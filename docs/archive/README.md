@@ -1,11 +1,13 @@
 # 과거 기록 보관함
 
-보존일: 2026-09-26. 이 폴더는 역사 자료이며 현재 에이전트 지침·요구사항·작업 승인이 아닙니다. 현재 기준은 [문서 지도](../README.md)에서 확인합니다.
+보존일: 2026-09-26. 이 폴더는 역사 자료이며 현재 에이전트 지침·요구사항·작업 승인이 아닙니다. 현재 기준은 [프로젝트 안내](../../README.md)에서 확인합니다.
 
-## 두 종류의 기록
+## 보관 기록
 
 - **[V1 기록](v1/README.md):** 포크 기준 커밋 98781bd에서 추출한 원래 README입니다. 핵심 기록은 [과거 헌법](v1/AGENTS-v1-historical.md), [교육 철학](v1/INTENT.md), [PRD](v1/PRD.md), [인수인계](v1/docs/HANDOFF.md), [배포](v1/docs/DEPLOYMENT.md)입니다. v1/docs/에는 평가·운영·검토 기록, v1/audit/에는 과거 감사 문서가 있습니다.
 - **[CS Class 개편 직전 기록](cs-class/2026-09-26-before-refresh/README.md):** 9월 25일 초기 시안과 9월 26일 대화 메모를 포함하는 작업 트리 원문입니다. V1 기록과 혼동하지 않습니다. [이전 협업 규칙](cs-class/2026-09-26-before-refresh/AGENTS-inherited-historical.md), [이전 PRD](cs-class/2026-09-26-before-refresh/PRD.md), [이전 디자인](cs-class/2026-09-26-before-refresh/docs/DESIGN.md)도 보존했습니다.
+
+- **[2026-09-27 통합 전 문서](cs-class/2026-09-27-before-consolidation/README.md):** 통합 직전 문서 9개의 원문입니다. [보존 목록](cs-class/2026-09-27-before-consolidation/manifest.json)에 원래 경로와 SHA-256을 기록했습니다. 이전 AGENTS는 `AGENTS-historical.md`로 보관하며, 본문의 현재 상태·지침·링크는 당시 기준입니다.
 
 ## 원문과 링크를 읽는 방법
 

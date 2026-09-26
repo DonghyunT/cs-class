@@ -1,0 +1,47 @@
+[
+  {
+    "original": "AGENTS.md",
+    "preserved": "AGENTS-historical.md",
+    "sha256": "7D1FB23CBF11141C881EFF2DB2E11B0AD058B66471DC63C101FF9263A7A3C6D1"
+  },
+  {
+    "original": "README.md",
+    "preserved": "README.md",
+    "sha256": "A41640F72F5B1602773A995FB082A05BE9C9F7C27AFC55F010109C9E631B4A20"
+  },
+  {
+    "original": "INTENT.md",
+    "preserved": "INTENT.md",
+    "sha256": "11244D60D0777D809542A24CA763F66A0334D71E2DF119BCF99ADBC2F8349FC2"
+  },
+  {
+    "original": "PRD.md",
+    "preserved": "PRD.md",
+    "sha256": "9EC968E2B05DF82059D8453E9C69F79AA4E928BB0490C54AE4038C96234B3CA1"
+  },
+  {
+    "original": "docs/DESIGN.md",
+    "preserved": "docs/DESIGN.md",
+    "sha256": "BC4DAF384E8114BC8F176D1313AECDA45CBE248A1781A3457740D1A053AF060D"
+  },
+  {
+    "original": "docs/TOOLING.md",
+    "preserved": "docs/TOOLING.md",
+    "sha256": "971BEF29A0121D229AD437449AC988802B85CFF3F02397FA033A9081F7AF17DA"
+  },
+  {
+    "original": "docs/HANDOFF.md",
+    "preserved": "docs/HANDOFF.md",
+    "sha256": "CA7B32A34EAA8B6CB801B1FFDCA66403E8079389ABD0E2C8D38D2E7BDBB81832"
+  },
+  {
+    "original": "docs/README.md",
+    "preserved": "docs/README.md",
+    "sha256": "D6D53A8B34DE7123F13A367FD8BE52D809BCEBF29CA4C5721BF5C64795D1A611"
+  },
+  {
+    "original": "docs/CS_CLASS_DEPLOYMENT.md",
+    "preserved": "docs/CS_CLASS_DEPLOYMENT.md",
+    "sha256": "F6F45CC73869F02078C109CEF83858C87F8233593005388684B242480796F6A4"
+  }
+]

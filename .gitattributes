@@ -1,0 +1,4 @@
+# Preserve historical documents byte-for-byte, including original CRLF.
+docs/archive/cs-class/2026-09-27-before-consolidation/** -text whitespace=cr-at-eol
+# Keep the upstream font license verbatim, including its original trailing space.
+platform/src/app/fonts/OFL.txt -text whitespace=cr-at-eol,-blank-at-eol

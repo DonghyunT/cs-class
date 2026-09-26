@@ -39,3 +39,6 @@ js/data/config.js
 !.env.example
 
 .vercel
+
+# 로컬 학생 계정 등록 자료 (초기 비밀번호 포함)
+/outputs/01a0de21-d7f4-7c03-8abf-2e213c2bf7fc/
