@@ -33,6 +33,7 @@ Thumbs.db
 
 # 🔑 환경설정 및 비밀 API 키 (GitHub 유출 방지)
 js/data/config.js
+**/js/data/config.js
 .env
 .env.*
 !.env.example

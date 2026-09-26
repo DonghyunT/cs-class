@@ -1,0 +1,1546 @@
+{
+  "date": "2026-09-26",
+  "source_commit": "6eb9595",
+  "records": [
+    {
+      "source": ".firebaserc",
+      "archive": "archive/v1/.firebaserc",
+      "sha256": "3c686df479f7489aec0b4aae9da6ad8ac7bc1433f58c4f1a93724438f091698d"
+    },
+    {
+      "source": "api/assessment.js",
+      "archive": "archive/v1/api/assessment.js",
+      "sha256": "b80a39767510846c711dd3f1b1f703d2496e6898ac428822dd0d0cf837215d6a"
+    },
+    {
+      "source": "api/chat.js",
+      "archive": "archive/v1/api/chat.js",
+      "sha256": "cc5a4c2945df1dc6c5ced74b6529b123d72b43fa81df0a1d43f950de1ee580b8"
+    },
+    {
+      "source": "api/evaluation.js",
+      "archive": "archive/v1/api/evaluation.js",
+      "sha256": "00baa96d085ab318c05765071ba2ac1714ed159939e80276f26990a535aba2d1"
+    },
+    {
+      "source": "audit/abstraction-concept.png",
+      "archive": "archive/v1/audit/abstraction-concept.png",
+      "sha256": "5efbec38a855fd3fc484ba2a9a1f02a55259b79bc2809323644cdffd0b9d8a5a"
+    },
+    {
+      "source": "audit/abstraction-lab.png",
+      "archive": "archive/v1/audit/abstraction-lab.png",
+      "sha256": "28af62edc9a3556d55043a80746b3c6638c34d09c17a0bf6b099333c344281cf"
+    },
+    {
+      "source": "audit/abstraction-quiz.png",
+      "archive": "archive/v1/audit/abstraction-quiz.png",
+      "sha256": "cf81e0617dcac89fa2db753c2d19f81af475bb51254d20d0e409cfb29786a9e6"
+    },
+    {
+      "source": "audit/algorithm-concept.png",
+      "archive": "archive/v1/audit/algorithm-concept.png",
+      "sha256": "9736b96f5b04a830396e99b080ce4c73748a5d0d89041cb081527ccd736cf2ed"
+    },
+    {
+      "source": "audit/algorithm-lab.png",
+      "archive": "archive/v1/audit/algorithm-lab.png",
+      "sha256": "fe1c536247802925031b6a4fb5a9453bc79b32484608e5ebcdd9793d4d906fd8"
+    },
+    {
+      "source": "audit/algorithm-quiz.png",
+      "archive": "archive/v1/audit/algorithm-quiz.png",
+      "sha256": "c235d39176dc764d3d21ae2590bd7286db402c24c3c612ab3a1152eec606b366"
+    },
+    {
+      "source": "audit/classroom.png",
+      "archive": "archive/v1/audit/classroom.png",
+      "sha256": "82e29c2c28d030e037af2a3cdf782b1b968c64af047931067bd6736c8cb81d19"
+    },
+    {
+      "source": "audit/coverage-results.json",
+      "archive": "archive/v1/audit/coverage-results.json",
+      "sha256": "23121cd4392e2ddd4ea74d55a99ed8b54e1dfd5366d7fd63dfe0a448d741a2b2"
+    },
+    {
+      "source": "audit/coverage.cjs",
+      "archive": "archive/v1/audit/coverage.cjs",
+      "sha256": "964beec004738efab017cffd979bf6594de7c68c1cfa98b9895927e2481b7efd"
+    },
+    {
+      "source": "audit/deep-results.json",
+      "archive": "archive/v1/audit/deep-results.json",
+      "sha256": "0182dffe59804aef227a75c5031376075fdffd4ea2d0256b155888813628af3a"
+    },
+    {
+      "source": "audit/deep.cjs",
+      "archive": "archive/v1/audit/deep.cjs",
+      "sha256": "a6632250cafa4a235e4f706ae12fe550631246d948f112c024420f8376a4e63c"
+    },
+    {
+      "source": "audit/eval-part3.png",
+      "archive": "archive/v1/audit/eval-part3.png",
+      "sha256": "acd8283376c8c96d99394a01538cccf7db5fa4a1a88004b011aa7985117ee28b"
+    },
+    {
+      "source": "audit/eval-shapes.png",
+      "archive": "archive/v1/audit/eval-shapes.png",
+      "sha256": "6b5d8eed301b85a0e46b314f89e4fd3a716a9d57012cb6a111c6975b6d6d5d2f"
+    },
+    {
+      "source": "audit/eval.png",
+      "archive": "archive/v1/audit/eval.png",
+      "sha256": "3d8197e131a92afabc4be39e60d28e7e7d7ae23b853e5c6ce9113eefb15f1fd2"
+    },
+    {
+      "source": "audit/final-checks.cjs",
+      "archive": "archive/v1/audit/final-checks.cjs",
+      "sha256": "617b8d0a685a49ae1438495d92947f9ebed9d114d75be4cc9cecf65551432160"
+    },
+    {
+      "source": "audit/final-results.json",
+      "archive": "archive/v1/audit/final-results.json",
+      "sha256": "09551ba366075fe3a024f1fdd0e756e4f895e515b052c627547e0e2496f30726"
+    },
+    {
+      "source": "audit/findings.json",
+      "archive": "archive/v1/audit/findings.json",
+      "sha256": "eca419ffd3bc034d9c0a5cd60a4904626c54f0935d0d0cd7e0066121f012dbc0"
+    },
+    {
+      "source": "audit/flowchart-1.png",
+      "archive": "archive/v1/audit/flowchart-1.png",
+      "sha256": "9dfdee528de7848581a4bc8a5ad6c1235985f790567c4568e1ec87a480e94ef7"
+    },
+    {
+      "source": "audit/flowchart-2.png",
+      "archive": "archive/v1/audit/flowchart-2.png",
+      "sha256": "f30c6feeed708e294c4c5d5b57a8c43eba4f815b1fde8a57ca7449f3868278aa"
+    },
+    {
+      "source": "audit/flowchart-3.png",
+      "archive": "archive/v1/audit/flowchart-3.png",
+      "sha256": "3068a2256af688b788a4a489e0549fb33687099772a702d76188218f3eb57ee9"
+    },
+    {
+      "source": "audit/flowchart-4.png",
+      "archive": "archive/v1/audit/flowchart-4.png",
+      "sha256": "e6e1c1f71b394f011e6877b370d8e478b9f1870cee6466a69d87000c9b13dd12"
+    },
+    {
+      "source": "audit/flowchart-5.png",
+      "archive": "archive/v1/audit/flowchart-5.png",
+      "sha256": "af0076c14dad25a5e1f9d0c933cdad03b1308fea985c973bf46f0bb880dcaf26"
+    },
+    {
+      "source": "audit/flowchart-concept.png",
+      "archive": "archive/v1/audit/flowchart-concept.png",
+      "sha256": "371dfda388f2700a4d6f1bc125f98d4b76d0d51446535f4f2deef66bd5c94710"
+    },
+    {
+      "source": "audit/flowchart-quiz.png",
+      "archive": "archive/v1/audit/flowchart-quiz.png",
+      "sha256": "725e0bf15b116e6fd91bf927ad85fe4dd257170ca80f50a17adf3990c92c100a"
+    },
+    {
+      "source": "audit/fresh-studio-1024.png",
+      "archive": "archive/v1/audit/fresh-studio-1024.png",
+      "sha256": "2c41cf08dd96098db17e0ea7f40285d3a0d48690b7afed04f8e888ac17a7ffd1"
+    },
+    {
+      "source": "audit/fresh-studio-1366.png",
+      "archive": "archive/v1/audit/fresh-studio-1366.png",
+      "sha256": "8a87590247e0544e09e52af8d63d5d66e0b656565687fa2e55a4e14d2f1bd469"
+    },
+    {
+      "source": "audit/fresh-studio-1440.png",
+      "archive": "archive/v1/audit/fresh-studio-1440.png",
+      "sha256": "a9c9e219c2d33b8e90aa2705895b39871c5aa1b20e4ccd32668d7f59585b8cb2"
+    },
+    {
+      "source": "audit/fresh-studio-1920.png",
+      "archive": "archive/v1/audit/fresh-studio-1920.png",
+      "sha256": "c65cc684570e1a566074c40d0e3062db942fbe34e98c53463683910e002f2ed3"
+    },
+    {
+      "source": "audit/fresh-studio-768.png",
+      "archive": "archive/v1/audit/fresh-studio-768.png",
+      "sha256": "14d1fe49d0459861e025ae17caa61177050058c5eb9fd6335cdcba7fff0b06a9"
+    },
+    {
+      "source": "audit/interaction-results.json",
+      "archive": "archive/v1/audit/interaction-results.json",
+      "sha256": "265bb2de189f5684a295342929a8e12b82ac549b84777008e7ae7cf339889f3e"
+    },
+    {
+      "source": "audit/interactions.cjs",
+      "archive": "archive/v1/audit/interactions.cjs",
+      "sha256": "c142fc93ba938bb30eaba31414a46a92bf47b545a18fb6c149201b48ff852526"
+    },
+    {
+      "source": "audit/portfolio.png",
+      "archive": "archive/v1/audit/portfolio.png",
+      "sha256": "71ce48fa9a747afc3a591de328752d02c97f11283aef8077dc34481d263f4d4f"
+    },
+    {
+      "source": "audit/results.json",
+      "archive": "archive/v1/audit/results.json",
+      "sha256": "9ab2afbbcbd752e7f266e1871ee474212e0e5906a4575b80adf2974def4a1650"
+    },
+    {
+      "source": "audit/roadmap.png",
+      "archive": "archive/v1/audit/roadmap.png",
+      "sha256": "0df43fb15da7230fd5aaa0ab5cf2589cf4c10cab1214c6776b041c872d189ce1"
+    },
+    {
+      "source": "audit/run.cjs",
+      "archive": "archive/v1/audit/run.cjs",
+      "sha256": "805e18f0ef5a110cad904adc2008104ec55b7c5c6a2508af800cd2c194db24a0"
+    },
+    {
+      "source": "audit/static-results.json",
+      "archive": "archive/v1/audit/static-results.json",
+      "sha256": "e08efb5986928ae7b19eb9041b2f2df3b5b23ffec8b180b42b8f33922bc80043"
+    },
+    {
+      "source": "audit/studio-1024.png",
+      "archive": "archive/v1/audit/studio-1024.png",
+      "sha256": "14be8b9b886f6fa703936c74c487b5b720c9fd69cfe5d01e677d7c01dc86da08"
+    },
+    {
+      "source": "audit/studio-1366.png",
+      "archive": "archive/v1/audit/studio-1366.png",
+      "sha256": "ae7e3b8e69439a4164e1e00f06b420b4a43c954d50abbacb340487dfc65bbd4e"
+    },
+    {
+      "source": "audit/studio-1440.png",
+      "archive": "archive/v1/audit/studio-1440.png",
+      "sha256": "03fb2c505a9e86fcb57cc54fa7cc3e5b5e4d6beae5266081018bc6cf2d4c0719"
+    },
+    {
+      "source": "audit/studio-1920.png",
+      "archive": "archive/v1/audit/studio-1920.png",
+      "sha256": "685b6a26b9a94f3e336653dea4c33119ff1a979663c82692d1ed3d2c40353964"
+    },
+    {
+      "source": "audit/studio-768.png",
+      "archive": "archive/v1/audit/studio-768.png",
+      "sha256": "73f6f359c70bdf8c7bfa7b728899276bb51411da9df834684f44258587869404"
+    },
+    {
+      "source": "css/classroom-layout.css",
+      "archive": "archive/v1/css/classroom-layout.css",
+      "sha256": "e3ac6e4da44ec0d07f3aaac4808e0815f144bb59f7c2ba1dd4cdec982c5afbfa"
+    },
+    {
+      "source": "css/common.css",
+      "archive": "archive/v1/css/common.css",
+      "sha256": "24c3f030cbc29e12374664f67c212f9d835b8dc4901057e08a19527ed35b3fa0"
+    },
+    {
+      "source": "css/flowchart.css",
+      "archive": "archive/v1/css/flowchart.css",
+      "sha256": "74fb12a48e0c6d6fd539f9d6182d96266bdbee955bd267ed879d6d6e3e661e17"
+    },
+    {
+      "source": "css/studio-ui.css",
+      "archive": "archive/v1/css/studio-ui.css",
+      "sha256": "5be1681e1fee93f7e3652eae3949d6b8febf8c99b4c1b4283c174856c1d0b2ee"
+    },
+    {
+      "source": "firebase.json",
+      "archive": "archive/v1/firebase.json",
+      "sha256": "10253688adb15b9457594602a53edaeb4ac697c067db1d9a36a8e49de6dee2ae"
+    },
+    {
+      "source": "firestore.rules",
+      "archive": "archive/v1/firestore.rules",
+      "sha256": "af495fb1a93b32d98c7bd10c7d84fd9385c76fef49d08a350bcc462883ce6735"
+    },
+    {
+      "source": "index.html",
+      "archive": "archive/v1/index.html",
+      "sha256": "c3af8845aa8524a0691d15a5e50f1d559320be4dcbaa43f92715a6224e2cc10f"
+    },
+    {
+      "source": "js/app.js",
+      "archive": "archive/v1/js/app.js",
+      "sha256": "0b0821fd8943b6fabfd765f7d1aa3adc937b07c13010937d2269890a043f6a9b"
+    },
+    {
+      "source": "js/core/ai-service.js",
+      "archive": "archive/v1/js/core/ai-service.js",
+      "sha256": "8fc564ec8dd74ee33b9d94844ab4eabb4edb436bdb712f77247cd55f12ac62af"
+    },
+    {
+      "source": "js/core/ai-tutor.js",
+      "archive": "archive/v1/js/core/ai-tutor.js",
+      "sha256": "b50f036908ec1406dfcd9dac29e12fa912251086eee4466d8625d60e7eebc0d6"
+    },
+    {
+      "source": "js/core/assessment-auto-review.js",
+      "archive": "archive/v1/js/core/assessment-auto-review.js",
+      "sha256": "271dc413607fc322a61921a8e0ea4c51209fab66cb2cad10d4ac9376fbdbd841"
+    },
+    {
+      "source": "js/core/assessment-policy.js",
+      "archive": "archive/v1/js/core/assessment-policy.js",
+      "sha256": "38aa1602ad8bcb78dc13e7a456f01c5a2d5d74e0c12974e7ee02290e5c3b1d54"
+    },
+    {
+      "source": "js/core/assessment-review-ui.js",
+      "archive": "archive/v1/js/core/assessment-review-ui.js",
+      "sha256": "da1ba395e20b6041191073d2111d7f56e6dfe778458b06b44a89aa9910fd8c1c"
+    },
+    {
+      "source": "js/core/assessment-workspace.js",
+      "archive": "archive/v1/js/core/assessment-workspace.js",
+      "sha256": "f91e643f289288a41c49dc2fc22aae9059c1a2619b727d1ac6557dcb5a6f4468"
+    },
+    {
+      "source": "js/core/audio.js",
+      "archive": "archive/v1/js/core/audio.js",
+      "sha256": "29723161678668b715079437ee1a16f8624ea0b43a7f35e7ac4084641ff99dda"
+    },
+    {
+      "source": "js/core/auth-service.js",
+      "archive": "archive/v1/js/core/auth-service.js",
+      "sha256": "867c17c9e24060d0dd98037d3778b2835c4a0f6e29061ae5abe676f77b6aeed1"
+    },
+    {
+      "source": "js/core/classroom.js",
+      "archive": "archive/v1/js/core/classroom.js",
+      "sha256": "c9556a6784e9c4ec5dcb10e2bd964a2f80d16cccc7ef07090763998ebefdedc7"
+    },
+    {
+      "source": "js/core/concept.js",
+      "archive": "archive/v1/js/core/concept.js",
+      "sha256": "c1671fbb35509fd53ca824b4a38fc495166664f8b1e8b2eec758141cc6eac1ab"
+    },
+    {
+      "source": "js/core/eval-service.js",
+      "archive": "archive/v1/js/core/eval-service.js",
+      "sha256": "07219c7ca61b123719b27693d5326c3ed6509e52113a94ee002f44fe0cf695cb"
+    },
+    {
+      "source": "js/core/excel-export.js",
+      "archive": "archive/v1/js/core/excel-export.js",
+      "sha256": "78b83aa1203591f88eb74d2273e26ef545b64b452255f137fe58e50721c937e6"
+    },
+    {
+      "source": "js/core/flow-expressions.js",
+      "archive": "archive/v1/js/core/flow-expressions.js",
+      "sha256": "4c5b8a51094a78ba682484bceddf694bb2f5373bc6d4135e8f02b6e7493a5abe"
+    },
+    {
+      "source": "js/core/flow-validation.js",
+      "archive": "archive/v1/js/core/flow-validation.js",
+      "sha256": "af828c275a8d99631315ebe04070033c25b69e4a542af9e086460443621683cc"
+    },
+    {
+      "source": "js/core/flowchart-review.js",
+      "archive": "archive/v1/js/core/flowchart-review.js",
+      "sha256": "0960d79bbb409f01af1323f10f9c44f496e2fe9964df92f1d38ef5fd62f877cc"
+    },
+    {
+      "source": "js/core/local-preview.js",
+      "archive": "archive/v1/js/core/local-preview.js",
+      "sha256": "d912e5ddc047a34a5b1469ad0df813e642f2490c59ee2042a8b910176acf6663"
+    },
+    {
+      "source": "js/core/navigation.js",
+      "archive": "archive/v1/js/core/navigation.js",
+      "sha256": "3240ecda6d3721685ace990b49f071f9a9f03be781e856870a12889f8f62670e"
+    },
+    {
+      "source": "js/core/objective-correction.js",
+      "archive": "archive/v1/js/core/objective-correction.js",
+      "sha256": "8c5b6f999612b19511eee56397f63ec62b74b4932996418daa5da360e9e231a7"
+    },
+    {
+      "source": "js/core/session-drafts.js",
+      "archive": "archive/v1/js/core/session-drafts.js",
+      "sha256": "9d9bfef8415a3772e319a848e7e94a5519ef91b819c43c215a7b0b18aab5c8e3"
+    },
+    {
+      "source": "js/data/abstraction-data.js",
+      "archive": "archive/v1/js/data/abstraction-data.js",
+      "sha256": "8dc5dc165a226341105837aa41f15d534041d54782c37c1165cb7cfcf38e7b6d"
+    },
+    {
+      "source": "js/data/config.example.js",
+      "archive": "archive/v1/js/data/config.example.js",
+      "sha256": "7436921981b430d8b70ca245b46a613078d10a601b8d76469dd5d4ae688a5e75"
+    },
+    {
+      "source": "js/data/eval-question-bank.js",
+      "archive": "archive/v1/js/data/eval-question-bank.js",
+      "sha256": "911e9bd3093aee5eb85349669910c799ac964d03b8a5895e30fa6e8e846eaa4e"
+    },
+    {
+      "source": "js/data/eval-questions.js",
+      "archive": "archive/v1/js/data/eval-questions.js",
+      "sha256": "06fcf40ed2c6a89876e63383bb0ac9fa365879aa4d69d24b42c4797741c9e9e4"
+    },
+    {
+      "source": "js/data/firebase-config.js",
+      "archive": "archive/v1/js/data/firebase-config.js",
+      "sha256": "01df9980cfbbfed76fbd4e677f6ea2aa9dbb8d65ca471afd841770fe8f40d4d1"
+    },
+    {
+      "source": "js/data/flowchart-missions.js",
+      "archive": "archive/v1/js/data/flowchart-missions.js",
+      "sha256": "24efb2ea86c8a4fe2fd1fbb23bacaf0a2472ea4acc8991b14efd73bca02b40cf"
+    },
+    {
+      "source": "js/labs/lab-abstraction.js",
+      "archive": "archive/v1/js/labs/lab-abstraction.js",
+      "sha256": "c120a8c124bc79be698b604280d67d416410eb785d4b5685a7bbf18fbd9d597c"
+    },
+    {
+      "source": "js/labs/lab-eval.js",
+      "archive": "archive/v1/js/labs/lab-eval.js",
+      "sha256": "e710350d89e654b049822aceef5c7d89dd8615e50f0b864d9d5e6a250d1d6b5f"
+    },
+    {
+      "source": "js/labs/lab-flowchart.js",
+      "archive": "archive/v1/js/labs/lab-flowchart.js",
+      "sha256": "9a18a9c27e95088a30b1bd74dcf34368d15868d3f5be98c06dcb93ba5c05ffba"
+    },
+    {
+      "source": "js/labs/lab-quiz.js",
+      "archive": "archive/v1/js/labs/lab-quiz.js",
+      "sha256": "46d3ae02c2b407ae35e7731e03f712763d3cbb5e046df9304614c1519f5b5399"
+    },
+    {
+      "source": "js/labs/lab-sandwich.js",
+      "archive": "archive/v1/js/labs/lab-sandwich.js",
+      "sha256": "7901adda8bdabbc5191c76865c7fee2a21416c68b30fd20c0ceeb597919ca2cd"
+    },
+    {
+      "source": "server/ai-quota.cjs",
+      "archive": "archive/v1/server/ai-quota.cjs",
+      "sha256": "41eaa9ab252fc9935a7f795673d023982b255ff510963241ad8a10c141f4cff4"
+    },
+    {
+      "source": "server/assessment-graph.cjs",
+      "archive": "archive/v1/server/assessment-graph.cjs",
+      "sha256": "c81d09876dfdbc3eb3f5c9d14e7a677c5ae639bd166243c1e82b2f5504156132"
+    },
+    {
+      "source": "server/assessment-guidance.cjs",
+      "archive": "archive/v1/server/assessment-guidance.cjs",
+      "sha256": "4887ceed907945ef2a15684fad70cf1929729519bd5ff75b4c3ea6cbcc82b7a4"
+    },
+    {
+      "source": "server/assessment-prompt.cjs",
+      "archive": "archive/v1/server/assessment-prompt.cjs",
+      "sha256": "d8c78d343ed347d9f0087bcb6dc1990aec3073f1464ea04b9f6d89085e123c14"
+    },
+    {
+      "source": "server/evaluation-bank.cjs",
+      "archive": "archive/v1/server/evaluation-bank.cjs",
+      "sha256": "815de72735589f53cfd66c32887fa68395e3ec4abb8c63704c66e3f07f7fac6d"
+    },
+    {
+      "source": "server/firebase-token.cjs",
+      "archive": "archive/v1/server/firebase-token.cjs",
+      "sha256": "b8bd47f9a6e515c70ad35464d0b128d7826534b4239af1f863cb22ecb91ce8b2"
+    },
+    {
+      "source": "server/objective-regrade.cjs",
+      "archive": "archive/v1/server/objective-regrade.cjs",
+      "sha256": "6d3b24154ba742e9407dd88c944fe79b6b5ad98cea7a6a1d097d494458b43a8a"
+    },
+    {
+      "source": "tests/api.test.cjs",
+      "archive": "archive/v1/tests/api.test.cjs",
+      "sha256": "1f006dd0a7403254b13fe362e42cc2233d9fb6a986d2117f40ed85f99aea0d3f"
+    },
+    {
+      "source": "tests/archive-history-ui.cjs",
+      "archive": "archive/v1/tests/archive-history-ui.cjs",
+      "sha256": "8f82c8be9ebcb2b59afcef08c188ab6d9dcbe09b7d7a76f9632cfd60d6b50f84"
+    },
+    {
+      "source": "tests/assessment-api.test.cjs",
+      "archive": "archive/v1/tests/assessment-api.test.cjs",
+      "sha256": "f0c3eca3339e6bbbe317ddeed01548d7e544c8e1f64908e6abba8d83786dfcdf"
+    },
+    {
+      "source": "tests/assessment-auto-review.test.cjs",
+      "archive": "archive/v1/tests/assessment-auto-review.test.cjs",
+      "sha256": "be8502a502e219899f46c030a979b30d404c65fe1bd2141a7beed7ce92402cfb"
+    },
+    {
+      "source": "tests/assessment-ui.cjs",
+      "archive": "archive/v1/tests/assessment-ui.cjs",
+      "sha256": "3e5db7c465f9a4603a5ab2891d29be46df0754fb9e70fbeb72dc22c8266b2307"
+    },
+    {
+      "source": "tests/assessment-v2.test.cjs",
+      "archive": "archive/v1/tests/assessment-v2.test.cjs",
+      "sha256": "0ced53d34532e665e3fa57ae61e8b920ab0cc84a39572de2e28393b65583afe9"
+    },
+    {
+      "source": "tests/auth.test.cjs",
+      "archive": "archive/v1/tests/auth.test.cjs",
+      "sha256": "cf20d88aac65426e9dd5b36b0c34f53d87df1482fdb7e190f0cdbbd904ba6a88"
+    },
+    {
+      "source": "tests/browser.cjs",
+      "archive": "archive/v1/tests/browser.cjs",
+      "sha256": "3f2b71bc4a76cf1827590d1dd107c08190f72fc321d202614e124fc269779701"
+    },
+    {
+      "source": "tests/cbt-assessment-ui.test.cjs",
+      "archive": "archive/v1/tests/cbt-assessment-ui.test.cjs",
+      "sha256": "5562a36fa01d709af9580711eb518d7119c0eed97fb58906dc48d7bf05591ade"
+    },
+    {
+      "source": "tests/class-scope.test.cjs",
+      "archive": "archive/v1/tests/class-scope.test.cjs",
+      "sha256": "eb7f0af56c7686d520d7b331524bd698792133100255b679c256576f0cc99b1c"
+    },
+    {
+      "source": "tests/classroom-score-grid.test.cjs",
+      "archive": "archive/v1/tests/classroom-score-grid.test.cjs",
+      "sha256": "079a3d9568970b2bcef9117380c43dc4a32f2006d05abf6194277beb5ddd6372"
+    },
+    {
+      "source": "tests/core.test.cjs",
+      "archive": "archive/v1/tests/core.test.cjs",
+      "sha256": "cfbfba1c02602ac98ef68f98fc2548d47e385ff4a75afbf51fc3f898360a495b"
+    },
+    {
+      "source": "tests/eval-csv.test.cjs",
+      "archive": "archive/v1/tests/eval-csv.test.cjs",
+      "sha256": "8dce72d6027e9c7742b7aa7412fd3b5cd037603aaf85483b1699944f4006ecc0"
+    },
+    {
+      "source": "tests/eval-entry-guard.test.cjs",
+      "archive": "archive/v1/tests/eval-entry-guard.test.cjs",
+      "sha256": "5f547774e2a9e5e4026640f730e79330b7e36cc9234ef54c8ff12cf7b15ff1ed"
+    },
+    {
+      "source": "tests/eval-time-extension.test.cjs",
+      "archive": "archive/v1/tests/eval-time-extension.test.cjs",
+      "sha256": "2c46389adfd8aae669c3b5e4912d6ba77b3df086e45b871f06b68ebe8945caf7"
+    },
+    {
+      "source": "tests/evaluation-api.test.cjs",
+      "archive": "archive/v1/tests/evaluation-api.test.cjs",
+      "sha256": "aac6f5a16c4869e9320a2c255747107212b0a529e6426048ccf1c059df0cdd66"
+    },
+    {
+      "source": "tests/evaluation-bank.test.cjs",
+      "archive": "archive/v1/tests/evaluation-bank.test.cjs",
+      "sha256": "1f1df7c61b5c31849d951abd41771c4b8f32bcab26647a5a7f6e61001415e1d2"
+    },
+    {
+      "source": "tests/evaluation-read-efficiency-ui.cjs",
+      "archive": "archive/v1/tests/evaluation-read-efficiency-ui.cjs",
+      "sha256": "456e3f330e78f2dfccb4668caa2ea21f689508b48d269e92a02534b69c5ec904"
+    },
+    {
+      "source": "tests/evaluation-read-efficiency.test.cjs",
+      "archive": "archive/v1/tests/evaluation-read-efficiency.test.cjs",
+      "sha256": "70878bfdb8ae6bab95bdea35e5289d6bf4a675f5e00c9037691d9ed1d4a55aa7"
+    },
+    {
+      "source": "tests/excel-export.test.cjs",
+      "archive": "archive/v1/tests/excel-export.test.cjs",
+      "sha256": "edfd64b126506be33361e496c9b0f0e40ddc624ae2da9a903b4f40ec2dbfd9b9"
+    },
+    {
+      "source": "tests/firestore-live.cjs",
+      "archive": "archive/v1/tests/firestore-live.cjs",
+      "sha256": "ab6983de83bdae386244127883c022c7022e9df47cd0b4d186cb7719282617aa"
+    },
+    {
+      "source": "tests/fixtures/part3-calibration.cjs",
+      "archive": "archive/v1/tests/fixtures/part3-calibration.cjs",
+      "sha256": "3d1a647c987bbbe40fbd395d3aa09d09e2ef6fe805e616dd82ecb4c687f4702e"
+    },
+    {
+      "source": "tests/fixtures/part3-sanity.cjs",
+      "archive": "archive/v1/tests/fixtures/part3-sanity.cjs",
+      "sha256": "1b0213a860a3e9cc02cb93699d1f0eb0728d57ff6637dfb92e71b3769bcfe456"
+    },
+    {
+      "source": "tests/flowchart-review.test.cjs",
+      "archive": "archive/v1/tests/flowchart-review.test.cjs",
+      "sha256": "7cb83b3649a48ec069ca9ca0366559d1c0221ea8da39c6ff6e195a0f1fed3b57"
+    },
+    {
+      "source": "tests/instructor-live.cjs",
+      "archive": "archive/v1/tests/instructor-live.cjs",
+      "sha256": "9793d0dd559ca43d42e9277d9c008b1c4c0833fcb29d3ab111761062ab506719"
+    },
+    {
+      "source": "tests/instructor-ui.cjs",
+      "archive": "archive/v1/tests/instructor-ui.cjs",
+      "sha256": "28e91fe4992704f3df3a474c4763f2ed260530c2ff888da47363185fe9e8178d"
+    },
+    {
+      "source": "tests/local-preview.test.cjs",
+      "archive": "archive/v1/tests/local-preview.test.cjs",
+      "sha256": "c88e4404bb8f823e924bb7aff0833246d7ea5e2a6a698960905aeb96e22f6c6e"
+    },
+    {
+      "source": "tests/objective-regrade.test.cjs",
+      "archive": "archive/v1/tests/objective-regrade.test.cjs",
+      "sha256": "eddb437d526b07aac47765b30775a61ae3f7f23051c33106ec129c84dc318629"
+    },
+    {
+      "source": "tests/part3-regrade.test.cjs",
+      "archive": "archive/v1/tests/part3-regrade.test.cjs",
+      "sha256": "1234998d89f23be808fee9b44639e502bbac5e2f4b6584a4dc25311d381e3c2c"
+    },
+    {
+      "source": "tests/part3-v2-ui.cjs",
+      "archive": "archive/v1/tests/part3-v2-ui.cjs",
+      "sha256": "e3bad11d58b436268d5f30b90e9fa59919d846848d29d138ec0c7d7f2770ec1c"
+    },
+    {
+      "source": "tests/results/assessment-production-390.png",
+      "archive": "archive/v1/tests/results/assessment-production-390.png",
+      "sha256": "cb6c5c13e9b7d3de426782f51786906d5e3e057660b1f022e51e7182272d7be1"
+    },
+    {
+      "source": "tests/results/assessment-production-home.png",
+      "archive": "archive/v1/tests/results/assessment-production-home.png",
+      "sha256": "7e7f62951766094d9648a6de8146452599e0a7db5b0fdaa08ce7cc31a7ac0933"
+    },
+    {
+      "source": "tests/results/assessment-production.json",
+      "archive": "archive/v1/tests/results/assessment-production.json",
+      "sha256": "a691a8bbeb8b552ba056f08a3c417b9d4e41219461514748770e4613392a457a"
+    },
+    {
+      "source": "tests/results/assessment-shared-1440.png",
+      "archive": "archive/v1/tests/results/assessment-shared-1440.png",
+      "sha256": "bfdb370d19427a3afa07495dbb7dc883452d85835983865fb04243377acdc232"
+    },
+    {
+      "source": "tests/results/assessment-shared-390.png",
+      "archive": "archive/v1/tests/results/assessment-shared-390.png",
+      "sha256": "91e090e582b62663310e6af152371b21fb496e833cb265ea9a18b17c600018da"
+    },
+    {
+      "source": "tests/results/assessment-teacher-review.png",
+      "archive": "archive/v1/tests/results/assessment-teacher-review.png",
+      "sha256": "d48c0ad49133d64bf75da8995c9021e3ac3c7d7652faff1b819feed7ddaef1a1"
+    },
+    {
+      "source": "tests/results/assessment-ui.json",
+      "archive": "archive/v1/tests/results/assessment-ui.json",
+      "sha256": "507e2a1be0ff3888a4404c5ca296643200c172a5ab47b4dcee6359a4333ea033"
+    },
+    {
+      "source": "tests/results/assessment.png",
+      "archive": "archive/v1/tests/results/assessment.png",
+      "sha256": "83e6a3c2e245369c84a8f4300bc75e44ae755f02284d70cc42427f6dc0931b83"
+    },
+    {
+      "source": "tests/results/browser.json",
+      "archive": "archive/v1/tests/results/browser.json",
+      "sha256": "4aceb873a7e3d12582c9553b3ebdbc9047b0a264c5f9b7b871c108fdb0cbdd43"
+    },
+    {
+      "source": "tests/results/drag-shape-0.png",
+      "archive": "archive/v1/tests/results/drag-shape-0.png",
+      "sha256": "bd1b7a4ee19440dfd3a7e0368df14b53cc5484d9a666505f9c9bd90f181bfe74"
+    },
+    {
+      "source": "tests/results/drag-shape-1.png",
+      "archive": "archive/v1/tests/results/drag-shape-1.png",
+      "sha256": "5d0a1a6af8279630f29d3b64dfd6b7d90142701f264236d10bcf167bd198d6ce"
+    },
+    {
+      "source": "tests/results/drag-shape-2.png",
+      "archive": "archive/v1/tests/results/drag-shape-2.png",
+      "sha256": "182a587e827682405ba7dfc23ffdbf0cb6f751aa583caf6003a6c4ca77168966"
+    },
+    {
+      "source": "tests/results/drag-shape-3.png",
+      "archive": "archive/v1/tests/results/drag-shape-3.png",
+      "sha256": "0481fdb43404efdf605c8397cc0b03bfb562aa4ab7232bf6fa14d460c44ddfd8"
+    },
+    {
+      "source": "tests/results/firestore-live.json",
+      "archive": "archive/v1/tests/results/firestore-live.json",
+      "sha256": "4e713808ee9207d2f09d42ac3296ced3f280c0fa59b2cc71a41c59a6a3f9ad47"
+    },
+    {
+      "source": "tests/results/firestore-structure.json",
+      "archive": "archive/v1/tests/results/firestore-structure.json",
+      "sha256": "06b7dd27ca31bba71deff099dd20053835d02d99bd18ca4c7a575f83bc85a48d"
+    },
+    {
+      "source": "tests/results/home-320.png",
+      "archive": "archive/v1/tests/results/home-320.png",
+      "sha256": "f6ca80e3148df078815278c335311032d85a29ff4971c460563d7144ec62b366"
+    },
+    {
+      "source": "tests/results/instructor-live.json",
+      "archive": "archive/v1/tests/results/instructor-live.json",
+      "sha256": "0e287227a424d54b1d2662f6f944bf682b13a192ac0a0a77e08e8b92cb34127e"
+    },
+    {
+      "source": "tests/results/instructor-production/classroom-1024.png",
+      "archive": "archive/v1/tests/results/instructor-production/classroom-1024.png",
+      "sha256": "8280b55bbb3afa7d08bd635935412d9fc1c0650b32195c6fe928ab78c0cafcaf"
+    },
+    {
+      "source": "tests/results/instructor-production/classroom-1440.png",
+      "archive": "archive/v1/tests/results/instructor-production/classroom-1440.png",
+      "sha256": "78332d7901dbd3ae2d5a1b8ee5607725eb3840500cd775085643b5dd21e10b2a"
+    },
+    {
+      "source": "tests/results/instructor-production/classroom-390.png",
+      "archive": "archive/v1/tests/results/instructor-production/classroom-390.png",
+      "sha256": "0dc780f125440b41beef386c216b280996f3c59d2e0f8a0c0867a0a6d60fb597"
+    },
+    {
+      "source": "tests/results/instructor-production/classroom-768.png",
+      "archive": "archive/v1/tests/results/instructor-production/classroom-768.png",
+      "sha256": "288530edfddccc09e540b09a873cfadba570ff27b09266a1b343aeaa200cee01"
+    },
+    {
+      "source": "tests/results/instructor-production/login-320.png",
+      "archive": "archive/v1/tests/results/instructor-production/login-320.png",
+      "sha256": "f4d574bc5016f30e1a53c03ebbf12596900f2cf02e929d1262b49f8be609f26c"
+    },
+    {
+      "source": "tests/results/instructor-production/results.json",
+      "archive": "archive/v1/tests/results/instructor-production/results.json",
+      "sha256": "4066052cab80ae9df84044cf8b2c294c36ec1381a1b31d2ac48b77eef57930fc"
+    },
+    {
+      "source": "tests/results/instructor-regression/assessment.png",
+      "archive": "archive/v1/tests/results/instructor-regression/assessment.png",
+      "sha256": "e49396624dffa4164027bb73fdaab5ceca21b231d49c19ec9b8dc8c75aced9d9"
+    },
+    {
+      "source": "tests/results/instructor-regression/browser.json",
+      "archive": "archive/v1/tests/results/instructor-regression/browser.json",
+      "sha256": "111ee6f18bf8beab337a6885cf98e975d1262101657fcfe7baeb9242dd778bff"
+    },
+    {
+      "source": "tests/results/instructor-regression/home-320.png",
+      "archive": "archive/v1/tests/results/instructor-regression/home-320.png",
+      "sha256": "404769653858b1ff145890303a1dc18d969d863175385109b05d86c08f927523"
+    },
+    {
+      "source": "tests/results/instructor-regression/studio-1024.png",
+      "archive": "archive/v1/tests/results/instructor-regression/studio-1024.png",
+      "sha256": "a3f889cfec51eeb1a009df4bcb91bc6f1c184ac01e538ddae479d302b27c33dc"
+    },
+    {
+      "source": "tests/results/instructor-regression/studio-1366.png",
+      "archive": "archive/v1/tests/results/instructor-regression/studio-1366.png",
+      "sha256": "8bf505898e05705cf016492fccaaf6565490d8040b9294f7dc4a362d91649fab"
+    },
+    {
+      "source": "tests/results/instructor-regression/studio-1440.png",
+      "archive": "archive/v1/tests/results/instructor-regression/studio-1440.png",
+      "sha256": "c80d0fcbb7417b1f76d07de81b0aabd63cadb997839c404b679a0b8f3cdcdbf9"
+    },
+    {
+      "source": "tests/results/instructor-regression/studio-1920.png",
+      "archive": "archive/v1/tests/results/instructor-regression/studio-1920.png",
+      "sha256": "4379be0b59c793b8cdf0234bfa85b8f4478b82861c5d8c7b280b3d1c53de16ee"
+    },
+    {
+      "source": "tests/results/instructor-regression/studio-768.png",
+      "archive": "archive/v1/tests/results/instructor-regression/studio-768.png",
+      "sha256": "8f083ee3e3c824393d446fd4505e75d8f6b42e2bcf7bcf2afe31970fb3c693b6"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-classroom-1024.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-classroom-1024.png",
+      "sha256": "2b8213b16f227e59f9a7c06dcb623b701b3ff7b4bafb8ca04c3e3ea08a7f723d"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-classroom-1440.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-classroom-1440.png",
+      "sha256": "2f979298d277f470de8d943ba6360e7e75f8700bff66cf2d71997e3e26c21715"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-classroom-390.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-classroom-390.png",
+      "sha256": "7e8b386d5aa26a2f275e4e9c39f36c4afb1311df90f0740566dc8e94ff728dbb"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-classroom-768.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-classroom-768.png",
+      "sha256": "d6ac6f1efbb6bc55543ad518918f28aa1e56b7b61406a7655a94dc7873e48d98"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-eval-1024.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-eval-1024.png",
+      "sha256": "7b5569d1a0ec664e7a68f3f319b5408263baaff36f3e9fa0fa1b44514fc1b4a4"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-eval-1440.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-eval-1440.png",
+      "sha256": "9576a0cfaebad53d58b49899c3fe404fe62411a4656eef3957745325fa2290a2"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-eval-390.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-eval-390.png",
+      "sha256": "5a8cca1d9b41046e75c93c4fd7818138d18db60282c63e3a89cd53d351473f3e"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-eval-768.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-eval-768.png",
+      "sha256": "c97f17632db9c5fee8732ba4eabbc8d24bea7b712c4cb217aad77e1712545906"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit1-1024.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-unit1-1024.png",
+      "sha256": "2e19998047dfc4c2b1efb899d982bc92872a843413e09441c6cf830c29fde7f0"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit1-1440.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-unit1-1440.png",
+      "sha256": "569b3a092b2bb447a6f9efc85c79db7a476b61fe43252538cafa48105fa05a43"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit1-390.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-unit1-390.png",
+      "sha256": "561e9062612fe8394c1a6c6a980a4fd7a9345f66355a42d2e0bb50fd3770fac7"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit1-768.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-unit1-768.png",
+      "sha256": "608b9a5c5d047cc05389c4f5db82e8930ff8d2e68589e1a3718d0646ca214ab2"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit2-1024.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-unit2-1024.png",
+      "sha256": "4662fb20e5bbb3a34c15095c6502210ad8a18e427d069ba6ac43bc7f616f7f5e"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit2-1440.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-unit2-1440.png",
+      "sha256": "c45a4c87ccf98be5e6235bec0e0ed488e54ee81001084603db42eb9555bdd871"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit2-390.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-unit2-390.png",
+      "sha256": "39841db2b529e1229257291a550f8162ff645ff9492aec9a2208c0b7b3cca852"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit2-768.png",
+      "archive": "archive/v1/tests/results/instructor-regression/ui-unit2-768.png",
+      "sha256": "cf6bd78bdbe846e8f2fe83958b655435e398bac38cf4484e9f0c139cdff9ed26"
+    },
+    {
+      "source": "tests/results/instructor-regression/view-concept.png",
+      "archive": "archive/v1/tests/results/instructor-regression/view-concept.png",
+      "sha256": "54ee2e90ec685cd908579ae14d93310389eabbd689c89366742f82d340f5d4bc"
+    },
+    {
+      "source": "tests/results/instructor-regression/view-quiz.png",
+      "archive": "archive/v1/tests/results/instructor-regression/view-quiz.png",
+      "sha256": "fd0f20f58c7972045faf1571be39360fbaf07c43782e964c9670e66f8462cc39"
+    },
+    {
+      "source": "tests/results/instructor-regression/view-roadmap.png",
+      "archive": "archive/v1/tests/results/instructor-regression/view-roadmap.png",
+      "sha256": "09c401a03b5b9c30108d8595e6d72e2aab626a09a1e1be851a33a4b7cbffa671"
+    },
+    {
+      "source": "tests/results/instructor-ui/classroom-1024.png",
+      "archive": "archive/v1/tests/results/instructor-ui/classroom-1024.png",
+      "sha256": "3018d8f86d5c5e4386c98b147a139ecc0dff35921cf52b188da7e9937b85b9e6"
+    },
+    {
+      "source": "tests/results/instructor-ui/classroom-1440.png",
+      "archive": "archive/v1/tests/results/instructor-ui/classroom-1440.png",
+      "sha256": "69c3af5603babd1b3dfd2de9d2589108537792bbbfa83bc2fe805fcf0def9354"
+    },
+    {
+      "source": "tests/results/instructor-ui/classroom-390.png",
+      "archive": "archive/v1/tests/results/instructor-ui/classroom-390.png",
+      "sha256": "6f7866b7ab49b0a2df5d6afc03a282fb8dba18f234ad0cec30a949da19226afb"
+    },
+    {
+      "source": "tests/results/instructor-ui/classroom-768.png",
+      "archive": "archive/v1/tests/results/instructor-ui/classroom-768.png",
+      "sha256": "d7ab0a86bd7b43d0564401320e34f5d7029842eea91e4db3e1beb94829a44840"
+    },
+    {
+      "source": "tests/results/instructor-ui/login-320.png",
+      "archive": "archive/v1/tests/results/instructor-ui/login-320.png",
+      "sha256": "f4d574bc5016f30e1a53c03ebbf12596900f2cf02e929d1262b49f8be609f26c"
+    },
+    {
+      "source": "tests/results/instructor-ui/results.json",
+      "archive": "archive/v1/tests/results/instructor-ui/results.json",
+      "sha256": "6c1f40b06220866dfc1576a45844a418ac3bc99c734b956be03ca6ff3959ecfc"
+    },
+    {
+      "source": "tests/results/production.json",
+      "archive": "archive/v1/tests/results/production.json",
+      "sha256": "89076d8ead688fd50bdbc2bcb104a913bcec4055208a0372b83b8e3f9c7b0052"
+    },
+    {
+      "source": "tests/results/production.png",
+      "archive": "archive/v1/tests/results/production.png",
+      "sha256": "0083bb21c0d3844f512f8c947a1466a0796aafebbc5c88fcca22e54b5db97361"
+    },
+    {
+      "source": "tests/results/semantic-regression/assessment.png",
+      "archive": "archive/v1/tests/results/semantic-regression/assessment.png",
+      "sha256": "e49396624dffa4164027bb73fdaab5ceca21b231d49c19ec9b8dc8c75aced9d9"
+    },
+    {
+      "source": "tests/results/semantic-regression/browser.json",
+      "archive": "archive/v1/tests/results/semantic-regression/browser.json",
+      "sha256": "111ee6f18bf8beab337a6885cf98e975d1262101657fcfe7baeb9242dd778bff"
+    },
+    {
+      "source": "tests/results/semantic-regression/home-320.png",
+      "archive": "archive/v1/tests/results/semantic-regression/home-320.png",
+      "sha256": "404769653858b1ff145890303a1dc18d969d863175385109b05d86c08f927523"
+    },
+    {
+      "source": "tests/results/semantic-regression/studio-1024.png",
+      "archive": "archive/v1/tests/results/semantic-regression/studio-1024.png",
+      "sha256": "a3f889cfec51eeb1a009df4bcb91bc6f1c184ac01e538ddae479d302b27c33dc"
+    },
+    {
+      "source": "tests/results/semantic-regression/studio-1366.png",
+      "archive": "archive/v1/tests/results/semantic-regression/studio-1366.png",
+      "sha256": "8bf505898e05705cf016492fccaaf6565490d8040b9294f7dc4a362d91649fab"
+    },
+    {
+      "source": "tests/results/semantic-regression/studio-1440.png",
+      "archive": "archive/v1/tests/results/semantic-regression/studio-1440.png",
+      "sha256": "e6cce59154afb9deff8043324bafae04a222e72969196cc367d54ed5d8b24bdb"
+    },
+    {
+      "source": "tests/results/semantic-regression/studio-1920.png",
+      "archive": "archive/v1/tests/results/semantic-regression/studio-1920.png",
+      "sha256": "4379be0b59c793b8cdf0234bfa85b8f4478b82861c5d8c7b280b3d1c53de16ee"
+    },
+    {
+      "source": "tests/results/semantic-regression/studio-768.png",
+      "archive": "archive/v1/tests/results/semantic-regression/studio-768.png",
+      "sha256": "8f083ee3e3c824393d446fd4505e75d8f6b42e2bcf7bcf2afe31970fb3c693b6"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-classroom-1024.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-classroom-1024.png",
+      "sha256": "2b8213b16f227e59f9a7c06dcb623b701b3ff7b4bafb8ca04c3e3ea08a7f723d"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-classroom-1440.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-classroom-1440.png",
+      "sha256": "2f979298d277f470de8d943ba6360e7e75f8700bff66cf2d71997e3e26c21715"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-classroom-390.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-classroom-390.png",
+      "sha256": "7e8b386d5aa26a2f275e4e9c39f36c4afb1311df90f0740566dc8e94ff728dbb"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-classroom-768.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-classroom-768.png",
+      "sha256": "d6ac6f1efbb6bc55543ad518918f28aa1e56b7b61406a7655a94dc7873e48d98"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-eval-1024.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-eval-1024.png",
+      "sha256": "7b5569d1a0ec664e7a68f3f319b5408263baaff36f3e9fa0fa1b44514fc1b4a4"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-eval-1440.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-eval-1440.png",
+      "sha256": "9576a0cfaebad53d58b49899c3fe404fe62411a4656eef3957745325fa2290a2"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-eval-390.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-eval-390.png",
+      "sha256": "5a8cca1d9b41046e75c93c4fd7818138d18db60282c63e3a89cd53d351473f3e"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-eval-768.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-eval-768.png",
+      "sha256": "c97f17632db9c5fee8732ba4eabbc8d24bea7b712c4cb217aad77e1712545906"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit1-1024.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-unit1-1024.png",
+      "sha256": "2e19998047dfc4c2b1efb899d982bc92872a843413e09441c6cf830c29fde7f0"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit1-1440.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-unit1-1440.png",
+      "sha256": "569b3a092b2bb447a6f9efc85c79db7a476b61fe43252538cafa48105fa05a43"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit1-390.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-unit1-390.png",
+      "sha256": "561e9062612fe8394c1a6c6a980a4fd7a9345f66355a42d2e0bb50fd3770fac7"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit1-768.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-unit1-768.png",
+      "sha256": "608b9a5c5d047cc05389c4f5db82e8930ff8d2e68589e1a3718d0646ca214ab2"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit2-1024.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-unit2-1024.png",
+      "sha256": "4662fb20e5bbb3a34c15095c6502210ad8a18e427d069ba6ac43bc7f616f7f5e"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit2-1440.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-unit2-1440.png",
+      "sha256": "c45a4c87ccf98be5e6235bec0e0ed488e54ee81001084603db42eb9555bdd871"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit2-390.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-unit2-390.png",
+      "sha256": "39841db2b529e1229257291a550f8162ff645ff9492aec9a2208c0b7b3cca852"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit2-768.png",
+      "archive": "archive/v1/tests/results/semantic-regression/ui-unit2-768.png",
+      "sha256": "cf6bd78bdbe846e8f2fe83958b655435e398bac38cf4484e9f0c139cdff9ed26"
+    },
+    {
+      "source": "tests/results/semantic-regression/view-concept.png",
+      "archive": "archive/v1/tests/results/semantic-regression/view-concept.png",
+      "sha256": "54ee2e90ec685cd908579ae14d93310389eabbd689c89366742f82d340f5d4bc"
+    },
+    {
+      "source": "tests/results/semantic-regression/view-quiz.png",
+      "archive": "archive/v1/tests/results/semantic-regression/view-quiz.png",
+      "sha256": "fd0f20f58c7972045faf1571be39360fbaf07c43782e964c9670e66f8462cc39"
+    },
+    {
+      "source": "tests/results/semantic-regression/view-roadmap.png",
+      "archive": "archive/v1/tests/results/semantic-regression/view-roadmap.png",
+      "sha256": "09c401a03b5b9c30108d8595e6d72e2aab626a09a1e1be851a33a4b7cbffa671"
+    },
+    {
+      "source": "tests/results/semantic-review-live/extended.json",
+      "archive": "archive/v1/tests/results/semantic-review-live/extended.json",
+      "sha256": "490a88fffca05986c7ccf78dc4813e1dc9e1ca438582b84a38766fca1db98a88"
+    },
+    {
+      "source": "tests/results/semantic-review-live/io-review.png",
+      "archive": "archive/v1/tests/results/semantic-review-live/io-review.png",
+      "sha256": "8300b149440ab0fe2d1b2460ccc7a748eda1c495bc939af7e7e175936756276e"
+    },
+    {
+      "source": "tests/results/semantic-review-live/io-review.txt",
+      "archive": "archive/v1/tests/results/semantic-review-live/io-review.txt",
+      "sha256": "ff8f9547d6358496a766a07cf2253932ae4fca9d79767df49ee218abcafe3ac4"
+    },
+    {
+      "source": "tests/results/semantic-review-live/results.json",
+      "archive": "archive/v1/tests/results/semantic-review-live/results.json",
+      "sha256": "68d3eac759d440a1e634ebd6a6a42a1876936801089073c2d5d084f840426e0d"
+    },
+    {
+      "source": "tests/results/semantic-review-live/reversed-review.txt",
+      "archive": "archive/v1/tests/results/semantic-review-live/reversed-review.txt",
+      "sha256": "13a299152340a5775a198a252220b7257ad38724a30fc7045aee889345503820"
+    },
+    {
+      "source": "tests/results/semantic-review/io-review.png",
+      "archive": "archive/v1/tests/results/semantic-review/io-review.png",
+      "sha256": "750d38ddc75055a4743c57379ed42e916ea4180f69d09b1be685a2e33b949623"
+    },
+    {
+      "source": "tests/results/semantic-review/io-review.txt",
+      "archive": "archive/v1/tests/results/semantic-review/io-review.txt",
+      "sha256": "9d193c93c2769c955218442149a79cdcc02c7bfe44ef2192fa8de25a72dda86f"
+    },
+    {
+      "source": "tests/results/semantic-review/results.json",
+      "archive": "archive/v1/tests/results/semantic-review/results.json",
+      "sha256": "fd24477952b2661adb180377eaffc840e8e598c3baec375a755c519e83a80877"
+    },
+    {
+      "source": "tests/results/semantic-review/reversed-review.txt",
+      "archive": "archive/v1/tests/results/semantic-review/reversed-review.txt",
+      "sha256": "24bc7dac945f2cb3e1e8f8f3ac57f91f8412bc57eab135045717fcec1724be64"
+    },
+    {
+      "source": "tests/results/semantic-review/variables-1440.png",
+      "archive": "archive/v1/tests/results/semantic-review/variables-1440.png",
+      "sha256": "6e7e3e0156c5aac0af1eb1248cfaf0c94ec6df4fbae563e2a52cbb716adcfb47"
+    },
+    {
+      "source": "tests/results/semantic-review/variables-390.png",
+      "archive": "archive/v1/tests/results/semantic-review/variables-390.png",
+      "sha256": "c76e3f9827829d7efaccfaff2a2a77b4405a007118db4658bcbdfe2af79a1554"
+    },
+    {
+      "source": "tests/results/studio-1024.png",
+      "archive": "archive/v1/tests/results/studio-1024.png",
+      "sha256": "7d0c5b55faf12ebdbf40306e3b0d072aa81d40c6497a97a7927793d26e90e3d7"
+    },
+    {
+      "source": "tests/results/studio-1366.png",
+      "archive": "archive/v1/tests/results/studio-1366.png",
+      "sha256": "8fb4fdda7b6d3f33c7b31e6f20a8785153df25ec665c404fcaf01665c9d19a7c"
+    },
+    {
+      "source": "tests/results/studio-1440.png",
+      "archive": "archive/v1/tests/results/studio-1440.png",
+      "sha256": "37bc9d22a14a3e696fc0e0aac701a97aa2213538bf8e6b9389587c8d0e24315a"
+    },
+    {
+      "source": "tests/results/studio-1920.png",
+      "archive": "archive/v1/tests/results/studio-1920.png",
+      "sha256": "7be799d27276e3186684b75227f3df8ca4b173afcc4ed76770ca94914e1fc735"
+    },
+    {
+      "source": "tests/results/studio-768.png",
+      "archive": "archive/v1/tests/results/studio-768.png",
+      "sha256": "9d162d5c03dda3bc081789d3901ca468ae317f0636836e327eb8a16d4f613137"
+    },
+    {
+      "source": "tests/results/teacher-controls-1440.png",
+      "archive": "archive/v1/tests/results/teacher-controls-1440.png",
+      "sha256": "039235bcff5867e38d905b053d426568a147f54d836eac549e27e2f1ac4a2aa0"
+    },
+    {
+      "source": "tests/results/teacher-controls-390.png",
+      "archive": "archive/v1/tests/results/teacher-controls-390.png",
+      "sha256": "2d1c9da2f446f243b6824eea59139a6749270fefdd78b6877e82a1d5c7908ac8"
+    },
+    {
+      "source": "tests/results/teacher-controls.json",
+      "archive": "archive/v1/tests/results/teacher-controls.json",
+      "sha256": "3e593521e6a5c92b1db8e02eb7d4a78bbb6b06254209c8ebce296a8a2f77d4cc"
+    },
+    {
+      "source": "tests/results/teacher-login-390.png",
+      "archive": "archive/v1/tests/results/teacher-login-390.png",
+      "sha256": "5902873f0351476b8affe6b81dec716fe0e160f5aafe8e569b16bf9e9a1751dc"
+    },
+    {
+      "source": "tests/results/teacher-production-390.png",
+      "archive": "archive/v1/tests/results/teacher-production-390.png",
+      "sha256": "cb6c5c13e9b7d3de426782f51786906d5e3e057660b1f022e51e7182272d7be1"
+    },
+    {
+      "source": "tests/results/teacher-production-home.png",
+      "archive": "archive/v1/tests/results/teacher-production-home.png",
+      "sha256": "7e7f62951766094d9648a6de8146452599e0a7db5b0fdaa08ce7cc31a7ac0933"
+    },
+    {
+      "source": "tests/results/teacher-production.json",
+      "archive": "archive/v1/tests/results/teacher-production.json",
+      "sha256": "f19c8e3194e5b82f34a379bf5ee583cb36ef7c3d602751a91f131fe5d7d170d8"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/assessment.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/assessment.png",
+      "sha256": "e49396624dffa4164027bb73fdaab5ceca21b231d49c19ec9b8dc8c75aced9d9"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/browser.json",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/browser.json",
+      "sha256": "111ee6f18bf8beab337a6885cf98e975d1262101657fcfe7baeb9242dd778bff"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/home-320.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/home-320.png",
+      "sha256": "404769653858b1ff145890303a1dc18d969d863175385109b05d86c08f927523"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/studio-1024.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/studio-1024.png",
+      "sha256": "a3f889cfec51eeb1a009df4bcb91bc6f1c184ac01e538ddae479d302b27c33dc"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/studio-1366.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/studio-1366.png",
+      "sha256": "8bf505898e05705cf016492fccaaf6565490d8040b9294f7dc4a362d91649fab"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/studio-1440.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/studio-1440.png",
+      "sha256": "e6cce59154afb9deff8043324bafae04a222e72969196cc367d54ed5d8b24bdb"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/studio-1920.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/studio-1920.png",
+      "sha256": "4379be0b59c793b8cdf0234bfa85b8f4478b82861c5d8c7b280b3d1c53de16ee"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/studio-768.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/studio-768.png",
+      "sha256": "8f083ee3e3c824393d446fd4505e75d8f6b42e2bcf7bcf2afe31970fb3c693b6"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-classroom-1024.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-classroom-1024.png",
+      "sha256": "2b8213b16f227e59f9a7c06dcb623b701b3ff7b4bafb8ca04c3e3ea08a7f723d"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-classroom-1440.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-classroom-1440.png",
+      "sha256": "2f979298d277f470de8d943ba6360e7e75f8700bff66cf2d71997e3e26c21715"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-classroom-390.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-classroom-390.png",
+      "sha256": "7e8b386d5aa26a2f275e4e9c39f36c4afb1311df90f0740566dc8e94ff728dbb"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-classroom-768.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-classroom-768.png",
+      "sha256": "d6ac6f1efbb6bc55543ad518918f28aa1e56b7b61406a7655a94dc7873e48d98"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-eval-1024.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-eval-1024.png",
+      "sha256": "7b5569d1a0ec664e7a68f3f319b5408263baaff36f3e9fa0fa1b44514fc1b4a4"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-eval-1440.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-eval-1440.png",
+      "sha256": "9576a0cfaebad53d58b49899c3fe404fe62411a4656eef3957745325fa2290a2"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-eval-390.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-eval-390.png",
+      "sha256": "5a8cca1d9b41046e75c93c4fd7818138d18db60282c63e3a89cd53d351473f3e"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-eval-768.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-eval-768.png",
+      "sha256": "c97f17632db9c5fee8732ba4eabbc8d24bea7b712c4cb217aad77e1712545906"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit1-1024.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-unit1-1024.png",
+      "sha256": "2e19998047dfc4c2b1efb899d982bc92872a843413e09441c6cf830c29fde7f0"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit1-1440.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-unit1-1440.png",
+      "sha256": "569b3a092b2bb447a6f9efc85c79db7a476b61fe43252538cafa48105fa05a43"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit1-390.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-unit1-390.png",
+      "sha256": "561e9062612fe8394c1a6c6a980a4fd7a9345f66355a42d2e0bb50fd3770fac7"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit1-768.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-unit1-768.png",
+      "sha256": "608b9a5c5d047cc05389c4f5db82e8930ff8d2e68589e1a3718d0646ca214ab2"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit2-1024.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-unit2-1024.png",
+      "sha256": "4662fb20e5bbb3a34c15095c6502210ad8a18e427d069ba6ac43bc7f616f7f5e"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit2-1440.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-unit2-1440.png",
+      "sha256": "c45a4c87ccf98be5e6235bec0e0ed488e54ee81001084603db42eb9555bdd871"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit2-390.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-unit2-390.png",
+      "sha256": "39841db2b529e1229257291a550f8162ff645ff9492aec9a2208c0b7b3cca852"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit2-768.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/ui-unit2-768.png",
+      "sha256": "cf6bd78bdbe846e8f2fe83958b655435e398bac38cf4484e9f0c139cdff9ed26"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/view-concept.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/view-concept.png",
+      "sha256": "54ee2e90ec685cd908579ae14d93310389eabbd689c89366742f82d340f5d4bc"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/view-quiz.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/view-quiz.png",
+      "sha256": "fd0f20f58c7972045faf1571be39360fbaf07c43782e964c9670e66f8462cc39"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/view-roadmap.png",
+      "archive": "archive/v1/tests/results/tutor-entry-regression/view-roadmap.png",
+      "sha256": "09c401a03b5b9c30108d8595e6d72e2aab626a09a1e1be851a33a4b7cbffa671"
+    },
+    {
+      "source": "tests/results/tutor-login-ui.json",
+      "archive": "archive/v1/tests/results/tutor-login-ui.json",
+      "sha256": "599105f1d43c0c10d219a3e6b1d3ff43b8dc831b217a80a248763d0c20119ebe"
+    },
+    {
+      "source": "tests/results/tutor-workspace-1440.png",
+      "archive": "archive/v1/tests/results/tutor-workspace-1440.png",
+      "sha256": "d4e8123e7a2fd8f0eb84aca5bcf195f60fe51bcecfecb67641a76dd20c18016a"
+    },
+    {
+      "source": "tests/results/tutor-workspace-390.png",
+      "archive": "archive/v1/tests/results/tutor-workspace-390.png",
+      "sha256": "027b16303b4c4313d5a80df1fc3f67933e9ab4ecfdef3026eb1fd11e4db5f01b"
+    },
+    {
+      "source": "tests/results/ui-classroom-1024.png",
+      "archive": "archive/v1/tests/results/ui-classroom-1024.png",
+      "sha256": "5f717304a41ea7def988cf1040a67511ddc1298fe062248eb96b0f30dc96b283"
+    },
+    {
+      "source": "tests/results/ui-classroom-1440.png",
+      "archive": "archive/v1/tests/results/ui-classroom-1440.png",
+      "sha256": "a448501cc8dbe2e38bfd44abe4ff6f47d6cfb2ac8f9e76a1502ab95028fef6ab"
+    },
+    {
+      "source": "tests/results/ui-classroom-390.png",
+      "archive": "archive/v1/tests/results/ui-classroom-390.png",
+      "sha256": "10fb0ab42851a0992ccb8c8015327f9cc55ac47682b0c79527af4cac04725d08"
+    },
+    {
+      "source": "tests/results/ui-classroom-768.png",
+      "archive": "archive/v1/tests/results/ui-classroom-768.png",
+      "sha256": "ae8daa0c9a924f842f0bba3b820d755b6829071cefd2dc477f783c62f5af24f2"
+    },
+    {
+      "source": "tests/results/ui-eval-1024.png",
+      "archive": "archive/v1/tests/results/ui-eval-1024.png",
+      "sha256": "f5c71c104fbdd7c983c87678b274426bd1dc1c14cb249cd46a9750daba1f2dc7"
+    },
+    {
+      "source": "tests/results/ui-eval-1440.png",
+      "archive": "archive/v1/tests/results/ui-eval-1440.png",
+      "sha256": "c40a24dd9bfa08ba6f001e2cf75090d9483f221a6f422e6d9b6968038ed0fb5f"
+    },
+    {
+      "source": "tests/results/ui-eval-390.png",
+      "archive": "archive/v1/tests/results/ui-eval-390.png",
+      "sha256": "b9ed3d835aef95b1f64bcd9f9f9c53804576374ee5bb14db085de76becbe742f"
+    },
+    {
+      "source": "tests/results/ui-eval-768.png",
+      "archive": "archive/v1/tests/results/ui-eval-768.png",
+      "sha256": "896c8ca31e578546d6895fa7415a7a7f939c0c5b9a48292b9c568e85780443e2"
+    },
+    {
+      "source": "tests/results/ui-production-390.png",
+      "archive": "archive/v1/tests/results/ui-production-390.png",
+      "sha256": "587a42c70643afc41206c6cf74bc28ad1dc6dfb4ebc02aab0d18ad7a0f1361b8"
+    },
+    {
+      "source": "tests/results/ui-production-home.png",
+      "archive": "archive/v1/tests/results/ui-production-home.png",
+      "sha256": "9cc6d933c25c3d34629eebba0497e454ff2f8ce44d5fef4b628edd0887bb0ca6"
+    },
+    {
+      "source": "tests/results/ui-production.json",
+      "archive": "archive/v1/tests/results/ui-production.json",
+      "sha256": "69bef64ec4dab48e0683f4d2567dd273200802bf7034f5d31787efedb1a4181a"
+    },
+    {
+      "source": "tests/results/ui-unit1-1024.png",
+      "archive": "archive/v1/tests/results/ui-unit1-1024.png",
+      "sha256": "adeef1872111e74df3e0148f04ab355655198c8bd08121015a070fdda2e91692"
+    },
+    {
+      "source": "tests/results/ui-unit1-1440.png",
+      "archive": "archive/v1/tests/results/ui-unit1-1440.png",
+      "sha256": "2f9ecc8e4e46969ed2b0bd14814eeab8041d498c2cc03cb5af04744af8e2172c"
+    },
+    {
+      "source": "tests/results/ui-unit1-390.png",
+      "archive": "archive/v1/tests/results/ui-unit1-390.png",
+      "sha256": "0134ae40fe5b22dbeb85290ce7c2ea98ceb2cea21073903f4e1a00a4141f19ad"
+    },
+    {
+      "source": "tests/results/ui-unit1-768.png",
+      "archive": "archive/v1/tests/results/ui-unit1-768.png",
+      "sha256": "cf85cbfd71edd23c8898fac4b2c2a1a2100a5d060dd4964dda12f15ba55480d0"
+    },
+    {
+      "source": "tests/results/ui-unit2-1024.png",
+      "archive": "archive/v1/tests/results/ui-unit2-1024.png",
+      "sha256": "891e31a17c32445c5207718031c236db8748bcfb17c07a80f35dc37d74abe233"
+    },
+    {
+      "source": "tests/results/ui-unit2-1440.png",
+      "archive": "archive/v1/tests/results/ui-unit2-1440.png",
+      "sha256": "01ede1c52d1697db3c2b84cfe8dd7cab8aa7f36aa8fcd67f4a907b9f11a8f809"
+    },
+    {
+      "source": "tests/results/ui-unit2-390.png",
+      "archive": "archive/v1/tests/results/ui-unit2-390.png",
+      "sha256": "44d833021723794a1c2b7208131aff8e44ee6c38eb317aa7c5201379bcd044f1"
+    },
+    {
+      "source": "tests/results/ui-unit2-768.png",
+      "archive": "archive/v1/tests/results/ui-unit2-768.png",
+      "sha256": "7c108734070cddc32bc58640aabea132219df42311748836f7304c7bda0ec805"
+    },
+    {
+      "source": "tests/results/view-concept.png",
+      "archive": "archive/v1/tests/results/view-concept.png",
+      "sha256": "300982037cbcecae263a0c3daf59e1193e3eb0f4237fd944998b980f6ac82ca0"
+    },
+    {
+      "source": "tests/results/view-quiz.png",
+      "archive": "archive/v1/tests/results/view-quiz.png",
+      "sha256": "51d3bcfedc1ddc5e5e3f01faebe928da1c6c06f51fa4857ff2323c00047fe620"
+    },
+    {
+      "source": "tests/results/view-roadmap.png",
+      "archive": "archive/v1/tests/results/view-roadmap.png",
+      "sha256": "39811906ee8b25fc9737d39cd6a6a63f0117c32bdd7ddbdfde9235a9c137badd"
+    },
+    {
+      "source": "tests/results/workspace-polish-collapsed.png",
+      "archive": "archive/v1/tests/results/workspace-polish-collapsed.png",
+      "sha256": "a74306a034e6cd856567f4d570ad5f9c72ae9bf3805da25b15245a5e1393183b"
+    },
+    {
+      "source": "tests/results/workspace-polish-dragged.png",
+      "archive": "archive/v1/tests/results/workspace-polish-dragged.png",
+      "sha256": "e0171f21363ae6af7b5dba61180ca7870f88f70ca9fdeaedd67a0d5ed6c5ef11"
+    },
+    {
+      "source": "tests/results/workspace-polish-expanded.png",
+      "archive": "archive/v1/tests/results/workspace-polish-expanded.png",
+      "sha256": "37e54afd54b37e483aa8792d3bfa68a5363b27af419695bca25ae506913997a0"
+    },
+    {
+      "source": "tests/results/workspace-polish-result-390.png",
+      "archive": "archive/v1/tests/results/workspace-polish-result-390.png",
+      "sha256": "234f3d6b13262baf8f80ed23d56d567e952531a05681f142172d7a692b33c2c5"
+    },
+    {
+      "source": "tests/results/workspace-polish-result-768.png",
+      "archive": "archive/v1/tests/results/workspace-polish-result-768.png",
+      "sha256": "46d085fb99411a06d06195cd14ba6afc79b5cf6065598e5100bd9bc08ae3539f"
+    },
+    {
+      "source": "tests/results/workspace-ui.json",
+      "archive": "archive/v1/tests/results/workspace-ui.json",
+      "sha256": "29f6b0ed8e9aa773be0d5ae2fb7ee3c735bb978a2491d8558f6ff018da045597"
+    },
+    {
+      "source": "tests/rounds.test.cjs",
+      "archive": "archive/v1/tests/rounds.test.cjs",
+      "sha256": "c503371fb791a55d2497e4e4940ff03eb3a27daecc6d774ae2f69497390571f3"
+    },
+    {
+      "source": "tests/semantic-live-cases.cjs",
+      "archive": "archive/v1/tests/semantic-live-cases.cjs",
+      "sha256": "e27e533152af17d832be3febc661a9b9071ddafb78ccf5c2b31abe1581f701f7"
+    },
+    {
+      "source": "tests/semantic-review-ui.cjs",
+      "archive": "archive/v1/tests/semantic-review-ui.cjs",
+      "sha256": "2ccb54af0e74c3ccc64f88ab85c22d19313d20858e74f10d3f359c31d9c33493"
+    },
+    {
+      "source": "tests/student-review-modal.test.cjs",
+      "archive": "archive/v1/tests/student-review-modal.test.cjs",
+      "sha256": "cc219187d6d0bd862913f7baaf1086b9fc542178e5157b9ca2485507c72b43a1"
+    },
+    {
+      "source": "tests/teacher-controls.cjs",
+      "archive": "archive/v1/tests/teacher-controls.cjs",
+      "sha256": "5bea448c1d627fa7ea779f7a00d44dc8d743b84b4e16b6c18bae93f0cb03237a"
+    },
+    {
+      "source": "tests/tutor-login-ui.cjs",
+      "archive": "archive/v1/tests/tutor-login-ui.cjs",
+      "sha256": "4c492538b4273f809c0bc42c20580d06ae06c3940a7ac96c7c2eb6d6abe41181"
+    },
+    {
+      "source": "tests/workspace-ui.cjs",
+      "archive": "archive/v1/tests/workspace-ui.cjs",
+      "sha256": "46559ce0a3d6e130b069d3850ee6bbe3fe025650ecd10101a8fe1257c09663f4"
+    },
+    {
+      "source": "tools/apply-objective-regrade.cjs",
+      "archive": "archive/v1/tools/apply-objective-regrade.cjs",
+      "sha256": "32e671de2f3f66e24c737434667e3dd898bcd6c0fcc9e2d099f63a573bc0694a"
+    },
+    {
+      "source": "tools/apply-part3-regrade.cjs",
+      "archive": "archive/v1/tools/apply-part3-regrade.cjs",
+      "sha256": "8213d5537c00424df9c5d7674a5816b70e35700ee6b5a4450ff9ab3f5463dd43"
+    },
+    {
+      "source": "tools/assessment-calibration-handler.cjs",
+      "archive": "archive/v1/tools/assessment-calibration-handler.cjs",
+      "sha256": "9747af73ede8d57627cc832866e832593c4089325d855ca06b4452f07b914bd7"
+    },
+    {
+      "source": "tools/audit-firestore-structure.cjs",
+      "archive": "archive/v1/tools/audit-firestore-structure.cjs",
+      "sha256": "3c43d0e80b3f48ba67f44a36b727d98acb91397f8bbe7c695bbf7e6ef205cf1d"
+    },
+    {
+      "source": "tools/check.cjs",
+      "archive": "archive/v1/tools/check.cjs",
+      "sha256": "80c7e41e8791d08193bb87917f583e28655976c29525f5915399736043aef199"
+    },
+    {
+      "source": "tools/close-idle-classrooms.cjs",
+      "archive": "archive/v1/tools/close-idle-classrooms.cjs",
+      "sha256": "c9f18d80e738e5e5d1aeb8b34e57e48bbb69e479b86e38b331dc5a44dc9ca0cf"
+    },
+    {
+      "source": "tools/firebase-admin.cjs",
+      "archive": "archive/v1/tools/firebase-admin.cjs",
+      "sha256": "c342cf2d16610d58380a10f05fe9d41a18872d47659bb07f1197569a227bc63c"
+    },
+    {
+      "source": "tools/local-preview-service.cjs",
+      "archive": "archive/v1/tools/local-preview-service.cjs",
+      "sha256": "223c932c7063dd31b30396e4fb0bc8d2bf6172529329522fa46db20233e607e8"
+    },
+    {
+      "source": "tools/part3-calibrate.cjs",
+      "archive": "archive/v1/tools/part3-calibrate.cjs",
+      "sha256": "dc97b4d133bb422a25fb9dbe2d056c9808aeb5f4c0d8bb708681a8667fe1d30b"
+    },
+    {
+      "source": "tools/part3-grade-plan.cjs",
+      "archive": "archive/v1/tools/part3-grade-plan.cjs",
+      "sha256": "b45efeb2940be7339cb4709e449901d009135226a8d1caeaa8bc50de030cdfac"
+    },
+    {
+      "source": "tools/part3-snapshot.cjs",
+      "archive": "archive/v1/tools/part3-snapshot.cjs",
+      "sha256": "b61357f9f8b7c03173d45a59a4f085635986ba4ef12dd347a2b65a032e942aec"
+    },
+    {
+      "source": "tools/preview.cjs",
+      "archive": "archive/v1/tools/preview.cjs",
+      "sha256": "3b1b4207fe6e3cb2c6d71a06393effc6d98db779d4523f50f80993fbe8381656"
+    },
+    {
+      "source": "tools/provision-firestore.cjs",
+      "archive": "archive/v1/tools/provision-firestore.cjs",
+      "sha256": "bc292f6468a1e54a7092a114848baaf140a70a0a3d89ee4752ca0e6f42215663"
+    },
+    {
+      "source": "tools/provision-instructor.cjs",
+      "archive": "archive/v1/tools/provision-instructor.cjs",
+      "sha256": "d1509f038bccde7d1e674aaf5c2cd13dee05f7b35d43fa0eef8a1212349ad67f"
+    },
+    {
+      "source": ".github/workflows/verify.yml",
+      "archive": "archive/v1/.github/workflows/verify.yml",
+      "sha256": "5e6d40ff0d0fe46dfa80cf384310703a00de203463880effd5540a2acb440667"
+    }
+  ]
+}
