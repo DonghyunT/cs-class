@@ -1,46 +1,40 @@
-# Design System: CS Class Student Home
+# CS Class 디자인 방향
 
-## 1. Visual Theme & Atmosphere
-A bright, calm classroom workspace for Korean middle-school learners. Daily-app balanced density (5/10), measured layout variation (4/10), restrained motion (2/10). Make the next learning action obvious and let the lesson content carry the visual identity. Keep the page warm and approachable without turning it into a game dashboard.
+갱신: 2026-09-26 · 합의한 취향과 다음 시안의 출발점입니다. 변경할 수 없는 스타일 규격이 아닙니다.
 
-## 2. Color Palette & Roles
-- **Paper Canvas** (#F5F7FA) — page background.
-- **White Surface** (#FFFFFF) — focused learning areas and navigation.
-- **Ink** (#1F2937) — primary Korean text.
-- **Quiet Slate** (#667085) — secondary labels and supporting copy.
-- **Line** (#E4E8EF) — separators and low-emphasis borders.
-- **Class Blue** (#1D4ED8) — the single primary accent for the main action, current step, and keyboard focus.
-- Use the established flowchart colors only inside flowchart examples: purple terminal, green data, orange decision, blue process. Pair color with shape and text; never use color alone to explain a symbol.
-- Do not introduce gradients, neon, or extra decorative colors.
+## 선생님과 확인한 취향
 
-## 3. Typography Rules
-- Use Noto Sans KR with a Korean-capable system sans-serif fallback.
-- Page title: 26–30 px, semibold. Section titles: 17–20 px. Body: 15–16 px with relaxed line spacing. Metadata may be 13–14 px but must remain readable.
-- Use weight, spacing, and alignment for hierarchy. Keep long learning descriptions around 65 characters per line.
-- Use tabular numerals only for progress counts; never invent scores or statistics.
+- Purity UI의 전반적인 구성과 UI 반응은 좋았습니다. 민트색은 선호하지 않습니다.
+- 선생님이 제시한 Figma 'UI Elements Learning Manag…' 이미지의 파란 강조색이 마음에 들었습니다. 과하지 않고 필요한 부분만 색을 쓰는 점, 가시성과 가독성을 긍정적으로 평가했습니다.
+- 밝은 바탕과 흰색·옅은 회색 표면, 단정한 카드, 여유 있는 왼쪽 탐색을 출발점으로 삼습니다. 본문은 실제 한국어로 읽기 편하게 조정합니다.
+- 특정 HEX·폰트·모서리·그림자 수치는 아직 정하지 않았습니다. 과거 Stitch 후보의 수치를 최종 합의로 사용하지 않습니다.
 
-## 4. Component Styling
-- Primary button: solid Class Blue, at least 44 px high, clear verb label, visible keyboard focus, subtle pressed feedback.
-- Secondary actions: text or quiet outline treatment.
-- Use a bordered surface only when it clarifies the current lesson or a distinct learning step. Prefer open space and dividers for the rest.
-- Progress: show completed counts as text plus a simple bar or step marker; do not imply a grade.
-- Saved/submission states: pair a short Korean label with a small status marker. Keep draft saved and final submission states separate.
-- Icons must have a text label or accessible name.
+## 대표 화면 구성 제안
 
-## 5. Layout Principles
-- Desktop: compact left navigation and a centered, readable content area with a clear featured continuation area, a four-step learning path, and one concise work-status area.
-- The featured area should combine the current topic, precise progress summary, a small flowchart motif, and one primary continue action. Do not repeat the same progress facts elsewhere.
-- Learning stages remain freely navigable; show progress without locked, disabled, or prerequisite states.
-- At widths below 768 px, collapse to one column and a simple compact navigation. Keep every action reachable without horizontal page scrolling.
-- Keep the student home focused on current class learning. Avoid analytics, social feeds, teacher rosters, and unrelated assignment widgets.
+학생 홈은 이번 수업을 가장 먼저 안내하고, 이미 열린 내 수업과 지난 작업으로 이어지는 구조를 만듭니다. 교사 지정 수업의 우선순위와 자유로운 복습은 [PRD](../PRD.md)의 합의사항입니다. '이번 수업 → 내 수업 → 저장·제출 상태'의 정확한 배열은 시안으로 검토할 제안입니다. 첫 버전에 공지는 넣지 않습니다.
 
-## 6. Motion & Interaction
-- Keep the reading and learning overview still. Use short opacity/transform feedback only for hover, focus, and press; honor reduced-motion preferences.
-- Do not use perpetual shimmer, bouncing, or auto-playing animation.
+Purity의 구성·조작감, 교사 제공 이미지의 색 사용·메뉴 표현을 참고하고 shadcn/ui의 부품을 우리 디자인으로 조정하는 방식을 추천했습니다. 이는 여러 템플릿이나 UI 라이브러리를 전부 설치한다는 뜻이 아닙니다.
 
-## 7. Anti-Patterns
-- No fake school names, class schedules, deadlines, classmates, teacher messages, grades, scores, streaks, or invented lesson titles.
-- No “오늘 할 일” checklist unless the product has real teacher-authored tasks.
-- No locked steps, dead buttons, or misleading submission labels.
-- No generic three-column KPI cards, stock-photo hero, oversized marketing banner, decorative gradients, neon glows, or emoji decoration.
-- No tiny body text, icon-only navigation without labels, or color-only status meaning.
+첨부 화면은 여러 부품을 펼친 Elements 페이지로 보입니다. 통계·달력·학생 사진·알림·할 일 등은 새 기능 요구로 합의하지 않았습니다. 같은 모양의 카드로 빈 공간을 채우기보다 실제 수업에 필요한 정보부터 배치합니다.
+
+## 표현을 판단하는 기준
+
+- 주요 행동과 현재 위치가 쉽게 보이는가, 본문이 편하게 읽히는가를 먼저 봅니다.
+- 색상은 강조·상태·학습 의미를 돕도록 사용하고 텍스트·형태도 함께 제공합니다. 순서도 기호는 기존 교육 연계를 참고해 단말 보라·자료 초록·판단 주황·처리 파랑을 출발점으로 합니다.
+- 그라데이션·카드·그림자·아이콘·모션을 일괄 금지하지 않습니다. 학습과 조작에 도움이 되는지, 집중을 방해하지 않는지 시안에서 판단합니다.
+- 대시보드는 차분하게, 학습 조작에는 짧고 이해 가능한 반응을 주는 방향은 에이전트 제안입니다. 효과의 강도는 실제 화면에서 다듬습니다.
+- 작은 글자나 클릭 영역으로 억지로 맞추지 않고 창 폭에 맞춰 재배치합니다. 키보드 초점, 대비, 긴 한국어, 빈 상태·저장 실패도 디자인에 포함합니다.
+
+## 참고와 채택 상태
+
+| 자료 | 용도·상태 |
+|---|---|
+| [Purity UI 데모](https://demos.creative-tim.com/purity-ui-dashboard/#/admin/dashboard) | 선생님이 구성·반응을 긍정적으로 평가. 색상·전체 기능·코드 채택은 아님 |
+| 교사 제공 Figma LMS 부품 이미지 | 파란 강조색·절제·가독성 방향 합의. 원본 파일 링크는 아직 받지 않음 |
+| [shadcn/ui Blocks](https://ui.shadcn.com/blocks) | 구현 부품과 조합 참고. 설치 전 |
+| [Soft UI 데모](https://demos.creative-tim.com/soft-ui-dashboard-tailwind/pages/dashboard.html) | 비교 후보로 확인. 선생님이 채택한 안은 아님 |
+| [이전 Stitch 프로젝트](https://stitch.withgoogle.com/projects/11262479829296966022) | 9월 25일 미승인 후보. 현재 방향의 고정 기준이 아님 |
+
+위 비교는 2026-09-26 대화 기준입니다. 외부 파일·코드를 실제 재사용할 때는 해당 자료의 라이선스와 표시 조건을 확인합니다. 사용자 이미지의 임시 파일 경로는 다른 PC의 재현 경로로 취급하지 않습니다.
+
+다음 결과물은 실제 한국어 학생 홈 대표 시안입니다. 선생님의 피드백을 받은 뒤 같은 규칙을 다른 화면으로 확장하고, 최종 시각값과 검증 결과를 이 문서에 추가합니다.

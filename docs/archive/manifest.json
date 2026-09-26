@@ -1,0 +1,222 @@
+{
+  "archived_at": "2026-09-26",
+  "baseline": "98781bd6e506e3ab5b1be08c39677e658215dba9",
+  "records": [
+    {
+      "source": "AGENTS.md",
+      "archive": "docs/archive/cs-class/2026-09-26-before-refresh/AGENTS-inherited-historical.md",
+      "origin": "working-tree-before-refresh",
+      "sha256": "f7d5efcb2dae6f0de4f01ae3234cb514a4074f0d52310c1cdfa6c503fb502de8"
+    },
+    {
+      "source": "INTENT.md",
+      "archive": "docs/archive/cs-class/2026-09-26-before-refresh/INTENT.md",
+      "origin": "working-tree-before-refresh",
+      "sha256": "6dd6288192d9520df74f833bc55afb5eb62b133b06616ceec67547a71d2af729"
+    },
+    {
+      "source": "PRD.md",
+      "archive": "docs/archive/cs-class/2026-09-26-before-refresh/PRD.md",
+      "origin": "working-tree-before-refresh",
+      "sha256": "93cbacef2dc465bf8415d34765b1bca7f64ca36e05c7540c8faa3a1282c3e42d"
+    },
+    {
+      "source": "README.md",
+      "archive": "docs/archive/cs-class/2026-09-26-before-refresh/README.md",
+      "origin": "working-tree-before-refresh",
+      "sha256": "73c40e1c0cc1bb8015eb734f408251ee7f907288526b03c42c93ddcd5335a53e"
+    },
+    {
+      "source": "docs/HANDOFF.md",
+      "archive": "docs/archive/cs-class/2026-09-26-before-refresh/docs/HANDOFF.md",
+      "origin": "working-tree-before-refresh",
+      "sha256": "5348e7999fb52836c44152c4081391f19302c39a39b2dda7abf7e064bfa628be"
+    },
+    {
+      "source": "docs/DESIGN.md",
+      "archive": "docs/archive/cs-class/2026-09-26-before-refresh/docs/DESIGN.md",
+      "origin": "working-tree-before-refresh",
+      "sha256": "bc65ef911eb16e4dc2daaded1295ec5219cd6bdd33511d628401e9f4c16c3dea"
+    },
+    {
+      "source": "docs/CS_CLASS_DEPLOYMENT.md",
+      "archive": "docs/archive/cs-class/2026-09-26-before-refresh/docs/CS_CLASS_DEPLOYMENT.md",
+      "origin": "working-tree-before-refresh",
+      "sha256": "cdf2fc28b3c5529d5be6b62a6d65b2ee234dd6f88e7aa598009dd0a0b483612d"
+    },
+    {
+      "source": "docs/ASSESSMENT_OPEN_DESIGN_REVIEW.md",
+      "archive": "docs/archive/v1/docs/ASSESSMENT_OPEN_DESIGN_REVIEW.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "837ead7e7cb720326b8d223b5f7bf80eac89de977fab58b5c41c4e15081a4f45"
+    },
+    {
+      "source": "docs/ASSESSMENT_UI_REVIEW.md",
+      "archive": "docs/archive/v1/docs/ASSESSMENT_UI_REVIEW.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "ba99c523143c9dab4e3b74cbb24fd4967bee09c1a9c6b5934728c2189d396bb0"
+    },
+    {
+      "source": "docs/DATABASE.md",
+      "archive": "docs/archive/v1/docs/DATABASE.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "fdb5c622ec73a7cad95692f96adbba901cda8369a65dcffa819fd1a273f2c81d"
+    },
+    {
+      "source": "docs/DEPLOYMENT.md",
+      "archive": "docs/archive/v1/docs/DEPLOYMENT.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "534496ecee5d295352af9523398123e2efd6133c6cb436b108f55f1d628c31f6"
+    },
+    {
+      "source": "docs/DEVELOPMENT.md",
+      "archive": "docs/archive/v1/docs/DEVELOPMENT.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "c6aff383e4fa6c5374646667eb1221d72dde6bbaff576ee34ff95bba4442e95c"
+    },
+    {
+      "source": "docs/EVALUATION_V4_PLAN.md",
+      "archive": "docs/archive/v1/docs/EVALUATION_V4_PLAN.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "330316a96c947703513b4eae6510339d58ba8483df4b96fb088ca05b5e21d0b0"
+    },
+    {
+      "source": "docs/EVALUATION_V4_SETUP.md",
+      "archive": "docs/archive/v1/docs/EVALUATION_V4_SETUP.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "f0c56002a24cb0171a8ea5f1e3ee4761b1868922cb6484da074498718ad43452"
+    },
+    {
+      "source": "docs/HANDOFF_HISTORY_2026-09-15.md",
+      "archive": "docs/archive/v1/docs/HANDOFF_HISTORY_2026-09-15.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "80d4f3f44794ca9e99de22ed3b495981e2126fb5244ef33fca9627ff5c7ecd3e"
+    },
+    {
+      "source": "docs/IMPLEMENTATION_REVIEW.md",
+      "archive": "docs/archive/v1/docs/IMPLEMENTATION_REVIEW.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "df4bc78e4696cd5068e8f38d02d741649559cf40c1e396cf347abbd7d80facd9"
+    },
+    {
+      "source": "docs/INSTRUCTOR_ACCESS_REVIEW.md",
+      "archive": "docs/archive/v1/docs/INSTRUCTOR_ACCESS_REVIEW.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "03fb9104c545e62a36681bbcef996d1af087f02fb129a0fb95d52dd1d5c4143a"
+    },
+    {
+      "source": "docs/OPERATIONS.md",
+      "archive": "docs/archive/v1/docs/OPERATIONS.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "25ac3e990c371c6cd59ce6a837f57bb2dabb47d4738a937512423a0b6ad13e0a"
+    },
+    {
+      "source": "docs/PART3_GRADING_PROMPT_DRAFT.md",
+      "archive": "docs/archive/v1/docs/PART3_GRADING_PROMPT_DRAFT.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "bb08c746cac78c6cdeaca88038f9a0ce5ebfa5534f27e6259fda81f9d37606b0"
+    },
+    {
+      "source": "docs/PART3_RUBRIC_CALIBRATION.md",
+      "archive": "docs/archive/v1/docs/PART3_RUBRIC_CALIBRATION.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "ab8572e25313d4f38f4e5fb614c58d1c4e74f1c0f35a437aff99448c2acaafa0"
+    },
+    {
+      "source": "docs/PRD_HISTORY_2026-09-12.md",
+      "archive": "docs/archive/v1/docs/PRD_HISTORY_2026-09-12.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "a02d0d44e20c0c023dccb3e8bceb08edde6a87be9e27b08fbd09d214a973155a"
+    },
+    {
+      "source": "docs/QUESTION_BANK.md",
+      "archive": "docs/archive/v1/docs/QUESTION_BANK.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "7ca14b5f3be6683447b23818d93866098fee11d00d39ebdce799bec22e988b8c"
+    },
+    {
+      "source": "docs/SEMANTIC_REVIEW_LOCAL_PREVIEW.md",
+      "archive": "docs/archive/v1/docs/SEMANTIC_REVIEW_LOCAL_PREVIEW.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "3c58d127f644876e96d1aac953d63a2761987706850fa98c367aaf9c0e81e520"
+    },
+    {
+      "source": "docs/TEACHER_CONTROLS_REVIEW.md",
+      "archive": "docs/archive/v1/docs/TEACHER_CONTROLS_REVIEW.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "a501c53d2e657c09071a6d86b0556b89021616d883abbf8e858c99ba74d31390"
+    },
+    {
+      "source": "docs/TUTOR_TEACHER_ENTRY_REVIEW.md",
+      "archive": "docs/archive/v1/docs/TUTOR_TEACHER_ENTRY_REVIEW.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "f9679ec96190cd5d82e020a8a19f326a53161f540d1929fddadf33ed3566e635"
+    },
+    {
+      "source": "docs/UI_REVIEW.md",
+      "archive": "docs/archive/v1/docs/UI_REVIEW.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "ed0791941c4a7616189bd0722c8a61e5d206e43c3b627be82c1ce53f687e1a48"
+    },
+    {
+      "source": "docs/V4_OBJECTIVE_CORRECTION.md",
+      "archive": "docs/archive/v1/docs/V4_OBJECTIVE_CORRECTION.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "47f678dde5b3812488af4597591d4c97a8022f93cb5f65252be47b327accf5ab"
+    },
+    {
+      "source": "docs/WORKSPACE_UI_REVIEW.md",
+      "archive": "docs/archive/v1/docs/WORKSPACE_UI_REVIEW.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "33cc053f5f1a33b7df01d7b5dc184d5e795b29e0cd93397eaa8bbbd3945e9cce"
+    },
+    {
+      "source": "CONTEXT.md",
+      "archive": "docs/archive/v1/CONTEXT.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "92b030e70ccfc92f413f2bf30ab881d04987221bdc1c402c15c2c6a5b91eb131"
+    },
+    {
+      "source": "audit/AUDIT_REPORT.md",
+      "archive": "docs/archive/v1/audit/AUDIT_REPORT.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "20d0ea4dad9f9268e74d248bf2f93cdd9a74f77862394533f517031d482a86c9"
+    },
+    {
+      "source": "audit/ENVIRONMENT_STATUS.md",
+      "archive": "docs/archive/v1/audit/ENVIRONMENT_STATUS.md",
+      "origin": "working-tree-inherited-v1",
+      "sha256": "c04e31bf9bdfdc9587c593192556c6008c2490b13cd92cf85688e48be1b81c3d"
+    },
+    {
+      "source": "AGENTS.md",
+      "archive": "docs/archive/v1/AGENTS-v1-historical.md",
+      "origin": "git:98781bd6e506e3ab5b1be08c39677e658215dba9",
+      "sha256": "7d2a10d691a645cde9441fb06ee2c2c7de93cca91d0850b9d2795f19ab0c4bed"
+    },
+    {
+      "source": "INTENT.md",
+      "archive": "docs/archive/v1/INTENT.md",
+      "origin": "git:98781bd6e506e3ab5b1be08c39677e658215dba9",
+      "sha256": "093b3c9b198d4e1246de4bb70d098e56d90100d9ebda99e14d07862135b51c4c"
+    },
+    {
+      "source": "PRD.md",
+      "archive": "docs/archive/v1/PRD.md",
+      "origin": "git:98781bd6e506e3ab5b1be08c39677e658215dba9",
+      "sha256": "8277b126a3943310a05af4c282e584b7ac627960b20bbdb4d7099ea7693474ed"
+    },
+    {
+      "source": "README.md",
+      "archive": "docs/archive/v1/README.md",
+      "origin": "git:98781bd6e506e3ab5b1be08c39677e658215dba9",
+      "sha256": "bf1e88ee5f79ab99280e41ccb1695b0e34a50ebb646b540e3fc48f3addf7c24f"
+    },
+    {
+      "source": "docs/HANDOFF.md",
+      "archive": "docs/archive/v1/docs/HANDOFF.md",
+      "origin": "git:98781bd6e506e3ab5b1be08c39677e658215dba9",
+      "sha256": "c460e8950efa1c98bbb68ff9d4f769288df2d1c41923c3e0e1bc197e689146b4"
+    }
+  ]
+}
