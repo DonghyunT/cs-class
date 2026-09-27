@@ -12,6 +12,7 @@
 - 사용자는 잠들기 전 현재 작업을 다른 PC에서 이어가도록 보존하고 문서를 통합하며 main 병합하기를 요청했습니다. 실제 병합·CI 결과는 GitHub PR과 Git 이력에서 확인합니다. 완료 전후 상태를 오래된 브랜치명만으로 판단하지 않습니다.
 - 이번 기준점은 [PR #2: 플랫폼·홈·다른 PC용 인수인계](https://github.com/DonghyunT/cs-class/pull/2)에 묶었습니다. 새 PC에서는 이 PR의 병합 상태와 main의 최신 커밋을 확인합니다.
 - 9월 28일 사용자가 이전 `web/` 시안과 후속 설정·문서 정리를 요청했습니다. 실행·개발·CI는 `platform/`으로 통일합니다. 이전 네 파일은 삭제 전 커밋 `c7bc397`의 `web/`에 남아 있으며, `git show c7bc397:web/curriculum.js`처럼 조회할 수 있습니다. 순서도 예시가 새 앱에 모두 이식됐다는 뜻은 아닙니다.
+- 정리와 배포 전환은 [PR #3](https://github.com/DonghyunT/cs-class/pull/3)에서 확인합니다. Next.js Preview 배포 `dpl_HVPHjkjMTKV7gZtYKCoyRMd1pkcN`이 READY이며, 홈의 입장 선택창·학생/교사 로그인 경로·교사 대시보드 진입을 실제 Chrome에서 확인했습니다. 기존 [CS Class 주소](https://cs-class-donghyunt.vercel.app/)는 main의 최신 Production 배포를 따릅니다.
 
 새 대화에는 다음과 같이 입력하면 됩니다.
 
