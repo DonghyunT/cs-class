@@ -2403,9 +2403,16 @@ select:focus-visible {
   html {
     scroll-behavior: auto;
   }
-  *,
-  *::before,
-  *::after {
+  /* The public home has its own motion switch; other pages follow the OS setting. */
+  :not(.public-home[data-motion="on"], .public-home[data-motion="on"] *),
+  :not(
+    .public-home[data-motion="on"],
+    .public-home[data-motion="on"] *
+  )::before,
+  :not(
+    .public-home[data-motion="on"],
+    .public-home[data-motion="on"] *
+  )::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

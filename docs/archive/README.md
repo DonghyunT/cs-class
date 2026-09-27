@@ -9,6 +9,8 @@
 
 - **[2026-09-27 통합 전 문서](cs-class/2026-09-27-before-consolidation/README.md):** 통합 직전 문서 9개의 원문입니다. [보존 목록](cs-class/2026-09-27-before-consolidation/manifest.json)에 원래 경로와 SHA-256을 기록했습니다. 이전 AGENTS는 `AGENTS-historical.md`로 보관하며, 본문의 현재 상태·지침·링크는 당시 기준입니다.
 
+- **[2026-09-27 홈 체크포인트](cs-class/2026-09-27-home-checkpoint/manifest.json):** 최신 홈 구현 후 인수인계 통합 직전 문서 9개의 원문입니다. 최초 Stitch 프롬프트·수정 요청·검토·UI Component Lab 검토를 포함합니다. 현재 필요한 내용은 루트 DESIGN과 docs/HANDOFF로 합쳤고, 원문의 바이트·SHA-256은 보존했습니다.
+
 ## 원문과 링크를 읽는 방법
 
 보존본은 바이트를 변경하지 않았습니다. AGENTS.md는 자동 적용되는 이름을 피하도록 historical 이름으로 저장했습니다. 원문 안의 상대 링크·앵커·파일 경로·'현재'·'승인'은 당시 위치와 시점을 기준으로 읽습니다. 일부 링크는 보관 위치에서 바로 열리지 않습니다. 이는 원문을 수정해 현대화하지 않았기 때문입니다.

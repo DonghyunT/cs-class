@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI Component Lab - Radix Style Interactive Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-mark">
+          <svg width="22" height="22" viewBox="0 0 25 25" fill="none">
+            <path d="M12 25C18.6274 25 24 19.6274 24 13C24 6.37258 18.6274 1 12 1C5.37258 1 0 6.37258 0 13C0 19.6274 5.37258 25 12 25Z" fill="#6E56CF"/>
+            <path d="M12 5V19M5 12H19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="header-titles">
+          <h1 class="logo-text">UI Component Lab</h1>
+          <span class="version-badge">Radix Inspired</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="component-search" placeholder="컴포넌트 검색 (예: modal, 키보드)..." aria-label="컴포넌트 검색">
+          <kbd class="kbd-shortcut">/</kbd>
+        </div>
+        <button id="theme-toggle" class="btn-icon" title="테마 변경 (라이트/다크)" aria-label="테마 변경">
+          <svg class="icon-theme" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Body Layout -->
+    <div class="app-body">
+      <!-- Left Sidebar -->
+      <aside class="app-sidebar" id="sidebar">
+        <div class="sidebar-header-hint">
+          <span>COMPONENTS (20)</span>
+        </div>
+        <nav class="sidebar-inner" id="sidebar-nav">
+          <!-- Dynamically populated by app.js -->
+        </nav>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="app-main" id="main-content">
+        <div class="content-container" id="content-container">
+          <!-- Dynamically populated by app.js based on current selected component -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Global Portal Container for Modals, Drawers, Floating Toasts -->
+  <div id="portal-root"></div>
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <script src="components-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

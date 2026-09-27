@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  Braces,
+  GraduationCap,
   Code2,
   Database,
   Fingerprint,
@@ -16,7 +16,7 @@ export function Brand({ small = false }: { small?: boolean }) {
       aria-label="CS Class 홈"
     >
       <span className="brand-symbol">
-        <Braces size={small ? 20 : 24} strokeWidth={2.6} />
+        <GraduationCap size={small ? 22 : 27} strokeWidth={2.1} />
       </span>
       <span>
         CS<span className="brand-light"> Class</span>

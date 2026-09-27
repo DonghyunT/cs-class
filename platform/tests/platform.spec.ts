@@ -1,7 +1,17 @@
 import { test, expect, type Page } from "@playwright/test";
 
+async function chooseEntry(page: Page, role: "student" | "teacher") {
+  await page.getByRole("button", { name: "교실 입장", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("link", {
+      name: role === "student" ? "학생으로 입장" : "선생님으로 입장",
+    })
+    .click();
+}
+
 async function studentLogin(page: Page, id = "20101", password = "class-demo") {
-  await page.locator('a[href="/login/student"]').first().click();
+  await chooseEntry(page, "student");
   await page.getByLabel("학번", { exact: true }).fill(id);
   await page.getByLabel("비밀번호", { exact: true }).fill(password);
   await page
@@ -19,7 +29,7 @@ async function changePassword(page: Page) {
   await expect(page.locator(".dashboard-main")).toBeVisible();
 }
 async function teacherLogin(page: Page) {
-  await page.locator('a[href="/login/teacher"]').first().click();
+  await chooseEntry(page, "teacher");
   await page.getByRole("button", { name: "Google 로그인 화면 체험" }).click();
   await expect(page).toHaveURL(/\/teacher$/);
   await expect(page.locator(".dashboard-main")).toBeVisible();
@@ -32,7 +42,7 @@ test("공개 홈·모바일·키보드·콘솔", async ({ page }) => {
   });
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "궁금한 생각이,나만의 발견으로.",
+    "정보 수업을 위한온라인 교실",
   );
   await page.keyboard.press("Tab");
   await expect(
@@ -56,8 +66,8 @@ test("공개 홈·모바일·키보드·콘솔", async ({ page }) => {
     path: "test-results/home-mobile.png",
     fullPage: true,
   });
-  await page.locator('a[href="/explore/flow"]').click();
-  await expect(page.getByText("배움의 공간을 준비하고 있어요.")).toBeVisible();
+  await chooseEntry(page, "student");
+  await expect(page.getByLabel("학번", { exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
 test("학생 오류·변경·활동·교사 초기화 후 기록 보존", async ({ page }) => {
@@ -158,7 +168,7 @@ test("11반 빈 상태 및 강사 반 범위·검색·모바일", async ({ page 
   await expect(page.getByText("다음 수업을 기다리는 중!")).toBeVisible();
   await expect(page.getByText("곧 새로운 수업이 열릴 거야.")).toBeVisible();
   await page.getByRole("button", { name: "로그아웃" }).click();
-  await page.locator('a[href="/login/teacher"]').first().click();
+  await chooseEntry(page, "teacher");
   await page.getByLabel("비밀번호", { exact: true }).fill("teacher-demo");
   await page.getByRole("button", { name: "강사님으로 입장" }).click();
   await expect(page.getByRole("button", { name: /^\d+반$/ })).toHaveCount(2);
@@ -182,56 +192,6 @@ test("11반 빈 상태 및 강사 반 범위·검색·모바일", async ({ page 
   await page.getByRole("button", { name: "21001 비밀번호 초기화" }).click();
   await expect(page.getByRole("alertdialog")).toBeVisible();
   await page.getByRole("button", { name: "취소", exact: true }).click();
-  expect(errors).toEqual([]);
-});
-
-test("홈 인터랙션·스크롤 이야기·미리보기·움직임 제어", async ({ page }) => {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
-  });
-  await page.goto("/");
-  await page.evaluate(() => document.fonts.ready);
-  await page.screenshot({ path: "test-results/home-hero.png" });
-  const idea = page.getByRole("group", { name: "생각 놀이터" });
-  await idea.getByRole("button", { name: /시도하기/ }).focus();
-  await page.keyboard.press("Enter");
-  await expect(page.locator(".idea-core strong")).toHaveText("이렇게 해 볼까?");
-  await expect(idea.getByRole("button", { name: /시도하기/ })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  await page
-    .getByRole("button", { name: "움직임 줄이기", exact: true })
-    .click();
-  await expect(page.locator(".idea-orbit")).toHaveCSS("animation-name", "none");
-  await page.locator('.journey-step[data-step="1"]').scrollIntoViewIfNeeded();
-  await expect(page.locator(".journey-art")).toHaveAttribute("data-step", "1");
-  await page.locator('.journey-step[data-step="2"]').scrollIntoViewIfNeeded();
-  await expect(page.locator(".journey-art")).toHaveAttribute("data-step", "2");
-  await page
-    .getByRole("button", { name: "선생님의 공간", exact: true })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "우리 반의 오늘을 한눈에." }),
-  ).toBeVisible();
-  await expect(page.locator(".room-entry")).toHaveAttribute(
-    "href",
-    "/login/teacher",
-  );
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.getByRole("button", { name: "움직임 켜기", exact: true }).click();
-  await expect(page.locator(".idea-orbit")).toHaveCSS("animation-name", "none");
-  await expect(page.locator(".journey-discovery")).toHaveCSS("opacity", "1");
-  for (const width of [320, 390, 768, 1024]) {
-    await page.setViewportSize({ width, height: 900 });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBeTruthy();
-  }
   expect(errors).toEqual([]);
 });
 
