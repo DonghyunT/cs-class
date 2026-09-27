@@ -48,17 +48,17 @@ firestore-debug.log*
 
 .vercel/
 
-# Next.js 빌드·로컬 타입 캐시
-/.next/
-/out/
-/build/
-/next-env.d.ts
+# Next.js 빌드·로컬 타입 캐시 (다른 PC의 옛 하위 폴더 잔여 캐시도 제외)
+.next/
+out/
+build/
+next-env.d.ts
 *.tsbuildinfo
 
 # 검사 결과
-/coverage/
-/test-results/
-/playwright-report/
+coverage/
+test-results/
+playwright-report/
 
 # 로컬 학생 계정 등록 자료 (초기 비밀번호 포함)
 /outputs/01a0de21-d7f4-7c03-8abf-2e213c2bf7fc/
