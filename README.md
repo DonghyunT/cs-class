@@ -21,18 +21,11 @@
 ```mermaid
 flowchart LR
     root["cs-class/ · 프로젝트 루트"]
-    root --> src["src/ · 앱 구현"]
-    src --> app["app/ · 페이지·스타일·글꼴"]
-    src --> components["components/ · 화면 구성과 공통 UI"]
-    src --> lib["lib/ · 가상 수업 데이터·공통 함수"]
-    root --> public["public/ · 그대로 제공할 이미지 등 정적 파일"]
-    root --> tests["tests/ · 브라우저 흐름 검사"]
-    root --> ci[".github/workflows/ · GitHub 자동 검사"]
-    root --> docs["docs/ · 인수인계·디자인 참고·과거 문서"]
-    root --> scripts["scripts/ · 개발 도구 설정 보조"]
-    root --> archive["archive/ · 이전 V1 코드 원문"]
-    root --> outputs["outputs/ · 디자인 검토 결과 등 산출물"]
-    root --> scratch["scratch/ · 이 PC의 임시 작업, Git 제외"]
+    root --> src["src/ · 앱 구현<br/>app/ : 페이지·스타일·글꼴<br/>components/ : 화면·공통 UI<br/>lib/ : 가상 데이터·공통 함수"]
+    root --> support["public/ · 정적 파일<br/>scripts/ · 개발 도구 설정 보조<br/>scratch/ · 로컬 임시 작업, Git 제외"]
+    root --> checks["tests/ · 브라우저 흐름 검사<br/>.github/workflows/ · GitHub 자동 검사"]
+    root --> docs["docs/ · 이어갈 일·디자인 참고·과거 문서<br/>루트의 MD 파일 · 현재 기준과 안내"]
+    root --> history["archive/ · 이전 V1 코드 원문<br/>outputs/ · 디자인 검토 등 산출물"]
 ```
 
 | 주요 파일·하위 경로 | 역할 |
