@@ -10,6 +10,7 @@ test("공간 안내 링크가 제목과 역할 화면을 한 화면에 보여줌
   ]) {
     await page.setViewportSize(viewport);
     await page.goto("/");
+    await expect(page.locator(".landing-story")).toHaveAttribute("data-pinned", "true");
     await page
       .getByRole("navigation", { name: "주 메뉴" })
       .getByRole("link", { name: "공간 안내", exact: true })
@@ -100,6 +101,7 @@ test("클릭·방향키로 단계 이동, 퀴즈·비트 상태 유지, 교사 �
   page,
 }) => {
   await page.goto("/");
+  await expect(page.locator(".landing-story")).toHaveAttribute("data-pinned", "true");
   await page.getByRole("tab", { name: "퀴즈", exact: true }).click();
   const quiz = page.getByRole("tabpanel", { name: "퀴즈", exact: true });
   await quiz.getByRole("button", { name: "1 2가지", exact: true }).click();
@@ -394,6 +396,7 @@ test("픽셀 캔버스는 포인터·키보드·터치와 움직임 줄이기에
   browser,
 }) => {
   await page.goto("/");
+  await expect(page.locator(".landing-story")).toHaveAttribute("data-pinned", "true");
   const canvas = page.getByRole("button", { name: /픽셀 모양 바꾸기/ });
   await canvas.hover({ position: { x: 50, y: 50 } });
   await expect

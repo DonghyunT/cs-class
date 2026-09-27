@@ -51,7 +51,7 @@ npm run build
 npm run test:e2e
 ```
 
-GitHub Actions는 `main`·`codex/**` push와 PR에서 위 네 검사를 실행합니다. UI 확인 기준은 [AGENTS](AGENTS.md)를 따릅니다.
+GitHub Actions는 `main`·`codex/**` push와 PR에서 위 네 검사를 실행하며 E2E는 빌드된 앱을 `next start`로 실행해 검사합니다. 로컬 E2E는 개발 서버를 사용합니다. UI 확인 기준은 [AGENTS](AGENTS.md)를 따릅니다.
 
 ## Stitch 연결
 

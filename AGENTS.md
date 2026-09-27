@@ -10,6 +10,7 @@
 
 ## 검증
 - `platform/`에서 `npm run lint`, `npm run typecheck`, `npm run build`를 실행합니다. UI 흐름은 `npm run test:e2e`로 검증합니다(최초 `npx playwright install chromium`).
+- CI의 E2E는 먼저 만든 빌드를 `next start`로 실행하고, 로컬은 개발 서버를 사용합니다. 홈 조작 검사는 데스크톱 고정 배치(`data-pinned=true`)가 준비된 뒤 시작해 초기화 도중의 클릭·앵커 이동과 혼동하지 않습니다.
 - 홈 모션은 기본으로 켜집니다. `no-preference`·`reduce` 모두에서 기본 켜짐과 상단 줄이기/켜기를 확인합니다. 스크롤 전환뿐 아니라 단계 선택 후 빠른 방향키·Tab 이동, 첫·마지막 구간의 낮은 창·모바일 배치를 검증합니다.
 - UI 변경은 실제 화면·주요 조작·좁은 창·키보드 초점·콘솔을 확인합니다. 인증·저장 구현은 실패·권한 경계도 검증합니다.
 - 문서 변경은 내용·링크·`git diff --check`를 확인합니다. 다른 PC에서 필요한 참고 자료는 Git 추적 여부도 확인하며 보관 원문은 manifest 해시를 유지합니다. 실제로 확인한 범위와 남은 한계를 보고합니다.
