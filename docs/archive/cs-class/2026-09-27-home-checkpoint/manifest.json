@@ -1,0 +1,56 @@
+[
+  {
+    "originalPath": "AGENTS.md",
+    "savedPath": "AGENTS-historical.md",
+    "sha256": "2F7EB523727A3B1649CBD7DD1CF597A752632DC205E51193CDB0A51A2A974DDE",
+    "source": "working tree before home handoff consolidation"
+  },
+  {
+    "originalPath": "README.md",
+    "savedPath": "README.md",
+    "sha256": "6E1D999E9D73BD0B651DC6FB5AEC5F927A11612CA7C64414264BE41AE527E80F",
+    "source": "working tree before home handoff consolidation"
+  },
+  {
+    "originalPath": "PRD.md",
+    "savedPath": "PRD.md",
+    "sha256": "51379CD748E108E9FECC9D7BC1A693E2542CB774FF8B10281632306E1EF66D06",
+    "source": "working tree before home handoff consolidation"
+  },
+  {
+    "originalPath": "DESIGN.md",
+    "savedPath": "DESIGN.md",
+    "sha256": "19BCD6CB56755C7EC0A63668316F1B8E27D54D9951C9C2F35286EDD3E7C3AFBE",
+    "source": "working tree before home handoff consolidation"
+  },
+  {
+    "originalPath": "docs/HANDOFF.md",
+    "savedPath": "docs/HANDOFF.md",
+    "sha256": "FB8E06EECCEA18FDBC3D1EBE9CA95EE964A87CBE987A4A86D5F3E41C797BB8A3",
+    "source": "working tree before home handoff consolidation"
+  },
+  {
+    "originalPath": "docs/STITCH_PROMPT.md",
+    "savedPath": "docs/STITCH_PROMPT.md",
+    "sha256": "7BA012BC9FF917E040F913FC75ECE4B5863D54B6DA54ED99F424AB36E1C3AE6B",
+    "source": "working tree before home handoff consolidation"
+  },
+  {
+    "originalPath": "docs/STITCH_REVISION_PROMPT.md",
+    "savedPath": "docs/STITCH_REVISION_PROMPT.md",
+    "sha256": "E7B9A5362206663110E8686198B41D3D448368A52EE2778BDE03091898D60A4C",
+    "source": "working tree before home handoff consolidation"
+  },
+  {
+    "originalPath": "docs/STITCH_REVIEW.md",
+    "savedPath": "docs/STITCH_REVIEW.md",
+    "sha256": "EB5D0C73C4FD6A6A697F7B4A0D7345FDD8A2EEBEFA133C40C00B444EB59BA4F2",
+    "source": "working tree before home handoff consolidation"
+  },
+  {
+    "originalPath": "docs/UI_COMPONENT_REVIEW.md",
+    "savedPath": "docs/UI_COMPONENT_REVIEW.md",
+    "sha256": "681FB0B7C273E97FCCD5EFBE96EA353FB846C53B6171EA12461FE521D92CA6A6",
+    "source": "working tree before home handoff consolidation"
+  }
+]
