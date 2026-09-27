@@ -11,12 +11,23 @@
 - 아직 후속 로그인·대시보드 Stitch 생성 요청이나 해당 화면의 스타일 구현은 하지 않았습니다. 코드에 있는 기존 로그인·대시보드는 이전 시안입니다.
 - 사용자는 잠들기 전 현재 작업을 다른 PC에서 이어가도록 보존하고 문서를 통합하며 main 병합하기를 요청했습니다. 실제 병합·CI 결과는 GitHub PR과 Git 이력에서 확인합니다. 완료 전후 상태를 오래된 브랜치명만으로 판단하지 않습니다.
 - 이번 기준점은 [PR #2: 플랫폼·홈·다른 PC용 인수인계](https://github.com/DonghyunT/cs-class/pull/2)에 묶었습니다. 새 PC에서는 이 PR의 병합 상태와 main의 최신 커밋을 확인합니다.
-- 9월 28일 사용자가 이전 `web/` 시안과 후속 설정·문서 정리를 요청했습니다. 실행·개발·CI는 `platform/`으로 통일합니다. 이전 네 파일은 삭제 전 커밋 `c7bc397`의 `web/`에 남아 있으며, `git show c7bc397:web/curriculum.js`처럼 조회할 수 있습니다. 순서도 예시가 새 앱에 모두 이식됐다는 뜻은 아닙니다.
+- 9월 28일 사용자가 이전 `web/` 시안과 후속 설정·문서 정리를 요청했습니다. 당시 새 앱만 남긴 뒤, 아래 루트 통합으로 실행 위치를 다시 정리했습니다. 이전 네 파일은 삭제 전 커밋 `c7bc397`의 `web/`에 남아 있으며, `git show c7bc397:web/curriculum.js`처럼 조회할 수 있습니다. 순서도 예시가 새 앱에 모두 이식됐다는 뜻은 아닙니다.
 - 정리와 배포 전환은 [PR #3](https://github.com/DonghyunT/cs-class/pull/3)에서 확인합니다. Next.js Preview 배포 `dpl_HVPHjkjMTKV7gZtYKCoyRMd1pkcN`이 READY이며, 홈의 입장 선택창·학생/교사 로그인 경로·교사 대시보드 진입을 실제 Chrome에서 확인했습니다. 기존 [CS Class 주소](https://cs-class-donghyunt.vercel.app/)는 main의 최신 Production 배포를 따릅니다.
 
 새 대화에는 다음과 같이 입력하면 됩니다.
 
 > docs/HANDOFF.md, PRD.md, DESIGN.md를 읽고 이어서 작업하자. 홈 디자인은 확정했고 다음은 중앙 집중형 학생·교사 로그인이다. Stitch 스킬과 MCP를 활용하되 로그인부터 함께 다듬고, 대시보드는 나와 대화하면서 진행하자.
+
+## 저장소 루트 통합 · 2026-09-28
+
+- 사용자는 단일 앱을 `cs-class/`에서 운영하고, 중복 안내 파일을 합치며 다른 PC에서도 이해하기 쉬운 구조를 요청했습니다. README에 폴더 구조도와 주요 파일 역할을 추가했습니다.
+- `platform/` 안의 소스·테스트·앱 설정·패키지 파일을 루트로 이동했습니다. 화면 동작과 테스트 내용, 의존성 버전은 유지합니다. `globals.css`의 Tailwind 검색 범위만 `src/`로 명시해 과거 HTML에서 불필요한 스타일이 생성되지 않게 합니다. 명령은 모두 루트에서 실행합니다.
+- AGENTS·README·Git 제외 규칙을 루트에 통합했습니다. Next.js 자동 안내 블록도 루트 AGENTS 안에 유지합니다. `@AGENTS.md`만 있던 하위 CLAUDE 문서는 제거했으며 별도 지침은 없었습니다.
+- GitHub Actions 작업 경로·잠금 파일 경로와 Vercel Root Directory를 루트에 맞췄습니다. ESLint·TypeScript에는 과거 코드·참고 자료·임시 산출물이 섞이지 않게 검사 범위를 지정했습니다.
+- 이전 체크포인트는 `e2dfaf1`(PR #4)입니다. 이 버전을 다시 운영해야 할 때는 코드만 되돌리지 말고 Vercel Root Directory도 `platform`으로 함께 복구해야 합니다. 이미 만들어진 이전 배포로 되돌리는 작업은 새 빌드와 구분합니다.
+- 다른 PC의 기존 개발 서버는 종료하고 루트에서 `npm ci` 후 다시 시작합니다. 남은 옛 `platform/` 로컬 캐시는 개인 파일 유무를 확인한 뒤 정리합니다. 상세 절차는 README를 따릅니다.
+- 과거 원문·UI 참고 자료·학생 자료는 정리 대상이 아닙니다. 실제 인증·권한·저장과 로그인·대시보드 디자인의 후속 범위도 그대로입니다.
+- 루트에서 새 `npm ci`·lint·typecheck·build와 프로덕션 서버 대상 E2E 12개를 통과했습니다. 원문 보관 목록 362개 파일의 SHA-256, 활성 문서의 로컬 링크 38개, 의존성 버전 보존도 확인했습니다. 소스·테스트 33개 중 Tailwind 검색 경로 한 줄을 제외한 32개는 이동 전후 바이트가 같습니다.
 
 ## 구현된 기준점
 
@@ -49,15 +60,15 @@
 
 | 위치 | 용도 |
 | --- | --- |
-| `platform/src/components/home-interactions.tsx` | 홈 구성·고정 시연·역할 예시·모션 상태 |
-| `platform/src/components/home-art.tsx` | 원본 픽셀 그래픽과 포인터 반응 |
-| `platform/src/components/home-entry.tsx` | 움직임 툴팁·학생/교사 입장 선택창 |
-| `platform/src/app/public-home.css` | 홈 전용 스타일·반응형·모션 |
-| `platform/src/components/login-screen.tsx` | 다음에 손볼 로그인·비밀번호 변경 시안 |
-| `platform/src/components/app-shell.tsx` | 기존 대시보드 셸·모바일 메뉴 |
-| `platform/src/app/student/page.tsx`, `teacher/page.tsx` | 기존 학생·교사 화면 |
-| `platform/src/components/demo-provider.tsx`, `platform/src/lib/demo-data.ts` | 실제 서비스가 아닌 메모리 체험 데이터 |
-| `platform/tests/landing.spec.ts`, `platform/tests/platform.spec.ts` | 홈과 로그인·대시보드 회귀 검증 |
+| `src/components/home-interactions.tsx` | 홈 구성·고정 시연·역할 예시·모션 상태 |
+| `src/components/home-art.tsx` | 원본 픽셀 그래픽과 포인터 반응 |
+| `src/components/home-entry.tsx` | 움직임 툴팁·학생/교사 입장 선택창 |
+| `src/app/public-home.css` | 홈 전용 스타일·반응형·모션 |
+| `src/components/login-screen.tsx` | 다음에 손볼 로그인·비밀번호 변경 시안 |
+| `src/components/app-shell.tsx` | 기존 대시보드 셸·모바일 메뉴 |
+| `src/app/student/page.tsx`, `teacher/page.tsx` | 기존 학생·교사 화면 |
+| `src/components/demo-provider.tsx`, `src/lib/demo-data.ts` | 실제 서비스가 아닌 메모리 체험 데이터 |
+| `tests/landing.spec.ts`, `tests/platform.spec.ts` | 홈과 로그인·대시보드 회귀 검증 |
 
 현재 홈은 [데스크톱](reference/home-hero-1440.png)·[모바일](reference/home-hero-390.png), 선택창은 [데스크톱](reference/home-entry-1440.png)·[320px](reference/home-entry-320.png), 나머지는 [공간 안내](reference/home-role-anchor.png)·[마지막 화면](reference/home-finale-1440.png)에서 확인합니다. 이 이미지들은 Git에 포함됩니다. `outputs/design-review/`의 이미지는 초기 플랫폼 시안이므로 현재 홈보다 우선하지 않습니다.
 
@@ -82,7 +93,7 @@
 - 사용자 제공 UI Component Lab 네 파일은 [저장소 복사본](reference/ui-component-lab/index.html)에 원문 그대로 보존했습니다. 직접 브라우저로 열 수 있고, [DESIGN의 활용 기준](../DESIGN.md#9-ui-component-lab-활용)에 이미 적용한 패턴·후속 후보를 통합했습니다. 원래 PC 밖의 절대 경로에 의존하지 않습니다.
 - 실제 학생 계정 엑셀·초기 비밀번호·API 키·개인 설정·`백업용/`·생성 캐시·테스트 임시 출력은 Git에 올리지 않습니다. 엑셀은 원래 PC의 `outputs/01a0de21-d7f4-7c03-8abf-2e213c2bf7fc/`에만 있습니다. UI 후속 작업에는 필요하지 않습니다.
 - StitchDesign 플러그인·MCP·브라우저 연결은 PC별 설정입니다. Figma는 계정·기존 Designo 스크린샷 조회까지 확인했으며 편집은 미검증, Context7은 연결 전입니다. 필요한 경우 실제 가용성을 확인합니다.
-- Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Root Directory를 `platform`, Framework Preset을 Next.js로 전환했습니다. Node.js 24.x와 기존 SSO 보호를 유지합니다. MCP의 프로젝트 연결은 팀 범위를 생략하면 정상 동작하며, `teamId`를 덧붙일 때 발생했던 403을 전체 연결 불가로 해석하지 않습니다. 반환값에 루트 경로가 없으면 Vercel Build and Deployment 설정 화면에서 확인합니다.
+- Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Root Directory는 비워 두며 Framework Preset은 Next.js입니다. Node.js 24.x와 기존 SSO 보호를 유지합니다. MCP의 프로젝트 연결은 팀 범위를 생략하면 정상 동작하며, `teamId`를 덧붙일 때 발생했던 403을 전체 연결 불가로 해석하지 않습니다. 반환값에 루트 경로가 없으면 Vercel Build and Deployment 설정 화면에서 확인합니다.
 - 문서 통합 전 원문 9개는 [홈 체크포인트 보관 목록](archive/cs-class/2026-09-27-home-checkpoint/manifest.json)에 경로·SHA-256과 함께 보존했습니다. 이 보관본의 상대 링크와 당시 상태는 현재 지침이 아닙니다.
 
 ## 검증 근거와 범위
