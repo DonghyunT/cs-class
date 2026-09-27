@@ -38,7 +38,7 @@ npm run dev -- --hostname 127.0.0.1 --port 3000
 - 학생 `20101` / `class-demo`, 빈 교실 학생 `21101` / `class-demo`. 첫 입장에는 시안용 새 비밀번호를 설정합니다. 실제 비밀번호를 입력하지 않습니다.
 - 교사는 Google 로그인 화면 체험 버튼, 강사는 `teacher-demo`로 들어갑니다. 강사의 화면 범위는 10·11반입니다.
 - 한국어 글꼴 [Pretendard 1.3.9](https://github.com/orioncactus/pretendard)은 로컬 제공하며 [SIL OFL](platform/src/app/fonts/OFL.txt)을 포함합니다. 실제 패키지 버전은 [package.json](platform/package.json)과 잠금 파일을 따릅니다.
-- `web/`은 이전 시안입니다. `python -m http.server 8765 --bind 127.0.0.1 --directory web`으로 별도 확인할 수 있습니다.
+- 이전 정적 시안은 정리했습니다. 순서도 수업 예시 등 원본이 필요하면 Git의 `c7bc397:web/`에서 확인할 수 있습니다. 현재 실행·개발 대상은 `platform/`입니다.
 
 ## 검증
 
@@ -51,7 +51,7 @@ npm run build
 npm run test:e2e
 ```
 
-GitHub Actions는 `main`·`codex/**` push와 PR에서 새 앱의 네 검사 및 이전 `web/`의 JavaScript 구문을 확인합니다. UI 확인 기준은 [AGENTS](AGENTS.md)를 따릅니다.
+GitHub Actions는 `main`·`codex/**` push와 PR에서 위 네 검사를 실행합니다. UI 확인 기준은 [AGENTS](AGENTS.md)를 따릅니다.
 
 ## Stitch 연결
 
@@ -89,7 +89,7 @@ macOS·Linux에서는 Codex를 시작하는 환경에 같은 이름의 환경변
 
 ## 외부 환경과 로컬 전용 자료
 
-- 연결된 Vercel 프로젝트는 `cs-class`입니다. 기존 기록상 배포 루트는 `web/`이며, Git 연동으로 main 병합 시 자동 배포가 일어날 수 있습니다. 새 `platform/`으로의 배포 루트 전환은 별도 작업입니다. 실제 대상은 배포 작업 전에 조회합니다.
+- 연결된 Vercel 프로젝트는 `cs-class`입니다. Root Directory는 `platform`, Framework Preset은 Next.js, Node.js는 24.x이며 빌드·설치·출력 경로는 프레임워크 기본값을 사용합니다. Git 연동으로 작업 브랜치는 Preview, main은 Production에 배포됩니다. Vercel SSO 보호는 유지하며 배포된 앱도 가상 계정 시안입니다.
 - Firebase 후보 `cs-class-f74c4`는 미연결입니다. 실제 인증·저장은 개발 대상을 정한 뒤 진행합니다.
 - 키·환경변수·학생 계정 엑셀·`백업용/`은 Git에 포함하지 않습니다. 학생 자료가 필요한 작업은 원래 PC의 자료를 별도 안전한 경로로 준비해야 합니다. UI 작업은 이 자료 없이 가능합니다.
 - 최신 공개 홈 참고 이미지와 제공받은 [UI Component Lab](docs/reference/ui-component-lab/index.html)은 저장소에 포함했습니다. 외부 PC에서도 사용할 수 있으며 학생 개인정보가 들어 있지 않습니다.
