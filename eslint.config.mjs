@@ -8,10 +8,18 @@ const eslintConfig = defineConfig([
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**", "test-results/**", "playwright-report/**",
-    "build/**",
-    "next-env.d.ts",
+    "**/.next/**",
+    "**/out/**", "**/test-results/**", "**/playwright-report/**",
+    "**/build/**",
+    "**/next-env.d.ts",
+    "**/coverage/**",
+    // Reference material and local artifacts are not application source.
+    "archive/**",
+    "docs/**",
+    "outputs/**",
+    "scratch/**",
+    "temp/**",
+    "백업용/**",
   ]),
 ]);
 
