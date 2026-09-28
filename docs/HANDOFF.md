@@ -56,7 +56,7 @@ git pull --ff-only
 - 실제 Firebase: Git 제외 `.env.local`과 외부 관리자 JSON을 준비한 뒤 `npm run dev`. Google 로그인은 `http://localhost:3000/login/teacher`에서 확인합니다.
 - 가상 계정 체험: `npm run dev:emulator`. 합성 계정은 [로컬 테스트 설정](../scripts/local-test-env.mjs), 자동 검사는 `npm run test:e2e`를 사용합니다. 실제 3000번 서버와 동시에 실행하지 않습니다.
 - 작업 브랜치의 GitHub 푸시는 연결된 Vercel의 Preview 빌드를 실행할 수 있습니다. Preview 빌드 성공은 실제 Firebase 로그인·저장 검증과 구분합니다. 서버 인증 환경변수와 도메인 검증은 후속이며 운영 `main`으로 승격하지 않습니다.
-- PC 간 동기화 커밋 `4ee5d25`의 [Preview 빌드](https://vercel.com/donghyunt/cs-class/By6uEFE7MJmunkXsxtiTiZatw16M)는 READY를 확인했습니다. 해당 커밋의 [GitHub 검사](https://github.com/DonghyunT/cs-class/actions/runs/36420189955)와 이후 커밋의 검사 결과는 위 Actions 링크에서 구분해 확인합니다.
+- PC 간 동기화 커밋 `4ee5d25`의 [Preview 빌드](https://vercel.com/donghyunt/cs-class/By6uEFE7MJmunkXsxtiTiZatw16M)는 READY를 확인했습니다. 최초 원격 검사에서 개념 확인 뒤 초점 이동이 간헐적으로 실패했고, 후속 `90da058`의 [GitHub 검사](https://github.com/DonghyunT/cs-class/actions/runs/36420618963)는 통과했습니다. 재발 방지를 위해 응답·단계 변경·순서 이동 후 초점을 React 화면 갱신 뒤 Effect에서 처리하도록 수정했습니다. 최신 커밋의 최종 검사 결과는 위 Actions 링크에서 확인합니다.
 - 검증을 위해 띄웠던 미리보기·에뮬레이터는 정리 후 종료합니다. 다음 작업 때 위 명령으로 다시 시작합니다. 이 PC의 임시 Java는 `scratch/tools/java/`에만 있으며 Git으로 전달되지 않습니다.
 
 ### 검증 근거와 범위

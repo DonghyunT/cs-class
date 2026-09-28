@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { ArrowLeft, ArrowRight, ArrowDown, ArrowUp, BookOpen, Check, CheckCircle2, CloudCheck, Layers3, Lightbulb, LoaderCircle, RotateCcw, Save, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { classroomApi } from "@/lib/classroom/client";
@@ -74,7 +74,11 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
   const progress = progressFor(lesson, work);
   const [moveMessage, setMoveMessage] = useState("");
   const [switching, setSwitching] = useState(false);
-  const stageRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [focusRequest, setFocusRequest] = useState<{ id: string; preventScroll?: boolean } | null>(null);
+  useEffect(() => {
+    // Focus after React commits the new feedback or enabled controls, not on the next animation frame.
+    if (focusRequest) document.getElementById(focusRequest.id)?.focus({ preventScroll: focusRequest.preventScroll });
+  }, [focusRequest]);
   const locked = busy || switching;
   const draftMatchesValidation = work.validation?.passed && JSON.stringify(work.validation.order) === JSON.stringify(draft.practiceOrder);
   const draftMatchesSubmission = work.submission && JSON.stringify(work.submission.order) === JSON.stringify(draft.practiceOrder);
@@ -84,7 +88,7 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
   async function switchStage(stage: Stage, focusTab = false) {
     if (switching || busy) return;
     setSwitching(true);
-    try { if (await controller.switchStage(stage)) { requestAnimationFrame(() => { if (focusTab) stageRefs.current[stages.findIndex((item) => item.id === stage)]?.focus(); else document.getElementById(`stage-heading-${stage}`)?.focus(); }); } }
+    try { if (await controller.switchStage(stage)) setFocusRequest({ id: focusTab ? `tab-${stage}` : `stage-heading-${stage}` }); }
     finally { setSwitching(false); }
   }
   function tabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
@@ -97,7 +101,7 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
     event.preventDefault(); void switchStage(stages[next].id, true);
   }
   async function runAction(action: WorkAction, focusId: string) {
-    if (await perform(action)) requestAnimationFrame(() => document.getElementById(focusId)?.focus());
+    if (await perform(action)) setFocusRequest({ id: focusId });
   }
   function moveBlock(id: string, delta: number) {
     const index = draft.practiceOrder.indexOf(id);
@@ -106,10 +110,8 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
     const order = [...draft.practiceOrder]; [order[index], order[destination]] = [order[destination], order[index]];
     update({ ...draft, practiceOrder: order });
     setMoveMessage(`${lesson.practice.blocks.find((block) => block.id === id)?.label}, ${destination + 1}번째로 이동했어요.`);
-    requestAnimationFrame(() => {
-      const direction = destination === 0 ? "down" : destination === order.length - 1 ? "up" : delta < 0 ? "up" : "down";
-      document.getElementById(`move-${id}-${direction}`)?.focus({ preventScroll: true });
-    });
+    const direction = destination === 0 ? "down" : destination === order.length - 1 ? "up" : delta < 0 ? "up" : "down";
+    setFocusRequest({ id: `move-${id}-${direction}`, preventScroll: true });
   }
   return <div className={styles.workspace}>
     <div className={styles.workspaceTop}><Link href="/student" className={styles.back}><ArrowLeft size={17} />대시보드로</Link>
@@ -120,7 +122,7 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
     <div className={styles.lessonProgress}><ProgressSummary lesson={lesson} work={{ ...work, validation: draftMatchesValidation ? work.validation : null }} /></div>
     {error && <section className={styles.errorPanel} role="alert"><strong>{controller.conflict ? "저장 기록이 서로 달라요." : "요청을 완료하지 못했어요."}</strong><p>{error}</p><p>현재 입력은 이 화면에 유지하고 있어요. 확인 전에는 창을 닫지 마세요.</p><Button variant="outline" disabled={busy} onClick={() => void (controller.conflict ? controller.compare() : controller.retry())}>{controller.conflict ? "서버 기록과 비교" : "저장 다시 확인"}</Button></section>}
     {controller.remote && <section className={styles.conflictPanel} aria-label="저장 충돌 비교"><h2>어떤 입력으로 이어갈까요?</h2><p>서버의 완료·제출 기록은 유지돼요. 입력 내용은 아래에서 직접 선택하세요.</p><div className={styles.comparisonGrid}><div><h3>이 화면의 입력</h3><DraftComparison lesson={lesson} draft={draft} /></div><div><h3>서버에 저장된 입력</h3><DraftComparison lesson={lesson} draft={controller.remote.draft} /></div></div><div className={styles.actions}><Button disabled={busy} onClick={() => void controller.resolve(true)}>현재 입력을 새 버전으로 저장</Button><Button variant="outline" disabled={busy} onClick={() => void controller.resolve(false)}>서버 기록으로 이어하기</Button></div></section>}
-    <div className={styles.tabs} role="tablist" aria-label="수업 단계">{stages.map((stage, index) => <button key={stage.id} ref={(element) => { stageRefs.current[index] = element; }} id={`tab-${stage.id}`} type="button" role="tab" aria-selected={draft.stage === stage.id} aria-controls={`panel-${stage.id}`} tabIndex={draft.stage === stage.id ? 0 : -1} disabled={locked} onKeyDown={(event) => tabKey(event, index)} onClick={() => void switchStage(stage.id, true)}><stage.icon size={18} /><span>{stage.label}</span><span className={styles.tabPercent}>{progress[stage.id].percent}%</span></button>)}</div>
+    <div className={styles.tabs} role="tablist" aria-label="수업 단계">{stages.map((stage, index) => <button key={stage.id} id={`tab-${stage.id}`} type="button" role="tab" aria-selected={draft.stage === stage.id} aria-controls={`panel-${stage.id}`} tabIndex={draft.stage === stage.id ? 0 : -1} disabled={locked} onKeyDown={(event) => tabKey(event, index)} onClick={() => void switchStage(stage.id, true)}><stage.icon size={18} /><span>{stage.label}</span><span className={styles.tabPercent}>{progress[stage.id].percent}%</span></button>)}</div>
 
     {draft.stage === "concept" && <section id="panel-concept" role="tabpanel" aria-labelledby="tab-concept" tabIndex={0} className={styles.stagePanel}>
       <div className={styles.stageHeading}><div><h2 id="stage-heading-concept" tabIndex={-1}>설명을 읽고 바로 확인해요</h2><p>개념 확인 문제를 해결하면 자동으로 완료돼요.</p></div><span>{progress.concept.completed} / {progress.concept.total}개 완료</span></div>
