@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { DemoProvider } from "@/components/demo-provider";
+import { SessionProvider } from "@/components/session-provider";
+import { NavigationProvider } from "@/components/navigation-provider";
 import "./globals.css";
 import "./experience.css";
 const pretendard = localFont({
@@ -27,7 +28,7 @@ export default function RootLayout({
         <a className="skip-link" href="#main-content">
           본문으로 바로가기
         </a>
-        <DemoProvider>{children}</DemoProvider>
+        <SessionProvider><NavigationProvider>{children}</NavigationProvider></SessionProvider>
       </body>
     </html>
   );

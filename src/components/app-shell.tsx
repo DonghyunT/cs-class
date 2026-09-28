@@ -13,9 +13,10 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Brand, DemoBanner } from "@/components/visuals";
+import { Brand } from "@/components/visuals";
 import { Button } from "@/components/ui/button";
-import { useDemo } from "@/components/demo-provider";
+import { useSession } from "@/components/session-provider";
+import { useNavigationGuard } from "@/components/navigation-provider";
 
 export function AppShell({
   children,
@@ -26,7 +27,9 @@ export function AppShell({
   title: string;
   teacher?: boolean;
 }) {
-  const { session, logout } = useDemo();
+  const { session, logout, loading, configured, error, refresh } = useSession();
+  const { beforeLeave } = useNavigationGuard();
+  const [logoutError, setLogoutError] = useState("");
   const router = useRouter();
   const path = usePathname();
   const [mobileNav, setMobileNav] = useState(false);
@@ -53,22 +56,23 @@ export function AppShell({
   }
   const valid = teacher
     ? session && session.role !== "student"
-    : session?.role === "student" && !session.mustChange;
+    : session?.role === "student" && !session.mustChangePassword;
+  if (loading) return <main id="main-content" className="access-state" aria-busy="true"><Brand /><h1>교실을 준비하고 있어요.</h1></main>;
   if (!valid)
     return (
       <>
-        <DemoBanner />
         <main id="main-content" className="access-state">
           <Brand />
           <span className="form-icon">
             <GraduationCap />
           </span>
           <h1>
-            {session?.mustChange
+            {session?.mustChangePassword
               ? "먼저 비밀번호를 바꿔 주세요."
               : "교실에 입장해 주세요."}
           </h1>
-          <p>새로고침하면 화면 체험의 로그인 상태가 초기화됩니다.</p>
+          <p role={error ? "alert" : undefined}>{error || (!configured ? "로그인 서비스를 연결하고 있어요. 선생님께 알려 주세요." : "본인의 계정으로 로그인하면 저장한 수업을 이어갈 수 있어요.")}</p>
+          {error && <Button variant="outline" onClick={() => void refresh()}>접속 다시 확인</Button>}
           <Button
             nativeButton={false}
             render={<Link href={`/login/${teacher ? "teacher" : "student"}`} />}
@@ -81,7 +85,6 @@ export function AppShell({
   const home = teacher ? "/teacher" : "/student";
   return (
     <>
-      <DemoBanner />
       <div className="app-layout">
         <aside
           role={mobileNav ? "dialog" : undefined}
@@ -122,7 +125,7 @@ export function AppShell({
             </Button>
           </div>
           <div className="workspace-label">
-            {teacher ? "TEACHER WORKSPACE" : "MY CLASSROOM"}
+            {teacher ? "선생님 공간" : "우리 반 교실"}
           </div>
           <nav aria-label="교실 메뉴">
             <Link
@@ -131,7 +134,7 @@ export function AppShell({
               onClick={() => setMobileNav(false)}
             >
               <Home size={19} />
-              {teacher ? "우리 반 관리" : "내 교실"}
+              {teacher ? "수업 현황" : "대시보드"}
               <ChevronRight size={15} />
             </Link>
             <Link
@@ -139,21 +142,11 @@ export function AppShell({
               onClick={() => setMobileNav(false)}
             >
               {teacher ? <Users size={19} /> : <BookOpen size={19} />}
-              {teacher ? "학생 목록" : "내 수업"}
+              {teacher ? "학생 관리" : "열린 수업"}
             </Link>
           </nav>
           <div className="sidebar-bottom">
-            <div className="sidebar-tip">
-              <span className="tiny-asterisk">✦</span>
-              <strong>
-                {teacher ? "함께 만드는 배움" : "생각은 자유롭게,"}
-              </strong>
-              <p>
-                {teacher
-                  ? "작은 발견도 놓치지 않도록.\n오늘의 교실을 살펴보세요."
-                  : "틀려도 괜찮아요.\n다시 해 보면 되니까요."}
-              </p>
-            </div>
+            <div className="sidebar-tip"><strong>{teacher ? "수업 운영" : "저장하고 이어가기"}</strong><p>{teacher ? "담당 반의 수업과 학생 기록을 확인해요." : "저장 완료를 확인하면 다음에도 이어갈 수 있어요."}</p></div>
             <Link href="/" className="sidebar-home">
               <PanelLeftClose size={16} /> 공개 홈 둘러보기
             </Link>
@@ -182,7 +175,7 @@ export function AppShell({
                 <Menu />
               </Button>
               <span className="breadcrumb">
-                {teacher ? "선생님 공간" : `2학년 ${session?.classId}반`}
+                {teacher ? "선생님 공간" : `${session?.classId?.split("-")[0]}학년 ${session?.classId?.split("-")[1]}반`}
                 <ChevronRight size={14} />
                 <strong>{title}</strong>
               </span>
@@ -202,9 +195,13 @@ export function AppShell({
                 variant="ghost"
                 size="icon"
                 aria-label="로그아웃"
-                onClick={() => {
-                  logout();
-                  router.push("/");
+                onClick={async () => {
+                  setLogoutError("");
+                  try {
+                    if (!(await beforeLeave())) return;
+                    await logout();
+                    router.replace(`/login/${teacher ? "teacher" : "student"}`);
+                  } catch (problem) { setLogoutError(problem instanceof Error ? problem.message : "로그아웃하지 못했어요. 다시 시도해 주세요."); }
                 }}
               >
                 <LogOut size={18} />
@@ -212,6 +209,7 @@ export function AppShell({
             </div>
           </header>
           <main id="main-content" tabIndex={-1} className="dashboard-main">
+            {logoutError && <p role="alert" className="app-error">{logoutError}</p>}
             {children}
           </main>
           <footer className="app-footer">

@@ -19,5 +19,9 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
