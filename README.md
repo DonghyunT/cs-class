@@ -49,6 +49,8 @@ flowchart LR
 
 ## 다른 PC에서 시작
 
+**진행 중인 기능 명세 대화(2026-09-28)는 `codex/login-policy-spec` 브랜치에 있습니다.** 집에서 논의를 이어갈 때는 main 대신 [HANDOFF의 브랜치 전환 절차와 재개 문장](docs/HANDOFF.md#집에서-재개할-위치)을 먼저 확인합니다. 아래는 기본 main 설치 절차이며, 기능 명세의 합의가 앱에 구현됐다는 뜻은 아닙니다.
+
 Git과 Node.js 24를 준비하고, 이 비공개 저장소에 접근할 수 있는 GitHub 계정으로 실행합니다.
 
 ```powershell
