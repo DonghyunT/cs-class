@@ -51,19 +51,24 @@ flowchart LR
 
 ## 다른 PC에서 시작
 
-**1차 LMS 구현은 `codex/login-policy-spec`의 로컬 커밋에 보존했습니다.** 아직 원격에 푸시하지 않았으므로 다른 PC에서는 먼저 [HANDOFF의 동기화 상태](docs/HANDOFF.md#집에서-재개할-위치)를 확인합니다. 아래는 원래 PC의 커밋을 원격에 동기화한 뒤 새 PC에서 시작하는 절차입니다.
+**GitHub의 [`codex/login-policy-spec` 작업 브랜치](https://github.com/DonghyunT/cs-class/tree/codex/login-policy-spec)에서 이어갑니다.** `main`은 이전 공개 버전입니다. 현재 기능·다음 작업·검증 기록은 [HANDOFF](docs/HANDOFF.md)에 모았습니다.
 
-Git과 Node.js 24를 준비하고, 이 비공개 저장소에 접근할 수 있는 GitHub 계정으로 실행합니다.
+Git·Node.js 24·Java 21+를 준비하고, 이 비공개 저장소에 접근할 수 있는 GitHub 계정으로 실행합니다. 아래 개발 모드는 Firebase 키나 실제 학생 자료 없이 사용할 수 있습니다.
 
 ```powershell
-git clone https://github.com/DonghyunT/cs-class.git
+git clone --branch codex/login-policy-spec https://github.com/DonghyunT/cs-class.git
 cd cs-class
-git switch codex/login-policy-spec
 npm ci
-npm run dev -- --hostname localhost --port 3000
+npm run dev:emulator
 ```
 
 이미 복제한 PC라면 먼저 `git status`로 로컬 작업을 확인합니다. 작업 트리가 깨끗할 때 HANDOFF의 fetch·작업 브랜치 전환·pull 순서를 따르고 의존성을 설치합니다. Windows PowerShell에서 npm 스크립트 실행이 차단되면 `npm.cmd`·`npx.cmd`를 사용합니다.
+
+[학생 입장](http://localhost:3000/login/student)에서 합성 학번 `20101`과 [테스트 설정의 초기 비밀번호](scripts/local-test-env.mjs)를 사용합니다. 첫 입장에는 본인 테스트 비밀번호로 바꿉니다. [교사 입장](http://localhost:3000/login/teacher)의 강사 계정은 같은 파일의 강사 비밀번호를 사용하며 10·11반을 확인합니다. `Ctrl+C`로 종료하면 에뮬레이터 기록은 보존되지 않습니다.
+
+실제 Firebase로 개발할 때만 [서버 설정 안내](docs/FIREBASE_SETUP.md#다른-pc의-서버-설정)에 따라 환경파일과 관리자 인증을 별도 준비한 뒤 `npm run dev`를 실행합니다. `.env.local`과 관리자 키는 Git에 없으며 새 PC에 자동 전달되지 않습니다. Codex에서 저장소 루트를 열고 다음처럼 요청하면 됩니다.
+
+> AGENTS.md와 docs/HANDOFF.md를 읽고 codex/login-policy-spec에서 CS Class를 이어가자. 먼저 로컬 변경과 원격 동기화를 확인하고 다음 작업 범위를 정하자.
 
 루트 통합 전부터 사용한 PC에서는 이전 개발 서버를 종료하고 **저장소 루트에서 `npm ci`로 다시 설치**합니다. 편집기 작업 폴더·터미널 시작 위치가 `platform/`으로 지정되어 있다면 `cs-class/`로 바꿉니다. Git에 없던 옛 `platform/node_modules/`·`.next/` 캐시가 남을 수 있으며, 계속 Git·코드 검사에서 제외됩니다. 더는 사용하지 않지만 `.env`·개인 파일·미커밋 소스가 섞여 있지 않은지 확인하기 전에는 `platform/` 전체를 삭제하지 않습니다.
 

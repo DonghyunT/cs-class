@@ -12,6 +12,10 @@
 
 ## 다른 PC의 서버 설정
 
+화면·학습 흐름 개발과 자동 검사는 [README의 에뮬레이터 실행](../README.md#다른-pc에서-시작)만으로 가능합니다. 아래는 실제 `cs-class-f74c4`에 연결해야 할 때만 사용합니다.
+
+이미 설정한 PC의 연결을 이어갈 때는 기존 `.env.local`과 관리자 JSON을 본인이 관리하는 안전한 경로로 따로 옮기고 `GOOGLE_APPLICATION_CREDENTIALS`만 새 PC의 경로로 맞춥니다. 같은 프로젝트의 교사 허용 목록·초기/초기화 비밀번호 설정은 유지합니다. Git이나 채팅에 파일·값을 올리지 않습니다. 아래 설정 도구는 기존 환경파일이 없는 최초 준비용이며 공통 비밀번호를 새로 생성합니다.
+
 1. [Firebase 서비스 계정 설정](https://console.firebase.google.com/project/cs-class-f74c4/settings/serviceaccounts/adminsdk)에서 준비한 인증 JSON을 저장소 밖의 본인만 접근하는 위치에 둡니다. 키 파일·내용을 채팅, Git, 화면 캡처에 넣지 않습니다.
 2. Firebase CLI에 해당 프로젝트 권한이 있는 계정으로 로그인합니다. 저장소 루트에서 아래 명령의 경로와 교사 이메일을 실제 값으로 바꿉니다. 기존 `.env.local`이 있으면 덮어쓰지 않고 중단합니다.
 

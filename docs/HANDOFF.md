@@ -5,7 +5,7 @@
 ## 집에서 재개할 위치
 
 - 작업 브랜치는 **`codex/login-policy-spec`**입니다. 구현 체크포인트는 `ba0dbc7`, 이후 정리 커밋은 `git log`로 확인합니다. 앱 기반은 `f880b82`(PR #5 병합), 이전 문서 체크포인트는 `f4bb478`입니다.
-- 이번 구현·정리 커밋은 **로컬에 보존했고 원격에는 아직 푸시하지 않았습니다.** 다른 PC에서 받으려면 원래 PC의 커밋을 먼저 원격에 동기화해야 합니다. Vercel Git 연동으로 푸시는 Preview 배포를 일으킬 수 있습니다. 푸시·병합·앱 배포는 이번 정리에 포함하지 않았습니다.
+- 다른 PC의 재개 기준은 [GitHub 작업 브랜치](https://github.com/DonghyunT/cs-class/tree/codex/login-policy-spec)입니다. 사용자가 PC 간 이어하기를 요청해 구현·정리 커밋과 실행 안내를 이 브랜치에 동기화합니다. 원격 검사 결과는 [GitHub Actions](https://github.com/DonghyunT/cs-class/actions?query=branch%3Acodex%2Flogin-policy-spec)에서 최신 커밋과 함께 확인합니다. `main` 병합은 하지 않습니다.
 - 같은 PC에서는 저장소 루트에서 다음으로 상태를 확인합니다. 기존 변경이 있으면 보존하고 강제 전환·초기화하지 않습니다.
 
 ```powershell
@@ -13,7 +13,7 @@ git status --short --branch
 git log -3 --oneline
 ```
 
-원격 동기화를 마친 뒤 다른 PC의 깨끗한 작업 트리에서만 다음을 실행합니다. 저장소가 없으면 [README](../README.md#다른-pc에서-시작)의 clone 안내부터 따릅니다.
+다른 PC의 깨끗한 작업 트리에서 다음을 실행합니다. 저장소가 없으면 [README](../README.md#다른-pc에서-시작)의 키 없이 실행하는 clone·에뮬레이터 안내부터 따릅니다.
 
 ```powershell
 git fetch origin
@@ -48,13 +48,14 @@ git pull --ff-only
 
 새 대화에는 다음처럼 전달하면 됩니다.
 
-> codex/login-policy-spec에서 docs/HANDOFF.md와 AGENTS.md를 읽고 CS Class를 이어가자. 1차 인증·학습·저장·교사 대시보드와 실제 Firebase 연결은 완료했다. 로컬 커밋의 원격 동기화 여부부터 확인하고 다음 운영 준비 범위를 정하자. 기존 완료·제출·권한 정책을 유지하며 실제 학생 등록과 배포는 아직 수행하지 않았다.
+> codex/login-policy-spec에서 docs/HANDOFF.md와 AGENTS.md를 읽고 CS Class를 이어가자. 1차 인증·학습·저장·교사 대시보드와 실제 Firebase 연결은 완료했다. 로컬 변경과 원격 동기화를 확인하고 다음 운영 준비 범위를 정하자. 기존 완료·제출·권한 정책을 유지하며 실제 학생 등록과 운영 배포는 아직 수행하지 않았다.
 
 ## 실행과 검증
 
 - Node.js 24, 자동 검사에는 Java 21+가 필요합니다. 프로젝트 루트에서 실행하며 Windows에서는 필요하면 `npm.cmd`·`npx.cmd`를 사용합니다.
 - 실제 Firebase: Git 제외 `.env.local`과 외부 관리자 JSON을 준비한 뒤 `npm run dev`. Google 로그인은 `http://localhost:3000/login/teacher`에서 확인합니다.
 - 가상 계정 체험: `npm run dev:emulator`. 합성 계정은 [로컬 테스트 설정](../scripts/local-test-env.mjs), 자동 검사는 `npm run test:e2e`를 사용합니다. 실제 3000번 서버와 동시에 실행하지 않습니다.
+- 작업 브랜치의 GitHub 푸시는 연결된 Vercel의 Preview 빌드를 실행할 수 있습니다. Preview 빌드 성공은 실제 Firebase 로그인·저장 검증과 구분합니다. 서버 인증 환경변수와 도메인 검증은 후속이며 운영 `main`으로 승격하지 않습니다.
 - 검증을 위해 띄웠던 미리보기·에뮬레이터는 정리 후 종료합니다. 다음 작업 때 위 명령으로 다시 시작합니다. 이 PC의 임시 Java는 `scratch/tools/java/`에만 있으며 Git으로 전달되지 않습니다.
 
 ### 검증 근거와 범위
