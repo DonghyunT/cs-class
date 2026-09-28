@@ -6,9 +6,9 @@
 
 - 사용자 제공 서비스 계정으로 Auth·Firestore 읽기를 확인했습니다. 키 원본은 저장소 밖에 있으며 Git 제외 `.env.local`은 경로만 참조합니다.
 - 이메일/비밀번호 로그인과 Google 로그인을 켰습니다. 교사 이메일 허용 목록은 서버 환경변수에 저장합니다. 2학년 1~11반의 빈 설정을 만들었으며 실제 학생 계정은 아직 등록하지 않았습니다.
-- 검증한 `firestore.rules`를 해당 프로젝트에 적용했습니다. PC 간 작업을 위한 GitHub 푸시로 Vercel Preview 빌드도 완료했습니다. Preview 빌드 성공은 실제 Firebase의 호스팅 환경 로그인·저장 검증과 구분하며 운영 배포는 후속입니다.
+- 검증한 `firestore.rules`를 해당 프로젝트에 적용했습니다. [PR #6](https://github.com/DonghyunT/cs-class/pull/6) 병합으로 Vercel Production 배포를 완료했습니다. 일반 Preview는 운영 DB에 연결하지 않으며, 실제 로그인 검증과 빌드 성공을 구분합니다.
 - 임시 합성 계정으로 실제 서버 로그인→반 수업 지정→개념·퀴즈 완료→실습 검증·제출→재로그인 복원→교사 조회를 확인했습니다. 직접 Firestore 접근 거부도 확인했고 임시 계정 두 개와 기록을 삭제하고 시험 반을 복원했습니다.
-- localhost에서 선생님이 직접 허용 Google 계정으로 입장했고 교사 대시보드·전체 11반 접근 화면을 브라우저에서도 확인했습니다. 최종 호스팅 도메인에서의 인증 검증은 배포 시 별도입니다.
+- localhost와 운영 주소에서 선생님이 직접 허용 Google 계정으로 입장했고, 교사 대시보드·담당 11반 목록과 1·11반 조회를 브라우저에서 확인했습니다. 운영 데이터에 추가 시험 계정을 넣지 않았으며 상세 범위는 [배포 기록](HANDOFF.md#통합배포-상태)을 따릅니다.
 
 ## 다른 PC의 서버 설정
 
@@ -46,6 +46,8 @@ Google 로그인을 확인할 때는 승인된 `localhost`를 사용해 [교사 
 Preview와 Production 양쪽에 일반 설정 `NODE_OPTIONS=--experimental-require-module`을 등록해야 합니다. Firebase Admin 14의 `jwks-rsa`가 ESM 전용 `jose`를 불러오는데, Vercel은 이 Node 기능을 기본으로 끕니다. 설정 없이 빌드와 로컬 검사가 통과해도 배포 API 시작 시 `ERR_REQUIRE_ESM`으로 실패합니다. [Vercel 공식 실행 설정](https://vercel.com/docs/functions/runtimes/node-js/advanced-node-configuration#experimental-nodejs-require-of-es-module)을 적용하며, 의존성을 임의로 낮추지 않습니다.
 
 환경변수 변경은 새 배포부터 적용됩니다. 배포 후 `/api/auth/session`이 JSON으로 응답하는지 확인합니다. Firebase 키가 없는 일반 Preview는 `configured: false`와 로그인 준비 안내가 정상입니다. Production에서는 Google 교사 로그인·대시보드 읽기를 확인하고 비로그인 사용자의 수업 API 거부도 검사합니다. 배포 완료만으로 실제 로그인 성공을 판정하지 않습니다.
+
+현재 운영 주소에도 기존 Vercel SSO 보호가 적용됩니다. Vercel에 로그인하지 않은 요청은 앱 API에 도달하기 전 302 인증 이동으로 차단됩니다. 새 PC에서는 Vercel 계정 로그인 후 앱의 Google 로그인을 진행합니다. 학생 공개 배포 때는 이 보호의 적용 범위와 실제 학생 계정 등록을 함께 결정합니다.
 
 ## 실제 프로젝트 초기화와 시험
 

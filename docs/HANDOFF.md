@@ -4,7 +4,7 @@
 
 ## 다른 PC에서 재개
 
-Firebase 구현 브랜치와 문서·홈 구조 정리를 통합했습니다. 이번 PR이 병합되면 **main이 재개 기준**입니다. 실행·Java·로컬 에뮬레이터 준비는 [DEVELOPMENT](DEVELOPMENT.md#다른-pc에서-시작)를 따릅니다. 새 PC는 실제 Firebase 키 없이도 개발할 수 있습니다.
+Firebase 구현 브랜치와 문서·홈 구조 정리를 통합·병합·배포했습니다. **main이 재개 기준**입니다. 실행·Java·로컬 에뮬레이터 준비는 [DEVELOPMENT](DEVELOPMENT.md#다른-pc에서-시작)를 따릅니다. 새 PC는 실제 Firebase 키 없이도 개발할 수 있습니다.
 
 기존 복제본은 먼저 로컬 변경을 확인하고, 작업 트리가 깨끗할 때 아래 명령을 실행합니다.
 
@@ -24,9 +24,12 @@ npm run dev:emulator
 - 사용자가 현재까지의 구현을 검증한 뒤 main 병합·운영 배포하도록 승인했습니다. 이전 브랜치의 병합 보류 기록은 이번 승인으로 대체합니다.
 - 통합 대상은 Firebase·학습 구현 `8c08ec5`와 구조 정리 `3f9cf7f`입니다. API·학습 로직은 유지하고, 공개 홈 컴포넌트 분리와 최신 문서의 경로·상태를 함께 반영했습니다.
 - 실제 `cs-class-f74c4`에서 Auth·Firestore 읽기, Google·비밀번호 제공자 활성화와 서버 전용 DB 규칙을 다시 확인했습니다. 일반 Preview에는 운영 비밀값을 넣지 않습니다.
-- 통합 상태에서 lint·typecheck·프로덕션 build와 에뮬레이터 E2E 27개를 통과했습니다. 활성 문서 링크·앵커 112개와 보관 원문 362개 해시도 확인했습니다. 원격 PR·Preview·Production 결과는 배포 기록에 갱신합니다.
-- [PR #6](https://github.com/DonghyunT/cs-class/pull/6)의 통합 커밋 `44ecf6c`에서 원격 push·PR CI도 모두 통과했습니다. Preview 실제 API 검사에서 Firebase Admin의 `ERR_REQUIRE_ESM`을 발견해 Vercel 공식 실행 옵션을 Preview·Production에 추가했습니다. 원인·설정은 [Firebase 안내](FIREBASE_SETUP.md#vercel-서버-설정)에 기록했습니다.
+- 통합 상태에서 lint·typecheck·프로덕션 build와 에뮬레이터 E2E 27개를 통과했습니다. 활성 문서 링크·앵커와 보관 원문 362개 해시도 확인했습니다.
+- [PR #6](https://github.com/DonghyunT/cs-class/pull/6)은 최신 커밋 `e5886f1`의 push·PR CI 전체 성공 후 main에 병합했습니다(`88ab44f`, 2026-09-28 22:14 KST). 병합된 main의 [CI](https://github.com/DonghyunT/cs-class/actions/runs/36427234255)도 통과했습니다.
+- Preview 실제 API 검사에서 Firebase Admin의 `ERR_REQUIRE_ESM`을 발견해 Vercel 공식 실행 옵션을 Preview·Production에 추가했습니다. 새 Preview의 `/api/auth/session` HTTP 200, 로그인 준비 안내·버튼 비활성과 콘솔 오류 없음을 확인했습니다. 원인·설정은 [Firebase 안내](FIREBASE_SETUP.md#vercel-서버-설정)에 기록했습니다.
 - 승인받은 Firebase 환경변수 7개는 Production 전용 Secret으로 등록했고, Google 로그인 허용 도메인에 `cs-class-donghyunt.vercel.app`을 추가했습니다. 임시 업로드 파일은 제거했고 원본 키·로컬 환경파일은 유지했습니다.
+- [운영 배포](https://vercel.com/donghyunt/cs-class/Hne73NjJQf4hvvMxideSBjQQsFSi)는 `88ab44f`로 READY입니다. [운영 주소](https://cs-class-donghyunt.vercel.app)에서 사용자가 직접 Google 로그인을 마쳤고, 브라우저에서 교사 대시보드·담당 11반 목록·등록 학생 0명·콘솔 오류 없음을 확인했습니다. [확인 화면](reference/releases/2026-09-28-production-teacher.png)을 남겼습니다.
+- 기존 Vercel SSO 보호를 유지합니다. Vercel 비로그인 요청은 앱 앞에서 302 인증 이동으로 차단됩니다. 새 PC에서는 소유자 Vercel 로그인도 필요하며, 학생에게 일반 공개하는 단계는 별도입니다. 운영에서 학생 계정 생성·비밀번호 변경·학습 제출을 반복 시험하지 않았습니다. 저장·실패·권한 검증은 로컬 E2E와 이전에 정리 완료한 클라우드 왕복 기록을 따릅니다.
 
 ## 완료한 범위
 
@@ -69,7 +72,7 @@ npm run dev:emulator
 - 1차 구현에서 lint·typecheck·build와 프로덕션 `next start` + 로컬 Firebase 에뮬레이터의 E2E **27개**를 통과했습니다. 구성: 홈 7·API 8·이력 이동 4·운영 복구 1·플랫폼 3·학생 4. 원격 CI 실행 결과와 구분합니다.
 - 저장 실패·느린 응답·두 탭 충돌·뒤로/앞으로 이동, 비밀번호 초기화·권한 경계·세션 만료, 좁은 화면·키보드·초점·콘솔을 검사했습니다. 테스트 주소는 Secure 쿠키 전송을 위해 `localhost`로 통일하며 보안을 낮추지 않습니다.
 - 실제 Firebase에서 임시 계정 로그인 → 수업 지정 → 개념·퀴즈·실습 제출 → 재로그인 복원 → 교사 조회 및 익명 Firestore 403을 확인했습니다. 시험 계정 2개와 기록을 삭제하고 시험 반을 빈 설정으로 복원했습니다.
-- 실제 허용 Google 계정의 localhost 로그인과 교사 대시보드 진입을 사용자·브라우저에서 확인했습니다. 담당 반 11개·등록 학생 0명 상태였습니다. 호스팅 환경은 미검증입니다.
+- 실제 허용 Google 계정의 localhost 및 운영 주소 로그인과 교사 대시보드 진입을 사용자·브라우저에서 확인했습니다. 담당 반 11개·등록 학생 0명 상태였습니다. 운영 확인 범위는 위 통합·배포 기록을 따릅니다.
 - 이번 정리 후에도 lint·typecheck·build와 같은 방식의 E2E **27개**를 다시 통과했습니다. 미리보기의 실제 배치·키보드 진입·콘솔도 확인했습니다. 사용하지 않는 체험용 인증·반 상태와 그림 컴포넌트를 제거하고 안내 문구를 바로잡았으며 새 기능·권한 변경·의존성 추가는 없습니다.
 
 ### 유지할 경계

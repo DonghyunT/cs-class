@@ -4,6 +4,8 @@
 
 Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 1차 학습 플랫폼**입니다. 학생·교사 로그인, 반별 수업 관리, 학습 기록 저장·복원과 제출을 구현했습니다. 현재 수업은 검증용 샘플이며 실제 학생 계정 등록은 별도입니다.
 
+[운영 사이트 열기](https://cs-class-donghyunt.vercel.app) · 2026-09-28 main 병합·배포와 실제 Google 교사 로그인을 확인했습니다. 현재 Vercel 접근 보호가 유지되므로 새 PC에서는 해당 Vercel 계정의 로그인도 필요합니다. 개발은 아래 에뮬레이터 모드로 진행할 수 있습니다.
+
 ## 빠르게 시작하기
 
 Node.js 24·Java 21+를 준비하고 **저장소 루트 `cs-class/`**에서 실행합니다.

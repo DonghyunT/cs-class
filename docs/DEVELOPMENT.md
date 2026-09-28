@@ -4,7 +4,7 @@
 
 ## 다른 PC에서 시작
 
-**이번 PR 병합 후 GitHub의 `main`에서 이어갑니다.** 현재 기능·다음 작업·검증 기록은 [HANDOFF](HANDOFF.md)에 모았습니다.
+**GitHub의 `main`에서 이어갑니다.** 2026-09-28 통합·운영 배포를 완료했습니다. 현재 기능·다음 작업·검증 기록은 [HANDOFF](HANDOFF.md)에 모았습니다.
 
 Git·Node.js 24·Java 21+를 준비하고, 이 비공개 저장소에 접근할 수 있는 GitHub 계정으로 실행합니다. 아래 개발 모드는 Firebase 키나 실제 학생 자료 없이 사용할 수 있습니다.
 
@@ -42,7 +42,7 @@ npm run test:e2e
 
 GitHub Actions는 `main`·`codex/**` push와 PR에서 위 네 검사를 실행하며 E2E는 빌드된 앱을 `next start`로 실행해 검사합니다. 로컬 E2E는 개발 서버를 사용합니다. UI 확인 기준은 [AGENTS](../AGENTS.md)를 따릅니다. 구체적인 연결·운영상 한계는 [Firebase 연결 안내](FIREBASE_SETUP.md)를 확인합니다.
 
-2026-09-28 최종 lint·typecheck·build와 CI 방식 전체 E2E **27개**를 통과했습니다. 실제 Firebase 왕복은 별도 임시 계정으로 확인했고 정리했으며, 실제 Google 교사 로그인도 localhost에서 확인했습니다. 호스팅 환경 검증은 배포 시 별도입니다.
+2026-09-28 최종 lint·typecheck·build와 CI 방식 전체 E2E **27개**를 통과했습니다. 실제 Firebase 왕복은 별도 임시 계정으로 확인했고 정리했으며, 실제 Google 교사 로그인은 localhost와 운영 주소에서 확인했습니다. 운영 검증의 범위와 남은 한계는 [HANDOFF](HANDOFF.md#통합배포-상태)에 있습니다.
 
 ## Stitch 연결
 
