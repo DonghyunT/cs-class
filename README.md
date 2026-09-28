@@ -10,7 +10,8 @@
 | [PRD](PRD.md) | 확정된 제품·계정·권한 요구사항과 미결정 사항 |
 | [DESIGN](DESIGN.md) | 승인된 홈 스타일, 로그인·대시보드 후속 기준, UI 컴포넌트 활용 |
 | [AGENTS](AGENTS.md) | 개발·검증 절차와 프로젝트 주의사항 |
-| 이 README | 폴더 구조·실행·체험 계정·도구 설정 |
+| [Firebase 연결](docs/FIREBASE_SETUP.md) | 실제 서비스 설정·가상 계정 검증·계정 복구 |
+| 이 README | 폴더 구조·실행·검증·도구 설정 |
 
 과거 프롬프트와 중간 검토 기록은 [원문 보관함](docs/archive/README.md)에 있습니다. 현재 지침으로 적용하지 않습니다.
 
@@ -21,7 +22,7 @@
 ```mermaid
 flowchart LR
     root["cs-class/ · 프로젝트 루트"]
-    root --> src["src/ · 앱 구현<br/>app/ : 페이지·스타일·글꼴<br/>components/ : 화면·공통 UI<br/>lib/ : 가상 데이터·공통 함수"]
+    root --> src["src/ · 앱 구현<br/>app/ : 페이지·API·스타일<br/>components/ : 화면·공통 UI<br/>lib/ : 학습 계약·서버 인증·저장"]
     root --> support["public/ · 정적 파일<br/>scripts/ · 개발 도구 설정 보조<br/>scratch/ · 로컬 임시 작업, Git 제외"]
     root --> checks["tests/ · 브라우저 흐름 검사<br/>.github/workflows/ · GitHub 자동 검사"]
     root --> docs["docs/ · 이어갈 일·디자인 참고·과거 문서<br/>루트의 MD 파일 · 현재 기준과 안내"]
@@ -34,7 +35,8 @@ flowchart LR
 | `src/app/classroom/`, `explore/` | 수업 활동과 둘러보기 화면 |
 | `src/app/layout.tsx`, `globals.css`, `experience.css`, `public-home.css` | 공통 틀·기본 스타일·체험 화면·홈 스타일 |
 | `src/app/icon.svg`, `fonts/` | 사이트 아이콘·한국어 글꼴과 라이선스 |
-| `src/components/ui/`, `demo-provider.tsx` | 공통 UI 부품·새로고침하면 초기화되는 체험 상태 |
+| `src/components/ui/`, `session-provider.tsx`, `navigation-provider.tsx` | 공통 UI·접속 상태·이동 전 저장 보호 |
+| `src/lib/classroom/`, `src/lib/server/`, `src/app/api/` | 공통 데이터·학습 규칙·Firebase 인증과 저장 API |
 | `docs/HANDOFF.md`, `docs/reference/`, `docs/archive/` | 다음 작업·승인된 화면과 UI 예제·과거 문서 원문 |
 | `package.json`, `package-lock.json` | 실행 명령·의존성 목록과 다른 PC에서도 동일하게 설치할 버전 |
 | `next.config.ts`, `tsconfig.json` | Next.js 실행·빌드 설정과 TypeScript 검사 범위·경로 별칭 |
@@ -49,7 +51,7 @@ flowchart LR
 
 ## 다른 PC에서 시작
 
-**진행 중인 기능 명세 대화(2026-09-28)는 `codex/login-policy-spec` 브랜치에 있습니다.** 집에서 논의를 이어갈 때는 main 대신 [HANDOFF의 브랜치 전환 절차와 재개 문장](docs/HANDOFF.md#집에서-재개할-위치)을 먼저 확인합니다. 아래는 기본 main 설치 절차이며, 기능 명세의 합의가 앱에 구현됐다는 뜻은 아닙니다.
+**1차 LMS 구현은 `codex/login-policy-spec` 작업 트리에 있습니다.** 다른 PC에서는 먼저 [HANDOFF의 브랜치와 미커밋 상태](docs/HANDOFF.md#집에서-재개할-위치)를 확인합니다. 이번 로컬 변경은 커밋·푸시 전에는 다른 PC에 자동으로 전달되지 않습니다. 아래는 기본 main 설치 절차입니다.
 
 Git과 Node.js 24를 준비하고, 이 비공개 저장소에 접근할 수 있는 GitHub 계정으로 실행합니다.
 
@@ -58,27 +60,29 @@ git clone https://github.com/DonghyunT/cs-class.git
 cd cs-class
 git switch main
 npm ci
-npm run dev -- --hostname 127.0.0.1 --port 3000
+npm run dev -- --hostname localhost --port 3000
 ```
 
 이미 복제한 PC라면 먼저 `git status`로 로컬 작업을 확인합니다. 작업 트리가 깨끗할 때 `git switch main`, `git pull --ff-only` 후 의존성을 설치합니다. 다음 개발은 `codex/` 작업 브랜치에서 진행합니다. Windows PowerShell에서 npm 스크립트 실행이 차단되면 `npm.cmd`·`npx.cmd`를 사용합니다.
 
 루트 통합 전부터 사용한 PC에서는 이전 개발 서버를 종료하고 **저장소 루트에서 `npm ci`로 다시 설치**합니다. 편집기 작업 폴더·터미널 시작 위치가 `platform/`으로 지정되어 있다면 `cs-class/`로 바꿉니다. Git에 없던 옛 `platform/node_modules/`·`.next/` 캐시가 남을 수 있으며, 계속 Git·코드 검사에서 제외됩니다. 더는 사용하지 않지만 `.env`·개인 파일·미커밋 소스가 섞여 있지 않은지 확인하기 전에는 `platform/` 전체를 삭제하지 않습니다.
 
-[로컬 앱](http://127.0.0.1:3000/)을 열고 [HANDOFF](docs/HANDOFF.md)를 읽으면 이어갈 수 있습니다. VS Code/Codex의 과거 대화가 없어도 이 문서와 저장소의 스크린샷을 기준으로 작업합니다.
+[로컬 앱](http://localhost:3000/)을 열고 [HANDOFF](docs/HANDOFF.md)를 읽으면 이어갈 수 있습니다. VS Code/Codex의 과거 대화가 없어도 이 문서와 저장소의 스크린샷을 기준으로 작업합니다.
 
 ## 현재 구현과 체험
 
-- 앱은 루트에서 실행하는 Next.js·TypeScript 시안입니다. 홈의 픽셀 그래픽·스크롤 수업 미리보기·역할 선택 입장과 기존 학생·교사 화면을 체험할 수 있습니다.
-- **가상 계정·변경 사항은 메모리에만 유지되며 새로고침하면 초기화됩니다.** Firebase 인증·서버 권한·저장·실제 수업 콘텐츠는 미구현입니다. Google 버튼도 실제 OAuth가 아닌 화면 체험입니다.
-- 학생 `20101` / `class-demo`, 빈 교실 학생 `21101` / `class-demo`. 첫 입장에는 시안용 새 비밀번호를 설정합니다. 실제 비밀번호를 입력하지 않습니다.
-- 교사는 Google 로그인 화면 체험 버튼, 강사는 `teacher-demo`로 들어갑니다. 강사의 화면 범위는 10·11반입니다.
+- Firebase Auth·Firestore와 Next.js 서버 API를 연결했습니다. 학생·교사 대시보드, 반별 수업 지정, 학습 기록 저장·복원, 제출 조회·비밀번호 초기화를 제공합니다. 메모리 로그인 체험은 제거했습니다.
+- 샘플 `순서가 만드는 알고리즘`은 개념 2개·퀴즈 3문항·순서 배열 실습 1개입니다. 개념 확인, 오답만 재도전, 접힌 힌트, 자유로운 단계 이동, 검증 후 제출을 구현했습니다. 제출 뒤 초안을 수정해도 이전 제출과 완료 기록이 남습니다.
+- 단계별 퍼센트·완료 수를 표시하고 전체 상태는 `시작 전 / 진행 중 / 완료`입니다. 저장 실패는 성공으로 표시하지 않으며, 두 탭 충돌은 비교 후 직접 해결합니다. 링크와 브라우저 뒤로·앞으로 이동도 저장을 확인합니다.
+- 실제 프로젝트는 `cs-class-f74c4`입니다. 사용자 제공 관리자 인증으로 연결했으며 로그인 제공자와 기본 반·서버 전용 DB 규칙을 설정했습니다. 임시 계정의 실제 인증→수업 지정→완료·제출→재로그인 복원→교사 조회 검증도 통과했고 시험 계정과 작업은 제거했습니다. 실학생 계정 등록과 웹 배포는 아직 하지 않았습니다.
+- 실제 서비스 설정 없이 체험하려면 Java 21+를 준비한 뒤 `npm run dev:emulator`를 실행합니다. 로컬 학생 `20101`, `20102`, `21001`, `21101`과 강사를 만들며 합성 비밀번호는 [로컬 테스트 설정](scripts/local-test-env.mjs)에만 있습니다. 이 계정은 클라우드에는 없습니다.
+- 실제 교사 Google 로그인은 등록된 허용 이메일만 통과합니다. localhost에서 선생님이 직접 Google 계정을 선택해 입장했고 실제 교사 대시보드 진입을 브라우저에서도 확인했습니다. 강사는 10·11반만 관리합니다. EntryJS·AI·Q&A와 정식 수업 콘텐츠는 후속 범위입니다.
 - 한국어 글꼴 [Pretendard 1.3.9](https://github.com/orioncactus/pretendard)은 로컬 제공하며 [SIL OFL](src/app/fonts/OFL.txt)을 포함합니다. 실제 패키지 버전은 [package.json](package.json)과 잠금 파일을 따릅니다.
 - 이전 정적 시안은 정리했습니다. 순서도 수업 예시 등 원본이 필요하면 Git의 `c7bc397:web/`에서 확인할 수 있습니다. 현재 실행·개발 대상은 루트의 앱 하나입니다.
 
 ## 검증
 
-저장소 루트에서 실행합니다. 최초 E2E 실행 전에 `npx playwright install chromium`이 필요합니다.
+저장소 루트에서 실행합니다. Java 21+와 최초 `npx playwright install chromium`이 필요합니다. 실제 Firebase에 연결한 3000번 서버는 종료한 뒤 실행합니다.
 
 ```powershell
 npm run lint
@@ -87,7 +91,11 @@ npm run build
 npm run test:e2e
 ```
 
-GitHub Actions는 `main`·`codex/**` push와 PR에서 위 네 검사를 실행하며 E2E는 빌드된 앱을 `next start`로 실행해 검사합니다. 로컬 E2E는 개발 서버를 사용합니다. UI 확인 기준은 [AGENTS](AGENTS.md)를 따릅니다.
+`test:e2e`는 Auth·Firestore 에뮬레이터를 시작하고 종료합니다. 이미 `dev:emulator`가 실행 중일 때만 `npm run test:e2e:running`을 사용합니다. 테스트는 로컬 `demo-cs-class`를 확인한 뒤 가상 계정을 준비하며 운영 데이터는 사용하지 않습니다.
+
+GitHub Actions는 `main`·`codex/**` push와 PR에서 위 네 검사를 실행하며 E2E는 빌드된 앱을 `next start`로 실행해 검사합니다. 로컬 E2E는 개발 서버를 사용합니다. UI 확인 기준은 [AGENTS](AGENTS.md)를 따릅니다. 구체적인 연결·운영상 한계는 [Firebase 연결 안내](docs/FIREBASE_SETUP.md)를 확인합니다.
+
+2026-09-28 최종 lint·typecheck·build와 CI 방식 전체 E2E **27개**를 통과했습니다. 실제 Firebase 왕복은 별도 임시 계정으로 확인했고 정리했으며, 실제 Google 교사 로그인도 localhost에서 확인했습니다. 호스팅 환경 검증은 배포 시 별도입니다.
 
 ## Stitch 연결
 
@@ -126,7 +134,7 @@ macOS·Linux에서는 Codex를 시작하는 환경에 같은 이름의 환경변
 ## 외부 환경과 로컬 전용 자료
 
 - 연결된 Vercel 프로젝트는 `cs-class`입니다. **Root Directory는 비워 둡니다(저장소 루트).** Framework Preset은 Next.js, Node.js는 24.x이며 빌드·설치·출력 경로는 프레임워크 기본값을 사용합니다. Git 연동으로 작업 브랜치는 Preview, main은 Production에 배포됩니다. Vercel SSO 보호는 유지하며 배포된 앱도 가상 계정 시안입니다.
-- Firebase 후보 `cs-class-f74c4`는 미연결입니다. 실제 인증·저장은 개발 대상을 정한 뒤 진행합니다.
+- Firebase `cs-class-f74c4`는 사용자가 승인한 연결 대상입니다. 실제 Auth·Firestore 연결을 검증했고 V1 프로젝트와 분리했습니다. `.env.local`과 외부 관리자 키는 PC별로 준비하며 저장소 복제로 전달되지 않습니다.
 - 키·환경변수·학생 계정 엑셀·`백업용/`은 Git에 포함하지 않습니다. 학생 자료가 필요한 작업은 원래 PC의 자료를 별도 안전한 경로로 준비해야 합니다. UI 작업은 이 자료 없이 가능합니다.
 - 최신 공개 홈 참고 이미지와 제공받은 [UI Component Lab](docs/reference/ui-component-lab/index.html)은 저장소에 포함했습니다. 외부 PC에서도 사용할 수 있으며 학생 개인정보가 들어 있지 않습니다.
 
