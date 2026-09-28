@@ -25,6 +25,8 @@ npm run dev:emulator
 - 통합 대상은 Firebase·학습 구현 `8c08ec5`와 구조 정리 `3f9cf7f`입니다. API·학습 로직은 유지하고, 공개 홈 컴포넌트 분리와 최신 문서의 경로·상태를 함께 반영했습니다.
 - 실제 `cs-class-f74c4`에서 Auth·Firestore 읽기, Google·비밀번호 제공자 활성화와 서버 전용 DB 규칙을 다시 확인했습니다. 일반 Preview에는 운영 비밀값을 넣지 않습니다.
 - 통합 상태에서 lint·typecheck·프로덕션 build와 에뮬레이터 E2E 27개를 통과했습니다. 활성 문서 링크·앵커 112개와 보관 원문 362개 해시도 확인했습니다. 원격 PR·Preview·Production 결과는 배포 기록에 갱신합니다.
+- [PR #6](https://github.com/DonghyunT/cs-class/pull/6)의 통합 커밋 `44ecf6c`에서 원격 push·PR CI도 모두 통과했습니다. Preview 실제 API 검사에서 Firebase Admin의 `ERR_REQUIRE_ESM`을 발견해 Vercel 공식 실행 옵션을 Preview·Production에 추가했습니다. 원인·설정은 [Firebase 안내](FIREBASE_SETUP.md#vercel-서버-설정)에 기록했습니다.
+- 승인받은 Firebase 환경변수 7개는 Production 전용 Secret으로 등록했고, Google 로그인 허용 도메인에 `cs-class-donghyunt.vercel.app`을 추가했습니다. 임시 업로드 파일은 제거했고 원본 키·로컬 환경파일은 유지했습니다.
 
 ## 완료한 범위
 

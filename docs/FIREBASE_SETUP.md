@@ -39,6 +39,14 @@ Google 로그인을 확인할 때는 승인된 `localhost`를 사용해 [교사 
 
 호스팅에는 로컬 파일 경로를 옮기지 않습니다. 승인된 호스팅의 서버 비밀 설정 또는 해당 플랫폼의 관리형 인증을 사용하며, 비공개 키를 `NEXT_PUBLIC_*`로 등록하지 않습니다. Auth·Firestore 에뮬레이터 변수는 호스팅에 넣지 않습니다. 현재 코드는 Vercel에서 에뮬레이터 변수가 감지되면 거부합니다.
 
+## Vercel 서버 설정
+
+운영 주소는 [CS Class](https://cs-class-donghyunt.vercel.app)입니다. 2026-09-28 사용자 승인으로 해당 도메인을 Firebase Authentication 허용 목록에 추가했습니다. Vercel `cs-class`에는 위 표의 Firebase 웹 설정 3개, 관리자 JSON, 교사 허용 목록, 초기·초기화 비밀번호 총 7개를 **Production 전용 Secret**으로 등록했습니다. 일반 Preview에는 운영 인증정보를 넣지 않습니다.
+
+Preview와 Production 양쪽에 일반 설정 `NODE_OPTIONS=--experimental-require-module`을 등록해야 합니다. Firebase Admin 14의 `jwks-rsa`가 ESM 전용 `jose`를 불러오는데, Vercel은 이 Node 기능을 기본으로 끕니다. 설정 없이 빌드와 로컬 검사가 통과해도 배포 API 시작 시 `ERR_REQUIRE_ESM`으로 실패합니다. [Vercel 공식 실행 설정](https://vercel.com/docs/functions/runtimes/node-js/advanced-node-configuration#experimental-nodejs-require-of-es-module)을 적용하며, 의존성을 임의로 낮추지 않습니다.
+
+환경변수 변경은 새 배포부터 적용됩니다. 배포 후 `/api/auth/session`이 JSON으로 응답하는지 확인합니다. Firebase 키가 없는 일반 Preview는 `configured: false`와 로그인 준비 안내가 정상입니다. Production에서는 Google 교사 로그인·대시보드 읽기를 확인하고 비로그인 사용자의 수업 API 거부도 검사합니다. 배포 완료만으로 실제 로그인 성공을 판정하지 않습니다.
+
 ## 실제 프로젝트 초기화와 시험
 
 `node --env-file=.env.local scripts/init-firebase.mjs`는 추가할 빈 반을 먼저 보여줍니다. `--apply`는 이메일/비밀번호 로그인 활성화와 없는 반 생성만 수행하며 기존 반·학생 기록을 덮어쓰지 않습니다. Google 제공자는 콘솔에서 지원 이메일과 함께 설정합니다.
