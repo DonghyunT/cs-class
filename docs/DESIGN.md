@@ -1,6 +1,6 @@
 # Design System: CS Class
 
-갱신: 2026-09-27. 공개 홈과 후속 로그인·대시보드의 디자인 기준입니다. 제품 방향은 [PRD](PRD.md), 작업 상태·Stitch 조회 정보는 [HANDOFF](docs/HANDOFF.md)에 있습니다. 홈은 사용자 만족을 확인했고 로그인은 중앙 집중형으로 확정했습니다. 대시보드 배치는 선생님과 논의합니다. 최초 생성·수정 요청 원문은 [보관함](docs/archive/README.md)에 있습니다.
+갱신: 2026-09-27. 공개 홈과 후속 로그인·대시보드의 디자인 기준입니다. 제품 방향은 [PRD](PRD.md), 작업 상태·Stitch 조회 정보는 [HANDOFF](HANDOFF.md)에 있습니다. 홈은 사용자 만족을 확인했고 로그인은 중앙 집중형으로 확정했습니다. 대시보드 배치는 선생님과 논의합니다. 최초 생성·수정 요청 원문은 [보관함](archive/README.md)에 있습니다.
 
 ## 1. Visual Theme & Atmosphere
 
@@ -162,7 +162,7 @@
 
 ## 9. UI Component Lab 활용
 
-사용자가 공부하며 만든 [학습 자료 네 파일](docs/reference/ui-component-lab/index.html)을 원문 그대로 저장소에 보존했습니다. Button·Input·Badge·Dialog·Drawer·Popover·Tooltip·Hover Card·Toast·Accordion·Collapsible·Tabs·Segmented Control·Breadcrumb·Radio Group·Dropdown Menu·Combobox·Switch/Checkbox·Slider·Skeleton/Optimistic UI의 20가지 패턴을 포함합니다.
+사용자가 공부하며 만든 [학습 자료 네 파일](reference/ui-component-lab/index.html)을 원문 그대로 저장소에 보존했습니다. Button·Input·Badge·Dialog·Drawer·Popover·Tooltip·Hover Card·Toast·Accordion·Collapsible·Tabs·Segmented Control·Breadcrumb·Radio Group·Dropdown Menu·Combobox·Switch/Checkbox·Slider·Skeleton/Optimistic UI의 20가지 패턴을 포함합니다.
 
 | 패턴 | 활용 기준 |
 | --- | --- |

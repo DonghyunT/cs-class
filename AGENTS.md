@@ -5,12 +5,14 @@
 ## 개발 환경
 - 앱은 저장소 루트의 Next.js·TypeScript 시안입니다. `cs-class/`에서 `npm ci`, `npm run dev`로 실행합니다. 소스는 `src/`에 있으며 실제 인증·저장은 아직 연결하지 않았습니다.
 - Vercel `cs-class`의 Root Directory는 비워 둡니다(저장소 루트). Framework Preset은 Next.js입니다. 프로젝트 연결로 MCP를 호출하고, 팀 범위를 임의로 덧붙이지 않습니다.
-- 제품 결정은 [PRD](PRD.md), 디자인 기준은 [DESIGN](DESIGN.md), 실행·도구 설정은 [README](README.md), 이어갈 일은 [HANDOFF](docs/HANDOFF.md)를 필요에 따라 읽습니다.
-- Windows PowerShell은 `.ps1` 실행을 차단할 수 있습니다. npm은 필요하면 `npm.cmd`·`npx.cmd`로 실행하고 Stitch 키 등록은 [직접 입력 안내](README.md#stitch-키-입력)의 마스킹된 명령을 사용합니다.
+- 폴더·문서 목차는 [README](README.md), 제품 결정은 [PRD](docs/PRD.md), 디자인 기준은 [DESIGN](docs/DESIGN.md), 실행·도구 설정은 [DEVELOPMENT](docs/DEVELOPMENT.md), 이어갈 일은 [HANDOFF](docs/HANDOFF.md)를 필요에 따라 읽습니다.
+- Windows PowerShell은 `.ps1` 실행을 차단할 수 있습니다. npm은 필요하면 `npm.cmd`·`npx.cmd`로 실행하고 Stitch 키 등록은 [직접 입력 안내](docs/DEVELOPMENT.md#stitch-키-입력)의 마스킹된 명령을 사용합니다.
+- 루트 Markdown은 README·AGENTS로 유지하고 상세 문서는 `docs/`에 둡니다. 관련 화면 부품은 `src/components/home/`처럼 기능별로 묶고, 공통 UI는 `src/components/ui/`에 둡니다. 파일 이동 시 import·활성 문서 링크를 함께 갱신하며 보관 원문 안의 옛 경로는 수정하지 않습니다.
 
 ## 검증
 - 저장소 루트에서 `npm run lint`, `npm run typecheck`, `npm run build`를 실행합니다. UI 흐름은 `npm run test:e2e`로 검증합니다(최초 `npx playwright install chromium`).
 - ESLint·TypeScript는 현재 앱·테스트·설정을 검사하고 Tailwind는 `src/`에서 클래스 이름을 찾습니다. `archive/`, `docs/`, `outputs/`, `scratch/`의 과거 코드·참고 자료를 앱 검사·스타일 생성에 섞지 않습니다.
+- 브랜치 전환 뒤 `.next` 타입 검사에서 삭제된 경로가 나오면 [생성 타입 갱신 안내](docs/DEVELOPMENT.md#검증)에 따라 현재 앱 기준으로 재생성합니다. 생성 파일을 직접 수정하지 않습니다.
 - CI의 E2E는 먼저 만든 빌드를 `next start`로 실행하고, 로컬은 개발 서버를 사용합니다. 홈 조작 검사는 데스크톱 고정 배치(`data-pinned=true`)가 준비된 뒤 시작해 초기화 도중의 클릭·앵커 이동과 혼동하지 않습니다.
 - 홈 모션은 기본으로 켜집니다. `no-preference`·`reduce` 모두에서 기본 켜짐과 상단 줄이기/켜기를 확인합니다. 스크롤 전환뿐 아니라 단계 선택 후 빠른 방향키·Tab 이동, 첫·마지막 구간의 낮은 창·모바일 배치를 검증합니다.
 - UI 변경은 실제 화면·주요 조작·좁은 창·키보드 초점·콘솔을 확인합니다. 인증·저장 구현은 실패·권한 경계도 검증합니다.
