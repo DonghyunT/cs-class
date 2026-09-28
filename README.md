@@ -2,18 +2,18 @@
 
 중학교 정보 수업을 위한 온라인 교실입니다. 학생은 이번 수업을 시작하고 지난 활동을 이어가며, 교사는 반별 수업을 준비합니다.
 
-현재는 Next.js·TypeScript로 만든 **화면 체험 시안**입니다. 공개 홈과 학생·교사 입장을 체험할 수 있으며, 실제 인증·저장·수업 콘텐츠는 아직 연결하지 않았습니다.
+Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 1차 학습 플랫폼**입니다. 학생·교사 로그인, 반별 수업 관리, 학습 기록 저장·복원과 제출을 구현했습니다. 현재 수업은 검증용 샘플이며 실제 학생 계정 등록은 별도입니다.
 
 ## 빠르게 시작하기
 
-Node.js 24를 준비하고 **저장소 루트 `cs-class/`**에서 실행합니다.
+Node.js 24·Java 21+를 준비하고 **저장소 루트 `cs-class/`**에서 실행합니다.
 
 ```powershell
 npm ci
-npm run dev -- --hostname 127.0.0.1 --port 3000
+npm run dev:emulator
 ```
 
-[로컬 앱](http://127.0.0.1:3000/)을 엽니다. Windows PowerShell에서 실행이 차단되면 `npm.cmd`·`npx.cmd`를 사용합니다. 새 PC의 저장소 복제·검증·Stitch 설정은 [개발 안내](docs/DEVELOPMENT.md)에 있습니다.
+Firebase 키 없이 사용하는 가상 계정 개발 모드입니다. [로컬 앱](http://localhost:3000/)을 열고, 실제 Firebase 연결은 [서버 설정](docs/FIREBASE_SETUP.md)을 따릅니다. Windows PowerShell에서 실행이 차단되면 `npm.cmd`·`npx.cmd`를 사용합니다. 새 PC의 저장소 복제·검증·Stitch 설정은 [개발 안내](docs/DEVELOPMENT.md)에 있습니다.
 
 ## 필요한 문서 찾기
 
@@ -23,6 +23,8 @@ npm run dev -- --hostname 127.0.0.1 --port 3000
 | 어떤 기능과 계정·권한을 만들기로 했나요? | [PRD · 제품 요구사항](docs/PRD.md) |
 | 화면·색·글꼴·움직임의 기준은 무엇인가요? | [DESIGN · 디자인 기준](docs/DESIGN.md) |
 | 설치·검증·Stitch·배포 설정은 어디에 있나요? | [DEVELOPMENT · 개발 안내](docs/DEVELOPMENT.md) |
+| Firebase·Google 로그인과 서버 비밀 설정은 어떻게 준비하나요? | [FIREBASE_SETUP · 서버 설정](docs/FIREBASE_SETUP.md) |
+| 1차 구현 범위와 후속 기능의 비용 가정은 무엇인가요? | [BUILD_BRIEF](docs/BUILD_BRIEF.md) · [운영비 예상안](docs/OPERATING_COST_ESTIMATE.md) |
 | 에이전트는 어떤 규칙을 지켜야 하나요? | [AGENTS · 작업 규칙](AGENTS.md) |
 
 현재 결정은 위 문서에 기록합니다. 과거 프롬프트·검토 원문은 [문서 보관함](docs/archive/README.md), 이전 V1 코드는 [코드 보관함](archive/README.md)에 있으며 현재 작업 지침으로 적용하지 않습니다.
@@ -34,12 +36,13 @@ cs-class/
 ├─ README.md              처음 읽는 안내와 문서 목차
 ├─ AGENTS.md              에이전트 작업 규칙
 ├─ src/
-│  ├─ app/                페이지·공통 레이아웃·스타일·글꼴
+│  ├─ app/                페이지·서버 API·레이아웃·스타일·글꼴
 │  ├─ components/
 │  │  ├─ home/            공개 홈의 구성·수업 시연·그래픽·입장창
 │  │  ├─ ui/              버튼·입력창·대화상자 등 공통 UI
-│  │  └─ *.tsx            로그인·교실·공통 셸·체험 상태
-│  └─ lib/                가상 데이터·공통 함수
+│  │  ├─ student/         학생 대시보드·학습·저장 상태
+│  │  └─ *.tsx            로그인·공통 셸·세션·이동 전 저장 보호
+│  └─ lib/                classroom/ 계약·server/ 인증과 저장·공통 함수
 ├─ tests/                 홈·로그인·대시보드 브라우저 검사
 ├─ public/                정적 파일 (현재 위치만 보존)
 ├─ scripts/               개발 도구 설정 보조
@@ -48,6 +51,9 @@ cs-class/
 │  ├─ DESIGN.md           디자인 기준
 │  ├─ DEVELOPMENT.md      실행·검증·도구 설정
 │  ├─ HANDOFF.md          현재 상태·다음 작업
+│  ├─ FIREBASE_SETUP.md   Firebase 연결·검증·운영 복구
+│  ├─ BUILD_BRIEF.md      완료한 1차 구현 범위·계약
+│  ├─ OPERATING_COST_ESTIMATE.md  비용 가정
 │  ├─ reference/          승인된 화면·UI 학습 자료
 │  └─ archive/            과거 문서 원문과 보존 목록
 ├─ archive/               이전 V1 코드 원문과 보존 목록
@@ -68,18 +74,13 @@ cs-class/
 - 홈의 시작점은 [public-home.tsx](src/components/home/public-home.tsx)입니다. 수업 시연·예제·역할 미리보기·포인터 효과를 같은 폴더에서 찾을 수 있습니다.
 - 스타일은 `app/globals.css` → `experience.css` 순서로 공통 적용하고, 홈은 `public-home.css`를 추가합니다. 앞선 스타일을 뒤에서 덮어쓰는 규칙이 있으므로, 향후 로그인·대시보드 개선 때 해당 화면의 규칙과 시각 검증을 함께 정리합니다.
 
-## 체험 계정
+## 로컬 개발과 실제 로그인
 
-**체험 데이터는 메모리에만 유지되며 새로고침하면 초기화됩니다.** Google 버튼도 실제 OAuth가 아닌 화면 체험입니다. 실제 비밀번호를 입력하지 않습니다.
+에뮬레이터는 합성 학생 `20101`·`20102`·`21001`·`21101`과 강사를 준비합니다. 비밀번호는 [로컬 테스트 설정](scripts/local-test-env.mjs)에 있고, 학생은 첫 입장에서 테스트 비밀번호로 바꿉니다. 종료하면 에뮬레이터 기록은 사라지며 이 계정들은 클라우드에 없습니다.
 
-| 역할 | 입장 방법 |
-| --- | --- |
-| 학생 | `20101` / `class-demo` |
-| 빈 교실 학생 | `21101` / `class-demo` |
-| 교사 | Google 로그인 화면 체험 버튼 |
-| 강사 | `teacher-demo` · 10·11반 범위 |
+실제 교사 Google 로그인은 서버에 등록된 허용 이메일만 통과합니다. 실제 서비스의 학습 기록은 Firebase에 저장됩니다. 새 PC에 `.env.local`과 관리자 키는 자동으로 전달되지 않으며, [다른 PC 안내](docs/DEVELOPMENT.md#다른-pc에서-시작)를 따릅니다.
 
-학생은 첫 입장에 시안용 새 비밀번호를 설정합니다. 한국어 글꼴은 로컬 [Pretendard 1.3.9](https://github.com/orioncactus/pretendard)이며 [SIL OFL](src/app/fonts/OFL.txt)을 포함합니다.
+한국어 글꼴은 로컬 [Pretendard 1.3.9](https://github.com/orioncactus/pretendard)이며 [SIL OFL](src/app/fonts/OFL.txt)을 포함합니다.
 
 ## 협업 방식
 

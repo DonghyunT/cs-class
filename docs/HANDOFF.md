@@ -1,93 +1,109 @@
 # 이어갈 작업
 
-갱신: 2026-09-28. 새 PC·새 대화에서는 이 문서 → [PRD](PRD.md) → [DESIGN](DESIGN.md) 순서로 읽습니다. 실행·검증·도구 설정은 [DEVELOPMENT](DEVELOPMENT.md), 폴더·문서 목차는 [README](../README.md)에 있습니다.
+갱신: 2026-09-28. **1차 LMS 구현과 실제 Firebase 연결을 마쳤습니다.** 다음 대화에서는 이 문서 → [PRD](PRD.md) → [DESIGN](DESIGN.md) 순서로 읽습니다. 실행은 [README](../README.md), 서버 설정은 [Firebase 안내](FIREBASE_SETUP.md)를 따릅니다.
 
-## 다음 작업과 확정된 결정
+## 다른 PC에서 재개
 
-- 공개 홈은 사용자 만족을 확인했습니다. 학생·교사 로그인과 대시보드에도 같은 스타일을 적용합니다.
-- **로그인은 중앙 집중형으로 확정했습니다.** 무엇을 어디에 입력할지 직관적으로 보이게 합니다. 좌우 분할 유지 여부를 다시 묻지 않습니다.
-- 다음 작업은 학생·교사 로그인 시안입니다. 학번·비밀번호, 교사 Google·강사 비밀번호, 첫 입장 비밀번호 변경, 잘못된 입력 상태를 함께 다룹니다.
-- 로그인 → 학생 대시보드 → 교사 대시보드 순으로 진행하는 방향입니다. 대시보드 세부 배치는 **사용자와 대화하며 천천히** 정합니다.
-- 후속 로그인·대시보드의 Stitch 생성과 스타일 구현은 아직 하지 않았습니다. 현재 코드는 이전 시안이며, 이번 폴더 정리는 디자인 변경이 아닙니다.
+Firebase 구현 브랜치와 문서·홈 구조 정리를 통합했습니다. 이번 PR이 병합되면 **main이 재개 기준**입니다. 실행·Java·로컬 에뮬레이터 준비는 [DEVELOPMENT](DEVELOPMENT.md#다른-pc에서-시작)를 따릅니다. 새 PC는 실제 Firebase 키 없이도 개발할 수 있습니다.
 
-새 대화에는 다음과 같이 입력하면 됩니다.
+기존 복제본은 먼저 로컬 변경을 확인하고, 작업 트리가 깨끗할 때 아래 명령을 실행합니다.
 
-> docs/HANDOFF.md, docs/PRD.md, docs/DESIGN.md를 읽고 이어서 작업하자. 홈 디자인은 확정했고 다음은 중앙 집중형 학생·교사 로그인이다. Stitch 스킬과 MCP를 활용하되 로그인부터 함께 다듬고, 대시보드는 나와 대화하면서 진행하자.
+```powershell
+git status --short --branch
+git fetch origin
+git switch main
+git pull --ff-only
+npm ci
+npm run dev:emulator
+```
 
-## 현재 구현
+다음 개발은 main에서 새 `codex/` 브랜치를 만들어 진행합니다. 실제 Firebase에 연결하려면 Git에 없는 환경파일과 관리자 인증을 본인이 관리하는 안전한 방법으로 따로 준비합니다.
 
-| 영역 | 상태 |
+## 통합·배포 상태
+
+- 사용자가 현재까지의 구현을 검증한 뒤 main 병합·운영 배포하도록 승인했습니다. 이전 브랜치의 병합 보류 기록은 이번 승인으로 대체합니다.
+- 통합 대상은 Firebase·학습 구현 `8c08ec5`와 구조 정리 `3f9cf7f`입니다. API·학습 로직은 유지하고, 공개 홈 컴포넌트 분리와 최신 문서의 경로·상태를 함께 반영했습니다.
+- 실제 `cs-class-f74c4`에서 Auth·Firestore 읽기, Google·비밀번호 제공자 활성화와 서버 전용 DB 규칙을 다시 확인했습니다. 일반 Preview에는 운영 비밀값을 넣지 않습니다.
+- 통합 상태에서 lint·typecheck·프로덕션 build와 에뮬레이터 E2E 27개를 통과했습니다. 활성 문서 링크·앵커 112개와 보관 원문 362개 해시도 확인했습니다. 원격 PR·Preview·Production 결과는 배포 기록에 갱신합니다.
+
+## 완료한 범위
+
+| 영역 | 현재 동작 |
 | --- | --- |
-| 공개 홈 | 픽셀 캔버스·중앙 목차·움직임 툴팁·통합 입장 선택창 |
-| 수업 미리보기 | 한 프레임에서 이번 수업 → 개념학습 → 퀴즈 → 실습 → 이어하기. 퀴즈·비트 직접 조작 |
-| 공간 안내·마무리 | 학생·교사 미리보기, 남색 입장 구간, `cs·` 푸터 |
-| 학생 시안 | 학번 입장·필수 비밀번호 변경·이번 수업·열린 수업·최근 활동·필터·빈 상태 |
-| 교사 시안 | 반 선택·이번 수업과 열린 수업 지정·학번 검색·초기화 확인창. 강사는 10·11반 |
-| 인증·저장 | 화면 체험만 구현. Firebase·Google OAuth·서버 권한·영속 저장 미구현 |
-| 수업 내용 | 예시 세 개와 둘러보기 기록. 실제 콘텐츠는 후속 작업 |
+| 인증 | 학생 학번·비밀번호, 교사 Google 허용 목록, 강사 비밀번호와 10·11반 권한. 최초·초기화 후 비밀번호 변경, 무활동 만료, 새 로그인 시 이전 세션 종료 |
+| 학생 | 이번 수업·열린 수업, 단계별 퍼센트와 완료 수, 전체 시작 전/진행 중/완료, 자동 저장·재접속 복원 |
+| 샘플 수업 | `sequence-lab`: 개념 2개·퀴즈 3문항·순서 배열 실습 1개. 개념 확인, 오답만 재도전, 선택형 힌트, 자유로운 단계 이동 |
+| 제출 | 서버 검증 → 학생 제출 → 저장 성공 시 완료. 제출 후 수정 중에도 기존 제출본·완료 유지 |
+| 교사 | 반 선택·이번 수업 지정·열린 수업 관리·학생별 진행·제출 작품 조회·비밀번호 초기화 |
+| Firebase | 승인된 `cs-class-f74c4`, 서울 기본 DB. 두 로그인 제공자, 11개 빈 반, 서버 전용 Firestore 규칙 설정. 실제 학생 계정은 아직 없음 |
 
-가상 데이터는 메모리에만 있고 새로고침하면 초기화됩니다. UI 역할 구분을 실제 보안 경계로 취급하지 않습니다. 체험 계정은 README, 계정·권한 요구사항은 PRD를 따릅니다.
+사용자는 메타프롬프팅 후 구현과 메인·학생·교사 분담을 승인했습니다. 구현 보류는 과거 단계의 요청입니다. [BUILD_BRIEF](BUILD_BRIEF.md)는 완료한 1차 작업의 범위·공통 계약·검증 기준이며 이후 작업을 자동으로 시작하라는 지시가 아닙니다.
 
-## 코드와 참고 화면
+공개 홈과 중앙 집중형 로그인은 승인된 디자인입니다. 미리보기 데이터와 실제 학습 기록을 구분합니다. 실제 수업·작업은 서버 API를 사용하며, 로컬 에뮬레이터의 합성 계정은 클라우드에 등록하지 않습니다.
 
-| 위치 | 용도 |
+## 다음 작업
+
+1. **운영 준비 범위를 정합니다.** 적용할 반·학번 목록·초기 비밀번호 전달 방법을 확인한 뒤 학생 계정을 등록합니다. 기존 자료를 자동 이관하거나 297명을 일괄 생성하지 않습니다.
+2. **배포 후 실제 사용을 준비합니다.** 최종 호스팅 도메인의 로그인·권한·저장 상태와 서버 설정은 아래 배포 기록 및 Firebase 안내를 확인합니다. 실제 학생 계정은 별도 승인 없이 등록하지 않습니다.
+3. **정식 수업을 추가합니다.** 현재 샘플은 흐름 검증용입니다. EntryJS는 작은 과제에서 실행·초기화·채점·제출을 먼저 검증하고 AI·Q&A는 합의한 정책에 따라 별도 연결합니다.
+
+제품 정책을 다시 정하지 않습니다. 기본 활동만 완료 조건에 포함하며 심화·자유시간 자동 처리는 미정입니다. Q&A의 질문/답변·해결/다시 열기 권한과 AI 오류의 교사 확인 경로는 PRD에 보존했습니다. 월 4만 원은 참고 예산이며 무료 AI API의 공급자·조건은 후속 확인합니다. [운영비 예상안](OPERATING_COST_ESTIMATE.md)은 가정이 포함된 비교 자료입니다.
+
+새 대화에는 다음처럼 전달하면 됩니다.
+
+> AGENTS.md와 docs/HANDOFF.md를 읽고 main에서 CS Class를 이어가자. 먼저 로컬 변경과 원격 동기화·배포 기록을 확인하고 새 codex/ 브랜치에서 다음 작업을 정하자. 기존 완료·제출·권한 정책을 유지하며 실제 학생 등록은 별도로 논의하자.
+
+## 실행과 검증
+
+- Node.js 24, 자동 검사에는 Java 21+가 필요합니다. 프로젝트 루트에서 실행하며 Windows에서는 필요하면 `npm.cmd`·`npx.cmd`를 사용합니다.
+- 실제 Firebase: Git 제외 `.env.local`과 외부 관리자 JSON을 준비한 뒤 `npm run dev`. Google 로그인은 `http://localhost:3000/login/teacher`에서 확인합니다.
+- 가상 계정 체험: `npm run dev:emulator`. 합성 계정은 [로컬 테스트 설정](../scripts/local-test-env.mjs), 자동 검사는 `npm run test:e2e`를 사용합니다. 실제 3000번 서버와 동시에 실행하지 않습니다.
+- GitHub 작업 브랜치는 Preview, main은 Production을 배포합니다. 일반 Preview는 운영 DB에 연결하지 않으며 로그인 서비스 미설정 안내가 정상입니다. Firebase를 포함한 기능 검사는 로컬 에뮬레이터로 수행합니다.
+- 이전 구현은 원격 CI에서 학습 초점 이동의 간헐적 실패를 수정했습니다. 응답·단계 변경·순서 이동 뒤 초점은 React 갱신 이후 Effect에서 처리하는 규칙을 유지합니다.
+- 검증을 위해 띄웠던 미리보기·에뮬레이터는 정리 후 종료합니다. 다음 작업 때 위 명령으로 다시 시작합니다. 이 PC의 임시 Java는 `scratch/tools/java/`에만 있으며 Git으로 전달되지 않습니다.
+
+### 검증 근거와 범위
+
+- 1차 구현에서 lint·typecheck·build와 프로덕션 `next start` + 로컬 Firebase 에뮬레이터의 E2E **27개**를 통과했습니다. 구성: 홈 7·API 8·이력 이동 4·운영 복구 1·플랫폼 3·학생 4. 원격 CI 실행 결과와 구분합니다.
+- 저장 실패·느린 응답·두 탭 충돌·뒤로/앞으로 이동, 비밀번호 초기화·권한 경계·세션 만료, 좁은 화면·키보드·초점·콘솔을 검사했습니다. 테스트 주소는 Secure 쿠키 전송을 위해 `localhost`로 통일하며 보안을 낮추지 않습니다.
+- 실제 Firebase에서 임시 계정 로그인 → 수업 지정 → 개념·퀴즈·실습 제출 → 재로그인 복원 → 교사 조회 및 익명 Firestore 403을 확인했습니다. 시험 계정 2개와 기록을 삭제하고 시험 반을 빈 설정으로 복원했습니다.
+- 실제 허용 Google 계정의 localhost 로그인과 교사 대시보드 진입을 사용자·브라우저에서 확인했습니다. 담당 반 11개·등록 학생 0명 상태였습니다. 호스팅 환경은 미검증입니다.
+- 이번 정리 후에도 lint·typecheck·build와 같은 방식의 E2E **27개**를 다시 통과했습니다. 미리보기의 실제 배치·키보드 진입·콘솔도 확인했습니다. 사용하지 않는 체험용 인증·반 상태와 그림 컴포넌트를 제거하고 안내 문구를 바로잡았으며 새 기능·권한 변경·의존성 추가는 없습니다.
+
+### 유지할 경계
+
+- 저장·완료 판정과 권한 검사는 서버가 수행합니다. 응답 순서·사용자 교체·두 탭 충돌·이동 전 저장 보호를 단순한 화면 처리로 대체하지 않습니다.
+- 미저장 초안은 화면 메모리에만 남고 세션 종료·계정 교체 때 비웁니다. 강제 창 닫기 후 미전송 초안 복구는 보장하지 않습니다. 브라우저의 세션 복원 때문에 창 닫기를 확실한 로그아웃으로 취급하지 않습니다.
+- 비밀번호 변경 장애 복구, 의존성 중간 경고 5개(운영 범위 2개), 데이터 보관·정리 후속 사항은 [Firebase 안내](FIREBASE_SETUP.md#데이터와-남은-한계)에 기록했습니다. 강제 메이저 다운그레이드는 하지 않았습니다.
+
+## 코드와 시각 기준 위치
+
+| 위치 | 역할 |
 | --- | --- |
-| [home/public-home.tsx](../src/components/home/public-home.tsx) | 홈 전체 구성·모션 상태 |
-| [home/lesson-story.tsx](../src/components/home/lesson-story.tsx) | 다섯 단계 시연·스크롤·키보드 선택 |
-| [home/lesson-examples.tsx](../src/components/home/lesson-examples.tsx) | 개념·퀴즈·비트 실습 예제 |
-| [home/role-preview.tsx](../src/components/home/role-preview.tsx) | 학생·교사 공간 미리보기 |
-| [home/reactive-surface.tsx](../src/components/home/reactive-surface.tsx) | 시연·역할 화면이 공유하는 포인터 효과 |
-| [home/home-art.tsx](../src/components/home/home-art.tsx), [home/home-entry.tsx](../src/components/home/home-entry.tsx) | 픽셀 그래픽·움직임 툴팁·입장 선택창 |
-| [public-home.css](../src/app/public-home.css) | 홈 스타일·반응형·모션 |
-| [login-screen.tsx](../src/components/login-screen.tsx) | 다음에 손볼 로그인·비밀번호 변경 시안 |
-| [app-shell.tsx](../src/components/app-shell.tsx), [학생](../src/app/student/page.tsx)·[교사](../src/app/teacher/page.tsx) 페이지 | 대시보드·공통 메뉴 |
-| [demo-provider.tsx](../src/components/demo-provider.tsx), [demo-data.ts](../src/lib/demo-data.ts) | 실제 서비스가 아닌 메모리 체험 상태·데이터 |
-| [landing.spec.ts](../tests/landing.spec.ts), [platform.spec.ts](../tests/platform.spec.ts) | 홈·로그인·대시보드 회귀 검증 |
+| `src/lib/classroom/`, `src/lib/server/`, `src/app/api/` | 데이터 계약·진행 계산·인증·권한·서버 저장 |
+| `src/components/session-provider.tsx`, `navigation-provider.tsx` | 세션·활동과 이동 전 저장 보호 |
+| `src/components/student/`, `src/app/teacher/` | 학생 학습·교사 수업/계정 관리 |
+| `src/components/home/`, `src/app/public-home.css`, `src/lib/demo-data.ts` | 공개 홈·수업 미리보기 |
+| `tests/`, `scripts/` | 흐름·권한 회귀 검사, 환경 설정·에뮬레이터·운영 복구 |
 
-홈은 [데스크톱](reference/home-hero-1440.png)·[모바일](reference/home-hero-390.png), 선택창은 [데스크톱](reference/home-entry-1440.png)·[320px](reference/home-entry-320.png), 나머지는 [공간 안내](reference/home-role-anchor.png)·[마지막 화면](reference/home-finale-1440.png)에서 확인합니다. 이 파일들은 Git에 포함됩니다. `outputs/design-review/`는 초기 시안이며 현재 홈보다 우선하지 않습니다.
-
-색·문구·배치·UI Component Lab 활용은 DESIGN을 따릅니다. 코드 수정 시 특히 아래 동작을 유지합니다.
-
-- 홈 모션은 사용자 요청으로 OS 설정과 관계없이 기본 켜짐입니다. 상단에서 줄이면 고정 시연·장식 모션을 해제하되 조작은 유지합니다. 새로고침하면 기본값으로 돌아옵니다. 다른 화면은 OS 설정을 따릅니다.
-- 고정 시연은 폭 960px 이상·높이 680px 이상에서 사용합니다. 모바일·낮은 창은 직접 단계 선택이며, 수동 선택은 새로운 사용자 스크롤 전까지 유지합니다.
-- 활성 패널은 즉시 보이게 해 빠른 방향키·Tab 이동에서도 초점이 유지되어야 합니다. 픽셀 그래픽은 클릭 영역을 고정하고 내부 그림만 움직입니다.
-- 공간 안내 앵커는 제목 `#classrooms`에 있습니다. 입장 선택창의 초점 순환·복귀, Escape·바깥 클릭·닫기 버튼을 유지합니다.
-- 개념학습·퀴즈·실습은 수업 구성의 예시이며 모든 수업의 진입 순서를 강제하는 정책이 아닙니다.
+홈의 모션·반응형·키보드 주의사항은 [AGENTS](../AGENTS.md#검증)와 [DESIGN](DESIGN.md)에 모읍니다. 승인된 화면은 [홈 데스크톱](reference/home-hero-1440.png)·[모바일](reference/home-hero-390.png), [입장 선택창](reference/home-entry-1440.png)·[320px](reference/home-entry-320.png), [공간 안내](reference/home-role-anchor.png)·[마지막 화면](reference/home-finale-1440.png)입니다. [UI Component Lab](reference/ui-component-lab/index.html)은 보존된 참고 원문이며 현재 앱 런타임이 아닙니다.
 
 ## Stitch 상태
 
-- 프로젝트: [CS Class 랜딩페이지 디자인](https://stitch.withgoogle.com/projects/9952170337891001891), ID `9952170337891001891`.
-- 다른 PC에는 [연결 안내](DEVELOPMENT.md#stitch-연결)에 따라 별도 설정합니다. 키는 `STITCH_API_KEY` 환경변수로만 참조하며 문서·채팅·로그에 노출하지 않습니다.
-- 프로젝트·화면 조회와 기존 화면 수정을 확인했습니다. 허용 도구는 `get_project`, `list_screens`, `get_screen`, `edit_screens`입니다. 생성 작업에서는 필요한 도구 가용성을 확인합니다.
-- 프로젝트 테마의 초기 `Plus Jakarta Sans`보다 **DESIGN의 Pretendard·색·컴포넌트 기준이 우선**입니다. 로컬 홈 수정이 Stitch에 자동 반영되지는 않습니다.
-- `list_screens`에서 수정 결과가 누락될 수 있어 아래 결과 ID로 `get_screen`을 호출합니다. 수정 응답만으로 기존 캔버스가 덮어써졌다고 단정하지 않습니다.
+- 프로젝트: [CS Class 랜딩페이지 디자인](https://stitch.withgoogle.com/projects/9952170337891001891). 키는 `STITCH_API_KEY`로만 참조하며 [README](DEVELOPMENT.md#stitch-연결)에 PC별 설정을 설명합니다.
+- 확인한 도구는 `get_project`, `list_screens`, `get_screen`, `edit_screens`입니다. 목록에 누락되면 아래 화면 ID로 조회합니다. 로컬 수정은 Stitch에 자동 반영되지 않습니다.
+- 테마의 과거 Plus Jakarta Sans보다 현재 DESIGN의 Pretendard·색·컴포넌트 기준이 우선입니다. 이번 LMS 구현에서는 새 Stitch 생성을 하지 않았습니다.
 
 | 화면 | 최초 ID | 수정 결과 ID |
 | --- | --- | --- |
 | 홈 데스크톱 | `43f4bb0b48b0429ea7827b5fec944945` | `b9fcd8f02ce3462c89ce9f653285f699` |
 | 홈 모바일 | `e157096258184c8190a44a9ba31585d8` | `5fdd1894a36a4c1e93b378b4a334abe8` |
-| 초기 브랜드 | `d355390e8e2b472093273fbb1855ffc5` | 로컬 학사모 브랜드가 현재 기준 |
+| 초기 브랜드 | `d355390e8e2b472093273fbb1855ffc5` | 로컬 작은 학사모가 현재 기준 |
 
-생성 HTML·정적 시안 서버 8766은 초기 참고이며 현재 앱은 3000에서 실행합니다. HTML은 원래 PC의 Git 제외 경로 `outputs/stitch-review/2026-09-27/`에 있고, 다른 PC에서는 화면 ID로 조회할 수 있습니다. 이전 프롬프트·검토 원문은 [홈 체크포인트](archive/cs-class/2026-09-27-home-checkpoint/manifest.json)에 보존했습니다.
+## PC별 자료와 이전 이력
 
-## 다른 PC에서 참고할 것
-
-- [UI Component Lab](reference/ui-component-lab/index.html) 네 파일은 원문 그대로 Git에 포함했습니다. 디자인 활용 기준은 [DESIGN](DESIGN.md#9-ui-component-lab-활용)을 따릅니다.
-- 실제 학생 계정 엑셀은 원래 PC의 `outputs/01a0de21-d7f4-7c03-8abf-2e213c2bf7fc/`에만 있습니다. 초기 비밀번호·API 키·개인 설정·`백업용/`·캐시·임시 출력도 Git에 포함하지 않으며, UI 작업에는 필요하지 않습니다.
-- StitchDesign·MCP·브라우저 연결은 PC별 설정입니다. Figma 편집은 미검증입니다. Context7은 이번 정리에서 Next.js·React 문서 조회를 확인했습니다. 다른 PC의 실제 가용성은 다시 확인합니다.
-- Vercel 프로젝트·로컬 환경·이전 `platform/` 설치 주의사항은 [DEVELOPMENT](DEVELOPMENT.md)를 따릅니다.
-
-## 이번 구조 정리 · 2026-09-28
-
-- 루트에는 README·AGENTS를 두고 PRD·DESIGN은 `docs/`로 이동했습니다. 긴 실행·도구 설정은 DEVELOPMENT로 옮기고 HANDOFF는 현재 상태와 다음 작업 중심으로 줄였습니다.
-- 공개 홈의 기존 컴포넌트를 `src/components/home/`에 모으고 큰 파일을 역할별로 분리했습니다. 동작·마크업·스타일·의존성·URL은 유지합니다.
-- 공통 CSS에는 기존 화면 규칙과 덮어쓰기 규칙이 누적되어 있습니다. 후속 로그인·대시보드 개선에서 해당 스타일을 정리하고 화면을 비교합니다.
-- lint·typecheck·프로덕션 build와 로컬 개발 서버 대상 E2E 12개를 통과했습니다. 데스크톱·390px 홈과 320px 입장창의 생성된 스크린샷도 확인했습니다. 기존 E2E에는 좁은 창·키보드·모션·콘솔·로그인·대시보드 흐름이 포함됩니다.
-- 분리한 함수·상수 12개와 이동한 그래픽·입장창의 내용을 원본과 대조했습니다. PRD·DESIGN은 상대 링크만 바꿨고, 활성 문서 로컬 링크·앵커 80개와 보관 원문 362개 파일의 SHA-256을 확인했습니다.
-- 처음에는 옛 API 경로가 남은 `.next` 타입 캐시가 검사를 막았으나 개발 서버·빌드 재생성 후 통과했습니다. 외부 서비스 설정·병합·배포는 변경하지 않았습니다.
-
-## 이전 기준점과 검증 기록
-
-홈 구현은 [PR #2](https://github.com/DonghyunT/cs-class/pull/2), 이전 정적 시안 정리·Next.js 배포 전환은 [PR #3](https://github.com/DonghyunT/cs-class/pull/3), 저장소 루트 통합은 [PR #5](https://github.com/DonghyunT/cs-class/pull/5)에 있습니다. 과거 검사·배포 결과는 해당 PR의 시점 기준이며 현재 브랜치의 결과와 구분합니다.
-
-이전 홈 검증은 데스크톱·낮은 창·320px 모바일, 스크롤·방향키·빠른 Tab·터치, 두 OS 움직임 설정, 모달 초점·콘솔과 학생·교사 체험을 포함했습니다. 실제 계정·서버 권한·영속 데이터·동시 사용·전체 접근성 인증은 검증 범위 밖입니다.
+- `.env.local`, 관리자 JSON·비밀번호·학생 계정 엑셀·`백업용/`·임시 산출물은 Git에 없습니다. 원래 학생 자료는 `outputs/01a0de21-d7f4-7c03-8abf-2e213c2bf7fc/`, 옛 Stitch 결과는 `outputs/stitch-review/2026-09-27/`에만 있습니다. 학생 자료는 UI 작업에 필요하지 않습니다.
+- 플러그인과 인증은 PC별 설정입니다. Context7에서 Next.js·React 구조 가이드를 확인했습니다. 설치된 Next.js 문서와 함께 참고하며 다른 PC의 도구 가용성은 다시 확인합니다.
+- Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)는 Root Directory 빈 값·Next.js·Node.js 24.x·기존 SSO 보호를 사용합니다. MCP에 임의의 `teamId`를 붙이지 않습니다.
+- 홈·앱 정리·루트 통합 이력은 [PR #2](https://github.com/DonghyunT/cs-class/pull/2), [PR #3](https://github.com/DonghyunT/cs-class/pull/3), [PR #5](https://github.com/DonghyunT/cs-class/pull/5)에 있습니다. `e2dfaf1` 이전 구조로 복구할 때는 Vercel Root Directory도 `platform`으로 맞춰야 합니다.
+- 옛 수업 원문은 `git show c7bc397:web/curriculum.js`, 정리 전 상세 인수인계는 `git show ba0dbc7:docs/HANDOFF.md`로 읽습니다. 과거 문서 원문·해시는 [보관 목록](archive/cs-class/2026-09-27-home-checkpoint/manifest.json)에 유지했습니다. 과거 승인·검증 기록을 현재 배포·병합 승인으로 해석하지 않습니다.

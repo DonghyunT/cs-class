@@ -1,15 +1,5 @@
-export type Role = "student" | "teacher" | "instructor";
-export type Session = {
-  role: Role;
-  studentId?: string;
-  classId?: number;
-  mustChange?: boolean;
-};
+// Public lesson previews. Auth and saved learning use lib/classroom and lib/server.
 export type LessonId = "flow" | "data" | "digital";
-export type ClassState = { current: LessonId | null; opened: LessonId[] };
-
-export const DEMO_PASSWORD = "class-demo";
-export const INSTRUCTOR_PASSWORD = "teacher-demo";
 export const lessons: {
   id: LessonId;
   title: string;
@@ -43,36 +33,3 @@ export const lessons: {
     number: "03",
   },
 ];
-export function getClassId(id: string) {
-  if (!/^2\d{4}$/.test(id)) return null;
-  const classId = Number(id.slice(1, 3));
-  const number = Number(id.slice(3));
-  return classId >= 1 && classId <= 11 && number >= 1 && number <= 27
-    ? classId
-    : null;
-}
-export function studentIds(classId: number) {
-  return Array.from(
-    { length: 27 },
-    (_, index) =>
-      `2${String(classId).padStart(2, "0")}${String(index + 1).padStart(2, "0")}`,
-  );
-}
-export function allowedClasses(role: Role) {
-  return role === "instructor"
-    ? [10, 11]
-    : role === "teacher"
-      ? Array.from({ length: 11 }, (_, i) => i + 1)
-      : [];
-}
-export function initialClasses(): Record<number, ClassState> {
-  return Object.fromEntries(
-    Array.from({ length: 11 }, (_, i) => [
-      i + 1,
-      {
-        current: i === 10 ? null : "flow",
-        opened: i === 10 ? [] : ["flow", "data"],
-      },
-    ]),
-  );
-}
