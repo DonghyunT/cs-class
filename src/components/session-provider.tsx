@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { classroomApi, setExpectedUser } from "@/lib/classroom/client";
+import styles from "./session-provider.module.css";
 import type { Session } from "@/lib/classroom/types";
 
 interface SessionContextValue {
@@ -68,7 +69,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   async function extend() { const started = generation.current; try { const result = await classroomApi.touch(); if (started === generation.current) { acceptSession(result.session); setRemaining(null); } } catch (problem) { if (started === generation.current) setError(problem instanceof Error ? problem.message : "접속을 연장하지 못했어요."); } }
   return <Context.Provider value={{ session, loading, configured, error, acceptSession, refresh, logout }}>
     {children}
-    {remaining !== null && session && <div className="session-warning" role="alert"><div><strong>곧 자동 로그아웃돼요.</strong><p>{remaining}초 안에 계속 사용하기를 눌러 주세요.</p></div><button type="button" onClick={() => void extend()}>계속 사용하기</button></div>}
+    {remaining !== null && session && <div className={styles.warning} role="alert"><div><strong>곧 자동 로그아웃돼요.</strong><p>{remaining}초 안에 계속 사용하기를 눌러 주세요.</p></div><button type="button" onClick={() => void extend()}>계속 사용하기</button></div>}
   </Context.Provider>;
 }
 export function useSession() { const value = useContext(Context); if (!value) throw new Error("SessionProvider is missing"); return value; }

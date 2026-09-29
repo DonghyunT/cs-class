@@ -1,18 +1,14 @@
 # Firebase 연결과 검증
 
-갱신: 2026-09-28. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다.
+갱신: 2026-09-29. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다.
 
-## 현재 연결
+## 연결 기준
 
-- 사용자 제공 서비스 계정으로 Auth·Firestore 읽기를 확인했습니다. 키 원본은 저장소 밖에 있으며 Git 제외 `.env.local`은 경로만 참조합니다.
-- 이메일/비밀번호 로그인과 Google 로그인을 켰습니다. 교사 이메일 허용 목록은 서버 환경변수에 저장합니다. 2학년 1~11반의 빈 설정을 만들었으며 실제 학생 계정은 아직 등록하지 않았습니다.
-- 검증한 `firestore.rules`를 해당 프로젝트에 적용했습니다. [PR #6](https://github.com/DonghyunT/cs-class/pull/6) 병합으로 Vercel Production 배포를 완료했습니다. 일반 Preview는 운영 DB에 연결하지 않으며, 실제 로그인 검증과 빌드 성공을 구분합니다.
-- 임시 합성 계정으로 실제 서버 로그인→반 수업 지정→개념·퀴즈 완료→실습 검증·제출→재로그인 복원→교사 조회를 확인했습니다. 직접 Firestore 접근 거부도 확인했고 임시 계정 두 개와 기록을 삭제하고 시험 반을 복원했습니다.
-- localhost와 운영 주소에서 선생님이 직접 허용 Google 계정으로 입장했고, 교사 대시보드·담당 11반 목록과 1·11반 조회를 브라우저에서 확인했습니다. 운영 데이터에 추가 시험 계정을 넣지 않았으며 상세 범위는 [배포 기록](HANDOFF.md#통합배포-상태)을 따릅니다.
+실제 환경은 이메일/비밀번호·Google 제공자, 서버의 교사 허용 목록과 서버 전용 Firestore 규칙을 사용합니다. 관리자 키 원본은 저장소 밖에 두고 Git 제외 `.env.local`은 경로만 참조합니다. 실제 연결·배포·로그인 확인의 날짜와 한계는 [HANDOFF](HANDOFF.md#통합배포-상태)에 기록합니다. 이 문서의 설정 절차가 계정 등록이나 운영 변경의 승인을 뜻하지 않습니다.
 
 ## 다른 PC의 서버 설정
 
-화면·학습 흐름 개발과 자동 검사는 [README의 에뮬레이터 실행](DEVELOPMENT.md#다른-pc에서-시작)만으로 가능합니다. 아래는 실제 `cs-class-f74c4`에 연결해야 할 때만 사용합니다.
+화면·학습 흐름 개발과 자동 검사는 [개발 안내의 에뮬레이터 실행](DEVELOPMENT.md#다른-pc에서-시작)만으로 가능합니다. 아래는 실제 `cs-class-f74c4`에 연결해야 할 때만 사용합니다.
 
 이미 설정한 PC의 연결을 이어갈 때는 기존 `.env.local`과 관리자 JSON을 본인이 관리하는 안전한 경로로 따로 옮기고 `GOOGLE_APPLICATION_CREDENTIALS`만 새 PC의 경로로 맞춥니다. 같은 프로젝트의 교사 허용 목록·초기/초기화 비밀번호 설정은 유지합니다. Git이나 채팅에 파일·값을 올리지 않습니다. 아래 설정 도구는 기존 환경파일이 없는 최초 준비용이며 공통 비밀번호를 새로 생성합니다.
 
@@ -59,20 +55,7 @@ Preview와 Production 양쪽에 일반 설정 `NODE_OPTIONS=--experimental-requi
 
 ## 로컬 자동 검사
 
-Java 21+와 Node.js 24를 사용합니다. Java를 별도 위치에 설치했다면 해당 터미널의 `JAVA_HOME`과 `PATH`에만 지정할 수 있습니다. CI는 `setup-java`를 사용합니다.
-
-```powershell
-npm ci
-npx playwright install chromium
-npm run lint
-npm run typecheck
-npm run build
-npm run test:e2e
-```
-
-테스트는 `demo-cs-class`, Auth `127.0.0.1:9099`, Firestore `127.0.0.1:8080`만 사용합니다. 테스트 시드는 4명의 가상 학생과 가상 강사를 준비하고 작업 규칙·권한·세션·저장 충돌·네트워크 실패·이력 이동·모바일 화면을 검사합니다. UI에서 사용하는 합성 비밀번호는 [local-test-env.mjs](../scripts/local-test-env.mjs)에 있으며 실제 서비스 비밀번호가 아닙니다.
-
-앱 테스트 주소는 `http://localhost:3000`입니다. Playwright API 쿠키 저장소가 로컬 HTTP의 Secure 쿠키를 지원하는 호스트 이름을 사용하며, 운영 쿠키 보안을 낮추지 않습니다. 빌드 후 PowerShell에서 `$env:CI='1'`을 설정하고 E2E를 실행하면 CI와 같은 `next start` 검사가 됩니다. 2026-09-28 이 방식으로 전체 27개와 lint·typecheck·build를 통과했습니다.
+설치·실행 명령과 CI 방식은 [DEVELOPMENT의 검증](DEVELOPMENT.md#검증)을 따릅니다. Firebase 검사는 `demo-cs-class`, Auth `127.0.0.1:9099`, Firestore `127.0.0.1:8080`만 사용합니다. 합성 계정은 [local-test-env.mjs](../scripts/local-test-env.mjs)에 정의하며 운영 계정·자료를 사용하지 않습니다.
 
 ## 계정 변경 장애 복구
 
@@ -94,6 +77,6 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 - 세션 쿠키는 HttpOnly·SameSite=Strict, 배포 환경 Secure이며 지속 만료일을 넣지 않습니다. 브라우저의 세션 복원 기능은 쿠키를 복구할 수 있어 창 닫기를 절대적인 로그아웃 보장으로 취급하지 않습니다. 공용 PC에서는 로그아웃을 사용합니다.
 - 미저장 답안은 현재 화면 메모리에만 유지합니다. 서버 저장이 실패한 채 강제로 창을 닫거나 세션을 종료한 뒤의 복구는 보장하지 않습니다. 다른 사용자에게 남지 않도록 브라우저 영속 저장소에 답안을 남기지 않습니다.
 - 현재는 수업 하나입니다. 수업 버전 변경·학년도 전환·실학생 대량 등록·심화·EntryJS·AI·Q&A는 후속 작업입니다.
-- 2026-09-28 의존성 점검에서 `npm audit` 중간 수준 경고 5개(운영 의존성 범위 2개)가 남았습니다. `uuid/gaxios`, 개발 CLI의 OpenTelemetry/PubSub 경로이며 high/critical은 없었습니다. 무관한 강제 메이저 다운그레이드를 적용하지 않았고 업스트림 갱신을 추적해야 합니다.
+- 의존성 점검의 미해결 항목·확인 날짜는 [HANDOFF](HANDOFF.md#다음-작업)에 기록합니다.
 
 공식 설정: [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup), [Application Default Credentials](https://docs.cloud.google.com/docs/authentication/provide-credentials-adc).
