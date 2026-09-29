@@ -37,21 +37,25 @@ export function AppShell({
   const navToggle = useRef<HTMLButtonElement>(null);
   const mobileClose = useRef<HTMLButtonElement>(null);
   const dashboardLink = useRef<HTMLAnchorElement>(null);
+  const sidebar = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (!mobileNav) return;
-    mobileClose.current?.focus();
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (mobileNav) {
+      mobileClose.current?.focus();
+      document.body.style.overflow = "hidden";
+    }
     const desktop = matchMedia("(min-width: 821px)");
     const onResize = () => {
-      if (desktop.matches) {
+      if (desktop.matches && mobileNav) {
         setMobileNav(false);
         dashboardLink.current?.focus();
+      } else if (!desktop.matches && sidebar.current?.contains(document.activeElement)) {
+        navToggle.current?.focus();
       }
     };
     desktop.addEventListener("change", onResize);
     return () => {
-      document.body.style.overflow = previousOverflow;
+      if (mobileNav) document.body.style.overflow = previousOverflow;
       desktop.removeEventListener("change", onResize);
     };
   }, [mobileNav]);
@@ -92,6 +96,7 @@ export function AppShell({
     <>
       <div className={`app-layout ${styles.layout}`}>
         <aside
+          ref={sidebar}
           role={mobileNav ? "dialog" : undefined}
           aria-modal={mobileNav || undefined}
           aria-label={mobileNav ? "교실 탐색 메뉴" : undefined}

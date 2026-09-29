@@ -6,7 +6,7 @@ const workPath = `/api/classroom/work/${lessonId}`;
 const classPath = `/classroom/${lessonId}`;
 const answerName = "컵에 물을 200mL 따른다";
 
-test("태블릿 메뉴의 초점 복귀와 데스크톱 전환", async ({ page }) => {
+test("태블릿 메뉴와 양방향 화면 전환의 초점 복귀", async ({ page }) => {
   await readyStudent(page.request);
   await page.setViewportSize({ width: 768, height: 900 });
   await page.goto("/student");
@@ -23,6 +23,14 @@ test("태블릿 메뉴의 초점 복귀와 데스크톱 전환", async ({ page }
   await expect(page.getByRole("link", { name: "대시보드", exact: true })).toBeFocused();
   await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe("");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 820, height: 900 });
+  await expect(toggle).toBeFocused();
+  const refresh = page.getByRole("button", { name: "수업 새로고침", exact: true });
+  await refresh.focus();
+  await page.setViewportSize({ width: 821, height: 900 });
+  await expect(refresh).toBeFocused();
+  await page.setViewportSize({ width: 820, height: 900 });
+  await expect(refresh).toBeFocused();
 });
 
 async function openLesson(page: Page) {
