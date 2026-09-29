@@ -18,6 +18,7 @@ const eslintConfig = defineConfig([
     "docs/**",
     "outputs/**",
     "scratch/**",
+    "public/entryjs/vendor/**",
     "temp/**",
     "백업용/**",
   ]),

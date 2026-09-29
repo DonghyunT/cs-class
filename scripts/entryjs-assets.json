@@ -1,0 +1,154 @@
+{
+  "packages": [
+    {
+      "name": "@entrylabs/entry",
+      "version": "4.0.23",
+      "directory": "entry",
+      "integrity": "sha512-AowPnMz+M2ozLNSzGGUFkhBn5f4V7/SPbxsF4x47Kk4L7L7pX0qweC78TPDXTVGQQ7fomTsXaeLTEeTGOF6mAQ==",
+      "files": [
+        "dist/entry.min.js",
+        "dist/entry.css",
+        "dist/entry.min.js.LICENSE.txt",
+        "extern/lang/ko.js",
+        "extern/util",
+        "images",
+        "LICENSE",
+        "NOTICE",
+        "COPYING"
+      ]
+    },
+    {
+      "name": "@entrylabs/tool",
+      "version": "2.0.4",
+      "directory": "entrylabs-tool",
+      "integrity": "sha512-xmI1H1o8Vs5As9+S8KmVxHchOQQNJQ1aDQ2vDy/SD1hjPgIeGvqrUQ+VM+m0zApah+5xAY+QP5CGXLHKSHYLgA==",
+      "files": [
+        "dist/entry-tool.js",
+        "dist/entry-tool.css",
+        "dist/entry-tool.js.LICENSE.txt",
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "react",
+      "version": "18.3.1",
+      "directory": "react",
+      "integrity": "sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==",
+      "files": [
+        "umd/react.production.min.js",
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "react-dom",
+      "version": "18.3.1",
+      "directory": "react-dom",
+      "integrity": "sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==",
+      "files": [
+        "umd/react-dom.production.min.js",
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "lodash",
+      "version": "4.17.21",
+      "directory": "lodash",
+      "integrity": "sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==",
+      "files": [
+        "lodash.min.js",
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "jquery",
+      "version": "3.7.1",
+      "directory": "jquery",
+      "integrity": "sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==",
+      "files": [
+        "dist/jquery.min.js",
+        "LICENSE.txt"
+      ]
+    },
+    {
+      "name": "jquery-ui-dist",
+      "version": "1.13.3",
+      "directory": "jquery-ui-dist",
+      "integrity": "sha512-qeTR3SOSQ0jgxaNXSFU6+JtxdzNUSJKgp8LCzVrVKntM25+2YBJW1Ea8B2AwjmmSHfPLy2dSlZxJQN06OfVFhg==",
+      "files": [
+        "jquery-ui.min.js",
+        "LICENSE.txt"
+      ]
+    },
+    {
+      "name": "velocity-animate",
+      "version": "1.5.2",
+      "directory": "velocity-animate",
+      "integrity": "sha512-m6EXlCAMetKztO1ppBhGU1/1MR3IiEevO6ESq6rcrSQ3Q77xYSW13jkfXW88o4xMrkXJhy/U7j4wFR/twMB0Eg==",
+      "files": [
+        "velocity.min.js",
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "codemirror",
+      "version": "5.65.20",
+      "directory": "codemirror",
+      "integrity": "sha512-i5dLDDxwkFCbhjvL2pNjShsojoL3XHyDwsGv1jqETUoW+lzpBKKqNTUWgQwVAOa0tUm4BwekT455ujafi8payA==",
+      "files": [
+        "lib/codemirror.js",
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "fuzzy",
+      "version": "0.1.3",
+      "directory": "fuzzy",
+      "integrity": "sha512-/gZffu4ykarLrCiP3Ygsa86UAo1E5vEVlvTrpkKywXSbP9Xhln3oSp9QSV57gEq3JFFpGJ4GZ+5zdEp3FcUh4w==",
+      "files": [
+        "lib/fuzzy.js",
+        "LICENSE-MIT"
+      ]
+    },
+    {
+      "name": "@entrylabs/legacy-video",
+      "version": "1.0.1",
+      "directory": "entrylabs-legacy-video",
+      "integrity": "sha512-GeEtG7HgYhM/cXOs9Jv3xTu01wEJwXJ5ZnGMXUUGFgoa64FQ/py6mCcjzNvJ5wZuGzdgt91jIKd8YbrBaBkwtw==",
+      "files": [
+        "dist/index.js"
+      ]
+    }
+  ],
+  "downloads": [
+    {
+      "url": "https://entry-cdn.pstatic.net/external/sound/sound-editor.js?v=240430-174210",
+      "file": "sound-editor.js",
+      "integrity": "sha512-CW4oXioNUac3qjrNhTNRxeLouDxX49MIP2uxdbvcuimZGkvWJCTf3Dsdz/dNC2XKhkRzWcuqXjDfgTzfT/ZQzA=="
+    },
+    {
+      "url": "https://entry-cdn.pstatic.net/lib/PreloadJS/lib/preloadjs-0.6.0.min.js?v=240430-174210",
+      "file": "preloadjs-0.6.0.min.js",
+      "integrity": "sha512-fCDhDazzLkJSt7QBsV0O/usMyoyhR0bs79KC7gQN4sX0OvW7Y7lPYPePjTtVJcyxOy0sBJTTKc89GeG9+38i8w=="
+    },
+    {
+      "url": "https://entry-cdn.pstatic.net/lib/EaselJS/lib/easeljs-0.8.0.min.js?v=240430-174210",
+      "file": "easeljs-0.8.0.min.js",
+      "integrity": "sha512-TvgO5kY/Xwmhy2NgjFVwYePyJCpFZGZBcD3mCWCfP3vtgGUVTqJxzXSHzoRSYxn76eVeTGrzokZ32MkSqtIr7Q=="
+    },
+    {
+      "url": "https://entry-cdn.pstatic.net/lib/SoundJS/lib/soundjs-0.6.0.min.js?v=240430-174210",
+      "file": "soundjs-0.6.0.min.js",
+      "integrity": "sha512-PmFWKVsVo3Ges6GnyL7Lm6cYxv6S92MMAUUcV2nWUvyKBbsSA/FManMuHiRuI+WsuI2MUM/t7MNyZs9hFSTnXA=="
+    },
+    {
+      "url": "https://raw.githubusercontent.com/entrylabs/example/d7d586b570457cd5fa63d47fd992ad9fc9fce633/base/lib/paint/entry-paint.js",
+      "file": "entry-paint.js",
+      "integrity": "sha512-oQWm9qfNCklWcmu675Y/wFljQSjBpDA//47rPLp14l1mQ+5Pwb5Z056dOgaLrwa6yacgkdpG9WMfu6x7V1I6dw=="
+    },
+    {
+      "url": "https://raw.githubusercontent.com/CreateJS/EaselJS/0.8.0/LICENSE.txt",
+      "file": "createjs-LICENSE.txt",
+      "integrity": "sha512-q5Zq3LamNhehhQ/2seNAq5kZju9Z36YF6+HGyaTpE/7R/kiD+MUcUJrOAYYuugXWA+1jWql+H/fLVPk9lGXy2w=="
+    }
+  ]
+}

@@ -8,7 +8,7 @@ const initial = process.env.CS_INITIAL_PASSWORD; const reset = process.env.CS_RE
 if (!initial || !reset || initial === reset) throw new Error("Distinct emulator passwords must be provided.");
 for (let i = 1; i <= 11; i++) {
   const id = `2-${i}`;
-  await db.collection("csClasses").doc(id).set({ id, name: `2학년 ${i}반`, currentLessonId: i === 1 ? "sequence-lab" : null, openedLessonIds: i === 1 ? ["sequence-lab"] : [], revision: 0 });
+  await db.collection("csClasses").doc(id).set({ id, name: `2학년 ${i}반`, currentLessonId: i === 1 ? "entry-bot-lab" : null, openedLessonIds: i === 1 ? ["sequence-lab", "flowchart-lab", "entry-bot-lab"] : [], revision: 0 });
 }
 for (const studentId of ["20101", "20102", "21001", "21101"]) {
   const uid = `student-${studentId}`;

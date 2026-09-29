@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import type { Transaction } from "firebase-admin/firestore";
 import { LESSONS, findLesson } from "../classroom/catalog";
-import { emptyWork } from "../classroom/progress";
+import { emptyWork, practiceMatches } from "../classroom/progress";
 import type { ClassSettings, StudentDashboard, TeacherDashboard, Work } from "../classroom/types";
 import { admin } from "./firebase";
 import { authorized, identity, type Account } from "./auth";
@@ -43,19 +43,26 @@ export async function mutateWork(lessonId: string, payload: unknown, actionReque
   const lesson = findLesson(lessonId); requireCondition(lesson, 404, "NOT_FOUND", "수업을 찾을 수 없어요.");
   const save = actionRequest ? null : z.object({ revision: revisionSchema, draft: draftSchema }).strict().parse(payload);
   const act = actionRequest ? z.object({ revision: revisionSchema, action: actionSchema }).strict().parse(payload) : null;
-  if (save) validateDraft(save.draft, lesson);
+  if (save) save.draft = validateDraft(save.draft, lesson);
   return authorized(await identity(), async (tx, account) => {
     const classroom = await studentClass(tx, account);
     requireCondition(classroom.openedLessonIds.includes(lessonId), 403, "LESSON_CLOSED", "우리 반에 아직 열리지 않은 수업이에요.");
     const ref = workRef(account.uid, lessonId);
     const previous = toWork((await tx.get(ref)).data() as StoredWork | undefined, lessonId);
     // A save whose acknowledgement was lost is safe to repeat without another write.
-    if (save && JSON.stringify(save.draft) === JSON.stringify(previous.draft)) return previous;
-    if (act?.action.type === "submit-practice" && previous.submission && previous.validation?.passed && sameOrder(previous.submission.order, previous.draft.practiceOrder)) return previous;
+    const samePractice = (a: typeof previous.draft, b: typeof previous.draft) =>
+      sameOrder(a.practiceOrder, b.practiceOrder) && (a.entryProject ?? null) === (b.entryProject ?? null);
+    const sameDraft = (a: typeof previous.draft, b: typeof previous.draft) =>
+      a.stage === b.stage &&
+      samePractice(a, b) &&
+      JSON.stringify(a.conceptAnswers) === JSON.stringify(b.conceptAnswers) &&
+      JSON.stringify(a.quizAnswers) === JSON.stringify(b.quizAnswers);
+    if (save && sameDraft(save.draft, previous.draft)) return previous;
+    if (act?.action.type === "submit-practice" && previous.submission && previous.validation?.passed && practiceMatches(previous.draft, previous.validation) && practiceMatches(previous.draft, previous.submission)) return previous;
     requireCondition(previous.revision === (save?.revision ?? act?.revision), 409, "REVISION_CONFLICT", "다른 탭에서 작업이 바뀌었어요. 현재 내용을 보관한 뒤 최신 기록을 확인해 주세요.");
     let next: Work;
     if (save) {
-      next = { ...previous, draft: save.draft, revision: previous.revision + 1, updatedAt: Date.now(), validation: sameOrder(save.draft.practiceOrder, previous.draft.practiceOrder) ? previous.validation : null };
+      next = { ...previous, draft: save.draft, revision: previous.revision + 1, updatedAt: Date.now(), validation: practiceMatches(save.draft, previous.validation) ? previous.validation : null };
       next.conceptFeedback = { ...previous.conceptFeedback };
       for (const id of Object.keys(next.conceptFeedback)) {
         if (previous.draft.conceptAnswers[id] !== save.draft.conceptAnswers[id]) delete next.conceptFeedback[id];

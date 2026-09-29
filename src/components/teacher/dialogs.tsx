@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ApiError, classroomApi } from "@/lib/classroom/client";
 import type { ClassSettings, Lesson, StudentRow, TeacherDashboard } from "@/lib/classroom/types";
+import { entryInstructionLabel, parseEntryProject } from "@/lib/classroom/entry-project";
 import { dateLabel, problemMessage } from "./presentation";
 import styles from "./teacher.module.css";
 
@@ -66,10 +67,11 @@ export function ManageLessons({ classroom, lessons, onSaved, onLock, onRefresh }
 export function SubmissionViewer({ student, lesson }: { student: StudentRow; lesson: Lesson }) {
   const submission = student.work?.submission;
   const labels = new Map(lesson.practice.blocks.map((block) => [block.id, block.label]));
+  const blocks = submission?.entryProject ? parseEntryProject(submission.entryProject)?.threads.flat().map(entryInstructionLabel) : null;
   return <Dialog>
     <DialogTrigger render={<Button variant="outline" disabled={!submission} aria-label={`${student.studentId} 제출 작품 보기`} />}><ClipboardCheck size={15} aria-hidden="true" />{submission ? "제출 작품" : "미제출"}</DialogTrigger>
     <DialogContent className={styles.dialog}><DialogHeader><DialogTitle>{student.studentId} 학생의 제출 작품</DialogTitle><DialogDescription>{lesson.title} · {lesson.practice.title}</DialogDescription></DialogHeader>
-      {submission && <><p className={styles.submittedTime}><CheckCircle2 size={16} aria-hidden="true" />{dateLabel(submission.submittedAt)} 제출</p><ol className={styles.submission}>{submission.order.map((id, index) => <li key={`${id}-${index}`}><span>{index + 1}</span>{labels.get(id) ?? "확인할 수 없는 단계"}</li>)}</ol><p className={styles.dialogNote}>서버에 저장된 최근 제출본이에요. 학생이 수정 중인 내용은 다시 제출하기 전까지 여기에 반영되지 않아요.</p></>}
+      {submission && <><p className={styles.submittedTime}><CheckCircle2 size={16} aria-hidden="true" />{dateLabel(submission.submittedAt)} 제출</p><ol className={styles.submission}>{(blocks ?? submission.order.map((id) => labels.get(id) ?? id)).map((label, index) => <li key={index}><span>{index + 1}</span>{label}</li>)}</ol>{submission.entryProject && <p className={styles.dialogNote}>엔트리 블록 코딩 프로젝트가 보존되어 있어요.</p>}<p className={styles.dialogNote}>서버에 저장된 최근 제출본이에요. 학생이 수정 중인 내용은 다시 제출하기 전까지 여기에 반영되지 않아요.</p></>}
     </DialogContent>
   </Dialog>;
 }

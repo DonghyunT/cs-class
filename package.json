@@ -3,11 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "node scripts/prepare-entryjs.mjs",
+    "predev": "node scripts/prepare-entryjs.mjs",
+    "prebuild": "node scripts/prepare-entryjs.mjs",
+    "prepare:entryjs": "node scripts/prepare-entryjs.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "playwright test",
     "test:e2e": "firebase emulators:exec --only auth,firestore --project demo-cs-class \"playwright test\"",
     "test:e2e:running": "playwright test",
     "dev:emulator": "firebase emulators:exec --only auth,firestore --project demo-cs-class \"node scripts/dev-emulator.mjs\""
