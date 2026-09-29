@@ -1182,15 +1182,6 @@
   line-height: 1.45;
   margin: 20px 0;
 }
-.landing-text-link {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--landing-blue);
-  font-size: 15px;
-  font-weight: 600;
-}
 .role-detail {
   background: white;
   border-radius: 18px;
@@ -1313,6 +1304,8 @@
     0 0 0 110px #a6caff04,
     0 0 0 111px #a6caff08,
     0 0 0 220px #a6caff03;
+  height: 630px;
+  right: -90px;
 }
 .finale-mark {
   display: grid;

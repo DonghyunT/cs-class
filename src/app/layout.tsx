@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import { SessionProvider } from "@/components/session-provider";
 import { NavigationProvider } from "@/components/navigation-provider";
 import "./globals.css";
-import "./experience.css";
 const pretendard = localFont({
   src: "./fonts/PretendardVariable.woff2",
   display: "swap",

@@ -73,13 +73,13 @@ export function AppShell({
   const valid = teacher
     ? session && session.role !== "student"
     : session?.role === "student" && !session.mustChangePassword;
-  if (loading) return <main id="main-content" className="access-state" aria-busy="true"><Brand /><h1>교실을 준비하고 있어요.</h1></main>;
+  if (loading) return <main id="main-content" className={styles.accessState} aria-busy="true"><Brand /><h1>교실을 준비하고 있어요.</h1></main>;
   if (!valid)
     return (
       <>
-        <main id="main-content" className="access-state">
+        <main id="main-content" className={styles.accessState}>
           <Brand />
-          <span className="form-icon">
+          <span className={styles.formIcon}>
             <GraduationCap />
           </span>
           <h1>
@@ -101,7 +101,7 @@ export function AppShell({
   const home = teacher ? "/teacher" : "/student";
   return (
     <>
-      <div className={`app-layout ${styles.layout}`}>
+      <div className={styles.layout}>
         <aside
           ref={sidebar}
           onFocusCapture={() => { sidebarFocused.current = true; }}
@@ -112,7 +112,7 @@ export function AppShell({
           role={mobileNav ? "dialog" : undefined}
           aria-modal={mobileNav || undefined}
           aria-label={mobileNav ? "교실 탐색 메뉴" : undefined}
-          className={`app-sidebar ${mobileNav ? "is-open" : ""}`}
+          className={`${styles.appSidebar} ${mobileNav ? styles.isOpen : ""}`}
           onKeyDown={(e) => {
             if (e.key === "Escape") closeNav();
             if (mobileNav && e.key === "Tab") {
@@ -133,7 +133,7 @@ export function AppShell({
             }
           }}
         >
-          <div className="sidebar-brand">
+          <div className={styles.sidebarBrand}>
             <Brand />
             <Button
               ref={mobileClose}
@@ -146,13 +146,13 @@ export function AppShell({
               <X />
             </Button>
           </div>
-          <div className="workspace-label">
+          <div className={styles.workspaceLabel}>
             {teacher ? "선생님 공간" : "우리 반 교실"}
           </div>
           <nav aria-label="교실 메뉴">
             <Link
               ref={dashboardLink}
-              className={path === home ? "active" : ""}
+              className={path === home ? styles.active : ""}
               aria-current={path === home ? "page" : undefined}
               href={home}
               onClick={() => setMobileNav(false)}
@@ -169,23 +169,23 @@ export function AppShell({
               {teacher ? "학생 관리" : "열린 수업"}
             </Link>
           </nav>
-          <div className="sidebar-bottom">
-            <div className="sidebar-tip"><strong>{teacher ? "수업 운영" : "저장하고 이어가기"}</strong><p>{teacher ? "담당 반의 수업과 학생 기록을 확인해요." : "저장 완료를 확인하면 다음에도 이어갈 수 있어요."}</p></div>
-            <Link href="/" className="sidebar-home">
+          <div className={styles.sidebarBottom}>
+            <div className={styles.sidebarTip}><strong>{teacher ? "수업 운영" : "저장하고 이어가기"}</strong><p>{teacher ? "담당 반의 수업과 학생 기록을 확인해요." : "저장 완료를 확인하면 다음에도 이어갈 수 있어요."}</p></div>
+            <Link href="/" className={styles.sidebarHome}>
               <PanelLeftClose size={16} /> 공개 홈 둘러보기
             </Link>
           </div>
         </aside>
         {mobileNav && (
           <button
-            className="sidebar-scrim"
+            className={styles.sidebarScrim}
             tabIndex={-1}
             aria-label="메뉴 닫기"
             onClick={closeNav}
           />
         )}
-        <div className="app-content" inert={mobileNav}>
-          <header className="app-topbar">
+        <div className={styles.appContent} inert={mobileNav}>
+          <header className={styles.appTopbar}>
             <div>
               <Button
                 ref={navToggle}
@@ -198,17 +198,17 @@ export function AppShell({
               >
                 <Menu />
               </Button>
-              <span className="breadcrumb">
+              <span className={styles.breadcrumb}>
                 {teacher ? "선생님 공간" : `${session?.classId?.split("-")[0]}학년 ${session?.classId?.split("-")[1]}반`}
                 <ChevronRight size={14} />
                 <strong>{title}</strong>
               </span>
             </div>
-            <div className="account-actions">
-              <span className="user-avatar">
+            <div className={styles.accountActions}>
+              <span className={styles.userAvatar}>
                 {teacher ? "T" : session?.studentId?.slice(-2)}
               </span>
-              <span className="user-name">
+              <span className={styles.userName}>
                 {teacher
                   ? session?.role === "instructor"
                     ? "강사님"
@@ -232,11 +232,11 @@ export function AppShell({
               </Button>
             </div>
           </header>
-          <main id="main-content" tabIndex={-1} className="dashboard-main">
-            {logoutError && <p role="alert" className="app-error">{logoutError}</p>}
+          <main id="main-content" tabIndex={-1} className={styles.dashboardMain}>
+            {logoutError && <p role="alert" className={styles.appError}>{logoutError}</p>}
             {children}
           </main>
-          <footer className="app-footer">
+          <footer className={styles.appFooter}>
             CS Class <span>즐거운 정보 교실</span>
           </footer>
         </div>
