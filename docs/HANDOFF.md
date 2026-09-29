@@ -7,11 +7,11 @@
 | 항목 | 2026-09-30 확인 |
 | --- | --- |
 | 저장소·작업 브랜치 | `DonghyunT/cs-class` · `main` |
-| 미커밋 상태 | 없음. 병합 커밋 `a22f3fd38c7441de311bd82e4507d526c7f9575e`와 문서 마감 커밋을 차례로 원격에 반영 중 |
+| 미커밋 상태 | 없음. EntryJS 구현·검증·병합·운영 배포 기록을 원격 `main`에 반영함 |
 | PR | [#10](https://github.com/DonghyunT/cs-class/pull/10) — 2026-09-30 병합, 순서도·엔트리봇 수업과 서버 솔루션 분리, 실제 EntryJS 실습 |
-| 로컬 검증 | Node 24.19.0·Java 21.0.12.1·Windows, lint·typecheck·build 통과. `CI=1`의 `next start` + 로컬 Auth·Firestore에서 전체 E2E **38개 통과** |
-| 배포 | PR 머리 `0b9f334`의 GitHub push/PR CI와 Vercel Preview READY 확인. 병합 커밋 `a22f3fd`의 main CI·Production은 아직 시작되지 않아 이 문서의 main 직접 push 뒤 확인할 단계 |
-| 다음 행동 | 문서 커밋을 main에 push → 정확한 main CI·Production READY 확인 → 운영 API·로그인·EntryJS 읽기 전용 검사 → 결과 기록·다른 PC 인계 |
+| 검증 | Node 24.19.0·Java 21.0.12.1·Windows에서 lint·typecheck·build·전체 E2E **38개 통과**. [main CI](https://github.com/DonghyunT/cs-class/actions/runs/36601913490)도 새 Linux 설치부터 전체 E2E 38개까지 통과 |
+| 배포 | `49ed3c6439e4d9ee4d7862ae99a2b372a619e4d2`의 Vercel Production `dpl_E8wV1Ts1my4nemUskiEeEM82UDBi` READY, [운영 주소](https://cs-class-donghyunt.vercel.app)의 읽기 전용 점검 통과. 최신 문서 커밋의 CI·배포는 각 서비스에서 SHA를 대조 |
+| 다음 행동 | 다른 PC에서 최신 `main`과 이 문서를 읽고, 다음 EntryJS 과제의 학습 목표·지원 블록·검사 조건을 결정. 실학생 적용 범위와 데이터 정책은 별도 협의 |
 
 이번 작업에서 사용자는 실제 EntryJS 실습 하나의 구현과 완료 후 커밋·병합·배포·문서 정리를 요청했습니다. 대상은 위 GitHub 저장소와 Vercel `cs-class`입니다. 실제 학생 계정 등록·DB 시험·도메인/접근 보호 변경은 범위에 포함하지 않았습니다. 완료 기록을 다음 작업의 자동 승인으로 사용하지 않습니다.
 
@@ -29,7 +29,9 @@
 
 PR [#10](https://github.com/DonghyunT/cs-class/pull/10)은 검증한 파일 내용과 동일한 병합 커밋 `a22f3fd38c7441de311bd82e4507d526c7f9575e`로 스쿼시 병합했습니다. 머리 `0b9f33482f453ac904edfe669bcddb43e5e654f9`의 [push CI](https://github.com/DonghyunT/cs-class/actions/runs/36600618197)와 [PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36600625704)는 새 Linux 설치부터 38개 E2E까지 통과했고, Preview `dpl_2XbPKvtTAa3soFZ346LPGuhmdqeR`은 READY입니다. 보호된 Preview 본문의 조회는 연결 권한 부족으로 확인하지 못했습니다.
 
-병합 후 main push 이벤트와 Vercel Production 배포가 자동으로 나타나지 않았습니다(2026-09-30 01:58 KST 확인). 이 문서를 main에 직접 push해 두 통합 작업을 시작하고, 성공 여부를 실제로 확인한 뒤 결과를 이 절에 기록합니다. 운영 주소는 [CS Class](https://cs-class-donghyunt.vercel.app)입니다. 서버 설정·이전 주소의 307 이동·Firebase 승인 도메인은 [서버 설정](FIREBASE_SETUP.md#vercel-서버-설정)을 따릅니다.
+병합 직후 `a22f3fd`의 main push 이벤트·Production 배포는 나타나지 않았습니다(2026-09-30 01:58 KST 확인). 이어서 문서 상태를 갱신한 `49ed3c6439e4d9ee4d7862ae99a2b372a619e4d2`를 `main`에 직접 push했고, [main CI](https://github.com/DonghyunT/cs-class/actions/runs/36601913490)가 새 Linux 설치·lint·typecheck·build·전체 E2E **38개**를 통과했습니다. 해당 SHA의 Vercel Production `dpl_E8wV1Ts1my4nemUskiEeEM82UDBi`도 READY입니다. 애플리케이션 파일은 병합 커밋과 동일하며 이 추가 커밋은 문서만 변경했습니다.
+
+2026-09-30 운영 [CS Class](https://cs-class-donghyunt.vercel.app)를 Chromium에서 읽기 전용으로 점검했습니다. `/api/auth/session`과 `/api/auth/config`는 200이며 Firebase 연결 설정이 확인됐고 에뮬레이터 주소는 없었습니다. 비로그인 학생·교사·작품 API는 401이었습니다. EntryJS 공개 작업실과 4.0.23 자산은 200, 자산 CORS와 OPTIONS 응답은 정상이며, 이전 주소의 로그인 경로·쿼리는 운영 주소로 307 이동했습니다. 교사 로그인 화면의 Google 버튼은 서비스 준비 후 활성화됐습니다. 같은 운영 자산으로 격리된 EntryJS 작업실에 세 블록을 올려 실행해 무대의 `x=10`, ‘안녕!’ 말하기, 종료 뒤 `x=0` 복원과 브라우저 오류 0건을 확인했습니다. 실제 운영 Google 로그인·학생 계정 저장·제출은 이번 배포에서 실행하지 않았습니다. 서버 설정·이전 주소·Firebase 승인 도메인은 [서버 설정](FIREBASE_SETUP.md#vercel-서버-설정)을 따릅니다.
 
 이전 2026-09-29 점검에서는 main `84163e9`의 CI·Production READY, 운영 로그인 화면·세션 JSON·비로그인 API 차단, 사용자의 실제 Google 교사 로그인·대시보드·새로고침 세션 유지를 확인했습니다. 이번 배포의 검증 결과로 표현하지 않습니다. 상세 이력은 [정리 전 원문과 SHA-256](archive/cs-class/2026-09-30-before-entryjs-handoff/manifest.json)에 보존했습니다.
 
