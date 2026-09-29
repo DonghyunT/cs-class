@@ -136,3 +136,65 @@ test("직접 Firestore 읽기·쓰기 차단", async ({ request }) => {
     const write = await fetch(url, { method: "PATCH", headers: { ...directHeaders, "Content-Type": "application/json" }, body: JSON.stringify({ fields: { role: { stringValue: "teacher" } } }) }); expect(write.status).toBe(403);
   }
 });
+
+test("다중 수업 지원 · 순서도 및 엔트리 실습 검증과 제출", async ({ request }) => {
+  await readyStudent(request);
+  await db.collection("csWork").doc("student-20101__entry-bot-lab").delete();
+  await readyTeacher(request);
+  const classRes = await request.get("/api/classroom/teacher?classId=2-1");
+  const teacherDash = await classRes.json();
+  const updateRes = await request.post("/api/classroom/classes/2-1", {
+    headers,
+    data: {
+      revision: teacherDash.classroom.revision,
+      currentLessonId: "entry-bot-lab",
+      openedLessonIds: ["sequence-lab", "flowchart-lab", "entry-bot-lab"],
+    },
+  });
+  expect(updateRes.status()).toBe(200);
+
+  expect((await loginStudent(request, studentPassword)).status()).toBe(200);
+  const endpoint = "/api/classroom/work/entry-bot-lab";
+  let work: Work = await (await request.get(endpoint)).json();
+  expect(work.lessonId).toBe("entry-bot-lab");
+
+  // Incomplete Entry project
+  work.draft.entryProject = JSON.stringify({
+    objects: [{ name: "엔트리봇", script: [[{ type: "move_direction", params: [10] }]] }],
+  });
+  let saveRes = await request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } });
+  expect(saveRes.status()).toBe(200);
+  work = await saveRes.json();
+
+  let actRes = await request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type: "validate-practice" } } });
+  expect(actRes.status()).toBe(200);
+  work = await actRes.json();
+  expect(work.validation?.passed).toBe(false);
+
+  expect((await request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type: "submit-practice" } } })).status()).toBe(409);
+
+  // Complete Entry project meeting all criteria
+  work.draft.entryProject = JSON.stringify({
+    objects: [{
+      name: "엔트리봇",
+      script: [[
+        { type: "when_run_button_click" },
+        { type: "move_direction", params: [10] },
+        { type: "dialog", params: ["안녕!", "say", 2] },
+      ]],
+    }],
+  });
+  saveRes = await request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } });
+  expect(saveRes.status()).toBe(200);
+  work = await saveRes.json();
+
+  actRes = await request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type: "validate-practice" } } });
+  expect(actRes.status()).toBe(200);
+  work = await actRes.json();
+  expect(work.validation?.passed).toBe(true);
+
+  actRes = await request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type: "submit-practice" } } });
+  expect(actRes.status()).toBe(200);
+  work = await actRes.json();
+  expect(work.submission?.entryProject).toBe(work.draft.entryProject);
+});

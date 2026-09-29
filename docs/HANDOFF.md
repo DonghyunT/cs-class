@@ -7,11 +7,11 @@
 | 항목 | 2026-09-29 이번 PC 확인 |
 | --- | --- |
 | 재개 기준 | `git pull --ff-only origin main`·`git fetch origin --prune`로 최신 main `84163e9` 동기화 완료 |
-| 현재 브랜치 | `codex/verify-production-login`, main `84163e9`에서 시작 |
-| 미커밋 변경 | `docs/HANDOFF.md` — 이번 PC의 운영 점검 기록. 아직 커밋·push하지 않음 |
+| 현재 브랜치 | `codex/curriculum-verification-entryjs`, `codex/verify-production-login`에서 분기 |
+| 미커밋 변경 | 정식 수업 추가(순서도·엔트리봇), 과제별 정답·검증 분리(`solutions.ts`), EntryJS 실습 작업실 컴포넌트, E2E 34개 검증 완료 |
 | 코드 릴리스 | [PR #9](https://github.com/DonghyunT/cs-class/pull/9), main `83dca8a` — 스타일·교사 모듈·문서 관리 기준 정리 |
-| 보존 상태 | 코드·기준 문서·이전 인계는 원격 main에 반영돼 있음. 이번 점검 기록은 로컬 작업 브랜치에만 있음 |
-| 검증 | 이번 PC lint·typecheck·build·프로덕션 E2E 33개 통과. 운영 Google 로그인·세션 유지·교사 조회·401/403 권한 경계 확인 |
+| 보존 상태 | 이전 `codex/verify-production-login` 커밋(`f2ab190`)은 원격에 푸시 보존됨 |
+| 검증 | 이번 PC lint 0·typecheck 0·build(14개 SSG 페이지) 통과·Firebase 에뮬레이터 E2E **34개 전원 통과**(0 실패) |
 | 운영 배포 | 최신 main `84163e9`의 [CI](https://github.com/DonghyunT/cs-class/actions/runs/36537362806) 성공·[Production](https://vercel.com/donghyunt/cs-class/DcP9rYcdDQs2v8LrNnLeh492dXcC) READY, SHA 일치 |
 | 운영 주소 | `cs-class-donghyunt.vercel.app`의 로그인 화면 HTTP 200. 이전 `cs-class-sigma.vercel.app`은 로그인 경로·쿼리를 유지하며 307 이동 |
 | 미확인 사항 | 운영 학생의 학습 저장·제출 왕복, 이전 진단에 사용한 Firebase CLI 인증의 폐기·재연결 완료 여부. Vercel 런타임 오류 조회는 이번에도 403 |
@@ -24,7 +24,7 @@
 
 새 대화에 전달할 내용:
 
-> AGENTS.md와 docs/HANDOFF.md를 읽고 CS Class를 이어가자. 현재 브랜치와 미커밋 인계 기록을 먼저 보존하고 최신 main과 대조하자. 문서 역할은 README, 제품 정책은 PRD, 화면 기준은 DESIGN을 따르자. 스타일·교사 모듈 정리와 main 배포는 완료됐고, 운영 주소의 Google 로그인·세션 유지·교사 조회와 이전 주소의 이동도 확인했다. 운영 학생의 저장·제출과 CLI 인증 후속 확인은 남아 있다. 다음 작업의 큰 방향만 물어보고 세부 구현은 기존 기준 안에서 진행해줘.
+> AGENTS.md와 docs/HANDOFF.md를 읽고 CS Class를 이어가자. 현재 브랜치는 `codex/curriculum-verification-entryjs`이며, 정식 수업 추가(순서도, 엔트리봇 블록 코딩)와 과제별 정답·검증 서버 분리, EntryJS 실습 작업실, 34개 E2E 테스트 전체 통과가 완료된 상태다. 문서 역할은 README, 제품 정책은 PRD, 화면 기준은 DESIGN을 따르자. 다음으로 작업 커밋 및 PR 생성, 또는 실학생 계정 등록/공개 준비를 진행하자.
 
 ## 구현 상태와 남은 한계
 
@@ -32,11 +32,12 @@
 | --- | --- |
 | 인증 | 학생 학번·비밀번호, 교사 Google 허용 목록, 강사 로그인·담당 반 권한, 최초·초기화 후 변경, 무활동 만료·중복 접속 종료 |
 | 학생 | 이번 수업·열린 수업, 단계별 진행·이어하기, 자동 저장·재접속 복원 |
-| 샘플 수업 | `sequence-lab`: 개념 2개·퀴즈 3문항·순서 배열 실습 1개 |
-| 제출 | 서버 검증·제출 저장, 기존 제출본과 수정 중 작업 구분 |
+| 정식 수업 | `sequence-lab`(순서와 문제 해결), `flowchart-lab`(순서도로 나타내는 일상), `entry-bot-lab`(엔트리봇의 첫 걸음 - EntryJS 실습) |
+| 실습·검증 | 순서도 카드 재배열 + EntryJS 블록 조립/시뮬레이션 실습, 서버 독립 솔루션 레지스트리 기반 채점/조건 검증 |
+| 제출 | 서버 검증·제출 저장, 기존 제출본과 수정 중 작업 구분, 교사 제출물 뷰어에서 엔트리 프로젝트 블록 확인 |
 | 교사 | 반 선택·수업 지정·열린 수업 관리·학생별 진행·제출 작품 조회·비밀번호 초기화 |
 
-정식 콘텐츠·EntryJS·AI·Q&A·실학생 일괄 등록은 후속입니다. 샘플 검증을 정식 수업이나 운영 준비 완료로 확대하지 않습니다. 브라우저 세션 복원·미전송 초안 복구와 데이터 보관의 한계는 [Firebase 안내](FIREBASE_SETUP.md#데이터와-남은-한계)를 따릅니다.
+AI·Q&A·실학생 일괄 등록은 후속입니다. 브라우저 세션 복원·미전송 초안 복구와 데이터 보관의 한계는 [Firebase 안내](FIREBASE_SETUP.md#데이터와-남은-한계)를 따릅니다.
 
 ## 현재 변경과 검증 근거
 

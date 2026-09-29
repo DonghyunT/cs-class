@@ -4,7 +4,13 @@ export const STATUS_LABELS = { "not-started": "시작 전", "in-progress": "진�
 export function emptyWork(lesson: Lesson): Work {
   return {
     lessonId: lesson.id, revision: 0,
-    draft: { stage: "concept", conceptAnswers: {}, quizAnswers: {}, practiceOrder: lesson.practice.blocks.map((block) => block.id) },
+    draft: {
+      stage: "concept",
+      conceptAnswers: {},
+      quizAnswers: {},
+      practiceOrder: lesson.practice.blocks ? lesson.practice.blocks.map((block) => block.id) : [],
+      entryProject: lesson.practice.defaultProject ?? null,
+    },
     conceptSolved: [], conceptFeedback: {}, quizSolved: [], quizRound: 1,
     quizRoundIds: lesson.quiz.map((question) => question.id), quizRoundGraded: false,
     quizFeedback: {}, validation: null, submission: null, updatedAt: null,

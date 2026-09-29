@@ -25,22 +25,56 @@ export interface Question {
   options: { id: string; label: string }[];
   hint: string;
 }
+export type PracticeType = "ordering" | "entryjs";
+
+export interface PracticeBlock {
+  id: string;
+  label: string;
+}
+
+export interface PracticeCriterion {
+  id: string;
+  label: string;
+}
+
+export interface PracticeDef {
+  type?: PracticeType;
+  title: string;
+  description: string;
+  blocks: PracticeBlock[];
+  criteria?: PracticeCriterion[];
+  defaultProject?: string;
+}
+
 export interface Lesson {
   id: string;
   title: string;
   description: string;
+  category?: string;
   concepts: { id: string; title: string; explanation: string; example: string; question: Question }[];
   quiz: Question[];
-  practice: { title: string; description: string; blocks: { id: string; label: string }[] };
+  practice: PracticeDef;
 }
 export interface WorkDraft {
   stage: Stage;
   conceptAnswers: Record<string, string>;
   quizAnswers: Record<string, string>;
   practiceOrder: string[];
+  entryProject?: string | null;
 }
 export interface Feedback { correct: boolean; message: string }
-export interface Submission { id: string; order: string[]; submittedAt: number }
+export interface Submission {
+  id: string;
+  order: string[];
+  entryProject?: string | null;
+  submittedAt: number;
+}
+export interface ValidationResult {
+  passed: boolean;
+  message: string;
+  order: string[];
+  criteriaResults?: { id: string; passed: boolean; message: string }[];
+}
 export interface Work {
   lessonId: string;
   revision: number;
@@ -52,7 +86,7 @@ export interface Work {
   quizRoundIds: string[];
   quizRoundGraded: boolean;
   quizFeedback: Record<string, Feedback>;
-  validation: { passed: boolean; message: string; order: string[] } | null;
+  validation: ValidationResult | null;
   submission: Submission | null;
   updatedAt: number | null;
 }

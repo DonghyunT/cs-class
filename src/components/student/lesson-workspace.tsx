@@ -8,6 +8,7 @@ import { classroomApi } from "@/lib/classroom/client";
 import { progressFor } from "@/lib/classroom/progress";
 import type { Lesson, Question, Stage, StudentDashboard, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { LearningStatus, ProgressSummary } from "./progress-summary";
+import { EntryPracticeWorkspace } from "./entry-practice-workspace";
 import { useWork } from "./use-work";
 import styles from "./student.module.css";
 
@@ -64,7 +65,7 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
     <li><strong>이어갈 단계</strong>{stages.find((stage) => stage.id === draft.stage)?.label}</li>
     {lesson.concepts.map((concept, i) => <li key={concept.id}><strong>개념 {i + 1}</strong>{label(concept.question, draft.conceptAnswers[concept.id])}</li>)}
     {lesson.quiz.map((question, i) => <li key={question.id}><strong>퀴즈 {i + 1}</strong>{label(question, draft.quizAnswers[question.id])}</li>)}
-    <li><strong>실습 순서</strong>{draft.practiceOrder.map((id) => lesson.practice.blocks.find((block) => block.id === id)?.label).join(" → ")}</li>
+    <li><strong>{lesson.practice.type === "entryjs" ? "엔트리 블록" : "실습 순서"}</strong>{lesson.practice.type === "entryjs" ? `${draft.practiceOrder.length}개 블록 조립됨` : draft.practiceOrder.map((id) => lesson.practice.blocks.find((block) => block.id === id)?.label).filter(Boolean).join(" → ")}</li>
   </ul>;
 }
 
@@ -118,7 +119,7 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
       <span className={styles.saveState} role="status">{saveState === "saving" ? <LoaderCircle size={16} className={styles.spin} /> : saveState === "saved" ? <CloudCheck size={17} /> : <Save size={16} />}{saveState === "saved" ? work.updatedAt ? "저장 완료" : "아직 학습 기록이 없어요" : saveState === "saving" ? "저장 중…" : saveState === "failed" ? "저장 확인 필요" : "변경 내용 저장 대기"}</span>
     </div>
     {otherCurrent && <div className={styles.notice} role="status"><div><strong>선생님이 지정한 이번 수업은 ‘{otherCurrent.title}’이에요.</strong><p>하던 학습을 계속하거나 저장한 뒤 이동할 수 있어요.</p></div><Button variant="outline" nativeButton={false} render={<Link href={`/classroom/${otherCurrent.id}`} />}>이번 수업으로<ArrowRight size={16} /></Button></div>}
-    <header className={styles.lessonHeader}><div><span className={styles.eyebrow}>알고리즘 · 순차 구조</span><h1>{lesson.title}</h1><p>{lesson.description}</p></div><LearningStatus lesson={lesson} work={work} /></header>
+    <header className={styles.lessonHeader}><div><span className={styles.eyebrow}>{lesson.category ?? "알고리즘 · 순차 구조"}</span><h1>{lesson.title}</h1><p>{lesson.description}</p></div><LearningStatus lesson={lesson} work={work} /></header>
     <div className={styles.lessonProgress}><ProgressSummary lesson={lesson} work={{ ...work, validation: draftMatchesValidation ? work.validation : null }} /></div>
     {error && <section className={styles.errorPanel} role="alert"><strong>{controller.conflict ? "저장 기록이 서로 달라요." : "요청을 완료하지 못했어요."}</strong><p>{error}</p><p>현재 입력은 이 화면에 유지하고 있어요. 확인 전에는 창을 닫지 마세요.</p><Button variant="outline" disabled={busy} onClick={() => void (controller.conflict ? controller.compare() : controller.retry())}>{controller.conflict ? "서버 기록과 비교" : "저장 다시 확인"}</Button></section>}
     {controller.remote && <section className={styles.conflictPanel} aria-label="저장 충돌 비교"><h2>어떤 입력으로 이어갈까요?</h2><p>서버의 완료·제출 기록은 유지돼요. 입력 내용은 아래에서 직접 선택하세요.</p><div className={styles.comparisonGrid}><div><h3>이 화면의 입력</h3><DraftComparison lesson={lesson} draft={draft} /></div><div><h3>서버에 저장된 입력</h3><DraftComparison lesson={lesson} draft={controller.remote.draft} /></div></div><div className={styles.actions}><Button disabled={busy} onClick={() => void controller.resolve(true)}>현재 입력을 새 버전으로 저장</Button><Button variant="outline" disabled={busy} onClick={() => void controller.resolve(false)}>서버 기록으로 이어하기</Button></div></section>}
@@ -145,20 +146,127 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
       <div className={styles.stageFooter}><div><p>{quizComplete ? "퀴즈 100% 완료" : work.quizRoundGraded ? `${lesson.quiz.length - work.quizSolved.length}문항을 다시 풀면 퀴즈가 완료돼요.` : unanswered ? `${unanswered}문항을 더 선택하면 결과를 확인할 수 있어요.` : "모든 답을 선택했어요. 결과를 확인해 보세요."}</p>{!quizComplete && (!work.quizRoundGraded ? <Button disabled={locked || unanswered > 0} onClick={() => void runAction({ type: "grade-quiz" }, "stage-heading-quiz")}>{busy ? "확인 중…" : "이번 문제 결과 확인"}</Button> : <Button disabled={locked} onClick={() => void runAction({ type: "retry-quiz" }, "stage-heading-quiz")}><RotateCcw size={16} />틀린 문제만 다시 풀기</Button>)}</div><Button variant={quizComplete ? "default" : "outline"} disabled={locked} onClick={() => void switchStage("practice")}>{quizComplete ? "실습으로 이동" : "먼저 실습하기"}<ArrowRight size={16} /></Button></div>
     </section>}
 
-    {draft.stage === "practice" && <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" tabIndex={0} className={styles.stagePanel}>
-      <div className={styles.stageHeading}><div><h2 id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2><p>{lesson.practice.description}</p></div><span>기본 실습</span></div>
-      {work.submission && <div className={styles.submissionNotice}><CheckCircle2 size={20} /><div><strong id="submitted-heading" tabIndex={-1}>제출한 작품이 있어요.</strong><p>{timeLabel(work.submission.submittedAt)} 제출 · 수정하는 동안에도 이전 제출본과 완료 기록은 유지돼요.</p><details><summary>제출한 순서 보기</summary><ol>{work.submission.order.map((id) => <li key={id}>{lesson.practice.blocks.find((block) => block.id === id)?.label}</li>)}</ol></details></div></div>}
-      <div className={styles.practiceGrid}><section className={styles.orderPanel} aria-label="순서 배열 작업"><div className={styles.orderHeading}><h3>{work.submission ? "수정 중인 작업" : "나의 알고리즘"}</h3><span>위·아래 버튼으로 순서를 바꿔요</span></div><ol className={styles.orderList}>{draft.practiceOrder.map((id, index) => {
-        const block = lesson.practice.blocks.find((item) => item.id === id)!;
-        return <li key={id}><span className={styles.orderIndex}>{index + 1}</span><span className={styles.blockLabel}>{block.label}</span><div className={styles.moveButtons}><button id={`move-${id}-up`} type="button" disabled={locked || index === 0} aria-label={`${block.label} 위로 이동`} onClick={() => moveBlock(id, -1)}><ArrowUp size={17} /></button><button id={`move-${id}-down`} type="button" disabled={locked || index === draft.practiceOrder.length - 1} aria-label={`${block.label} 아래로 이동`} onClick={() => moveBlock(id, 1)}><ArrowDown size={17} /></button></div></li>;
-      })}</ol><span className={styles.srOnly} role="status">{moveMessage}</span></section>
-      <aside className={styles.validationPanel}><span className={styles.iconTile}><CheckCircle2 size={24} /></span><h3>검증하고 제출해요</h3><p>순서를 완성하면 조건을 확인하세요. 검증을 통과한 작품을 제출하면 실습이 완료돼요.</p><ul><li><Check size={15} />시작과 종료의 위치</li><li><Check size={15} />입력 → 인사말 만들기 → 출력</li></ul><Button disabled={locked} onClick={() => void runAction({ type: "validate-practice" }, "practice-feedback")}>{busy ? "처리 중…" : "순서 검증"}</Button>
-        {work.validation && JSON.stringify(work.validation.order) === JSON.stringify(draft.practiceOrder) && <p id="practice-feedback" tabIndex={-1} role="status" className={work.validation.passed ? styles.feedbackGood : styles.feedbackRetry}>{work.validation.message}</p>}
-        {work.validation && JSON.stringify(work.validation.order) !== JSON.stringify(draft.practiceOrder) && <p className={styles.feedbackRetry}>작업이 바뀌었어요. 제출 전에 다시 검증해 주세요.</p>}
-        <Button variant="outline" disabled={locked || !draftMatchesValidation || !!draftMatchesSubmission} onClick={() => void runAction({ type: "submit-practice" }, "submitted-heading")}><Send size={16} />{draftMatchesSubmission ? "이 작품 제출 완료" : work.submission ? "수정한 작품 제출" : "작품 제출"}</Button>
-        {!work.submission && draftMatchesValidation && <p className={styles.smallNote}>검증 통과 · 아직 제출 전이에요.</p>}
-      </aside></div>
-      <div className={styles.stageFooter}><p>{progress.status === "completed" ? "필수 활동을 모두 마쳤어요. 이 수업은 완료예요." : "실습을 제출해도 남은 개념과 퀴즈는 이어서 풀 수 있어요."}</p><Button variant="outline" disabled={locked} onClick={() => void switchStage(progress.concept.percent < 100 ? "concept" : "quiz")}>{progress.concept.percent < 100 ? "개념 확인하러 가기" : "퀴즈 돌아보기"}<ArrowRight size={16} /></Button></div>
-    </section>}
+    {draft.stage === "practice" && (
+      <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" tabIndex={0} className={styles.stagePanel}>
+        <div className={styles.stageHeading}>
+          <div>
+            <h2 id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2>
+            <p>{lesson.practice.description}</p>
+          </div>
+          <span>{lesson.practice.type === "entryjs" ? "엔트리 실습" : "기본 실습"}</span>
+        </div>
+
+        {lesson.practice.type === "entryjs" ? (
+          <EntryPracticeWorkspace
+            lesson={lesson}
+            work={work}
+            draft={draft}
+            locked={locked}
+            busy={busy}
+            update={update}
+            runAction={runAction}
+          />
+        ) : (
+          <>
+            {work.submission && (
+              <div className={styles.submissionNotice}>
+                <CheckCircle2 size={20} />
+                <div>
+                  <strong id="submitted-heading" tabIndex={-1}>제출한 작품이 있어요.</strong>
+                  <p>{timeLabel(work.submission.submittedAt)} 제출 · 수정하는 동안에도 이전 제출본과 완료 기록은 유지돼요.</p>
+                  <details>
+                    <summary>제출한 순서 보기</summary>
+                    <ol>
+                      {work.submission.order.map((id) => (
+                        <li key={id}>{lesson.practice.blocks.find((block) => block.id === id)?.label}</li>
+                      ))}
+                    </ol>
+                  </details>
+                </div>
+              </div>
+            )}
+            <div className={styles.practiceGrid}>
+              <section className={styles.orderPanel} aria-label="순서 배열 작업">
+                <div className={styles.orderHeading}>
+                  <h3>{work.submission ? "수정 중인 작업" : "나의 알고리즘"}</h3>
+                  <span>위·아래 버튼으로 순서를 바꿔요</span>
+                </div>
+                <ol className={styles.orderList}>
+                  {draft.practiceOrder.map((id, index) => {
+                    const block = lesson.practice.blocks.find((item) => item.id === id);
+                    if (!block) return null;
+                    return (
+                      <li key={id}>
+                        <span className={styles.orderIndex}>{index + 1}</span>
+                        <span className={styles.blockLabel}>{block.label}</span>
+                        <div className={styles.moveButtons}>
+                          <button
+                            id={`move-${id}-up`}
+                            type="button"
+                            disabled={locked || index === 0}
+                            aria-label={`${block.label} 위로 이동`}
+                            onClick={() => moveBlock(id, -1)}
+                          >
+                            <ArrowUp size={17} />
+                          </button>
+                          <button
+                            id={`move-${id}-down`}
+                            type="button"
+                            disabled={locked || index === draft.practiceOrder.length - 1}
+                            aria-label={`${block.label} 아래로 이동`}
+                            onClick={() => moveBlock(id, 1)}
+                          >
+                            <ArrowDown size={17} />
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <span className={styles.srOnly} role="status">{moveMessage}</span>
+              </section>
+              <aside className={styles.validationPanel}>
+                <span className={styles.iconTile}><CheckCircle2 size={24} /></span>
+                <h3>검증하고 제출해요</h3>
+                <p>순서를 완성하면 조건을 확인하세요. 검증을 통과한 작품을 제출하면 실습이 완료돼요.</p>
+                <ul>
+                  <li><Check size={15} />시작과 종료의 위치</li>
+                  <li><Check size={15} />올바른 순차 실행 흐름</li>
+                </ul>
+                <Button disabled={locked} onClick={() => void runAction({ type: "validate-practice" }, "practice-feedback")}>
+                  {busy ? "처리 중…" : "순서 검증"}
+                </Button>
+                {work.validation && JSON.stringify(work.validation.order) === JSON.stringify(draft.practiceOrder) && (
+                  <p id="practice-feedback" tabIndex={-1} role="status" className={work.validation.passed ? styles.feedbackGood : styles.feedbackRetry}>
+                    {work.validation.passed && <Check size={16} />}
+                    {work.validation.message}
+                  </p>
+                )}
+                {work.validation && JSON.stringify(work.validation.order) !== JSON.stringify(draft.practiceOrder) && (
+                  <p className={styles.feedbackRetry}>작업이 바뀌었어요. 제출 전에 다시 검증해 주세요.</p>
+                )}
+                <Button
+                  variant="outline"
+                  disabled={locked || !draftMatchesValidation || !!draftMatchesSubmission}
+                  onClick={() => void runAction({ type: "submit-practice" }, "submitted-heading")}
+                >
+                  <Send size={16} />
+                  {draftMatchesSubmission ? "이 작품 제출 완료" : work.submission ? "수정한 작품 제출" : "작품 제출"}
+                </Button>
+                {!work.submission && draftMatchesValidation && (
+                  <p className={styles.smallNote}>검증 통과 · 아직 제출 전이에요.</p>
+                )}
+              </aside>
+            </div>
+          </>
+        )}
+        <div className={styles.stageFooter}>
+          <p>{progress.status === "completed" ? "필수 활동을 모두 마쳤어요. 이 수업은 완료예요." : "실습을 제출해도 남은 개념과 퀴즈는 이어서 풀 수 있어요."}</p>
+          <Button variant="outline" disabled={locked} onClick={() => void switchStage(progress.concept.percent < 100 ? "concept" : "quiz")}>
+            {progress.concept.percent < 100 ? "개념 확인하러 가기" : "퀴즈 돌아보기"}<ArrowRight size={16} />
+          </Button>
+        </div>
+      </section>
+    )}
   </div>;
 }
