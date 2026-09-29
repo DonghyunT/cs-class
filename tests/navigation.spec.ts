@@ -25,12 +25,28 @@ test("태블릿 메뉴와 양방향 화면 전환의 초점 복귀", async ({ pa
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.setViewportSize({ width: 820, height: 900 });
   await expect(toggle).toBeFocused();
+  for (const width of [821, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const dashboard = page.getByRole("link", { name: "대시보드", exact: true });
+    await dashboard.focus();
+    await expect(dashboard).toBeFocused();
+    await page.setViewportSize({ width: 820, height: 900 });
+    await expect(toggle).toBeFocused();
+  }
   const refresh = page.getByRole("button", { name: "수업 새로고침", exact: true });
   await refresh.focus();
   await page.setViewportSize({ width: 821, height: 900 });
   await expect(refresh).toBeFocused();
   await page.setViewportSize({ width: 820, height: 900 });
   await expect(refresh).toBeFocused();
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.getByRole("link", { name: "대시보드", exact: true }).focus();
+  await page.getByRole("contentinfo").click();
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+  await page.setViewportSize({ width: 820, height: 900 });
+  await expect(toggle).toBeVisible();
+  await expect(toggle).not.toBeFocused();
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
 });
 
 async function openLesson(page: Page) {

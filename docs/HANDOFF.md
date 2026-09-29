@@ -21,7 +21,7 @@ npm run dev:emulator
 
 ## 통합·배포 상태
 
-**최신 UI 릴리스는 2026-09-29 [PR #7](https://github.com/DonghyunT/cs-class/pull/7)을 main에 병합한 `1c320ab`입니다.** [운영 배포](https://vercel.com/donghyunt/cs-class/5xHki8Fm6rjcUGakkXF75xpyqt7y)는 READY이고 [운영 주소](https://cs-class-donghyunt.vercel.app)에 연결됐습니다. 새 화면의 검증·접근 제한은 아래 대시보드 정리 기록을 따릅니다.
+**대시보드 화면 릴리스는 2026-09-29 [PR #7](https://github.com/DonghyunT/cs-class/pull/7)을 main에 병합한 `1c320ab`입니다.** 해당 [운영 배포](https://vercel.com/donghyunt/cs-class/5xHki8Fm6rjcUGakkXF75xpyqt7y)는 READY였고 [운영 주소](https://cs-class-donghyunt.vercel.app)에 연결됐습니다. 이후 로그인·입장 수정은 아래 기록을 따르며 최신 배포 커밋은 GitHub main과 Vercel Production을 대조합니다.
 
 ### 2026-09-28 Firebase 통합 기록
 
@@ -63,6 +63,17 @@ npm run dev:emulator
 - 현재 PC의 Vercel 연결은 재인증 후에도 보호된 배포 URL 접근을 거부했고 런타임 로그도 확인하지 못했습니다. 이번 운영 배포에서 앱 세션 API 응답·Google 로그인·대시보드 내부·DB 왕복을 새로 검증하지 않았습니다. 실제 Firebase 키 없이 `demo-cs-class`의 합성 계정으로 한 기능 검증과 구분하며 이전 실제 계정 확인은 위 2026-09-28 기록을 따릅니다.
 
 프로덕션 빌드의 로컬 화면: [학생 데스크톱](reference/dashboards/2026-09-29/student-1440.png)·[학생 모바일](reference/dashboards/2026-09-29/student-390.png), [교사 데스크톱](reference/dashboards/2026-09-29/teacher-1440.png)·[교사 모바일](reference/dashboards/2026-09-29/teacher-390.png). 화면의 학번·인원·진행률은 합성 테스트 기록입니다. 최신 표현 기준은 [DESIGN](DESIGN.md#학생교사-대시보드)을 따릅니다.
+
+### 2026-09-29 교실 입장·로그인 아이콘 수정
+
+- [PR #8](https://github.com/DonghyunT/cs-class/pull/8)에서 홈의 `교실 입장`이 로그인 여부와 관계없이 역할 선택창을 열던 문제를 수정했습니다. 기존 `SessionProvider`의 확인 결과로 학생은 `/student`, 교사·강사는 `/teacher`에 바로 연결합니다. 비밀번호 변경 필요 학생은 `/login/student`로 연결하며 최초 세션 확인 중에는 버튼을 비활성화합니다. 비로그인 상태의 역할 선택·Escape 초점 복귀는 유지합니다.
+- 로고의 파랑 그라데이션·그림자·기울기를 공통 `Brand` 스타일로 모았습니다. 로그인 카드의 학생·교사 아이콘도 홈의 책·학사모와 같은 모양·선·색으로 맞추고 주요 버튼에 홈의 파랑을 적용했습니다. 비밀번호 변경 화면의 열쇠 아이콘은 유지합니다.
+- 최종 lint·typecheck·프로덕션 build와 `next start` + 로컬 Auth·Firestore 에뮬레이터의 전체 E2E **33개**를 통과했습니다. 학생·교사·강사의 홈 입장, 비밀번호 변경 필요 상태, 느린 최초 세션 확인의 회귀 검사 5개를 추가했습니다. 운영 자료를 사용하거나 변경한 검증이 아닙니다.
+- 전체 검사에서 재현된 메뉴 초점 문제도 수정했습니다. 화면을 줄일 때 CSS가 사이드바를 숨기며 `blur`를 먼저 발생시키면 기존 `matchMedia` 검사에서 초점 위치를 놓쳤습니다. 숨기기 전 사이드바 초점을 보존하고 820px 메뉴 버튼으로 복귀하며, 본문 조작이나 바닥글 클릭 뒤에는 초점을 옮기지 않습니다. 화면 변경 알림이 늦게 도착한 경우에도 그 사이 새로 잡힌 사이드바 초점을 유지합니다. 경계·여러 데스크톱 폭·본문 초점 회귀 검사를 확장했고 같은 검사를 3회 연속 통과했습니다.
+- 실제 화면에서 로그인 상태의 모바일 입장·키보드 Enter, 학생·교사 로그인 아이콘·초점을 확인했습니다. 로그인 화면의 320·390·600·768·821·1440px 배치에 가로 넘침이 없었고 브라우저 콘솔 오류도 없었습니다.
+- 사용자의 Chrome 정상 접속 관찰과 연결 도구의 접근 제한을 구분합니다. 이 PC의 Vercel 도구는 재확인에서도 보호된 운영 세션 API 접근을 거부했습니다. 실제 운영 Google 로그인·DB 저장을 새로 검증한 것으로 간주하지 않으며 기존 SSO 보호와 운영 자료를 유지합니다.
+
+로컬 프로덕션 빌드의 로그인 화면: [학생 모바일](reference/login/2026-09-29/student-390.png)·[교사 데스크톱](reference/login/2026-09-29/teacher-1440.png). 실제 계정이나 학생 자료가 없는 화면 기록입니다.
 
 ## 다음 작업
 

@@ -19,6 +19,8 @@ import { useSession } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
 import styles from "./app-shell.module.css";
 
+const desktopQuery = "(min-width: 821px)";
+
 export function AppShell({
   children,
   title,
@@ -38,20 +40,25 @@ export function AppShell({
   const mobileClose = useRef<HTMLButtonElement>(null);
   const dashboardLink = useRef<HTMLAnchorElement>(null);
   const sidebar = useRef<HTMLElement>(null);
+  const sidebarFocused = useRef(false);
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     if (mobileNav) {
       mobileClose.current?.focus();
       document.body.style.overflow = "hidden";
     }
-    const desktop = matchMedia("(min-width: 821px)");
+    const desktop = matchMedia(desktopQuery);
     const onResize = () => {
+      const focusWasInSidebar = sidebar.current?.contains(document.activeElement)
+        || (sidebarFocused.current && document.activeElement === document.body);
       if (desktop.matches && mobileNav) {
         setMobileNav(false);
         dashboardLink.current?.focus();
-      } else if (!desktop.matches && sidebar.current?.contains(document.activeElement)) {
+      } else if (!desktop.matches && focusWasInSidebar) {
         navToggle.current?.focus();
       }
+      // A delayed desktop media event must preserve newly focused sidebar links.
+      sidebarFocused.current = sidebar.current?.contains(document.activeElement) ?? false;
     };
     desktop.addEventListener("change", onResize);
     return () => {
@@ -97,6 +104,11 @@ export function AppShell({
       <div className={`app-layout ${styles.layout}`}>
         <aside
           ref={sidebar}
+          onFocusCapture={() => { sidebarFocused.current = true; }}
+          onBlurCapture={(event) => {
+            // CSS can hide the sidebar and blur it before the media event fires.
+            if (event.relatedTarget || matchMedia(desktopQuery).matches) sidebarFocused.current = false;
+          }}
           role={mobileNav ? "dialog" : undefined}
           aria-modal={mobileNav || undefined}
           aria-label={mobileNav ? "교실 탐색 메뉴" : undefined}
