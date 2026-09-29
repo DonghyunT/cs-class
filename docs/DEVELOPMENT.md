@@ -17,6 +17,10 @@ npm run dev:emulator
 
 이미 복제한 PC라면 먼저 `git status`로 로컬 작업을 확인합니다. 작업 트리가 깨끗할 때 HANDOFF의 fetch·작업 브랜치 전환·pull 순서를 따르고 의존성을 설치합니다. Windows PowerShell에서 npm 스크립트 실행이 차단되면 `npm.cmd`·`npx.cmd`를 사용합니다.
 
+Windows의 사용자 npm 캐시에서 `EPERM`이 발생하면 저장소의 Git 제외 캐시로 설치합니다: `npm.cmd ci --cache .\scratch\npm-cache --no-audit --no-fund`. Java·에뮬레이터·브라우저의 로컬 설치와 캐시는 Git으로 다른 PC에 전달되지 않습니다.
+
+Firebase CLI가 사용자 설정 파일 접근을 거부하면 로컬 에뮬레이터용 터미널에서 `$env:XDG_CONFIG_HOME="$PWD\scratch\firebase-cli-config"`를 설정한 뒤 실행합니다. CLI 설정을 Git 제외 폴더에 분리하며 실제 Firebase 로그인용 터미널에는 적용하지 않습니다.
+
 [학생 입장](http://localhost:3000/login/student)에서 합성 학번 `20101`과 [테스트 설정의 초기 비밀번호](../scripts/local-test-env.mjs)를 사용합니다. 첫 입장에는 본인 테스트 비밀번호로 바꿉니다. [교사 입장](http://localhost:3000/login/teacher)의 강사 계정은 같은 파일의 강사 비밀번호를 사용하며 10·11반을 확인합니다. `Ctrl+C`로 종료하면 에뮬레이터 기록은 보존되지 않습니다.
 
 실제 Firebase로 개발할 때만 [서버 설정 안내](FIREBASE_SETUP.md#다른-pc의-서버-설정)에 따라 환경파일과 관리자 인증을 별도 준비한 뒤 `npm run dev`를 실행합니다. `.env.local`과 관리자 키는 Git에 없으며 새 PC에 자동 전달되지 않습니다. Codex에서 저장소 루트를 열고 다음처럼 요청하면 됩니다.
@@ -42,7 +46,9 @@ npm run test:e2e
 
 GitHub Actions는 `main`·`codex/**` push와 PR에서 위 네 검사를 실행하며 E2E는 빌드된 앱을 `next start`로 실행해 검사합니다. 로컬 E2E는 개발 서버를 사용합니다. UI 확인 기준은 [AGENTS](../AGENTS.md)를 따릅니다. 구체적인 연결·운영상 한계는 [Firebase 연결 안내](FIREBASE_SETUP.md)를 확인합니다.
 
-2026-09-28 최종 lint·typecheck·build와 CI 방식 전체 E2E **27개**를 통과했습니다. 실제 Firebase 왕복은 별도 임시 계정으로 확인했고 정리했으며, 실제 Google 교사 로그인은 localhost와 운영 주소에서 확인했습니다. 운영 검증의 범위와 남은 한계는 [HANDOFF](HANDOFF.md#통합배포-상태)에 있습니다.
+Windows에서 검사 뒤 `next start` 종료가 멈추면 이번 실행의 PID와 명령을 확인해 해당 테스트 서버만 종료합니다. Playwright는 서버 종료 후 최종 결과를 출력하므로 E2E 요약과 종료 코드까지 확인합니다.
+
+2026-09-29 대시보드 변경은 lint·typecheck·build와 프로덕션 빌드 + 로컬 에뮬레이터의 전체 E2E **28개**를 통과했습니다. 실제 Firebase 왕복과 Google 교사 로그인은 2026-09-28 이전 구현에서 확인한 범위이며 이번 로컬 검증과 구분합니다. 화면 기록과 상세 범위는 [HANDOFF](HANDOFF.md#2026-09-29-대시보드-화면-정리), 운영 상태·남은 한계는 [통합·배포 상태](HANDOFF.md#통합배포-상태)에 있습니다.
 
 ## Stitch 연결
 

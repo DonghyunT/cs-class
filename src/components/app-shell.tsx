@@ -17,6 +17,7 @@ import { Brand } from "@/components/visuals";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
+import styles from "./app-shell.module.css";
 
 export function AppShell({
   children,
@@ -35,18 +36,26 @@ export function AppShell({
   const [mobileNav, setMobileNav] = useState(false);
   const navToggle = useRef<HTMLButtonElement>(null);
   const mobileClose = useRef<HTMLButtonElement>(null);
+  const dashboardLink = useRef<HTMLAnchorElement>(null);
+  const sidebar = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (!mobileNav) return;
-    mobileClose.current?.focus();
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const desktop = matchMedia("(min-width: 601px)");
+    if (mobileNav) {
+      mobileClose.current?.focus();
+      document.body.style.overflow = "hidden";
+    }
+    const desktop = matchMedia("(min-width: 821px)");
     const onResize = () => {
-      if (desktop.matches) setMobileNav(false);
+      if (desktop.matches && mobileNav) {
+        setMobileNav(false);
+        dashboardLink.current?.focus();
+      } else if (!desktop.matches && sidebar.current?.contains(document.activeElement)) {
+        navToggle.current?.focus();
+      }
     };
     desktop.addEventListener("change", onResize);
     return () => {
-      document.body.style.overflow = previousOverflow;
+      if (mobileNav) document.body.style.overflow = previousOverflow;
       desktop.removeEventListener("change", onResize);
     };
   }, [mobileNav]);
@@ -85,8 +94,9 @@ export function AppShell({
   const home = teacher ? "/teacher" : "/student";
   return (
     <>
-      <div className="app-layout">
+      <div className={`app-layout ${styles.layout}`}>
         <aside
+          ref={sidebar}
           role={mobileNav ? "dialog" : undefined}
           aria-modal={mobileNav || undefined}
           aria-label={mobileNav ? "교실 탐색 메뉴" : undefined}
@@ -117,7 +127,7 @@ export function AppShell({
               ref={mobileClose}
               variant="ghost"
               size="icon"
-              className="mobile-only"
+              className={styles.mobileOnly}
               aria-label="메뉴 닫기"
               onClick={closeNav}
             >
@@ -129,7 +139,9 @@ export function AppShell({
           </div>
           <nav aria-label="교실 메뉴">
             <Link
+              ref={dashboardLink}
               className={path === home ? "active" : ""}
+              aria-current={path === home ? "page" : undefined}
               href={home}
               onClick={() => setMobileNav(false)}
             >
@@ -167,7 +179,7 @@ export function AppShell({
                 ref={navToggle}
                 variant="ghost"
                 size="icon"
-                className="mobile-only"
+                className={styles.mobileOnly}
                 aria-label="메뉴 열기"
                 aria-expanded={mobileNav}
                 onClick={() => setMobileNav(true)}
@@ -213,7 +225,7 @@ export function AppShell({
             {children}
           </main>
           <footer className="app-footer">
-            CS Class <span>생각하고, 시도하고, 발견하는 즐거움.</span>
+            CS Class <span>즐거운 정보 교실</span>
           </footer>
         </div>
       </div>
