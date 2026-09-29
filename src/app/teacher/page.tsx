@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BookOpen, CheckCircle2, ClipboardCheck, KeyRound, RefreshCw, Search, Settings2, ShieldCheck, Users } from "lucide-react";
+import { CheckCircle2, ClipboardCheck, KeyRound, RefreshCw, Search, Settings2, ShieldCheck, Users } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { DashboardArt } from "@/components/dashboard-art";
 import { useSession } from "@/components/session-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,7 +99,7 @@ function TeacherWorkspace({ instructor }: { instructor: boolean }) {
 
   return <div className={styles.page}>
     <div className={styles.heading}>
-      <div><p className={styles.kicker}>선생님 공간</p><h1>우리 반의 배움을 살펴보세요.</h1><p>수업을 준비하고, 학생이 어디까지 해냈는지 확인해요.</p></div>
+      <div><p className={styles.kicker}>선생님 공간</p><h1>우리 반 수업을 살펴봐요.</h1><p>수업을 준비하고, 학생이 어디까지 해냈는지 확인해요.</p></div>
       <span className={styles.role}><ShieldCheck size={16} aria-hidden="true" />{instructor ? "강사 · 담당 반 관리" : "교사 · 수업 관리"}</span>
     </div>
     <div className={styles.toolbar}>
@@ -106,16 +107,15 @@ function TeacherWorkspace({ instructor }: { instructor: boolean }) {
         {!data?.classrooms.length && <option value="">반 정보 확인 중</option>}
         {data?.classrooms.map((classroom) => <option key={classroom.id} value={classroom.id}>{classroom.name}</option>)}
       </select></label>
-      <div className={styles.refresh}><span>{fetching ? "기록을 확인하고 있어요." : updatedAt && active ? `${dateLabel(updatedAt)} 확인` : "서버에 저장된 기록을 확인해요."}</span><Button variant="outline" disabled={fetching} onClick={() => { setFetching(true); void load(); }}><RefreshCw size={16} aria-hidden="true" />새로고침</Button></div>
+      <div className={styles.refresh}><span>{fetching ? "기록을 확인하고 있어요." : updatedAt && active ? `${dateLabel(updatedAt)} 확인` : "서버에 저장된 기록을 확인해요."}</span><Button variant="outline" aria-label="수업 새로고침" disabled={fetching} onClick={() => { setFetching(true); void load(); }}><RefreshCw size={16} aria-hidden="true" /><span>새로고침</span></Button></div>
     </div>
     {error && <div className={styles.error} role="alert"><p>{error}</p><Button variant="outline" disabled={fetching} onClick={() => { setFetching(true); void load(); }}>다시 불러오기</Button>{active && <span>마지막으로 확인한 기록을 표시하고 있어요.</span>}</div>}
     <div role="status" aria-live="polite" className={notice ? styles.notice : styles.silentNotice}>{notice && <><CheckCircle2 size={18} aria-hidden="true" /><span>{notice}</span></>}</div>
     {!active && !error && <div className={styles.loading} role="status"><span className={styles.loadingBar} /><p>반과 학습 기록을 불러오고 있어요.</p></div>}
     {active && <>
       <section className={styles.currentLesson} aria-labelledby="current-lesson-title">
-        <div className={styles.lessonIcon}><BookOpen size={27} aria-hidden="true" /></div>
-        <div className={styles.currentCopy}><p className={styles.kicker}>{active.classroom.name} · 이번 수업</p><h2 id="current-lesson-title">{current?.title ?? "이번 수업을 지정해 주세요."}</h2><p>{current?.description ?? "수업을 열고 지정하면 학생 대시보드에 먼저 보여요."}</p><span className={styles.currentMeta}>열린 수업 {active.classroom.openedLessonIds.length}개 · 기존 수업은 계속 복습할 수 있어요.</span></div>
-        <ManageLessons key={active.classroom.id} classroom={active.classroom} lessons={active.lessons} onSaved={updateSettings} onLock={lockMutation} onRefresh={load} />
+        <div className={styles.currentCopy}><p className={styles.kicker}><span className={styles.dot} />{active.classroom.name} · 이번 수업</p><h2 id="current-lesson-title">{current?.title ?? "이번 수업을 지정해 주세요."}</h2><p>{current?.description ?? "수업을 열고 지정하면 학생 대시보드에 먼저 보여요."}</p><span className={styles.currentMeta}>열린 수업 {active.classroom.openedLessonIds.length}개 · 기존 수업은 계속 복습할 수 있어요.</span><ManageLessons key={active.classroom.id} classroom={active.classroom} lessons={active.lessons} onSaved={updateSettings} onLock={lockMutation} onRefresh={load} /></div>
+        <DashboardArt variant="teacher" className={styles.heroArt} />
       </section>
       <section id="students" className={styles.students} aria-labelledby="students-title">
         <div className={styles.sectionHeading}><div><h2 id="students-title">학생별 학습 현황</h2><p>개념·퀴즈·실습의 진행과 제출된 작품을 확인해요.</p></div><label className={styles.lessonPicker}>확인할 수업<select value={active.selectedLessonId ?? ""} disabled={!active.classroom.openedLessonIds.length} onChange={(event) => { request.current += 1; setFetching(true); setSelection({ classId: active.classroom.id, lessonId: event.target.value }); setError(""); }}>
@@ -197,7 +197,7 @@ function ManageLessons({ classroom, lessons, onSaved, onLock, onRefresh }: {
     if (next) { setDraft({ ...classroom, openedLessonIds: [...classroom.openedLessonIds] }); setError(""); setConflict(false); setRefreshed(false); }
     setOpen(next);
   }}>
-    <DialogTrigger render={<Button variant="outline" />}><Settings2 size={16} aria-hidden="true" />수업 관리</DialogTrigger>
+    <DialogTrigger render={<Button />}><Settings2 size={16} aria-hidden="true" />수업 관리</DialogTrigger>
     <DialogContent className={styles.dialog} showCloseButton={!saving && !reloading}>
       <DialogHeader><DialogTitle>{classroom.name} 수업 관리</DialogTitle><DialogDescription>학생에게 열어 줄 수업과 이번 수업을 정해 주세요. 이미 열린 수업과 학생 작업은 유지돼요.</DialogDescription></DialogHeader>
       <fieldset className={styles.lessonOptions} disabled={saving || reloading}><legend>열린 수업</legend>

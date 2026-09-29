@@ -1,10 +1,29 @@
 import { expect, test, type Page } from "@playwright/test";
-import { db, headers, initialPassword, lessonId, loginStudent, resetStudent, studentPassword } from "./emulator";
+import { db, headers, initialPassword, lessonId, loginStudent, readyStudent, resetStudent, studentPassword } from "./emulator";
 
 const studentId = "20102";
 const workPath = `/api/classroom/work/${lessonId}`;
 const classPath = `/classroom/${lessonId}`;
 const answerName = "컵에 물을 200mL 따른다";
+
+test("태블릿 메뉴의 초점 복귀와 데스크톱 전환", async ({ page }) => {
+  await readyStudent(page.request);
+  await page.setViewportSize({ width: 768, height: 900 });
+  await page.goto("/student");
+  const toggle = page.getByRole("button", { name: "메뉴 열기", exact: true });
+  const menu = page.getByRole("dialog", { name: "교실 탐색 메뉴" });
+  await toggle.click();
+  await expect(menu.getByRole("button", { name: "메뉴 닫기", exact: true })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(toggle).toBeFocused();
+  await toggle.click();
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await expect(menu).toHaveCount(0);
+  await expect(toggle).toBeHidden();
+  await expect(page.getByRole("link", { name: "대시보드", exact: true })).toBeFocused();
+  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe("");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
 
 async function openLesson(page: Page) {
   await resetStudent(page.request, studentId);

@@ -1,6 +1,6 @@
 # 이어갈 작업
 
-갱신: 2026-09-28. **1차 LMS 구현과 실제 Firebase 연결을 마쳤습니다.** 다음 대화에서는 이 문서 → [PRD](PRD.md) → [DESIGN](DESIGN.md) 순서로 읽습니다. 실행은 [README](../README.md), 서버 설정은 [Firebase 안내](FIREBASE_SETUP.md)를 따릅니다.
+갱신: 2026-09-29. **1차 LMS 구현과 실제 Firebase 연결을 마쳤고, 학생·교사 대시보드를 홈 기준으로 재정리했습니다.** 다음 대화에서는 이 문서 → [PRD](PRD.md) → [DESIGN](DESIGN.md) 순서로 읽습니다. 실행은 [README](../README.md), 서버 설정은 [Firebase 안내](FIREBASE_SETUP.md)를 따릅니다.
 
 ## 다른 PC에서 재개
 
@@ -46,6 +46,18 @@ npm run dev:emulator
 
 공개 홈과 중앙 집중형 로그인은 승인된 디자인입니다. 미리보기 데이터와 실제 학습 기록을 구분합니다. 실제 수업·작업은 서버 API를 사용하며, 로컬 에뮬레이터의 합성 계정은 클라우드에 등록하지 않습니다.
 
+## 2026-09-29 대시보드 화면 정리
+
+- 다른 PC의 작업을 반영해 깨끗한 main을 `6961ef4`까지 fast-forward했습니다. 해당 main의 [GitHub CI](https://github.com/DonghyunT/cs-class/actions/runs/36428192249)는 성공했고 재개 시 열린 PR·이슈는 없었습니다.
+- 이번 UI 변경은 `codex/dashboard-visual-consistency` 작업 내용이며 main 병합·운영 배포는 수행하지 않았습니다. 이전 통합·배포 기록과 구분합니다.
+- 학생·교사 화면의 파랑·본문색·제목·여백·카드·탐색을 홈 기준으로 맞췄습니다. 이번 수업의 정적 픽셀 그래픽은 공통 컴포넌트로 표현하고 학생 집계는 제목 옆에, 교사 집계는 하나의 요약 영역에 모았습니다. 좁은 화면은 진행 정보를 읽을 수 있게 재배치했습니다.
+- 공통 메뉴는 820px 이하에서 열고 821px부터 사이드바를 표시합니다. 옛 전역 CSS의 강제 숨김과 버튼 `visibility` 전환으로 생긴 메뉴 표시·초점 문제를 수정하고 태블릿 메뉴의 Escape·데스크톱 전환 회귀 검사를 추가했습니다.
+- lint·typecheck·프로덕션 build와 `next start` + 로컬 Auth·Firestore 에뮬레이터의 전체 E2E **28개**를 통과했습니다. 구성: 홈 7·API 8·탐색/이력 이동 5·운영 복구 1·플랫폼 3·학생 4. 새 UI의 원격 CI 결과는 아닙니다.
+- 별도 실제 화면 검사에서 학생 개념·퀴즈 기록 저장 → 실습 검증/제출 → 교사 작품 조회, 반 전환·검색/빈 상태·수업 관리 창, 메뉴 Tab 순환·Escape 초점 복귀를 확인했습니다. 320·390·600·768·820·821·1024·1440px 배치와 가로 넘침, 브라우저 오류를 확인했고 오류는 없었습니다.
+- 현재 PC에서는 실제 Firebase 키 없이 `demo-cs-class`의 합성 계정만 사용했습니다. 실제 Google 로그인·학생 등록·운영 DB 및 배포 설정은 이번 검사 대상이 아니며 이전 확인 기록은 위 통합·배포 상태를 따릅니다.
+
+프로덕션 빌드의 로컬 화면: [학생 데스크톱](reference/dashboards/2026-09-29/student-1440.png)·[학생 모바일](reference/dashboards/2026-09-29/student-390.png), [교사 데스크톱](reference/dashboards/2026-09-29/teacher-1440.png)·[교사 모바일](reference/dashboards/2026-09-29/teacher-390.png). 화면의 학번·인원·진행률은 합성 테스트 기록입니다. 최신 표현 기준은 [DESIGN](DESIGN.md#학생교사-대시보드)을 따릅니다.
+
 ## 다음 작업
 
 1. **운영 준비 범위를 정합니다.** 적용할 반·학번 목록·초기 비밀번호 전달 방법을 확인한 뒤 학생 계정을 등록합니다. 기존 자료를 자동 이관하거나 297명을 일괄 생성하지 않습니다.
@@ -87,6 +99,7 @@ npm run dev:emulator
 | --- | --- |
 | `src/lib/classroom/`, `src/lib/server/`, `src/app/api/` | 데이터 계약·진행 계산·인증·권한·서버 저장 |
 | `src/components/session-provider.tsx`, `navigation-provider.tsx` | 세션·활동과 이동 전 저장 보호 |
+| `src/components/app-shell.tsx`, `app-shell.module.css`, `dashboard-art.tsx` | 로그인 후 공통 탐색·시각 기준·정적 픽셀 그래픽 |
 | `src/components/student/`, `src/app/teacher/` | 학생 학습·교사 수업/계정 관리 |
 | `src/components/home/`, `src/app/public-home.css`, `src/lib/demo-data.ts` | 공개 홈·수업 미리보기 |
 | `tests/`, `scripts/` | 흐름·권한 회귀 검사, 환경 설정·에뮬레이터·운영 복구 |
