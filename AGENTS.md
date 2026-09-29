@@ -25,7 +25,8 @@
 
 ## 검증
 - 작업별 완료 조건을 정하고 실패 원인 확인·수정·같은 조건 재검증을 반복합니다. 같은 실패가 세 번 남으면 가설·접근을 재검토합니다. 요구사항을 낮춰 검사를 통과시키거나 새 변경·남은 위험 없이 검사를 반복하지 않습니다.
-- 저장소 루트에서 `npm run lint`, `npm run typecheck`, `npm run build`를 실행합니다. UI·권한·저장은 `npm run test:e2e`로 로컬 Auth·Firestore 에뮬레이터와 함께 검증합니다(Java 21+, 최초 `npx playwright install chromium`). 이미 에뮬레이터를 실행 중일 때만 `npm run test:e2e:running`을 씁니다.
+- 계층형 검증(Tiered Verification)으로 토큰과 실행 시간을 최적화합니다. 작업 도중(디버깅·반복 수정)에는 `npm run typecheck`와 수정한 대상의 단일 테스트(`npx playwright test tests/<target>.spec.ts` 또는 에뮬레이터 실행 중 `npm run test:e2e:running -- tests/<target>.spec.ts`)를 우선 실행하고 무관한 전체 E2E나 빌드를 반복하지 않습니다.
+- 최종 통합(커밋·인계·PR 직전)에는 저장소 루트에서 `npm run lint`, `npm run build`, `npm run test:e2e`로 로컬 Auth·Firestore 에뮬레이터와 함께 전체를 검증합니다(Java 21+, 최초 `npx playwright install chromium`). 이미 에뮬레이터를 실행 중일 때만 `npm run test:e2e:running`을 씁니다.
 - 테스트는 `demo-cs-class`와 로컬 9099·8080만 사용합니다. 실제 서버가 3000에서 실행 중이면 종료한 뒤 E2E를 실행합니다. 운영 DB에 테스트 시드·합성 계정을 넣지 않습니다. 병렬 수동 검사는 계정과 결과 폴더를 나누고 최종 통합은 단일 실행으로 확인합니다.
 - ESLint·TypeScript는 현재 앱·테스트·설정을 검사하고 Tailwind는 `src/`에서 클래스 이름을 찾습니다. `archive/`, `docs/`, `outputs/`, `scratch/`의 과거 코드·참고 자료를 앱 검사·스타일 생성에 섞지 않습니다.
 - CI의 E2E는 먼저 만든 빌드를 `next start`로 실행하고, 로컬은 개발 서버를 사용합니다. 두 경우 모두 에뮬레이터 환경변수를 명시하고 로컬 시드를 준비합니다. 홈 조작 검사는 데스크톱 고정 배치(`data-pinned=true`)가 준비된 뒤 시작해 초기화 도중의 클릭·앵커 이동과 혼동하지 않습니다.

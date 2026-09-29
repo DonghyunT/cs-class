@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "playwright test",
     "test:e2e": "firebase emulators:exec --only auth,firestore --project demo-cs-class \"playwright test\"",
     "test:e2e:running": "playwright test",
     "dev:emulator": "firebase emulators:exec --only auth,firestore --project demo-cs-class \"node scripts/dev-emulator.mjs\""
