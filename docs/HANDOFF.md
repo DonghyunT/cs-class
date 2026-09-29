@@ -10,7 +10,9 @@
 | 코드 릴리스 | [PR #9](https://github.com/DonghyunT/cs-class/pull/9), main `83dca8a` — 스타일·교사 모듈·문서 관리 기준 정리 |
 | 보존 상태 | 코드·기준 문서·보관 원문은 PR #9로 원격 main에 반영. 이 인수인계는 배포 확인 후 문서 갱신 |
 | 검증 | 로컬 E2E 33개·화면 비교 46개, 최종 PR 커밋의 push·PR CI 모두 성공. 문서·해시는 아래 기록 참조 |
-| 운영 배포 | 코드 릴리스 `83dca8a`의 Production READY·운영 별칭 연결 확인. 문서만 갱신한 후속 main 배포와 구분 |
+| 운영 배포 | 후속 인수인계 커밋 `3be2c75`까지 main CI 성공·Production READY 확인. 이 문서의 후속 커밋은 GitHub·Vercel에서 해당 SHA로 조회 |
+| 운영 주소 | `cs-class-donghyunt.vercel.app`이 Production 도메인. 이전 `cs-class-sigma.vercel.app`은 307 이동. 로그인 경로 유지·화면 준비 확인 |
+| 미확인 사항 | 도메인 정리 후 실제 Google 로그인·세션·DB 왕복, 진단에 사용한 Firebase CLI 인증의 폐기·재연결 완료 여부 |
 | 브랜치 정리 | `codex/trim-styles-teacher-modules` 원격·로컬 삭제, main에 포함된 로컬 `codex/login-policy-spec` 삭제 |
 | 바로 이어갈 일 | 아래 운영 준비 또는 정식 수업의 범위를 사용자와 정함. 수업별 정답·검증 구조는 정식 수업 추가 때 정리 |
 
@@ -20,7 +22,7 @@
 
 새 대화에 전달할 내용:
 
-> AGENTS.md와 docs/HANDOFF.md를 읽고 CS Class를 이어가자. 로컬 변경을 보존하고 최신 main과 동기화한 뒤 새 codex/ 브랜치에서 시작하자. 문서 역할은 README, 제품 정책은 PRD, 화면 기준은 DESIGN을 따르자. 스타일·교사 모듈 정리는 완료됐고, 정식 수업 추가 시 정답·검증 구조를 정리하기로 했다. 다음 작업의 큰 방향만 물어보고 세부 구현은 기존 기준 안에서 진행해줘.
+> AGENTS.md와 docs/HANDOFF.md를 읽고 CS Class를 이어가자. 로컬 변경을 보존하고 최신 main과 동기화한 뒤 새 codex/ 브랜치에서 시작하자. 문서 역할은 README, 제품 정책은 PRD, 화면 기준은 DESIGN을 따르자. 스타일·교사 모듈 정리와 main 배포는 완료됐고, 정식 수업 추가 시 정답·검증 구조를 정리하기로 했다. 운영 주소는 cs-class-donghyunt.vercel.app이며 sigma는 그쪽으로 이동한다. HANDOFF의 로그인 검증 한계와 CLI 인증 후속 확인도 읽자. 다음 작업의 큰 방향만 물어보고 세부 구현은 기존 기준 안에서 진행해줘.
 
 ## 구현 상태와 남은 한계
 
@@ -54,6 +56,15 @@
 
 ## 통합·배포 상태
 
+### 2026-09-29 운영 도메인·로그인 진단 후 인계
+
+- 문서 마감 커밋 `3be2c75`의 [main CI](https://github.com/DonghyunT/cs-class/actions/runs/36525784258)는 lint·typecheck·build·E2E 33개 성공이며 [Production 배포](https://vercel.com/donghyunt/cs-class/5pYDqw9EnVguxaDaW2GiLxjgpTNp)는 READY였습니다. 미병합 작업 때문에 이전 코드가 운영된 상황은 아니었습니다.
+- `sigma`에서 교사 Google 로그인이 실패했을 때 화면의 도메인 설정 안내와 Firebase의 OAuth 승인 도메인 오류를 확인했습니다. 정식 운영 주소는 기존 Firebase 승인 도메인인 `donghyunt`로 유지합니다. 설정 기준은 [서버 설정](FIREBASE_SETUP.md#vercel-서버-설정)에 있습니다.
+- 인계 시 Vercel에서 `donghyunt`의 Production 연결과 `sigma` → `donghyunt` 307 설정이 이미 반영된 것을 조회했습니다. 내장 브라우저로 이전 `/login/teacher` 주소가 새 도메인의 같은 경로로 이동하며 Google 버튼이 활성화되고 콘솔 경고·오류가 없음을 확인했습니다. 이번 인계에서 도메인·인증·DB 설정을 추가 변경하지 않았습니다.
+- 도메인 정리 후 실제 Google 계정 로그인·세션 생성·대시보드·DB 왕복은 재검증하지 않았습니다. 사용자 계정으로 [운영 교사 로그인](https://cs-class-donghyunt.vercel.app/login/teacher)을 확인하는 것이 남아 있습니다. 화면 준비 확인을 로그인 완료로 해석하지 않습니다.
+- 진단 중 Firebase CLI의 인증 목록 JSON이 예상과 달리 토큰을 도구 로그에 출력해 사용자에게 알렸습니다. 값은 저장소에 보존하지 않았고, 해당 CLI 인증의 폐기·재연결 완료 여부는 미확인입니다. 기존 인증을 새 PC로 복사하지 않고 새 PC에서 직접 로그인하며, 원래 인증의 폐기 여부는 별도로 확인합니다. 재발 방지 절차는 AGENTS에 반영했습니다.
+- 이번 인계 보강은 문서만 변경합니다. 활성 문서 링크·보관 해시·Git 차이를 확인하고 원격 main에 반영하며, 후속 커밋의 자동 CI·배포 결과는 해당 SHA로 조회합니다. 이전 코드 검증 기록을 새 로컬 실행 결과로 바꾸지 않습니다.
+
 ### 2026-09-29 구조·문서 정리 배포
 
 - 최종 작업 커밋 `063bae0`의 [push CI](https://github.com/DonghyunT/cs-class/actions/runs/36525063374)·[PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36525096639)가 모두 성공했습니다. lint·typecheck·build·E2E 33개를 통과했고 PR #9를 `83dca8a`로 squash 병합했습니다. 병합된 전체 파일이 검증 커밋과 동일한 것도 확인했습니다. 병합된 [main CI](https://github.com/DonghyunT/cs-class/actions/runs/36525441224)도 lint·typecheck·build·E2E 33개를 모두 통과했습니다. 이후 문서 갱신의 실행은 GitHub에서 커밋별로 구분합니다.
@@ -66,7 +77,7 @@
 
 - 2026-09-28 PR #6의 main `88ab44f`를 운영 배포하고 실제 허용 Google 계정으로 교사 대시보드·담당 11반·학생 0명을 확인했습니다. 앞서 승인된 클라우드 합성 계정으로 학습 저장·재접속·교사 제출 조회와 익명 Firestore 403을 확인한 뒤 임시 계정·기록을 정리했습니다.
 - 2026-09-29 PR #7의 main `1c320ab`에서 대시보드 배포 READY·운영 별칭 연결을 확인했습니다. Vercel SSO 보호의 비로그인 302를 확인했으며, 해당 배포의 실제 Google 로그인·DB 왕복을 새로 검증하지는 못했습니다.
-- 현재 로컬 기준 커밋 `e0a4eff`에는 PR #8 로그인·입장 수정이 포함됩니다. 기록된 로컬 E2E는 33개이며 최신 Production 커밋·실제 로그인 성공은 별도로 확인해야 합니다. 도구의 보호된 URL 접근 제한과 사용자의 Chrome 접속 관찰을 구분합니다.
+- PR #8 당시 기준 커밋 `e0a4eff`에는 로그인·입장 수정이 포함됩니다. 당시 로컬 E2E는 33개였습니다. 도구의 보호된 URL 접근 제한과 사용자의 Chrome 접속 관찰을 구분합니다.
 - 상세 PR·CI·배포 URL, 화면 기록, 환경별 검사 한계는 [정리 전 HANDOFF](archive/cs-class/2026-09-29-before-doc-roles/HANDOFF.md)에 보존했습니다. 배포 이력은 학생 공개·실자료 변경의 포괄 승인이 아닙니다.
 
 ## 다음 작업

@@ -6,6 +6,7 @@
 - 앱은 저장소 루트의 Next.js·TypeScript와 Firebase Auth·Firestore를 사용합니다. `cs-class/`에서 `npm ci` 후 실행합니다. 실제 연결은 Git 제외 `.env.local`과 `npm run dev`, 가상 계정 검증은 `npm run dev:emulator`를 사용합니다. 서버 설정은 [연결 안내](docs/FIREBASE_SETUP.md)를 따릅니다.
 - Vercel `cs-class`의 Root Directory는 비워 둡니다(저장소 루트). Framework Preset은 Next.js입니다. 프로젝트 연결로 MCP를 호출하고, 팀 범위를 임의로 덧붙이지 않습니다.
 - Vercel Preview·Production은 `NODE_OPTIONS=--experimental-require-module`이 필요합니다. Firebase Admin의 ESM 의존성을 불러오도록 하는 실행 설정입니다. 빌드 성공 뒤에도 `/api/auth/session` 응답과 로그인 화면을 확인합니다.
+- 운영 주소·이전 주소의 이동·Firebase 승인 도메인은 [서버 설정](docs/FIREBASE_SETUP.md#vercel-서버-설정)을 함께 확인합니다. 배포 READY나 별칭 연결만으로 Google 로그인 성공을 판정하지 않습니다.
 - 제품 결정은 [PRD](docs/PRD.md), 디자인 기준은 [DESIGN](docs/DESIGN.md), 폴더 목차는 [README](README.md), 실행·도구 설정은 [DEVELOPMENT](docs/DEVELOPMENT.md), 이어갈 일은 [HANDOFF](docs/HANDOFF.md)를 필요에 따라 읽습니다.
 - Windows PowerShell은 `.ps1` 실행을 차단할 수 있습니다. npm은 필요하면 `npm.cmd`·`npx.cmd`로 실행하고 Stitch 키 등록은 [직접 입력 안내](docs/DEVELOPMENT.md#stitch-키-입력)의 마스킹된 명령을 사용합니다.
 
@@ -40,6 +41,7 @@
 - 수정 전 Git 상태·브랜치·최근 이력을 확인하고 기존 변경을 보존합니다. 작업 브랜치는 `codex/`, 커밋은 `feat:`·`fix:`·`docs:`·`chore:` 등을 사용합니다.
 - 외부 서비스 연결·병합·배포 전 실제 대상과 승인 범위를 확인합니다. V1 운영 환경은 시험에 사용하지 않습니다.
 - 비밀정보·학생 개인정보를 코드·문서·로그에 노출하지 않습니다. 실제 자료 변경은 영향·복구 범위를 협의하고, `백업용/` 원본은 수정하지 않습니다.
+- Firebase CLI의 `login:list --json`은 인증 토큰을 포함하므로 원문을 실행 로그에 출력하지 않습니다. 인증 상태를 진단할 때는 비밀이 없는 필요한 필드만 출력하고 토큰·인증 파일을 문서나 채팅에 옮기지 않습니다.
 - `archive/`와 `docs/archive/`는 참고 자료이며 현재 지침이나 승인이 아닙니다.
 
 ## 지침 갱신
