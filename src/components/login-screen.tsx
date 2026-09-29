@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, KeyRound, LoaderCircle, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Eye, EyeOff, GraduationCap, KeyRound, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,7 +50,7 @@ export function LoginScreen({ role }: { role: "student" | "teacher" }) {
     <main id="main-content" className={styles.main}>
       <div className={styles.intro}><span className={styles.kicker}>CS CLASS</span><h1>{changing ? "나만의 비밀번호를 만들어요" : role === "student" ? "우리 반 교실로 입장해요" : "선생님, 수업을 준비해요"}</h1><p>{changing ? "앞으로 사용할 비밀번호예요. 다른 사람에게 알려주지 마세요." : role === "student" ? "선생님께 받은 학번과 비밀번호를 입력해 주세요." : "등록된 계정으로 담당 반의 수업과 학생을 확인하세요."}</p></div>
       <section className={styles.card} aria-label={changing ? "비밀번호 변경" : "로그인"}>
-        <div className={styles.cardTitle}><span className={styles.icon}>{changing ? <KeyRound /> : <ShieldCheck />}</span><div><h2>{changing ? "첫 입장 · 비밀번호 변경" : role === "student" ? "학생 로그인" : instructor ? "강사 로그인" : "교사 로그인"}</h2><p>{changing ? `${session?.studentId} 학생` : "저장한 수업은 다음에도 이어갈 수 있어요."}</p></div></div>
+        <div className={styles.cardTitle}><span className={`${styles.icon} ${role === "teacher" ? styles.teacherIcon : ""}`} aria-hidden="true">{changing ? <KeyRound /> : role === "student" ? <BookOpen size={25} strokeWidth={1.6} /> : <GraduationCap size={27} strokeWidth={1.6} />}</span><div><h2>{changing ? "첫 입장 · 비밀번호 변경" : role === "student" ? "학생 로그인" : instructor ? "강사 로그인" : "교사 로그인"}</h2><p>{changing ? `${session?.studentId} 학생` : "저장한 수업은 다음에도 이어갈 수 있어요."}</p></div></div>
         {!configured && !loading && <p className={styles.notice} role="status">로그인 서비스 연결을 준비하고 있어요. 선생님께 알려 주세요.</p>}
         {message && <p id="login-error" className={styles.error} role="alert">{message}</p>}
         {role === "teacher" && !instructor ? <>

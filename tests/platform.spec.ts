@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { resetStudent, initialPassword, studentPassword, readyStudent, readyTeacher, headers, lessonId, correctOrder, db } from "./emulator";
+import { resetStudent, loginStudent, initialPassword, studentPassword, readyStudent, readyTeacher, localOnly, headers, lessonId, correctOrder, db } from "./emulator";
+import { testEnv } from "../scripts/local-test-env.mjs";
 import type { Work } from "../src/lib/classroom/types";
 
 test("공개 홈 · 모바일 · 키보드 · 콘솔", async ({ page }) => {
@@ -18,6 +19,63 @@ test("공개 홈 · 모바일 · 키보드 · 콘솔", async ({ page }) => {
   await expect(page.getByLabel("학번", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "교실 입장", exact: true })).toBeEnabled();
   expect(errors).toEqual([]);
+});
+
+for (const role of ["student", "teacher", "instructor"] as const) {
+  test(`${role} 로그인 후 홈 입장은 선택창 없이 대시보드로 이동`, async ({ page }) => {
+    if (role === "student") await readyStudent(page.request);
+    else if (role === "teacher") await readyTeacher(page.request);
+    else {
+      await localOnly(page.request);
+      expect((await page.request.post("/api/auth/login", { headers, data: { role, studentId: "", password: testEnv.CS_TEST_INSTRUCTOR_PASSWORD } })).status()).toBe(200);
+    }
+
+    const destination = role === "student" ? "/student" : "/teacher";
+    await page.goto("/");
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      const entry = page.getByRole("link", { name: "교실 입장", exact: true });
+      await expect(entry).toHaveAttribute("href", destination);
+      await entry.focus();
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(`http://localhost:3000${destination}`);
+      await expect(page.getByRole("dialog")).toBeHidden();
+      if (role === "student") await expect(page.getByRole("heading", { name: "수업을 이어가 볼까요?" })).toBeVisible();
+      else await expect(page.getByRole("combobox", { name: "담당 반" })).toBeVisible();
+      if (width === 1440) await page.getByRole("link", { name: "CS Class 홈", exact: true }).click();
+      else await page.goto("/");
+      await expect(page).toHaveURL("http://localhost:3000/");
+    }
+    await page.reload();
+    await expect(page.getByRole("link", { name: "교실 입장", exact: true })).toHaveAttribute("href", destination);
+  });
+}
+
+test("비밀번호 변경 전 홈 입장은 변경 화면으로 연결", async ({ page }) => {
+  await resetStudent(page.request);
+  expect((await loginStudent(page.request)).status()).toBe(200);
+  await page.goto("/");
+  await page.getByRole("link", { name: "교실 입장", exact: true }).click();
+  await expect(page).toHaveURL(/\/login\/student$/);
+  await expect(page.getByRole("heading", { name: "나만의 비밀번호를 만들어요" })).toBeVisible();
+  await expect(page.getByRole("dialog")).toBeHidden();
+  expect((await page.request.get("/api/classroom/student")).status()).toBe(403);
+});
+
+test("세션 확인 중에는 역할 선택을 보류하고 확인 후 내 교실로 연결", async ({ page }) => {
+  await readyStudent(page.request);
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => { release = resolve; });
+  await page.route("**/api/auth/session", async (route) => { await pending; await route.continue(); });
+  try {
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "교실 입장", exact: true })).toBeDisabled();
+    await expect(page.getByRole("dialog")).toBeHidden();
+    release();
+    await page.getByRole("link", { name: "교실 입장", exact: true }).click();
+    await expect(page).toHaveURL(/\/student$/);
+    await expect(page.getByRole("dialog")).toBeHidden();
+  } finally { release(); }
 });
 
 test("첫 로그인 비밀번호 변경 · 새로고침 유지 · 세션 쿠키 · 로그아웃", async ({ page }) => {
