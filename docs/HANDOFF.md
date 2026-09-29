@@ -8,7 +8,8 @@
 | --- | --- |
 | 재개 기준 | `git pull --ff-only origin main`·`git fetch origin --prune`로 최신 main `84163e9` 동기화 완료 |
 | 현재 브랜치 | `codex/curriculum-verification-entryjs`, `codex/verify-production-login`에서 분기 |
-| 미커밋 변경 | 정식 수업 추가(순서도·엔트리봇), 과제별 정답·검증 분리(`solutions.ts`), EntryJS 실습 작업실 컴포넌트, E2E 34개 검증 완료 |
+| 미커밋 변경 | 없음 (작업 트리 깨끗함, 커밋 및 푸시 완료) |
+| 열린 PR | [PR #10](https://github.com/DonghyunT/cs-class/pull/10) — 정식 수업 추가 및 서버 정답 분리, EntryJS 실습 연동 |
 | 코드 릴리스 | [PR #9](https://github.com/DonghyunT/cs-class/pull/9), main `83dca8a` — 스타일·교사 모듈·문서 관리 기준 정리 |
 | 보존 상태 | 이전 `codex/verify-production-login` 커밋(`f2ab190`)은 원격에 푸시 보존됨 |
 | 검증 | 이번 PC lint 0·typecheck 0·build(14개 SSG 페이지) 통과·Firebase 에뮬레이터 E2E **34개 전원 통과**(0 실패) |
