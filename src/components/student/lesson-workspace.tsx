@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowLeft, ArrowRight, ArrowDown, ArrowUp, BookOpen, Check, CheckCircle2, CloudCheck, Layers3, Lightbulb, LoaderCircle, RotateCcw, Save, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { classroomApi } from "@/lib/classroom/client";
-import { progressFor } from "@/lib/classroom/progress";
+import { practiceMatches, progressFor } from "@/lib/classroom/progress";
+import { parseEntryProject } from "@/lib/classroom/entry-project";
 import type { Lesson, Question, Stage, StudentDashboard, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { LearningStatus, ProgressSummary } from "./progress-summary";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
@@ -70,7 +71,15 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
 }
 
 function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; initial: Work; uid: string; otherCurrent?: Lesson }) {
-  const controller = useWork(initial, uid);
+  const entryExport = useRef<(() => Promise<string | null>) | null>(null);
+  const readEditorDraft = useCallback(async (current: WorkDraft) => {
+    if (!entryExport.current) return current;
+    const serialized = await entryExport.current();
+    const project = parseEntryProject(serialized);
+    if (!serialized || !project) throw new Error("작품을 확인하지 못했어요. 블록과 입력값을 확인하고 다시 시도해 주세요.");
+    return { ...current, entryProject: serialized, practiceOrder: project.order };
+  }, []);
+  const controller = useWork(initial, uid, lesson.practice.type === "entryjs" ? readEditorDraft : undefined);
   const { work, draft, busy, update, perform, saveState, error } = controller;
   const progress = progressFor(lesson, work);
   const [moveMessage, setMoveMessage] = useState("");
@@ -81,8 +90,8 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
     if (focusRequest) document.getElementById(focusRequest.id)?.focus({ preventScroll: focusRequest.preventScroll });
   }, [focusRequest]);
   const locked = busy || switching;
-  const draftMatchesValidation = work.validation?.passed && JSON.stringify(work.validation.order) === JSON.stringify(draft.practiceOrder);
-  const draftMatchesSubmission = work.submission && JSON.stringify(work.submission.order) === JSON.stringify(draft.practiceOrder);
+  const draftMatchesValidation = work.validation?.passed && practiceMatches(draft, work.validation);
+  const draftMatchesSubmission = practiceMatches(draft, work.submission);
   const quizQuestions = work.quizRoundIds.map((id) => lesson.quiz.find((question) => question.id === id)).filter((question): question is Question => !!question);
   const unanswered = quizQuestions.filter((question) => !draft.quizAnswers[question.id]).length;
   const quizComplete = progress.quiz.percent === 100;
@@ -158,6 +167,7 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
 
         {lesson.practice.type === "entryjs" ? (
           <EntryPracticeWorkspace
+            exportRef={entryExport}
             lesson={lesson}
             work={work}
             draft={draft}

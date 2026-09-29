@@ -33,6 +33,7 @@ Thumbs.db
 
 # 공통 의존성·도구 로그
 node_modules/
+public/entryjs/vendor/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

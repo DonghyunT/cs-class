@@ -1,4 +1,5 @@
-import type { Lesson, Progress, Work } from "./types";
+import { parseEntryProject } from "./entry-project";
+import type { Lesson, Progress, ValidationResult, Work, WorkDraft } from "./types";
 
 export const STATUS_LABELS = { "not-started": "시작 전", "in-progress": "진행 중", completed: "완료" };
 export function emptyWork(lesson: Lesson): Work {
@@ -8,13 +9,20 @@ export function emptyWork(lesson: Lesson): Work {
       stage: "concept",
       conceptAnswers: {},
       quizAnswers: {},
-      practiceOrder: lesson.practice.blocks ? lesson.practice.blocks.map((block) => block.id) : [],
+      practiceOrder: lesson.practice.type === "entryjs" ? parseEntryProject(lesson.practice.defaultProject)?.order ?? [] : lesson.practice.blocks.map((block) => block.id),
       entryProject: lesson.practice.defaultProject ?? null,
     },
     conceptSolved: [], conceptFeedback: {}, quizSolved: [], quizRound: 1,
     quizRoundIds: lesson.quiz.map((question) => question.id), quizRoundGraded: false,
     quizFeedback: {}, validation: null, submission: null, updatedAt: null,
   };
+}
+export function practiceMatches(draft: WorkDraft, saved: Pick<ValidationResult, "order" | "entryProject"> | null | undefined): boolean {
+  if (!saved || draft.practiceOrder.length !== saved.order.length || !draft.practiceOrder.every((id, index) => id === saved.order[index])) return false;
+  if (!draft.entryProject && !saved.entryProject) return true;
+  const current = parseEntryProject(draft.entryProject);
+  const previous = parseEntryProject(saved.entryProject);
+  return !!current && !!previous && JSON.stringify(current.threads) === JSON.stringify(previous.threads);
 }
 export function progressFor(lesson: Lesson, work?: Work | null): Progress {
   const ratio = (completed: number, total: number) => ({ completed, total, percent: total ? Math.round(completed / total * 100) : 100 });

@@ -1,4 +1,5 @@
 import type { Lesson } from "./types";
+import { buildEntryProject } from "./entry-project";
 
 export const SAMPLE_LESSON: Lesson = {
   id: "sequence-lab",
@@ -138,7 +139,7 @@ export const ENTRY_BOT_LESSON: Lesson = {
   id: "entry-bot-lab",
   title: "엔트리봇의 첫 걸음",
   description: "블록 코딩의 원리를 배우고, 엔트리봇이 앞으로 걷고 인사말을 건네도록 만들어 봅니다.",
-  category: "블록 코딩 · EntryJS",
+  category: "블록 코딩",
   concepts: [
     {
       id: "block_order",
@@ -206,31 +207,18 @@ export const ENTRY_BOT_LESSON: Lesson = {
   practice: {
     type: "entryjs",
     title: "엔트리봇 앞으로 걷고 인사하기",
-    description: "시작하기 버튼을 클릭했을 때 엔트리봇이 앞으로 이동하고 인사말을 건네도록 블록을 조립하세요.",
+    description: "시작하기 버튼을 클릭했을 때 엔트리봇이 오른쪽으로 10만큼 이동한 뒤 ‘안녕!’을 2초 동안 말하도록 블록을 연결하세요.",
     blocks: [
       { id: "when_run_button_click", label: "시작하기 버튼을 클릭했을 때" },
       { id: "move_direction", label: "이동 방향으로 10만큼 움직이기" },
-      { id: "dialog", label: "‘안녕!’을 2초 동안 말하기" },
+      { id: "dialog_time", label: "‘안녕!’을 2초 동안 말하기" },
     ],
     criteria: [
-      { id: "crit_start", label: "‘시작하기 버튼을 클릭했을 때’ 블록이 연결되어 있나요?" },
-      { id: "crit_move", label: "‘이동 방향으로 움직이기’ 블록이 포함되어 있나요?" },
-      { id: "crit_say", label: "‘안녕!’ 말하기 블록이 연결되어 있나요?" },
+      { id: "crit_start", label: "시작 블록 하나가 맨 위에 연결되어 있나요?" },
+      { id: "crit_move", label: "시작 신호 뒤에 10만큼 앞으로 움직이나요?" },
+      { id: "crit_say", label: "움직인 뒤 ‘안녕!’을 2초 동안 말하나요?" },
     ],
-    defaultProject: JSON.stringify({
-      objects: [
-        {
-          name: "엔트리봇",
-          script: [
-            [
-              { type: "when_run_button_click" },
-              { type: "move_direction", params: [10] },
-              { type: "dialog", params: ["안녕!", "say", 2] },
-            ],
-          ],
-        },
-      ],
-    }),
+    defaultProject: buildEntryProject(["when_run_button_click"]),
   },
 };
 

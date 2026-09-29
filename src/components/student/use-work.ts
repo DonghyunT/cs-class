@@ -16,7 +16,7 @@ if (typeof window !== "undefined") {
 }
 const sameDraft = (a: WorkDraft, b: WorkDraft) => JSON.stringify(a) === JSON.stringify(b);
 
-export function useWork(initial: Work, uid: string) {
+export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: WorkDraft) => Promise<WorkDraft>) {
   const key = `${uid}:${initial.lessonId}`;
   const [work, setWork] = useState(initial);
   const [draft, setDraft] = useState(() => {
@@ -55,13 +55,22 @@ export function useWork(initial: Work, uid: string) {
     setConflict(problem instanceof ApiError && problem.code === "REVISION_CONFLICT");
   }, []);
 
-  const flush = useCallback((): Promise<boolean> => {
-    if (saving.current) return saving.current;
+  const flush = useCallback(function flushWork(captureEditor = false): Promise<boolean> {
+    if (saving.current) return captureEditor ? saving.current.then((saved) => saved ? flushWork(true) : false) : saving.current;
     if (!active.current || blocked.current) return Promise.resolve(false);
-    if (!isDirty()) { setSaveState("saved"); return Promise.resolve(true); }
+    if (!isDirty() && !(captureEditor && readEditorDraft)) { setSaveState("saved"); return Promise.resolve(true); }
     const operation = (async () => {
       setSaveState("saving");
       try {
+        // Native editors may still hold an uncommitted field when leaving or submitting.
+        if (captureEditor && readEditorDraft) {
+          const captured = await readEditorDraft(local.current);
+          if (!active.current) return false;
+          if (!sameDraft(local.current, captured)) {
+            local.current = captured; setDraft(captured);
+            recovery.set(key, { revision: server.current.revision, draft: captured, at: Date.now() });
+          }
+        }
         // A single writer drains edits made during an outstanding request.
         while (active.current && isDirty()) {
           const captured = local.current;
@@ -77,7 +86,7 @@ export function useWork(initial: Work, uid: string) {
     })();
     saving.current = operation;
     return operation;
-  }, [adopt, fail, initial.lessonId, isDirty, uid]);
+  }, [adopt, fail, initial.lessonId, isDirty, key, readEditorDraft, uid]);
 
   const update = useCallback((next: WorkDraft) => {
     if (!active.current || actionPending.current) return;
@@ -92,7 +101,7 @@ export function useWork(initial: Work, uid: string) {
     actionPending.current = true; setBusy(true);
     const operation = (async () => {
       try {
-        if (!(await flush()) || !active.current) return false;
+        if (!(await flush(true)) || !active.current) return false;
         const captured = local.current;
         const next = await classroomApi.act(initial.lessonId, server.current.revision, action, uid);
         if (!active.current) return false;
@@ -105,7 +114,7 @@ export function useWork(initial: Work, uid: string) {
     return operation;
   }, [adopt, fail, flush, initial.lessonId, uid]);
 
-  const retry = useCallback(async () => { blocked.current = false; setError(""); return flush(); }, [flush]);
+  const retry = useCallback(async () => { blocked.current = false; setError(""); return flush(true); }, [flush]);
   const compare = useCallback(async () => {
     if (actionPending.current) return;
     actionPending.current = true; setBusy(true);
@@ -127,11 +136,11 @@ export function useWork(initial: Work, uid: string) {
 
   const switchStage = useCallback((stage: WorkDraft["stage"]): Promise<boolean> => {
     if (actionPending.current || !active.current) return Promise.resolve(false);
-    if (local.current.stage === stage) return flush();
+    if (local.current.stage === stage) return flush(true);
     actionPending.current = true;
     const operation = (async () => {
       try {
-        if (!(await flush()) || !active.current) return false;
+        if (!(await flush(true)) || !active.current) return false;
         const captured = local.current;
         setSaveState("saving");
         const next = await classroomApi.saveWork(initial.lessonId, server.current.revision, { ...captured, stage }, uid);
@@ -158,7 +167,7 @@ export function useWork(initial: Work, uid: string) {
   useEffect(() => register({
     flush: async () => {
       if (pendingAction.current && !(await pendingAction.current)) return false;
-      return flush();
+      return flush(true);
     },
     isDirty: () => isDirty() || actionPending.current,
   }), [flush, isDirty, register]);

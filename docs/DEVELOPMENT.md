@@ -31,6 +31,19 @@ Firebase CLI가 사용자 설정 파일 접근을 거부하면 로컬 에뮬레�
 
 [로컬 앱](http://localhost:3000/)을 열고 [HANDOFF](HANDOFF.md)를 읽으면 이어갈 수 있습니다. VS Code/Codex의 과거 대화가 없어도 이 문서와 저장소의 스크린샷을 기준으로 작업합니다.
 
+## EntryJS 실습
+
+`entry-bot-lab`은 실제 `@entrylabs/entry` **4.0.23** 작업실을 사용합니다. 교사가 해당 수업을 반에 공개하면 학생의 열린 수업에 나타납니다. 에뮬레이터에서는 교사 입장의 강사 계정으로 10반 수업 관리에서 엔트리봇 수업을 공개하고, 합성 학생 `21001`로 입장해 실습 탭을 선택하면 확인할 수 있습니다. 강사·학생 비밀번호는 위 로컬 테스트 설정을 따릅니다.
+
+- `npm ci`의 `postinstall`과 `npm run dev`·`npm run build`의 준비 단계가 [자산 목록](../scripts/entryjs-assets.json)의 버전·SHA-512로 브라우저 파일을 준비합니다. npm 레지스트리·공식 Entry CDN·고정한 공식 예제 커밋을 사용하며 브라우저는 `/entryjs/vendor/`의 로컬 파일을 읽습니다. 첫 설치에는 인터넷과 `tar`가 필요합니다(Windows 기본 tar 또는 해당 OS의 tar). 자산·다운로드 캐시는 Git 제외 `public/entryjs/vendor/`·`scratch/entryjs/`에 생성됩니다. 필요하면 `npm run prepare:entryjs`로 다시 준비합니다. 무결성이 다른 파일은 빌드에 사용하지 않습니다.
+- [작업실 HTML](../public/entryjs/workspace.html)·[브리지](../public/entryjs/workspace.js)는 `allow-scripts`만 허용한 iframe에서 실행합니다. Next.js 앱의 React 19와 EntryJS 보조 UI의 React 18을 분리합니다. iframe의 설정 저장소는 메모리이며 부모 화면의 쿠키·DOM·저장소에 접근할 수 없습니다. 공개 자산에만 CORS와 OPTIONS를 허용하고 수업 API의 인증·권한·Origin 검사는 유지합니다.
+- 학생 화면은 [EntryPracticeWorkspace](../src/components/student/entry-practice-workspace.tsx), 작품 읽기는 [entry-project.ts](../src/lib/classroom/entry-project.ts), 서버 조건 판정은 [solutions.ts](../src/lib/server/solutions.ts)에서 관리합니다. 네이티브 JSON-string 스크립트와 이전 미리보기 작품을 읽습니다. 시작·이동·시간 동안 말하기 블록과 상수 입력만 허용하고 고정한 엔트리봇·무대로 불러옵니다. 최대 50개 블록·직렬화된 작품 28KB, 이동 ±1000·말 80자·시간 0~10초를 지원합니다.
+- 실행 결과는 중지 **전**에 수집합니다. EntryJS는 중지하면 오브젝트를 실행 전 상태로 되돌리고 `exportProject`도 실행을 중지하므로, 실행 중 자동 저장은 정지 상태의 작품에 현재 코드만 반영합니다. 15초가 지나면 실행을 멈춥니다. 이 과제의 서버 채점은 지원 블록의 연결 구조·상수 값을 검사하며 서버에서 EntryJS를 실행하지 않습니다. 다른 과제의 반복·입력·충돌·난수 검사는 별도 설계합니다.
+- 네이티브 입력의 붙여넣기·IME는 `input`을 `keyup` 처리로 연결합니다. 단계 이동·화면 이동·검증·제출 전에는 편집기의 현재 작품을 읽고 저장하며 실패하면 이동을 멈춥니다. 드래그 중 임시 블록은 저장하지 않습니다. 작품을 불러올 때 작업실 `dReDraw`와 팔레트 `reDraw`의 예약을 순서대로 `flush()`한 뒤 편집을 허용합니다. 늦은 초기 갱신이 입력창을 닫지 않도록 하며, 자동 저장 이후 초점과 연속 입력도 검사합니다. EntryJS 팔레트 좌표 갱신에는 지연이 있으므로 UI 검사는 블록 모델의 좌표 준비 후 시작합니다.
+- [EntryJS 브라우저 검사](../tests/entryjs-ui.spec.ts)는 실제 드래그·숫자 입력·실행·무대 복원·저장·검증·제출·재접속, 저장/파일 로딩 실패 복구, 좁은 창·Esc·키보드 가로 이동을 확인합니다. 라이브러리 번들과 공개된 라이선스·NOTICE·COPYING·패키지 메타데이터는 자산 준비 시 함께 보존합니다.
+
+공식 근거: [설치 예제](https://github.com/entrylabs/example/tree/main/base), [프로젝트 API](https://docs.playentry.org/entryjs/api/2024-02-29-api.html), [실행 이벤트](https://docs.playentry.org/entryjs/api/2024-02-29-event.html). Context7에서 EntryJS를 찾지 못해 고정 버전 패키지의 README·배포 소스와 공식 문서를 확인했습니다.
+
 ## 검증
 
 저장소 루트에서 실행합니다. Java 21+와 최초 `npx playwright install chromium`이 필요합니다. 실제 Firebase에 연결한 3000번 서버는 종료한 뒤 실행합니다.

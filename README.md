@@ -2,7 +2,7 @@
 
 중학교 정보 수업을 위한 온라인 교실입니다. 학생은 이번 수업을 시작하고 지난 활동을 이어가며, 교사는 반별 수업을 준비합니다.
 
-Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 1차 학습 플랫폼**입니다. 학생·교사 로그인, 반별 수업 관리, 학습 기록 저장·복원과 제출을 구현했습니다. 현재 수업은 검증용 샘플이며 실제 학생 계정 등록은 별도입니다.
+Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 학습 플랫폼**입니다. 학생·교사 로그인, 반별 수업 관리, 학습 기록 저장·복원과 제출을 구현했습니다. 순서·순서도·엔트리봇 수업이 있으며 엔트리봇 실습은 실제 EntryJS 편집기와 실행 무대를 사용합니다. 실제 학생 계정 등록은 별도입니다.
 
 [운영 사이트 열기](https://cs-class-donghyunt.vercel.app) · 배포·접근 보호·실제 로그인 확인 범위와 진행 중인 작업은 [HANDOFF](docs/HANDOFF.md)를 먼저 확인합니다. 개발은 아래 에뮬레이터 모드로 진행할 수 있습니다.
 
@@ -70,8 +70,8 @@ cs-class/
 │  │  └─ *.tsx            로그인·공통 셸·세션·이동 전 저장 보호
 │  └─ lib/                classroom/ 계약·server/ 인증과 저장·공통 함수
 ├─ tests/                 홈·로그인·대시보드 브라우저 검사
-├─ public/                정적 파일 (현재 위치만 보존)
-├─ scripts/               개발 도구 설정 보조
+├─ public/entryjs/        EntryJS 작업실·설치 시 생성되는 브라우저 자산
+├─ scripts/               개발·에뮬레이터·EntryJS 자산 준비 도구
 ├─ docs/
 │  ├─ PRD.md              제품 요구사항
 │  ├─ DESIGN.md           디자인 기준
@@ -86,7 +86,7 @@ cs-class/
 └─ .github/workflows/     GitHub 자동 검사
 ```
 
-루트의 `package.json`·잠금 파일·Next.js·TypeScript·ESLint·Playwright·Tailwind 설정은 개발 도구가 사용하는 위치에 둡니다. 문서처럼 `docs/`로 옮기지 않습니다. `public/`은 현재 `.gitkeep`으로 위치만 보존합니다.
+루트의 `package.json`·잠금 파일·Next.js·TypeScript·ESLint·Playwright·Tailwind 설정은 개발 도구가 사용하는 위치에 둡니다. 문서처럼 `docs/`로 옮기지 않습니다. `public/entryjs/vendor/`는 설치·빌드 때 생성하며 Git에서 제외합니다. 버전·무결성·실행 구조는 [EntryJS 개발 안내](docs/DEVELOPMENT.md#entryjs-실습)를 따릅니다.
 
 `node_modules/`, `.next/`, `next-env.d.ts`, `*.tsbuildinfo`, `test-results/`, `playwright-report/`와 도구 로그는 설치·실행 중 생기는 파일입니다. Git에서 제외하며 직접 수정하지 않습니다. `outputs/` 전체를 일괄 추가하지 않습니다. 학생 계정 자료·키·`백업용/`은 로컬에만 보관합니다.
 

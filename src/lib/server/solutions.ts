@@ -1,5 +1,6 @@
 import "server-only";
 import type { WorkDraft } from "../classroom/types";
+import { runnableEntryBlocks } from "../classroom/entry-project";
 
 export interface OrderingSolution {
   type: "ordering";
@@ -27,40 +28,6 @@ export interface LessonSolution {
   quizAnswers: Record<string, string>;
   quizFeedback?: Record<string, { correct: string; incorrect?: string }>;
   practice: OrderingSolution | EntrySolution;
-}
-
-/**
- * Extracts block type names from an EntryJS project JSON or structure.
- */
-export function extractEntryBlockTypes(projectJson: unknown): string[] {
-  if (!projectJson) return [];
-  let parsed: unknown = projectJson;
-  if (typeof projectJson === "string") {
-    try {
-      parsed = JSON.parse(projectJson);
-    } catch {
-      return [];
-    }
-  }
-  const types: string[] = [];
-  function walk(node: unknown) {
-    if (!node || typeof node !== "object") return;
-    if (Array.isArray(node)) {
-      for (const item of node) walk(item);
-      return;
-    }
-    const record = node as Record<string, unknown>;
-    if (typeof record.type === "string") {
-      types.push(record.type);
-    }
-    for (const val of Object.values(record)) {
-      if (typeof val === "object" && val !== null) {
-        walk(val);
-      }
-    }
-  }
-  walk(parsed);
-  return types;
 }
 
 export const SOLUTIONS: Record<string, LessonSolution> = {
@@ -105,43 +72,49 @@ export const SOLUTIONS: Record<string, LessonSolution> = {
       criteria: [
         {
           id: "crit_start",
-          label: "‘시작하기 버튼을 클릭했을 때’ 블록이 연결되어 있나요?",
+          label: "시작 블록 하나가 맨 위에 연결되어 있나요?",
           check: (entryProject) => {
-            const types = extractEntryBlockTypes(entryProject);
-            const passed = types.includes("when_run_button_click");
+            const passed = runnableEntryBlocks(entryProject).length > 0;
             return {
               passed,
-              message: passed ? "시작하기 블록이 올바르게 연결되어 있어요." : "‘시작하기 버튼을 클릭했을 때’ 블록을 가장 위에 놓아 주세요.",
+              message: passed ? "시작하기 블록 하나가 맨 위에 연결되어 있어요." : "‘시작하기 버튼을 클릭했을 때’ 블록 하나를 가장 위에 놓아 주세요.",
             };
           },
         },
         {
           id: "crit_move",
-          label: "‘이동 방향으로 움직이기’ 블록이 포함되어 있나요?",
+          label: "시작 신호 뒤에 10만큼 앞으로 움직이나요?",
           check: (entryProject) => {
-            const types = extractEntryBlockTypes(entryProject);
-            const passed = types.includes("move_direction");
+            const blocks = runnableEntryBlocks(entryProject);
+            const moves = blocks.filter((block) => block.type === "move_direction");
+            const passed = moves.length > 0 && moves.reduce((sum, block) => sum + block.amount, 0) === 10;
             return {
               passed,
-              message: passed ? "이동 블록이 포함되어 있어요." : "엔트리봇이 앞으로 이동할 수 있도록 ‘이동 방향으로 움직이기’ 블록을 추가해 주세요.",
+              message: passed ? "시작 신호 뒤에 10만큼 앞으로 움직여요." : "시작 블록 아래에 ‘이동 방향으로 10만큼 움직이기’ 블록을 연결해 주세요.",
             };
           },
         },
         {
           id: "crit_say",
-          label: "‘안녕!’ 말하기 블록이 연결되어 있나요?",
+          label: "움직인 뒤 ‘안녕!’을 2초 동안 말하나요?",
           check: (entryProject) => {
-            const types = extractEntryBlockTypes(entryProject);
-            const passed = types.includes("dialog");
+            const blocks = runnableEntryBlocks(entryProject);
+            const speechIndex = blocks.findIndex((block) => block.type === "dialog_time");
+            const speech = blocks[speechIndex];
+            const moves = blocks.slice(0, speechIndex).filter((block) => block.type === "move_direction");
+            const passed = speech?.type === "dialog_time" && speech.text === "안녕!" && speech.seconds === 2 && speech.mode === "speak" &&
+              moves.length > 0 && moves.reduce((sum, block) => sum + block.amount, 0) === 10 &&
+              blocks.filter((block) => block.type === "dialog_time").length === 1 &&
+              blocks.slice(speechIndex + 1).every((block) => block.type !== "move_direction");
             return {
               passed,
-              message: passed ? "말하기 블록이 연결되어 있어요." : "인사말을 건넬 수 있도록 ‘말하기’ 블록을 연결해 주세요.",
+              message: passed ? "움직인 뒤 ‘안녕!’을 2초 동안 말해요." : "이동 블록 아래에 ‘안녕!’을 2초 동안 말하기 블록을 연결해 주세요.",
             };
           },
         },
       ],
       successMessage: "엔트리봇이 시작 신호에 맞춰 앞으로 걷고 인사말을 건네는 프로그램이 완성됐어요! 제출하면 실습이 완료돼요.",
-      failureMessage: "조건을 모두 만족하는지 확인해 보세요. (시작 블록, 이동 블록, 말하기 블록)",
+      failureMessage: "시작 블록 하나를 맨 위에 놓고, 앞으로 움직인 뒤 ‘안녕!’을 말하도록 연결해 보세요.",
     },
   },
 };

@@ -3,6 +3,7 @@ import { db, headers, lessonId, correctOrder, readyStudent, loginStudent, studen
 import type { Work, WorkAction } from "../src/lib/classroom/types";
 import { SAMPLE_LESSON } from "../src/lib/classroom/catalog";
 import { progressFor } from "../src/lib/classroom/progress";
+import { buildEntryProject } from "../src/lib/classroom/entry-project";
 
 test("서버에서만 완료 판정 · 오답 회차 · 검증/제출 분리 · 이전 제출 유지", async ({ request }) => {
   await readyStudent(request);
@@ -158,10 +159,10 @@ test("다중 수업 지원 · 순서도 및 엔트리 실습 검증과 제출", 
   let work: Work = await (await request.get(endpoint)).json();
   expect(work.lessonId).toBe("entry-bot-lab");
 
-  // Incomplete Entry project
-  work.draft.entryProject = JSON.stringify({
-    objects: [{ name: "엔트리봇", script: [[{ type: "move_direction", params: [10] }]] }],
-  });
+  // Incomplete native EntryJS project: a detached movement block cannot run.
+  const starter = JSON.parse(work.draft.entryProject!);
+  starter.objects[0].script = [[{ type: "move_direction", params: [{ type: "number", params: [10] }, null] }]];
+  work.draft.entryProject = JSON.stringify(starter);
   let saveRes = await request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } });
   expect(saveRes.status()).toBe(200);
   work = await saveRes.json();
@@ -173,17 +174,13 @@ test("다중 수업 지원 · 순서도 및 엔트리 실습 검증과 제출", 
 
   expect((await request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type: "submit-practice" } } })).status()).toBe(409);
 
-  // Complete Entry project meeting all criteria
-  work.draft.entryProject = JSON.stringify({
-    objects: [{
-      name: "엔트리봇",
-      script: [[
-        { type: "when_run_button_click" },
-        { type: "move_direction", params: [10] },
-        { type: "dialog", params: ["안녕!", "say", 2] },
-      ]],
-    }],
-  });
+  // Native exports store scripts as JSON strings with nested literal blocks.
+  starter.objects[0].script = JSON.stringify([[
+    { type: "when_run_button_click", params: [null] },
+    { type: "move_direction", params: [{ type: "number", params: [10] }, null] },
+    { type: "dialog_time", params: [{ type: "text", params: ["안녕!"] }, { type: "number", params: [2] }, "speak", null] },
+  ]]);
+  work.draft.entryProject = JSON.stringify(starter);
   saveRes = await request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } });
   expect(saveRes.status()).toBe(200);
   work = await saveRes.json();
@@ -197,4 +194,44 @@ test("다중 수업 지원 · 순서도 및 엔트리 실습 검증과 제출", 
   expect(actRes.status()).toBe(200);
   work = await actRes.json();
   expect(work.submission?.entryProject).toBe(work.draft.entryProject);
+});
+
+test("EntryJS는 실제 스크립트의 연결·값을 검사하고 변경된 작품의 재검증을 요구한다", async ({ request }) => {
+  await readyStudent(request);
+  await db.collection("csWork").doc("student-20101__entry-bot-lab").delete();
+  await db.collection("csClasses").doc("2-1").update({ openedLessonIds: ["sequence-lab", "entry-bot-lab"], currentLessonId: "entry-bot-lab" });
+  const endpoint = "/api/classroom/work/entry-bot-lab";
+  let work: Work = await (await request.get(endpoint)).json();
+  const correct = JSON.parse(buildEntryProject(["when_run_button_click", "move_direction", "dialog_time"]));
+  const script = correct.objects[0].script;
+  const invalidScripts = [
+    [[script[0][1], script[0][2]]],
+    [[script[0][1], script[0][0], script[0][2]]],
+    [[script[0][0], script[0][2], script[0][1]]],
+    [script[0], [script[0][1]]],
+    [[script[0][0], { ...script[0][1], params: [{ type: "number", params: [20] }, null] }, script[0][2]]],
+    [[script[0][0], script[0][1], { ...script[0][2], params: [{ type: "text", params: ["다른 말"] }, { type: "number", params: [2] }, "speak", null] }]],
+    [[script[0][0], script[0][1], { ...script[0][2], params: [{ type: "text", params: ["안녕!"] }, { type: "number", params: [1] }, "speak", null] }]],
+    [[script[0][0], script[0][1], { ...script[0][2], params: [{ type: "text", params: ["안녕!"] }, { type: "number", params: [2] }, "think", null] }]],
+  ];
+  async function save(project: string) {
+    const response = await request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, entryProject: project } } });
+    expect(response.status()).toBe(200); work = await response.json();
+  }
+  async function validate() {
+    const response = await request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type: "validate-practice" } } });
+    expect(response.status()).toBe(200); work = await response.json();
+  }
+  for (const blocks of invalidScripts) {
+    await save(JSON.stringify({ ...correct, objects: [{ ...correct.objects[0], script: JSON.stringify(blocks) }] }));
+    await validate(); expect(work.validation?.passed).toBe(false);
+    expect((await request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type: "submit-practice" } } })).status()).toBe(409);
+  }
+  const before = work.revision;
+  expect((await request.post(endpoint, { headers, data: { revision: before, draft: { ...work.draft, entryProject: JSON.stringify({ objects: [{ script: [[{ type: "get_variable", params: ["x"] }]] }] }) } } })).status()).toBe(400);
+  expect(((await (await request.get(endpoint)).json()) as Work).revision).toBe(before);
+  await save(JSON.stringify(correct)); await validate(); expect(work.validation?.passed).toBe(true);
+  await save(JSON.stringify({ ...correct, objects: [{ ...correct.objects[0], script: invalidScripts[4] }] }));
+  expect(work.validation).toBeNull();
+  expect((await request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type: "submit-practice" } } })).status()).toBe(409);
 });

@@ -1,6 +1,6 @@
 # Firebase 연결과 검증
 
-갱신: 2026-09-29. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다.
+갱신: 2026-09-30. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다.
 
 ## 연결 기준
 
@@ -78,7 +78,7 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 - 학생 10분(9분 경고), 교사/강사 4시간 무활동 만료입니다. 자동 저장·조회는 활동으로 취급하지 않습니다. 새 로그인만 기존 세션을 바꿉니다.
 - 세션 쿠키는 HttpOnly·SameSite=Strict, 배포 환경 Secure이며 지속 만료일을 넣지 않습니다. 브라우저의 세션 복원 기능은 쿠키를 복구할 수 있어 창 닫기를 절대적인 로그아웃 보장으로 취급하지 않습니다. 공용 PC에서는 로그아웃을 사용합니다.
 - 미저장 답안은 현재 화면 메모리에만 유지합니다. 서버 저장이 실패한 채 강제로 창을 닫거나 세션을 종료한 뒤의 복구는 보장하지 않습니다. 다른 사용자에게 남지 않도록 브라우저 영속 저장소에 답안을 남기지 않습니다.
-- 현재는 수업 하나입니다. 수업 버전 변경·학년도 전환·실학생 대량 등록·심화·EntryJS·AI·Q&A는 후속 작업입니다.
-- 의존성 점검의 미해결 항목·확인 날짜는 [HANDOFF](HANDOFF.md#다음-작업)에 기록합니다.
+- 순서·순서도·엔트리봇 세 수업과 작은 EntryJS 실습을 구현했습니다. 수업 버전 변경·학년도 전환·실학생 대량 등록·심화·추가 EntryJS 과제·AI·Q&A는 후속 작업입니다. EntryJS 실행·자산 준비·검사 범위는 [개발 안내](DEVELOPMENT.md#entryjs-실습)를 따릅니다.
+- 의존성 점검의 미해결 항목·확인 날짜는 [HANDOFF](HANDOFF.md#남은-한계와-다음-결정)에 기록합니다.
 
 공식 설정: [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup), [Application Default Credentials](https://docs.cloud.google.com/docs/authentication/provide-credentials-adc).

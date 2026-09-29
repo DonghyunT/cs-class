@@ -1,384 +1,159 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Check, CheckCircle2, Play, Plus, RotateCcw, Send, Square, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import { Check, CheckCircle2, Play, RotateCcw, Send, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Lesson, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
-import styles from "./student.module.css";
+import { buildEntryProject, parseEntryProject } from "@/lib/classroom/entry-project";
+import { practiceMatches } from "@/lib/classroom/progress";
+import common from "./student.module.css";
+import styles from "./entry-practice-workspace.module.css";
 
-interface EntryBlockItem {
-  id: string;
-  type: string;
-  label: string;
-  category: "start" | "movement" | "looks";
-  paramText?: string;
-}
+const CHANNEL = "cs-class-entryjs";
+const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
-const AVAILABLE_BLOCKS: EntryBlockItem[] = [
-  { id: "when_run_button_click", type: "when_run_button_click", label: "시작하기 버튼을 클릭했을 때", category: "start" },
-  { id: "move_direction", type: "move_direction", label: "이동 방향으로", category: "movement", paramText: "10만큼 움직이기" },
-  { id: "dialog", type: "dialog", label: "‘안녕!’을", category: "looks", paramText: "2초 동안 말하기" },
-];
-
-function buildProjectJson(blocks: EntryBlockItem[]): string {
-  return JSON.stringify({
-    objects: [
-      {
-        name: "엔트리봇",
-        script: [blocks.map((b) => ({ type: b.type, params: b.type === "move_direction" ? [10] : b.type === "dialog" ? ["안녕!", "say", 2] : [] }))],
-      },
-    ],
-  });
-}
-
-function parseBlocksFromDraft(draft: WorkDraft): EntryBlockItem[] {
-  if (draft.entryProject) {
-    try {
-      const parsed = JSON.parse(draft.entryProject);
-      const scripts = parsed?.objects?.[0]?.script?.[0];
-      if (Array.isArray(scripts)) {
-        const result: EntryBlockItem[] = [];
-        for (let i = 0; i < scripts.length; i++) {
-          const item = scripts[i];
-          const matched = AVAILABLE_BLOCKS.find((b) => b.type === item.type);
-          if (matched) {
-            result.push({ ...matched, id: `${matched.type}_${i}` });
-          }
-        }
-        if (result.length > 0) return result;
-      }
-    } catch {
-      // Fallback below
-    }
-  }
-  // Default blocks for entry-bot-lab
-  return [
-    { ...AVAILABLE_BLOCKS[0], id: "blk_start_default" },
-    { ...AVAILABLE_BLOCKS[1], id: "blk_move_default" },
-    { ...AVAILABLE_BLOCKS[2], id: "blk_dialog_default" },
-  ];
-}
-
-const timeLabel = (time: number) =>
-  new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
-
-export function EntryPracticeWorkspace({
-  lesson,
-  work,
-  draft,
-  locked,
-  busy,
-  update,
-  runAction,
-}: {
-  lesson: Lesson;
-  work: Work;
-  draft: WorkDraft;
-  locked: boolean;
-  busy: boolean;
+export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, update, runAction, exportRef }: {
+  lesson: Lesson; work: Work; draft: WorkDraft; locked: boolean; busy: boolean;
   update: (next: WorkDraft) => void;
   runAction: (action: WorkAction, focusId: string) => Promise<void>;
+  exportRef: RefObject<(() => Promise<string | null>) | null>;
 }) {
-  const [blocks, setBlocks] = useState<EntryBlockItem[]>(() => parseBlocksFromDraft(draft));
-  const [isRunning, setIsRunning] = useState(false);
-  const [botX, setBotX] = useState(50); // percentage across canvas
-  const [speechBubble, setSpeechBubble] = useState<string | null>(null);
-  const [activeStepIndex, setActiveStepIndex] = useState<number | null>(null);
-  const [runMessage, setRunMessage] = useState("");
-  const canvasId = useId();
-  const blockCounter = useRef(100);
+  const frame = useRef<HTMLIFrameElement>(null);
+  const editorProject = useRef<string | null>(null);
+  const bootTimer = useRef<number | undefined>(undefined);
+  const pending = useRef<{ id: number; promise: Promise<string | null>; resolve: (project: string | null) => void; timer: number } | null>(null);
+  const requestId = useRef(0);
+  const [attempt, setAttempt] = useState(0);
+  const [bootReady, setBootReady] = useState(false);
+  const [phase, setPhase] = useState<"loading" | "ready" | "failed">("loading");
+  const [running, setRunning] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState("블록을 연결한 뒤 실행해 보세요.");
+  const program = parseEntryProject(draft.entryProject);
+  const validation = practiceMatches(draft, work.validation) ? work.validation : null;
+  const submitted = practiceMatches(draft, work.submission);
 
-  // Sync draft whenever blocks change
-  function applyBlockChanges(nextBlocks: EntryBlockItem[]) {
-    setBlocks(nextBlocks);
-    const json = buildProjectJson(nextBlocks);
-    update({
-      ...draft,
-      entryProject: json,
-      practiceOrder: nextBlocks.map((b) => b.type),
-    });
+  function send(type: string, details: Record<string, unknown> = {}) {
+    frame.current?.contentWindow?.postMessage({ channel: CHANNEL, type, ...details }, "*");
   }
 
-  function addBlock(template: EntryBlockItem) {
-    if (locked) return;
-    blockCounter.current += 1;
-    const newBlock: EntryBlockItem = {
-      ...template,
-      id: `${template.type}_${blockCounter.current}`,
+  const readProject = useCallback((): Promise<string | null> => {
+    if (pending.current) return pending.current.promise;
+    let resolve!: (project: string | null) => void;
+    const promise = new Promise<string | null>((finish) => { resolve = finish; });
+    const id = ++requestId.current;
+    const timer = window.setTimeout(() => { if (pending.current?.id === id) { pending.current = null; resolve(null); } }, 4000);
+    pending.current = { id, promise, resolve, timer };
+    frame.current?.contentWindow?.postMessage({ channel: CHANNEL, type: "export", id }, "*");
+    return promise;
+  }, []);
+
+  useEffect(() => {
+    const exportProject = async () => {
+      const serialized = await readProject();
+      if (serialized) editorProject.current = serialized;
+      return serialized;
     };
-    applyBlockChanges([...blocks, newBlock]);
-  }
+    exportRef.current = phase === "ready" ? exportProject : null;
+    return () => { if (exportRef.current === exportProject) exportRef.current = null; };
+  }, [exportRef, phase, readProject]);
 
-  function removeBlock(index: number) {
-    if (locked) return;
-    const next = [...blocks];
-    next.splice(index, 1);
-    applyBlockChanges(next);
-  }
+  useEffect(() => {
+    bootTimer.current = window.setTimeout(() => { setPhase("failed"); setError("작업실을 불러오지 못했어요. 다시 불러와 주세요."); }, 20000);
+    return () => {
+      window.clearTimeout(bootTimer.current);
+      if (pending.current) { window.clearTimeout(pending.current.timer); pending.current.resolve(null); pending.current = null; }
+    };
+  }, [attempt]);
 
-  function moveBlock(index: number, delta: number) {
-    if (locked) return;
-    const destination = index + delta;
-    if (destination < 0 || destination >= blocks.length) return;
-    const next = [...blocks];
-    const [target] = next.splice(index, 1);
-    next.splice(destination, 0, target);
-    applyBlockChanges(next);
-  }
-
-  function resetSimulator() {
-    setIsRunning(false);
-    setBotX(50);
-    setSpeechBubble(null);
-    setActiveStepIndex(null);
-    setRunMessage("");
-  }
-
-  // Simulation execution loop
-  function handleRun() {
-    if (isRunning) {
-      resetSimulator();
-      return;
+  useEffect(() => {
+    function receive(event: MessageEvent) {
+      if (event.source !== frame.current?.contentWindow || event.origin !== "null" || event.data?.channel !== CHANNEL) return;
+      const message = event.data;
+      if (message.type === "ready") setBootReady(true);
+      else if (message.type === "loaded") { window.clearTimeout(bootTimer.current); setPhase("ready"); setError(""); }
+      else if (message.type === "changed" && typeof message.project === "string" && !locked) {
+        const next = parseEntryProject(message.project);
+        editorProject.current = message.project;
+        update({ ...draft, entryProject: message.project, practiceOrder: next?.order ?? draft.practiceOrder });
+        setError(next ? "" : "시작·이동·시간 동안 말하기 블록과 입력값을 확인해 주세요. 블록이 많다면 조금 줄여 주세요.");
+      } else if (message.type === "exported" && typeof message.project === "string" && pending.current && pending.current.id === message.id) {
+        window.clearTimeout(pending.current.timer); pending.current.resolve(message.project); pending.current = null;
+      } else if (message.type === "running" && typeof message.running === "boolean") {
+        setRunning(message.running);
+        if (message.running) setResult("엔트리봇이 실행 중이에요.");
+      } else if (message.type === "result" && typeof message.x === "number" && Number.isFinite(message.x) && typeof message.speech === "string") {
+        const finish = message.reason === "timeout" ? "15초가 지나 실행을 멈췄어요." : message.reason === "reset" ? "무대를 처음 위치로 돌렸어요." : message.reason === "finished" ? "실행을 마쳤어요." : "실행을 멈췄어요.";
+        setResult(`${finish} 이동 거리 ${Math.round(message.x * 100) / 100}${message.speech ? ` · 마지막 말: ${message.speech.slice(0, 80)}` : ""}`);
+      } else if (message.type === "error") { window.clearTimeout(bootTimer.current); setPhase("failed"); setError("작업실을 불러오지 못했어요. 입력한 작품은 이 화면에 유지하고 있어요."); }
+      else if (message.type === "focus-return") document.getElementById("entry-run")?.focus();
     }
-    const hasStart = blocks.some((b) => b.type === "when_run_button_click");
-    if (!hasStart) {
-      setRunMessage("‘시작하기 버튼을 클릭했을 때’ 블록이 연결되어야 실행돼요!");
-      return;
-    }
-    setIsRunning(true);
-    setBotX(50);
-    setSpeechBubble(null);
-    setRunMessage("실행 중…");
+    window.addEventListener("message", receive);
+    return () => window.removeEventListener("message", receive);
+  }, [draft, locked, update]);
 
-    // Execute step by step
-    let delay = 0;
-    blocks.forEach((block, index) => {
-      setTimeout(() => {
-        setActiveStepIndex(index);
-        if (block.type === "move_direction") {
-          setBotX((prev) => Math.min(prev + 12, 85));
-        } else if (block.type === "dialog") {
-          setSpeechBubble("안녕!");
-        }
-      }, delay);
-      delay += 800;
-    });
+  useEffect(() => {
+    if (!bootReady || editorProject.current === (draft.entryProject ?? null)) return;
+    const next = parseEntryProject(draft.entryProject);
+    if (!next) return;
+    editorProject.current = draft.entryProject ?? null;
+    frame.current?.contentWindow?.postMessage({ channel: CHANNEL, type: "load", project: next.project }, "*");
+  }, [bootReady, draft.entryProject]);
 
-    setTimeout(() => {
-      setIsRunning(false);
-      setActiveStepIndex(null);
-      setRunMessage("실행을 마쳤어요. 조건을 검증해 보세요!");
-    }, delay + 600);
+  useEffect(() => {
+    if (bootReady) frame.current?.contentWindow?.postMessage({ channel: CHANNEL, type: "lock", locked: locked || preparing }, "*");
+  }, [bootReady, locked, preparing]);
+
+  async function act(action: WorkAction, focusId: string) {
+    if (locked || preparing || phase !== "ready" || running) return;
+    setPreparing(true);
+    const serialized = await readProject();
+    const next = parseEntryProject(serialized);
+    if (serialized && next) {
+      editorProject.current = serialized;
+      update({ ...draft, entryProject: serialized, practiceOrder: next.order });
+      await runAction(action, focusId);
+    } else setError("작품을 확인하지 못했어요. 작업실의 블록과 입력값을 확인하고 다시 시도해 주세요.");
+    setPreparing(false);
   }
 
-  const draftMatchesValidation =
-    work.validation?.passed && work.validation.criteriaResults?.every((r) => r.passed);
-  const draftMatchesSubmission =
-    work.submission && work.submission.entryProject === draft.entryProject;
+  function retry() {
+    editorProject.current = null; setBootReady(false); setPhase("loading"); setError(""); setRunning(false); setAttempt((value) => value + 1);
+  }
 
-  return (
-    <div className={styles.practiceGrid}>
-      <section className={styles.entryWorkspacePanel} aria-label="엔트리 블록 코딩 작업">
-        {work.submission && (
-          <div className={styles.submissionNotice}>
-            <CheckCircle2 size={20} />
-            <div>
-              <strong id="submitted-heading" tabIndex={-1}>제출한 작품이 있어요.</strong>
-              <p>{timeLabel(work.submission.submittedAt)} 제출 · 수정하는 동안에도 이전 제출본과 완료 기록은 유지돼요.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Live Simulation Canvas */}
-        <div className={styles.entryCanvasWrapper} id={canvasId} role="region" aria-label="엔트리 무대">
-          <div className={styles.entryCanvasHeader}>
-            <div className={styles.entryCanvasTitle}>
-              <span className={styles.entryCanvasBadge}>무대</span>
-              <span>실행 결과 미리보기</span>
-            </div>
-            <div className={styles.entrySimControls}>
-              <Button
-                variant={isRunning ? "destructive" : "default"}
-                size="sm"
-                onClick={handleRun}
-                aria-label={isRunning ? "실행 정지" : "시작하기 실행"}
-              >
-                {isRunning ? <Square size={14} /> : <Play size={14} />}
-                {isRunning ? "정지하기" : "시작하기"}
-              </Button>
-              <Button variant="outline" size="sm" onClick={resetSimulator} aria-label="무대 초기화">
-                <RotateCcw size={14} />초기화
-              </Button>
-            </div>
-          </div>
-
-          <div className={styles.entryStage}>
-            {/* Coordinate ground line */}
-            <div className={styles.stageGround} />
-            {/* EntryBot */}
-            <div
-              className={styles.entryBotContainer}
-              style={{ left: `${botX}%` }}
-              aria-label="엔트리봇 캐릭터"
-            >
-              {speechBubble && <div className={styles.entrySpeechBubble}>{speechBubble}</div>}
-              {/* Cute SVG representation of EntryBot */}
-              <svg width="68" height="68" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Body */}
-                <rect x="25" y="32" width="50" height="42" rx="14" fill="#376FC8" />
-                <rect x="29" y="36" width="42" height="34" rx="10" fill="#FFFFFF" />
-                {/* Eyes */}
-                <circle cx="42" cy="50" r="5" fill="#202B3A" />
-                <circle cx="58" cy="50" r="5" fill="#202B3A" />
-                <circle cx="44" cy="48" r="1.5" fill="#FFFFFF" />
-                <circle cx="60" cy="48" r="1.5" fill="#FFFFFF" />
-                {/* Smile */}
-                <path d="M44 60 C 48 64, 52 64, 56 60" stroke="#202B3A" strokeWidth="2.5" strokeLinecap="round" />
-                {/* Antenna */}
-                <path d="M50 32 L50 20" stroke="#376FC8" strokeWidth="4" strokeLinecap="round" />
-                <circle cx="50" cy="18" r="5" fill="#F8B133" />
-                {/* Ears */}
-                <rect x="18" y="44" width="7" height="16" rx="3.5" fill="#376FC8" />
-                <rect x="75" y="44" width="7" height="16" rx="3.5" fill="#376FC8" />
-                {/* Feet */}
-                <rect x="33" y="74" width="12" height="10" rx="4" fill="#202B3A" />
-                <rect x="55" y="74" width="12" height="10" rx="4" fill="#202B3A" />
-              </svg>
-            </div>
-          </div>
-          {runMessage && <p className={styles.simStatus} role="status">{runMessage}</p>}
-        </div>
-
-        {/* Block Palette & Assembly Area */}
-        <div className={styles.entryStudio}>
-          {/* Palette */}
-          <div className={styles.entryPalette}>
-            <h4>블록 모음</h4>
-            <div className={styles.paletteList}>
-              {AVAILABLE_BLOCKS.map((template) => (
-                <button
-                  key={template.type}
-                  type="button"
-                  className={`${styles.entryBlock} ${styles[`entryBlock_${template.category}`]}`}
-                  disabled={locked}
-                  onClick={() => addBlock(template)}
-                  aria-label={`${template.label} 추가`}
-                >
-                  <Plus size={14} />
-                  <span>{template.label} {template.paramText && <em>{template.paramText}</em>}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Script Thread */}
-          <div className={styles.entryScriptThread}>
-            <div className={styles.scriptHeader}>
-              <h4>조립된 블록 ({blocks.length}개)</h4>
-              <span>위에서 아래로 차례대로 실행돼요</span>
-            </div>
-            {blocks.length === 0 ? (
-              <div className={styles.emptyScript}>
-                <p>왼쪽 블록 모음에서 블록을 클릭해 조립해 보세요.</p>
-              </div>
-            ) : (
-              <ol className={styles.entryScriptList}>
-                {blocks.map((b, index) => (
-                  <li
-                    key={b.id}
-                    className={`${styles.entryScriptItem} ${styles[`entryBlock_${b.category}`]} ${activeStepIndex === index ? styles.activeBlockStep : ""}`}
-                  >
-                    <span className={styles.stepNum}>{index + 1}</span>
-                    <span className={styles.blockText}>
-                      {b.label} {b.paramText && <strong className={styles.paramBubble}>{b.paramText}</strong>}
-                    </span>
-                    <div className={styles.blockActions}>
-                      <button
-                        type="button"
-                        disabled={locked || index === 0}
-                        onClick={() => moveBlock(index, -1)}
-                        aria-label="위로 이동"
-                      >
-                        <ArrowUp size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={locked || index === blocks.length - 1}
-                        onClick={() => moveBlock(index, 1)}
-                        aria-label="아래로 이동"
-                      >
-                        <ArrowDown size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={locked}
-                        onClick={() => removeBlock(index)}
-                        aria-label="블록 삭제"
-                        className={styles.deleteBlockBtn}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Validation Panel */}
-      <aside className={styles.validationPanel}>
-        <span className={styles.iconTile}><CheckCircle2 size={24} /></span>
-        <h3>검증하고 제출해요</h3>
-        <p>조립한 블록이 과제의 조건을 만족하는지 확인하세요. 검증을 통과한 작품을 제출하면 실습이 완료돼요.</p>
-
-        {lesson.practice.criteria && (
-          <ul className={styles.criteriaList}>
-            {lesson.practice.criteria.map((criterion) => {
-              const res = work.validation?.criteriaResults?.find((r) => r.id === criterion.id);
-              const isChecked = res ? res.passed : false;
-              return (
-                <li key={criterion.id} className={isChecked ? styles.criterionPassed : ""}>
-                  <Check size={15} />
-                  <span>{criterion.label}</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
-        <Button
-          disabled={locked}
-          onClick={() => void runAction({ type: "validate-practice" }, "practice-feedback")}
-        >
-          {busy ? "검증 중…" : "조건 검증"}
+  return <div className={styles.workspace}>
+    {work.submission && <div className={common.submissionNotice}><CheckCircle2 size={20} /><div><strong id="submitted-heading" tabIndex={-1}>제출한 작품이 있어요.</strong><p>{timeLabel(work.submission.submittedAt)} 제출 · 수정하는 동안에도 이전 제출본과 완료 기록은 유지돼요.</p></div></div>}
+    <section className={styles.editor} aria-label="엔트리 블록 코딩 작업">
+      <div className={styles.toolbar}><strong>엔트리 작업실</strong><div>
+        <Button id="entry-run" size="sm" disabled={locked || preparing || phase !== "ready" || !program} onClick={() => send(running ? "stop" : "run")}>
+          {running ? <Square size={14} /> : <Play size={14} />}{running ? "실행 정지" : "실행하기"}
         </Button>
-
-        {work.validation && (
-          <p
-            id="practice-feedback"
-            tabIndex={-1}
-            role="status"
-            className={work.validation.passed ? styles.feedbackGood : styles.feedbackRetry}
-          >
-            {work.validation.passed && <Check size={16} />}
-            {work.validation.message}
-          </p>
-        )}
-
-        <Button
-          variant="outline"
-          disabled={locked || !draftMatchesValidation || !!draftMatchesSubmission}
-          onClick={() => void runAction({ type: "submit-practice" }, "submitted-heading")}
-        >
-          <Send size={16} />
-          {draftMatchesSubmission ? "이 작품 제출 완료" : work.submission ? "수정한 작품 제출" : "작품 제출"}
-        </Button>
-        {!work.submission && draftMatchesValidation && (
-          <p className={styles.smallNote}>검증 통과 · 아직 제출 전이에요.</p>
-        )}
-      </aside>
-    </div>
-  );
+        <Button size="sm" variant="outline" disabled={locked || preparing || phase !== "ready"} onClick={() => send("reset-stage")}><RotateCcw size={14} />무대 처음 위치로</Button>
+      </div></div>
+      <p className={styles.help} id="entry-help">시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요. 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 실행 버튼으로 돌아와요.</p>
+      {(!program || error) && <div role="alert" className={styles.error}><p>{error || "저장된 작품을 읽지 못했어요. 기존 저장본은 유지돼요."}</p>{phase === "failed" && program && <Button variant="outline" onClick={retry}>작업실 다시 불러오기</Button>}
+        {!program && <Button variant="outline" disabled={locked} onClick={() => { if (window.confirm("현재 편집 중인 블록을 시작 블록 하나로 바꿀까요? 이전 제출본은 유지돼요.")) { const starter = buildEntryProject(); update({ ...draft, entryProject: starter, practiceOrder: ["when_run_button_click"] }); retry(); } }}>시작 블록으로 다시 만들기</Button>}
+      </div>}
+      <div className={styles.frameScroll} tabIndex={0} role="region" aria-label="엔트리 작업실 가로 이동" aria-describedby="entry-help" aria-busy={phase === "loading"}>
+        {phase === "loading" && <p className={styles.loading} role="status">엔트리 작업실을 불러오는 중…</p>}
+        <iframe key={attempt} ref={frame} src="/entryjs/workspace.html" title="엔트리봇 블록 편집기와 실행 무대" sandbox="allow-scripts" className={styles.frame} inert={locked || preparing || phase !== "ready"} />
+      </div>
+      <p className={styles.result} role="status">{result}</p>
+    </section>
+    <aside className={styles.validation}>
+      <div><h3>검증하고 제출해요</h3><p>검증을 통과한 작품을 제출하면 실습이 완료돼요.</p>
+        <ul className={styles.criteria}>{lesson.practice.criteria?.map((criterion) => {
+          const feedback = validation?.criteriaResults?.find((item) => item.id === criterion.id);
+          return <li key={criterion.id}>{feedback?.passed ? <Check size={16} /> : <Square size={16} />}<span>{criterion.label}<span className={common.srOnly}>{feedback ? feedback.passed ? "통과" : "보완 필요" : "확인 전"}</span></span></li>;
+        })}</ul>
+      </div>
+      <div className={styles.actions}>
+        <Button disabled={locked || preparing || running || phase !== "ready" || !program} onClick={() => void act({ type: "validate-practice" }, "practice-feedback")}>{busy || preparing ? "확인 중…" : "조건 검증"}</Button>
+        {validation && <p id="practice-feedback" tabIndex={-1} role="status" className={validation.passed ? common.feedbackGood : common.feedbackRetry}>{validation.message}</p>}
+        <Button variant="outline" disabled={locked || preparing || running || phase !== "ready" || !validation?.passed || submitted} onClick={() => void act({ type: "submit-practice" }, "submitted-heading")}><Send size={16} />{submitted ? "이 작품 제출 완료" : work.submission ? "수정한 작품 제출" : "작품 제출"}</Button>
+        {!work.submission && validation?.passed && <p className={common.smallNote}>검증 통과 · 아직 제출 전이에요.</p>}
+      </div>
+    </aside>
+  </div>;
 }

@@ -2,6 +2,8 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Lesson, Work, WorkAction } from "../classroom/types";
+import { parseEntryProject } from "../classroom/entry-project";
+import { practiceMatches } from "../classroom/progress";
 import { requireCondition } from "./errors";
 import { getLessonSolution } from "./solutions";
 
@@ -34,10 +36,9 @@ export function validateDraft(draft: z.infer<typeof draftSchema>, lesson: Lesson
     requireCondition(lesson.quiz.find((q) => q.id === id)?.options.some((option) => option.id === value), 400, "INVALID_ANSWER", "퀴즈 답안을 확인해 주세요.");
   }
   if (lesson.practice.type === "entryjs") {
-    // For EntryJS practice, practiceOrder may reflect available/used blocks or be empty
-    if (draft.practiceOrder.length > 0 && lesson.practice.blocks.length > 0) {
-      requireCondition(draft.practiceOrder.every((id) => lesson.practice.blocks.some((block) => block.id === id)), 400, "INVALID_ORDER", "실습 블록을 확인해 주세요.");
-    }
+    const blocks = parseEntryProject(draft.entryProject);
+    requireCondition(blocks, 400, "INVALID_PROJECT", "이 실습에서 사용하는 블록과 값을 확인해 주세요.");
+    return { ...draft, practiceOrder: blocks.order };
   } else {
     // Default: ordering practice
     requireCondition(new Set(draft.practiceOrder).size === lesson.practice.blocks.length && draft.practiceOrder.every((id) => lesson.practice.blocks.some((block) => block.id === id)), 400, "INVALID_ORDER", "실습 블록을 확인해 주세요.");
@@ -90,6 +91,7 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
       next.validation = {
         passed,
         order: [...next.draft.practiceOrder],
+        entryProject: next.draft.entryProject ?? null,
         message: passed ? solution.practice.successMessage : solution.practice.failureMessage,
       };
     } else {
@@ -102,6 +104,7 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
       next.validation = {
         passed,
         order: [...next.draft.practiceOrder],
+        entryProject: next.draft.entryProject ?? null,
         message: passed ? solution.practice.successMessage : solution.practice.failureMessage,
         criteriaResults: results.map((r) => ({ id: r.id, passed: r.passed, message: r.message })),
       };
@@ -111,7 +114,7 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
     if (solution.practice.type === "ordering") {
       requireCondition(
         next.validation?.passed &&
-        sameOrder(next.validation.order, next.draft.practiceOrder) &&
+        practiceMatches(next.draft, next.validation) &&
         sameOrder(next.draft.practiceOrder, solution.practice.expectedOrder),
         409,
         "VALIDATION_REQUIRED",
@@ -121,7 +124,7 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
     } else {
       const allPassed = solution.practice.criteria.every((c) => c.check(next.draft.entryProject, next.draft).passed);
       requireCondition(
-        next.validation?.passed && allPassed,
+        next.validation?.passed && practiceMatches(next.draft, next.validation) && allPassed,
         409,
         "VALIDATION_REQUIRED",
         "현재 작품을 검증한 뒤 제출해 주세요."

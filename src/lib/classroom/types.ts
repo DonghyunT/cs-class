@@ -73,6 +73,7 @@ export interface ValidationResult {
   passed: boolean;
   message: string;
   order: string[];
+  entryProject?: string | null;
   criteriaResults?: { id: string; passed: boolean; message: string }[];
 }
 export interface Work {
