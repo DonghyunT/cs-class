@@ -51,13 +51,14 @@ export function AppShell({
     const onResize = () => {
       const focusWasInSidebar = sidebar.current?.contains(document.activeElement)
         || (sidebarFocused.current && document.activeElement === document.body);
-      sidebarFocused.current = false;
       if (desktop.matches && mobileNav) {
         setMobileNav(false);
         dashboardLink.current?.focus();
       } else if (!desktop.matches && focusWasInSidebar) {
         navToggle.current?.focus();
       }
+      // A delayed desktop media event must preserve newly focused sidebar links.
+      sidebarFocused.current = sidebar.current?.contains(document.activeElement) ?? false;
     };
     desktop.addEventListener("change", onResize);
     return () => {
