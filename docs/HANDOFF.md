@@ -1,10 +1,10 @@
 # 이어갈 작업
 
-갱신: 2026-09-29. **1차 LMS 구현과 실제 Firebase 연결을 마쳤고, 학생·교사 대시보드를 홈 기준으로 재정리했습니다.** 다음 대화에서는 이 문서 → [PRD](PRD.md) → [DESIGN](DESIGN.md) 순서로 읽습니다. 실행은 [README](../README.md), 서버 설정은 [Firebase 안내](FIREBASE_SETUP.md)를 따릅니다.
+갱신: 2026-09-29. **1차 LMS 구현과 실제 Firebase 연결을 마쳤고, 홈 기준으로 재정리한 학생·교사 대시보드를 main에 병합·운영 배포했습니다.** 다음 대화에서는 이 문서 → [PRD](PRD.md) → [DESIGN](DESIGN.md) 순서로 읽습니다. 실행은 [README](../README.md), 서버 설정은 [Firebase 안내](FIREBASE_SETUP.md)를 따릅니다.
 
 ## 다른 PC에서 재개
 
-Firebase 구현 브랜치와 문서·홈 구조 정리를 통합·병합·배포했습니다. **main이 재개 기준**입니다. 실행·Java·로컬 에뮬레이터 준비는 [DEVELOPMENT](DEVELOPMENT.md#다른-pc에서-시작)를 따릅니다. 새 PC는 실제 Firebase 키 없이도 개발할 수 있습니다.
+Firebase 구현·문서·홈 구조와 학생·교사 대시보드 정리를 main에 반영했습니다. **main이 재개 기준**입니다. 실행·Java·로컬 에뮬레이터 준비는 [DEVELOPMENT](DEVELOPMENT.md#다른-pc에서-시작)를 따릅니다. 새 PC는 실제 Firebase 키 없이도 개발할 수 있습니다.
 
 기존 복제본은 먼저 로컬 변경을 확인하고, 작업 트리가 깨끗할 때 아래 명령을 실행합니다.
 
@@ -20,6 +20,10 @@ npm run dev:emulator
 다음 개발은 main에서 새 `codex/` 브랜치를 만들어 진행합니다. 실제 Firebase에 연결하려면 Git에 없는 환경파일과 관리자 인증을 본인이 관리하는 안전한 방법으로 따로 준비합니다.
 
 ## 통합·배포 상태
+
+**최신 UI 릴리스는 2026-09-29 [PR #7](https://github.com/DonghyunT/cs-class/pull/7)을 main에 병합한 `1c320ab`입니다.** [운영 배포](https://vercel.com/donghyunt/cs-class/5xHki8Fm6rjcUGakkXF75xpyqt7y)는 READY이고 [운영 주소](https://cs-class-donghyunt.vercel.app)에 연결됐습니다. 새 화면의 검증·접근 제한은 아래 대시보드 정리 기록을 따릅니다.
+
+### 2026-09-28 Firebase 통합 기록
 
 - 사용자가 현재까지의 구현을 검증한 뒤 main 병합·운영 배포하도록 승인했습니다. 이전 브랜치의 병합 보류 기록은 이번 승인으로 대체합니다.
 - 통합 대상은 Firebase·학습 구현 `8c08ec5`와 구조 정리 `3f9cf7f`입니다. API·학습 로직은 유지하고, 공개 홈 컴포넌트 분리와 최신 문서의 경로·상태를 함께 반영했습니다.
@@ -40,7 +44,7 @@ npm run dev:emulator
 | 샘플 수업 | `sequence-lab`: 개념 2개·퀴즈 3문항·순서 배열 실습 1개. 개념 확인, 오답만 재도전, 선택형 힌트, 자유로운 단계 이동 |
 | 제출 | 서버 검증 → 학생 제출 → 저장 성공 시 완료. 제출 후 수정 중에도 기존 제출본·완료 유지 |
 | 교사 | 반 선택·이번 수업 지정·열린 수업 관리·학생별 진행·제출 작품 조회·비밀번호 초기화 |
-| Firebase | 승인된 `cs-class-f74c4`, 서울 기본 DB. 두 로그인 제공자, 11개 빈 반, 서버 전용 Firestore 규칙 설정. 실제 학생 계정은 아직 없음 |
+| Firebase | 승인된 `cs-class-f74c4`, 서울 기본 DB. 2026-09-28 두 로그인 제공자·11개 빈 반·서버 전용 Firestore 규칙·등록 학생 0명을 확인한 기록이며 이번 검사는 로컬 에뮬레이터 범위 |
 
 사용자는 메타프롬프팅 후 구현과 메인·학생·교사 분담을 승인했습니다. 구현 보류는 과거 단계의 요청입니다. [BUILD_BRIEF](BUILD_BRIEF.md)는 완료한 1차 작업의 범위·공통 계약·검증 기준이며 이후 작업을 자동으로 시작하라는 지시가 아닙니다.
 
@@ -49,12 +53,14 @@ npm run dev:emulator
 ## 2026-09-29 대시보드 화면 정리
 
 - 다른 PC의 작업을 반영해 깨끗한 main을 `6961ef4`까지 fast-forward했습니다. 해당 main의 [GitHub CI](https://github.com/DonghyunT/cs-class/actions/runs/36428192249)는 성공했고 재개 시 열린 PR·이슈는 없었습니다.
-- 이번 UI 변경은 `codex/dashboard-visual-consistency`의 [PR #7](https://github.com/DonghyunT/cs-class/pull/7)입니다. 사용자가 브랜치 정리·main 병합·푸시·운영 배포를 승인했으며 최종 CI·배포 확인을 진행합니다.
+- [PR #7](https://github.com/DonghyunT/cs-class/pull/7)의 최종 커밋 `ca8f5e4`를 검증한 뒤 사용자의 승인에 따라 main `1c320ab`로 squash 병합했습니다. 병합된 파일 전체가 검증 브랜치와 같은지 확인했고, Ponytail·Context7 사용 기준도 AGENTS에 반영했습니다.
 - 학생·교사 화면의 파랑·본문색·제목·여백·카드·탐색을 홈 기준으로 맞췄습니다. 이번 수업의 정적 픽셀 그래픽은 공통 컴포넌트로 표현하고 학생 집계는 제목 옆에, 교사 집계는 하나의 요약 영역에 모았습니다. 좁은 화면은 진행 정보를 읽을 수 있게 재배치했습니다.
 - 공통 메뉴는 820px 이하에서 열고 821px부터 사이드바를 표시합니다. 옛 전역 CSS의 강제 숨김과 버튼 `visibility` 전환으로 생긴 메뉴 표시·초점 문제를 수정하고 Escape·양방향 화면 크기 전환 회귀 검사를 추가했습니다. 데스크톱에서 태블릿으로 줄일 때 사이드바 안의 초점은 메뉴 버튼으로 복귀하며 본문 조작의 초점은 유지합니다.
-- lint·typecheck·프로덕션 build와 `next start` + 로컬 Auth·Firestore 에뮬레이터의 전체 E2E **28개**를 통과했습니다. 구성: 홈 7·API 8·탐색/이력 이동 5·운영 복구 1·플랫폼 3·학생 4. 최종 원격 CI와 배포 결과는 병합 단계에서 다시 확인합니다.
+- 최종 lint·typecheck·프로덕션 build와 `next start` + 로컬 Auth·Firestore 에뮬레이터의 전체 E2E **28개**를 통과하고 종료 코드 0을 확인했습니다. 구성: 홈 7·API 8·탐색/이력 이동 5·운영 복구 1·플랫폼 3·학생 4. Windows의 테스트 서버 종료 대기는 해당 실행의 PID를 확인해 정리했고 대처 방법을 DEVELOPMENT에 남겼습니다.
+- 최종 커밋의 [push CI](https://github.com/DonghyunT/cs-class/actions/runs/36509726318)와 [PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36509731521), 병합된 [main CI](https://github.com/DonghyunT/cs-class/actions/runs/36510124961)가 모두 성공했습니다. 자동 리뷰의 데스크톱 → 태블릿 초점 지적은 먼저 재현한 뒤 수정·회귀 검사하여 해결 처리했습니다.
 - 별도 실제 화면 검사에서 학생 개념·퀴즈 기록 저장 → 실습 검증/제출 → 교사 작품 조회, 반 전환·검색/빈 상태·수업 관리 창, 메뉴 Tab 순환·Escape 초점 복귀를 확인했습니다. 320·390·600·768·820·821·1024·1440px 배치와 가로 넘침, 브라우저 오류를 확인했고 오류는 없었습니다.
-- 현재 PC에서는 실제 Firebase 키 없이 `demo-cs-class`의 합성 계정만 사용했습니다. 실제 Google 로그인·학생 등록·운영 DB 및 배포 설정은 이번 검사 대상이 아니며 이전 확인 기록은 위 통합·배포 상태를 따릅니다.
+- main `1c320ab`의 [운영 배포](https://vercel.com/donghyunt/cs-class/5xHki8Fm6rjcUGakkXF75xpyqt7y)는 READY이며 운영 별칭 연결을 확인했습니다. 운영 `/`·`/api/auth/session`·`/login/teacher`의 비로그인 GET은 모두 HTTP 302로 Vercel 인증에 이동합니다. 기존 SSO 보호가 적용된 상태입니다.
+- 현재 PC의 Vercel 연결은 재인증 후에도 보호된 배포 URL 접근을 거부했고 런타임 로그도 확인하지 못했습니다. 이번 운영 배포에서 앱 세션 API 응답·Google 로그인·대시보드 내부·DB 왕복을 새로 검증하지 않았습니다. 실제 Firebase 키 없이 `demo-cs-class`의 합성 계정으로 한 기능 검증과 구분하며 이전 실제 계정 확인은 위 2026-09-28 기록을 따릅니다.
 
 프로덕션 빌드의 로컬 화면: [학생 데스크톱](reference/dashboards/2026-09-29/student-1440.png)·[학생 모바일](reference/dashboards/2026-09-29/student-390.png), [교사 데스크톱](reference/dashboards/2026-09-29/teacher-1440.png)·[교사 모바일](reference/dashboards/2026-09-29/teacher-390.png). 화면의 학번·인원·진행률은 합성 테스트 기록입니다. 최신 표현 기준은 [DESIGN](DESIGN.md#학생교사-대시보드)을 따릅니다.
 
