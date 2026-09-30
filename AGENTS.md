@@ -28,11 +28,13 @@
 - 계층형 검증(Tiered Verification)으로 토큰과 실행 시간을 최적화합니다. 작업 도중(디버깅·반복 수정)에는 `npm run typecheck`와 수정한 대상의 단일 테스트(`npx playwright test tests/<target>.spec.ts` 또는 에뮬레이터 실행 중 `npm run test:e2e:running -- tests/<target>.spec.ts`)를 우선 실행하고 무관한 전체 E2E나 빌드를 반복하지 않습니다.
 - 최종 통합(커밋·인계·PR 직전)에는 저장소 루트에서 `npm run lint`, `npm run build`, `npm run test:e2e`로 로컬 Auth·Firestore 에뮬레이터와 함께 전체를 검증합니다(Java 21+, 최초 `npx playwright install chromium`). 이미 에뮬레이터를 실행 중일 때만 `npm run test:e2e:running`을 씁니다.
 - 테스트는 `demo-cs-class`와 로컬 9099·8080만 사용합니다. 실제 서버가 3000에서 실행 중이면 종료한 뒤 E2E를 실행합니다. 운영 DB에 테스트 시드·합성 계정을 넣지 않습니다. 병렬 수동 검사는 계정과 결과 폴더를 나누고 최종 통합은 단일 실행으로 확인합니다.
+- 제한된 Windows 환경에서 사용자 캐시 접근이 실패하면 이미 준비한 Git 제외 캐시를 `FIREBASE_EMULATORS_PATH`·`PLAYWRIGHT_BROWSERS_PATH`로 지정하고 JDK 21+의 PATH를 확인합니다. `$env:` 설정은 터미널별이므로 새 PowerShell에서도 실행 전 준비합니다. 실제 경로·복사 가능한 준비 명령·최초 설치는 [개발 안내](docs/DEVELOPMENT.md#다른-pc에서-시작)를 따릅니다. 기존 캐시를 확인하기 전에 같은 다운로드·설치를 반복하지 않습니다.
 - ESLint·TypeScript는 현재 앱·테스트·설정을 검사하고 Tailwind는 `src/`에서 클래스 이름을 찾습니다. `archive/`, `docs/`, `outputs/`, `scratch/`의 과거 코드·참고 자료를 앱 검사·스타일 생성에 섞지 않습니다.
 - CI의 E2E는 먼저 만든 빌드를 `next start`로 실행하고, 로컬은 개발 서버를 사용합니다. 두 경우 모두 에뮬레이터 환경변수를 명시하고 로컬 시드를 준비합니다. 홈 조작 검사는 데스크톱 고정 배치(`data-pinned=true`)가 준비된 뒤 시작해 초기화 도중의 클릭·앵커 이동과 혼동하지 않습니다.
 - E2E 앱 주소는 `http://localhost:3000`으로 통일합니다. Playwright API 쿠키 저장소는 HTTP의 `127.0.0.1`에서 운영 빌드의 Secure 쿠키를 보내지 않습니다. 테스트를 위해 운영 쿠키 보안을 낮추지 않습니다.
 - 홈 모션은 기본으로 켜집니다. `no-preference`·`reduce` 모두에서 기본 켜짐과 상단 줄이기/켜기를 확인합니다. 스크롤 전환뿐 아니라 단계 선택 후 빠른 방향키·Tab 이동, 첫·마지막 구간의 낮은 창·모바일 배치를 검증합니다.
 - UI 변경은 실제 화면·주요 조작·좁은 창·키보드 초점·콘솔을 확인합니다. 인증·저장 구현은 실패·권한 경계도 검증합니다.
+- 목록의 첫 조회 대기·조회 실패만으로 미편집 화면의 메뉴·홈·로그아웃을 막지 않습니다. 실제 미전송 입력·저장 실패는 보존하고 이동 전에 저장을 확인하며 두 상태를 구분해 검사합니다.
 - EntryJS는 실제 팔레트 조립·입력·실행·중지 후 무대 복원·재접속을 검사합니다. 단계/화면 이동 전 입력 확정, 실행 중 초안 보존, 팔레트 좌표 준비와 자산 설치는 [EntryJS 개발 안내](docs/DEVELOPMENT.md#entryjs-실습)를 따릅니다.
 - 화면별 스타일은 담당 컴포넌트 옆에 두고 공통 CSS에는 실제 공통 규칙만 남깁니다. CSS 이동·분리 때는 프로덕션 빌드로 적용 순서를 확인합니다. 포털 대화상자의 화면별 규칙은 전역 `[data-slot]` 규칙과 우선순위가 같아 불러오는 순서에 따라 바뀌지 않도록 합니다.
 - 학생·교사 대시보드는 [DESIGN](docs/DESIGN.md#학생교사-대시보드)의 공통 시각 기준과 `AppShell` CSS Module을 사용합니다. 탐색 메뉴의 CSS 820px 경계와 `matchMedia` 821px 경계를 함께 유지하고, 태블릿·Escape·양방향 화면 크기 전환 초점을 검사합니다. 메뉴의 초점 대상에는 `visibility`를 지연하는 `transition-all`을 쓰지 않습니다. 화면 축소 시 CSS가 사이드바를 먼저 숨기며 초점을 지우는 순서도 처리하고, 본문 조작·클릭 뒤에는 초점을 빼앗지 않습니다.

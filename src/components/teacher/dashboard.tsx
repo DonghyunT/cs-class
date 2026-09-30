@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, ClipboardCheck, RefreshCw, Search, ShieldCheck, Users } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
@@ -14,18 +15,19 @@ import { ManageLessons, ResetPassword, SubmissionViewer } from "./dialogs";
 import { dateLabel, problemMessage } from "./presentation";
 import styles from "./teacher.module.css";
 
-export function TeacherDashboardView() {
+type TeacherView = { view: "classes" | "students"; classId?: string; lessonId?: string; studentId?: string };
+export function TeacherDashboardView(props: TeacherView) {
   const { session } = useSession();
-  return <AppShell title="수업 현황" teacher>{session && session.role !== "student" && (session.classIds.length ? <TeacherWorkspace key={session.uid} instructor={session.role === "instructor"} /> : <div className={styles.empty}><Users size={28} aria-hidden="true" /><h1>아직 담당 반이 없어요.</h1><p>담당 반이 연결되면 수업과 학생 기록을 확인할 수 있어요.</p></div>)}</AppShell>;
+  return <AppShell title={props.view === "classes" ? "수업 관리" : "학생 현황·계정"} teacher>{session && session.role !== "student" && (session.classIds.length ? <TeacherWorkspace key={`${session.uid}:${props.classId}:${props.lessonId}:${props.studentId}`} instructor={session.role === "instructor"} {...props} /> : <div className={styles.empty}><Users size={28} aria-hidden="true" /><h1>아직 담당 반이 없어요.</h1><p>담당 반이 연결되면 수업과 학생 기록을 확인할 수 있어요.</p></div>)}</AppShell>;
 }
 
-function TeacherWorkspace({ instructor }: { instructor: boolean }) {
+function TeacherWorkspace({ instructor, view, classId, lessonId, studentId }: { instructor: boolean } & TeacherView) {
   const [data, setData] = useState<TeacherDashboard | null>(null);
-  const [selection, setSelection] = useState<{ classId?: string; lessonId?: string }>({});
+  const [selection, setSelection] = useState<{ classId?: string; lessonId?: string }>({ classId, lessonId });
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(studentId ?? "");
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const request = useRef(0);
   const busy = useRef(false);
@@ -105,11 +107,12 @@ function TeacherWorkspace({ instructor }: { instructor: boolean }) {
     <div role="status" aria-live="polite" className={notice ? styles.notice : styles.silentNotice}>{notice && <><CheckCircle2 size={18} aria-hidden="true" /><span>{notice}</span></>}</div>
     {!active && !error && <div className={styles.loading} role="status"><span className={styles.loadingBar} /><p>반과 학습 기록을 불러오고 있어요.</p></div>}
     {active && <>
-      <section className={styles.currentLesson} aria-labelledby="current-lesson-title">
+      {view === "classes" && <section className={styles.currentLesson} aria-labelledby="current-lesson-title">
         <div className={styles.currentCopy}><p className={styles.kicker}><span className={styles.dot} />{active.classroom.name} · 이번 수업</p><h2 id="current-lesson-title">{current?.title ?? "이번 수업을 지정해 주세요."}</h2><p>{current?.description ?? "수업을 열고 지정하면 학생 대시보드에 먼저 보여요."}</p><span className={styles.currentMeta}>열린 수업 {active.classroom.openedLessonIds.length}개 · 기존 수업은 계속 복습할 수 있어요.</span><ManageLessons key={active.classroom.id} classroom={active.classroom} lessons={active.lessons} onSaved={updateSettings} onLock={lockMutation} onRefresh={load} /></div>
         <DashboardArt variant="teacher" className={styles.heroArt} />
-      </section>
-      <section id="students" className={styles.students} aria-labelledby="students-title">
+      </section>}
+      {view === "classes" && <p className={styles.inlineNote}><Link href={`/teacher/students?classId=${active.classroom.id}`}>학생 진행·제출 작품·계정 관리로 이동</Link></p>}
+      {view === "students" && <section className={styles.students} aria-labelledby="students-title">
         <div className={styles.sectionHeading}><div><h2 id="students-title">학생별 학습 현황</h2><p>개념·퀴즈·실습의 진행과 제출된 작품을 확인해요.</p></div><label className={styles.lessonPicker}>확인할 수업<select value={active.selectedLessonId ?? ""} disabled={!active.classroom.openedLessonIds.length} onChange={(event) => { request.current += 1; setFetching(true); setSelection({ classId: active.classroom.id, lessonId: event.target.value }); setError(""); }}>
           {!active.selectedLessonId && <option value="">열린 수업이 없어요</option>}
           {active.lessons.filter((item) => active.classroom.openedLessonIds.includes(item.id)).map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
@@ -119,7 +122,7 @@ function TeacherWorkspace({ instructor }: { instructor: boolean }) {
           <div><CheckCircle2 size={19} aria-hidden="true" /><span>수업 완료</span><strong>{lesson ? completed : "—"}<small>{lesson ? "명" : ""}</small></strong></div>
           <div><ClipboardCheck size={19} aria-hidden="true" /><span>실습 제출</span><strong>{lesson ? submitted : "—"}<small>{lesson ? "명" : ""}</small></strong></div>
         </div>
-        {!lesson && <p className={styles.inlineNote}>아직 열린 수업이 없어요. 위의 수업 관리에서 수업을 열어 주세요. 학생 계정은 아래에서 관리할 수 있어요.</p>}
+        {!lesson && <p className={styles.inlineNote}>아직 열린 수업이 없어요. <Link href={`/teacher/classes?classId=${active.classroom.id}`}>수업 관리에서 수업을 열어 주세요.</Link> 학생 계정은 아래에서 관리할 수 있어요.</p>}
         <div className={styles.listToolbar}><span>{lesson?.title ?? "학생 계정 관리"}</span><label className={styles.search}><Search size={17} aria-hidden="true" /><span className="sr-only">학번 검색</span><Input placeholder="학번 검색" type="search" inputMode="numeric" value={search} onChange={(event) => setSearch(event.target.value)} /></label></div>
         {active.students.length === 0 ? <div className={styles.empty}><Users size={28} aria-hidden="true" /><h3>등록된 학생이 없어요.</h3><p>이 반에 학생 계정이 등록되면 학습 현황을 볼 수 있어요.</p></div> : filtered.length === 0 ? <div className={styles.empty}><Search size={28} aria-hidden="true" /><h3>일치하는 학번이 없어요.</h3><p>선택한 반의 학번을 확인해 주세요.</p><Button variant="outline" onClick={() => setSearch("")}>검색 지우기</Button></div> : <div className={styles.tableFrame}>
           <table className={styles.table}><caption className="sr-only">{active.classroom.name} {lesson?.title ?? "계정"} 학생별 현황</caption><thead><tr><th scope="col">학생</th><th scope="col">개념</th><th scope="col">퀴즈</th><th scope="col">실습</th><th scope="col">수업 상태</th><th scope="col">계정·작품</th></tr></thead><tbody>{filtered.map((student) => {
@@ -138,7 +141,7 @@ function TeacherWorkspace({ instructor }: { instructor: boolean }) {
           })}</tbody></table>
         </div>}
         <div className={styles.listFooter}><span>{filtered.length}명 표시 · 전체 {active.students.length}명</span><span>비밀번호 초기화 후에도 학습 기록은 유지돼요.</span></div>
-      </section>
+      </section>}
     </>}
   </div>;
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen,
+  CalendarDays,
   ChevronRight,
   GraduationCap,
   Home,
@@ -158,16 +159,20 @@ export function AppShell({
               onClick={() => setMobileNav(false)}
             >
               <Home size={19} />
-              {teacher ? "수업 현황" : "대시보드"}
+              대시보드
               <ChevronRight size={15} />
             </Link>
             <Link
-              href={`${home}#${teacher ? "students" : "lessons"}`}
+              className={path === `${home}/${teacher ? "students" : "lessons"}` ? styles.active : ""}
+              aria-current={path === `${home}/${teacher ? "students" : "lessons"}` ? "page" : undefined}
+              href={`${home}/${teacher ? "students" : "lessons"}`}
               onClick={() => setMobileNav(false)}
             >
               {teacher ? <Users size={19} /> : <BookOpen size={19} />}
-              {teacher ? "학생 관리" : "열린 수업"}
+              {teacher ? "학생 현황·계정" : "열린 수업"}
             </Link>
+            {teacher && <Link className={path === "/teacher/classes" ? styles.active : ""} aria-current={path === "/teacher/classes" ? "page" : undefined} href="/teacher/classes" onClick={() => setMobileNav(false)}><BookOpen size={19} />수업 관리</Link>}
+            <Link className={path === `${home}/schedule` ? styles.active : ""} aria-current={path === `${home}/schedule` ? "page" : undefined} href={`${home}/schedule`} onClick={() => setMobileNav(false)}><CalendarDays size={19} />반 일정</Link>
           </nav>
           <div className={styles.sidebarBottom}>
             <div className={styles.sidebarTip}><strong>{teacher ? "수업 운영" : "저장하고 이어가기"}</strong><p>{teacher ? "담당 반의 수업과 학생 기록을 확인해요." : "저장 완료를 확인하면 다음에도 이어갈 수 있어요."}</p></div>
