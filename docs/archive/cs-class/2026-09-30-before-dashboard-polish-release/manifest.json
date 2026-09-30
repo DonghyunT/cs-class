@@ -1,0 +1,47 @@
+[
+  {
+    "branch": "codex/dashboard-visual-polish",
+    "sourceCommit": "cf3ccb0e901817481bce0585dd8e7fc201fd9d32",
+    "preservedAt": "2026-09-30",
+    "original": "docs/HANDOFF.md",
+    "preserved": "HANDOFF.md",
+    "sha256": "2e55e6133c33c2c1b069067d64d2dbd742c2a3255348bf9f856f5badebb2e790",
+    "source": "clean working tree at sourceCommit; original line endings preserved"
+  },
+  {
+    "branch": "codex/dashboard-visual-polish",
+    "sourceCommit": "cf3ccb0e901817481bce0585dd8e7fc201fd9d32",
+    "preservedAt": "2026-09-30",
+    "original": "docs/PRD.md",
+    "preserved": "PRD.md",
+    "sha256": "cdd5d0631875c5eb7f67b1dcc06da4c079383e6c78aaf12c31e6f660c6c0f31a",
+    "source": "clean working tree at sourceCommit; original line endings preserved"
+  },
+  {
+    "branch": "codex/dashboard-visual-polish",
+    "sourceCommit": "cf3ccb0e901817481bce0585dd8e7fc201fd9d32",
+    "preservedAt": "2026-09-30",
+    "original": "docs/DESIGN.md",
+    "preserved": "DESIGN.md",
+    "sha256": "507179e9bae963d87f32bcd03d91fb84bf6ee1542f9a74d20fd0695f88303557",
+    "source": "clean working tree at sourceCommit; original line endings preserved"
+  },
+  {
+    "branch": "codex/dashboard-visual-polish",
+    "sourceCommit": "cf3ccb0e901817481bce0585dd8e7fc201fd9d32",
+    "preservedAt": "2026-09-30",
+    "original": "docs/DEVELOPMENT.md",
+    "preserved": "DEVELOPMENT.md",
+    "sha256": "c94167b8f2af9e13f2a7c1f8b35f20314c63fe834816afd549326b1586b3e6b0",
+    "source": "clean working tree at sourceCommit; original line endings preserved"
+  },
+  {
+    "branch": "codex/dashboard-visual-polish",
+    "sourceCommit": "cf3ccb0e901817481bce0585dd8e7fc201fd9d32",
+    "preservedAt": "2026-09-30",
+    "original": "docs/FIREBASE_SETUP.md",
+    "preserved": "FIREBASE_SETUP.md",
+    "sha256": "cce927816a7865b74138cce8c77ee5f489675b94e885432441c5d33a219cdad9",
+    "source": "clean working tree at sourceCommit; original line endings preserved"
+  }
+]

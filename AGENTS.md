@@ -4,9 +4,8 @@
 
 ## 개발 환경
 - 앱은 저장소 루트의 Next.js·TypeScript와 Firebase Auth·Firestore를 사용합니다. `cs-class/`에서 `npm ci` 후 실행합니다. 실제 연결은 Git 제외 `.env.local`과 `npm run dev`, 가상 계정 검증은 `npm run dev:emulator`를 사용합니다. 서버 설정은 [연결 안내](docs/FIREBASE_SETUP.md)를 따릅니다.
-- Vercel `cs-class`의 Root Directory는 비워 둡니다(저장소 루트). Framework Preset은 Next.js입니다. 프로젝트 연결로 MCP를 호출하고, 팀 범위를 임의로 덧붙이지 않습니다.
-- Vercel Preview·Production은 `NODE_OPTIONS=--experimental-require-module`이 필요합니다. Firebase Admin의 ESM 의존성을 불러오도록 하는 실행 설정입니다. 빌드 성공 뒤에도 `/api/auth/session` 응답과 로그인 화면을 확인합니다.
-- 운영 주소·이전 주소의 이동·Firebase 승인 도메인은 [서버 설정](docs/FIREBASE_SETUP.md#vercel-서버-설정)을 함께 확인합니다. 배포 READY나 별칭 연결만으로 Google 로그인 성공을 판정하지 않습니다.
+- Vercel 대상·Root Directory·Node 실행 설정·운영 주소·이전 주소 이동·Firebase 승인 도메인은 [서버 설정](docs/FIREBASE_SETUP.md#vercel-서버-설정)에 모읍니다. 프로젝트 연결로 MCP를 호출하고 팀 범위를 임의로 덧붙이지 않습니다.
+- 빌드 성공 뒤에도 배포 SHA·별칭·`/api/auth/session` 응답·로그인 화면을 확인합니다. READY·별칭·일반 Preview의 준비 안내만으로 운영 Google 로그인 성공을 판정하지 않습니다.
 - 제품 결정은 [PRD](docs/PRD.md), 디자인 기준은 [DESIGN](docs/DESIGN.md), 폴더 목차는 [README](README.md), 실행·도구 설정은 [DEVELOPMENT](docs/DEVELOPMENT.md), 이어갈 일은 [HANDOFF](docs/HANDOFF.md)를 필요에 따라 읽습니다.
 - Windows PowerShell은 `.ps1` 실행을 차단할 수 있습니다. npm은 필요하면 `npm.cmd`·`npx.cmd`로 실행하고 Stitch 키 등록은 [직접 입력 안내](docs/DEVELOPMENT.md#stitch-키-입력)의 마스킹된 명령을 사용합니다.
 
