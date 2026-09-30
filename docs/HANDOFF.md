@@ -1,54 +1,67 @@
 # 이어갈 작업
 
-갱신: 2026-09-30. 현재 상태·검증 범위·다음 행동을 관리합니다. 제품 정책은 [PRD](PRD.md), 화면 기준은 [DESIGN](DESIGN.md), 실행은 [DEVELOPMENT](DEVELOPMENT.md), 서버 설정·복구는 [FIREBASE_SETUP](FIREBASE_SETUP.md)을 따릅니다.
+갱신: 2026-09-30. 현재 상태·검증 범위·다음 행동을 관리합니다. 정책은 [PRD](PRD.md), 화면 기준은 [DESIGN](DESIGN.md), 실행은 [DEVELOPMENT](DEVELOPMENT.md), 서버 설정·복구는 [FIREBASE_SETUP](FIREBASE_SETUP.md)을 따릅니다.
 
 ## 현재 작업 상태
 
 | 항목 | 2026-09-30 확인 |
 | --- | --- |
-| 저장소·작업 브랜치 | `DonghyunT/cs-class` · `main` |
-| 미커밋 상태 | 없음. EntryJS 구현·검증·병합·운영 배포 기록을 원격 `main`에 반영함 |
-| PR | [#10](https://github.com/DonghyunT/cs-class/pull/10) — 2026-09-30 병합, 순서도·엔트리봇 수업과 서버 솔루션 분리, 실제 EntryJS 실습 |
-| 검증 | Node 24.19.0·Java 21.0.12.1·Windows에서 lint·typecheck·build·전체 E2E **38개 통과**. [main CI](https://github.com/DonghyunT/cs-class/actions/runs/36601913490)도 새 Linux 설치부터 전체 E2E 38개까지 통과 |
-| 배포 | `49ed3c6439e4d9ee4d7862ae99a2b372a619e4d2`의 Vercel Production `dpl_E8wV1Ts1my4nemUskiEeEM82UDBi` READY, [운영 주소](https://cs-class-donghyunt.vercel.app)의 읽기 전용 점검 통과. 최신 문서 커밋의 CI·배포는 각 서비스에서 SHA를 대조 |
-| 다음 행동 | 다른 PC에서 최신 `main`과 이 문서를 읽고, 다음 EntryJS 과제의 학습 목표·지원 블록·검사 조건을 결정. 실학생 적용 범위와 데이터 정책은 별도 협의 |
+| 저장소·작업 브랜치 | `DonghyunT/cs-class` · `codex/dashboard-pilot-brief`. 기반은 `main`의 `fc54d09` |
+| 미커밋 상태 | 파일럿 소스·검사·문서·논의용 원본 3장과 실제 화면 4장 있음. 원문을 보존하고 릴리스 정리 중 |
+| 통합·배포 | 이번 파일럿은 아직 병합·배포하지 않음. 사용자 요청에 따라 최종 검증 후 진행 |
+| 검증 | 이번 릴리스 lint·typecheck·build·전체 에뮬레이터 E2E **46개** 통과. 문서 링크/앵커 169개·보관 원문 62개의 해시 확인 |
+| 브랜치 정리 | 기존 원격 두 브랜치가 PR #10에 포함됨을 확인. 릴리스 후 정리 예정 |
+| 다음 행동 | 검증한 파일럿을 병합·배포하고 결과를 이 문서에 갱신. 이후 다른 PC는 최신 main에서 새 작업 시작 |
 
-이번 작업에서 사용자는 실제 EntryJS 실습 하나의 구현과 완료 후 커밋·병합·배포·문서 정리를 요청했습니다. 대상은 위 GitHub 저장소와 Vercel `cs-class`입니다. 실제 학생 계정 등록·DB 시험·도메인/접근 보호 변경은 범위에 포함하지 않았습니다. 완료 기록을 다음 작업의 자동 승인으로 사용하지 않습니다.
+## 대시보드 파일럿 구현과 로컬 검증
 
-## 구현과 이번 검증
+- 첫 화면은 개인 `내 할 일`, 실제 수업/제출 기록의 다음 행동, 다가오는 일정과 작은 `이번 수업` 바로가기입니다. 학생의 수업·필터·이어하기·복습은 `/student/lessons`, 교사의 수업 운영은 `/teacher/classes`, 학생 진행·제출·계정은 `/teacher/students`에 있습니다.
+- 내 할 일은 체크박스·한 줄 입력·인라인 수정·완료/해제·삭제를 지원합니다. 반 일정은 제목·한국 날짜·선택 수업 연결로 구성하며 교사·강사는 담당 반을 수정하고 학생은 본인 반을 조회합니다. 서버 세션으로 권한을 확인하고 직접 Firestore 접근은 차단합니다.
+- 저장 실패 시 변경 의도를 보존하고 이동을 막습니다. 명시적 재시도는 최신 목록에 해당 변경만 적용하며 응답 유실·동시 변경·계정 교체 후 늦은 응답을 처리합니다. 개인 체크는 학습 완료·제출 기록을 바꾸지 않습니다. 한도·충돌·미전송 내용의 경계는 [PRD](PRD.md#작은-버전의-경계와-저장-동작)를 따릅니다.
 
-- 수업은 `sequence-lab`(순서와 문제 해결), `flowchart-lab`(순서도), `entry-bot-lab`(엔트리봇의 첫 걸음)입니다. 학생·교사 화면은 같은 수업별 서버 기록을 사용합니다.
-- 엔트리봇은 실제 `@entrylabs/entry` **4.0.23** 편집기와 실행 엔진을 사용합니다. 시작 → 오른쪽으로 총 10 이동 → ‘안녕!’을 2초 동안 말하기 과제입니다. 시작 블록 하나에서 학생이 이동·말하기 블록을 연결합니다. 지원 블록·자산 설치·샌드박스·실행 제한은 [EntryJS 개발 안내](DEVELOPMENT.md#entryjs-실습)에 있습니다.
-- 실제 프로젝트 JSON의 연결 구조와 입력값을 서버에서 검증합니다. 분리된 코드·잘못된 시작/동작 순서·이동 거리·인사말·시간·생각하기 모드를 통과시키지 않습니다. 입력값 변경은 이전 검증을 무효화하며, 이전 제출본·완료 기록은 재제출 성공까지 유지합니다. 교사 제출 뷰어도 실제 제출된 값으로 표시합니다.
-- 자동 저장·재접속 복원, 단계/화면 이동 직전 입력 확정, 저장/자산 로딩 실패 후 복구, 실행 중 초기 무대 보존을 연결했습니다. 작업실·팔레트의 초기 갱신 예약을 순서대로 완료해 입력창이 늦게 닫히는 문제를 수정했고, 자동 저장 뒤 연속 입력도 검사합니다. 이전 자체 미리보기 작품도 읽고 지원 블록으로 변환합니다. 잘못된 저장본은 자동 삭제하지 않습니다.
-- 2026-09-30 Windows에서 `npm run lint`, `npm run typecheck`, `npm run build`, `CI=1 npm run test:e2e`를 확인했습니다. 전체 **38개**는 기존 인증·권한·저장·탐색·홈 검사와 실제 EntryJS 조립/입력/실행/무대 복원/검증/제출/수정본 복원, 저장·로딩 실패 복구, 320·390·768px 배치·Esc 초점·키보드 가로 이동을 포함합니다. 정상 EntryJS 경로의 브라우저 오류가 없음을 확인했습니다.
-- 테스트는 `demo-cs-class`, Auth `127.0.0.1:9099`, Firestore `127.0.0.1:8080`, 앱 `http://localhost:3000`의 합성 계정만 사용했습니다. 이전 문서의 34개 결과는 자체 미리보기 당시 검사이며 이번 38개 결과를 대신하지 않습니다.
-- [데스크톱 1440px](reference/entryjs/2026-09-30/desktop-1440.png)·[모바일 390px](reference/entryjs/2026-09-30/mobile-390.png)는 위 프로덕션 빌드의 합성 계정 화면이며 Git에 포함합니다. 운영 학생 화면이 아닙니다.
+### 검증 환경과 결과
+
+2026-09-30 Windows PowerShell, Node 24.19.0·Java 21.0.12.1·로컬 Chromium에서 `demo-cs-class`, Auth 9099·Firestore 8080, 앱 `http://localhost:3000`만 사용했습니다. Git 제외 캐시를 재사용했고 운영 계정·DB에는 시드나 합성 자료를 넣지 않았습니다.
+
+| 검사 | 확인 범위와 결과 |
+| --- | --- |
+| 정적 검사·빌드 | 이번 릴리스 `npm run lint`·`npm run typecheck`·`npm run build` 통과 |
+| 전체 E2E | 실행 중인 로컬 demo 에뮬레이터·개발 서버에서 `npm run test:e2e:running` 단일 worker **46개** 통과(4.5분·종료 코드 0). 기존 38개와 [파일럿 8개](../tests/dashboard-pilot.spec.ts) |
+| 저장·인증·권한 | 본인/담당 반·직접 DB 차단·만료, 재로그인 복원, 조회/저장 실패·응답 유실·동시 수정·계정 교체, 일정 CRUD/학생 조회 |
+| 실제 UI | 빠른 Enter·IME·인라인 수정·Tab/Space·Esc·모바일 체크. 1440/1024/821/820/768/390/320px, 메뉴·양방향 크기 전환 초점, 수업 필터/이어하기·교사 상세 링크. 정상 경로 콘솔/페이지 오류 0건 |
+| 문서·자료 | 활성 문서 8개의 로컬 링크/앵커 169개·`git diff --check` 통과. 보관 원문 62개의 SHA-256·논의용 이미지 3장의 해시·메타프롬프트 원문 일치. 외부 링크 일괄 검사는 별도 |
+
+릴리스 검증에서 첫 목록 조회가 늦을 때 미편집 상태의 홈·메뉴·로그아웃도 막히는 문제를 수정했습니다. 조회 지연·실패의 회귀 검사를 추가하고 기존 실패 보호·로그인/탐색 등 관련 8개를 먼저 통과한 뒤 전체 46개를 통합 검증했습니다. 앞선 45개 프로덕션 빌드 검사와 보강 검사 상세는 보관 원문에 있습니다.
+
+[학생 1440px](reference/dashboard-pilot/2026-09-30/student-1440.png)·[학생 390px](reference/dashboard-pilot/2026-09-30/student-390.png)·[교사 1440px](reference/dashboard-pilot/2026-09-30/teacher-1440.png)·[교사 390px](reference/dashboard-pilot/2026-09-30/teacher-390.png)는 파일럿의 프로덕션 빌드(`next start`)·합성 계정으로 촬영했습니다. 운영 학생 화면이 아닙니다. [논의용 원본 3장](DESIGN.md#대시보드-파일럿--노션을-참고한-내-할-일)도 수정 없이 Git에 포함합니다.
+
+새로고침·로그아웃/재로그인 복원은 에뮬레이터를 계속 실행한 조건입니다. 종료 후 데이터 유지·운영 학생 저장·제출은 이 검사로 보장하지 않습니다. Java PATH 오류의 해결과 새 터미널 준비는 [개발 안내](DEVELOPMENT.md#다른-pc에서-시작)를 따릅니다.
 
 ## 통합·배포 상태
 
-PR [#10](https://github.com/DonghyunT/cs-class/pull/10)은 검증한 파일 내용과 동일한 병합 커밋 `a22f3fd38c7441de311bd82e4507d526c7f9575e`로 스쿼시 병합했습니다. 머리 `0b9f33482f453ac904edfe669bcddb43e5e654f9`의 [push CI](https://github.com/DonghyunT/cs-class/actions/runs/36600618197)와 [PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36600625704)는 새 Linux 설치부터 38개 E2E까지 통과했고, Preview `dpl_2XbPKvtTAa3soFZ346LPGuhmdqeR`은 READY입니다. 보호된 Preview 본문의 조회는 연결 권한 부족으로 확인하지 못했습니다.
+이번 파일럿의 병합·CI·Production 배포 결과는 실제 실행 후 기록합니다. 연결 대상은 GitHub `DonghyunT/cs-class`, Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`), Production 브랜치는 `main`입니다. [운영 주소](https://cs-class-donghyunt.vercel.app)·이전 주소 이동·환경 설정은 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)를 따릅니다.
 
-병합 직후 `a22f3fd`의 main push 이벤트·Production 배포는 나타나지 않았습니다(2026-09-30 01:58 KST 확인). 이어서 문서 상태를 갱신한 `49ed3c6439e4d9ee4d7862ae99a2b372a619e4d2`를 `main`에 직접 push했고, [main CI](https://github.com/DonghyunT/cs-class/actions/runs/36601913490)가 새 Linux 설치·lint·typecheck·build·전체 E2E **38개**를 통과했습니다. 해당 SHA의 Vercel Production `dpl_E8wV1Ts1my4nemUskiEeEM82UDBi`도 READY입니다. 애플리케이션 파일은 병합 커밋과 동일하며 이 추가 커밋은 문서만 변경했습니다.
+정리 시작 시 기존 main `fc54d09`의 Vercel Production `dpl_327m2zzS49WcXi1XD48JD7DxB57K`는 READY이며 운영 별칭과 Next.js 프로젝트 연결을 확인했습니다. 이는 파일럿 배포 전 상태입니다. 이번 Firestore 규칙 변경은 설명 주석뿐이며 접근 규칙의 동작은 바뀌지 않습니다.
 
-2026-09-30 운영 [CS Class](https://cs-class-donghyunt.vercel.app)를 Chromium에서 읽기 전용으로 점검했습니다. `/api/auth/session`과 `/api/auth/config`는 200이며 Firebase 연결 설정이 확인됐고 에뮬레이터 주소는 없었습니다. 비로그인 학생·교사·작품 API는 401이었습니다. EntryJS 공개 작업실과 4.0.23 자산은 200, 자산 CORS와 OPTIONS 응답은 정상이며, 이전 주소의 로그인 경로·쿼리는 운영 주소로 307 이동했습니다. 교사 로그인 화면의 Google 버튼은 서비스 준비 후 활성화됐습니다. 같은 운영 자산으로 격리된 EntryJS 작업실에 세 블록을 올려 실행해 무대의 `x=10`, ‘안녕!’ 말하기, 종료 뒤 `x=0` 복원과 브라우저 오류 0건을 확인했습니다. 실제 운영 Google 로그인·학생 계정 저장·제출은 이번 배포에서 실행하지 않았습니다. 서버 설정·이전 주소·Firebase 승인 도메인은 [서버 설정](FIREBASE_SETUP.md#vercel-서버-설정)을 따릅니다.
-
-이전 2026-09-29 점검에서는 main `84163e9`의 CI·Production READY, 운영 로그인 화면·세션 JSON·비로그인 API 차단, 사용자의 실제 Google 교사 로그인·대시보드·새로고침 세션 유지를 확인했습니다. 이번 배포의 검증 결과로 표현하지 않습니다. 상세 이력은 [정리 전 원문과 SHA-256](archive/cs-class/2026-09-30-before-entryjs-handoff/manifest.json)에 보존했습니다.
+이전 EntryJS PR [#10](https://github.com/DonghyunT/cs-class/pull/10), 38개 검사·운영 읽기 전용 점검, 완료한 파일럿 메타프롬프트와 최초 로컬 검증의 상세 근거는 [정리 전 원문과 SHA-256](archive/cs-class/2026-09-30-before-dashboard-release/manifest.json)에 있습니다. 이전 결과를 새 릴리스 검증으로 표현하지 않습니다.
 
 ## 다른 PC에서 이어가기
 
-1. [개발 안내](DEVELOPMENT.md#다른-pc에서-시작)에 따라 Git·Node 24·Java 21+를 준비합니다. 기존 체크아웃은 미커밋 변경을 먼저 보존하고 깨끗한 main에서 `git fetch origin`·`git pull --ff-only`로 갱신합니다. 새 작업은 `codex/` 브랜치에서 시작합니다.
-2. 저장소 루트에서 `npm ci`와 최초 `npx playwright install chromium`을 실행합니다. EntryJS 자산은 자동 준비됩니다. Java·브라우저·플러그인·인증·캐시는 PC별이며 이 PC의 `scratch/tools/java/`는 Git으로 전달되지 않습니다.
-3. `npm run dev:emulator`를 실행합니다. 엔트리봇 실습의 강사/학생 확인 방법은 [EntryJS 개발 안내](DEVELOPMENT.md#entryjs-실습)를 따릅니다. 실제 Firebase 개발이 필요할 때만 본인이 관리하는 안전한 경로로 환경파일·관리자 인증을 준비합니다.
-4. 다음 요청 예시: “AGENTS.md와 docs/HANDOFF.md를 읽고 최신 main과 미커밋 상태부터 확인하자. EntryJS 엔트리봇 실습은 구현됐으니 다음 과제의 학습 목표와 검사 조건을 정하자.”
+1. [개발 안내](DEVELOPMENT.md#다른-pc에서-시작)에 따라 Git·Node 24·Java 21+와 저장소 접근을 준비합니다. 기존 PC의 미커밋 변경이 있으면 먼저 보존합니다. 이 릴리스 병합·배포 완료 뒤에는 최신 `main`이 시작점입니다.
+2. 깨끗한 작업 트리에서 `git fetch origin --prune`, `git switch main`, `git pull --ff-only`로 갱신하고 목적에 맞는 새 `codex/` 브랜치를 만듭니다. 새 PC는 README의 복제 안내를 따릅니다.
+3. 루트에서 `npm ci`, 최초 `npx playwright install chromium`을 실행한 뒤 `npm run dev:emulator`로 확인합니다. EntryJS 자산은 자동 준비되며 Java·브라우저·플러그인·인증·`scratch/` 캐시는 PC마다 준비합니다.
+4. `.env.local`·관리자 키·학생 원본은 Git으로 전달되지 않습니다. 실제 Firebase 연결이 필요할 때만 [서버 설정](FIREBASE_SETUP.md#다른-pc의-서버-설정)을 따르고 각 PC에서 직접 인증합니다.
+
+> AGENTS.md와 docs/HANDOFF.md를 읽고 CS Class를 이어가자. 현재 브랜치·미커밋 변경·원격 동기화를 확인하고 최신 main에서 새 codex/ 브랜치를 만들자. 대시보드 파일럿의 현재 화면과 남은 범위를 확인한 뒤 다음 작업을 진행하자.
 
 ## 남은 한계와 다음 결정
 
-- 이번 실습의 서버 채점은 지원한 세 블록의 구조·상수 값을 검사합니다. 반복·조건·사용자 입력·충돌·난수·자유 제작과 범용 서버 실행 검사, 전체 블록 조립의 키보드/모바일 터치 검증은 후속입니다. AI·Q&A·교사 콘텐츠 편집기·교사 확인 요청도 미구현입니다.
-- 실학생 적용 반·학번·초기 비밀번호 전달·학생 공개 범위, 학년도/수업 버전 전환·보관/백업 정책은 별도 합의합니다. 운영 DB에 이번 테스트 계정·작품을 넣지 않았습니다.
-- 실제 Google 로그인과 운영 학생 저장·제출은 이번 작업에서 새로 확인하지 않았습니다. Vercel 런타임 로그는 기존에 403으로 제한됐으며 로그가 없다고 판정하지 않습니다.
-- 2026-09-29 진단 중 노출된 기존 Firebase CLI 인증의 폐기·재연결 완료 여부는 미확인입니다. 인증 파일을 새 PC로 복사하지 말고 새 PC에서 직접 로그인합니다. 비밀값을 보존하거나 다시 출력하지 않았습니다.
-- 2026-09-28 `npm audit`의 중간 경고 5개(운영 2개, `uuid/gaxios`·개발 CLI 경로)는 이전 미해결 기록입니다. 이번 변경에서 다시 검사하거나 무관한 강제 다운그레이드를 하지 않았습니다.
-- `.env.local`, 관리자 JSON·비밀번호·학생 엑셀·`백업용/`은 Git에 없습니다. 미전송 초안은 현재 화면 메모리에만 보존되므로 강제 종료 뒤 복구 한계는 [서버 안내](FIREBASE_SETUP.md#데이터와-남은-한계)를 따릅니다.
+- 내 할 일의 본인 전용 공개 범위·반 일정 권한·안내 역할·목록 한도는 [파일럿 기본안](PRD.md#파일럿-기본안--최종-운영-정책과-구분)입니다. 알림·반복·외부 연동·Q&A·개인 할 일 공유는 후속이며 최종 운영 정책·실학생 적용은 별도 합의합니다.
+- 실제 Google 로그인과 운영 학생의 새 할 일/일정 저장·학습 제출은 이번 릴리스에서 새로 확인하지 않았습니다. 배포 READY·로컬/CI 통과와 구분합니다.
+- EntryJS 서버 채점은 지원한 세 블록의 구조·상수 값을 검사합니다. 반복·조건·입력·충돌·난수·자유 제작, 전체 블록 조립의 키보드/모바일 터치 검증은 후속입니다. 현재 확인 범위는 [개발 안내](DEVELOPMENT.md#entryjs-실습)를 따릅니다.
+- 실학생 등록·초기 비밀번호 전달·학생 공개 범위, 수업 버전/학년도 전환·보관/백업 정책과 AI·교사 콘텐츠 편집기·확인 요청은 미결정 또는 미구현입니다.
+- 2026-09-29 진단 중 노출된 기존 Firebase CLI 인증의 폐기·재연결 완료 여부는 미확인입니다. 인증 파일을 복사하지 않고 새 PC에서 직접 로그인합니다.
+- 2026-09-28 `npm audit`의 중간 경고 5개(운영 2개, `uuid/gaxios`·개발 CLI 경로)는 이전 미해결 기록입니다. 이번에 재검사하거나 의존성을 변경하지 않았습니다.
+- 미전송 초안은 현재 화면 메모리에만 보존됩니다. 강제 종료 뒤 복구 경계는 [서버 안내](FIREBASE_SETUP.md#데이터와-남은-한계)를 따릅니다.
 
-대시보드·로그인의 기존 참고 화면은 [DESIGN](DESIGN.md), 원문·해시는 [문서 보관함](archive/README.md)에 있습니다. 보관 원문의 경로·현재 상태·승인은 당시 기준입니다.
+과거 승인·프롬프트·배포 이력은 [문서 보관함](archive/README.md)에 있습니다. 보관 원문은 당시 시점·경로 기준이며 현재 지침이 아닙니다.

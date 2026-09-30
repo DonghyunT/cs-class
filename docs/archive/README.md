@@ -1,8 +1,10 @@
 # 과거 기록 보관함
 
-보존일: 2026-09-26. 이 폴더는 역사 자료이며 현재 에이전트 지침·요구사항·작업 승인이 아닙니다. 현재 기준은 [프로젝트 안내](../../README.md)에서 확인합니다.
+목록 갱신: 2026-09-30. 각 원문의 보존 시점은 아래 기록을 따릅니다. 이 폴더는 역사 자료이며 현재 에이전트 지침·요구사항·작업 승인이 아닙니다. 현재 기준은 [프로젝트 안내](../../README.md)에서 확인합니다.
 
 ## 보관 기록
+
+- **[2026-09-30 대시보드 릴리스 정리 전 원문](cs-class/2026-09-30-before-dashboard-release/manifest.json):** `codex/dashboard-pilot-brief`의 미커밋 [HANDOFF](cs-class/2026-09-30-before-dashboard-release/HANDOFF.md)를 바이트 그대로 보존했습니다. 완료한 대시보드 메타프롬프트, 최초 로컬 45개 검사와 보강 검사, 이전 EntryJS 배포 근거를 포함합니다. 당시 기반 커밋은 `fc54d09`이며 원문의 로컬 전용 범위와 미커밋 상태는 현재 릴리스 상태와 구분합니다. 최신 결과와 다른 PC의 시작점은 [HANDOFF](../HANDOFF.md)에 있습니다.
 
 - **[2026-09-30 EntryJS 인계 정리 전 원문](cs-class/2026-09-30-before-entryjs-handoff/manifest.json):** 커밋 `9340932`의 [HANDOFF](cs-class/2026-09-30-before-entryjs-handoff/HANDOFF.md)를 바이트 그대로 보존했습니다. 9월 28~29일의 CI·배포·운영 로그인·미해결 진단 기록과 PR #10 초기 상태를 포함합니다. 당시 EntryJS 구현 표현은 자체 미리보기 코드의 실제 범위와 구분해서 읽습니다. 현재 구현·검증·배포는 [HANDOFF](../HANDOFF.md)를 따릅니다.
 

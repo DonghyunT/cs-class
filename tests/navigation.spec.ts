@@ -128,7 +128,7 @@ test("저장 응답 대기 중 뒤로가기 · 한 번 저장 후 원래 목적�
     expect(await page.evaluate(() => Boolean(history.state?.__NA && history.state?.__PRIVATE_NEXTJS_INTERNALS_TREE))).toBe(true);
     await back(page);
     await expect(page).toHaveURL(/\/student$/);
-    await expect(page.getByRole("heading", { name: "수업을 이어가 볼까요?" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "오늘은 무엇을 해볼까요?" })).toBeVisible();
   }
   expect(await page.evaluate(() => history.length)).toBe(historyLength);
 });

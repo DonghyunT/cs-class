@@ -17,6 +17,7 @@ export async function api<T>(path: string, body?: unknown, method = body === und
     response = await fetch(`/api/${path}`, { method, cache: "no-store", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CS-Class": "1", ...(expectedUser ? { "X-CS-User": expectedUser } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
   } catch { throw new ApiError("NETWORK", "서버에 연결하지 못했어요. 연결을 확인하고 다시 시도해 주세요.", 0); }
   const payload = await response.json().catch(() => ({}));
+  if (requestingUser !== expectedUser || requestingEpoch !== sessionEpoch) throw new ApiError("SESSION_REPLACED", "계정이 바뀌어 이전 요청을 중단했어요.", 401);
   if (!response.ok) {
     const error = new ApiError(payload.code ?? "SERVER", payload.message ?? "처리하지 못했어요. 잠시 후 다시 시도해 주세요.", response.status);
     if (response.status === 401 && requestingUser === expectedUser && requestingEpoch === sessionEpoch && !path.startsWith("auth/login") && path !== "auth/google") window.dispatchEvent(new CustomEvent("cs-session-ended", { detail: error.message }));

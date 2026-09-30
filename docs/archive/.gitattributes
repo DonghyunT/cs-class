@@ -1,2 +1,2 @@
-# Preserve historical documents byte-for-byte across Windows and other systems.
-* -text
+# Preserve original bytes and accept their CRLF line endings in whitespace checks.
+* -text whitespace=cr-at-eol

@@ -4,6 +4,8 @@
 
 Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 학습 플랫폼**입니다. 학생·교사 로그인, 반별 수업 관리, 학습 기록 저장·복원과 제출을 구현했습니다. 순서·순서도·엔트리봇 수업이 있으며 엔트리봇 실습은 실제 EntryJS 편집기와 실행 무대를 사용합니다. 실제 학생 계정 등록은 별도입니다.
 
+학생·교사 공통 대시보드에 개인 할 일·반 일정 파일럿을 구현했습니다. 수업 전체 목록·교사의 학생 현황과 수업 관리는 별도 메뉴에서 확인합니다. 최신 검증·배포·이어갈 작업은 [HANDOFF](docs/HANDOFF.md), 로컬 확인 방법은 [파일럿 실행 안내](docs/DEVELOPMENT.md#대시보드-파일럿)를 따릅니다.
+
 [운영 사이트 열기](https://cs-class-donghyunt.vercel.app) · 배포·접근 보호·실제 로그인 확인 범위와 진행 중인 작업은 [HANDOFF](docs/HANDOFF.md)를 먼저 확인합니다. 개발은 아래 에뮬레이터 모드로 진행할 수 있습니다.
 
 ## 빠르게 시작하기
@@ -64,8 +66,9 @@ cs-class/
 │  ├─ components/
 │  │  ├─ home/            공개 홈의 구성·수업 시연·그래픽·입장창
 │  │  ├─ ui/              버튼·입력창·대화상자 등 공통 UI
-│  │  ├─ student/         학생 대시보드·학습·저장 상태
-│  │  ├─ teacher/         교사 대시보드·수업/계정 대화상자
+│  │  ├─ dashboard/       공통 대시보드·개인 할 일·반 일정·저장 상태
+│  │  ├─ student/         열린 수업·학습·저장 상태
+│  │  ├─ teacher/         학생 현황·수업 관리·수업/계정 대화상자
 │  │  ├─ explore/         공개 수업 미리보기 그래픽·스타일
 │  │  └─ *.tsx            로그인·공통 셸·세션·이동 전 저장 보호
 │  └─ lib/                classroom/ 계약·server/ 인증과 저장·공통 함수
@@ -97,7 +100,8 @@ cs-class/
 - 여러 화면에서 쓰는 기본 부품은 `components/ui/`, 셸·브랜드 등 앱 공통 요소는 `components/`, 데이터·순수 함수는 `lib/`에 둡니다. 한 번 쓰는 작은 조각마다 폴더를 만들지는 않습니다.
 - 홈의 시작점은 [public-home.tsx](src/components/home/public-home.tsx)입니다. 수업 시연·예제·역할 미리보기·포인터 효과를 같은 폴더에서 찾을 수 있습니다.
 - `app/globals.css`는 글꼴·색상·기본 요소·공통 UI·브랜드를 담당합니다. 홈 스타일은 `components/home/public-home.css`, 셸·로그인·세션 안내·학생·교사·수업 미리보기 스타일은 담당 컴포넌트 옆의 CSS Module에 둡니다.
-- 교사 페이지의 시작점은 `app/teacher/page.tsx`입니다. `components/teacher/dashboard.tsx`가 조회·반 선택·학생 목록을, `dialogs.tsx`가 수업 설정·제출 작품 조회·비밀번호 초기화를 담당합니다. 함께 쓰는 날짜·오류 표현만 `presentation.ts`에 둡니다.
+- 학생·교사 첫 화면은 `components/dashboard/dashboard.tsx`를 사용하며 목록·일정·스타일을 같은 폴더에 둡니다. 학생 수업 목록은 `app/student/lessons/page.tsx`로 연결합니다.
+- 교사 상세 페이지는 `app/teacher/classes/page.tsx`·`app/teacher/students/page.tsx`입니다. `components/teacher/dashboard.tsx`가 조회·반 선택·학생 목록을, `dialogs.tsx`가 수업 설정·제출 작품 조회·비밀번호 초기화를 담당합니다. 함께 쓰는 날짜·오류 표현만 `presentation.ts`에 둡니다.
 
 ## 로컬 개발과 실제 로그인
 
