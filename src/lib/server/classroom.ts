@@ -27,7 +27,8 @@ export async function studentDashboard(): Promise<StudentDashboard> {
     const classroom = await studentClass(tx, account);
     const lessons = LESSONS.filter((lesson) => classroom.openedLessonIds.includes(lesson.id));
     const work: Record<string, Work> = {};
-    for (const lesson of lessons) work[lesson.id] = toWork((await tx.get(workRef(account.uid, lesson.id))).data() as StoredWork | undefined, lesson.id);
+    const snapshots = lessons.length ? await tx.getAll(...lessons.map((lesson) => workRef(account.uid, lesson.id))) : [];
+    lessons.forEach((lesson, index) => { work[lesson.id] = toWork(snapshots[index].data() as StoredWork | undefined, lesson.id); });
     return { classroom, lessons, work };
   });
 }
@@ -77,25 +78,18 @@ export async function teacherDashboard(classId?: string, lessonId?: string): Pro
     requireCondition(account.role !== "student", 403, "FORBIDDEN", "선생님 계정으로 입장해 주세요.");
     const selectedClassId = classId ?? account.classIds[0];
     requireCondition(account.classIds.includes(selectedClassId), 403, "FORBIDDEN", "담당 반만 확인할 수 있어요.");
-    const classrooms: ClassSettings[] = [];
-    for (const id of account.classIds) {
-      const value = (await tx.get(admin().db.collection("csClasses").doc(id))).data() as ClassSettings | undefined;
-      if (value) classrooms.push(value);
-    }
+    const classSnapshots = await tx.getAll(...account.classIds.map((id) => admin().db.collection("csClasses").doc(id)));
+    const classrooms = classSnapshots.map((snap) => snap.data() as ClassSettings | undefined).filter((value): value is ClassSettings => !!value);
     const classroom = classrooms.find((c) => c.id === selectedClassId);
     requireCondition(classroom, 404, "CLASS_NOT_FOUND", "아직 준비되지 않은 반이에요.");
     const selectedLessonId = lessonId ?? classroom.currentLessonId ?? classroom.openedLessonIds[0] ?? null;
     requireCondition(selectedLessonId === null || classroom.openedLessonIds.includes(selectedLessonId), 400, "INVALID_LESSON", "이 반에 열린 수업을 선택해 주세요.");
     const roster = await tx.get(admin().db.collection("csAccounts").where("classId", "==", selectedClassId));
-    const students = [];
-    for (const doc of roster.docs) {
-      const student = doc.data() as Account;
-      if (student.role !== "student" || student.disabled || !student.studentId) continue;
-      const work = selectedLessonId ? toWork((await tx.get(workRef(student.uid, selectedLessonId))).data() as StoredWork | undefined, selectedLessonId) : null;
-      students.push({ uid: student.uid, studentId: student.studentId, mustChangePassword: student.mustChangePassword, work });
-    }
-    students.sort((a, b) => a.studentId.localeCompare(b.studentId));
-    return { classrooms, lessons: LESSONS, classroom, selectedLessonId, students };
+    const students = roster.docs.map((doc) => doc.data() as Account).filter((student): student is Account & { studentId: string } => student.role === "student" && !student.disabled && !!student.studentId);
+    const workSnapshots = selectedLessonId && students.length ? await tx.getAll(...students.map((student) => workRef(student.uid, selectedLessonId))) : [];
+    const records = students.map((student, index) => ({ uid: student.uid, studentId: student.studentId, mustChangePassword: student.mustChangePassword, work: selectedLessonId ? toWork(workSnapshots[index].data() as StoredWork | undefined, selectedLessonId) : null }));
+    records.sort((a, b) => a.studentId.localeCompare(b.studentId));
+    return { classrooms, lessons: LESSONS, classroom, selectedLessonId, students: records };
   });
 }
 export async function updateClass(classId: string, payload: unknown) {

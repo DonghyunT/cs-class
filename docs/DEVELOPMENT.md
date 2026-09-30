@@ -56,6 +56,28 @@ npm.cmd run dev:emulator
 
 이 구현에서는 의존성을 추가하지 않았습니다. 설치된 Next.js 16.3.6의 `node_modules/next/dist/docs/`와 Firebase Admin 14.5.0·React 19.2.8의 로컬 자료를 읽고 Context7 문서를 함께 확인했습니다. Context7은 Next/React 각각 16.2.9/19.2.7 색인으로 확인했으며 정확한 패치의 차이는 설치본을 기준으로 확인했습니다.
 
+### 대시보드 성능 측정
+
+[성능 검사](../tests/dashboard-performance.spec.ts)는 `demo-cs-class`·로컬 Auth/Firestore를 확인한 뒤 합성 학생·교사로 측정합니다. 교사는 담당 11개 반과 선택 반의 학생 30명, 학생은 열린 수업 3개를 사용합니다. 이전 테스트의 작품을 보존한 뒤 측정 조건을 초기화하고 종료 시 복원합니다. 첫 관찰과 연속 새로고침 5회를 구분하며 응답 본문 대신 결과의 SHA-256·시간·크기·요청 수만 보고서에 저장합니다.
+
+위 Windows 검사 터미널 준비와 빌드 후 실행합니다. 기존 3000번 서버·에뮬레이터는 종료한 상태여야 합니다.
+
+```powershell
+$env:CI = "1"
+$env:CS_PERF_LABEL = "before-or-after"
+npx.cmd firebase emulators:exec --only auth,firestore --project demo-cs-class "playwright test tests/dashboard-performance.spec.ts"
+```
+
+보고서는 `test-results/`의 해당 검사 폴더에 `performance.json`으로 생성됩니다. 다음 실행에서 덮어쓰므로 비교할 파일은 Git 제외 `scratch/`에 먼저 복사합니다. 동일 PC·빌드 모드·fixture로 중앙값과 최댓값을 비교하고 첫 관찰은 별도 기록합니다. 화면 준비 시간은 Playwright 탐색부터 네 API 응답 완료와 스켈레톤 소멸 확인까지이며 브라우저 조작 비용도 포함합니다. 설치된 Firebase Admin 14.5.0의 Firestore 9.2.0 소스·타입과 Context7 `/googleapis/nodejs-firestore`에서 트랜잭션 `getAll`의 읽기 일관성·참조 순서·누락 문서 동작을 확인했습니다.
+
+[공개 홈 측정 스크립트](../scripts/measure-public-home.mjs)는 별도의 비로그인 브라우저에서 운영 홈 첫 관찰과 연속 접속 5회를 확인합니다. 저장된 로그인·HAR·쿠키·헤더·응답 본문·캡처를 수집하지 않습니다. 기록 경로의 부모 폴더는 미리 준비합니다.
+
+```powershell
+node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scratch/public-home-performance.json
+```
+
+운영 로그인 수치는 선생님이 직접 로그인한 Chrome의 F12 → Network → Fetch/XHR에서 새로고침 뒤 `session`·`teacher`·`todos`·`schedule`의 Time·Size만 확인합니다. 상세 요청·헤더·응답·HAR는 공유하지 않습니다. 운영과 로컬의 감소율을 계산하거나 첫 관찰을 서버 콜드 스타트로 단정하지 않습니다. 실제 관찰 결과와 후속 병목은 [HANDOFF](HANDOFF.md#교실-입장대시보드-조회-성능)에 남깁니다.
+
 ## EntryJS 실습
 
 `entry-bot-lab`은 실제 `@entrylabs/entry` **4.0.23** 작업실을 사용합니다. 교사가 해당 수업을 반에 공개하면 학생의 열린 수업에 나타납니다. 에뮬레이터에서는 교사 입장의 강사 계정으로 10반 수업 관리에서 엔트리봇 수업을 공개하고, 합성 학생 `21001`로 입장해 실습 탭을 선택하면 확인할 수 있습니다. 강사·학생 비밀번호는 위 로컬 테스트 설정을 따릅니다.
