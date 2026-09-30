@@ -4,9 +4,8 @@
 
 ## 개발 환경
 - 앱은 저장소 루트의 Next.js·TypeScript와 Firebase Auth·Firestore를 사용합니다. `cs-class/`에서 `npm ci` 후 실행합니다. 실제 연결은 Git 제외 `.env.local`과 `npm run dev`, 가상 계정 검증은 `npm run dev:emulator`를 사용합니다. 서버 설정은 [연결 안내](docs/FIREBASE_SETUP.md)를 따릅니다.
-- Vercel `cs-class`의 Root Directory는 비워 둡니다(저장소 루트). Framework Preset은 Next.js입니다. 프로젝트 연결로 MCP를 호출하고, 팀 범위를 임의로 덧붙이지 않습니다.
-- Vercel Preview·Production은 `NODE_OPTIONS=--experimental-require-module`이 필요합니다. Firebase Admin의 ESM 의존성을 불러오도록 하는 실행 설정입니다. 빌드 성공 뒤에도 `/api/auth/session` 응답과 로그인 화면을 확인합니다.
-- 운영 주소·이전 주소의 이동·Firebase 승인 도메인은 [서버 설정](docs/FIREBASE_SETUP.md#vercel-서버-설정)을 함께 확인합니다. 배포 READY나 별칭 연결만으로 Google 로그인 성공을 판정하지 않습니다.
+- Vercel 대상·Root Directory·Node 실행 설정·운영 주소·이전 주소 이동·Firebase 승인 도메인은 [서버 설정](docs/FIREBASE_SETUP.md#vercel-서버-설정)에 모읍니다. 프로젝트 연결로 MCP를 호출하고 팀 범위를 임의로 덧붙이지 않습니다.
+- 빌드 성공 뒤에도 배포 SHA·별칭·`/api/auth/session` 응답·로그인 화면을 확인합니다. READY·별칭·일반 Preview의 준비 안내만으로 운영 Google 로그인 성공을 판정하지 않습니다.
 - 제품 결정은 [PRD](docs/PRD.md), 디자인 기준은 [DESIGN](docs/DESIGN.md), 폴더 목차는 [README](README.md), 실행·도구 설정은 [DEVELOPMENT](docs/DEVELOPMENT.md), 이어갈 일은 [HANDOFF](docs/HANDOFF.md)를 필요에 따라 읽습니다.
 - Windows PowerShell은 `.ps1` 실행을 차단할 수 있습니다. npm은 필요하면 `npm.cmd`·`npx.cmd`로 실행하고 Stitch 키 등록은 [직접 입력 안내](docs/DEVELOPMENT.md#stitch-키-입력)의 마스킹된 명령을 사용합니다.
 
@@ -28,7 +27,7 @@
 - 계층형 검증(Tiered Verification)으로 토큰과 실행 시간을 최적화합니다. 작업 도중(디버깅·반복 수정)에는 `npm run typecheck`와 수정한 대상의 단일 테스트(`npx playwright test tests/<target>.spec.ts` 또는 에뮬레이터 실행 중 `npm run test:e2e:running -- tests/<target>.spec.ts`)를 우선 실행하고 무관한 전체 E2E나 빌드를 반복하지 않습니다.
 - 최종 통합(커밋·인계·PR 직전)에는 저장소 루트에서 `npm run lint`, `npm run build`, `npm run test:e2e`로 로컬 Auth·Firestore 에뮬레이터와 함께 전체를 검증합니다(Java 21+, 최초 `npx playwright install chromium`). 이미 에뮬레이터를 실행 중일 때만 `npm run test:e2e:running`을 씁니다.
 - 테스트는 `demo-cs-class`와 로컬 9099·8080만 사용합니다. 실제 서버가 3000에서 실행 중이면 종료한 뒤 E2E를 실행합니다. 운영 DB에 테스트 시드·합성 계정을 넣지 않습니다. 병렬 수동 검사는 계정과 결과 폴더를 나누고 최종 통합은 단일 실행으로 확인합니다.
-- 제한된 Windows 환경에서 사용자 캐시 접근이 실패하면 이미 준비한 Git 제외 캐시를 `FIREBASE_EMULATORS_PATH`·`PLAYWRIGHT_BROWSERS_PATH`로 지정하고 JDK 21+의 PATH를 확인합니다. `$env:` 설정은 터미널별이므로 새 PowerShell에서도 실행 전 준비합니다. 실제 경로·복사 가능한 준비 명령·최초 설치는 [개발 안내](docs/DEVELOPMENT.md#다른-pc에서-시작)를 따릅니다. 기존 캐시를 확인하기 전에 같은 다운로드·설치를 반복하지 않습니다.
+- 제한된 Windows 환경에서 사용자 캐시 접근이 실패하면 이미 준비한 Git 제외 캐시를 `FIREBASE_EMULATORS_PATH`·`PLAYWRIGHT_BROWSERS_PATH`로 지정하고 Java 21+의 PATH를 확인합니다. `$env:` 설정은 터미널별이므로 새 PowerShell에서도 실행 전 준비합니다. Java·`tar`·Playwright의 자식 프로세스 `EPERM`은 설치 누락과 구분하고 허용된 검사 실행에서 재확인합니다. 실제 경로·복사 가능한 준비 명령·최초 설치는 [개발 안내](docs/DEVELOPMENT.md#다른-pc에서-시작)를 따릅니다. 기존 캐시를 확인하기 전에 같은 다운로드·설치를 반복하지 않습니다.
 - ESLint·TypeScript는 현재 앱·테스트·설정을 검사하고 Tailwind는 `src/`에서 클래스 이름을 찾습니다. `archive/`, `docs/`, `outputs/`, `scratch/`의 과거 코드·참고 자료를 앱 검사·스타일 생성에 섞지 않습니다.
 - CI의 E2E는 먼저 만든 빌드를 `next start`로 실행하고, 로컬은 개발 서버를 사용합니다. 두 경우 모두 에뮬레이터 환경변수를 명시하고 로컬 시드를 준비합니다. 홈 조작 검사는 데스크톱 고정 배치(`data-pinned=true`)가 준비된 뒤 시작해 초기화 도중의 클릭·앵커 이동과 혼동하지 않습니다.
 - E2E 앱 주소는 `http://localhost:3000`으로 통일합니다. Playwright API 쿠키 저장소는 HTTP의 `127.0.0.1`에서 운영 빌드의 Secure 쿠키를 보내지 않습니다. 테스트를 위해 운영 쿠키 보안을 낮추지 않습니다.
@@ -46,6 +45,7 @@
 - 외부 서비스 연결·병합·배포 전 실제 대상과 승인 범위를 확인합니다. V1 운영 환경은 시험에 사용하지 않습니다.
 - 비밀정보·학생 개인정보를 코드·문서·로그에 노출하지 않습니다. 실제 자료 변경은 영향·복구 범위를 협의하고, `백업용/` 원본은 수정하지 않습니다.
 - Firebase CLI의 `login:list --json`은 인증 토큰을 포함하므로 원문을 실행 로그에 출력하지 않습니다. 인증 상태를 진단할 때는 비밀이 없는 필요한 필드만 출력하고 토큰·인증 파일을 문서나 채팅에 옮기지 않습니다.
+- Firebase CLI 진단 로그는 자식 프로세스의 환경변수와 비밀 키를 포함할 수 있으므로 원문을 통째로 출력하지 않습니다. 필요한 오류만 비밀 필드를 제외해 읽고, 로컬 검사 터미널에는 불필요한 외부 도구 키를 전달하지 않습니다.
 - `archive/`와 `docs/archive/`는 참고 자료이며 현재 지침이나 승인이 아닙니다.
 
 ## 지침 갱신

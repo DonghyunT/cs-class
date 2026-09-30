@@ -45,11 +45,8 @@ async function scheduleScope(tx: Transaction, account: Account, requested?: stri
   const allowed = account.role === "student" ? [account.classId].filter((value): value is string => !!value) : account.classIds;
   const selected = requested ?? allowed[0];
   requireCondition(selected && allowed.includes(selected), 403, "FORBIDDEN", "본인 반이나 담당 반의 일정만 확인할 수 있어요.");
-  const classrooms: ClassSettings[] = [];
-  for (const classId of allowed) {
-    const value = (await tx.get(admin().db.collection("csClasses").doc(classId))).data() as ClassSettings | undefined;
-    if (value) classrooms.push(value);
-  }
+  const snapshots = await tx.getAll(...allowed.map((classId) => admin().db.collection("csClasses").doc(classId)));
+  const classrooms = snapshots.map((snap) => snap.data() as ClassSettings | undefined).filter((value): value is ClassSettings => !!value);
   const classroom = classrooms.find((value) => value.id === selected);
   requireCondition(classroom, 404, "CLASS_NOT_FOUND", "아직 준비되지 않은 반이에요.");
   return { classroom: { id: classroom.id, name: classroom.name }, classrooms: classrooms.map(({ id, name }) => ({ id, name })), lessons: LESSONS.filter((value) => classroom.openedLessonIds.includes(value.id)).map(({ id, title }) => ({ id, title })) };

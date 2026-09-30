@@ -37,6 +37,8 @@ Google 로그인을 확인할 때는 승인된 `localhost`를 사용해 [교사 
 
 ## Vercel 서버 설정
 
+연결 프로젝트는 `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)입니다. Root Directory는 비워 둔 저장소 루트, Framework Preset은 Next.js, Node.js는 24.x이며 빌드·설치·출력은 프레임워크 기본값을 사용합니다. Git 연동의 작업 브랜치는 Preview, `main`은 Production입니다. MCP는 프로젝트 연결로 호출하고 팀 범위를 임의로 덧붙이지 않습니다. 응답에 루트 설정이 없으면 Build and Deployment 화면에서 확인합니다. 한 도구의 403을 전체 연결 불가로 일반화하지 않습니다.
+
 운영 주소는 [CS Class](https://cs-class-donghyunt.vercel.app)입니다. 2026-09-28 사용자 승인으로 해당 도메인을 Firebase Authentication 허용 목록에 추가했습니다. Vercel `cs-class`에는 위 표의 Firebase 웹 설정 3개, 관리자 JSON, 교사 허용 목록, 초기·초기화 비밀번호 총 7개를 **Production 전용 Secret**으로 등록했습니다. 일반 Preview에는 운영 인증정보를 넣지 않습니다.
 
 운영 도메인은 Vercel 프로젝트의 Production에 `cs-class-donghyunt.vercel.app`을 연결하고, 이전 `cs-class-sigma.vercel.app`은 해당 주소로 307 이동하도록 유지합니다. 공유 링크와 로그인 확인에는 운영 주소를 사용합니다. Vercel 도메인 연결과 Firebase Authentication의 승인 도메인은 별도 설정입니다. 다른 주소에서 Google 로그인이 실패하면 최종 접속 도메인과 Firebase의 도메인 오류를 먼저 확인하며, 임의의 배포·Preview 주소를 승인 목록에 추가해 해결하지 않습니다. 설정 변경 뒤에는 이전 주소의 경로 유지와 실제 Google 로그인·세션 생성을 구분해 검증합니다.
@@ -76,12 +78,11 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 - `csWork`: 학생별 초안·풀이 결과·검증·최근 제출본·revision. 완료는 서버가 판정합니다.
 - `csTodos/{uid}`: 본인 개인 할 일의 `revision`과 `items`(항목 ID·텍스트·완료 의도). 서버 세션 UID만 사용하고 교사도 다른 사용자의 목록을 조회하지 않습니다.
 - `csSchedules/{classId}`: 반 일정의 `revision`과 `items`(항목 ID·제목·한국 날짜·선택 수업 ID). 학생은 본인 반 조회만, 교사·강사는 담당 반 조회·수정만 허용합니다. 계정·반 권한·열린 수업을 같은 서버 트랜잭션에서 확인합니다.
-- 두 파일럿 목록은 서버 API만 읽고 씁니다. 클라이언트의 직접 Firestore 접근은 기존 전체 차단 규칙을 유지합니다. 쓰기에는 기존 Origin·세션 UID 검사와 revision 충돌 검사를 적용하고 동일 내용의 재전송은 중복 저장하지 않습니다. 모델의 한도·명시적 재시도·세션 종료 경계는 [PRD](PRD.md#작은-버전의-경계와-저장-동작)를 따릅니다. 일정 날짜가 수업·제출 권한을 자동 변경하지 않습니다.
+- 데이터는 서버 API로만 접근하며 직접 Firestore 접근은 차단합니다. 쓰기는 Origin·세션 UID·revision을 검사합니다. 재시도·동시 변경·한도·일정의 제품 의미는 [PRD](PRD.md#작은-버전의-경계와-저장-동작)를 기준으로 합니다.
 - `csRateLimits`, `csGoogleExchanges`: 로그인 제한과 Google 로그인 토큰 재사용 방지. 후속 운영에서 보관 기간·정리 작업을 마련합니다.
-- 학생 10분(9분 경고), 교사/강사 4시간 무활동 만료입니다. 자동 저장·조회는 활동으로 취급하지 않습니다. 새 로그인만 기존 세션을 바꿉니다.
+- 무활동 만료·연장·동시 접속·저장 기록의 제품 정책은 [PRD의 로그인 정책](PRD.md#로그인-정책)에 모읍니다. 서버 세션은 계정의 세션 해시·활동 시각과 대조합니다.
 - 세션 쿠키는 HttpOnly·SameSite=Strict, 배포 환경 Secure이며 지속 만료일을 넣지 않습니다. 브라우저의 세션 복원 기능은 쿠키를 복구할 수 있어 창 닫기를 절대적인 로그아웃 보장으로 취급하지 않습니다. 공용 PC에서는 로그아웃을 사용합니다.
-- 미저장 답안은 현재 화면 메모리에만 유지합니다. 서버 저장이 실패한 채 강제로 창을 닫거나 세션을 종료한 뒤의 복구는 보장하지 않습니다. 다른 사용자에게 남지 않도록 브라우저 영속 저장소에 답안을 남기지 않습니다.
-- 순서·순서도·엔트리봇 세 수업과 작은 EntryJS 실습을 구현했습니다. 수업 버전 변경·학년도 전환·실학생 대량 등록·심화·추가 EntryJS 과제·AI·Q&A는 후속 작업입니다. EntryJS 실행·자산 준비·검사 범위는 [개발 안내](DEVELOPMENT.md#entryjs-실습)를 따릅니다.
+- 미전송 초안과 강제 종료 후 복구 경계는 [PRD의 저장 정책](PRD.md#작업-저장과-통신-비용), 미해결 제품·운영 과제는 [HANDOFF](HANDOFF.md#남은-한계와-다음-결정)에 있습니다. EntryJS 실행·자산·검사는 [개발 안내](DEVELOPMENT.md#entryjs-실습)를 따릅니다.
 - 의존성 점검의 미해결 항목·확인 날짜는 [HANDOFF](HANDOFF.md#남은-한계와-다음-결정)에 기록합니다.
 
 공식 설정: [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup), [Application Default Credentials](https://docs.cloud.google.com/docs/authentication/provide-credentials-adc).

@@ -21,16 +21,19 @@ Windows의 사용자 npm 캐시에서 `EPERM`이 발생하면 저장소의 Git �
 
 Firebase CLI가 사용자 설정 파일 접근을 거부하면 로컬 에뮬레이터용 터미널에서 `$env:XDG_CONFIG_HOME="$PWD\scratch\firebase-cli-config"`를 설정한 뒤 실행합니다. CLI 설정을 Git 제외 폴더에 분리하며 실제 Firebase 로그인용 터미널에는 적용하지 않습니다.
 
-에뮬레이터·Playwright를 이미 `scratch/`에 설치한 제한된 Windows 환경에서는 기존 캐시를 가리킵니다. `$env:FIREBASE_EMULATORS_PATH="$PWD\scratch\firebase-emulators"`, `$env:PLAYWRIGHT_BROWSERS_PATH="$PWD\scratch\playwright"`를 같은 검사 터미널에 설정합니다. Java가 PATH에 없으면 해당 PC에 설치한 JDK 21+의 `bin`을 그 터미널 PATH 앞에 추가합니다. 이 PC의 JDK는 `scratch/tools/java/runtime/jdk-21.0.12.1+1/bin`에 있지만 다른 PC에 같은 경로가 있다고 가정하지 않습니다. 캐시가 없는 새 PC는 최초 설치를 진행합니다.
+에뮬레이터·Playwright를 이미 `scratch/`에 설치한 제한된 Windows 환경에서는 기존 캐시를 가리킵니다. `$env:FIREBASE_EMULATORS_PATH="$PWD\scratch\firebase-emulators"`, `$env:PLAYWRIGHT_BROWSERS_PATH="$PWD\scratch\playwright"`를 같은 검사 터미널에 설정합니다. Java가 PATH에 없으면 해당 PC에 설치한 Java 21+의 `bin`을 그 터미널 PATH 앞에 추가합니다. 2026-09-30 이 체크아웃의 예시는 `scratch/tools/java/jdk-21.0.12.1+1-jre/bin`이며 다른 PC에 같은 경로가 있다고 가정하지 않습니다. 캐시가 없는 새 PC는 최초 설치를 진행합니다.
 
-이 PC의 새 PowerShell에서는 저장소 루트에서 아래 준비 명령을 함께 실행합니다. `$env:` 설정은 해당 터미널에만 적용되므로 이전 검사 터미널에서 설정했더라도 다시 필요합니다. 로컬 JDK·캐시가 없는 다른 PC에서는 위 설치 안내를 먼저 따릅니다.
+이 PC의 새 PowerShell에서는 저장소 루트에서 아래 준비 명령을 함께 실행합니다. `$env:` 설정은 해당 터미널에만 적용되므로 이전 검사 터미널에서 설정했더라도 다시 필요합니다. 로컬 Java·캐시가 없는 다른 PC에서는 위 설치 안내를 먼저 따릅니다.
 
 ```powershell
-$env:PATH = "$PWD\scratch\tools\java\runtime\jdk-21.0.12.1+1\bin;$env:PATH"
+$env:PATH = "$PWD\scratch\tools\java\jdk-21.0.12.1+1-jre\bin;$env:PATH"
 $env:XDG_CONFIG_HOME = "$PWD\scratch\firebase-cli-config"
 $env:FIREBASE_EMULATORS_PATH = "$PWD\scratch\firebase-emulators"
+Remove-Item Env:STITCH_API_KEY -ErrorAction SilentlyContinue
 npm.cmd run dev:emulator
 ```
+
+`where.exe java`·`java -version`이 되는데도 제한된 실행에서 Java·`tar`·Playwright 자식 프로세스가 `EPERM`이면 설치 실패로 단정하지 않습니다. 허용된 로컬 검사 실행에서 같은 명령을 확인합니다. 위 Stitch 키 제거는 검사 터미널에만 적용하며 사용자 저장 설정을 지우지 않습니다. Firebase CLI 진단 로그에는 실행 환경 전체가 포함될 수 있으므로 원문을 출력하거나 공유하지 않습니다.
 
 [학생 입장](http://localhost:3000/login/student)에서 합성 학번 `20101`과 [테스트 설정의 초기 비밀번호](../scripts/local-test-env.mjs)를 사용합니다. 첫 입장에는 본인 테스트 비밀번호로 바꿉니다. [교사 입장](http://localhost:3000/login/teacher)의 강사 계정은 같은 파일의 강사 비밀번호를 사용하며 10·11반을 확인합니다. `Ctrl+C`로 종료하면 에뮬레이터 기록은 보존되지 않습니다.
 
@@ -49,9 +52,31 @@ npm.cmd run dev:emulator
 - 공통 화면·목록·일정·담당 CSS는 `src/components/dashboard/`에 둡니다. `use-saved-list.ts`는 두 목록의 직렬 저장·실패 의도·명시적 충돌 재시도를 공유합니다. 기존 학습 저장·이동 보호를 재사용하며 개인 체크가 `csWork`를 변경하지 않습니다.
 - 서버 저장과 권한은 `src/lib/server/planner.ts`, 계약·한국 날짜는 `src/lib/classroom/planner.ts`에서 관리합니다. 저장 모델은 [Firebase 안내](FIREBASE_SETUP.md#데이터와-남은-한계), 파일럿 가정·한도·미전송 내용의 경계는 [PRD](PRD.md#작은-버전의-경계와-저장-동작)를 따릅니다.
 - 로컬 `dev:emulator`를 계속 실행한 상태에서 목록을 추가한 뒤 새로고침·로그아웃·같은 합성 계정 재로그인으로 복원을 확인합니다. 교사 입장의 강사는 담당 10·11반의 일정을 등록하고 해당 반의 합성 학생은 조회합니다. 운영 계정·자료는 사용하지 않습니다.
-- 변경 중에는 `npm run typecheck`와 `npm run test:e2e:running -- tests/dashboard-pilot.spec.ts`의 관련 단일 검사를 우선합니다. 최종 통합은 아래 전체 검사로 진행합니다. 대표 검사는 권한·응답 유실·동시 수정·실패 복구·IME/키보드·7개 너비와 화면 기록을 포함합니다.
+- 대상 검사는 `tests/dashboard-pilot.spec.ts`·`tests/loading-states.spec.ts`입니다. 변경 중에는 실행 중인 에뮬레이터에서 `npm run test:e2e:running -- tests/<target>.spec.ts`로 확인하며 최종 통합은 [전체 검증](#검증)을 따릅니다.
 
-이 구현에서는 의존성을 추가하지 않았습니다. 설치된 Next.js 16.3.6의 `node_modules/next/dist/docs/`와 Firebase Admin 14.5.0·React 19.2.8의 로컬 자료를 읽고 Context7 문서를 함께 확인했습니다. Context7은 Next/React 각각 16.2.9/19.2.7 색인으로 확인했으며 정확한 패치의 차이는 설치본을 기준으로 확인했습니다.
+Next.js 가이드는 설치본 `node_modules/next/dist/docs/`에 있습니다. 패치 버전 차이는 설치본을 기준으로 하고, 라이브러리 문서 확인 규칙은 AGENTS를 따릅니다. 이번 조회 구현의 SDK 근거는 아래 성능 측정 절에 있습니다.
+
+### 대시보드 성능 측정
+
+[성능 검사](../tests/dashboard-performance.spec.ts)는 `demo-cs-class`·로컬 Auth/Firestore를 확인한 뒤 합성 학생·교사로 측정합니다. 교사는 담당 11개 반과 선택 반의 학생 30명, 학생은 열린 수업 3개를 사용합니다. 이전 테스트의 작품을 보존한 뒤 측정 조건을 초기화하고 종료 시 복원합니다. 첫 관찰과 연속 새로고침 5회를 구분하며 응답 본문 대신 결과의 SHA-256·시간·크기·요청 수만 보고서에 저장합니다.
+
+위 Windows 검사 터미널 준비와 빌드 후 실행합니다. 기존 3000번 서버·에뮬레이터는 종료한 상태여야 합니다.
+
+```powershell
+$env:CI = "1"
+$env:CS_PERF_LABEL = "before-or-after"
+npx.cmd firebase emulators:exec --only auth,firestore --project demo-cs-class "playwright test tests/dashboard-performance.spec.ts"
+```
+
+보고서는 `test-results/`의 해당 검사 폴더에 `performance.json`으로 생성됩니다. 다음 실행에서 덮어쓰므로 비교할 파일은 Git 제외 `scratch/`에 먼저 복사합니다. 동일 PC·빌드 모드·fixture로 중앙값과 최댓값을 비교하고 첫 관찰은 별도 기록합니다. 화면 준비 시간은 Playwright 탐색부터 네 API 응답 완료와 스켈레톤 소멸 확인까지이며 브라우저 조작 비용도 포함합니다. 설치된 Firebase Admin 14.5.0의 Firestore 9.2.0 소스·타입과 Context7 `/googleapis/nodejs-firestore`에서 트랜잭션 `getAll`의 읽기 일관성·참조 순서·누락 문서 동작을 확인했습니다.
+
+[공개 홈 측정 스크립트](../scripts/measure-public-home.mjs)는 별도의 비로그인 브라우저에서 운영 홈 첫 관찰과 연속 접속 5회를 확인합니다. 저장된 로그인·HAR·쿠키·헤더·응답 본문·캡처를 수집하지 않습니다. 기록 경로의 부모 폴더는 미리 준비합니다.
+
+```powershell
+node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scratch/public-home-performance.json
+```
+
+운영 로그인 수치는 선생님이 직접 로그인한 Chrome의 F12 → Network → Fetch/XHR에서 새로고침 뒤 `session`·`teacher`·`todos`·`schedule`의 Time·Size만 확인합니다. 상세 요청·헤더·응답·HAR는 공유하지 않습니다. 운영과 로컬의 감소율을 계산하거나 첫 관찰을 서버 콜드 스타트로 단정하지 않습니다. 실제 관찰 결과와 후속 병목은 [HANDOFF](HANDOFF.md#교실-입장대시보드-조회-성능)에 남깁니다.
 
 ## EntryJS 실습
 
@@ -135,9 +160,7 @@ macOS·Linux에서는 Codex를 시작하는 환경에 같은 이름의 환경변
 
 ## 외부 환경과 로컬 전용 자료
 
-- 연결된 Vercel 프로젝트는 `cs-class`입니다. **Root Directory는 비워 둡니다(저장소 루트).** Framework Preset은 Next.js, Node.js는 24.x이며 빌드·설치·출력 경로는 프레임워크 기본값을 사용합니다. Git 연동으로 작업 브랜치는 Preview, main은 Production에 배포됩니다. Vercel SSO 보호는 유지합니다. Production은 승인된 Firebase에 연결하고, 일반 Preview에는 운영 비밀값을 넣지 않습니다.
-- Vercel 프로젝트 ID는 `prj_RUUtcTMukVY9kjudgDr6VA89KKxP`입니다. MCP는 프로젝트 연결로 호출하고 팀 범위를 임의로 덧붙이지 않습니다. `teamId`를 덧붙일 때의 403을 전체 연결 불가로 해석하지 않습니다. 응답에 루트 경로가 없으면 Build and Deployment 설정 화면에서 확인합니다.
-- Firebase의 승인 대상·서버 설정·복구 절차는 [Firebase 안내](FIREBASE_SETUP.md), 실제 연결 확인 기록은 [HANDOFF](HANDOFF.md)를 따릅니다.
+- Vercel 프로젝트·Git 배포·Root Directory·Node 실행 설정·접근 보호와 Firebase 연결·복구는 [서버 설정](FIREBASE_SETUP.md#vercel-서버-설정)에 모읍니다. 확인 날짜·배포 결과는 HANDOFF에서 관리합니다.
 - 키·환경변수·학생 계정 엑셀·`백업용/`은 Git에 포함하지 않습니다. 학생 자료가 필요한 작업은 원래 PC의 자료를 별도 안전한 경로로 준비해야 합니다. UI 작업은 이 자료 없이 가능합니다.
 - 최신 공개 홈 참고 이미지와 제공받은 [UI Component Lab](reference/ui-component-lab/index.html)은 저장소에 포함했습니다. 외부 PC에서도 사용할 수 있으며 학생 개인정보가 들어 있지 않습니다.
 
@@ -145,11 +168,8 @@ macOS·Linux에서는 Codex를 시작하는 환경에 같은 이름의 환경변
 
 제품 의미·권한·저장 정책은 [PRD](PRD.md)를 따릅니다. 구현의 공통 시작점은 [types.ts](../src/lib/classroom/types.ts), [client.ts](../src/lib/classroom/client.ts), [progress.ts](../src/lib/classroom/progress.ts)이며 학생·교사 화면이 같은 세션·탐색 보호·서버 API를 사용합니다.
 
-- 학번 같은 표시 식별자와 서버 사용자 식별자를 구분하고, 역할·담당 반은 검증된 서버 정보에서 받습니다.
-- 수업 안에서 안정적인 활동 식별자를 사용하고 응답·미응답·오답·해결을 구분합니다. 두 화면의 진행은 같은 서버 기록으로 계산합니다.
-- 검증 결과는 작업 버전에 연결합니다. 제출본·편집 중 초안, 학습 완료·저장 상태를 구분합니다.
-- 인증 만료·권한 부족·통신 실패·버전 충돌을 구분합니다. 재시도가 중복 제출을 만들거나 늦은 저장이 최신 작업을 덮어쓰지 않도록 합니다.
-- 공유 계약 변경은 학생·교사 양쪽 영향과 실패·권한 경계를 함께 검증합니다. 모의 데이터·에뮬레이터 검증과 실제 연결 결과를 구분합니다.
+- 정책의 식별자·권한·초안/제출·완료 의미를 위 계약에 반영하고, 서버 인증은 `src/lib/server/auth.ts`, 수업 저장은 `classroom.ts`·`learning.ts`, 목록 저장은 `planner.ts`에서 함께 확인합니다.
+- 변경한 계약을 쓰는 학생·교사 양쪽 호출부를 찾고 만료·권한 부족·통신 실패·버전 충돌·늦은 응답을 대상으로 검사합니다. 환경별 실제 결과는 HANDOFF에 남깁니다.
 
 ## 이전 구조를 확인해야 할 때
 

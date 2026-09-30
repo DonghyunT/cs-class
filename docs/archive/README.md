@@ -4,6 +4,8 @@
 
 ## 보관 기록
 
+- **[2026-09-30 UI·성능 릴리스 문서 정리 전 원문](cs-class/2026-09-30-before-dashboard-polish-release/manifest.json):** `cf3ccb0`의 PRD·DESIGN·DEVELOPMENT·FIREBASE_SETUP·HANDOFF 5개를 바이트 그대로 보존했습니다. 초기 구현 목표·이전 릴리스 검증·원격 브랜치/Preview 진단의 맥락을 남기고, 현재 문서는 정책·표현·절차·설정·최신 상태를 각각 담당하도록 중복을 줄였습니다. 각 원래 경로·보존 경로·SHA-256은 manifest에 있으며 당시 승인·상태는 현재 실행 지시가 아닙니다.
+
 - **[2026-09-30 대시보드 릴리스 정리 전 원문](cs-class/2026-09-30-before-dashboard-release/manifest.json):** `codex/dashboard-pilot-brief`의 미커밋 [HANDOFF](cs-class/2026-09-30-before-dashboard-release/HANDOFF.md)를 바이트 그대로 보존했습니다. 완료한 대시보드 메타프롬프트, 최초 로컬 45개 검사와 보강 검사, 이전 EntryJS 배포 근거를 포함합니다. 당시 기반 커밋은 `fc54d09`이며 원문의 로컬 전용 범위와 미커밋 상태는 현재 릴리스 상태와 구분합니다. 최신 결과와 다른 PC의 시작점은 [HANDOFF](../HANDOFF.md)에 있습니다.
 
 - **[2026-09-30 EntryJS 인계 정리 전 원문](cs-class/2026-09-30-before-entryjs-handoff/manifest.json):** 커밋 `9340932`의 [HANDOFF](cs-class/2026-09-30-before-entryjs-handoff/HANDOFF.md)를 바이트 그대로 보존했습니다. 9월 28~29일의 CI·배포·운영 로그인·미해결 진단 기록과 PR #10 초기 상태를 포함합니다. 당시 EntryJS 구현 표현은 자체 미리보기 코드의 실제 범위와 구분해서 읽습니다. 현재 구현·검증·배포는 [HANDOFF](../HANDOFF.md)를 따릅니다.

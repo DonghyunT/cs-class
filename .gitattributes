@@ -2,6 +2,7 @@
 docs/archive/cs-class/2026-09-27-before-consolidation/** -text whitespace=cr-at-eol
 docs/archive/cs-class/2026-09-27-home-checkpoint/** -text whitespace=cr-at-eol
 docs/archive/cs-class/2026-09-29-before-doc-roles/** -text whitespace=cr-at-eol
+docs/archive/cs-class/2026-09-30-before-dashboard-polish-release/** -text whitespace=cr-at-eol
 docs/reference/ui-component-lab/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 # Keep the upstream font license verbatim, including its original trailing space.
 src/app/fonts/OFL.txt -text whitespace=cr-at-eol,-blank-at-eol

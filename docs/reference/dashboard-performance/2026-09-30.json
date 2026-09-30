@@ -1,0 +1,1036 @@
+{
+  "date": "2026-09-30",
+  "local": {
+    "environment": "Windows, Node 24.19.0, Java 21.0.12.1, Chromium, next start, demo-cs-class Auth 9099 / Firestore 8080",
+    "conditions": "Same PC; 11 teacher classes, selected class 30 students; student 3 opened lessons; first observation + 5 repeats. Synthetic data only.",
+    "beforeCommit": "18ebbf3bf5ef12abab76834fa4ca5f4732c5288c",
+    "afterChange": "transaction getAll in classroom.ts and planner.ts",
+    "before": {
+      "environment": "local-production-build",
+      "label": "baseline-18ebbf3",
+      "studentPayloadHash": "94de7d606c391e10fe6c0cda58d6fc5440b5f6c81fb70f5bf18a3d4c44dd1b8d",
+      "teacherPayloadHash": "2f6fc7fede2d8b9b85fed34886b4f8ce2061f1c6884addebbc48b6474d5b716f",
+      "student": [
+        {
+          "index": 0,
+          "kind": "first-observed",
+          "visibleMs": 914,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 32,
+              "ttfbMs": 30,
+              "responseBodyBytes": 212
+            },
+            {
+              "path": "/api/classroom/student",
+              "durationMs": 125,
+              "ttfbMs": 124,
+              "responseBodyBytes": 14823
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 28,
+              "ttfbMs": 28,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 36,
+              "ttfbMs": 35,
+              "responseBodyBytes": 337
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "kind": "repeat",
+          "visibleMs": 182,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 14,
+              "ttfbMs": 13,
+              "responseBodyBytes": 212
+            },
+            {
+              "path": "/api/classroom/student",
+              "durationMs": 46,
+              "ttfbMs": 44,
+              "responseBodyBytes": 14823
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 29,
+              "ttfbMs": 28,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 35,
+              "ttfbMs": 34,
+              "responseBodyBytes": 337
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "kind": "repeat",
+          "visibleMs": 153,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 13,
+              "ttfbMs": 12,
+              "responseBodyBytes": 212
+            },
+            {
+              "path": "/api/classroom/student",
+              "durationMs": 42,
+              "ttfbMs": 40,
+              "responseBodyBytes": 14823
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 28,
+              "ttfbMs": 27,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 34,
+              "ttfbMs": 33,
+              "responseBodyBytes": 337
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "repeat",
+          "visibleMs": 184,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 13,
+              "ttfbMs": 13,
+              "responseBodyBytes": 212
+            },
+            {
+              "path": "/api/classroom/student",
+              "durationMs": 78,
+              "ttfbMs": 77,
+              "responseBodyBytes": 14823
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 37,
+              "ttfbMs": 37,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 55,
+              "ttfbMs": 54,
+              "responseBodyBytes": 337
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "repeat",
+          "visibleMs": 143,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 13,
+              "ttfbMs": 12,
+              "responseBodyBytes": 212
+            },
+            {
+              "path": "/api/classroom/student",
+              "durationMs": 48,
+              "ttfbMs": 47,
+              "responseBodyBytes": 14823
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 31,
+              "ttfbMs": 31,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 37,
+              "ttfbMs": 36,
+              "responseBodyBytes": 337
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "kind": "repeat",
+          "visibleMs": 151,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 12,
+              "ttfbMs": 12,
+              "responseBodyBytes": 212
+            },
+            {
+              "path": "/api/classroom/student",
+              "durationMs": 51,
+              "ttfbMs": 50,
+              "responseBodyBytes": 14823
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 22,
+              "ttfbMs": 21,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 35,
+              "ttfbMs": 34,
+              "responseBodyBytes": 337
+            }
+          ]
+        }
+      ],
+      "teacher": [
+        {
+          "index": 0,
+          "kind": "first-observed",
+          "visibleMs": 904,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 27,
+              "ttfbMs": 26,
+              "responseBodyBytes": 293
+            },
+            {
+              "path": "/api/classroom/teacher",
+              "durationMs": 620,
+              "ttfbMs": 619,
+              "responseBodyBytes": 27189
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 94,
+              "ttfbMs": 93,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 158,
+              "ttfbMs": 157,
+              "responseBodyBytes": 691
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "kind": "repeat",
+          "visibleMs": 742,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 17,
+              "ttfbMs": 16,
+              "responseBodyBytes": 293
+            },
+            {
+              "path": "/api/classroom/teacher",
+              "durationMs": 608,
+              "ttfbMs": 606,
+              "responseBodyBytes": 27189
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 61,
+              "ttfbMs": 61,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 163,
+              "ttfbMs": 161,
+              "responseBodyBytes": 691
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "kind": "repeat",
+          "visibleMs": 633,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 12,
+              "ttfbMs": 11,
+              "responseBodyBytes": 293
+            },
+            {
+              "path": "/api/classroom/teacher",
+              "durationMs": 535,
+              "ttfbMs": 534,
+              "responseBodyBytes": 27189
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 14,
+              "ttfbMs": 13,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 97,
+              "ttfbMs": 96,
+              "responseBodyBytes": 691
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "repeat",
+          "visibleMs": 686,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 13,
+              "ttfbMs": 12,
+              "responseBodyBytes": 293
+            },
+            {
+              "path": "/api/classroom/teacher",
+              "durationMs": 580,
+              "ttfbMs": 579,
+              "responseBodyBytes": 27189
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 37,
+              "ttfbMs": 36,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 113,
+              "ttfbMs": 111,
+              "responseBodyBytes": 691
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "repeat",
+          "visibleMs": 705,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 14,
+              "ttfbMs": 14,
+              "responseBodyBytes": 293
+            },
+            {
+              "path": "/api/classroom/teacher",
+              "durationMs": 594,
+              "ttfbMs": 593,
+              "responseBodyBytes": 27189
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 40,
+              "ttfbMs": 39,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 127,
+              "ttfbMs": 126,
+              "responseBodyBytes": 691
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "kind": "repeat",
+          "visibleMs": 634,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 11,
+              "ttfbMs": 11,
+              "responseBodyBytes": 293
+            },
+            {
+              "path": "/api/classroom/teacher",
+              "durationMs": 544,
+              "ttfbMs": 543,
+              "responseBodyBytes": 27189
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 35,
+              "ttfbMs": 34,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 85,
+              "ttfbMs": 84,
+              "responseBodyBytes": 691
+            }
+          ]
+        }
+      ]
+    },
+    "after": {
+      "environment": "local-production-build",
+      "label": "batched-getAll",
+      "studentPayloadHash": "94de7d606c391e10fe6c0cda58d6fc5440b5f6c81fb70f5bf18a3d4c44dd1b8d",
+      "teacherPayloadHash": "2f6fc7fede2d8b9b85fed34886b4f8ce2061f1c6884addebbc48b6474d5b716f",
+      "student": [
+        {
+          "index": 0,
+          "kind": "first-observed",
+          "visibleMs": 319,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 44,
+              "ttfbMs": 43,
+              "responseBodyBytes": 212
+            },
+            {
+              "path": "/api/classroom/student",
+              "durationMs": 57,
+              "ttfbMs": 54,
+              "responseBodyBytes": 14823
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 38,
+              "ttfbMs": 35,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 69,
+              "ttfbMs": 66,
+              "responseBodyBytes": 337
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "kind": "repeat",
+          "visibleMs": 137,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 12,
+              "ttfbMs": 11,
+              "responseBodyBytes": 212
+            },
+            {
+              "path": "/api/classroom/student",
+              "durationMs": 38,
+              "ttfbMs": 37,
+              "responseBodyBytes": 14823
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 20,
+              "ttfbMs": 19,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 30,
+              "ttfbMs": 29,
+              "responseBodyBytes": 337
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "kind": "repeat",
+          "visibleMs": 143,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 16,
+              "ttfbMs": 15,
+              "responseBodyBytes": 212
+            },
+            {
+              "path": "/api/classroom/student",
+              "durationMs": 28,
+              "ttfbMs": 27,
+              "responseBodyBytes": 14823
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 18,
+              "ttfbMs": 17,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 28,
+              "ttfbMs": 26,
+              "responseBodyBytes": 337
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "repeat",
+          "visibleMs": 147,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 17,
+              "ttfbMs": 16,
+              "responseBodyBytes": 212
+            },
+            {
+              "path": "/api/classroom/student",
+              "durationMs": 49,
+              "ttfbMs": 48,
+              "responseBodyBytes": 14823
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 35,
+              "ttfbMs": 34,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 43,
+              "ttfbMs": 42,
+              "responseBodyBytes": 337
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "repeat",
+          "visibleMs": 158,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 15,
+              "ttfbMs": 14,
+              "responseBodyBytes": 212
+            },
+            {
+              "path": "/api/classroom/student",
+              "durationMs": 54,
+              "ttfbMs": 53,
+              "responseBodyBytes": 14823
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 45,
+              "ttfbMs": 44,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 48,
+              "ttfbMs": 46,
+              "responseBodyBytes": 337
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "kind": "repeat",
+          "visibleMs": 132,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 13,
+              "ttfbMs": 12,
+              "responseBodyBytes": 212
+            },
+            {
+              "path": "/api/classroom/student",
+              "durationMs": 37,
+              "ttfbMs": 36,
+              "responseBodyBytes": 14823
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 25,
+              "ttfbMs": 24,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 37,
+              "ttfbMs": 36,
+              "responseBodyBytes": 337
+            }
+          ]
+        }
+      ],
+      "teacher": [
+        {
+          "index": 0,
+          "kind": "first-observed",
+          "visibleMs": 337,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 29,
+              "ttfbMs": 29,
+              "responseBodyBytes": 293
+            },
+            {
+              "path": "/api/classroom/teacher",
+              "durationMs": 112,
+              "ttfbMs": 110,
+              "responseBodyBytes": 27189
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 64,
+              "ttfbMs": 63,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 89,
+              "ttfbMs": 88,
+              "responseBodyBytes": 691
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "kind": "repeat",
+          "visibleMs": 166,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 15,
+              "ttfbMs": 14,
+              "responseBodyBytes": 293
+            },
+            {
+              "path": "/api/classroom/teacher",
+              "durationMs": 72,
+              "ttfbMs": 71,
+              "responseBodyBytes": 27189
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 38,
+              "ttfbMs": 37,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 51,
+              "ttfbMs": 50,
+              "responseBodyBytes": 691
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "kind": "repeat",
+          "visibleMs": 177,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 11,
+              "ttfbMs": 11,
+              "responseBodyBytes": 293
+            },
+            {
+              "path": "/api/classroom/teacher",
+              "durationMs": 82,
+              "ttfbMs": 80,
+              "responseBodyBytes": 27189
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 30,
+              "ttfbMs": 29,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 55,
+              "ttfbMs": 53,
+              "responseBodyBytes": 691
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "repeat",
+          "visibleMs": 165,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 13,
+              "ttfbMs": 12,
+              "responseBodyBytes": 293
+            },
+            {
+              "path": "/api/classroom/teacher",
+              "durationMs": 75,
+              "ttfbMs": 74,
+              "responseBodyBytes": 27189
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 39,
+              "ttfbMs": 38,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 64,
+              "ttfbMs": 63,
+              "responseBodyBytes": 691
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "repeat",
+          "visibleMs": 171,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 12,
+              "ttfbMs": 11,
+              "responseBodyBytes": 293
+            },
+            {
+              "path": "/api/classroom/teacher",
+              "durationMs": 75,
+              "ttfbMs": 74,
+              "responseBodyBytes": 27189
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 46,
+              "ttfbMs": 46,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 47,
+              "ttfbMs": 46,
+              "responseBodyBytes": 691
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "kind": "repeat",
+          "visibleMs": 148,
+          "requestCount": 4,
+          "api": [
+            {
+              "path": "/api/auth/session",
+              "durationMs": 15,
+              "ttfbMs": 14,
+              "responseBodyBytes": 293
+            },
+            {
+              "path": "/api/classroom/teacher",
+              "durationMs": 52,
+              "ttfbMs": 51,
+              "responseBodyBytes": 27189
+            },
+            {
+              "path": "/api/classroom/todos",
+              "durationMs": 14,
+              "ttfbMs": 13,
+              "responseBodyBytes": 36
+            },
+            {
+              "path": "/api/classroom/schedule",
+              "durationMs": 38,
+              "ttfbMs": 37,
+              "responseBodyBytes": 691
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "production": {
+    "note": "Unchanged production app; anonymous independent runs and teacher self-reported Chrome Network metadata. No response bodies, cookies, tokens, headers or student data.",
+    "anonymous": [
+      {
+        "observedAt": "2026-09-30T10:14:52.915Z",
+        "base": "https://cs-class-donghyunt.vercel.app",
+        "role": "anonymous",
+        "samples": [
+          {
+            "index": 0,
+            "kind": "first-observed",
+            "enabledMs": 3440,
+            "documentTtfbMs": 7,
+            "domReadyMs": 3127,
+            "apiRequestCount": 1,
+            "session": {
+              "durationMs": 203,
+              "ttfbMs": 202,
+              "responseBodyBytes": 282
+            }
+          },
+          {
+            "index": 1,
+            "kind": "repeat",
+            "enabledMs": 294,
+            "documentTtfbMs": 5,
+            "domReadyMs": 28,
+            "apiRequestCount": 1,
+            "session": {
+              "durationMs": 217,
+              "ttfbMs": 216,
+              "responseBodyBytes": 156
+            }
+          },
+          {
+            "index": 2,
+            "kind": "repeat",
+            "enabledMs": 296,
+            "documentTtfbMs": 5,
+            "domReadyMs": 32,
+            "apiRequestCount": 1,
+            "session": {
+              "durationMs": 220,
+              "ttfbMs": 219,
+              "responseBodyBytes": 156
+            }
+          },
+          {
+            "index": 3,
+            "kind": "repeat",
+            "enabledMs": 264,
+            "documentTtfbMs": 5,
+            "domReadyMs": 20,
+            "apiRequestCount": 1,
+            "session": {
+              "durationMs": 200,
+              "ttfbMs": 199,
+              "responseBodyBytes": 156
+            }
+          },
+          {
+            "index": 4,
+            "kind": "repeat",
+            "enabledMs": 280,
+            "documentTtfbMs": 5,
+            "domReadyMs": 23,
+            "apiRequestCount": 1,
+            "session": {
+              "durationMs": 208,
+              "ttfbMs": 207,
+              "responseBodyBytes": 148
+            }
+          },
+          {
+            "index": 5,
+            "kind": "repeat",
+            "enabledMs": 298,
+            "documentTtfbMs": 6,
+            "domReadyMs": 27,
+            "apiRequestCount": 1,
+            "session": {
+              "durationMs": 211,
+              "ttfbMs": 210,
+              "responseBodyBytes": 156
+            }
+          }
+        ]
+      },
+      {
+        "observedAt": "2026-09-30T10:21:32.832Z",
+        "base": "https://cs-class-donghyunt.vercel.app",
+        "role": "anonymous",
+        "samples": [
+          {
+            "index": 0,
+            "kind": "first-observed",
+            "enabledMs": 789,
+            "documentTtfbMs": 7,
+            "dnsMs": 24,
+            "connectMs": 52,
+            "documentRequestStartMs": 87,
+            "documentResponseEndMs": 153,
+            "domReadyMs": 292,
+            "sessionStartMs": 566,
+            "apiRequestCount": 1,
+            "session": {
+              "durationMs": 205,
+              "ttfbMs": 204,
+              "responseBodyBytes": 236
+            }
+          },
+          {
+            "index": 1,
+            "kind": "repeat",
+            "enabledMs": 294,
+            "documentTtfbMs": 6,
+            "dnsMs": 0,
+            "connectMs": 0,
+            "documentRequestStartMs": 2,
+            "documentResponseEndMs": 13,
+            "domReadyMs": 24,
+            "sessionStartMs": 68,
+            "apiRequestCount": 1,
+            "session": {
+              "durationMs": 212,
+              "ttfbMs": 211,
+              "responseBodyBytes": 156
+            }
+          },
+          {
+            "index": 2,
+            "kind": "repeat",
+            "enabledMs": 281,
+            "documentTtfbMs": 6,
+            "dnsMs": 0,
+            "connectMs": 0,
+            "documentRequestStartMs": 2,
+            "documentResponseEndMs": 18,
+            "domReadyMs": 28,
+            "sessionStartMs": 66,
+            "apiRequestCount": 1,
+            "session": {
+              "durationMs": 207,
+              "ttfbMs": 205,
+              "responseBodyBytes": 156
+            }
+          },
+          {
+            "index": 3,
+            "kind": "repeat",
+            "enabledMs": 279,
+            "documentTtfbMs": 7,
+            "dnsMs": 0,
+            "connectMs": 0,
+            "documentRequestStartMs": 3,
+            "documentResponseEndMs": 15,
+            "domReadyMs": 28,
+            "sessionStartMs": 66,
+            "apiRequestCount": 1,
+            "session": {
+              "durationMs": 199,
+              "ttfbMs": 198,
+              "responseBodyBytes": 156
+            }
+          },
+          {
+            "index": 4,
+            "kind": "repeat",
+            "enabledMs": 280,
+            "documentTtfbMs": 6,
+            "dnsMs": 0,
+            "connectMs": 0,
+            "documentRequestStartMs": 1,
+            "documentResponseEndMs": 12,
+            "domReadyMs": 20,
+            "sessionStartMs": 57,
+            "apiRequestCount": 1,
+            "session": {
+              "durationMs": 207,
+              "ttfbMs": 205,
+              "responseBodyBytes": 157
+            }
+          },
+          {
+            "index": 5,
+            "kind": "repeat",
+            "enabledMs": 295,
+            "documentTtfbMs": 7,
+            "dnsMs": 0,
+            "connectMs": 0,
+            "documentRequestStartMs": 1,
+            "documentResponseEndMs": 16,
+            "domReadyMs": 27,
+            "sessionStartMs": 72,
+            "apiRequestCount": 1,
+            "session": {
+              "durationMs": 207,
+              "ttfbMs": 206,
+              "responseBodyBytes": 147
+            }
+          }
+        ]
+      }
+    ],
+    "teacher": {
+      "session": {
+        "durationMs": [
+          634,
+          631,
+          627,
+          619,
+          614
+        ],
+        "size": "0.3-0.4 kB"
+      },
+      "teacher": {
+        "durationMs": [
+          3210,
+          3060,
+          3030,
+          3070,
+          3030
+        ],
+        "size": "4.8 kB"
+      },
+      "todos": {
+        "durationMs": [
+          4310
+        ],
+        "size": "0.1 kB"
+      },
+      "schedule": {
+        "durationMs": [
+          3820
+        ],
+        "size": "0.3 kB"
+      }
+    }
+  }
+}
