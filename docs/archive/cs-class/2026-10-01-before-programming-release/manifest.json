@@ -1,0 +1,12 @@
+[
+  {
+    "preservedAt": "2026-10-01",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/continuation-prep",
+    "baseCommit": "3ac9ed5b88802760011281b179af0c7268e59905",
+    "source": "uncommitted working tree before requested merge and deployment",
+    "original": "docs/HANDOFF.md",
+    "preserved": "HANDOFF.md",
+    "sha256": "1480fdc8ae588e6f30296003b4b8fb54dab405f7b6ffffcb1f7ee0fe037ae52d"
+  }
+]

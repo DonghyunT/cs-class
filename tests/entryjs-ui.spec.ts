@@ -97,10 +97,14 @@ test("EntryJS 저장 실패 복구 · 단계 이동 직전 입력 · 좁은 화�
   expect(await native.evaluate(() => {
     try { return parent.document.cookie; } catch { return "isolated"; }
   })).toBe("isolated");
-  await page.route(`**${endpoint}`, (route) => route.request().method() === "POST" ? route.abort("failed") : route.continue());
   await frame.locator("#entryWorkspaceBoard").getByText("10", { exact: true }).locator("..").click();
-  await frame.locator("input:not([disabled]):visible").fill("20");
-  await frame.locator("input:not([disabled]):visible").press("Enter");
+  const input = frame.locator("input:not([disabled]):visible");
+  await expect(input).toBeFocused();
+  // Inject the edited draft's failure after opening the field: initial editor
+  // normalization can otherwise insert an alert and shift the click target.
+  await page.route(`**${endpoint}`, (route) => route.request().method() === "POST" ? route.abort("failed") : route.continue());
+  await input.fill("20");
+  await input.press("Enter");
   await expect(page.getByRole("main").getByRole("alert")).toContainText("서버에 연결하지 못했어요");
   await page.getByRole("tab", { name: "개념 0%" }).click();
   await expect(page.getByRole("tab", { name: "실습 0%" })).toHaveAttribute("aria-selected", "true");

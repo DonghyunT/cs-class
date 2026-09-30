@@ -45,6 +45,23 @@ npm.cmd run dev:emulator
 
 [로컬 앱](http://localhost:3000/)을 열고 [HANDOFF](HANDOFF.md)를 읽으면 이어갈 수 있습니다. VS Code/Codex의 과거 대화가 없어도 이 문서와 저장소의 스크린샷을 기준으로 작업합니다.
 
+### 진행 중 작업을 다른 환경으로 옮기기
+
+Git으로 전달할 수 있으면 신규 파일까지 커밋·push하고, 완료된 작업은 검증한 `main`으로 이어갑니다. 로컬 이식 ZIP은 커밋 전 작업을 보존하는 대안입니다. 완료된 `main`과 진행 중인 작업 파일을 구분하며 일반 `git diff`에는 미추적 신규 파일이 들어가지 않으므로 아래 두 목록을 함께 확인합니다.
+
+```powershell
+git status --short --branch
+git rev-parse HEAD
+git diff --stat
+git ls-files --others --exclude-standard
+```
+
+- 현재 브랜치·기준 커밋·미추적 파일·이식 묶음의 이름은 HANDOFF에서 확인합니다. 프로토타입이 미커밋이면 새 PC의 원격 복제본에는 없을 수 있습니다. `src/app/prototype/programming/page.tsx`·대상 검사·담당 문서가 실제로 있는지 확인합니다.
+- 이식 묶음은 저장소 전체가 아닌 진행 중 파일의 스냅샷입니다. `TRANSFER.md`와 `handoff-manifest.json`을 먼저 읽고 SHA-256·기준 커밋·대상 파일의 기존 변경을 확인한 뒤 적용합니다. 깨끗한 별도 체크아웃에서 기준 커밋으로 `codex/` 브랜치를 만들고 `workspace/` 아래 파일을 같은 상대 경로로 복사하는 방식이 가장 단순합니다.
+- 이미 수정 중인 PC에서는 파일을 통째로 덮어쓰지 않고 기준 파일과 양쪽 변경을 비교해 합칩니다. 미추적 파일의 이름 충돌도 확인합니다. `.git`·비밀 설정·학생 자료·원본 PPT·캐시를 복사하는 방식으로 이식하지 않습니다.
+- 정상적인 Git 인계를 마친 뒤에는 전달한 커밋/브랜치와 최신 상태를 HANDOFF에 갱신합니다. 오래된 이식 묶음은 제작 시점의 참고본으로 구분하고 새 변경을 대신하지 않습니다. 생성된 스냅샷은 원격 동기화나 커밋 완료를 뜻하지 않습니다.
+- 새 PC의 플러그인은 Ponytail 스킬과 Context7 도구가 실제로 있는지 확인합니다. 설치 경로는 PC마다 다르며 대화에서 쓴 에이전트 이름·도구 호출 상태도 자동 복원되지 않습니다. 사용 가능한 스킬·로컬 문서·실제 코드로 이어갑니다.
+
 ## 대시보드 파일럿
 
 학생 `/student`·교사 `/teacher`는 공통 할 일·일정·수업 바로가기를 사용합니다. 학생의 전체 수업은 `/student/lessons`, 교사의 수업 설정은 `/teacher/classes`, 학생 진행·제출·계정은 `/teacher/students`, 전체 일정은 각각 `/student/schedule`·`/teacher/schedule`입니다. 교사 상세 링크의 `classId`·`lessonId`·`studentId`는 서버 권한 안에서 조회 조건으로 사용합니다.
@@ -90,6 +107,80 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 - [EntryJS 브라우저 검사](../tests/entryjs-ui.spec.ts)는 실제 드래그·숫자 입력·실행·무대 복원·저장·검증·제출·재접속, 저장/파일 로딩 실패 복구, 좁은 창·Esc·키보드 가로 이동을 확인합니다. 라이브러리 번들과 공개된 라이선스·NOTICE·COPYING·패키지 메타데이터는 자산 준비 시 함께 보존합니다.
 
 공식 근거: [설치 예제](https://github.com/entrylabs/example/tree/main/base), [프로젝트 API](https://docs.playentry.org/entryjs/api/2024-02-29-api.html), [실행 이벤트](https://docs.playentry.org/entryjs/api/2024-02-29-event.html). Context7에서 EntryJS를 찾지 못해 고정 버전 패키지의 README·배포 소스와 공식 문서를 확인했습니다.
+
+### 13차시의 실제 EntryJS 적용 검토
+
+2026-10-01 사용자는 프로토타입 실습도 실제 EntryJS를 사용했어도 좋았겠다고 의견을 남겼습니다. **다음 구현을 위한 기술 검토안**이며 이번 문서 작업에서는 편집기·서버·검사를 변경하지 않았습니다. 기존 실제 작업실을 우선 재사용하되 UI만 교체하면 모든 미션이 동작한다고 가정하지 않습니다.
+
+| 먼저 읽을 곳 | 재사용할 기반 | 현재 한계 |
+| --- | --- | --- |
+| [EntryPracticeWorkspace](../src/components/student/entry-practice-workspace.tsx) | iframe 준비/실패/재시도·작품 읽기·실행/중지·이동 전 export | `Lesson`·`Work`·`WorkDraft`·서버 액션을 받는 운영 학습 컴포넌트. 공개 탭 보관 체험과 직접 호환되지 않음 |
+| [workspace.html](../public/entryjs/workspace.html)·[workspace.js](../public/entryjs/workspace.js) | React 18 보조 UI 격리·브리지·실행 결과 수집·IME/입력 확정 | 팔레트 3종, 변수/리스트/장면/오브젝트 편집을 제한함 |
+| [entry-project.ts](../src/lib/classroom/entry-project.ts) | 제한된 작품 읽기·고정 무대·네이티브 script 문자열 복원 | `when_run_button_click`·`move_direction`·`dialog_time`과 상수 입력만 읽음. 변수/연산 reporter·질문·키 신호를 읽지 못함 |
+| [catalog.ts](../src/lib/classroom/catalog.ts)·[solutions.ts](../src/lib/server/solutions.ts) | 기존 엔트리봇 과제·구조/상수 조건·검증/제출 계약 | 해당 작은 과제의 판정. 브라우저 실행 결과만으로 일반 작품을 서버가 채점하지 않음 |
+| [자산 목록](../scripts/entryjs-assets.json)·[준비 스크립트](../scripts/prepare-entryjs.mjs) | `@entrylabs/entry` 4.0.23 고정·무결성·로컬 자산·라이선스 | `public/entryjs/vendor/`는 생성물. 새로운 라이브러리나 CDN 교체를 전제로 하지 않음 |
+
+추천하는 첫 기술 확인은 **이름 묻기→대답 말하기 미션 하나를 실제 팔레트에서 조립·실행·저장·복원**하는 것입니다. 이후 A/B 변수·곱/평균, 방향 설정·키 이벤트를 넓힙니다. 전체 차시를 한꺼번에 바꾸거나 범용 편집기·AI·교사 전송을 추가하는 계획은 아닙니다. [원 PPT와 미니 미션의 차이](reference/programming-13.md#학습-내용과-ppt의-흐름)도 함께 확인합니다.
+
+- 필요한 블록 ID·params·변수/대답 모델은 고정 버전의 실제 배포 소스와 공식 문서에서 확인합니다. 미니 명령 `ask/store/calculate/direction`을 EntryJS 블록 이름으로 그대로 사용하지 않습니다. 자산 준비 후 설치 메타데이터는 `public/entryjs/vendor/entry/package.json`에 있습니다. Context7의 이름 검색에서 EntryJS와 무관한 라이브러리가 나오면 그 문서를 Entry 근거로 쓰지 않습니다.
+- 변수 A/B·질문/대답·중첩 연산·키 신호를 지원하려면 팔레트·초기 작품·프로젝트 읽기/정규화·허용 구조·UI 오류·과제 조건을 함께 검토합니다. 기존 `entry-bot-lab`의 3블록 작품 호환성과 검사를 유지하며 필요한 경계만 넓힙니다. 과제별 옵션이 정말 필요해질 때 최소로 나눕니다.
+- 공개 프로토타입을 유지할지 운영 `Lesson/Work`에 넣을지 먼저 정합니다. 체험용 `Block[]`와 실제 `entryProject` JSON은 다른 형식입니다. 저장 키/버전을 그대로 둔 채 뜻을 바꾸거나 형식 차이 때문에 이전 답안·완료 기록을 지우지 않습니다. 변환 또는 분리 방법과 기존 초안 처리 결과를 명시합니다.
+- iframe의 `allow-scripts` 격리, 부모가 확인하는 `source`·opaque origin `null`·채널과 iframe이 확인하는 부모 source/origin을 유지합니다. 편집기 때문에 서버 API·쿠키·Origin·권한을 느슨하게 하지 않습니다. React 19 앱에 Entry의 React 18을 직접 섞지 않습니다.
+- 실행 중 저장은 실행 전 무대에 최신 코드만 합칩니다. 결과는 중지 전에 수집하고, 입력·IME·드래그 확정 뒤 이동/검증/제출합니다. 새 질문·변수가 여러 실행/키 이벤트에서 어떻게 초기화되는지도 확인해야 합니다.
+- 실제 Entry 과제 검사는 작품 연결/허용 구조와 입력별 실행 목표를 함께 설계합니다. 현재 미니 실행기의 `checkMission`과 서버의 상수 구조 검사 모두 새 Entry 미션의 완성된 채점기가 아닙니다. 새 블록 하나 때문에 서버 범용 실행기·AI 검사·유료 호출을 자동 도입하지 않습니다.
+- 변경 중 `npm run typecheck`와 해당 로컬 에뮬레이터 검사를 먼저 실행합니다. 실제 드래그·질문 입력·변수 덮어쓰기·0/음수·방향키·중지 복원·재접속·이동 전 export/저장 실패를 확인하고, 최종 lint/build/전체 E2E는 아래 공통 검증을 따릅니다.
+
+## 프로그래밍 수업 프로토타입
+
+`npm run dev:emulator` 뒤 [공개 체험](http://localhost:3000/prototype/programming)을 엽니다. 일반 개발은 `CI`를 설정하지 않고 실행합니다. 빌드 확인용으로 `$env:CI='1'`을 설정한 터미널에서는 `next start`가 실행되므로 소스 수정 반영을 확인하려면 다시 빌드하거나 일반 개발 모드로 시작합니다. 원본 PPT 없이도 소스로 체험을 재현할 수 있으며 차시 내용·PPT와의 차이는 [수업 자료 요약](reference/programming-13.md)에 있습니다.
+
+### 코드 위치와 역할
+
+| 파일 | 담당 |
+| --- | --- |
+| [page.tsx](../src/app/prototype/programming/page.tsx) | 공개 URL의 페이지·메타데이터 |
+| [programming.tsx](../src/components/prototype/programming/programming.tsx) | 단계/학생·교사 시점·초안 복원/보관·이동 보호·Effect 초점·초기화 |
+| [concept.tsx](../src/components/prototype/programming/concept.tsx) | 조작형 개념 4개와 개념 확인 |
+| [quiz.tsx](../src/components/prototype/programming/quiz.tsx) | 한 문항씩 풀이·회차 채점·오답 재도전 |
+| [practice.tsx](../src/components/prototype/programming/practice.tsx) | 미니 블록 팔레트·조립·입력·실행 타이머·무대·조건 확인·완료·발견 기록 |
+| [support.tsx](../src/components/prototype/programming/support.tsx) | 도움 요청의 고정 문맥·교사 답변·학생 해결 표시 |
+| [programming.module.css](../src/components/prototype/programming/programming.module.css) | 기능에 인접한 데스크톱/좁은 화면·상태·초점 스타일 |
+| [programming.ts](../src/lib/prototype/programming.ts) | 개념/퀴즈/미션 데이터·타입·초기값·복원 검사·순수 `runProgram/checkMission` |
+| [programming-prototype.spec.ts](../tests/programming-prototype.spec.ts) | 순수 실행/복원·전체 체험·키보드/좁은 창·저장 실패의 4개 검사 |
+
+기존 `Stage`·Brand·Button·NavigationProvider를 재사용합니다. 운영 Lesson/Work·서버 저장·API·권한·의존성은 변경하지 않았습니다. 공통 루트의 `SessionProvider`는 기존처럼 세션 확인을 수행하므로 이 체험을 ‘HTTP/API 요청이 전혀 없는 앱’으로 설명하지 않습니다. 체험 자체는 로그인을 요구하지 않고 학습 기록을 서버에 보내지 않습니다.
+
+### 상태와 저장 경계
+
+| 상태 | 위치·수명 | 재접속/이동 때의 동작 |
+| --- | --- | --- |
+| 단계·개념 확인 답안/완료·퀴즈 회차/풀이/해결·미션별 코드·입력·완료·발견 기록 | `sessionStorage`, 키 `cs-class-programming-prototype-v1`, `version: 1` | 같은 탭의 새로고침에 복원. 다른 기기/사용자 계정의 서버 기록이 아님 |
+| 개념 실험의 표현 방식·이름·A/B·강아지 위치 | Concept 컴포넌트 메모리 | 개념 단계에서 나갔다 돌아오면 기본 실험값. 개념 확인 기록은 유지 |
+| 마지막 실행·실행 중 타이머·무대 위치·조건 확인 결과 | Practice 컴포넌트 메모리 | 미션/단계/시점 변경·새로고침에 지속 실행하지 않음. 미션별 코드와 완료 기록은 보존 |
+| 도움을 연 순간의 코드/입력/실행·예시 요청·교사 답변·해결 표시 | 루트/도움 UI 메모리 | 최신 코드와 분리된 스냅샷. 새로고침하면 사라지며 하나의 요청 체험만 지원 |
+| 학생·교사 모드·도움 패널·입력 중 도움 문장 | 화면 메모리 | 서버 역할·메시지 발송·권한을 나타내지 않음 |
+
+보관은 hydration 뒤 Effect에서 읽고 이벤트의 최신 상태를 ref로 유지합니다. 단계/페이지 이동 전 최신 입력을 보관하며 저장 실패 때 입력을 유지하고 재시도를 안내합니다. `sessionStorage` 읽기 실패·quota/쓰기 실패·잘못된 버전/구조를 구분해 읽고, 실제 학생용 서버 저장 정책은 [PRD](PRD.md#작업-저장과-통신-비용)를 따릅니다. 브라우저 세션 복원·탭 복제는 환경별로 다르므로 `sessionStorage`를 개인정보 보안이나 기기 간 백업 장치로 사용하지 않습니다.
+
+복원은 허용된 초안의 모양을 검사하고 실행은 실행 가능한 값을 따로 검사합니다. 이동량 입력을 지우거나 긴 숫자 `100.0000`을 입력한 상태도 보존합니다. 이 때문에 전체 답안·완료 기록을 초기화하지 않습니다. 지원하지 않는 종류·손상된 JSON·범위를 넘는 구조는 실행에 사용하지 않습니다. 원 저장 형식을 바꾸면 버전/초안 처리도 함께 갱신합니다.
+
+### 미니 실행과 조작의 경계
+
+- 미션별 최대 32블록이며 허용 enum·입력 길이를 검사합니다. 실습의 A/B는 유한한 수 ±1000, 이동량은 실행 때 1~100입니다. 개념 실험의 A/B UI 범위는 ±100으로 실습과 별도입니다. 실행 무대의 좌표 한계는 x ±180/y ±100입니다.
+- `runProgram`은 허용 명령을 결정적으로 처리하며 임의 코드/eval을 실행하지 않습니다. 여러 시작 블록을 신호별로 구분하고 대답·A/B·말풍선·방향·좌표의 실행 발자국을 반환합니다. `checkMission`은 여러 입력과 실제 발자국으로 해당 미션만 확인합니다.
+- 실제 실행 결과·조건 확인·완료 표시는 별도입니다. 평균 도전은 기본 3미션 집계에서 제외하며 완료 뒤 편집이 이전 완료 기록을 취소하지 않습니다. 최신 코드로 다시 확인할 수 있게 표시합니다.
+- 실행 중 코드 편집을 잠그고 중지/무대 초기화는 시작 상태로 되돌립니다. 컴포넌트 정리와 미션/단계 이동은 타이머를 취소합니다. 방향키는 무대 자체에 초점이 있을 때만 동작하여 숫자/문장 입력을 가로채지 않습니다.
+- 팔레트 클릭·네이티브 드래그, 블록 드래그/위·아래 버튼·삭제를 지원합니다. 단계 탭은 좌우/Home/End로 선택하며 초점 이동은 React 갱신 뒤 Effect에서 처리합니다. `체험 처음부터`는 확인 후 학습 기록·도움·컴포넌트 내부 실험/실행 상태를 함께 초기화합니다.
+
+### 처음 체험하는 순서
+
+1. 개념에서 블록/텍스트를 바꾸고 실행합니다. 다음 개념의 이름·A/B·방향을 바꾸며 짧은 확인 문제를 풉니다. 단계는 완료 전에 자유롭게 오갑니다.
+2. 퀴즈에서 일부러 하나를 틀리고 결과를 본 뒤 오답만 재도전합니다. 상단 전체 해결 수와 이번 회차 분모를 비교합니다.
+3. 실습에서 블록을 클릭/드래그로 더하고 입력·순서를 바꿔 실행합니다. 실행 발자국과 조건 확인 뒤 완료 표시·발견 기록을 남기고 새로고침해 복원을 봅니다.
+4. 곱셈 계산기의 A 저장을 빠뜨리고 실행한 뒤 `막혔어요` → `도움 요청 체험하기` → `요청받은 선생님 화면 보기`를 선택합니다. 직접 피드백을 남기고 학생 시점으로 돌아와 코드를 고칩니다.
+5. 학생이 `다시 해보고 해결했어요`를 선택한 뒤 교사 시점에서 요청 당시 코드와 최신 코드 차이를 확인합니다. 교사 답변은 실제 전송이나 AI 호출이 아닙니다. 새로고침 시 이 도움 요청이 사라지는 안내도 확인합니다.
+
+변경 중에는 `npm run typecheck`와 실행 중인 로컬 에뮬레이터의 `npm run test:e2e:running -- tests/programming-prototype.spec.ts`를 우선 실행합니다. 필요하면 [실제 EntryJS 검사](../tests/entryjs-ui.spec.ts)도 해당 범위로 확인합니다. 최종 앱 통합은 아래 공통 검증, 문서만 수정한 작업은 내용·활성 링크/앵커·`git diff --check`·이식 파일 목록/해시를 확인하고 앱 검사 과거 결과와 구분해 기록합니다.
 
 ## 검증
 

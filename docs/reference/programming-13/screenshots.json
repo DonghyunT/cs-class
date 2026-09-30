@@ -1,0 +1,71 @@
+{
+  "documentedAt": "2026-10-01",
+  "timezone": "Asia/Seoul",
+  "environment": {
+    "app": "Next.js 16.3.6 production next start",
+    "browser": "Chromium",
+    "url": "http://localhost:3000/prototype/programming",
+    "data": "local prototype, no real student data"
+  },
+  "limitations": [
+    "Screenshots are prior 2026-09-30 verification, not a new run.",
+    "Keyboard focus or skip-link can be visible.",
+    "These are app screenshots, not copied PPT media."
+  ],
+  "screenshots": [
+    {
+      "file": "concept-desktop.png",
+      "width": 1440,
+      "height": 1529,
+      "sha256": "1527315a8a63ea96722b5f3b06e8de23aedda83ae751d7c523b77f6fc2e215f2",
+      "capturedAtKST": "2026-09-30T23:46:41+09:00",
+      "sourceArtifact": "test-results/programming-prototype-개념→퀴즈-오답-재도전→실습·도움·교사-피드백과-재접속/concept-desktop.png",
+      "verification": "production E2E"
+    },
+    {
+      "file": "concept-variable-320.png",
+      "width": 320,
+      "height": 1921,
+      "sha256": "ab5c8711fff2bb9384bbfd3c7b548bfd324c7156acaaf8f4a87381c57a7eefaa",
+      "capturedAtKST": "2026-09-30T23:39:10+09:00",
+      "sourceArtifact": "scratch/prototype-visual/concept-3-320.png",
+      "verification": "production concept interaction"
+    },
+    {
+      "file": "quiz-desktop.png",
+      "width": 1440,
+      "height": 1427,
+      "sha256": "869df8fad5dc281d11367ed229610905ed191ed5f827559df7cd59d4c362a36f",
+      "capturedAtKST": "2026-09-30T23:46:42+09:00",
+      "sourceArtifact": "test-results/programming-prototype-개념→퀴즈-오답-재도전→실습·도움·교사-피드백과-재접속/quiz-desktop.png",
+      "verification": "production E2E"
+    },
+    {
+      "file": "practice-desktop.png",
+      "width": 1440,
+      "height": 2186,
+      "sha256": "44e60f5bdcce8bd918ba2a3c0c76d2ed5f6887805863fef556f6937fd354a0c6",
+      "capturedAtKST": "2026-09-30T23:46:50+09:00",
+      "sourceArtifact": "test-results/programming-prototype-개념→퀴즈-오답-재도전→실습·도움·교사-피드백과-재접속/practice-desktop.png",
+      "verification": "production E2E"
+    },
+    {
+      "file": "practice-mobile.png",
+      "width": 390,
+      "height": 2808,
+      "sha256": "18ee1c8a0821e9b2c8743e50aa0c86534646a22b0e197463bad1586e1a32baaa",
+      "capturedAtKST": "2026-09-30T23:46:52+09:00",
+      "sourceArtifact": "test-results/programming-prototype-방향키는-무대에서만-동작하고-중지·좁은-창·탭-이동이-작업을-보존한다/practice-mobile.png",
+      "verification": "production E2E"
+    },
+    {
+      "file": "teacher-mobile.png",
+      "width": 390,
+      "height": 2063,
+      "sha256": "fa4f95ee022ca393dc6f03571f7df7249aa13ef2459664633c5db85a7315b9db",
+      "capturedAtKST": "2026-09-30T23:46:50+09:00",
+      "sourceArtifact": "test-results/programming-prototype-개념→퀴즈-오답-재도전→실습·도움·교사-피드백과-재접속/teacher-mobile.png",
+      "verification": "production E2E"
+    }
+  ]
+}
