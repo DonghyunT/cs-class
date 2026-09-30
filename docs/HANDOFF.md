@@ -7,7 +7,7 @@
 | 항목 | 2026-09-30 확인 |
 | --- | --- |
 | 저장소·작업 브랜치 | `DonghyunT/cs-class` · 로컬 `codex/dashboard-visual-polish`. 2026-09-30 이 PC에서 `origin/main`의 `a5ca4aa`를 받은 뒤 분기 |
-| 미커밋 상태 | 시각·로딩 UI 커밋 `18ebbf3`을 원격에 보존. 이번 성능 변경·검사·측정 문서는 후속 커밋으로 반영하며 인계 시 `git status` 확인 |
+| 미커밋 상태 | 없음(최종 인계 커밋 후 확인). UI `18ebbf3`·성능 `e23af41`과 인계 문서를 원격 `codex/dashboard-visual-polish`에 보존 |
 | 통합·배포 | [Draft PR #12](https://github.com/DonghyunT/cs-class/pull/12)에서 진행. main 병합·Production 배포는 이번 범위에 없음. Preview 검증은 아래 최신 상태를 확인 |
 | 검증 | Windows Node 24.19.0·Java 21.0.12.1에서 lint·typecheck·build·빌드 앱의 전체 로컬 에뮬레이터 E2E **51개 통과**(2.4분·종료 코드 0). 직전 UI 49개·릴리스 46개와 구분 |
 | 브랜치 정리 | 이 PC의 이전 로컬 작업 브랜치 2개는 보존. 현재 작업에는 사용하지 않음 |
@@ -55,7 +55,10 @@ Windows Node 24.19.0·Java 21.0.12.1·Chromium, `next start`, `demo-cs-class` Au
 
 ### 검증·반영
 
-- 기존 UI 커밋을 원격에 보존하고 Draft PR #12를 만든 뒤 성능 변경을 추가합니다. Preview의 공개 화면·세션 API 확인 결과는 최종 인계에 갱신합니다.
+- 기존 UI `18ebbf3`을 원격에 보존하고 Draft PR #12를 만든 뒤 성능 `e23af413ce8dfa70b31defb5c4aa97482edc7af3`을 push했습니다. 해당 SHA의 [Preview](https://cs-class-172t2234i-donghyunt.vercel.app) `dpl_3MAknoo8hVR3FsqUxxiXiMN8wXob`가 READY이며 Production 대상이 아님을 확인했습니다.
+- Chrome에서 해당 Preview의 홈·입장 버튼 준비 후 활성화·교사 로그인 화면·로그인 준비 안내를 확인했고 수집된 콘솔 오류는 0건입니다. 일반 Preview에는 운영 Firebase 키를 넣지 않는 정책이므로 로그인 버튼 비활성화·준비 안내는 정상입니다([서버 설정](FIREBASE_SETUP.md#vercel-서버-설정)).
+- 세션 API 직접 GET은 브라우저의 `ERR_BLOCKED_BY_CLIENT`, 두 Vercel 연결 도구의 접근 거부로 확인하지 못했습니다. 사용자 연결 권한 갱신 후에도 같은 접근 거부가 남았고 해당 Preview의 세션 경로에 한정한 상태 코드 집계 로그도 403입니다. 화면으로 관찰한 준비 상태와 직접 응답 검증을 구분합니다. SSO·승인 도메인·운영 인증정보는 변경하지 않았습니다.
+- 성능 SHA `e23af41`의 [push CI](https://github.com/DonghyunT/cs-class/actions/runs/36703484755)·[PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36703490028)가 모두 통과했습니다. 새 Linux 설치·lint·typecheck·build·전체 에뮬레이터 E2E를 포함하며 후속 인계 커밋은 문서만 변경합니다.
 - 빈 반(0명)·학생 30명·수업 없음/3개·누락 작품·누락 반·제외 대상·학생 정렬·다른 반 접근 검사가 통과했습니다. 변경 전후 동일한 합성 응답을 확인했습니다.
 - 첫 전체 실행은 기존 합성 EntryJS 기록이 성능 fixture에 남아 신규 측정 검사 1개가 실패하고 50개가 통과했습니다. 측정 작품을 보존·초기화·복원하도록 수정한 뒤 같은 프로덕션 조건의 성능/경계 2개가 통과했습니다. 최종 `CI=1 npm run test:e2e` 단일 실행은 **51개 통과**(2.4분·종료 코드 0) 후 에뮬레이터·앱을 종료했습니다.
 - lint·typecheck·프로덕션 build 통과. 전체 검사에서 로딩 UI·초점·조회 실패/저장 실패 보호·만료/교체 세션과 권한 경계를 재검증했습니다. 운영 로그인은 선생님 직접 로그인·Network 관찰 범위이며 Preview 보호 권한·READY·실제 로그인 성공을 구분합니다.
