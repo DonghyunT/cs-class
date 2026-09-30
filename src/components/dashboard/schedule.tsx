@@ -54,9 +54,10 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
   const sorted = [...list.items].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
   const items = summary ? sorted.filter((item) => item.date >= today).slice(0, 3) : sorted;
   const locked = list.saving || !!list.error || !!list.loadError;
-  return <section className={summary ? styles.panel : styles.page} aria-labelledby="schedule-heading">
+  return <section className={summary ? `${styles.panel} ${styles.schedulePanel}` : styles.page} aria-labelledby="schedule-heading">
     {!summary && <header className={styles.heading}><div><span className={styles.eyebrow}>우리 반 일정</span><h1>다가오는 일을 살펴봐요.</h1><p>날짜는 한국 시간 기준이에요. 날짜가 지나도 수업·제출은 계속할 수 있어요.</p></div><CalendarDays aria-hidden="true" /></header>}
-    <div className={styles.sectionHeading}><h2 id="schedule-heading">{summary ? "다가오는 일정" : "전체 일정"}</h2>{summary ? <Link href={`${home}/schedule${teacher && classId ? `?classId=${encodeURIComponent(classId)}` : ""}`}>전체 보기 <ArrowRight size={15} aria-hidden="true" /></Link> : list.data && <label className={styles.classPicker}>담당 반{teacher ? <select value={list.data.classroom.id} onChange={async (event) => { const selected = event.target.value; if (await beforeLeave()) router.push(`${home}/schedule?classId=${encodeURIComponent(selected)}`); }}>{list.data.classrooms.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select> : <span>{list.data.classroom.name}</span>}</label>}</div>
+    <div className={styles.sectionHeading}><div className={styles.sectionTitle}>{summary && <span className={`${styles.titleIcon} ${styles.scheduleIcon}`}><CalendarDays size={19} aria-hidden="true" /></span>}<h2 id="schedule-heading">{summary ? "다가오는 일정" : "전체 일정"}</h2></div>{summary ? <Link href={`${home}/schedule${teacher && classId ? `?classId=${encodeURIComponent(classId)}` : ""}`}>전체 보기 <ArrowRight size={15} aria-hidden="true" /></Link> : list.data && <label className={styles.classPicker}>담당 반{teacher ? <select value={list.data.classroom.id} onChange={async (event) => { const selected = event.target.value; if (await beforeLeave()) router.push(`${home}/schedule?classId=${encodeURIComponent(selected)}`); }}>{list.data.classrooms.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select> : <span>{list.data.classroom.name}</span>}</label>}</div>
+    {summary && list.data && <MonthCalendar today={today} events={list.data.items} />}
     {!summary && <button type="button" className={styles.textButton} disabled={locked} onClick={() => void list.refresh()}><RefreshCw size={15} aria-hidden="true" />일정 새로고침</button>}
     {list.loadError && <div className={styles.error} role="alert"><p>{list.loadError} {list.data && "마지막으로 조회한 일정이에요."}</p><Button variant="outline" disabled={list.saving} onClick={() => void list.refresh()}>일정 다시 불러오기</Button></div>}
     {!list.data && !list.loadError && <p role="status">일정을 불러오고 있어요.</p>}
@@ -73,6 +74,26 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
       {list.error && <div className={styles.error} role="alert"><p>{list.error} 등록·수정·삭제 의도를 보관했어요. 재시도하면 같은 항목에는 내 변경을 적용해요.</p><Button variant="outline" onClick={() => void list.retry()}>최신 기록에 내 변경 재시도</Button></div>}
     </>}
   </section>;
+}
+
+function MonthCalendar({ today, events }: { today: string; events: ClassEvent[] }) {
+  const [year, month] = today.split("-").map(Number);
+  const start = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7;
+  const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const cells = Array.from({ length: Math.ceil((start + days) / 7) * 7 }, (_, index) => index - start + 1);
+  const counts = new Map<string, number>();
+  for (const item of events) counts.set(item.date, (counts.get(item.date) ?? 0) + 1);
+
+  return <table className={styles.monthCalendar} aria-label={`${year}년 ${month}월 일정 달력`}>
+    <caption><span>{year}년 {month}월</span><span className={styles.calendarKey}><span aria-hidden="true" />일정이 있는 날</span></caption>
+    <thead><tr>{["월", "화", "수", "목", "금", "토", "일"].map((day) => <th key={day} scope="col">{day}</th>)}</tr></thead>
+    <tbody>{Array.from({ length: cells.length / 7 }, (_, week) => <tr key={week}>{cells.slice(week * 7, week * 7 + 7).map((day, weekday) => {
+      if (day < 1 || day > days) return <td key={weekday} />;
+      const date = `${today.slice(0, 7)}-${String(day).padStart(2, "0")}`;
+      const count = counts.get(date) ?? 0;
+      return <td key={weekday}><time dateTime={date} aria-current={date === today ? "date" : undefined} aria-label={`${month}월 ${day}일${count ? `, 일정 ${count}개` : ""}`} data-event={count > 0}>{day}{count > 0 && <span className={styles.calendarDot} aria-hidden="true" />}</time></td>;
+    })}</tr>)}</tbody>
+  </table>;
 }
 
 function ScheduleForm({ resolvedClassId, draft, setDraft, form, title, locked, lessons, submit, cancel }: {

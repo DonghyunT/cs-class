@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Pencil, Trash2, Plus, RefreshCw } from "lucide-react";
+import { ListTodo, Pencil, Trash2, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigationGuard } from "@/components/navigation-provider";
 import { PLANNER_LIMIT, type Todo } from "@/lib/classroom/planner";
@@ -55,8 +55,8 @@ export function TodoList({ uid }: { uid: string }) {
     if (send({ id: item.id, item: { ...item, text: edit.text.trim() } })) { setEdit(null); setFocus({ id: null }); }
   }
   const locked = list.saving || !!list.error;
-  return <section ref={section} className={styles.panel} aria-labelledby="todos-heading">
-    <div className={styles.sectionHeading}><h2 id="todos-heading">내 할 일</h2><div className={styles.panelTools}><span>나만 보는 목록</span><button type="button" aria-label="할 일 새로고침" disabled={locked} onClick={() => void list.refresh()}><RefreshCw size={16} aria-hidden="true" /></button></div></div>
+  return <section ref={section} className={`${styles.panel} ${styles.todoPanel}`} aria-labelledby="todos-heading">
+    <div className={styles.sectionHeading}><div className={styles.sectionTitle}><span className={`${styles.titleIcon} ${styles.todoIcon}`}><ListTodo size={19} aria-hidden="true" /></span><h2 id="todos-heading">내 할 일</h2></div><div className={styles.panelTools}><span>나만 보는 목록</span><button type="button" aria-label="할 일 새로고침" disabled={locked} onClick={() => void list.refresh()}><RefreshCw size={16} aria-hidden="true" /></button></div></div>
     <p className={styles.muted}>개인 체크리스트예요. 체크해도 수업·제출 기록은 바뀌지 않아요.</p>
     {list.loadError && <div className={styles.error} role="alert"><p>{list.loadError} {list.data && "마지막으로 조회한 목록이에요."}</p><Button variant="outline" onClick={() => void list.refresh()} disabled={list.saving}>목록 다시 불러오기</Button></div>}
     {!list.data && !list.loadError && <p role="status">할 일을 불러오고 있어요.</p>}

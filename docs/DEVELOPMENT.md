@@ -21,16 +21,18 @@ Windows의 사용자 npm 캐시에서 `EPERM`이 발생하면 저장소의 Git �
 
 Firebase CLI가 사용자 설정 파일 접근을 거부하면 로컬 에뮬레이터용 터미널에서 `$env:XDG_CONFIG_HOME="$PWD\scratch\firebase-cli-config"`를 설정한 뒤 실행합니다. CLI 설정을 Git 제외 폴더에 분리하며 실제 Firebase 로그인용 터미널에는 적용하지 않습니다.
 
-에뮬레이터·Playwright를 이미 `scratch/`에 설치한 제한된 Windows 환경에서는 기존 캐시를 가리킵니다. `$env:FIREBASE_EMULATORS_PATH="$PWD\scratch\firebase-emulators"`, `$env:PLAYWRIGHT_BROWSERS_PATH="$PWD\scratch\playwright"`를 같은 검사 터미널에 설정합니다. Java가 PATH에 없으면 해당 PC에 설치한 JDK 21+의 `bin`을 그 터미널 PATH 앞에 추가합니다. 이 PC의 JDK는 `scratch/tools/java/runtime/jdk-21.0.12.1+1/bin`에 있지만 다른 PC에 같은 경로가 있다고 가정하지 않습니다. 캐시가 없는 새 PC는 최초 설치를 진행합니다.
+에뮬레이터·Playwright를 이미 `scratch/`에 설치한 제한된 Windows 환경에서는 기존 캐시를 가리킵니다. `$env:FIREBASE_EMULATORS_PATH="$PWD\scratch\firebase-emulators"`, `$env:PLAYWRIGHT_BROWSERS_PATH="$PWD\scratch\playwright"`를 같은 검사 터미널에 설정합니다. Java가 PATH에 없으면 해당 PC에 설치한 Java 21+의 `bin`을 그 터미널 PATH 앞에 추가합니다. 2026-09-30 이 체크아웃의 예시는 `scratch/tools/java/jdk-21.0.12.1+1-jre/bin`이며 다른 PC에 같은 경로가 있다고 가정하지 않습니다. 캐시가 없는 새 PC는 최초 설치를 진행합니다.
 
-이 PC의 새 PowerShell에서는 저장소 루트에서 아래 준비 명령을 함께 실행합니다. `$env:` 설정은 해당 터미널에만 적용되므로 이전 검사 터미널에서 설정했더라도 다시 필요합니다. 로컬 JDK·캐시가 없는 다른 PC에서는 위 설치 안내를 먼저 따릅니다.
+이 PC의 새 PowerShell에서는 저장소 루트에서 아래 준비 명령을 함께 실행합니다. `$env:` 설정은 해당 터미널에만 적용되므로 이전 검사 터미널에서 설정했더라도 다시 필요합니다. 로컬 Java·캐시가 없는 다른 PC에서는 위 설치 안내를 먼저 따릅니다.
 
 ```powershell
-$env:PATH = "$PWD\scratch\tools\java\runtime\jdk-21.0.12.1+1\bin;$env:PATH"
+$env:PATH = "$PWD\scratch\tools\java\jdk-21.0.12.1+1-jre\bin;$env:PATH"
 $env:XDG_CONFIG_HOME = "$PWD\scratch\firebase-cli-config"
 $env:FIREBASE_EMULATORS_PATH = "$PWD\scratch\firebase-emulators"
 npm.cmd run dev:emulator
 ```
+
+`where.exe java`·`java -version`이 되는데도 제한된 실행에서 Java·`tar`·Playwright 자식 프로세스가 `EPERM`이면 설치 실패로 단정하지 않습니다. 허용된 로컬 검사 실행에서 같은 명령을 확인합니다.
 
 [학생 입장](http://localhost:3000/login/student)에서 합성 학번 `20101`과 [테스트 설정의 초기 비밀번호](../scripts/local-test-env.mjs)를 사용합니다. 첫 입장에는 본인 테스트 비밀번호로 바꿉니다. [교사 입장](http://localhost:3000/login/teacher)의 강사 계정은 같은 파일의 강사 비밀번호를 사용하며 10·11반을 확인합니다. `Ctrl+C`로 종료하면 에뮬레이터 기록은 보존되지 않습니다.
 

@@ -293,6 +293,11 @@ test("학생·교사 실제 배치: 7개 너비·키보드·모바일·빈 상�
     await page.goto(`/${role}`); await expect(todos(page).getByText(/아직 내 할 일이 없어요/)).toBeVisible();
     await add(page, role === "student" ? "궁금한 점 정리하기" : "학생 작품 살펴보기"); await saved(page);
     await expect(page.locator("#current-heading")).toHaveText("순서가 만드는 알고리즘");
+    const calendar = page.getByRole("table", { name: /일정 달력/ });
+    const [year, month] = seoulToday().split("-").map(Number);
+    await expect(calendar.locator("time")).toHaveCount(new Date(Date.UTC(year, month, 0)).getUTCDate());
+    await expect(calendar.locator(`time[datetime="${seoulToday()}"]`)).toHaveAttribute("aria-current", "date");
+    await expect(calendar.locator(`time[datetime="${seoulToday()}"]`)).toHaveAttribute("aria-label", /일정 2개/);
     if (role === "teacher") await expect(page.getByRole("link", { name: /학습 현황.*등록 학생/ })).toBeVisible();
     for (const width of [1440, 1024, 821, 820, 768, 390, 320]) {
       await page.setViewportSize({ width, height: 900 });
