@@ -6,20 +6,20 @@
 
 | 항목 | 확인 상태 |
 | --- | --- |
-| 브랜치·미커밋 | `codex/dashboard-visual-polish`. 문서 정리는 커밋 준비 중이며 앱·검사 변경은 원격에 보존 |
-| 통합·배포 | [PR #12](https://github.com/DonghyunT/cs-class/pull/12)의 병합·Production 배포를 사용자 승인으로 진행. 아직 실행 전 |
+| 브랜치·미커밋 | `main`·원격 동기화·미커밋 없음. 이 인계 결과는 문서 전용 후속 커밋으로 저장. 완료 브랜치 정리 후 로컬·원격은 `main`만 유지 |
+| 통합·배포 | [PR #12](https://github.com/DonghyunT/cs-class/pull/12) 병합 완료. 릴리스 기준 `b2d1beb02a3106a21ec42ac56d172f700b09a11f`의 Production READY·운영 주소 연결·실제 API/화면 확인 |
 | 앱 변경 | 달력·보조색·시각적 위계, 첫 조회 스켈레톤·입장 준비 안내, 트랜잭션 일괄 조회. API 계약·DB 구조·의존성 유지 |
-| 검증 기준 | 이번 문서 통합의 lint·typecheck·build·프로덕션 빌드 전체 에뮬레이터 E2E 51개 통과(2.5분). 정확한 PR 머리의 CI 확인 후 병합 |
-| 다음 행동 | 문서·원문 해시·링크 확인 → 최종 검사 → PR 병합·운영 확인 → 완료 브랜치 정리 |
+| 검증 기준 | 문서 통합 뒤 로컬 lint·typecheck·build·프로덕션 빌드 전체 에뮬레이터 E2E 51개 통과(2.5분). 최종 PR 머리와 병합된 main CI도 전체 51개 통과 |
+| 다음 행동 | 최신 `main`에서 새 `codex/` 브랜치로 다음 범위를 정하기. 운영 세션·초기화 병목 또는 실학생 파일럿 준비가 후보 |
 
 ## 이번 릴리스와 검증
 
 - 학생·교사 화면은 작은 이번 수업·내 할 일·실제 기록의 다음 행동·이번 달 달력을 공유합니다. 수업·학생 현황·일정 편집은 해당 메뉴로 연결합니다. 배치·조작·로딩 표현은 [DESIGN](DESIGN.md#학생교사-대시보드)을 따릅니다.
 - 학생의 열린 수업별 작품, 교사의 담당 반·학생별 작품, 일정의 담당 반을 같은 트랜잭션의 `getAll`로 묶었습니다. 빈 작품 목록은 조회하지 않으며 누락 문서·학생 정렬·권한·읽기 일관성을 유지합니다. SDK 근거와 실행 방법은 [성능 측정 절차](DEVELOPMENT.md#대시보드-성능-측정)에 있습니다.
-- 2026-09-30 Windows Node 24.19.0·Java 21.0.12.1·Chromium, `next start`, `demo-cs-class` Auth 9099·Firestore 8080에서 51개 통과(2.4분·종료 코드 0). 성능 SHA의 [push CI](https://github.com/DonghyunT/cs-class/actions/runs/36703484755)·[PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36703490028)도 새 Linux 설치와 전체 51개를 통과했습니다. 후속 `cf3ccb0`은 인계 문서만 변경합니다.
+- 2026-09-30 Windows Node 24.19.0·Java 21.0.12.1·Chromium, `next start`, `demo-cs-class` Auth 9099·Firestore 8080에서 최종 로컬 lint·typecheck·build·전체 E2E **51개 통과**(2.5분·종료 코드 0). 최종 PR 머리 `fdec031`의 [push CI](https://github.com/DonghyunT/cs-class/actions/runs/36706845485)·[PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36706849707), 병합 `b2d1beb`의 [main CI](https://github.com/DonghyunT/cs-class/actions/runs/36707559905)도 새 Linux 설치·빌드와 전체 51개를 통과했습니다(main E2E 2.7분). PR 머리와 병합 커밋의 전체 파일 트리는 동일합니다.
 - 검사는 학생 0/30명·수업 없음/3개·누락 작품/반·제외 계정·정렬·다른 반 접근, 만료/교체 세션, 조회 지연/실패·재조회 기록 유지, 320~1440px·키보드 초점·저장 실패/충돌/응답 유실 보호를 포함합니다. 최초 합성 기록 간섭은 fixture 보존·초기화·복원으로 수정한 뒤 재검증했습니다.
 - 운영 합성 계정·학생 자료 변경은 하지 않았습니다. 로컬·CI 검사를 운영 학생 저장·제출 성공으로 확대 해석하지 않습니다. 이전 UI 49개·파일럿 46개·EntryJS 검증과 진단 이력은 [정리 전 원문](archive/cs-class/2026-09-30-before-dashboard-polish-release/manifest.json)에 보존합니다.
-- 문서 통합 뒤 같은 로컬 프로덕션 환경에서 lint·typecheck·build·전체 E2E **51개 통과**(2.5분·종료 코드 0)를 새로 확인했습니다. 활성 문서 8개의 로컬 링크/앵커·`git diff --check`, 보관 원문 67개의 작업 파일/Git 저장 바이트 SHA-256 134건이 일치합니다. 새 보관 원문 5개와 측정 메타데이터를 Git에 포함합니다.
+- 활성 문서 8개의 로컬 링크/앵커·`git diff --check`, 보관 원문 67개의 작업 파일/Git 저장 바이트 SHA-256 134건을 확인했습니다. 새 보관 원문 5개와 측정 메타데이터는 Git으로 보존합니다. 릴리스 뒤 인계 결과 커밋은 이 문서만 바꾸며 앱·검사·의존성은 릴리스 기준과 같습니다. 이후 실행 상태는 [main CI 목록](https://github.com/DonghyunT/cs-class/actions?query=branch%3Amain)에서 확인합니다.
 
 ## 교실 입장·대시보드 조회 성능
 
@@ -42,7 +42,7 @@
 
 ### 운영 관찰과 후속 병목
 
-선생님이 직접 로그인한 Chrome의 Network 시간·크기만 기록했습니다. 세션 5회 중앙값 627ms·최대 634ms(0.3–0.4kB), 교사 수업 3.06초·최대 3.21초(4.8kB), 할 일 단일 4.31초(0.1kB), 일정 단일 3.82초(0.3kB)입니다. 쿠키·토큰·헤더·응답 본문·학생 자료는 수집하지 않았습니다.
+변경 전 운영에서 선생님이 직접 로그인한 Chrome의 Network 시간·크기만 기록했습니다. 세션 5회 중앙값 627ms·최대 634ms(0.3–0.4kB), 교사 수업 3.06초·최대 3.21초(4.8kB), 할 일 단일 4.31초(0.1kB), 일정 단일 3.82초(0.3kB)입니다. 쿠키·토큰·헤더·응답 본문·학생 자료는 수집하지 않았습니다.
 
 별도 비로그인 브라우저의 첫 입장 버튼 준비는 3,440ms, 반복 5회 중앙값 294ms·최대 298ms였습니다. 세션은 중앙값 211ms·최대 220ms, 문서 TTFB 5–7ms, API 접속당 1회입니다. 원인 분해용 독립 재관찰은 첫 789ms·반복 중앙값 281ms·최대 295ms였고, 첫 DNS 24ms·연결 52ms·문서 응답 완료 153ms·DOM 준비 292ms·세션 시작 566ms·세션 요청 205ms를 분리했습니다.
 
@@ -50,15 +50,18 @@
 
 ## 통합·배포 상태
 
-대상은 GitHub `DonghyunT/cs-class`, Vercel `cs-class`, Production 브랜치 `main`입니다. 주소·접근 보호·환경 설정은 [서버 설정](FIREBASE_SETUP.md#vercel-서버-설정)을 따릅니다.
+대상은 GitHub `DonghyunT/cs-class`, Vercel `cs-class`, Production 브랜치 `main`입니다. 주소·접근 보호·환경 설정은 [서버 설정](FIREBASE_SETUP.md#vercel-서버-설정)을 따릅니다. 아래는 2026-09-30 릴리스 기준의 확인 결과이며 문서 전용 후속 커밋과 구분합니다.
 
-- 성능 SHA `e23af413ce8dfa70b31defb5c4aa97482edc7af3`의 [Preview](https://cs-class-172t2234i-donghyunt.vercel.app) `dpl_3MAknoo8hVR3FsqUxxiXiMN8wXob`는 READY였습니다. Chrome 홈·입장 버튼 준비 후 활성화·교사 로그인 준비 안내를 확인했고 수집된 콘솔 오류는 0건입니다. 운영 Firebase 키가 없는 일반 Preview의 준비 안내는 정상입니다.
-- 해당 Preview 세션 API 직접 GET은 브라우저의 `ERR_BLOCKED_BY_CLIENT`, 연결 권한 갱신 뒤에도 남은 Vercel 보호 조회 거부로 확인하지 못했습니다. 세션 경로 상태 코드 집계 로그도 403이었습니다. 화면 관찰을 직접 응답 검증으로 표현하지 않습니다.
-- 직전 운영 릴리스 [PR #11](https://github.com/DonghyunT/cs-class/pull/11)의 READY·익명 API·로그인 화면 결과는 보관 원문에 있습니다. 이번 병합 뒤 운영 결과는 별도로 갱신합니다.
+- [PR #12](https://github.com/DonghyunT/cs-class/pull/12)를 20:16:48 KST에 병합했습니다. 정확한 최종 머리 `fdec031`의 CI·Preview 성공 후 병합했으며 main CI도 통과했습니다.
+- merge SHA `b2d1beb02a3106a21ec42ac56d172f700b09a11f`의 [Production 배포](https://vercel.com/donghyunt/cs-class/GwtqVtpLRqi4xe6evZwAbj7APpEZ) `dpl_GwtqVtpLRqi4xe6evZwAbj7APpEZ`는 READY이며 [운영 주소](https://cs-class-donghyunt.vercel.app)와 `cs-class-sigma.vercel.app`에 연결됐습니다.
+- 20:18 KST 익명 조회에서 홈·학생/교사 로그인·EntryJS 자산 200, 세션 200(`configured: true`, `session: null`), 설정 200(운영 프로젝트·에뮬레이터 미사용), 학생/교사 수업·할 일·일정 401을 확인했습니다. 이전 주소의 로그인 경로·쿼리는 307로 운영 주소에 보존됩니다. 응답 본문·쿠키·키를 기록하지 않았습니다.
+- 운영 Chrome의 기존 교사 세션으로 새 대시보드·할 일·달력 조회와 스켈레톤 해제를 확인했고 실제 오류 안내·수집된 콘솔 오류는 0건입니다. 익명 브라우저에서는 교사 로그인 화면·Google 버튼 활성화, Chrome에서는 학생 로그인 화면을 확인했습니다. 새로운 Google OAuth 로그인은 다시 수행하지 않았으며 학생 자료·일정·할 일을 수정하지 않았습니다.
+- 일반 Preview의 공개 화면·입장 버튼·로그인 준비 안내는 확인했습니다. 운영 Firebase 키가 없는 Preview는 준비 안내가 정상이며 직접 세션 GET은 보호 조회 거부로 미확인입니다. 이번 Production 오류/치명 로그의 상태 코드 집계도 403으로 확인하지 못했습니다. 실제 API/화면 확인을 서버 로그 전체 정상으로 확대하지 않습니다.
+- 완료 브랜치 `codex/dashboard-visual-polish`는 main 포함을 확인한 뒤 원격·로컬에서 삭제했습니다. 로컬에만 남아 있던 `codex/verify-production-login`·`codex/curriculum-verification-entryjs`는 [PR #10](https://github.com/DonghyunT/cs-class/pull/10)의 squash 결과와 전체 파일 트리 일치·앞선 브랜치 포함·main 조상 관계를 확인한 뒤 삭제했습니다. 남은 로컬·원격 브랜치는 `main`이며 다른 PC의 로컬 브랜치는 다음 fetch에서 별도로 확인합니다.
 
 ## 다른 PC에서 이어가기
 
-[개발 안내](DEVELOPMENT.md#다른-pc에서-시작)에 따라 미커밋 변경을 보존한 뒤 원격 브랜치를 확인합니다. 이번 PR 병합 전에는 `codex/dashboard-visual-polish`, 병합 뒤에는 최신 `main`을 가져오고 새 작업은 새 `codex/` 브랜치에서 시작합니다. `.env.local`·인증·Java/브라우저 캐시·플러그인은 PC마다 준비하며 Git으로 키·학생 자료를 전달하지 않습니다.
+[개발 안내](DEVELOPMENT.md#다른-pc에서-시작)에 따라 미커밋 변경을 보존한 뒤 `git fetch --prune`으로 원격 상태를 확인하고 최신 `main`을 가져옵니다. 새 작업은 새 `codex/` 브랜치에서 시작합니다. `.env.local`·인증·Java/브라우저 캐시·플러그인은 PC마다 준비하며 Git으로 키·학생 자료를 전달하지 않습니다.
 
 > AGENTS.md와 docs/HANDOFF.md를 읽고 CS Class를 이어가자. 현재 브랜치·미커밋 변경·원격 동기화를 먼저 확인하자. 최신 배포·검증 범위와 세션/초기화 성능 병목을 파악한 뒤 다음 작업 범위를 정하자.
 
