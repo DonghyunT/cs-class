@@ -19,6 +19,10 @@ npm run dev:emulator
 
 Firebase 키 없이 사용하는 가상 계정 개발 모드입니다. [로컬 앱](http://localhost:3000/)을 열고, 실제 Firebase 연결은 [서버 설정](docs/FIREBASE_SETUP.md)을 따릅니다. Windows PowerShell에서 실행이 차단되면 `npm.cmd`·`npx.cmd`를 사용합니다. 새 PC의 저장소 복제·검증·Stitch 설정은 [개발 안내](docs/DEVELOPMENT.md)에 있습니다.
 
+[프로그래밍 13차시 프로토타입](http://localhost:3000/prototype/programming)은 로그인 없이 개념–퀴즈–실습과 도움·교사 피드백을 체험하는 화면입니다. 학습 초안은 이 탭에만 보관하며 실제 수업 제출·교사 전송은 연결하지 않습니다. 최종 정책과 구분한 범위는 [PRD](docs/PRD.md#프로그래밍-13차시--경험-검토용-프로토타입)를 따릅니다.
+
+**다른 PC에서 이어갈 때는** [HANDOFF](docs/HANDOFF.md#현재-작업-상태)에서 병합·배포 상태를 확인하고 해당 `main`을 받습니다. 전달 범위와 새 대화용 요청문은 [다른 PC에서 이어가기](docs/HANDOFF.md#다른-pc에서-이어가기), 수업 내용은 [13차시 자료 요약](docs/reference/programming-13.md), 구현 경계·검사는 [개발 안내](docs/DEVELOPMENT.md#프로그래밍-수업-프로토타입)에 있습니다.
+
 ## 필요한 문서 찾기
 
 | 궁금한 것 | 읽을 문서 |
@@ -29,6 +33,7 @@ Firebase 키 없이 사용하는 가상 계정 개발 모드입니다. [로컬 �
 | 설치·검증·Stitch·개발 도구는 어디에 있나요? | [DEVELOPMENT · 개발 안내](docs/DEVELOPMENT.md) |
 | Firebase·Google 로그인과 서버 비밀 설정은 어떻게 준비하나요? | [FIREBASE_SETUP · 서버 설정](docs/FIREBASE_SETUP.md) |
 | 후속 기능의 비용 가정은 무엇인가요? | [운영비 예상안 · 참고 자료](docs/reference/OPERATING_COST_ESTIMATE.md) |
+| 원본 PPT 없이 13차시 내용과 체험을 어떻게 파악하나요? | [프로그래밍 13차시 · 수업 자료와 체험 기록](docs/reference/programming-13.md) |
 | 완료된 구현 지시와 이전 판단 근거는 어디에 있나요? | [문서 보관함](docs/archive/README.md) |
 | 에이전트는 어떤 규칙을 지켜야 하나요? | [AGENTS · 작업 규칙](AGENTS.md) |
 
@@ -70,8 +75,9 @@ cs-class/
 │  │  ├─ student/         열린 수업·학습·저장 상태
 │  │  ├─ teacher/         학생 현황·수업 관리·수업/계정 대화상자
 │  │  ├─ explore/         공개 수업 미리보기 그래픽·스타일
+│  │  ├─ prototype/       programming/ 한 차시 체험·개념·퀴즈·실습·도움
 │  │  └─ *.tsx            로그인·공통 셸·세션·이동 전 저장 보호
-│  └─ lib/                classroom/ 계약·server/ 인증과 저장·공통 함수
+│  └─ lib/                classroom/ 계약·server/ 인증과 저장·prototype/ 체험 데이터·실행
 ├─ tests/                 홈·로그인·대시보드 브라우저 검사
 ├─ public/entryjs/        EntryJS 작업실·설치 시 생성되는 브라우저 자산
 ├─ scripts/               개발·에뮬레이터·EntryJS 자산 준비 도구
@@ -102,6 +108,7 @@ cs-class/
 - `app/globals.css`는 글꼴·색상·기본 요소·공통 UI·브랜드를 담당합니다. 홈 스타일은 `components/home/public-home.css`, 셸·로그인·세션 안내·학생·교사·수업 미리보기 스타일은 담당 컴포넌트 옆의 CSS Module에 둡니다.
 - 학생·교사 첫 화면은 `components/dashboard/dashboard.tsx`를 사용하며 목록·일정·스타일을 같은 폴더에 둡니다. 학생 수업 목록은 `app/student/lessons/page.tsx`로 연결합니다.
 - 교사 상세 페이지는 `app/teacher/classes/page.tsx`·`app/teacher/students/page.tsx`입니다. `components/teacher/dashboard.tsx`가 조회·반 선택·학생 목록을, `dialogs.tsx`가 수업 설정·제출 작품 조회·비밀번호 초기화를 담당합니다. 함께 쓰는 날짜·오류 표현만 `presentation.ts`에 둡니다.
+- 프로그래밍 체험의 진입점은 [page.tsx](src/app/prototype/programming/page.tsx), 기능별 UI와 CSS는 `components/prototype/programming/`, 차시 데이터·순수 실행/조건 확인·복원은 [programming.ts](src/lib/prototype/programming.ts), 대상 검사는 [programming-prototype.spec.ts](tests/programming-prototype.spec.ts)입니다. 실제 EntryJS 작업실과의 차이는 개발 안내를 먼저 읽습니다.
 
 ## 로컬 개발과 실제 로그인
 
