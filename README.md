@@ -19,7 +19,7 @@ npm run dev:emulator
 
 Firebase 키 없이 사용하는 가상 계정 개발 모드입니다. [로컬 앱](http://localhost:3000/)을 열고, 실제 Firebase 연결은 [서버 설정](docs/FIREBASE_SETUP.md)을 따릅니다. Windows PowerShell에서 실행이 차단되면 `npm.cmd`·`npx.cmd`를 사용합니다. 새 PC의 저장소 복제·검증·Stitch 설정은 [개발 안내](docs/DEVELOPMENT.md)에 있습니다.
 
-[프로그래밍 13차시 프로토타입](http://localhost:3000/prototype/programming)은 로그인 없이 개념–퀴즈–실습과 도움·교사 피드백을 체험하는 화면입니다. 학습 초안은 이 탭에만 보관하며 실제 수업 제출·교사 전송은 연결하지 않습니다. 최종 정책과 구분한 범위는 [PRD](docs/PRD.md#프로그래밍-13차시--경험-검토용-프로토타입)를 따릅니다.
+[프로그래밍 13차시 프로토타입](https://cs-class-donghyunt.vercel.app/prototype/programming)은 로그인 없이 개념–퀴즈–실습과 도움·교사 피드백을 체험하는 화면입니다. [로컬 체험](http://localhost:3000/prototype/programming)도 같은 경로로 열립니다. 학습 초안은 이 탭에만 보관하며 실제 수업 제출·교사 전송은 연결하지 않습니다. 최종 정책과 구분한 범위는 [PRD](docs/PRD.md#프로그래밍-13차시--경험-검토용-프로토타입)를 따릅니다.
 
 **다른 PC에서 이어갈 때는** [HANDOFF](docs/HANDOFF.md#현재-작업-상태)에서 병합·배포 상태를 확인하고 해당 `main`을 받습니다. 전달 범위와 새 대화용 요청문은 [다른 PC에서 이어가기](docs/HANDOFF.md#다른-pc에서-이어가기), 수업 내용은 [13차시 자료 요약](docs/reference/programming-13.md), 구현 경계·검사는 [개발 안내](docs/DEVELOPMENT.md#프로그래밍-수업-프로토타입)에 있습니다.
 

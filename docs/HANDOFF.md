@@ -6,11 +6,11 @@
 
 | 항목 | 확인 상태 |
 | --- | --- |
-| 브랜치·미커밋 | `codex/continuation-prep`, 기준 HEAD `3ac9ed5b88802760011281b179af0c7268e59905`. 프로토타입 소스·검사 9개, 수업 참고 자료·화면, 활성 문서와 원문 보관은 미커밋이며 함께 릴리스 준비 중. 10/1 원격 fetch에서 `origin/main`이 기준 HEAD와 같음을 확인 |
-| 통합·배포 | 사용자가 10/1 현재 작업의 병합·배포와 다른 PC 인계를 요청함. 새 PR·CI·병합·Production 확인은 진행 중. 기존 운영은 `3ac9ed5` Production READY |
+| 브랜치·미커밋 | 10/1 마감 시 `main`·`origin/main` 동기화, 미커밋 없음. 기능 병합 커밋 `56e5a1fa49804e77d6359bd0074368dae709bc0f` 뒤에는 README/HANDOFF의 인계 결과만 갱신했습니다. 최신 HEAD는 시작 전 `git status --short --branch`·`git log -1`로 확인 |
+| 통합·배포 | 사용자의 10/1 요청으로 [PR #13](https://github.com/DonghyunT/cs-class/pull/13) 병합 완료. 병합 커밋의 CI 전체 55개 통과·Vercel Production READY·운영 별칭·인증 API·체험/로그인 화면 확인. 후속 문서 커밋도 Git 자동 배포 대상으로 같은 앱·테스트를 유지 |
 | 구현 | 공개 `/prototype/programming`: 조작형 개념·퀴즈 재도전·미니 블록 실습·도움/교사 피드백 체험. 릴리스 정리에서는 앱·API·DB·의존성을 유지하고 기존 EntryJS 검사의 실패 주입 순서만 보정 |
-| 새 검증 | 10/1 Windows Node 24.19.0·Java 21.0.12.1·Chromium, lint·typecheck·프로덕션 build 통과. `next start`·localhost:3000·`demo-cs-class` Auth 9099/Firestore 8080에서 최종 전체 E2E **55개 통과**(2.8분·종료 코드 0) |
-| 다음 행동 | 릴리스 결과를 확정한 뒤 다른 PC에서 `main`을 받아 시작. 다음 기능 수정은 기존 EntryJS 재사용 범위·13차시 첫 미션을 검토하고 구체 범위를 정하는 것 |
+| 새 검증 | 10/1 Windows Node 24.19.0·Java 21.0.12.1·Chromium, lint·typecheck·프로덕션 build 통과. `next start`·localhost:3000·`demo-cs-class` Auth 9099/Firestore 8080에서 최종 전체 E2E **55개 통과**(2.8분·종료 코드 0). GitHub PR·브랜치·병합 `main` CI도 통과 |
+| 다음 행동 | 다른 PC에서 최신 `main`을 받아 아래 읽기 순서·새 대화 요청문으로 시작. 다음 기능 수정은 기존 EntryJS 재사용 범위·13차시 첫 미션을 검토하고 구체 범위를 정하는 것 |
 
 ## 새 에이전트가 먼저 읽을 순서
 
@@ -34,7 +34,7 @@
 
 ### 프로그래밍 13차시 프로토타입
 
-- [로컬 체험](http://localhost:3000/prototype/programming), [범위](PRD.md#프로그래밍-13차시--경험-검토용-프로토타입), [실행·코드 위치](DEVELOPMENT.md#프로그래밍-수업-프로토타입). 제공한 `정보 13차시 수업(프로그래밍).pptx`의 17장 텍스트·실습 블록 이미지를 9/30 읽었고 원본은 수정하지 않았습니다. 원 PPT·추출 미디어는 Git 제외이며 학습 내용과 차이는 참고 자료에 요약했습니다.
+- [운영 체험](https://cs-class-donghyunt.vercel.app/prototype/programming), [로컬 체험](http://localhost:3000/prototype/programming), [범위](PRD.md#프로그래밍-13차시--경험-검토용-프로토타입), [실행·코드 위치](DEVELOPMENT.md#프로그래밍-수업-프로토타입). 제공한 `정보 13차시 수업(프로그래밍).pptx`의 17장 텍스트·실습 블록 이미지를 9/30 읽었고 원본은 수정하지 않았습니다. 원 PPT·추출 미디어는 Git 제외이며 학습 내용과 차이는 참고 자료에 요약했습니다.
 - 개념 4개와 퀴즈 5문항·오답 재도전, 이름·변수 A/B 곱셈·방향키의 기본 3미션과 평균 도전입니다. 팔레트 클릭/드래그, 입력·순서·삭제, 신호별 실행·중지·무대 복원·실행 발자국·여러 입력의 조건 확인을 지원합니다.
 - 도움 요청 당시 코드·입력·실행을 고정해 교사 시점에서 피드백을 남기고 학생이 해결 표시합니다. 도움/응답은 새로고침에 사라지고 학습 초안·완료 기록만 같은 탭에 복원합니다. 실제 교사 전송·AI·평가/제출·Entry 파일 저장은 연결하지 않았습니다.
 - 9/30 구현은 Ponytail full, Next.js 16.3.6 설치본/React README와 Context7 문서를 확인했습니다. 당시 reviewer가 초안 복원과 실행 가능성 분리·방향 설정 순서·도움 이동/초점 문제를 재현했고 수정 후 확인했습니다. 의존성 추가·운영 인증 변경은 없었습니다.
@@ -46,7 +46,7 @@
 - 10/1 로컬 lint·typecheck·프로덕션 build 통과. 최초 제한 실행의 빌드는 컴파일 뒤 자식 프로세스 `EPERM`이어서 허용된 환경에서 동일 명령을 실행해 통과했습니다.
 - 최종 전체 E2E **55개 통과**(2.8분·종료 코드 0). 준비한 Java/Firestore/Chromium 캐시, `npm run test:e2e`, `CI=1`의 프로덕션 빌드·새 로컬 에뮬레이터로 단일 실행했습니다. 이전 `emulators:exec` 포트 충돌과 앱 자식 종료 시 에뮬레이터도 종료되는 수명을 먼저 해결했습니다.
 - 첫 전체 실행은 54개 통과·기존 EntryJS 검사 1개 시간 초과였습니다. trace에서 초기 정규화 POST 실패 안내가 숫자칸 클릭 도중 화면을 밀었음을 확인했습니다. [대상 검사](../tests/entryjs-ui.spec.ts)는 편집칸 초점 준비 뒤 실패를 주입하도록 보정했고 저장 실패·이동 보호·입력 확정·복원·좁은 창 조건은 유지합니다. 설치 Playwright 1.63.0 README/타입과 Context7의 해당 버전 문서를 확인했습니다. 수정 뒤 대상 3개 통과(54초), lint/typecheck 통과 후 위 최종 전체 실행을 확인했습니다.
-- 활성 문서 9개의 로컬 링크/앵커·Git 전달 여부 245건, 참고 화면 6개의 SHA-256/치수, 프로토타입 소스·검사 9개의 기존 스냅샷과 바이트 일치를 확인했습니다. 문서/코드 보관 원문 376개의 작업 파일·스테이징 SHA-256 752건과 `git diff --check`도 통과했습니다. 병합·배포 결과를 기록한 뒤 문서는 다시 확인합니다.
+- 활성 문서 9개의 로컬 링크/앵커·Git 전달 여부 245건, 참고 화면 6개의 SHA-256/치수, 프로토타입 소스·검사 9개의 기존 스냅샷과 Git 저장 내용의 바이트 일치를 확인했습니다. Windows `core.autocrlf=true`로 체크아웃의 줄끝만 LF→CRLF로 바뀌었고 코드 변경은 없습니다. 문서/코드 보관 원문 376개의 작업 파일·스테이징 SHA-256 752건과 `git diff --check`도 통과했습니다. 병합·배포 결과를 기록한 뒤 같은 문서 검사를 다시 확인했습니다.
 - 이전 55개·대시보드 51개 검사, 문서 링크 221건, 23파일 이식 ZIP 검증은 [릴리스 전 원문](archive/cs-class/2026-10-01-before-programming-release/HANDOFF.md)에 보존했습니다. 당시 결과를 이번 재실행으로 표현하지 않습니다.
 - 운영 학생 자료·계정·Firebase 규칙·비밀 설정은 변경하지 않았습니다. 합성 검사는 `demo-cs-class`·로컬 9099/8080만 사용합니다.
 
@@ -54,13 +54,16 @@
 
 대상은 GitHub `DonghyunT/cs-class`, Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`), Production 브랜치 `main`입니다. 운영 주소는 [CS Class](https://cs-class-donghyunt.vercel.app)이며 설정은 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)에 모읍니다.
 
-- 10/1 릴리스 시작 전 원격 `main`과 운영 [배포](https://vercel.com/donghyunt/cs-class/FLvwmShQTERKJhLkHgq9Y5VZdkpA)의 SHA `3ac9ed5`·Production READY·운영 별칭을 확인했습니다. Vercel 화면에서 Root Directory 비움·Next.js 기본 빌드/설치·Node 24.x도 확인했습니다.
-- 새 PR·CI·병합·운영 배포/API/화면은 완료 뒤 이 절에 기록합니다. 일반 Preview의 `configured: false`·로그인 준비 안내는 운영 인증 성공의 증거가 아닙니다.
+- 기능 커밋 `709cbb14f576264d424272b54dc8c0705e2a5f0e`를 [PR #13](https://github.com/DonghyunT/cs-class/pull/13)에서 10/1 01:36 KST에 `main`의 `56e5a1fa49804e77d6359bd0074368dae709bc0f`로 병합했습니다. 병합 트리는 검증한 기능 커밋과 같습니다. [PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36744354132)는 55개/3.1분, 브랜치 CI도 성공했으며 [병합 main CI](https://github.com/DonghyunT/cs-class/actions/runs/36745415277)는 lint·typecheck·build·전체 E2E 55개/3.0분을 통과했습니다. CI는 로컬 Auth·Firestore 에뮬레이터만 사용합니다.
+- 병합 커밋의 [Production 배포](https://vercel.com/donghyunt/cs-class/3ZpfkT1V2J6Hcsvt8TjeXvN8r8n2) `dpl_3ZpfkT1V2J6Hcsvt8TjeXvN8r8n2`·SHA `56e5a1f`·READY·운영 별칭 `cs-class-donghyunt.vercel.app`을 확인했습니다. Vercel 화면의 Root Directory 비움·Next.js 기본 빌드/설치·Node 24.x도 확인했고 설정은 바꾸지 않았습니다. 후속 인계 문서 커밋은 같은 앱·테스트입니다. 다른 PC에서 확인할 때는 최신 문서 HEAD를 Git 로그에서 읽고 해당 Git 배포의 SHA·READY·운영 별칭·API를 함께 확인합니다.
+- 운영 익명 요청: `/api/auth/session` HTTP 200 JSON·`configured: true`·`session: null`·`SIGNED_OUT`, `/api/auth/config`의 프로젝트 `cs-class-f74c4`·에뮬레이터 없음, 학생/교사/할 일/일정 API 모두 401. 이전 주소 `/login/teacher?source=release-check`는 같은 경로·쿼리로 공식 주소에 307 이동했습니다. 키·쿠키·응답의 개인정보는 기록하지 않았습니다.
+- Chrome의 운영 체험 화면·개념 명령 실행과 교사 로그인 화면의 Google 버튼 활성 상태를 확인했고 두 화면의 콘솔 오류는 0건이었습니다. [기능 Preview](https://cs-class-fwmfi0ywz-donghyunt.vercel.app/prototype/programming)에서는 이름 미션의 팔레트 조립·실행·조건 확인도 통과했습니다. 좁은 창·키보드·저장 실패/복원 등의 자세한 범위는 로컬/CI 검사이며 운영에서 전부 반복한 것은 아닙니다.
+- Google 계정 선택 창은 열렸으나 개인 계정 접근 단계에서 자동 승인 검토가 추가 사용자 승인이 필요하다고 거절했습니다. 새 Google OAuth 세션 생성·교사 대시보드 조회는 이번 완료 확인 범위에 포함하지 않습니다. 서버 런타임 로그 MCP도 프로젝트 호출에서 팀 ID 필수 오류로 조회하지 못했습니다. 일반 Preview의 `configured: false`·로그인 준비 안내나 Production READY만으로 실제 Google 로그인 성공을 판정하지 않습니다.
 - 이전 [PR #12](https://github.com/DonghyunT/cs-class/pull/12)의 로컬/CI 51개·운영 API/대시보드 확인은 9/30 결과입니다. 당시 Chrome의 기존 교사 세션으로 조회했고 새 Google OAuth 로그인은 반복하지 않았습니다. 상세 SHA·CI·주소·로그 조회 한계는 [보관 원문](archive/cs-class/2026-10-01-before-programming-release/HANDOFF.md)에 있습니다.
 
 ## 다른 PC에서 이어가기
 
-Git 인계를 마치면 **최신 `main`이 기본 시작점**입니다. [설치 안내](DEVELOPMENT.md#다른-pc에서-시작)대로 새로 복제하거나, 기존 PC에서는 변경을 보존한 뒤 `git fetch origin` → `git switch main` → `git pull --ff-only`로 갱신합니다. 새 수정은 `codex/` 브랜치에서 시작합니다. `.env.local`·관리자 키·Java/브라우저 캐시·플러그인은 Git으로 전달되지 않으며 UI 개발과 자동 검사는 운영 키 없이 가능합니다.
+**최신 `main`이 기본 시작점**입니다. [설치 안내](DEVELOPMENT.md#다른-pc에서-시작)대로 새로 복제하거나, 기존 PC에서는 변경을 보존한 뒤 `git fetch origin` → `git switch main` → `git pull --ff-only`로 갱신합니다. 위 기능 병합 커밋이 이력에 있고 로컬 HEAD와 `origin/main`이 같은지 확인합니다. 새 수정은 `codex/` 브랜치에서 시작합니다. `.env.local`·관리자 키·Java/브라우저 캐시·플러그인은 Git으로 전달되지 않으며 UI 개발과 자동 검사는 운영 키 없이 가능합니다.
 
 ### 다른 환경으로 옮길 자료
 
@@ -87,7 +90,7 @@ Git 인계를 마치면 **최신 `main`이 기본 시작점**입니다. [설치 
 - EntryJS: 현재 3블록/상수 구조·지원 범위와 실제 드래그·입력·실행·중지/재접속 검사는 [개발 안내](DEVELOPMENT.md#entryjs-실습)를 따릅니다. 변수/입력·반복/조건·자유 제작·전체 블록의 키보드/터치 검증은 남습니다.
 - 복구: 운영 학습/대시보드의 미전송 초안은 메모리에만 남습니다. [운영 저장 정책](PRD.md#작업-저장과-통신-비용)과 공개 체험의 [탭 보관·도움 메모리](DEVELOPMENT.md#상태와-저장-경계)를 구분합니다. 탭의 체험 답안 자체는 다른 PC로 이동하지 않습니다.
 - 인증정보: 9/30 진단 중 노출된 Stitch 키 재발급과 9/29 Firebase CLI 인증 폐기·재연결 완료 여부는 미확인입니다. 원문 로그·키를 보관하지 않으며 검사 터미널에서 불필요한 도구 키를 제외합니다.
-- 의존성: 9/28 `npm audit` 중간 경고 5개(운영 2개, `uuid/gaxios`·개발 CLI)는 이전 미해결 기록입니다. 이번 릴리스에서 재검사·의존성 변경은 하지 않았습니다.
+- 의존성: 9/28 `npm audit` 중간 경고 5개(운영 2개, `uuid/gaxios`·개발 CLI)는 이전 미해결 기록입니다. 이번 릴리스에서 재검사·의존성 변경은 하지 않았습니다. 10/1 성공한 CI의 Node 20 기반 Actions·`setup-java@v4` 폐기 예정 경고와 Ubuntu 이미지 이전 예고도 후속 도구 갱신 대상으로 남깁니다.
 - 운영 검증: 새로운 Google OAuth 로그인, 실학생 사용성·수업 시간·평가 타당성은 새로 확인한 범위만 별도로 기록합니다. 이전 세션·합성 검사를 해당 성공으로 확대하지 않습니다.
 
 과거 원문과 검증 근거는 [보관함](archive/README.md)을 따릅니다. 당시 승인과 지침은 현재 작업 범위를 확대하지 않습니다.
