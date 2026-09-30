@@ -29,10 +29,11 @@ Firebase CLI가 사용자 설정 파일 접근을 거부하면 로컬 에뮬레�
 $env:PATH = "$PWD\scratch\tools\java\jdk-21.0.12.1+1-jre\bin;$env:PATH"
 $env:XDG_CONFIG_HOME = "$PWD\scratch\firebase-cli-config"
 $env:FIREBASE_EMULATORS_PATH = "$PWD\scratch\firebase-emulators"
+Remove-Item Env:STITCH_API_KEY -ErrorAction SilentlyContinue
 npm.cmd run dev:emulator
 ```
 
-`where.exe java`·`java -version`이 되는데도 제한된 실행에서 Java·`tar`·Playwright 자식 프로세스가 `EPERM`이면 설치 실패로 단정하지 않습니다. 허용된 로컬 검사 실행에서 같은 명령을 확인합니다.
+`where.exe java`·`java -version`이 되는데도 제한된 실행에서 Java·`tar`·Playwright 자식 프로세스가 `EPERM`이면 설치 실패로 단정하지 않습니다. 허용된 로컬 검사 실행에서 같은 명령을 확인합니다. 위 Stitch 키 제거는 검사 터미널에만 적용하며 사용자 저장 설정을 지우지 않습니다. Firebase CLI 진단 로그에는 실행 환경 전체가 포함될 수 있으므로 원문을 출력하거나 공유하지 않습니다.
 
 [학생 입장](http://localhost:3000/login/student)에서 합성 학번 `20101`과 [테스트 설정의 초기 비밀번호](../scripts/local-test-env.mjs)를 사용합니다. 첫 입장에는 본인 테스트 비밀번호로 바꿉니다. [교사 입장](http://localhost:3000/login/teacher)의 강사 계정은 같은 파일의 강사 비밀번호를 사용하며 10·11반을 확인합니다. `Ctrl+C`로 종료하면 에뮬레이터 기록은 보존되지 않습니다.
 

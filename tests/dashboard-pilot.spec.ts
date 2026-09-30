@@ -180,6 +180,7 @@ test("미편집 목록의 첫 조회 대기·실패는 홈·메뉴·로그아웃
     delay = false; release();
     await page.goto("/student");
     await expect(todos(page).getByRole("alert")).toContainText("목록 조회 점검");
+    await expect(todos(page).locator('span[class*="skeleton"]')).toHaveCount(0);
     await page.getByRole("link", { name: "열린 수업", exact: true }).click();
     await expect(page).toHaveURL(/\/student\/lessons$/);
     await page.goto("/student");

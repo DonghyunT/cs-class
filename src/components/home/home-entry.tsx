@@ -5,6 +5,7 @@ import { useId } from "react";
 import { ArrowRight, BookOpen, GraduationCap, Pause, Play } from "lucide-react";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { useSession } from "@/components/session-provider";
+import { LoadingSpinner } from "@/components/ui/loading-state";
 import {
   Dialog,
   DialogContent,
@@ -66,8 +67,9 @@ export function HomeEntry({
             className="landing-button compact"
             disabled={loading}
             aria-busy={loading}
+            aria-label="교실 입장"
           >
-            교실 입장 <ArrowRight size={16} />
+            {loading ? <>입장 준비 중 <LoadingSpinner /></> : <>교실 입장 <ArrowRight size={16} /></>}
           </DialogTrigger>
           <DialogContent className="entry-dialog">
             <DialogHeader>

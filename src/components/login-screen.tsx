@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Brand } from "@/components/visuals";
+import { LoadingState } from "@/components/ui/loading-state";
 import { useSession } from "@/components/session-provider";
 import { classroomApi } from "@/lib/classroom/client";
 import { googleLogin, prepareGoogleLogin } from "@/lib/classroom/google-login";
@@ -52,6 +53,7 @@ export function LoginScreen({ role }: { role: "student" | "teacher" }) {
       <section className={styles.card} aria-label={changing ? "비밀번호 변경" : "로그인"}>
         <div className={styles.cardTitle}><span className={`${styles.icon} ${role === "teacher" ? styles.teacherIcon : ""}`} aria-hidden="true">{changing ? <KeyRound /> : role === "student" ? <BookOpen size={25} strokeWidth={1.6} /> : <GraduationCap size={27} strokeWidth={1.6} />}</span><div><h2>{changing ? "첫 입장 · 비밀번호 변경" : role === "student" ? "학생 로그인" : instructor ? "강사 로그인" : "교사 로그인"}</h2><p>{changing ? `${session?.studentId} 학생` : "저장한 수업은 다음에도 이어갈 수 있어요."}</p></div></div>
         {!configured && !loading && <p className={styles.notice} role="status">로그인 서비스 연결을 준비하고 있어요. 선생님께 알려 주세요.</p>}
+        {loading && <LoadingState>로그인 상태를 확인하고 있어요. 잠시만 기다려 주세요.</LoadingState>}
         {message && <p id="login-error" className={styles.error} role="alert">{message}</p>}
         {role === "teacher" && !instructor ? <>
           <Button className={styles.primary} size="lg" disabled={busy || loading || !configured} onClick={() => void google()}>{busy ? <LoaderCircle className={styles.spinner} size={18} /> : <span className={styles.google} aria-hidden="true">G</span>} Google 계정으로 로그인</Button>

@@ -16,6 +16,7 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Brand } from "@/components/visuals";
 import { Button } from "@/components/ui/button";
+import { LoadingState } from "@/components/ui/loading-state";
 import { useSession } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
 import styles from "./app-shell.module.css";
@@ -74,7 +75,7 @@ export function AppShell({
   const valid = teacher
     ? session && session.role !== "student"
     : session?.role === "student" && !session.mustChangePassword;
-  if (loading) return <main id="main-content" className={styles.accessState} aria-busy="true"><Brand /><h1>교실을 준비하고 있어요.</h1></main>;
+  if (loading) return <main id="main-content" className={styles.accessState}><Brand /><h1>교실을 준비하고 있어요.</h1><LoadingState>로그인 상태를 확인하고 있어요.</LoadingState><Link href="/">공개 홈 둘러보기</Link></main>;
   if (!valid)
     return (
       <>

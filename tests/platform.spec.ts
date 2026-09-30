@@ -70,6 +70,8 @@ test("세션 확인 중에는 역할 선택을 보류하고 확인 후 내 교�
   try {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "교실 입장", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "교실 입장", exact: true })).toHaveText("입장 준비 중");
+    await expect(page.getByRole("button", { name: "교실 입장", exact: true })).toHaveAttribute("aria-busy", "true");
     await expect(page.getByRole("dialog")).toBeHidden();
     release();
     await page.getByRole("link", { name: "교실 입장", exact: true }).click();
