@@ -6,12 +6,12 @@
 
 | 항목 | 2026-09-30 확인 |
 | --- | --- |
-| 저장소·작업 브랜치 | `DonghyunT/cs-class` · `codex/dashboard-pilot-brief`. 기반은 `main`의 `fc54d09` |
-| 미커밋 상태 | 파일럿 소스·검사·문서·논의용 원본 3장과 실제 화면 4장 있음. 원문을 보존하고 릴리스 정리 중 |
-| 통합·배포 | 이번 파일럿은 아직 병합·배포하지 않음. 사용자 요청에 따라 최종 검증 후 진행 |
-| 검증 | 이번 릴리스 lint·typecheck·build·전체 에뮬레이터 E2E **46개** 통과. 문서 링크/앵커 169개·보관 원문 62개의 해시 확인 |
-| 브랜치 정리 | 기존 원격 두 브랜치가 PR #10에 포함됨을 확인. 릴리스 후 정리 예정 |
-| 다음 행동 | 검증한 파일럿을 병합·배포하고 결과를 이 문서에 갱신. 이후 다른 PC는 최신 main에서 새 작업 시작 |
+| 저장소·작업 브랜치 | `DonghyunT/cs-class` · `main`·`origin/main` 동기화. 기능 기준은 PR #11 병합 커밋 `d2fcfa8`이며 후속 인계 커밋은 문서만 변경 |
+| 미커밋 상태 | 없음. 소스·검사·문서·논의용 원본 3장·실제 화면 4장과 완료한 요청 원문을 Git에 포함 |
+| 통합·배포 | [PR #11](https://github.com/DonghyunT/cs-class/pull/11) 병합. 기능 릴리스 Production READY·운영 읽기 전용 점검 완료. 실제 로그인·학생 저장 확인과 구분 |
+| 검증 | Windows lint·typecheck·build·전체 에뮬레이터 E2E **46개**와 Linux PR·main CI 통과. 문서 링크/앵커·보관 원문 62개·이미지 3장의 해시 확인 |
+| 브랜치 정리 | 병합된 원격 작업 브랜치 3개와 로컬 파일럿 브랜치를 삭제. 로컬·원격에는 main만 남음 |
+| 다음 행동 | 다른 PC에서 최신 main을 받고 새 목적의 codex/ 브랜치로 시작. 파일럿의 자잘한 화면 개선과 운영 적용 범위는 다음 작업에서 정함 |
 
 ## 대시보드 파일럿 구현과 로컬 검증
 
@@ -29,7 +29,7 @@
 | 전체 E2E | 실행 중인 로컬 demo 에뮬레이터·개발 서버에서 `npm run test:e2e:running` 단일 worker **46개** 통과(4.5분·종료 코드 0). 기존 38개와 [파일럿 8개](../tests/dashboard-pilot.spec.ts) |
 | 저장·인증·권한 | 본인/담당 반·직접 DB 차단·만료, 재로그인 복원, 조회/저장 실패·응답 유실·동시 수정·계정 교체, 일정 CRUD/학생 조회 |
 | 실제 UI | 빠른 Enter·IME·인라인 수정·Tab/Space·Esc·모바일 체크. 1440/1024/821/820/768/390/320px, 메뉴·양방향 크기 전환 초점, 수업 필터/이어하기·교사 상세 링크. 정상 경로 콘솔/페이지 오류 0건 |
-| 문서·자료 | 활성 문서 8개의 로컬 링크/앵커 169개·`git diff --check` 통과. 보관 원문 62개의 SHA-256·논의용 이미지 3장의 해시·메타프롬프트 원문 일치. 외부 링크 일괄 검사는 별도 |
+| 문서·자료 | 활성 문서 8개의 로컬 링크/앵커·`git diff --check` 통과. 보관 원문 62개·논의용 이미지 3장의 SHA-256이 작업 파일과 Git 저장 바이트 모두 일치하며 메타프롬프트 원문도 유지. 외부 링크 일괄 검사는 별도 |
 
 릴리스 검증에서 첫 목록 조회가 늦을 때 미편집 상태의 홈·메뉴·로그아웃도 막히는 문제를 수정했습니다. 조회 지연·실패의 회귀 검사를 추가하고 기존 실패 보호·로그인/탐색 등 관련 8개를 먼저 통과한 뒤 전체 46개를 통합 검증했습니다. 앞선 45개 프로덕션 빌드 검사와 보강 검사 상세는 보관 원문에 있습니다.
 
@@ -39,15 +39,20 @@
 
 ## 통합·배포 상태
 
-이번 파일럿의 병합·CI·Production 배포 결과는 실제 실행 후 기록합니다. 연결 대상은 GitHub `DonghyunT/cs-class`, Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`), Production 브랜치는 `main`입니다. [운영 주소](https://cs-class-donghyunt.vercel.app)·이전 주소 이동·환경 설정은 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)를 따릅니다.
+연결 대상은 GitHub `DonghyunT/cs-class`, Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`), Production 브랜치 `main`입니다. [운영 주소](https://cs-class-donghyunt.vercel.app)·이전 주소 이동·환경 설정은 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)를 따릅니다.
 
-정리 시작 시 기존 main `fc54d09`의 Vercel Production `dpl_327m2zzS49WcXi1XD48JD7DxB57K`는 READY이며 운영 별칭과 Next.js 프로젝트 연결을 확인했습니다. 이는 파일럿 배포 전 상태입니다. 이번 Firestore 규칙 변경은 설명 주석뿐이며 접근 규칙의 동작은 바뀌지 않습니다.
+- PR [#11](https://github.com/DonghyunT/cs-class/pull/11)은 머리 `f1f54e29e3ac2744535acd973324040cff827dad`를 병합 커밋 `d2fcfa8991a3a99e887de83074e6811a51cf3675`로 통합했습니다. 두 커밋의 파일 트리가 같음을 확인했습니다.
+- [push CI](https://github.com/DonghyunT/cs-class/actions/runs/36684508409)·[PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36684521124)·[main CI](https://github.com/DonghyunT/cs-class/actions/runs/36685157563)는 새 Linux 설치·lint·typecheck·build·전체 에뮬레이터 E2E **46개**까지 통과했습니다. 기능 릴리스의 고정된 근거이며 후속 문서 커밋의 최신 결과는 [main 실행 목록](https://github.com/DonghyunT/cs-class/actions/workflows/verify.yml?query=branch%3Amain)에서 확인합니다.
+- 같은 병합 SHA의 [Vercel Production](https://vercel.com/donghyunt/cs-class/F5gPaUrExi2Wc5yJkXp7A3MMRUdU) `dpl_F5gPaUrExi2Wc5yJkXp7A3MMRUdU`가 READY이며 운영 별칭을 확인했습니다. Preview `dpl_HgZEjGsPV92HbbnE9WeBpuB37CmP`도 READY입니다. 보호된 Preview 본문은 연결 권한 부족으로 확인하지 못했습니다. 인계 문서의 후속 main 커밋은 앱 파일이 동일하며 같은 Git 배포 경로를 사용합니다.
+- 2026-09-30 운영 읽기 전용 GET 점검에서 `/api/auth/session`·`/api/auth/config`는 200이고 `cs-class-f74c4` 연결·에뮬레이터 없음·익명 세션을 확인했습니다. 비로그인 학생·교사·할 일·일정 API는 401, 로그인·새 메뉴 경로와 EntryJS 공개 작업실은 200, 이전 주소의 경로·쿼리는 운영 주소로 307 이동합니다.
+- Chromium에서 학생·교사 로그인 화면과 Google 버튼의 준비 후 활성화를 확인했습니다. 해당 화면의 콘솔 오류·경고는 0건입니다. 실제 Google 로그인·운영 학생의 할 일/일정 저장·학습 제출은 새로 실행하지 않았습니다. Vercel 런타임 로그 조회는 403으로 실패했으므로 오류 로그가 없다고 판정하지 않습니다. 이번 Firestore 변경은 설명 주석뿐이며 별도 규칙 배포는 필요하지 않습니다.
+- `codex/curriculum-verification-entryjs`의 머리가 기존 PR #10의 머리와 같고 병합 파일 트리와도 일치함을 확인했습니다. `codex/verify-production-login`은 그 머리의 조상으로 함께 포함됐습니다. 두 원격 브랜치와 PR #11의 `codex/dashboard-pilot-brief`를 확인한 SHA에 한해 삭제하고 로컬 파일럿 브랜치도 정리했습니다.
 
 이전 EntryJS PR [#10](https://github.com/DonghyunT/cs-class/pull/10), 38개 검사·운영 읽기 전용 점검, 완료한 파일럿 메타프롬프트와 최초 로컬 검증의 상세 근거는 [정리 전 원문과 SHA-256](archive/cs-class/2026-09-30-before-dashboard-release/manifest.json)에 있습니다. 이전 결과를 새 릴리스 검증으로 표현하지 않습니다.
 
 ## 다른 PC에서 이어가기
 
-1. [개발 안내](DEVELOPMENT.md#다른-pc에서-시작)에 따라 Git·Node 24·Java 21+와 저장소 접근을 준비합니다. 기존 PC의 미커밋 변경이 있으면 먼저 보존합니다. 이 릴리스 병합·배포 완료 뒤에는 최신 `main`이 시작점입니다.
+1. [개발 안내](DEVELOPMENT.md#다른-pc에서-시작)에 따라 Git·Node 24·Java 21+와 저장소 접근을 준비합니다. 기존 PC의 미커밋 변경이 있으면 먼저 보존합니다. 완료한 파일럿 소스·검사·문서·화면이 포함된 최신 `main`이 시작점입니다.
 2. 깨끗한 작업 트리에서 `git fetch origin --prune`, `git switch main`, `git pull --ff-only`로 갱신하고 목적에 맞는 새 `codex/` 브랜치를 만듭니다. 새 PC는 README의 복제 안내를 따릅니다.
 3. 루트에서 `npm ci`, 최초 `npx playwright install chromium`을 실행한 뒤 `npm run dev:emulator`로 확인합니다. EntryJS 자산은 자동 준비되며 Java·브라우저·플러그인·인증·`scratch/` 캐시는 PC마다 준비합니다.
 4. `.env.local`·관리자 키·학생 원본은 Git으로 전달되지 않습니다. 실제 Firebase 연결이 필요할 때만 [서버 설정](FIREBASE_SETUP.md#다른-pc의-서버-설정)을 따르고 각 PC에서 직접 인증합니다.
