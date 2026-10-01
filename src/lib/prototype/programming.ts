@@ -1,6 +1,9 @@
 import type { Stage } from "@/lib/classroom/types";
+import { buildNameProject, parseNameProject } from "./name-entry";
 
-export const STORAGE_KEY = "cs-class-programming-prototype-v1";
+export const LEGACY_STORAGE_KEY = "cs-class-programming-prototype-v1";
+export const STORAGE_KEY = "cs-class-programming-prototype-v2";
+export const MAX_PROTOTYPE_SIZE = 500_000;
 export const concepts = [
   { title: "컴퓨터에게 전하는 말", subtitle: "같은 행동을 블록과 글자로 표현해 보세요.", question: "블록 코딩과 텍스트 코딩의 공통점은?", options: ["컴퓨터가 할 일을 명령으로 표현해요", "모두 마우스로만 만들어요", "명령을 쓰지 않아도 실행돼요"], correct: 0, explanation: "표현 방법은 달라도 컴퓨터가 할 일을 순서대로 알려주는 코드예요. 프로그램을 만드는 과정이 프로그래밍이에요." },
   { title: "이름이 인사말이 되기까지", subtitle: "입력한 이름이 어디를 지나가는지 따라가 보세요.", question: "강아지가 이름을 말하는 것은 어떤 과정일까요?", options: ["입력", "처리", "출력"], correct: 2, explanation: "이름을 받는 것은 입력, 인사말을 만드는 것은 처리, 말풍선으로 보여주는 것은 출력이에요." },
@@ -23,14 +26,15 @@ export type Signal = "click" | "ArrowUp" | "ArrowRight" | "ArrowDown" | "ArrowLe
 export type Frame = { blockId: string; message: string; answer: string; variables: Partial<Record<"A" | "B", number>>; speech: string; x: number; y: number; direction: number };
 export type RunResult = { frames: Frame[]; error: string; triggered: boolean };
 export type PrototypeState = {
-  version: 1; stage: Stage; concept: number; conceptDone: number[]; conceptAnswers: Record<string, number>;
+  version: 2; nameEntryProject: string; nameImportFailed: boolean; nameImportRaw?: string; stage: Stage; concept: number; conceptDone: number[]; conceptAnswers: Record<string, number>;
   quiz: { round: number; ids: string[]; index: number; answers: Record<string, number>; solved: string[]; graded: boolean };
   mission: number; programs: Block[][]; inputs: Inputs; completed: number[]; reflection: string;
 };
+export type PrototypeUpdate = (next: PrototypeState | ((previous: PrototypeState) => PrototypeState)) => void;
 export const signalLabels: Record<Signal, string> = { click: "시작 버튼", ArrowUp: "위쪽 키", ArrowRight: "오른쪽 키", ArrowDown: "아래쪽 키", ArrowLeft: "왼쪽 키" };
 export const blockLabels: Record<BlockKind, string> = { start: "시작 신호", ask: "묻고 대답 기다리기", store: "대답을 변수에 저장하기", say: "대답 말하기", calculate: "계산해서 말하기", direction: "이동 방향 정하기", move: "이동 방향으로 움직이기" };
 export const missions = [
-  { title: "강아지 이름 짓기", description: "이름을 입력받아 ‘내 이름은 ○○!’라고 말하게 해주세요.", goal: "이름 입력 → 대답 → 이름 말하기", kinds: ["start", "ask", "say"] as BlockKind[], hint: "먼저 이름을 물어야 ‘대답’에 이름이 생겨요. 말하기는 그 아래에 연결해 보세요." },
+  { title: "강아지 이름 짓기", description: "이름을 물어보고 입력한 이름을 말하게 해주세요. 인사 문장은 자유롭게 꾸며도 좋아요.", goal: "이름 입력 → 대답 → 이름 말하기", kinds: ["start", "ask", "say"] as BlockKind[], hint: "먼저 이름을 물어야 ‘대답’에 이름이 생겨요. 말하기는 그 아래에 연결해 보세요." },
   { title: "곱셈 계산기", description: "두 수를 A와 B에 기억한 뒤 두 수의 곱을 말하게 해주세요.", goal: "A 입력·저장 → B 입력·저장 → A × B 출력", kinds: ["start", "ask", "store", "calculate"] as BlockKind[], hint: "A를 물은 바로 다음에 A에 저장해 보세요. B를 물으면 ‘대답’이 새 값으로 바뀌어요." },
   { title: "방향키로 강아지 움직이기", description: "오른쪽 키를 누르면 강아지가 오른쪽으로 움직이도록 만들어주세요. 다른 키도 더해볼 수 있어요.", goal: "오른쪽 키 → 방향 90° → 10만큼 이동", kinds: ["start", "direction", "move"] as BlockKind[], hint: "오른쪽 키 시작 신호를 골랐나요? 이동하기 전에 방향을 90°로 정해 보세요." },
   { title: "도전 · 평균 계산기", description: "곱셈 계산기를 응용해 두 수의 평균을 구해보세요. 기본 미션을 마친 뒤 도전해도 좋아요.", goal: "두 수 입력·저장 → (A + B) ÷ 2 출력", kinds: ["start", "ask", "store", "calculate"] as BlockKind[], hint: "평균은 두 수를 더한 뒤 2로 나눈 값이에요. 계산 블록에서 연산을 바꿔 보세요." },
@@ -41,7 +45,7 @@ export function newBlock(kind: BlockKind, id: string): Block {
 }
 export function initialState(): PrototypeState {
   return {
-    version: 1, stage: "concept", concept: 0, conceptDone: [], conceptAnswers: {},
+    version: 2, nameEntryProject: buildNameProject()!, nameImportFailed: false, stage: "concept", concept: 0, conceptDone: [], conceptAnswers: {},
     quiz: { round: 1, ids: questions.map((q) => q.id), index: 0, answers: {}, solved: [], graded: false },
     mission: 0, programs: [0, 1, 2, 3].map((i) => [newBlock("start", `start-${i}`)]),
     inputs: { name: "초코", a: "6", b: "4" }, completed: [], reflection: "",
@@ -55,18 +59,25 @@ function validBlock(value: unknown): value is Block {
   return typeof b.id === "string" && b.id.length > 0 && b.id.length < 80 && Object.hasOwn(values, b.kind) && typeof b.value === "string" && (values[b.kind]?.includes(b.value) ?? b.value.length <= 40);
 }
 export function restoreState(raw: string | null): PrototypeState | null {
-  if (!raw || raw.length > 100_000) return null;
+  if (!raw || raw.length > MAX_PROTOTYPE_SIZE) return null;
   try {
     const s = JSON.parse(raw) as PrototypeState;
     const ints = (v: unknown, max: number): v is number[] => Array.isArray(v) && v.length <= max && new Set(v).size === v.length && v.every((n) => Number.isInteger(n) && n >= 0 && n < max);
     const ids = (v: unknown): v is string[] => Array.isArray(v) && v.length <= questions.length && new Set(v).size === v.length && v.every((id) => questions.some((q) => q.id === id));
     const answers = (v: unknown, keys: string[], sizes: number[]): boolean => !!v && typeof v === "object" && !Array.isArray(v) && Object.entries(v).every(([key, n]) => keys.includes(key) && Number.isInteger(n) && Number(n) >= 0 && Number(n) < sizes[keys.indexOf(key)]);
-    if (!s || s.version !== 1 || !["concept", "quiz", "practice"].includes(s.stage) || !Number.isInteger(s.concept) || s.concept < 0 || s.concept >= concepts.length || !ints(s.conceptDone, concepts.length) || !answers(s.conceptAnswers, concepts.map((_, i) => String(i)), concepts.map((c) => c.options.length))) return null;
+    const version = (s as { version: number }).version;
+    if (!s || ![1, 2].includes(version) || !["concept", "quiz", "practice"].includes(s.stage) || !Number.isInteger(s.concept) || s.concept < 0 || s.concept >= concepts.length || !ints(s.conceptDone, concepts.length) || !answers(s.conceptAnswers, concepts.map((_, i) => String(i)), concepts.map((c) => c.options.length))) return null;
     if (!s.quiz || !ids(s.quiz.ids) || !s.quiz.ids.length || !ids(s.quiz.solved) || !Number.isInteger(s.quiz.index) || s.quiz.index < 0 || s.quiz.index >= s.quiz.ids.length || !Number.isSafeInteger(s.quiz.round) || s.quiz.round < 1 || s.quiz.round > 1000 || typeof s.quiz.graded !== "boolean" || !answers(s.quiz.answers, questions.map((q) => q.id), questions.map((q) => q.options.length))) return null;
     if (s.quiz.graded && s.quiz.ids.some((id) => s.quiz.answers[id] === undefined)) return null;
     if (s.quiz.solved.some((id) => s.quiz.answers[id] !== questions.find((q) => q.id === id)?.correct) || s.conceptDone.some((i) => s.conceptAnswers[i] !== concepts[i].correct)) return null;
     if (!Number.isInteger(s.mission) || s.mission < 0 || s.mission > 3 || !ints(s.completed, 4) || !Array.isArray(s.programs) || s.programs.length !== 4 || s.programs.some((p) => !Array.isArray(p) || p.length > 32 || !p.every(validBlock) || new Set(p.map((b) => b.id)).size !== p.length)) return null;
     if (!s.inputs || ![s.inputs.name, s.inputs.a, s.inputs.b].every((v) => typeof v === "string" && v.length <= 40) || typeof s.reflection !== "string" || s.reflection.length > 500) return null;
+    if (version === 1) {
+      const converted = buildNameProject(s.programs[0]);
+      return { ...s, version: 2, nameEntryProject: converted ?? buildNameProject()!, nameImportFailed: !converted };
+    }
+    if (typeof s.nameImportFailed !== "boolean" || typeof s.nameEntryProject !== "string" || s.nameEntryProject.length > 100_000 || (s.nameImportRaw !== undefined && (typeof s.nameImportRaw !== "string" || s.nameImportRaw.length > 100_000))) return null;
+    if (!parseNameProject(s.nameEntryProject)) return { ...s, nameEntryProject: buildNameProject()!, nameImportRaw: s.nameEntryProject, nameImportFailed: true };
     return s;
   } catch { return null; }
 }

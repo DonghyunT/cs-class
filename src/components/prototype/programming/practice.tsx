@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState, type DragEvent } from "react";
+import { useEffect, useState, type DragEvent, type RefObject } from "react";
 import { ArrowDown, ArrowUp, Check, Dog, Lightbulb, Play, Plus, RotateCcw, Square, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { blankFrame, blockLabels, checkMission, missions, newBlock, runProgram, signalLabels, type Block, type BlockKind, type Frame, type PrototypeState, type RunResult, type Signal } from "@/lib/prototype/programming";
+import { blankFrame, blockLabels, checkMission, missions, newBlock, runProgram, signalLabels, type Block, type BlockKind, type Frame, type PrototypeState, type PrototypeUpdate, type RunResult, type Signal } from "@/lib/prototype/programming";
 import type { HelpContext } from "./support";
 import styles from "./programming.module.css";
+import { NamePractice, type NameEditor } from "./name-practice";
 
-export function Practice({ state, update, focus, help }: { state: PrototypeState; update: (next: PrototypeState) => void; focus: (id: string) => void; help: (context: HelpContext) => void }) {
+export function Practice({ state, update, focus, help, moveMission, editorRef }: { state: PrototypeState; update: PrototypeUpdate; focus: (id: string) => void; help: (context: HelpContext) => void; moveMission: (mission: number) => Promise<void>; editorRef: RefObject<NameEditor | null> }) {
   const mission = missions[state.mission];
   const blocks = state.programs[state.mission];
   const [frame, setFrame] = useState<Frame>(blankFrame);
@@ -64,8 +65,9 @@ export function Practice({ state, update, focus, help }: { state: PrototypeState
   function reset() { setPlayback(null); setFrame(blankFrame); setResult(null); }
   function patchBlock(id: string, value: string) { change(blocks.map((b) => b.id === id ? { ...b, value } : b)); }
   return <div>
-    <nav className={styles.missionNav} aria-label="실습 미션">{missions.map((item, i) => <button type="button" key={item.title} aria-current={i === state.mission ? "step" : undefined} onClick={() => { reset(); setValidation(null); update({ ...state, mission: i }); focus("practice-title"); }}><span>{state.completed.includes(i) ? <Check size={16} /> : i === 3 ? "+" : `0${i + 1}`}</span><strong>{item.title}</strong>{i === 3 && <small>추가 도전</small>}</button>)}</nav>
-    <div className={styles.practiceHeading}><div className={styles.sectionHeading}><span className={styles.eyebrow}>{state.mission === 3 ? "CHALLENGE" : `MISSION 0${state.mission + 1}`} · 미니 블록 실습</span><h2 id="practice-title" tabIndex={-1}>{mission.title}</h2><p>{mission.description}</p></div><Button variant="outline" disabled={running} onClick={() => help({ mission: state.mission, program: blocks.map((b) => ({ ...b })), inputs: { ...state.inputs }, result })}><Lightbulb size={17} />막혔어요</Button></div>
+    <nav className={styles.missionNav} aria-label="실습 미션">{missions.map((item, i) => <button type="button" key={item.title} aria-current={i === state.mission ? "step" : undefined} onClick={() => void moveMission(i)}><span>{state.completed.includes(i) ? <Check size={16} /> : i === 3 ? "+" : `0${i + 1}`}</span><strong>{item.title}</strong>{i === 3 && <small>추가 도전</small>}</button>)}</nav>
+    {state.mission === 0 ? <NamePractice state={state} update={update} focus={focus} help={help} editorRef={editorRef} /> : <>
+    <div className={styles.practiceHeading}><div className={styles.sectionHeading}><span className={styles.eyebrow}>{state.mission === 3 ? "CHALLENGE" : `MISSION 0${state.mission + 1}`} · 미니 블록 실습</span><h2 id="practice-title" tabIndex={-1}>{mission.title}</h2><p>{mission.description}</p></div><Button variant="outline" disabled={running} onClick={() => help({ format: "mini", mission: state.mission, program: blocks.map((b) => ({ ...b })), inputs: { ...state.inputs }, result })}><Lightbulb size={17} />막혔어요</Button></div>
     <p className={styles.goal}><span>오늘의 목표</span>{mission.goal}</p>
     <div className={styles.workbench}>
       <section className={styles.codeWorkspace} aria-label="블록 조립 작업실"><div className={styles.workbenchTop}><strong>내 코드</strong><span>블록을 눌러 추가하거나 끌어 놓으세요</span></div>
@@ -95,6 +97,7 @@ export function Practice({ state, update, focus, help }: { state: PrototypeState
     </div>
     <div className={styles.validation}><div><span className={styles.eyebrow}>마지막으로 확인해요</span><p>{state.completed.includes(state.mission) ? "완료 기록이 있어요. 수정한 코드도 다시 확인해 보세요." : "입력값이 달라도 목표대로 실행되는지 확인해요."}</p></div><div><Button variant="outline" disabled={running} onClick={() => { setValidation(checkMission(state.mission, blocks)); focus("mission-feedback"); }}>미션 조건 확인</Button><Button disabled={running || !validation?.passed} onClick={() => { if (!state.completed.includes(state.mission)) update({ ...state, completed: [...state.completed, state.mission] }); focus("mission-feedback"); }}><Check size={16} />내 작업에 완료 표시</Button></div></div>
     {validation && <p id="mission-feedback" tabIndex={-1} role="status" className={validation.passed ? styles.good : styles.feedback}>{state.completed.includes(state.mission) && validation.passed ? "이 탭의 작업에 완료 기록을 남겼어요. 실제 수업 제출은 아니에요." : validation.message}</p>}
+    </>}
     <div className={styles.reflection}><label htmlFor="reflection">오늘 발견한 것을 한 줄로 남겨볼까요?</label><textarea id="reflection" maxLength={500} placeholder="예: A의 대답을 먼저 저장해야 B를 물어도 A가 남는다." value={state.reflection} onChange={(e) => update({ ...state, reflection: e.target.value })} /><p>내 코드와 함께 이 탭에 보관돼요. 탭을 닫으면 체험 기록이 사라져요.</p></div>
   </div>;
 }
