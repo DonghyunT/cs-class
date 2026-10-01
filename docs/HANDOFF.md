@@ -6,11 +6,11 @@
 
 | 항목 | 확인 상태 |
 | --- | --- |
-| 브랜치·미커밋 | 이름 파일럿 작업 브랜치 `codex/entryjs-name-pilot`, 기준 `main` SHA `576c1c1`. 구현·문서·대상 검사 완료, PR 통합 준비. 시작 전 실제 Git 상태를 확인 |
-| 통합·배포 | 사용자가 10/1 이름 파일럿의 구현·문서·병합·배포를 요청. 로컬 대상 검사 통과. PR/CI를 확인한 뒤 `main` 자동 배포 예정. 아래 이전 PR #13 결과와 구분 |
+| 브랜치·미커밋 | `main`, 이름 파일럿 병합 SHA `1c3ffc2`. PR #14 병합·작업 브랜치 삭제 완료. 시작 전 실제 Git 상태와 최신 문서 커밋의 원격 동기화를 확인 |
+| 통합·배포 | PR #14 병합·Production 배포·운영 체험 검증 완료. 기능 SHA `1c3ffc2`, 운영 별칭 `cs-class-donghyunt.vercel.app`. 아래 이름 파일럿 결과와 이전 PR #13 결과를 구분 |
 | 구현 | 공개 이름 미션만 실제 EntryJS 4.0.23. 질문창·두 입력의 출력 확인·v1→v2 보존·도움 스냅샷·이동 전 export/저장. 다른 미션은 미니 작업실 |
 | 새 검증 | Windows Node 24.19.0·Java 21.0.12.1·Chromium에서 lint·typecheck·build 통과. 프로덕션 빌드의 최종 영향 범위 14개 통과(3.4분). 도움 요청 시점 3개 추가 통과(1.5분), 저장 상태 표시의 이동 보호 2개 추가 통과(55.9초) |
-| 다음 행동 | PR/CI → 병합/Production SHA·별칭·실제 체험 확인. 이어갈 기능은 다른 미션의 Entry 전환/운영 수업 편입 중 별도 선택 |
+| 다음 행동 | 체험을 수업 관점에서 검토하고 다른 미션의 Entry 전환/운영 수업 편입 중 다음 범위를 별도 선택. 실제 OS IME 후보창·실학생 사용성은 별도 확인 |
 
 
 ## 새 에이전트가 먼저 읽을 순서
@@ -65,6 +65,15 @@
 
 대상은 GitHub `DonghyunT/cs-class`, Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`), Production 브랜치 `main`입니다. 운영 주소는 [CS Class](https://cs-class-donghyunt.vercel.app)이며 설정은 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)에 모읍니다.
 
+### 이름 파일럿 릴리스(10/1)
+
+- 기능 커밋 `fd015d7f065003fd4f84a2ed4d21a83fed0db6e6`를 [PR #14](https://github.com/DonghyunT/cs-class/pull/14)에서 10/1 17:45 KST에 `main`의 `1c3ffc25a592ac7d1b6e619e5d3257a5966e649b`로 병합했습니다. [PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36837241114)는 lint·typecheck·build·전체 E2E **63개/6.3분**을 통과했고 브랜치 CI도 성공했습니다. 병합한 작업 브랜치는 로컬·원격에서 삭제했습니다.
+- 기능 SHA `1c3ffc2`의 [Production 배포](https://vercel.com/donghyunt/cs-class/BtuSNZDzA8PXPe327Dnv4fuCBmgq) `dpl_BtuSNZDzA8PXPe327Dnv4fuCBmgq`·GitHub 배포 `6780010649`의 성공을 확인했습니다. [고유 주소](https://cs-class-c01ftcxi1-donghyunt.vercel.app)와 운영 별칭이 연결됐고 아래 실제 검사는 운영 별칭에서 수행했습니다. 후속 인계 문서 커밋은 동일한 앱·테스트입니다. [병합 main CI](https://github.com/DonghyunT/cs-class/actions/runs/36838309298)도 동일 앱을 검사하며 최신 문서 HEAD의 CI·배포 상태는 GitHub에서 확인합니다.
+- 10/1 17:48 KST Windows Chromium에서 익명으로 운영 체험의 실제 팔레트 조립→두 질문 응답→각 실제 출력→조건 확인→완료→새로고침 복원→홈 이동을 확인했습니다. `/api/auth/session` HTTP 200·`configured: true`·`session: null`, `/api/auth/config`의 `cs-class-f74c4`·에뮬레이터 없음, 교사 로그인 Google 버튼 활성 상태와 콘솔 오류 0건도 확인했습니다. 브라우저의 탭 저장만 사용했고 운영 DB에 합성 계정·작품을 쓰지 않았습니다. 새 Google OAuth 세션과 실학생 운영은 검증 범위가 아닙니다.
+- 기능 Preview의 배포 성공은 확인했으나 접근 보호로 익명 UI 검사는 진행하지 않았습니다. Vercel MCP의 프로젝트 조회는 팀 ID 필수 오류로 사용할 수 없어 GitHub 배포 상태·커밋 SHA·실제 운영 응답을 함께 확인했습니다.
+
+### 이전 프로토타입 릴리스(10/1 새벽)
+
 - 기능 커밋 `709cbb14f576264d424272b54dc8c0705e2a5f0e`를 [PR #13](https://github.com/DonghyunT/cs-class/pull/13)에서 10/1 01:36 KST에 `main`의 `56e5a1fa49804e77d6359bd0074368dae709bc0f`로 병합했습니다. 병합 트리는 검증한 기능 커밋과 같습니다. [PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36744354132)는 55개/3.1분, 브랜치 CI도 성공했으며 [병합 main CI](https://github.com/DonghyunT/cs-class/actions/runs/36745415277)는 lint·typecheck·build·전체 E2E 55개/3.0분을 통과했습니다. CI는 로컬 Auth·Firestore 에뮬레이터만 사용합니다.
 - 병합 커밋의 [Production 배포](https://vercel.com/donghyunt/cs-class/3ZpfkT1V2J6Hcsvt8TjeXvN8r8n2) `dpl_3ZpfkT1V2J6Hcsvt8TjeXvN8r8n2`·SHA `56e5a1f`·READY·운영 별칭 `cs-class-donghyunt.vercel.app`을 확인했습니다. Vercel 화면의 Root Directory 비움·Next.js 기본 빌드/설치·Node 24.x도 확인했고 설정은 바꾸지 않았습니다. 후속 인계 문서 커밋은 같은 앱·테스트입니다. 다른 PC에서 확인할 때는 최신 문서 HEAD를 Git 로그에서 읽고 해당 Git 배포의 SHA·READY·운영 별칭·API를 함께 확인합니다.
 - 운영 익명 요청: `/api/auth/session` HTTP 200 JSON·`configured: true`·`session: null`·`SIGNED_OUT`, `/api/auth/config`의 프로젝트 `cs-class-f74c4`·에뮬레이터 없음, 학생/교사/할 일/일정 API 모두 401. 이전 주소 `/login/teacher?source=release-check`는 같은 경로·쿼리로 공식 주소에 307 이동했습니다. 키·쿠키·응답의 개인정보는 기록하지 않았습니다.
@@ -78,7 +87,7 @@
 
 ### 다른 환경으로 옮길 자료
 
-- 릴리스 대상은 프로토타입 소스 8개·검사 1개, [13차시 수업 요약](reference/programming-13.md)·체험 화면 6개·[메타데이터](reference/programming-13/screenshots.json), PRD/DESIGN/DEVELOPMENT의 맥락과 이 인계입니다. 기존 EntryJS 소스·설치 스크립트·공통 UI도 저장소에 있습니다. 정리 전 인계 원문과 manifest의 바이트 해시를 함께 보존합니다.
+- 최신 `main`에는 공개 체험·이름 파일럿의 소스/검사, [13차시 수업 요약](reference/programming-13.md), PRD/DESIGN/DEVELOPMENT의 맥락과 이 인계가 포함됩니다. 체험 화면 6개와 [메타데이터](reference/programming-13/screenshots.json)는 9/30 미니 작업실의 참고 화면이며 실제 Entry 파일럿 화면으로 사용하지 않습니다. 기존 EntryJS 소스·설치 스크립트·공통 UI도 저장소에 있습니다. 정리 전 인계 원문과 manifest의 바이트 해시를 함께 보존합니다.
 - 이전 Git 제외 `scratch/handoff/cs-class-2026-10-01-handoff.zip`은 **병합 전 23파일의 과거 스냅샷**입니다. 최신 `main`을 받은 PC에 덮어쓰지 않습니다. 별도 복구가 필요할 때만 [이식 절차](DEVELOPMENT.md#진행-중-작업을-다른-환경으로-옮기기)와 안의 `TRANSFER.md`·manifest를 따릅니다.
 - 원 PPT·추출 그림·학생 자료·비밀 설정·캐시는 전달하지 않습니다. 원 PPT 없이도 현재 체험과 학습 목적은 재현할 수 있고, 정확한 PPT 장면/그림·파일 저장 절차를 확인하는 작업에만 원본이 필요합니다.
 - 이전 완성형 HTML 시안은 대화의 시각화 영역에만 있으나 세 장면의 후보 경험은 PRD에 보존했습니다. 대화나 도구의 세션·에이전트 상태를 복원할 필요는 없습니다. 새 PC의 Ponytail/Context7 가용성은 따로 확인합니다.
