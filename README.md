@@ -19,7 +19,7 @@ npm run dev:emulator
 
 Firebase 키 없이 사용하는 가상 계정 개발 모드입니다. [로컬 앱](http://localhost:3000/)을 열고, 실제 Firebase 연결은 [서버 설정](docs/FIREBASE_SETUP.md)을 따릅니다. Windows PowerShell에서 실행이 차단되면 `npm.cmd`·`npx.cmd`를 사용합니다. 새 PC의 저장소 복제·검증·Stitch 설정은 [개발 안내](docs/DEVELOPMENT.md)에 있습니다.
 
-[프로그래밍 13차시 프로토타입](https://cs-class-donghyunt.vercel.app/prototype/programming)은 로그인 없이 개념–퀴즈–실습과 도움·교사 피드백을 체험하는 화면입니다. [로컬 체험](http://localhost:3000/prototype/programming)도 같은 경로로 열립니다. 학습 초안은 이 탭에만 보관하며 실제 수업 제출·교사 전송은 연결하지 않습니다. 최종 정책과 구분한 범위는 [PRD](docs/PRD.md#프로그래밍-13차시--경험-검토용-프로토타입)를 따릅니다.
+[프로그래밍 13차시 프로토타입](https://cs-class-donghyunt.vercel.app/prototype/programming)은 로그인 없이 개념–퀴즈–실습과 도움·교사 피드백을 체험하는 화면입니다. [로컬 체험](http://localhost:3000/prototype/programming)도 같은 경로로 열립니다. 이름 짓기는 실제 EntryJS, 다른 미션은 미니 작업실을 사용합니다. 학습 초안은 이 탭에만 보관하며 실제 수업 제출·교사 전송은 연결하지 않습니다. 최종 정책과 구분한 범위는 [PRD](docs/PRD.md#프로그래밍-13차시--경험-검토용-프로토타입)를 따릅니다.
 
 **다른 PC에서 이어갈 때는** [HANDOFF](docs/HANDOFF.md#현재-작업-상태)에서 병합·배포 상태를 확인하고 해당 `main`을 받습니다. 전달 범위와 새 대화용 요청문은 [다른 PC에서 이어가기](docs/HANDOFF.md#다른-pc에서-이어가기), 수업 내용은 [13차시 자료 요약](docs/reference/programming-13.md), 구현 경계·검사는 [개발 안내](docs/DEVELOPMENT.md#프로그래밍-수업-프로토타입)에 있습니다.
 
@@ -108,7 +108,7 @@ cs-class/
 - `app/globals.css`는 글꼴·색상·기본 요소·공통 UI·브랜드를 담당합니다. 홈 스타일은 `components/home/public-home.css`, 셸·로그인·세션 안내·학생·교사·수업 미리보기 스타일은 담당 컴포넌트 옆의 CSS Module에 둡니다.
 - 학생·교사 첫 화면은 `components/dashboard/dashboard.tsx`를 사용하며 목록·일정·스타일을 같은 폴더에 둡니다. 학생 수업 목록은 `app/student/lessons/page.tsx`로 연결합니다.
 - 교사 상세 페이지는 `app/teacher/classes/page.tsx`·`app/teacher/students/page.tsx`입니다. `components/teacher/dashboard.tsx`가 조회·반 선택·학생 목록을, `dialogs.tsx`가 수업 설정·제출 작품 조회·비밀번호 초기화를 담당합니다. 함께 쓰는 날짜·오류 표현만 `presentation.ts`에 둡니다.
-- 프로그래밍 체험의 진입점은 [page.tsx](src/app/prototype/programming/page.tsx), 기능별 UI와 CSS는 `components/prototype/programming/`, 차시 데이터·순수 실행/조건 확인·복원은 [programming.ts](src/lib/prototype/programming.ts), 대상 검사는 [programming-prototype.spec.ts](tests/programming-prototype.spec.ts)입니다. 실제 EntryJS 작업실과의 차이는 개발 안내를 먼저 읽습니다.
+- 프로그래밍 체험의 진입점은 [page.tsx](src/app/prototype/programming/page.tsx), 기능별 UI와 CSS는 `components/prototype/programming/`, 차시 데이터·순수 실행/조건 확인·복원은 [programming.ts](src/lib/prototype/programming.ts), 대상 검사는 [programming-prototype.spec.ts](tests/programming-prototype.spec.ts)·[name-entry-pilot.spec.ts](tests/name-entry-pilot.spec.ts)입니다. 이름 미션의 작품 읽기·실행 조건은 [name-entry.ts](src/lib/prototype/name-entry.ts), 호환 경계는 개발 안내를 먼저 읽습니다.
 
 ## 로컬 개발과 실제 로그인
 

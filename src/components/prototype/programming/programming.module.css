@@ -343,3 +343,10 @@
 @media (prefers-reduced-motion: reduce) {
   .prototype *, .prototype *::before, .prototype *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+.entryEditor { border: 1px solid var(--border, #dce3ec); border-radius: 16px; padding: 16px; background: white; min-width: 0; }
+.entryScroll { position: relative; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+.entryScroll:focus-visible { outline: 3px solid #2563eb; outline-offset: -3px; }
+.entryFrame { display: block; width: 100%; min-width: 1000px; height: 660px; border: 0; }
+@media (max-width: 700px) { .entryEditor { padding: 12px; } .entryFrame { height: 620px; } }
+.preservedCode { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; max-height: 240px; overflow-y: auto; }

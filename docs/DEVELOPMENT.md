@@ -21,12 +21,12 @@ Windows의 사용자 npm 캐시에서 `EPERM`이 발생하면 저장소의 Git �
 
 Firebase CLI가 사용자 설정 파일 접근을 거부하면 로컬 에뮬레이터용 터미널에서 `$env:XDG_CONFIG_HOME="$PWD\scratch\firebase-cli-config"`를 설정한 뒤 실행합니다. CLI 설정을 Git 제외 폴더에 분리하며 실제 Firebase 로그인용 터미널에는 적용하지 않습니다.
 
-에뮬레이터·Playwright를 이미 `scratch/`에 설치한 제한된 Windows 환경에서는 기존 캐시를 가리킵니다. `$env:FIREBASE_EMULATORS_PATH="$PWD\scratch\firebase-emulators"`, `$env:PLAYWRIGHT_BROWSERS_PATH="$PWD\scratch\playwright"`를 같은 검사 터미널에 설정합니다. Java가 PATH에 없으면 해당 PC에 설치한 Java 21+의 `bin`을 그 터미널 PATH 앞에 추가합니다. 2026-09-30 이 체크아웃의 예시는 `scratch/tools/java/jdk-21.0.12.1+1-jre/bin`이며 다른 PC에 같은 경로가 있다고 가정하지 않습니다. 캐시가 없는 새 PC는 최초 설치를 진행합니다.
+에뮬레이터·Playwright를 이미 `scratch/`에 설치한 제한된 Windows 환경에서는 기존 캐시를 가리킵니다. `$env:FIREBASE_EMULATORS_PATH="$PWD\scratch\firebase-emulators"`, `$env:PLAYWRIGHT_BROWSERS_PATH="$PWD\scratch\playwright"`를 같은 검사 터미널에 설정합니다. Java가 PATH에 없으면 해당 PC에 설치한 Java 21+의 `bin`을 그 터미널 PATH 앞에 추가합니다. 2026-10-01 이 체크아웃의 예시는 `scratch/tools/java/runtime/jdk-21.0.12.1+1/bin`이며 다른 PC에 같은 경로가 있다고 가정하지 않습니다. 캐시가 없는 새 PC는 최초 설치를 진행합니다.
 
 이 PC의 새 PowerShell에서는 저장소 루트에서 아래 준비 명령을 함께 실행합니다. `$env:` 설정은 해당 터미널에만 적용되므로 이전 검사 터미널에서 설정했더라도 다시 필요합니다. 로컬 Java·캐시가 없는 다른 PC에서는 위 설치 안내를 먼저 따릅니다.
 
 ```powershell
-$env:PATH = "$PWD\scratch\tools\java\jdk-21.0.12.1+1-jre\bin;$env:PATH"
+$env:PATH = "$PWD\scratch\tools\java\runtime\jdk-21.0.12.1+1\bin;$env:PATH"
 $env:XDG_CONFIG_HOME = "$PWD\scratch\firebase-cli-config"
 $env:FIREBASE_EMULATORS_PATH = "$PWD\scratch\firebase-emulators"
 Remove-Item Env:STITCH_API_KEY -ErrorAction SilentlyContinue
@@ -110,25 +110,16 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 
 ### 13차시의 실제 EntryJS 적용 검토
 
-2026-10-01 사용자는 프로토타입 실습도 실제 EntryJS를 사용했어도 좋았겠다고 의견을 남겼습니다. **다음 구현을 위한 기술 검토안**이며 이번 문서 작업에서는 편집기·서버·검사를 변경하지 않았습니다. 기존 실제 작업실을 우선 재사용하되 UI만 교체하면 모든 미션이 동작한다고 가정하지 않습니다.
+2026-10-01 이름 미션 하나를 실제 EntryJS에 연결했습니다. 기존 `entry-bot-lab`의 팔레트·서버 검사·저장은 유지하며 공개 체험만 이름 전용 설정을 사용합니다.
 
-| 먼저 읽을 곳 | 재사용할 기반 | 현재 한계 |
-| --- | --- | --- |
-| [EntryPracticeWorkspace](../src/components/student/entry-practice-workspace.tsx) | iframe 준비/실패/재시도·작품 읽기·실행/중지·이동 전 export | `Lesson`·`Work`·`WorkDraft`·서버 액션을 받는 운영 학습 컴포넌트. 공개 탭 보관 체험과 직접 호환되지 않음 |
-| [workspace.html](../public/entryjs/workspace.html)·[workspace.js](../public/entryjs/workspace.js) | React 18 보조 UI 격리·브리지·실행 결과 수집·IME/입력 확정 | 팔레트 3종, 변수/리스트/장면/오브젝트 편집을 제한함 |
-| [entry-project.ts](../src/lib/classroom/entry-project.ts) | 제한된 작품 읽기·고정 무대·네이티브 script 문자열 복원 | `when_run_button_click`·`move_direction`·`dialog_time`과 상수 입력만 읽음. 변수/연산 reporter·질문·키 신호를 읽지 못함 |
-| [catalog.ts](../src/lib/classroom/catalog.ts)·[solutions.ts](../src/lib/server/solutions.ts) | 기존 엔트리봇 과제·구조/상수 조건·검증/제출 계약 | 해당 작은 과제의 판정. 브라우저 실행 결과만으로 일반 작품을 서버가 채점하지 않음 |
-| [자산 목록](../scripts/entryjs-assets.json)·[준비 스크립트](../scripts/prepare-entryjs.mjs) | `@entrylabs/entry` 4.0.23 고정·무결성·로컬 자산·라이선스 | `public/entryjs/vendor/`는 생성물. 새로운 라이브러리나 CDN 교체를 전제로 하지 않음 |
+- [NamePractice](../src/components/prototype/programming/name-practice.tsx)는 `/entryjs/workspace.html?exercise=name`을 사용합니다. 격리·source/opaque origin/channel 검사는 기존 방식입니다. 허용 블록은 `when_run_button_click`, 이전 초안의 키 시작을 보존하는 `when_some_key_pressed`, `ask_and_wait`, `get_canvas_input_value`, `dialog_time`, `combine_something`입니다. 초기 작품에는 시작 블록만 있고 [강아지 자산](../public/entryjs/name-dog.svg)은 기존 lucide 강아지 그림을 재사용했습니다.
+- [name-entry.ts](../src/lib/prototype/name-entry.ts)는 허용 AST·고정 무대를 복원하며 ID·좌표를 제외한 작품 키와 실행 ID로 근거를 연결합니다. 질문 → 실제 대답 → 해당 대답을 사용한 실제 말하기가 서로 다른 두 입력에서 확인되어야 합니다. 인사 문구는 자유입니다. 지금 확인은 시작 버튼 아래 한 줄의 프로그램만 지원하며 복원과 실행 가능성은 구분합니다.
+- [브리지](../public/entryjs/workspace.js)의 이름 전용 기록은 질문·응답·실제 말풍선을 중지 전에 수집합니다. 네이티브 질문창을 사용하고 검사 목적으로 답을 주입하지 않습니다. 질문 응답 대기를 제외한 실행 시간 15초가 지나면 중지합니다. 질문 필드의 한국어 `input/keyup`과 조합 중 Enter를 처리합니다. 실행 이벤트 안의 전체 export는 엔진을 멈추므로 그 순간에는 코드만 복사합니다.
+- v2 상태는 `cs-class-programming-prototype-v2`에 저장합니다. v1이 있으면 순서·시작 신호·미완성 입력 그대로 옮기며 v1 키를 삭제하지 않습니다. 이름만 변환 실패하면 다른 답안·완료를 보존하고 이전 미니 코드 또는 `nameImportRaw`를 읽기 전용으로 제공합니다. 작품/원문 각각 100,000자, 전체 JSON 500,000자 상한을 저장·복원에 함께 적용합니다.
+- 이동·도움·확인·완료 전에 활성 입력을 확정하고 작품을 내보냅니다. 단계·미션·교사/홈 이동은 탭 저장까지 확인하며 실패 시 작업실을 유지합니다. 초기 로딩/파일 실패만 있고 실제 편집이 없으면 저장된 초안으로 이동할 수 있습니다. 도움은 `mini | entry`의 고정 작품·실행 스냅샷이며 실제 전송은 없습니다. 실행 근거/확인 결과는 화면 메모리로, 단계/미션 이동·새로고침 후에는 다시 실행합니다.
+- 변경 중에는 typecheck와 [파일럿 검사](../tests/name-entry-pilot.spec.ts)를 사용합니다. 이번 최종 검사는 사용자 요청에 따라 영향받는 공개 체험과 공용 EntryJS 작업실만 실행합니다: `npm run test:e2e:running -- tests/name-entry-pilot.spec.ts tests/programming-prototype.spec.ts tests/entryjs-ui.spec.ts`. 이 명령은 로컬 demo 에뮬레이터가 실행 중일 때만 씁니다. lint/typecheck/build도 확인하고 범위·한계는 HANDOFF에 남깁니다.
 
-추천하는 첫 기술 확인은 **이름 묻기→대답 말하기 미션 하나를 실제 팔레트에서 조립·실행·저장·복원**하는 것입니다. 이후 A/B 변수·곱/평균, 방향 설정·키 이벤트를 넓힙니다. 전체 차시를 한꺼번에 바꾸거나 범용 편집기·AI·교사 전송을 추가하는 계획은 아닙니다. [원 PPT와 미니 미션의 차이](reference/programming-13.md#학습-내용과-ppt의-흐름)도 함께 확인합니다.
-
-- 필요한 블록 ID·params·변수/대답 모델은 고정 버전의 실제 배포 소스와 공식 문서에서 확인합니다. 미니 명령 `ask/store/calculate/direction`을 EntryJS 블록 이름으로 그대로 사용하지 않습니다. 자산 준비 후 설치 메타데이터는 `public/entryjs/vendor/entry/package.json`에 있습니다. Context7의 이름 검색에서 EntryJS와 무관한 라이브러리가 나오면 그 문서를 Entry 근거로 쓰지 않습니다.
-- 변수 A/B·질문/대답·중첩 연산·키 신호를 지원하려면 팔레트·초기 작품·프로젝트 읽기/정규화·허용 구조·UI 오류·과제 조건을 함께 검토합니다. 기존 `entry-bot-lab`의 3블록 작품 호환성과 검사를 유지하며 필요한 경계만 넓힙니다. 과제별 옵션이 정말 필요해질 때 최소로 나눕니다.
-- 공개 프로토타입을 유지할지 운영 `Lesson/Work`에 넣을지 먼저 정합니다. 체험용 `Block[]`와 실제 `entryProject` JSON은 다른 형식입니다. 저장 키/버전을 그대로 둔 채 뜻을 바꾸거나 형식 차이 때문에 이전 답안·완료 기록을 지우지 않습니다. 변환 또는 분리 방법과 기존 초안 처리 결과를 명시합니다.
-- iframe의 `allow-scripts` 격리, 부모가 확인하는 `source`·opaque origin `null`·채널과 iframe이 확인하는 부모 source/origin을 유지합니다. 편집기 때문에 서버 API·쿠키·Origin·권한을 느슨하게 하지 않습니다. React 19 앱에 Entry의 React 18을 직접 섞지 않습니다.
-- 실행 중 저장은 실행 전 무대에 최신 코드만 합칩니다. 결과는 중지 전에 수집하고, 입력·IME·드래그 확정 뒤 이동/검증/제출합니다. 새 질문·변수가 여러 실행/키 이벤트에서 어떻게 초기화되는지도 확인해야 합니다.
-- 실제 Entry 과제 검사는 작품 연결/허용 구조와 입력별 실행 목표를 함께 설계합니다. 현재 미니 실행기의 `checkMission`과 서버의 상수 구조 검사 모두 새 Entry 미션의 완성된 채점기가 아닙니다. 새 블록 하나 때문에 서버 범용 실행기·AI 검사·유료 호출을 자동 도입하지 않습니다.
-- 변경 중 `npm run typecheck`와 해당 로컬 에뮬레이터 검사를 먼저 실행합니다. 실제 드래그·질문 입력·변수 덮어쓰기·0/음수·방향키·중지 복원·재접속·이동 전 export/저장 실패를 확인하고, 최종 lint/build/전체 E2E는 아래 공통 검증을 따릅니다.
+곱셈/평균·방향키 미션의 실제 Entry 전환, 운영 Lesson/Work 편입, 서버 범용 실행 검사·AI·교사 전송은 후속 설계입니다. Context7 검색의 Entry UI 라이브러리를 EntryJS 근거로 쓰지 않으며 위 [공식 API/이벤트](#entryjs-실습)와 설치본 4.0.23을 확인합니다.
 
 ## 프로그래밍 수업 프로토타입
 
@@ -143,6 +134,7 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 | [concept.tsx](../src/components/prototype/programming/concept.tsx) | 조작형 개념 4개와 개념 확인 |
 | [quiz.tsx](../src/components/prototype/programming/quiz.tsx) | 한 문항씩 풀이·회차 채점·오답 재도전 |
 | [practice.tsx](../src/components/prototype/programming/practice.tsx) | 미니 블록 팔레트·조립·입력·실행 타이머·무대·조건 확인·완료·발견 기록 |
+| [name-practice.tsx](../src/components/prototype/programming/name-practice.tsx)·[name-entry.ts](../src/lib/prototype/name-entry.ts) | 이름 미션의 실제 편집기·작품 읽기·실행 근거·조건 확인 |
 | [support.tsx](../src/components/prototype/programming/support.tsx) | 도움 요청의 고정 문맥·교사 답변·학생 해결 표시 |
 | [programming.module.css](../src/components/prototype/programming/programming.module.css) | 기능에 인접한 데스크톱/좁은 화면·상태·초점 스타일 |
 | [programming.ts](../src/lib/prototype/programming.ts) | 개념/퀴즈/미션 데이터·타입·초기값·복원 검사·순수 `runProgram/checkMission` |
@@ -154,10 +146,10 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 
 | 상태 | 위치·수명 | 재접속/이동 때의 동작 |
 | --- | --- | --- |
-| 단계·개념 확인 답안/완료·퀴즈 회차/풀이/해결·미션별 코드·입력·완료·발견 기록 | `sessionStorage`, 키 `cs-class-programming-prototype-v1`, `version: 1` | 같은 탭의 새로고침에 복원. 다른 기기/사용자 계정의 서버 기록이 아님 |
+| 단계·개념 확인 답안/완료·퀴즈 회차/풀이/해결·미션별 코드·입력·완료·발견 기록 | `sessionStorage`, 키 `cs-class-programming-prototype-v2`, `version: 2` (v1 원문 유지) | 같은 탭의 새로고침에 복원. 다른 기기/사용자 계정의 서버 기록이 아님 |
 | 개념 실험의 표현 방식·이름·A/B·강아지 위치 | Concept 컴포넌트 메모리 | 개념 단계에서 나갔다 돌아오면 기본 실험값. 개념 확인 기록은 유지 |
 | 마지막 실행·실행 중 타이머·무대 위치·조건 확인 결과 | Practice 컴포넌트 메모리 | 미션/단계/시점 변경·새로고침에 지속 실행하지 않음. 미션별 코드와 완료 기록은 보존 |
-| 도움을 연 순간의 코드/입력/실행·예시 요청·교사 답변·해결 표시 | 루트/도움 UI 메모리 | 최신 코드와 분리된 스냅샷. 새로고침하면 사라지며 하나의 요청 체험만 지원 |
+| 도움의 코드/입력/실행(Entry는 요청 버튼, mini는 패널을 연 순간)·예시 요청·교사 답변·해결 표시 | 루트/도움 UI 메모리 | 최신 코드와 분리된 스냅샷. 새로고침하면 사라지며 하나의 요청 체험만 지원 |
 | 학생·교사 모드·도움 패널·입력 중 도움 문장 | 화면 메모리 | 서버 역할·메시지 발송·권한을 나타내지 않음 |
 
 보관은 hydration 뒤 Effect에서 읽고 이벤트의 최신 상태를 ref로 유지합니다. 단계/페이지 이동 전 최신 입력을 보관하며 저장 실패 때 입력을 유지하고 재시도를 안내합니다. `sessionStorage` 읽기 실패·quota/쓰기 실패·잘못된 버전/구조를 구분해 읽고, 실제 학생용 서버 저장 정책은 [PRD](PRD.md#작업-저장과-통신-비용)를 따릅니다. 브라우저 세션 복원·탭 복제는 환경별로 다르므로 `sessionStorage`를 개인정보 보안이나 기기 간 백업 장치로 사용하지 않습니다.

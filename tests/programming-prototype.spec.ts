@@ -1,3 +1,4 @@
+import { buildNameProject } from "../src/lib/prototype/name-entry";
 import { expect, test } from "@playwright/test";
 import { STORAGE_KEY, checkMission, initialState, newBlock, restoreState, runProgram, type Block, type BlockKind, type Signal } from "../src/lib/prototype/programming";
 
@@ -66,15 +67,20 @@ test("개념→퀴즈 오답 재도전→실습·도움·교사 피드백과 재
   await page.getByRole("button", { name: "이번 도전 결과 보기" }).click();
   await expect(page.getByRole("tab", { name: "퀴즈 5/5" })).toBeVisible();
   await page.getByRole("button", { name: "실습으로 이동" }).click();
-  await page.getByRole("button", { name: "묻고 대답 기다리기", exact: true }).dragTo(page.locator("ol").first());
-  await page.getByRole("button", { name: "대답 말하기", exact: true }).click();
-  await page.getByRole("button", { name: "실행하기", exact: true }).click();
-  await expect(page.getByRole("status").filter({ hasText: "내 이름은 초코!" })).toBeVisible();
+  const nameProject = buildNameProject(make(["start", "click"], ["ask", "name"], ["say", "answer"]))!;
+  await page.evaluate(({ key, project }) => { const state = JSON.parse(sessionStorage.getItem(key)!); state.nameEntryProject = project; sessionStorage.setItem(key, JSON.stringify(state)); }, { key: STORAGE_KEY, project: nameProject });
+  await page.reload();
+  const nameFrame = page.frameLocator("iframe[title='강아지 이름 짓기 엔트리 작업실']");
+  for (const name of ["초코", "보리"]) {
+    await page.getByRole("button", { name: "실행하기", exact: true }).click();
+    const input = nameFrame.locator("input:not([disabled]):visible");
+    await expect(input).toBeVisible(); await input.fill(name); await input.press("Enter");
+    await expect(page.getByRole("status").filter({ hasText: `마지막 말: 내 이름은 ${name}!` })).toBeVisible();
+  }
   await page.getByRole("button", { name: "미션 조건 확인" }).click();
   await page.getByRole("button", { name: "내 작업에 완료 표시" }).click();
   await page.reload();
   await expect(page.getByRole("tab", { name: "실습 1/3" })).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator("li[data-kind]")).toHaveCount(3);
   await page.getByRole("button", { name: "곱셈 계산기", exact: false }).click();
   for (const name of ["묻고 대답 기다리기", "묻고 대답 기다리기", "대답을 변수에 저장하기", "계산해서 말하기"]) await page.getByRole("button", { name, exact: true }).click();
   await page.getByLabel("4번 블록 변수").selectOption("B");
@@ -170,7 +176,7 @@ test("탭 보관 실패는 답안을 유지하고 이동을 막고 재시도 뒤
   await expect(page.getByRole("tab", { name: "개념 0/4" })).toBeEnabled();
   await page.evaluate(() => {
     Reflect.set(window, "originalPrototypeSetItem", Storage.prototype.setItem);
-    Storage.prototype.setItem = function (key, value) { if (key === "cs-class-programming-prototype-v1") throw new DOMException("quota", "QuotaExceededError"); Reflect.get(window, "originalPrototypeSetItem").call(this, key, value); };
+    Storage.prototype.setItem = function (key, value) { if (key === "cs-class-programming-prototype-v2") throw new DOMException("quota", "QuotaExceededError"); Reflect.get(window, "originalPrototypeSetItem").call(this, key, value); };
   });
   await page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true }).check();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("보관하지 못했어요");
