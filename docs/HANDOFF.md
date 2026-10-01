@@ -6,11 +6,11 @@
 
 | 항목 | 확인 상태 |
 | --- | --- |
-| 브랜치·미커밋 | `codex/continuation-ready-20261001`, 기준 HEAD `de147cc122ec8839e4e88c78e76ee3d405827332`. 게스트·개인 할 일·로그인/Select/홈 안내와 문서 정리가 미커밋. 새 소스·검사·보관 원문도 함께 전달해야 함. 시작 전 실제 Git 상태 확인 |
+| 브랜치·미커밋 | `main`·`origin/main` 동기화, 미커밋 없음. 기능 병합 SHA `9fd9df4863fb993fe225be4bf752fc6887452e4a`. 후속 인계 문서 커밋도 앱·검사는 동일하며 최신 HEAD는 실제 Git 로그로 확인. 릴리스 브랜치는 로컬·원격 정리 |
 | 구현 | 로컬 학생/교사 게스트, 개인 할 일의 즉시 반영·행별 대기·실패 복원, 동등한 교사 로그인 버튼, 공통 둥근 Select, 홈 안내 문구 정리 완료 |
 | 검증 | 10/1 새 프로덕션 빌드·demo 에뮬레이터의 최종 전체 E2E **73개 통과**(4.8분). lint·typecheck·build 통과. 문서·보관 해시는 아래 확인 범위 참조 |
-| 통합·배포 | 사용자 요청으로 이번 변경을 검증→push/PR→main 병합→Production 확인할 예정. 현재 운영 기준은 이전 `de147cc`이며 이번 UI가 운영에 반영됐다고 판단하지 않음 |
-| 다음 행동 | 최종 검증과 문서 검토 후 위 릴리스를 완료하고, 최신 main을 다른 PC의 시작점으로 사용 |
+| 통합·배포 | [PR #15](https://github.com/DonghyunT/cs-class/pull/15) main 병합·Production 배포·운영 API/UI 확인 완료. 로컬/PR/브랜치/기능 main에서 전체 73개 통과. 게스트는 운영 화면 미표시·API 404 |
+| 다음 행동 | 최신 main으로 이어가기. 로컬 `dev:emulator`를 다시 실행해 새 게스트 계정 준비 완료. 이후 범위는 아래 미결정 중 사용자 요청으로 선택 |
 
 ### 이번 변경의 범위
 
@@ -31,7 +31,10 @@
 
 대상은 GitHub `DonghyunT/cs-class`, Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`), Production 브랜치 `main`입니다. 운영 주소는 [CS Class](https://cs-class-donghyunt.vercel.app), 설정은 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)를 따릅니다. 10/1 MCP에서 해당 프로젝트·Next.js·Node 24.x·기존 운영 도메인을 조회했으며 설정은 변경하지 않았습니다.
 
-이번 PR·병합 SHA·CI·배포 SHA/READY/별칭·운영 API/UI 확인 결과는 완료 후 이 절에 기록합니다. Preview는 운영 인증정보가 없는 별도 환경이며 그 준비 안내를 Production 로그인 성공으로 판단하지 않습니다.
+- 기능 커밋 `4de30dcc37b5f8d9c7b64e2d2658bfa63e46aff1`을 [PR #15](https://github.com/DonghyunT/cs-class/pull/15)에서 10/1 21:55 KST에 위 `9fd9df4`로 병합했습니다. 병합 트리는 검증한 기능 커밋과 같습니다. [PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36863916854)의 lint·typecheck·build·전체 E2E **73개/5.0분**, [브랜치 CI](https://github.com/DonghyunT/cs-class/actions/runs/36863884237) **73개/6.5분**, [기능 main CI](https://github.com/DonghyunT/cs-class/actions/runs/36865069012) **73개/6.6분**이 성공했습니다. CI도 demo 로컬 에뮬레이터만 사용합니다. 후속 인계 문서 커밋은 동일 앱·검사이며 최신 자동 검사 상태는 [main CI 목록](https://github.com/DonghyunT/cs-class/actions?query=branch%3Amain)에서 확인합니다.
+- 기능 SHA `9fd9df4`의 [Production 배포](https://vercel.com/donghyunt/cs-class/86EZxZVLWJXV1W7mDjdWzmcgSNS7) `dpl_86EZxZVLWJXV1W7mDjdWzmcgSNS7`·READY·[고유 주소](https://cs-class-baysphibu-donghyunt.vercel.app)·운영 별칭 `cs-class-donghyunt.vercel.app`의 연결을 MCP로 확인했습니다. 운영 설정·Firebase 승인 도메인·기존 SSO 보호는 변경하지 않았습니다. 기능 Preview도 READY이며 운영 인증정보가 없는 별도 환경입니다.
+- 10/1 21:57 KST 운영 별칭의 익명 요청에서 `/api/auth/session` HTTP 200·`configured: true`·`session: null`, config의 `cs-class-f74c4`·에뮬레이터 없음·게스트 비활성을 확인했습니다. 올바른 출처/형식의 학생·교사 게스트 POST는 각각 **404**, 학생/교사/할 일/일정 API는 **401**이었습니다. 홈·양쪽 로그인·공개 체험·Entry 작업실은 200이며 이전 도메인의 경로·쿼리는 운영 주소로 307 이동했습니다.
+- 10/1 Windows 내장 브라우저의 운영 화면에서 로그인 버튼 1440/390px의 같은 크기·다른 색상·활성 상태, 비밀번호 방식/복귀의 초점, 양쪽 로그인 게스트 버튼 0개를 확인했습니다. 390px 실습 Select는 16px 팝업·화면 경계·실제 값 선택·Escape/초점 복귀·가로 넘침 없음, 홈은 고정 배치 준비 뒤 새 안내·화살표 0개·비트 조작을 확인했습니다. 확인한 흐름의 콘솔 오류는 0건입니다. 운영 계정 로그인·DB 쓰기는 하지 않았으며 할 일 저장/실패·담당 반 경계는 위 로컬/CI 검사 범위입니다. 새 Google OAuth 세션과 실학생 운영은 검증하지 않았습니다.
 
 이전 이름 파일럿은 [PR #14](https://github.com/DonghyunT/cs-class/pull/14)로 병합됐습니다. 공개 프로토타입의 이름 미션은 실제 EntryJS 4.0.23, 다른 미션은 미니 작업실이며 운영 수업 제출·실제 교사 전송·AI를 연결하지 않습니다. 이전 PR/CI·배포·63개 검사·운영 체험과 Google OAuth의 확인 한계는 [보관 원문](archive/cs-class/2026-10-01-before-local-ui-release/HANDOFF.md#통합배포-상태)에 있습니다.
 
