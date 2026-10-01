@@ -5,4 +5,5 @@ export const testEnv = {
   FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099", FIRESTORE_EMULATOR_HOST: "127.0.0.1:8080",
   CS_TEACHER_EMAILS: "teacher@cs-class.invalid", CS_INITIAL_PASSWORD: "initial-test-8264",
   CS_RESET_PASSWORD: "reset-test-3951", CS_TEST_INSTRUCTOR_PASSWORD: "instructor-test-5173",
+  CS_TEST_GUEST_PASSWORD: "guest-test-6378",
 };

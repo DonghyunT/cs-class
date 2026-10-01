@@ -1,6 +1,6 @@
 # Firebase 연결과 검증
 
-갱신: 2026-09-30. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다.
+문서 갱신: 2026-10-01. 실제 환경 확인 날짜·범위는 HANDOFF를 따릅니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다.
 
 ## 연결 기준
 
@@ -33,7 +33,7 @@ Google 로그인을 확인할 때는 승인된 `localhost`를 사용해 [교사 
 | `CS_TEACHER_EMAILS` | Google 로그인 허용 이메일, 여러 개는 쉼표로 구분 |
 | `CS_INITIAL_PASSWORD`, `CS_RESET_PASSWORD` | 서로 다른 초기/초기화 비밀번호 |
 
-호스팅에는 로컬 파일 경로를 옮기지 않습니다. 승인된 호스팅의 서버 비밀 설정 또는 해당 플랫폼의 관리형 인증을 사용하며, 비공개 키를 `NEXT_PUBLIC_*`로 등록하지 않습니다. Auth·Firestore 에뮬레이터 변수는 호스팅에 넣지 않습니다. 현재 코드는 Vercel에서 에뮬레이터 변수가 감지되면 거부합니다.
+호스팅에는 로컬 파일 경로를 옮기지 않습니다. 승인된 호스팅의 서버 비밀 설정 또는 해당 플랫폼의 관리형 인증을 사용하며, 비공개 키를 `NEXT_PUBLIC_*`로 등록하지 않습니다. Auth·Firestore 에뮬레이터 변수와 로컬 게스트용 `CS_TEST_GUEST_PASSWORD`는 호스팅에 넣지 않습니다. 게스트 준비 조건은 [개발 안내](DEVELOPMENT.md#로컬-게스트-입장)에 있습니다. 현재 코드는 Vercel에서 에뮬레이터 변수가 감지되면 거부합니다.
 
 ## Vercel 서버 설정
 

@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import type { Transaction } from "firebase-admin/firestore";
 import type { Role, Session } from "../classroom/types";
 import { admin } from "./firebase";
+import { guestLoginEnabled } from "./guest-mode";
 import { requireCondition, ServiceError } from "./errors";
 
 export const SESSION_COOKIE = "cs_session";
@@ -73,12 +74,19 @@ async function openSession(uid: string, expectedVersion: number, expectedRole: R
   return session;
 }
 export async function loginPassword(role: "student" | "instructor", studentId: string, password: string) {
-  const { auth, db } = admin();
   const uid = role === "student" ? `student-${studentId}` : "instructor";
+  const email = role === "student" ? `s-${studentId}@cs-class.invalid` : "instructor@cs-class.invalid";
+  return loginPasswordAccount(role, uid, email, password);
+}
+export async function loginGuest(role: "student" | "teacher") {
+  requireCondition(guestLoginEnabled(), 404, "NOT_FOUND", "찾을 수 없는 요청입니다.");
+  return loginPasswordAccount(role, role === "student" ? "student-21099" : "guest-teacher", role === "student" ? "s-21099@cs-class.invalid" : "guest-teacher@cs-class.invalid", process.env.CS_TEST_GUEST_PASSWORD!);
+}
+async function loginPasswordAccount(role: Role, uid: string, email: string, password: string) {
+  const { auth, db } = admin();
   await limitLogin(uid);
   const initial = (await db.collection("csAccounts").doc(uid).get()).data() as Account | undefined;
   requireCondition(!initial?.authBusy, 423, "ACCOUNT_BUSY", "계정 정보를 변경하고 있어요. 잠시 후 다시 시도해 주세요.");
-  const email = role === "student" ? `s-${studentId}@cs-class.invalid` : "instructor@cs-class.invalid";
   const host = process.env.FIREBASE_AUTH_EMULATOR_HOST;
   const endpoint = host ? `http://${host}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword` : "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword";
   const response = await fetch(`${endpoint}?key=${encodeURIComponent(process.env.FIREBASE_WEB_API_KEY!)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, returnSecureToken: true }), cache: "no-store", signal: AbortSignal.timeout(15000) });

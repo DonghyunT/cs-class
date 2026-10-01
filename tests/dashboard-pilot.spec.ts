@@ -76,6 +76,69 @@ test("파일럿 API: 본인 목록·반 권한·직접 DB 차단·검증·동시
   } finally { await separate.dispose(); }
 });
 
+for (const role of ["student", "teacher"] as const) {
+  test(`내 할 일 낙관적 UI ${role}: 지연 중 다른 행 조작·삭제 복원·재시도`, async ({ page }, testInfo) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => { if (message.type() === "error" && !message.text().includes("503")) errors.push(message.text()); });
+    let uid: string;
+    if (role === "student") { await readyStudent(page.request); uid = "student-20101"; }
+    else uid = (await readyTeacher(page.request)).uid;
+    const first = todo("먼저 완료할 일"), deleted = todo("곧 삭제할 일"), edited = todo("계속 수정할 일");
+    await db.collection("csTodos").doc(uid).set({ revision: 0, items: [first, deleted, edited] });
+    await page.goto(`/${role}`);
+    await expect(todos(page).getByRole("checkbox")).toHaveCount(3);
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    let failed = false;
+    await page.route(`**${todosPath}`, async (route) => {
+      if (route.request().method() === "POST" && !failed) {
+        await pending; failed = true;
+        await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ message: "저장 연결을 확인해 주세요." }) });
+      } else await route.continue();
+    });
+    try {
+      const checkbox = todos(page).getByRole("checkbox", { name: "먼저 완료할 일 완료", exact: true });
+      await checkbox.focus(); await page.keyboard.press("Space");
+      await expect(checkbox).toBeChecked();
+      await expect(checkbox).toBeFocused();
+      await expect(todos(page).getByText(first.text, { exact: true })).toHaveCSS("text-decoration-line", "line-through");
+      await expect(todos(page).getByRole("button", { name: `${first.text} 삭제`, exact: true })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "할 일 새로고침" })).toBeDisabled();
+      await todos(page).getByRole("button", { name: `${deleted.text} 삭제`, exact: true }).click();
+      await expect(todos(page).getByText(deleted.text, { exact: true })).toHaveCount(0);
+      await expect(page.getByLabel("할 일 추가", { exact: true })).toBeFocused();
+      await todos(page).getByRole("button", { name: `${edited.text} 수정`, exact: true }).click();
+      await page.getByLabel("할 일 수정", { exact: true }).fill("저장 중에도 수정한 일");
+      await page.getByLabel("할 일 수정", { exact: true }).press("Enter");
+      await add(page, "저장 중에도 추가한 일");
+      await expect(todos(page).getByText("저장 중에도 추가한 일", { exact: true })).toBeVisible();
+      expect((await readTodos(page.request)).items).toEqual([first, deleted, edited]);
+      await expect(todos(page).getByText("저장 완료", { exact: true })).toHaveCount(0);
+      for (const width of [320, 390, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      }
+      if (role === "student") await page.screenshot({ path: testInfo.outputPath("todo-optimistic.png"), fullPage: true });
+      release();
+      await expect(todos(page).getByRole("alert")).toContainText("저장 연결");
+      await expect(todos(page).locator("[data-todo-id]").nth(1)).toContainText(deleted.text);
+      await expect(todos(page).getByRole("checkbox", { name: "먼저 완료할 일 완료", exact: true })).toBeChecked();
+      await page.getByRole("link", { name: "CS Class 홈", exact: true }).click();
+      await expect(page).toHaveURL(`http://localhost:3000/${role}`);
+      await todos(page).getByRole("button", { name: "최신 기록에 내 변경 재시도" }).click();
+      await saved(page);
+      const stored = await readTodos(page.request);
+      expect(stored.items.map((item) => item.text)).toEqual([first.text, "저장 중에도 수정한 일", "저장 중에도 추가한 일"]);
+      expect(stored.items[0].completed).toBe(true);
+      await page.reload();
+      await expect(todos(page).getByRole("checkbox")).toHaveCount(3);
+      await expect(todos(page).getByText(deleted.text, { exact: true })).toHaveCount(0);
+      expect(errors).toEqual([]);
+    } finally { release(); }
+  });
+}
+
 test("내 할 일: 빠른 Enter·IME·인라인 수정·Space·삭제·재로그인 복원", async ({ page }) => {
   await readyStudent(page.request);
   await page.goto("/student");
@@ -254,7 +317,8 @@ test("반 일정: 교사 CRUD·실패 복구·반 전환 보호·학생 조회·
   await readyStudent(page.request); await readyTeacher(page.request); await page.goto("/teacher/schedule");
   await expect(page.getByText("아직 등록된 일정이 없어요.", { exact: true })).toBeVisible();
   await page.getByLabel("일정 제목", { exact: true }).fill("정보 수업 준비");
-  await page.getByRole("combobox", { name: "연결할 수업 · 선택", exact: true }).selectOption(lessonId);
+  await page.getByRole("combobox", { name: "연결할 수업 · 선택", exact: true }).click();
+  await page.getByRole("option", { name: "순서가 만드는 알고리즘", exact: true }).click();
   await page.getByRole("button", { name: "일정 저장", exact: true }).click();
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await expect(page.getByLabel("일정 제목", { exact: true })).toBeFocused();
   await page.getByRole("button", { name: "정보 수업 준비 수정", exact: true }).click();
@@ -262,7 +326,9 @@ test("반 일정: 교사 CRUD·실패 복구·반 전환 보호·학생 조회·
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.route(`**${schedulePath}`, (route) => route.request().method() === "POST" ? route.abort("failed") : route.continue());
   await page.getByRole("button", { name: "작품 제출 안내 삭제", exact: true }).click(); await expect(page.getByRole("main").getByRole("alert")).toContainText("의도를 보관");
-  await page.getByRole("combobox", { name: "담당 반", exact: true }).selectOption("2-2"); await expect(page.getByRole("combobox", { name: "담당 반", exact: true })).toHaveValue("2-1");
+  await page.getByRole("combobox", { name: "담당 반", exact: true }).click();
+  await page.getByRole("option", { name: "2학년 2반", exact: true }).click();
+  await expect(page.getByRole("combobox", { name: "담당 반", exact: true })).toHaveText("2학년 1반");
   await page.unroute(`**${schedulePath}`); await page.getByRole("button", { name: "최신 기록에 내 변경 재시도" }).click(); await expect(page.getByText("아직 등록된 일정이 없어요.", { exact: true })).toBeVisible();
   await page.getByLabel("일정 제목", { exact: true }).fill("재접속으로 확인할 일정"); await page.getByRole("button", { name: "일정 저장", exact: true }).click(); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.reload(); await expect(page.getByText("재접속으로 확인할 일정", { exact: true })).toBeVisible();
@@ -335,7 +401,7 @@ test("학생·교사 실제 배치: 7개 너비·키보드·모바일·빈 상�
     } else {
       await page.getByRole("link", { name: /학습 현황.*등록 학생/ }).click();
       await expect(page.getByRole("heading", { name: "학생별 학습 현황", exact: true })).toBeVisible();
-      await expect(page.getByRole("combobox", { name: "확인할 수업", exact: true })).toHaveValue(lessonId);
+      await expect(page.getByRole("combobox", { name: "확인할 수업", exact: true })).toHaveText("순서가 만드는 알고리즘");
     }
   }
   expect(errors).toEqual([]);

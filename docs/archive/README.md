@@ -4,6 +4,8 @@
 
 ## 보관 기록
 
+- **[2026-10-01 로컬 게스트·목록·공통 UI 릴리스 문서 정리 전 원문](cs-class/2026-10-01-before-local-ui-release/manifest.json):** `codex/continuation-ready-20261001`·기준 HEAD `de147cc`의 미커밋 PRD·DESIGN·DEVELOPMENT·FIREBASE_SETUP·HANDOFF 5개를 바이트 그대로 보존했습니다. 이전 릴리스와 PC 복귀, 게스트·낙관적 목록·선택 메뉴의 단계별 검사 기록을 남기고, 대체된 초기 기능 구상·이전 폴더 이식 안내·누적 이력은 현재 기준에서 정리했습니다. 최신 구현·검증·배포는 [HANDOFF](../HANDOFF.md), 문서별 역할은 [README](../../README.md#문서의-위치와-내용-기준)를 따릅니다.
+
 - **[2026-10-01 프로그래밍 프로토타입 릴리스 전 인계 원문](cs-class/2026-10-01-before-programming-release/manifest.json):** `codex/continuation-prep`의 미커밋 [HANDOFF](cs-class/2026-10-01-before-programming-release/HANDOFF.md)를 바이트 그대로 보존했습니다. 9/30 프로토타입 55개 검사, 10/1 사용자 피드백·23파일 이식 ZIP, 이전 대시보드 CI·운영 확인·성능 측정의 상세 맥락을 포함합니다. 기준 HEAD는 `3ac9ed5`이며 당시 미커밋·배포 미실행 상태는 이후 사용자가 요청한 병합·배포와 구분합니다. 현재 인계는 [HANDOFF](../HANDOFF.md)를 따릅니다.
 
 - **[2026-09-30 UI·성능 릴리스 문서 정리 전 원문](cs-class/2026-09-30-before-dashboard-polish-release/manifest.json):** `cf3ccb0`의 PRD·DESIGN·DEVELOPMENT·FIREBASE_SETUP·HANDOFF 5개를 바이트 그대로 보존했습니다. 초기 구현 목표·이전 릴리스 검증·원격 브랜치/Preview 진단의 맥락을 남기고, 현재 문서는 정책·표현·절차·설정·최신 상태를 각각 담당하도록 중복을 줄였습니다. 각 원래 경로·보존 경로·SHA-256은 manifest에 있으며 당시 승인·상태는 현재 실행 지시가 아닙니다.

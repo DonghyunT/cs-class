@@ -8,6 +8,7 @@ import { DashboardArt } from "@/components/dashboard-art";
 import { useSession } from "@/components/session-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { classroomApi } from "@/lib/classroom/client";
 import { progressFor, STATUS_LABELS } from "@/lib/classroom/progress";
 import type { ClassSettings, Progress, TeacherDashboard, Work } from "@/lib/classroom/types";
@@ -97,10 +98,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId }: { 
       <span className={styles.role}><ShieldCheck size={16} aria-hidden="true" />{instructor ? "강사 · 담당 반 관리" : "교사 · 수업 관리"}</span>
     </div>
     <div className={styles.toolbar}>
-      <label className={styles.classPicker}>담당 반<select value={selection.classId ?? data?.classroom.id ?? ""} onChange={(event) => selectClass(event.target.value)} disabled={!data?.classrooms.length}>
-        {!data?.classrooms.length && <option value="">반 정보 확인 중</option>}
-        {data?.classrooms.map((classroom) => <option key={classroom.id} value={classroom.id}>{classroom.name}</option>)}
-      </select></label>
+      <label className={styles.classPicker}>담당 반<Select label="담당 반" value={selection.classId ?? data?.classroom.id ?? ""} onValueChange={selectClass} disabled={!data?.classrooms.length} options={data?.classrooms.length ? data.classrooms.map((classroom) => ({ value: classroom.id, label: classroom.name })) : [{ value: "", label: "반 정보 확인 중" }]} /></label>
       <div className={styles.refresh}><span>{fetching ? "기록을 확인하고 있어요." : updatedAt && active ? `${dateLabel(updatedAt)} 확인` : "서버에 저장된 기록을 확인해요."}</span><Button variant="outline" aria-label="수업 새로고침" disabled={fetching} onClick={() => { setFetching(true); void load(); }}><RefreshCw size={16} aria-hidden="true" /><span>새로고침</span></Button></div>
     </div>
     {error && <div className={styles.error} role="alert"><p>{error}</p><Button variant="outline" disabled={fetching} onClick={() => { setFetching(true); void load(); }}>다시 불러오기</Button>{active && <span>마지막으로 확인한 기록을 표시하고 있어요.</span>}</div>}
@@ -113,10 +111,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId }: { 
       </section>}
       {view === "classes" && <p className={styles.inlineNote}><Link href={`/teacher/students?classId=${active.classroom.id}`}>학생 진행·제출 작품·계정 관리로 이동</Link></p>}
       {view === "students" && <section className={styles.students} aria-labelledby="students-title">
-        <div className={styles.sectionHeading}><div><h2 id="students-title">학생별 학습 현황</h2><p>개념·퀴즈·실습의 진행과 제출된 작품을 확인해요.</p></div><label className={styles.lessonPicker}>확인할 수업<select value={active.selectedLessonId ?? ""} disabled={!active.classroom.openedLessonIds.length} onChange={(event) => { request.current += 1; setFetching(true); setSelection({ classId: active.classroom.id, lessonId: event.target.value }); setError(""); }}>
-          {!active.selectedLessonId && <option value="">열린 수업이 없어요</option>}
-          {active.lessons.filter((item) => active.classroom.openedLessonIds.includes(item.id)).map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-        </select></label></div>
+        <div className={styles.sectionHeading}><div><h2 id="students-title">학생별 학습 현황</h2><p>개념·퀴즈·실습의 진행과 제출된 작품을 확인해요.</p></div><label className={styles.lessonPicker}>확인할 수업<Select label="확인할 수업" value={active.selectedLessonId ?? ""} disabled={!active.classroom.openedLessonIds.length} onValueChange={(value) => { request.current += 1; setFetching(true); setSelection({ classId: active.classroom.id, lessonId: value }); setError(""); }} options={[...(!active.selectedLessonId ? [{ value: "", label: "열린 수업이 없어요" }] : []), ...active.lessons.filter((item) => active.classroom.openedLessonIds.includes(item.id)).map((item) => ({ value: item.id, label: item.title }))]} /></label></div>
         <div className={styles.summary}>
           <div><Users size={19} aria-hidden="true" /><span>등록 학생</span><strong>{active.students.length}<small>명</small></strong></div>
           <div><CheckCircle2 size={19} aria-hidden="true" /><span>수업 완료</span><strong>{lesson ? completed : "—"}<small>{lesson ? "명" : ""}</small></strong></div>

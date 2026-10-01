@@ -1,0 +1,52 @@
+[
+  {
+    "preservedAt": "2026-10-01",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/continuation-ready-20261001",
+    "baseCommit": "de147cc122ec8839e4e88c78e76ee3d405827332",
+    "source": "uncommitted working tree before document role cleanup and requested local UI release",
+    "original": "docs/PRD.md",
+    "preserved": "PRD.md",
+    "sha256": "94cbfaa86796666f214ff3e7832fa1ce12a45ad82497a02edb15f362f849c2f1"
+  },
+  {
+    "preservedAt": "2026-10-01",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/continuation-ready-20261001",
+    "baseCommit": "de147cc122ec8839e4e88c78e76ee3d405827332",
+    "source": "uncommitted working tree before document role cleanup and requested local UI release",
+    "original": "docs/DESIGN.md",
+    "preserved": "DESIGN.md",
+    "sha256": "88ae964ddbf16258739240294423d2dbb7949ba7c700f30a907b6533414a42a9"
+  },
+  {
+    "preservedAt": "2026-10-01",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/continuation-ready-20261001",
+    "baseCommit": "de147cc122ec8839e4e88c78e76ee3d405827332",
+    "source": "uncommitted working tree before document role cleanup and requested local UI release",
+    "original": "docs/DEVELOPMENT.md",
+    "preserved": "DEVELOPMENT.md",
+    "sha256": "05b4aab3b08627951eecec33ac34e3ee11c28a9b268eb9652ba564a9a5057f99"
+  },
+  {
+    "preservedAt": "2026-10-01",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/continuation-ready-20261001",
+    "baseCommit": "de147cc122ec8839e4e88c78e76ee3d405827332",
+    "source": "uncommitted working tree before document role cleanup and requested local UI release",
+    "original": "docs/FIREBASE_SETUP.md",
+    "preserved": "FIREBASE_SETUP.md",
+    "sha256": "07117b15cef34fd372d78177660d1c5cd9727f60e376dfdc56efc0f16364185a"
+  },
+  {
+    "preservedAt": "2026-10-01",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/continuation-ready-20261001",
+    "baseCommit": "de147cc122ec8839e4e88c78e76ee3d405827332",
+    "source": "uncommitted working tree before document role cleanup and requested local UI release",
+    "original": "docs/HANDOFF.md",
+    "preserved": "HANDOFF.md",
+    "sha256": "1f10487886d2ce7c060680ecab29ca567b7e7c5db319f2c04bc59f74d1fe0a8d"
+  }
+]

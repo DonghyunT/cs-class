@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
-import { ArrowDown, ArrowRight, BookOpen, ChevronRight, Mouse, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, BookOpen, Mouse, Sparkles } from "lucide-react";
 import { ReactiveSurface } from "./reactive-surface";
 import { BitExample, ConceptExample, QuizExample } from "./lesson-examples";
 
@@ -358,7 +358,7 @@ export function LessonStory({ paused }: { paused: boolean }) {
               <span className="lesson-status-dot" />
               <span>{scenes[active].eyebrow}</span>
               <span>
-                직접 눌러 보세요 <ChevronRight size={13} />
+                화면 안의 버튼을 눌러 보세요
               </span>
             </div>
           </ReactiveSurface>

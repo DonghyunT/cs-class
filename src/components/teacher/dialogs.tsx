@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { CheckCircle2, ClipboardCheck, KeyRound, Settings2 } from "lucide-react";
 import { useSession } from "@/components/session-provider";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ApiError, classroomApi } from "@/lib/classroom/client";
@@ -55,7 +56,7 @@ export function ManageLessons({ classroom, lessons, onSaved, onLock, onRefresh }
         {lessons.length === 0 && <p>지금은 공개할 수업이 없어요.</p>}
         {lessons.map((lesson) => <label key={lesson.id}><input type="checkbox" checked={draft.openedLessonIds.includes(lesson.id)} disabled={classroom.openedLessonIds.includes(lesson.id)} onChange={(event) => setDraft((previous) => ({ ...previous, openedLessonIds: event.target.checked ? [...previous.openedLessonIds, lesson.id] : previous.openedLessonIds.filter((id) => id !== lesson.id), currentLessonId: !event.target.checked && previous.currentLessonId === lesson.id ? null : previous.currentLessonId }))} /><span><strong>{lesson.title}</strong><small>{classroom.openedLessonIds.includes(lesson.id) ? "이미 열린 수업 · 복습 가능" : "선택하면 학생에게 공개돼요"}</small></span></label>)}
       </fieldset>
-      <label className={styles.dialogField}>이번 수업<select value={draft.currentLessonId ?? ""} disabled={saving || reloading} onChange={(event) => setDraft((previous) => ({ ...previous, currentLessonId: event.target.value || null }))}><option value="">지정하지 않음</option>{lessons.filter((lesson) => draft.openedLessonIds.includes(lesson.id)).map((lesson) => <option key={lesson.id} value={lesson.id}>{lesson.title}</option>)}</select></label>
+      <label className={styles.dialogField}>이번 수업<Select label="이번 수업" value={draft.currentLessonId ?? ""} disabled={saving || reloading} onValueChange={(value) => setDraft((previous) => ({ ...previous, currentLessonId: value || null }))} options={[{ value: "", label: "지정하지 않음" }, ...lessons.filter((lesson) => draft.openedLessonIds.includes(lesson.id)).map((lesson) => ({ value: lesson.id, label: lesson.title }))]} /></label>
       {error && <p role="alert" className={styles.dialogError}>{error}</p>}
       {conflict && <Button variant="outline" disabled={reloading} onClick={() => void refreshSettings()}>{reloading ? "확인 중…" : "최신 설정 확인 후 다시 적용"}</Button>}
       {refreshed && <p role="status" className={styles.dialogNote}>최신 공개 목록을 반영했어요. 선택한 이번 수업을 확인하고 다시 저장해 주세요.</p>}

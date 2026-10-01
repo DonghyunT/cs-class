@@ -20,7 +20,7 @@ export async function api<T>(path: string, body?: unknown, method = body === und
   if (requestingUser !== expectedUser || requestingEpoch !== sessionEpoch) throw new ApiError("SESSION_REPLACED", "계정이 바뀌어 이전 요청을 중단했어요.", 401);
   if (!response.ok) {
     const error = new ApiError(payload.code ?? "SERVER", payload.message ?? "처리하지 못했어요. 잠시 후 다시 시도해 주세요.", response.status);
-    if (response.status === 401 && requestingUser === expectedUser && requestingEpoch === sessionEpoch && !path.startsWith("auth/login") && path !== "auth/google") window.dispatchEvent(new CustomEvent("cs-session-ended", { detail: error.message }));
+    if (response.status === 401 && requestingUser === expectedUser && requestingEpoch === sessionEpoch && !path.startsWith("auth/login") && path !== "auth/google" && path !== "auth/guest") window.dispatchEvent(new CustomEvent("cs-session-ended", { detail: error.message }));
     throw error;
   }
   return payload as T;
@@ -28,6 +28,7 @@ export async function api<T>(path: string, body?: unknown, method = body === und
 export const classroomApi = {
   session: () => api<{ session: Session | null; configured: boolean; reason?: string }>("auth/session"),
   login: (role: "student" | "instructor", studentId: string, password: string) => api<{ session: Session }>("auth/login", { role, studentId, password }),
+  guest: (role: "student" | "teacher") => api<{ session: Session }>("auth/guest", { role }),
   google: (idToken: string) => api<{ session: Session }>("auth/google", { idToken }),
   changePassword: (password: string) => api<{ session: Session }>("auth/password", { password }),
   touch: (idleForMs = 0) => api<{ session: Session }>("auth/activity", { idleForMs }),
