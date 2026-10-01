@@ -21,27 +21,34 @@ Windows의 사용자 npm 캐시에서 `EPERM`이 발생하면 저장소의 Git �
 
 Firebase CLI가 사용자 설정 파일 접근을 거부하면 로컬 에뮬레이터용 터미널에서 `$env:XDG_CONFIG_HOME="$PWD\scratch\firebase-cli-config"`를 설정한 뒤 실행합니다. CLI 설정을 Git 제외 폴더에 분리하며 실제 Firebase 로그인용 터미널에는 적용하지 않습니다.
 
-에뮬레이터·Playwright를 이미 `scratch/`에 설치한 제한된 Windows 환경에서는 기존 캐시를 가리킵니다. `$env:FIREBASE_EMULATORS_PATH="$PWD\scratch\firebase-emulators"`, `$env:PLAYWRIGHT_BROWSERS_PATH="$PWD\scratch\playwright"`를 같은 검사 터미널에 설정합니다. Java가 PATH에 없으면 해당 PC에 설치한 Java 21+의 `bin`을 그 터미널 PATH 앞에 추가합니다. 2026-10-01 이 체크아웃의 예시는 `scratch/tools/java/runtime/jdk-21.0.12.1+1/bin`이며 다른 PC에 같은 경로가 있다고 가정하지 않습니다. 캐시가 없는 새 PC는 최초 설치를 진행합니다.
+에뮬레이터·Playwright를 이미 `scratch/`에 설치한 제한된 Windows 환경에서는 기존 캐시를 가리킵니다. `$env:FIREBASE_EMULATORS_PATH="$PWD\scratch\firebase-emulators"`, `$env:PLAYWRIGHT_BROWSERS_PATH="$PWD\scratch\playwright"`를 같은 검사 터미널에 설정합니다. Chromium이 기본 사용자 캐시인 `$env:LOCALAPPDATA\ms-playwright`에 이미 있으면 재설치하지 않고 그 경로를 사용합니다. Java가 PATH에 없으면 해당 PC에 설치한 Java 21+의 `bin`을 그 터미널 PATH 앞에 추가합니다. 2026-10-01 확인한 두 PC의 경로는 아래와 같으며 다른 PC에도 있다고 가정하지 않습니다. 캐시가 없는 새 PC는 최초 설치를 진행합니다.
 
 이 PC의 새 PowerShell에서는 저장소 루트에서 아래 준비 명령을 함께 실행합니다. `$env:` 설정은 해당 터미널에만 적용되므로 이전 검사 터미널에서 설정했더라도 다시 필요합니다. 로컬 Java·캐시가 없는 다른 PC에서는 위 설치 안내를 먼저 따릅니다.
 
 ```powershell
-$env:PATH = "$PWD\scratch\tools\java\runtime\jdk-21.0.12.1+1\bin;$env:PATH"
+$csJavaBin = @(
+    "$PWD\scratch\tools\java\runtime\jdk-21.0.12.1+1\bin",
+    "$PWD\scratch\tools\java\jdk-21.0.12.1+1-jre\bin"
+) | Where-Object { Test-Path -LiteralPath (Join-Path $_ 'java.exe') } | Select-Object -First 1
+if ($csJavaBin) { $env:PATH = "$csJavaBin;$env:PATH" }
+java -version
 $env:XDG_CONFIG_HOME = "$PWD\scratch\firebase-cli-config"
 $env:FIREBASE_EMULATORS_PATH = "$PWD\scratch\firebase-emulators"
-Remove-Item Env:STITCH_API_KEY -ErrorAction SilentlyContinue
+$csBrowserCache = @("$PWD\scratch\playwright", "$env:LOCALAPPDATA\ms-playwright") |
+    Where-Object { (Test-Path -LiteralPath $_) -and (Get-ChildItem -LiteralPath $_ -Directory -Filter 'chromium*') } | Select-Object -First 1
+if ($csBrowserCache) { $env:PLAYWRIGHT_BROWSERS_PATH = $csBrowserCache }
+Get-ChildItem Env: | Where-Object { $_.Name -match '(TOKEN|SECRET|PASSWORD|API_KEY|CREDENTIAL)' } |
+    ForEach-Object { Remove-Item -LiteralPath ('Env:' + $_.Name) }
 npm.cmd run dev:emulator
 ```
 
-`where.exe java`·`java -version`이 되는데도 제한된 실행에서 Java·`tar`·Playwright 자식 프로세스가 `EPERM`이면 설치 실패로 단정하지 않습니다. 허용된 로컬 검사 실행에서 같은 명령을 확인합니다. 위 Stitch 키 제거는 검사 터미널에만 적용하며 사용자 저장 설정을 지우지 않습니다. Firebase CLI 진단 로그에는 실행 환경 전체가 포함될 수 있으므로 원문을 출력하거나 공유하지 않습니다.
+`where.exe java`·`java -version`이 되는데도 제한된 실행에서 Java·`tar`·Playwright 자식 프로세스가 `EPERM`이면 설치 실패로 단정하지 않습니다. 허용된 로컬 검사 실행에서 같은 명령을 확인합니다. 위 비밀 환경변수 제거는 demo 검사 터미널에만 적용하며 사용자 저장 설정을 지우지 않습니다. 실제 Firebase 연결용 터미널에는 적용하지 않습니다. Firebase CLI 진단 로그에는 실행 환경 전체가 포함될 수 있으므로 원문을 출력하거나 공유하지 않습니다.
 
-[학생 입장](http://localhost:3000/login/student)에서 합성 학번 `20101`과 [테스트 설정의 초기 비밀번호](../scripts/local-test-env.mjs)를 사용합니다. 첫 입장에는 본인 테스트 비밀번호로 바꿉니다. [교사 입장](http://localhost:3000/login/teacher)의 강사 계정은 같은 파일의 강사 비밀번호를 사용하며 10·11반을 확인합니다. `Ctrl+C`로 종료하면 에뮬레이터 기록은 보존되지 않습니다.
+[학생 입장](http://localhost:3000/login/student)·[교사 입장](http://localhost:3000/login/teacher) 아래의 게스트 버튼으로 바로 체험할 수 있습니다. 일반 합성 학번 `20101`은 [테스트 설정의 초기 비밀번호](../scripts/local-test-env.mjs)로 입장한 뒤 본인 테스트 비밀번호로 바꿉니다. 교사 입장의 강사 계정은 같은 파일의 강사 비밀번호를 사용하며 10·11반을 확인합니다. `Ctrl+C`로 종료하면 에뮬레이터 기록은 보존되지 않습니다.
 
 실제 Firebase로 개발할 때만 [서버 설정 안내](FIREBASE_SETUP.md#다른-pc의-서버-설정)에 따라 환경파일과 관리자 인증을 별도 준비한 뒤 `npm run dev`를 실행합니다. `.env.local`과 관리자 키는 Git에 없으며 새 PC에 자동 전달되지 않습니다. Codex에서 저장소 루트를 열고 다음처럼 요청하면 됩니다.
 
 > AGENTS.md와 docs/HANDOFF.md를 읽고 CS Class를 이어가자. 먼저 현재 브랜치·미커밋 변경·원격 동기화를 확인하고 진행 중인 작업과 다음 범위를 정하자.
-
-루트 통합 전부터 사용한 PC에서는 이전 개발 서버를 종료하고 **저장소 루트에서 `npm ci`로 다시 설치**합니다. 편집기 작업 폴더·터미널 시작 위치가 `platform/`으로 지정되어 있다면 `cs-class/`로 바꿉니다. Git에 없던 옛 `platform/node_modules/`·`.next/` 캐시가 남을 수 있으며, 계속 Git·코드 검사에서 제외됩니다. 더는 사용하지 않지만 `.env`·개인 파일·미커밋 소스가 섞여 있지 않은지 확인하기 전에는 `platform/` 전체를 삭제하지 않습니다.
 
 [로컬 앱](http://localhost:3000/)을 열고 [HANDOFF](HANDOFF.md)를 읽으면 이어갈 수 있습니다. VS Code/Codex의 과거 대화가 없어도 이 문서와 저장소의 스크린샷을 기준으로 작업합니다.
 
@@ -56,17 +63,31 @@ git diff --stat
 git ls-files --others --exclude-standard
 ```
 
-- 현재 브랜치·기준 커밋·미추적 파일·이식 묶음의 이름은 HANDOFF에서 확인합니다. 프로토타입이 미커밋이면 새 PC의 원격 복제본에는 없을 수 있습니다. `src/app/prototype/programming/page.tsx`·대상 검사·담당 문서가 실제로 있는지 확인합니다.
+- 현재 브랜치·기준 커밋·미추적 파일·이식 묶음의 이름은 HANDOFF에서 확인합니다. 미커밋 작업은 원격 복제본에 없을 수 있으므로 새 소스·대상 검사·담당 문서가 함께 포함됐는지 확인합니다.
 - 이식 묶음은 저장소 전체가 아닌 진행 중 파일의 스냅샷입니다. `TRANSFER.md`와 `handoff-manifest.json`을 먼저 읽고 SHA-256·기준 커밋·대상 파일의 기존 변경을 확인한 뒤 적용합니다. 깨끗한 별도 체크아웃에서 기준 커밋으로 `codex/` 브랜치를 만들고 `workspace/` 아래 파일을 같은 상대 경로로 복사하는 방식이 가장 단순합니다.
 - 이미 수정 중인 PC에서는 파일을 통째로 덮어쓰지 않고 기준 파일과 양쪽 변경을 비교해 합칩니다. 미추적 파일의 이름 충돌도 확인합니다. `.git`·비밀 설정·학생 자료·원본 PPT·캐시를 복사하는 방식으로 이식하지 않습니다.
 - 정상적인 Git 인계를 마친 뒤에는 전달한 커밋/브랜치와 최신 상태를 HANDOFF에 갱신합니다. 오래된 이식 묶음은 제작 시점의 참고본으로 구분하고 새 변경을 대신하지 않습니다. 생성된 스냅샷은 원격 동기화나 커밋 완료를 뜻하지 않습니다.
 - 새 PC의 플러그인은 Ponytail 스킬과 Context7 도구가 실제로 있는지 확인합니다. 설치 경로는 PC마다 다르며 대화에서 쓴 에이전트 이름·도구 호출 상태도 자동 복원되지 않습니다. 사용 가능한 스킬·로컬 문서·실제 코드로 이어갑니다.
 
+## 로컬 게스트 입장
+
+`npm run dev:emulator`가 [로컬 테스트 설정](../scripts/local-test-env.mjs)을 적용하고 [시드](../scripts/seed-emulator.mjs)에서 별도 게스트 학생 `21099`·교사를 준비합니다. 10반에 순서·순서도·엔트리봇을 공개하고 순서 수업을 이번 수업으로 지정합니다. 버튼 두 개는 학생·교사 로그인 카드에 함께 있으며 계정 입력 없이 각 대시보드로 이동합니다. 정책과 공유 계정의 범위는 [PRD](PRD.md#로컬-게스트-체험)를 따릅니다.
+
+표시와 POST `/api/auth/guest`는 [서버 조건](../src/lib/server/guest-mode.ts)을 같이 확인합니다. `VERCEL`이 없고, `FIREBASE_PROJECT_ID=demo-cs-class`·`FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099`·`FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`·서버 전용 `CS_TEST_GUEST_PASSWORD`가 모두 준비되어야 합니다. 파일을 배포에서 제외하는 방식이 아니라 동일한 코드가 실행 환경으로 표시와 요청을 판정합니다. 테스트 비밀번호를 브라우저에 전달하지 않으며 기존 Firebase 인증과 서버 세션을 사용합니다. `npm run dev`의 실제 Firebase 연결에는 게스트가 없습니다. 교사로 비밀번호 초기화를 시험하면 게스트 학생도 기존 정책에 따라 버튼 입장이 실패하므로 로컬 에뮬레이터를 종료·재실행해 계정을 복구합니다. 재실행하면 기존 로컬 기록도 사라집니다.
+
+실행 중인 로컬 에뮬레이터의 대상 검사는 `npm run test:e2e:running -- tests/guest-login.spec.ts`입니다. 환경 조건·요청 출처·역할/담당 반·계정 잠금·기록 복원·실패 입력 보존·모바일/키보드를 확인합니다. 이 검사를 실행하면 게스트 학생의 순서 수업 기록을 초기화하므로 수동 체험 중인 기록을 보존해야 할 때는 검사를 함께 실행하지 않습니다.
+
+## 공통 선택 메뉴와 로그인 화면
+
+앱에서 직접 구현하는 반·수업·프로그래밍 실습의 선택은 `src/components/ui/select.tsx`·`select.module.css`로 통일합니다. 설치된 Base UI의 Select를 사용하며 추가 의존성이 없습니다. 선택 값·비활성 상태·저장 전 이동 확인은 호출 화면에서 기존처럼 관리하고, 화면별 CSS는 배치와 크기만 조정합니다. 펼침창은 포털에 표시되어 대화상자와 좁은 화면에서 잘리지 않습니다.
+
+로그인 구현은 `src/components/login-screen.tsx`와 인접 CSS Module에 있습니다. 비밀번호 방식의 인증 역할은 기존 `instructor`이며 공통 세션·권한 계약을 사용합니다. 디자인 기준은 [DESIGN](DESIGN.md#확정된-공통-기준), 검사는 `tests/interface-polish.spec.ts`의 로그인 실패/복원·담당 반 권한·키보드·대화상자·320/390/768/1440px와 기존 일정/교사/프로그래밍 흐름을 따릅니다. 선택 검사는 네이티브 `selectOption` 대신 combobox를 열고 실제 option을 선택합니다.
+
 ## 대시보드 파일럿
 
 학생 `/student`·교사 `/teacher`는 공통 할 일·일정·수업 바로가기를 사용합니다. 학생의 전체 수업은 `/student/lessons`, 교사의 수업 설정은 `/teacher/classes`, 학생 진행·제출·계정은 `/teacher/students`, 전체 일정은 각각 `/student/schedule`·`/teacher/schedule`입니다. 교사 상세 링크의 `classId`·`lessonId`·`studentId`는 서버 권한 안에서 조회 조건으로 사용합니다.
 
-- 공통 화면·목록·일정·담당 CSS는 `src/components/dashboard/`에 둡니다. `use-saved-list.ts`는 두 목록의 직렬 저장·실패 의도·명시적 충돌 재시도를 공유합니다. 기존 학습 저장·이동 보호를 재사용하며 개인 체크가 `csWork`를 변경하지 않습니다.
+- 공통 화면·목록·일정·담당 CSS는 `src/components/dashboard/`에 둡니다. `use-saved-list.ts`는 두 목록의 직렬 저장·실패 의도·명시적 충돌 재시도를 공유합니다. `todos.tsx`는 이 큐로 개인 할 일의 즉시 삭제/완료 표시와 실패 시 삭제 행 복원을 처리하고 저장 중인 행만 잠급니다. 반 일정의 삭제 처리는 기존대로 유지합니다. 기존 학습 저장·이동 보호를 재사용하며 개인 체크가 `csWork`를 변경하지 않습니다.
 - 서버 저장과 권한은 `src/lib/server/planner.ts`, 계약·한국 날짜는 `src/lib/classroom/planner.ts`에서 관리합니다. 저장 모델은 [Firebase 안내](FIREBASE_SETUP.md#데이터와-남은-한계), 파일럿 가정·한도·미전송 내용의 경계는 [PRD](PRD.md#작은-버전의-경계와-저장-동작)를 따릅니다.
 - 로컬 `dev:emulator`를 계속 실행한 상태에서 목록을 추가한 뒤 새로고침·로그아웃·같은 합성 계정 재로그인으로 복원을 확인합니다. 교사 입장의 강사는 담당 10·11반의 일정을 등록하고 해당 반의 합성 학생은 조회합니다. 운영 계정·자료는 사용하지 않습니다.
 - 대상 검사는 `tests/dashboard-pilot.spec.ts`·`tests/loading-states.spec.ts`입니다. 변경 중에는 실행 중인 에뮬레이터에서 `npm run test:e2e:running -- tests/<target>.spec.ts`로 확인하며 최종 통합은 [전체 검증](#검증)을 따릅니다.
@@ -97,7 +118,7 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 
 ## EntryJS 실습
 
-`entry-bot-lab`은 실제 `@entrylabs/entry` **4.0.23** 작업실을 사용합니다. 교사가 해당 수업을 반에 공개하면 학생의 열린 수업에 나타납니다. 에뮬레이터에서는 교사 입장의 강사 계정으로 10반 수업 관리에서 엔트리봇 수업을 공개하고, 합성 학생 `21001`로 입장해 실습 탭을 선택하면 확인할 수 있습니다. 강사·학생 비밀번호는 위 로컬 테스트 설정을 따릅니다.
+`entry-bot-lab`은 실제 `@entrylabs/entry` **4.0.23** 작업실을 사용합니다. 교사가 해당 수업을 반에 공개하면 학생의 열린 수업에 나타납니다. 에뮬레이터 시드는 10반에 엔트리봇을 공개합니다. 교사 수업 관리에서 공개 상태를 확인하고 합성 학생 `21001` 또는 게스트 학생으로 실습 탭을 선택합니다. 강사·학생 비밀번호는 위 로컬 테스트 설정을 따릅니다.
 
 - `npm ci`의 `postinstall`과 `npm run dev`·`npm run build`의 준비 단계가 [자산 목록](../scripts/entryjs-assets.json)의 버전·SHA-512로 브라우저 파일을 준비합니다. npm 레지스트리·공식 Entry CDN·고정한 공식 예제 커밋을 사용하며 브라우저는 `/entryjs/vendor/`의 로컬 파일을 읽습니다. 첫 설치에는 인터넷과 `tar`가 필요합니다(Windows 기본 tar 또는 해당 OS의 tar). 자산·다운로드 캐시는 Git 제외 `public/entryjs/vendor/`·`scratch/entryjs/`에 생성됩니다. 필요하면 `npm run prepare:entryjs`로 다시 준비합니다. 무결성이 다른 파일은 빌드에 사용하지 않습니다.
 - [작업실 HTML](../public/entryjs/workspace.html)·[브리지](../public/entryjs/workspace.js)는 `allow-scripts`만 허용한 iframe에서 실행합니다. Next.js 앱의 React 19와 EntryJS 보조 UI의 React 18을 분리합니다. iframe의 설정 저장소는 메모리이며 부모 화면의 쿠키·DOM·저장소에 접근할 수 없습니다. 공개 자산에만 CORS와 OPTIONS를 허용하고 수업 API의 인증·권한·Origin 검사는 유지합니다.
@@ -117,7 +138,7 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 - [브리지](../public/entryjs/workspace.js)의 이름 전용 기록은 질문·응답·실제 말풍선을 중지 전에 수집합니다. 네이티브 질문창을 사용하고 검사 목적으로 답을 주입하지 않습니다. 질문 응답 대기를 제외한 실행 시간 15초가 지나면 중지합니다. 질문 필드의 한국어 `input/keyup`과 조합 중 Enter를 처리합니다. 실행 이벤트 안의 전체 export는 엔진을 멈추므로 그 순간에는 코드만 복사합니다.
 - v2 상태는 `cs-class-programming-prototype-v2`에 저장합니다. v1이 있으면 순서·시작 신호·미완성 입력 그대로 옮기며 v1 키를 삭제하지 않습니다. 이름만 변환 실패하면 다른 답안·완료를 보존하고 이전 미니 코드 또는 `nameImportRaw`를 읽기 전용으로 제공합니다. 작품/원문 각각 100,000자, 전체 JSON 500,000자 상한을 저장·복원에 함께 적용합니다.
 - 이동·도움·확인·완료 전에 활성 입력을 확정하고 작품을 내보냅니다. 단계·미션·교사/홈 이동은 탭 저장까지 확인하며 실패 시 작업실을 유지합니다. 초기 로딩/파일 실패만 있고 실제 편집이 없으면 저장된 초안으로 이동할 수 있습니다. 도움은 `mini | entry`의 고정 작품·실행 스냅샷이며 실제 전송은 없습니다. 실행 근거/확인 결과는 화면 메모리로, 단계/미션 이동·새로고침 후에는 다시 실행합니다.
-- 변경 중에는 typecheck와 [파일럿 검사](../tests/name-entry-pilot.spec.ts)를 사용합니다. 이번 최종 검사는 사용자 요청에 따라 영향받는 공개 체험과 공용 EntryJS 작업실만 실행합니다: `npm run test:e2e:running -- tests/name-entry-pilot.spec.ts tests/programming-prototype.spec.ts tests/entryjs-ui.spec.ts`. 이 명령은 로컬 demo 에뮬레이터가 실행 중일 때만 씁니다. lint/typecheck/build도 확인하고 범위·한계는 HANDOFF에 남깁니다.
+- 변경 중에는 typecheck와 [파일럿 검사](../tests/name-entry-pilot.spec.ts)를 사용합니다. 공개 체험·공용 EntryJS 브리지의 영향 범위를 함께 확인할 때는 다음 대상 검사를 사용합니다: `npm run test:e2e:running -- tests/name-entry-pilot.spec.ts tests/programming-prototype.spec.ts tests/entryjs-ui.spec.ts`. 이 명령은 로컬 demo 에뮬레이터가 실행 중일 때만 씁니다. 최종 통합은 [검증](#검증)을 따르고 실제 실행 범위·한계는 HANDOFF에 남깁니다.
 
 곱셈/평균·방향키 미션의 실제 Entry 전환, 운영 Lesson/Work 편입, 서버 범용 실행 검사·AI·교사 전송은 후속 설계입니다. Context7 검색의 Entry UI 라이브러리를 EntryJS 근거로 쓰지 않으며 위 [공식 API/이벤트](#entryjs-실습)와 설치본 4.0.23을 확인합니다.
 
@@ -140,7 +161,7 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 | [programming.ts](../src/lib/prototype/programming.ts) | 개념/퀴즈/미션 데이터·타입·초기값·복원 검사·순수 `runProgram/checkMission` |
 | [programming-prototype.spec.ts](../tests/programming-prototype.spec.ts) | 순수 실행/복원·전체 체험·키보드/좁은 창·저장 실패의 4개 검사 |
 
-기존 `Stage`·Brand·Button·NavigationProvider를 재사용합니다. 운영 Lesson/Work·서버 저장·API·권한·의존성은 변경하지 않았습니다. 공통 루트의 `SessionProvider`는 기존처럼 세션 확인을 수행하므로 이 체험을 ‘HTTP/API 요청이 전혀 없는 앱’으로 설명하지 않습니다. 체험 자체는 로그인을 요구하지 않고 학습 기록을 서버에 보내지 않습니다.
+기존 `Stage`·Brand·Button·NavigationProvider를 재사용합니다. 공개 체험은 운영 Lesson/Work·서버 저장에서 분리되어 있습니다. 공통 루트의 `SessionProvider`는 기존처럼 세션 확인을 수행하므로 이 체험을 ‘HTTP/API 요청이 전혀 없는 앱’으로 설명하지 않습니다. 체험 자체는 로그인을 요구하지 않고 학습 기록을 서버에 보내지 않습니다.
 
 ### 상태와 저장 경계
 
@@ -233,7 +254,7 @@ macOS·Linux에서는 Codex를 시작하는 환경에 같은 이름의 환경변
 
 - 프로젝트: [CS Class 랜딩페이지 디자인](https://stitch.withgoogle.com/projects/9952170337891001891). 키는 `STITCH_API_KEY`로만 참조하며 [Stitch 연결](#stitch-연결)에 PC별 설정을 설명합니다.
 - 확인한 도구는 `get_project`, `list_screens`, `get_screen`, `edit_screens`입니다. 목록에 누락되면 아래 화면 ID로 조회합니다. 로컬 수정은 Stitch에 자동 반영되지 않습니다.
-- 테마의 과거 Plus Jakarta Sans보다 현재 DESIGN의 Pretendard·색·컴포넌트 기준이 우선입니다. 이번 LMS 구현에서는 새 Stitch 생성을 하지 않았습니다.
+- 테마의 과거 Plus Jakarta Sans보다 현재 DESIGN의 Pretendard·색·컴포넌트 기준이 우선입니다.
 
 | 화면 | 최초 ID | 수정 결과 ID |
 | --- | --- | --- |
@@ -254,7 +275,4 @@ macOS·Linux에서는 Codex를 시작하는 환경에 같은 이름의 환경변
 - 정책의 식별자·권한·초안/제출·완료 의미를 위 계약에 반영하고, 서버 인증은 `src/lib/server/auth.ts`, 수업 저장은 `classroom.ts`·`learning.ts`, 목록 저장은 `planner.ts`에서 함께 확인합니다.
 - 변경한 계약을 쓰는 학생·교사 양쪽 호출부를 찾고 만료·권한 부족·통신 실패·버전 충돌·늦은 응답을 대상으로 검사합니다. 환경별 실제 결과는 HANDOFF에 남깁니다.
 
-## 이전 구조를 확인해야 할 때
-
-- 루트 통합은 [PR #5](https://github.com/DonghyunT/cs-class/pull/5)에 있습니다. 통합 전 `e2dfaf1`(PR #4) 버전을 다시 빌드해 운영하려면 코드와 함께 Vercel Root Directory도 `platform`으로 맞춰야 합니다. 이미 만들어진 배포로 되돌리는 작업과 구분하고, 실제 변경은 대상·승인 범위를 확인한 뒤 진행합니다.
-- 이전 정적 시안 네 파일은 `c7bc397:web/`에 있습니다. 예를 들어 `git show c7bc397:web/curriculum.js`로 순서도 수업 예시를 확인할 수 있습니다. 현재 개발 대상은 루트의 앱 하나이며, 옛 수업 콘텐츠가 새 앱에 모두 이식됐다는 뜻은 아닙니다.
+이전 구조·정적 시안은 [코드 보관함](../archive/README.md)과 Git 이력에서 확인합니다. 현재 실행·배포 기준은 저장소 루트의 앱과 [서버 설정](FIREBASE_SETUP.md#vercel-서버-설정)입니다.

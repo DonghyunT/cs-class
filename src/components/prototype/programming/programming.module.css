@@ -4,7 +4,7 @@
 .prototype button:disabled { cursor: default; opacity: .5; }
 .prototype [data-slot="button"] { min-height: 46px; height: auto; white-space: normal; line-height: 1.45; padding-block: 11px; }
 .prototype [data-slot="button"][data-variant="default"] { background: var(--blue); }
-.prototype input:not([type="radio"]), .prototype select, .prototype textarea { width: 100%; min-height: 44px; padding: 9px 12px; background: white; color: var(--ink); border: 1px solid #bfcbd9; border-radius: 9px; }
+.prototype input:not([type="radio"]), .prototype textarea { width: 100%; min-height: 44px; padding: 9px 12px; background: white; color: var(--ink); border: 1px solid #bfcbd9; border-radius: 9px; }
 .prototype textarea { resize: vertical; line-height: 1.65; min-height: 86px; }
 .prototype fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .prototype label { font-weight: 600; }
@@ -164,7 +164,7 @@
 .blockTools button { width: 36px; min-height: 44px; display: grid; place-items: center; color: #526173; border-radius: 7px; }
 .blockTools button:hover:not(:disabled) { background: #ffffff99; }
 .blockValue { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; font-weight: 600; }
-.blockValue select, .blockValue input { width: auto !important; max-width: 100%; min-width: 65px; padding-inline: 10px !important; font-size: 12px !important; }
+.blockValue :global([data-slot="select-trigger"]), .blockValue input { width: auto !important; max-width: 100%; min-width: 65px; padding-inline: 10px !important; font-size: 12px !important; }
 .blockValue input { width: 82px !important; }
 .blockValue em { font-style: normal; color: #62507e; background: white; padding: 4px 9px; border-radius: 8px; }
 .smallText { font-size: 11px; color: var(--quiet); line-height: 1.8; }
@@ -327,7 +327,7 @@
   .blockList > li { margin-left: 4px; padding-inline: 9px; }
   .blockTools button { width: 44px; }
   .blockValue { font-size: 11px; }
-  .blockValue select { font-size: 11px !important; }
+  .blockValue :global([data-slot="select-trigger"]) { font-size: 11px !important; }
   .runTools { flex-wrap: wrap; }
   .runTools [data-slot="button"] { padding-inline: 12px; font-size: 12px; }
   .stage { height: 260px; }

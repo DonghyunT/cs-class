@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, BookOpen, CalendarDays, ListChecks, RefreshCw } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { LoadingState, Skeleton } from "@/components/ui/loading-state";
 import { useSession } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
@@ -53,9 +54,7 @@ function Dashboard({ session, teacher }: { session: Session; teacher: boolean })
   const unfinished = student?.lessons.filter((lesson) => progressFor(lesson, student.work[lesson.id]).status !== "completed") ?? [];
   return <div className={`${styles.page} ${styles.dashboardHome}`}>
     <header className={styles.heading}><div><span className={styles.eyebrow}>{teacher ? "선생님 공간" : `${session.studentId} 학생의 교실`}</span><h1>오늘은 무엇을 해볼까요?</h1><p>할 일을 살펴보고, 하던 활동을 이어가세요.</p></div><time dateTime={seoulToday()}><CalendarDays size={16} aria-hidden="true" />{eventDate(seoulToday())}</time></header>
-    {teacher && session.classIds.length > 0 && <div className={styles.toolbar}><label className={styles.classPicker}>담당 반<select value={classId} onChange={async (event) => { const value = event.target.value; if (await beforeLeave()) { request.current += 1; setClassId(value); } }}>
-      {(staff?.classrooms ?? session.classIds.map((id) => ({ id, name: `2학년 ${id.split("-")[1]}반` }))).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-    </select></label><Button variant="ghost" aria-label="수업 새로고침" onClick={() => void refresh()}><RefreshCw size={17} aria-hidden="true" /></Button></div>}
+    {teacher && session.classIds.length > 0 && <div className={styles.toolbar}><label className={styles.classPicker}>담당 반<Select label="담당 반" value={classId ?? ""} onValueChange={async (value) => { if (await beforeLeave()) { request.current += 1; setClassId(value); } }} options={(staff?.classrooms ?? session.classIds.map((id) => ({ id, name: `2학년 ${id.split("-")[1]}반` }))).map((item) => ({ value: item.id, label: item.name }))} /></label><Button variant="ghost" aria-label="수업 새로고침" onClick={() => void refresh()}><RefreshCw size={17} aria-hidden="true" /></Button></div>}
     {!teacher && <Button className={styles.refresh} variant="ghost" aria-label="수업 새로고침" onClick={() => void refresh()}><RefreshCw size={16} aria-hidden="true" />수업 기록 새로고침</Button>}
     {error && <div className={styles.error} role="alert"><p>{error} {active && "마지막으로 확인한 수업 기록이에요."}</p><Button variant="outline" onClick={() => void refresh()}>수업 다시 불러오기</Button></div>}
     {loading && !active && !error && <LoadingState>수업 기록을 확인하고 있어요.</LoadingState>}

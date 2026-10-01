@@ -119,7 +119,9 @@ test("교사 실제 기록 · 제출 작품 · 수업 지정 · 초기화 · 작
   for (const type of ["validate-practice", "submit-practice"]) work = await (await page.request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type } } })).json();
   await readyTeacher(page.request);
   await page.goto("/teacher/students");
-  await expect(page.getByRole("combobox", { name: "담당 반" }).getByRole("option")).toHaveCount(11);
+  await page.getByRole("combobox", { name: "담당 반" }).click();
+  await expect(page.getByRole("option")).toHaveCount(11);
+  await page.keyboard.press("Escape");
   await page.getByLabel("학번 검색").fill("20101");
   await page.getByRole("button", { name: "20101 제출 작품 보기" }).click();
   await expect(page.getByRole("dialog")).toContainText("20101 학생의 제출 작품");
@@ -127,7 +129,8 @@ test("교사 실제 기록 · 제출 작품 · 수업 지정 · 초기화 · 작
   await page.keyboard.press("Escape");
   await page.getByRole("navigation", { name: "교실 메뉴" }).getByRole("link", { name: "수업 관리", exact: true }).click();
   await page.getByRole("button", { name: "수업 관리", exact: true }).click();
-  await page.getByRole("combobox", { name: "이번 수업", exact: true }).selectOption("");
+  await page.getByRole("combobox", { name: "이번 수업", exact: true }).click();
+  await page.getByRole("option", { name: "지정하지 않음", exact: true }).click();
   await page.getByRole("button", { name: "설정 저장", exact: true }).click();
   await expect(page.getByText("2학년 1반 수업 설정을 저장했어요.")).toBeVisible();
   expect((await db.collection("csClasses").doc("2-1").get()).data()!.openedLessonIds).toEqual([lessonId]);

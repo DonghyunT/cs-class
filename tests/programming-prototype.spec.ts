@@ -83,7 +83,8 @@ test("개념→퀴즈 오답 재도전→실습·도움·교사 피드백과 재
   await expect(page.getByRole("tab", { name: "실습 1/3" })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("button", { name: "곱셈 계산기", exact: false }).click();
   for (const name of ["묻고 대답 기다리기", "묻고 대답 기다리기", "대답을 변수에 저장하기", "계산해서 말하기"]) await page.getByRole("button", { name, exact: true }).click();
-  await page.getByLabel("4번 블록 변수").selectOption("B");
+  await page.getByLabel("4번 블록 변수").click();
+  await page.getByRole("option", { name: "B", exact: true }).click();
   await page.getByRole("button", { name: "실행하기", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "계산하려면 A와 B" })).toBeVisible();
   await page.getByRole("button", { name: "막혔어요" }).click();
@@ -103,7 +104,8 @@ test("개념→퀴즈 오답 재도전→실습·도움·교사 피드백과 재
   await page.getByRole("button", { name: "대답을 변수에 저장하기", exact: true }).click();
   const id = await page.locator("li[data-kind='store']").last().getAttribute("id");
   const block = page.locator(`#${id}`);
-  await block.getByRole("combobox").selectOption("A");
+  await block.getByRole("combobox").click();
+  await page.getByRole("option", { name: "A", exact: true }).click();
   for (let i = 0; i < 3; i++) await block.getByRole("button", { name: /위로 이동/ }).click();
   await page.getByRole("button", { name: "실행하기", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "A × B = 24" })).toBeVisible();
@@ -129,7 +131,8 @@ test("방향키는 무대에서만 동작하고 중지·좁은 창·탭 이동�
   await page.goto("/prototype/programming");
   await page.getByRole("tab", { name: "실습 0/3" }).click();
   await page.getByRole("button", { name: "방향키로 강아지 움직이기", exact: false }).click();
-  await page.getByLabel("1번 블록 시작 신호").selectOption("ArrowRight");
+  await page.getByLabel("1번 블록 시작 신호").click();
+  await page.getByRole("option", { name: "오른쪽 키", exact: true }).click();
   await page.getByRole("button", { name: "이동 방향 정하기", exact: true }).click();
   await page.getByRole("button", { name: "이동 방향으로 움직이기", exact: true }).click();
   const stage = page.getByRole("group", { name: "강아지 실행 무대" });

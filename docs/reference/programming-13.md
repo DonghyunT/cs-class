@@ -87,4 +87,4 @@
 | [실습 · 390px](programming-13/practice-mobile.png) | 세로 작업 흐름·입력·키보드 |
 | [교사 · 390px](programming-13/teacher-mobile.png) | 요청 당시 작품·피드백·해결 상태 |
 
-전체 E2E 55개와 reviewer 확인은 [HANDOFF](../HANDOFF.md#프로그래밍-13차시-프로토타입)에 기록합니다. 2026-10-01 문서 정리에서 화면을 새로 실행·촬영한 것은 아닙니다.
+촬영 당시 전체 E2E 55개와 reviewer 확인은 [보관한 검증 기록](../archive/cs-class/2026-10-01-before-local-ui-release/HANDOFF.md#프로그래밍-13차시-프로토타입)에 있습니다. 2026-10-01 문서 정리에서 화면을 새로 실행·촬영한 것은 아닙니다. 최신 상태는 [HANDOFF](../HANDOFF.md)를 따릅니다.
