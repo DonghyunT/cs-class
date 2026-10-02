@@ -1,25 +1,37 @@
 # 이어갈 작업
 
-갱신: 2026-10-01(Asia/Seoul). 현재 구현·검증·배포 상태와 다음 행동을 확인하는 시작점입니다. 정책은 [PRD](PRD.md), 표현은 [DESIGN](DESIGN.md), 실행은 [DEVELOPMENT](DEVELOPMENT.md), 서버 설정은 [FIREBASE_SETUP](FIREBASE_SETUP.md)을 따릅니다. 누적 이력은 [보관함](archive/README.md)에 있습니다.
+갱신: 2026-10-02(Asia/Seoul). 현재 구현·검증·배포 상태와 다음 행동을 확인하는 시작점입니다. 정책은 [PRD](PRD.md), 표현은 [DESIGN](DESIGN.md), 실행은 [DEVELOPMENT](DEVELOPMENT.md), 서버 설정은 [FIREBASE_SETUP](FIREBASE_SETUP.md)을 따릅니다. 누적 이력은 [보관함](archive/README.md)에 있습니다.
 
 ## 현재 작업 상태
 
 | 항목 | 확인 상태 |
 | --- | --- |
-| 브랜치·미커밋 | `main`·`origin/main` 동기화, 미커밋 없음. 기능 병합 SHA `9fd9df4863fb993fe225be4bf752fc6887452e4a`. 후속 인계 문서 커밋도 앱·검사는 동일하며 최신 HEAD는 실제 Git 로그로 확인. 릴리스 브랜치는 로컬·원격 정리 |
-| 구현 | 로컬 학생/교사 게스트, 개인 할 일의 즉시 반영·행별 대기·실패 복원, 동등한 교사 로그인 버튼, 공통 둥근 Select, 홈 안내 문구 정리 완료 |
-| 검증 | 10/1 새 프로덕션 빌드·demo 에뮬레이터의 최종 전체 E2E **73개 통과**(4.8분). lint·typecheck·build 통과. 문서·보관 해시는 아래 확인 범위 참조 |
-| 통합·배포 | [PR #15](https://github.com/DonghyunT/cs-class/pull/15) main 병합·Production 배포·운영 API/UI 확인 완료. 로컬/PR/브랜치/기능 main에서 전체 73개 통과. 게스트는 운영 화면 미표시·API 404 |
-| 다음 행동 | 최신 main으로 이어가기. 로컬 `dev:emulator`를 다시 실행해 새 게스트 계정 준비 완료. 이후 범위는 아래 미결정 중 사용자 요청으로 선택 |
+| 브랜치·미커밋 | `codex/security-classroom-auth`에서 보안 수정 중. 기준은 최신 `origin/main`의 `8e5a694b12782e4abe6cc022c6c34754148be565`. 미커밋·신규 소스 포함 |
+| 구현 | 학생별 30분 임시 비밀번호·Firebase 비밀번호 분리, 타인 오답에 의한 정상 로그인 잠금 방지, 서버 수업 본문 권한 검사, 운영 쓰기 점검 폐기. 기존 학습 기록·개인 비밀번호·로컬 게스트 유지 |
+| 검증 | 10/2 새 프로덕션 빌드·demo 에뮬레이터에서 전체 E2E **79개 통과**(7.1분), lint·typecheck·build 통과. 이후 27명 동시 로그인을 추가한 보안·화면 대상 **15개 통과**(1.1분) |
+| 통합·배포 | 독립 조사·패치 검토 완료, 확정된 추가 권한 우회 없음. 사용자 승인으로 PR·main 병합·Production 배포 진행 |
+| 다음 행동 | PR 자동 검사와 운영 배포 확인을 마무리. Firebase 직접 비밀번호 경로의 플랫폼 정책은 별도 확인 필요 |
 
-### 이번 변경의 범위
+### 10/2 보안 수정과 운영 영향
+
+교사·강사의 담당 반 확인과 기존 초기화 버튼은 유지합니다. 초기화 결과 창에 해당 학생만 사용할 새 임시 비밀번호와 만료 시각을 보여 주고, 학생은 기존 입장 화면에서 개인 비밀번호를 설정합니다. DB에는 임시값의 해시·만료 시각만 남기며 개인 비밀번호 설정 후 제거합니다. 실제 운영 계정·학생 기록·외부 설정을 자동 변경하지 않았습니다.
+
+이미 개인 비밀번호를 정한 계정은 기존 비밀번호로 계속 입장합니다. `mustChangePassword: true`이면서 새 임시 검증값이 없는 기존 공통 비밀번호 계정은 교사가 학생별로 초기화해야 합니다. 최초 일괄 등록 도구는 아직 미구현이며 기존 엑셀의 공통 비밀번호 열을 운영 발급에 사용하지 않습니다. [현재 정책](PRD.md#학생-비밀번호와-초기화)과 [복구 절차](FIREBASE_SETUP.md#계정-변경-장애-복구)를 따릅니다.
+
+로그인은 Vercel가 정한 출처당 분당 600건과 계정·입력값 조합당 15분 12건을 제한합니다. 오답은 정상 비밀번호의 예산을 소모하지 않습니다. Firebase의 일반 개인 비밀번호 직접 인증·변경은 남아 있으므로 이 경로의 추측 방지·정책을 완전히 해결한 것으로 보고하지 않습니다. 이 PC에는 운영 관리자 설정이 없어 Firebase 네이티브 비밀번호 정책을 조회하거나 변경하지 않았습니다. [플랫폼 경계](FIREBASE_SETUP.md#보안-수정-적용과-남은-공급자-경계)를 확인합니다.
+
+10/2 Windows·Node 24.19.0·Java 21·Chromium·`CI=1`의 새 프로덕션 빌드와 demo Auth9099/Firestore8080에서 전체 79개가 통과했습니다. 새 보안 검사는 교차 학생 탈취·공통값/Firebase 임시값 우회·만료/재발급·개인 비밀번호 설정 후 폐기·오답 잠금·출처 예산·HTML/RSC 본문 노출·운영 점검 쓰기 차단을 포함합니다. 초기 대상 25개 검사도 통과했습니다. 독립 서브에이전트는 조사와 별도 패치 검토를 수행했으며 직접 테스트 결과로 대체하지 않았습니다.
+
+이후 테스트에 27명 동시 입장을 추가하고 보안·화면 대상 15개를 새 demo 환경에서 검사해 모두 통과했습니다(1.1분). 같은 출처의 27개 응답이 모두 200·해당 학생의 세션이며 출처 예산 count도 정확히 27이었습니다. 결과 창은 320/390/768/1440px 가로 넘침 없음·입력 초기 초점·닫기·기존 제출 보존을 확인했습니다. 추가된 검사는 한 개이며 전체 검사 목록은 이제 80개입니다. 두 실행 사이 앱 코드는 바꾸지 않았습니다. 로컬 에뮬레이터의 동시 입장 성공은 실제 학교 네트워크·운영 Firestore 지연의 성능 보장을 뜻하지 않습니다.
+
+### 10/1 이전 릴리스의 범위
 
 - 게스트는 같은 로컬 테스트 10반을 사용하는 학생·교사 계정으로 기존 인증·세션·권한·저장을 체험합니다. 표시와 서버 요청에 동일한 환경 조건을 적용합니다. [제품 정책](PRD.md#로컬-게스트-체험), [준비·복구](DEVELOPMENT.md#로컬-게스트-입장)를 따릅니다.
 - 개인 할 일의 추가·수정·완료·삭제를 즉시 보여 주고 저장 중인 행만 잠급니다. 실패 시 삭제 행은 원래 위치에 복원하며 변경 의도와 이동 보호를 유지합니다. 기존 직렬 저장 큐를 사용하고 반 일정은 기존 저장 동작을 유지합니다. [정책](PRD.md#작은-버전의-경계와-저장-동작), [코드·검사](DEVELOPMENT.md#대시보드-파일럿)를 따릅니다.
 - Google 아래에 같은 크기의 `교사 비밀번호 로그인` 버튼을 배치하고 반·수업·실습 선택 메뉴를 공통 Select로 정리했습니다. 홈 안내는 `화면 안의 버튼을 눌러 보세요`이며 화살표를 제거했습니다. [표현 기준](DESIGN.md#확정된-공통-기준), [코드·검사](DEVELOPMENT.md#공통-선택-메뉴와-로그인-화면)를 따릅니다.
 - 새 의존성·운영 계정·학생 자료·Firebase 규칙·외부 서비스 설정은 변경하지 않았습니다. 합성 계정과 시드는 demo 로컬 환경에만 사용합니다.
 
-### 이번 릴리스의 검증
+### 10/1 이전 릴리스의 검증
 
 10/1 Windows·Node 24.19.0·Java 21·Chromium·`CI=1`·`localhost:3000`의 새 프로덕션 빌드와 새 `demo-cs-class` Auth9099/Firestore8080에서 최종 전체 E2E **73개가 단일 실행으로 통과**했습니다(4.8분·종료 코드 0). lint·typecheck·build도 통과했습니다. 실제 운영 DB·계정은 사용하지 않았습니다. 대상에는 기존 인증/세션/권한/저장/EntryJS와 새 게스트·낙관적 목록·공통 UI 검사가 포함됩니다.
 
@@ -30,6 +42,8 @@
 ## 통합·배포 상태
 
 대상은 GitHub `DonghyunT/cs-class`, Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`), Production 브랜치 `main`입니다. 운영 주소는 [CS Class](https://cs-class-donghyunt.vercel.app), 설정은 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)를 따릅니다. 10/1 MCP에서 해당 프로젝트·Next.js·Node 24.x·기존 운영 도메인을 조회했으며 설정은 변경하지 않았습니다.
+
+### 10/1 이전 릴리스 기록
 
 - 기능 커밋 `4de30dcc37b5f8d9c7b64e2d2658bfa63e46aff1`을 [PR #15](https://github.com/DonghyunT/cs-class/pull/15)에서 10/1 21:55 KST에 위 `9fd9df4`로 병합했습니다. 병합 트리는 검증한 기능 커밋과 같습니다. [PR CI](https://github.com/DonghyunT/cs-class/actions/runs/36863916854)의 lint·typecheck·build·전체 E2E **73개/5.0분**, [브랜치 CI](https://github.com/DonghyunT/cs-class/actions/runs/36863884237) **73개/6.5분**, [기능 main CI](https://github.com/DonghyunT/cs-class/actions/runs/36865069012) **73개/6.6분**이 성공했습니다. CI도 demo 로컬 에뮬레이터만 사용합니다. 후속 인계 문서 커밋은 동일 앱·검사이며 최신 자동 검사 상태는 [main CI 목록](https://github.com/DonghyunT/cs-class/actions?query=branch%3Amain)에서 확인합니다.
 - 기능 SHA `9fd9df4`의 [Production 배포](https://vercel.com/donghyunt/cs-class/86EZxZVLWJXV1W7mDjdWzmcgSNS7) `dpl_86EZxZVLWJXV1W7mDjdWzmcgSNS7`·READY·[고유 주소](https://cs-class-baysphibu-donghyunt.vercel.app)·운영 별칭 `cs-class-donghyunt.vercel.app`의 연결을 MCP로 확인했습니다. 운영 설정·Firebase 승인 도메인·기존 SSO 보호는 변경하지 않았습니다. 기능 Preview도 READY이며 운영 인증정보가 없는 별도 환경입니다.

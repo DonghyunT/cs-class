@@ -109,7 +109,7 @@ test("첫 로그인 비밀번호 변경 · 새로고침 유지 · 세션 쿠키 
   expect((await (await page.request.get("/api/auth/session")).json()).session).toBeNull();
 });
 
-test("교사 실제 기록 · 제출 작품 · 수업 지정 · 초기화 · 작은 화면", async ({ page }) => {
+test("교사 실제 기록 · 제출 작품 · 수업 지정 · 초기화 · 작은 화면", async ({ page }, testInfo) => {
   const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
   await readyStudent(page.request);
   const endpoint = `/api/classroom/work/${lessonId}`;
@@ -143,6 +143,18 @@ test("교사 실제 기록 · 제출 작품 · 수업 지정 · 초기화 · 작
   await page.getByRole("button", { name: "20101 비밀번호 초기화" }).click();
   await page.getByRole("button", { name: "초기화하기", exact: true }).click();
   await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "20101 학생의 임시 비밀번호" })).toBeVisible();
+  await expect(page.getByLabel("임시 비밀번호", { exact: true })).toBeFocused();
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+    await expect.poll(async () => {
+      const box = await page.getByRole("dialog", { name: "20101 학생의 임시 비밀번호" }).boundingBox();
+      return !!box && box.x >= 0 && box.x + box.width <= width;
+    }).toBe(true);
+    if (width === 320 || width === 1440) await page.screenshot({ path: testInfo.outputPath(`reset-${width}.png`), fullPage: true });
+  }
+  await page.getByRole("button", { name: "전달 완료", exact: true }).click();
   await expect(page.getByText("20101 학생의 비밀번호를 초기화했어요. 다음 입장 시 변경이 필요해요.")).toBeVisible();
   expect((await db.collection("csWork").doc(`student-20101__${lessonId}`).get()).data()!.submission.id).toBe(work.submission!.id);
   for (const width of [320, 390, 768, 1440]) {

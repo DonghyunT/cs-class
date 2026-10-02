@@ -33,7 +33,7 @@ export function LoginScreen({ role }: { role: "student" | "teacher" }) {
   async function submit(event: FormEvent) {
     event.preventDefault(); if (busy) return; setError("");
     if (changing) {
-      if (password.length < 6 || !/[a-zA-Z]/.test(password) || !/\d/.test(password)) { setError("영문과 숫자를 포함해 6자 이상으로 만들어 주세요."); return; }
+      if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/\d/.test(password)) { setError("영문과 숫자를 포함해 8자 이상으로 만들어 주세요."); return; }
       if (password !== confirm) { setError("두 비밀번호가 달라요. 다시 확인해 주세요."); return; }
     }
     setBusy(true);
@@ -79,7 +79,7 @@ export function LoginScreen({ role }: { role: "student" | "teacher" }) {
           <p className={styles.helper}>사전에 등록된 선생님 계정만 입장할 수 있어요.</p>
         </> : <form onSubmit={submit} aria-describedby={message ? "login-error" : undefined}>
           {role === "student" && !changing && <div className={styles.field}><Label htmlFor="student-id">학번</Label><Input id="student-id" name="username" inputMode="numeric" autoComplete="username" placeholder="학번 5자리" maxLength={5} pattern="2[0-9]{4}" required value={studentId} onChange={(event) => setStudentId(event.target.value)} autoFocus /></div>}
-          <div className={styles.field}><Label htmlFor="password">{changing ? "새 비밀번호" : "비밀번호"}</Label><div className={styles.password}><Input id="password" name="password" autoFocus={instructor} type={visible ? "text" : "password"} autoComplete={changing ? "new-password" : "current-password"} placeholder={changing ? "영문과 숫자를 포함해 6자 이상" : "비밀번호를 입력해 주세요"} required maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} /><button type="button" aria-label={visible ? "비밀번호 숨기기" : "비밀번호 보기"} aria-pressed={visible} onClick={() => setVisible(!visible)}>{visible ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
+          <div className={styles.field}><Label htmlFor="password">{changing ? "새 비밀번호" : "비밀번호"}</Label><div className={styles.password}><Input id="password" name="password" autoFocus={instructor} type={visible ? "text" : "password"} autoComplete={changing ? "new-password" : "current-password"} placeholder={changing ? "영문과 숫자를 포함해 8자 이상" : "비밀번호를 입력해 주세요"} required maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} /><button type="button" aria-label={visible ? "비밀번호 숨기기" : "비밀번호 보기"} aria-pressed={visible} onClick={() => setVisible(!visible)}>{visible ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
           {changing && <div className={styles.field}><Label htmlFor="confirm-password">새 비밀번호 확인</Label><Input id="confirm-password" name="confirmPassword" type={visible ? "text" : "password"} autoComplete="new-password" placeholder="한 번 더 입력해 주세요" required maxLength={128} value={confirm} onChange={(event) => setConfirm(event.target.value)} /></div>}
           <Button type="submit" size="lg" className={styles.primary} disabled={busy || loading || !configured}>{busy && <LoaderCircle size={18} className={styles.spinner} />}{busy ? "확인하고 있어요" : changing ? "비밀번호 저장하고 입장" : "교실 입장"}{!busy && <ArrowRight size={17} />}</Button>
           <p className={styles.helper}>{changing ? "처음 받은 비밀번호는 다시 사용할 수 없어요." : "비밀번호를 잊었다면 선생님께 초기화를 요청해 주세요."}</p>

@@ -22,7 +22,7 @@ export async function POST(request: Request, context: Context) {
     if (path.length === 1 && path[0] === "todos") return json(await saveTodos(input));
     if (path.length === 2 && path[0] === "schedule" && /^2-(?:[1-9]|1[01])$/.test(path[1])) return json(await saveSchedule(path[1], input));
     if (path.length === 2 && path[0] === "classes") return json(await updateClass(path[1], input));
-    if (path.length === 3 && path[0] === "students" && path[2] === "reset" && /^[a-zA-Z0-9_-]{1,128}$/.test(path[1])) { await resetStudentPassword(path[1]); return json({ ok: true }); }
+    if (path.length === 3 && path[0] === "students" && path[2] === "reset" && /^[a-zA-Z0-9_-]{1,128}$/.test(path[1])) return json(await resetStudentPassword(path[1]));
     if (path.length === 2 && path[0] === "work") return json(await mutateWork(path[1], input, false));
     if (path.length === 3 && path[0] === "work" && path[2] === "action") return json(await mutateWork(path[1], input, true));
     return json({ code: "NOT_FOUND", message: "찾을 수 없는 요청입니다." }, 404);
