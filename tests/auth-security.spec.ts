@@ -4,6 +4,7 @@ import { promisify } from "node:util";
 import { test, expect } from "@playwright/test";
 import { auth, db, headers, initialPassword, lessonId, loginStudent, readyStudent, readyTeacher, resetStudent, studentPassword } from "./emulator";
 import { testEnv } from "../scripts/local-test-env.mjs";
+import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
 
 const resetPath = "/api/classroom/students/student-20101/reset";
 test("개별 임시 비밀번호는 다른 학생·Firebase·공통값으로 우회할 수 없고 소비 뒤 폐기", async ({ request, playwright }) => {
@@ -70,6 +71,8 @@ test("출처 예산은 학번·전달 헤더를 바꿔도 적용되고 기존 �
 
 test("같은 학교 출처의 27명 동시 입장이 모두 성공", async ({ playwright }, testInfo) => {
   const ref = db.collection("csRateLimits").doc(createHash("sha256").update("source:local").digest("hex"));
+  const classroomRef = db.doc("csClasses/2-2");
+  const previousClassroom = (await classroomRef.get()).data();
   const students = await Promise.all(Array.from({ length: 27 }, async (_, index) => ({
     studentId: `202${String(index + 1).padStart(2, "0")}`,
     request: await playwright.request.newContext({ baseURL: "http://localhost:3000" }),
@@ -88,7 +91,16 @@ test("같은 학교 출처의 27명 동시 입장이 모두 성공", async ({ pl
     testInfo.annotations.push({ type: "동시 입장 소요 시간", description: `${Date.now() - startedAt}ms / 27명` });
   } finally {
     await ref.delete();
-    await Promise.all(students.map(({ request }) => request.dispose()));
+    for (const { studentId, request } of students) {
+      await db.doc(`csAccounts/student-${studentId}`).delete();
+      await db.collection("csRateLimits").doc(createHash("sha256").update(`credential:student-${studentId}:${passwordDigest(initialPassword)}`).digest("hex")).delete();
+      await auth.deleteUser(`student-${studentId}`).catch((error: { code: string }) => {
+        if (error.code !== "auth/user-not-found") throw error;
+      });
+      await request.dispose();
+    }
+    if (previousClassroom) await classroomRef.set(previousClassroom);
+    else await classroomRef.delete();
   }
 });
 
