@@ -82,19 +82,27 @@ export function ResetPassword({ student, onLock, onComplete }: { student: Studen
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [credential, setCredential] = useState<{ password: string; expiresAt: number } | null>(null);
+  const passwordInput = useRef<HTMLInputElement>(null);
   const cancel = useRef<HTMLButtonElement>(null);
   async function reset() {
     setSaving(true); setError(""); onLock(true);
-    try { await classroomApi.resetPassword(student.uid, session?.uid); onComplete(); setOpen(false); }
+    try { const result = await classroomApi.resetPassword(student.uid, session?.uid); setCredential(result); onComplete(); setOpen(false); }
     catch (problem) { setError(problemMessage(problem)); }
     finally { setSaving(false); onLock(false); }
   }
-  return <AlertDialog open={open} onOpenChange={(next) => { if (saving) return; setError(""); setOpen(next); }}>
+  return <><AlertDialog open={open} onOpenChange={(next) => { if (saving) return; setError(""); setOpen(next); }}>
     <AlertDialogTrigger render={<Button variant="ghost" aria-label={`${student.studentId} 비밀번호 초기화`} />}><KeyRound size={15} aria-hidden="true" />비밀번호 초기화</AlertDialogTrigger>
     <AlertDialogContent className={styles.dialog} initialFocus={cancel}>
-      <AlertDialogHeader><AlertDialogTitle>{student.studentId} 학생의 비밀번호를 초기화할까요?</AlertDialogTitle><AlertDialogDescription>학습 기록과 제출 작품은 그대로 유지돼요. 학생의 기존 접속은 종료되고, 다음 입장 시 초기화용 공통 비밀번호로 로그인한 뒤 새 비밀번호를 설정해야 해요.</AlertDialogDescription></AlertDialogHeader>
+      <AlertDialogHeader><AlertDialogTitle>{student.studentId} 학생의 비밀번호를 초기화할까요?</AlertDialogTitle><AlertDialogDescription>학습 기록과 제출 작품은 그대로 유지돼요. 기존 접속을 종료하고 이 학생만 사용할 임시 비밀번호를 발급해요. 학생은 30분 안에 입장해 새 비밀번호를 설정해야 해요.</AlertDialogDescription></AlertDialogHeader>
       {error && <p role="alert" className={styles.dialogError}>{error}</p>}
       <AlertDialogFooter><AlertDialogCancel ref={cancel} disabled={saving}>취소</AlertDialogCancel><AlertDialogAction disabled={saving} onClick={() => void reset()}>{saving ? "초기화 중…" : "초기화하기"}</AlertDialogAction></AlertDialogFooter>
     </AlertDialogContent>
-  </AlertDialog>;
+  </AlertDialog><Dialog open={credential !== null} onOpenChange={(next) => { if (!next) setCredential(null); }}>
+    <DialogContent className={styles.dialog} initialFocus={passwordInput}>
+      <DialogHeader><DialogTitle>{student.studentId} 학생의 임시 비밀번호</DialogTitle><DialogDescription>이 학생에게만 전달해 주세요. 새 비밀번호를 설정하면 사용할 수 없어요. 이 창을 닫으면 다시 표시하지 않아요.</DialogDescription></DialogHeader>
+      {credential && <><label className={styles.dialogField}>임시 비밀번호<input ref={passwordInput} readOnly value={credential.password} onFocus={(event) => event.target.select()} autoComplete="off" spellCheck={false} /></label><p className={styles.dialogNote}>{new Date(credential.expiresAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Seoul" })}까지 사용 가능 · 30분 안에 비밀번호 변경</p></>}
+      <DialogFooter><Button onClick={() => setCredential(null)}>전달 완료</Button></DialogFooter>
+    </DialogContent>
+  </Dialog></>;
 }

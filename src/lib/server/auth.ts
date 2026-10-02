@@ -5,6 +5,7 @@ import type { Transaction } from "firebase-admin/firestore";
 import type { Role, Session } from "../classroom/types";
 import { admin } from "./firebase";
 import { guestLoginEnabled } from "./guest-mode";
+import { createTemporaryPassword, passwordDigest } from "./temporary-password.mjs";
 import { requireCondition, ServiceError } from "./errors";
 
 export const SESSION_COOKIE = "cs_session";
@@ -12,6 +13,7 @@ export interface Account {
   uid: string; role: Role; studentId: string | null; classId: string | null; classIds: string[];
   mustChangePassword: boolean; disabled: boolean; authVersion: number; authBusy: string | null;
   authBusyAt?: number | null;
+  temporaryPassword?: { hash: string; expiresAt: number } | null;
   session: { hash: string; lastActivityAt: number; startedAt: number } | null;
 }
 export interface Identity { uid: string; secret: string }
@@ -34,6 +36,7 @@ export function validateSession(account: Account | undefined, who: Identity, all
   const digest = hash(who.secret);
   requireCondition(account.session && account.session.hash.length === digest.length && timingSafeEqual(Buffer.from(account.session.hash), Buffer.from(digest)), 401, "SESSION_REPLACED", "다른 곳에서 로그인되었거나 계정이 초기화되어 로그아웃됐어요.");
   requireCondition(now - account.session.lastActivityAt < timeoutFor(account.role), 401, "SESSION_EXPIRED", "오랫동안 사용하지 않아 로그아웃됐어요. 다시 로그인해 주세요.");
+  if (account.mustChangePassword) requireCondition(account.temporaryPassword && account.temporaryPassword.expiresAt > now, 401, "TEMP_PASSWORD_EXPIRED", "임시 비밀번호가 만료됐어요. 선생님께 다시 발급을 요청해 주세요.");
   requireCondition(allowPasswordChange || !account.mustChangePassword, 403, "PASSWORD_REQUIRED", "먼저 비밀번호를 바꿔 주세요.");
   return account;
 }
@@ -52,12 +55,12 @@ export async function readSession() {
 async function setSessionCookie(uid: string, secret: string) {
   (await cookies()).set(SESSION_COOKIE, `${uid}.${secret}`, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/" });
 }
-async function limitLogin(key: string) {
+async function limitLogin(key: string, maximum: number, windowMs: number) {
   const { db } = admin(); const ref = db.collection("csRateLimits").doc(hash(key)); const now = Date.now();
   await db.runTransaction(async (tx) => {
     const data = (await tx.get(ref)).data();
-    const fresh = !data || now - data.start >= 15 * 60_000;
-    requireCondition(fresh || data.count < 12, 429, "LOGIN_LIMIT", "로그인 시도가 많아요. 15분 후 다시 시도해 주세요.");
+    const fresh = !data || now - data.start >= windowMs;
+    requireCondition(fresh || data.count < maximum, 429, "LOGIN_LIMIT", "로그인 요청이 많아요. 잠시 후 다시 시도해 주세요.");
     tx.set(ref, { start: fresh ? now : data.start, count: fresh ? 1 : data.count + 1 });
   });
 }
@@ -66,6 +69,7 @@ async function openSession(uid: string, expectedVersion: number, expectedRole: R
   const session = await db.runTransaction(async (tx) => {
     const account = (await tx.get(ref)).data() as Account | undefined;
     requireCondition(account && !account.disabled && account.role === expectedRole && account.authVersion === expectedVersion && !account.authBusy, 401, "LOGIN_CHANGED", "계정 정보가 바뀌었어요. 다시 로그인해 주세요.");
+    if (account.mustChangePassword) requireCondition(account.temporaryPassword && account.temporaryPassword.expiresAt > Date.now(), 401, "TEMP_PASSWORD_EXPIRED", "임시 비밀번호가 만료됐어요. 선생님께 다시 발급을 요청해 주세요.");
     account.session = { hash: hash(secret), startedAt: Date.now(), lastActivityAt: Date.now() };
     tx.update(ref, { session: account.session });
     return publicSession(account);
@@ -84,9 +88,21 @@ export async function loginGuest(role: "student" | "teacher") {
 }
 async function loginPasswordAccount(role: Role, uid: string, email: string, password: string) {
   const { auth, db } = admin();
-  await limitLogin(uid);
+  // Vercel가 덮어쓰는 출처만 신뢰합니다. 로컬에서는 전달 헤더로 제한을 우회하지 못합니다.
+  const source = process.env.VERCEL ? (await headers()).get("x-vercel-forwarded-for") ?? "unknown" : "local";
+  await limitLogin(`source:${source}`, 600, 60_000);
+  // 같은 학교의 동시 입장은 허용하고, 타인의 오답은 정상 비밀번호의 예산을 소모하지 않습니다.
+  await limitLogin(`credential:${uid}:${hash(password)}`, 12, 15 * 60_000);
   const initial = (await db.collection("csAccounts").doc(uid).get()).data() as Account | undefined;
+  requireCondition(initial && initial.role === role && !initial.disabled, 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
   requireCondition(!initial?.authBusy, 423, "ACCOUNT_BUSY", "계정 정보를 변경하고 있어요. 잠시 후 다시 시도해 주세요.");
+  if (initial.mustChangePassword) {
+    const temporary = initial.temporaryPassword;
+    requireCondition(temporary && temporary.expiresAt > Date.now(), 401, "TEMP_PASSWORD_EXPIRED", "선생님께 학생별 임시 비밀번호를 발급받아 주세요.");
+    const digest = passwordDigest(password);
+    requireCondition(temporary.hash.length === digest.length && timingSafeEqual(Buffer.from(temporary.hash), Buffer.from(digest)), 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
+    return openSession(uid, initial.authVersion, role);
+  }
   const host = process.env.FIREBASE_AUTH_EMULATOR_HOST;
   const endpoint = host ? `http://${host}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword` : "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword";
   const response = await fetch(`${endpoint}?key=${encodeURIComponent(process.env.FIREBASE_WEB_API_KEY!)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, returnSecureToken: true }), cache: "no-store", signal: AbortSignal.timeout(15000) });
@@ -137,17 +153,13 @@ export async function logout() {
   // Server-side revocation is authoritative. Do not send an expired Set-Cookie:
   // a delayed logout response from another tab could erase a newer login cookie.
 }
-function configuredPassword(kind: "initial" | "reset") {
-  const value = kind === "initial" ? process.env.CS_INITIAL_PASSWORD : process.env.CS_RESET_PASSWORD;
-  requireCondition(value && value.length >= 6 && process.env.CS_INITIAL_PASSWORD !== process.env.CS_RESET_PASSWORD, 503, "PASSWORD_CONFIGURATION", "계정 초기화 설정을 확인해야 해요.");
-  return value;
-}
 export async function changePassword(password: string) {
-  requireCondition(password.length >= 6 && password.length <= 128 && /[a-zA-Z]/.test(password) && /\d/.test(password), 400, "PASSWORD_POLICY", "영문과 숫자를 포함해 6자 이상으로 만들어 주세요.");
-  requireCondition(password !== configuredPassword("initial") && password !== configuredPassword("reset"), 400, "PASSWORD_COMMON", "처음 받은 비밀번호와 다른 비밀번호를 사용해 주세요.");
+  requireCondition(password.length >= 8 && password.length <= 128 && /[a-zA-Z]/.test(password) && /\d/.test(password), 400, "PASSWORD_POLICY", "영문과 숫자를 포함해 8자 이상으로 만들어 주세요.");
+  requireCondition(!["password1", "password123", "qwerty12", "abc12345", "a1234567", "abcd1234"].includes(password.toLowerCase()) && password !== process.env.CS_INITIAL_PASSWORD && password !== process.env.CS_RESET_PASSWORD, 400, "PASSWORD_COMMON", "쉽게 추측할 수 있는 비밀번호는 피해주세요.");
   const who = await identity(); const { db, auth } = admin(); const ref = db.collection("csAccounts").doc(who.uid); const lock = randomBytes(16).toString("hex");
   await authorized(who, async (tx, account) => {
     requireCondition(account.role === "student" && account.mustChangePassword, 403, "PASSWORD_NOT_REQUIRED", "현재 비밀번호 변경 대상이 아니에요.");
+    requireCondition(account.temporaryPassword?.hash !== passwordDigest(password), 400, "PASSWORD_COMMON", "임시 비밀번호와 다른 비밀번호를 사용해 주세요.");
     tx.update(ref, { authBusy: lock, authBusyAt: Date.now() });
   }, true);
   try { await auth.updateUser(who.uid, { password }); }
@@ -156,7 +168,7 @@ export async function changePassword(password: string) {
   const session = await db.runTransaction(async (tx) => {
     const account = (await tx.get(ref)).data() as Account;
     requireCondition(account.authBusy === lock, 409, "ACCOUNT_CHANGED", "계정 정보가 변경됐어요. 다시 로그인해 주세요.");
-    const next = { ...account, authBusy: null, authBusyAt: null, authVersion: account.authVersion + 1, mustChangePassword: false, session: { hash: hash(secret), lastActivityAt: Date.now(), startedAt: Date.now() } };
+    const next = { ...account, authBusy: null, authBusyAt: null, authVersion: account.authVersion + 1, mustChangePassword: false, temporaryPassword: null, session: { hash: hash(secret), lastActivityAt: Date.now(), startedAt: Date.now() } };
     tx.set(ref, next); return publicSession(next);
   });
   await setSessionCookie(who.uid, secret); return session;
@@ -166,7 +178,7 @@ async function releaseLock(path: string, lock: string) {
   await db.runTransaction(async (tx) => { if ((await tx.get(ref)).data()?.authBusy === lock) tx.update(ref, { authBusy: null, authBusyAt: null }); });
 }
 export async function resetStudentPassword(uid: string) {
-  const who = await identity(); const { db, auth } = admin(); const password = configuredPassword("reset");
+  const who = await identity(); const { db, auth } = admin(); const credential = createTemporaryPassword();
   const ref = db.collection("csAccounts").doc(uid); const lock = randomBytes(16).toString("hex");
   await authorized(who, async (tx, staff) => {
     requireCondition(staff.role !== "student", 403, "FORBIDDEN", "선생님만 초기화할 수 있어요.");
@@ -175,7 +187,7 @@ export async function resetStudentPassword(uid: string) {
     requireCondition(!student.authBusy, 409, "ACCOUNT_BUSY", "이미 계정 정보를 변경하고 있어요.");
     tx.update(ref, { authBusy: lock, authBusyAt: Date.now() });
   });
-  try { await auth.updateUser(uid, { password }); }
+  try { await auth.updateUser(uid, { password: credential.providerPassword }); }
   catch (error) { await releaseLock(ref.path, lock); throw error; }
   // If token revocation/finalization fails after the provider password changed,
   // keep the account locked instead of reviving an old authenticated session.
@@ -183,6 +195,7 @@ export async function resetStudentPassword(uid: string) {
   await db.runTransaction(async (tx) => {
     const account = (await tx.get(ref)).data() as Account;
     requireCondition(account.authBusy === lock, 409, "ACCOUNT_CHANGED", "계정 상태를 다시 확인해 주세요.");
-    tx.update(ref, { authBusy: null, authBusyAt: null, authVersion: account.authVersion + 1, mustChangePassword: true, session: null });
+    tx.update(ref, { authBusy: null, authBusyAt: null, authVersion: account.authVersion + 1, mustChangePassword: true, temporaryPassword: credential.temporaryPassword, session: null });
   });
+  return { password: credential.password, expiresAt: credential.temporaryPassword.expiresAt };
 }

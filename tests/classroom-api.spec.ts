@@ -71,9 +71,11 @@ test("권한 · 초기화 후 기록 보존 · 기존 세션 종료 · 변경 �
   const teacher = await playwright.request.newContext({ baseURL: "http://localhost:3000" });
   try {
     await readyTeacher(teacher);
-    expect((await teacher.post("/api/classroom/students/student-20101/reset", { headers, data: {} })).status()).toBe(200);
+    const reset = await teacher.post("/api/classroom/students/student-20101/reset", { headers, data: {} });
+    expect(reset.status()).toBe(200);
+    const credential = await reset.json();
     expect((await request.get(endpoint)).status()).toBe(401);
-    expect((await loginStudent(request, "reset-test-3951")).status()).toBe(200);
+    expect((await loginStudent(request, credential.password)).status()).toBe(200);
     expect((await request.get(endpoint)).status()).toBe(403);
     expect((await request.post("/api/auth/password", { headers, data: { password: "letters-only" } })).status()).toBe(400);
     expect((await request.post("/api/auth/password", { headers, data: { password: initialPassword } })).status()).toBe(400);

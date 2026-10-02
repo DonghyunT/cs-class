@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
+import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
 
 if (process.env.VERCEL || process.env.FIREBASE_PROJECT_ID !== "demo-cs-class" || process.env.FIREBASE_AUTH_EMULATOR_HOST !== "127.0.0.1:9099" || process.env.FIRESTORE_EMULATOR_HOST !== "127.0.0.1:8080") throw new Error("Local demo emulators are required. Cloud seeding is not permitted by this script.");
 const app = initializeApp({ projectId: "demo-cs-class" }); const auth = getAuth(app); const db = getFirestore(app);
@@ -15,7 +16,7 @@ for (const studentId of ["20101", "20102", "21001", "21101"]) {
   const uid = `student-${studentId}`;
   try { await auth.createUser({ uid, email: `s-${studentId}@cs-class.invalid`, password: initial }); }
   catch (error) { if (error.code !== "auth/uid-already-exists") throw error; await auth.updateUser(uid, { password: initial, disabled: false }); }
-  await db.collection("csAccounts").doc(uid).set({ uid, role: "student", studentId, classId: `2-${Number(studentId.slice(1, 3))}`, classIds: [], mustChangePassword: true, disabled: false, authVersion: 0, authBusy: null, session: null });
+  await db.collection("csAccounts").doc(uid).set({ uid, role: "student", studentId, classId: `2-${Number(studentId.slice(1, 3))}`, classIds: [], mustChangePassword: true, temporaryPassword: { hash: passwordDigest(initial), expiresAt: Date.now() + 30 * 60_000 }, disabled: false, authVersion: 0, authBusy: null, session: null });
 }
 try { await auth.createUser({ uid: "instructor", email: "instructor@cs-class.invalid", password: process.env.CS_TEST_INSTRUCTOR_PASSWORD }); }
 catch (error) { if (error.code !== "auth/uid-already-exists") throw error; await auth.updateUser("instructor", { password: process.env.CS_TEST_INSTRUCTOR_PASSWORD }); }
