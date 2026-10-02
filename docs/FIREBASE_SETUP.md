@@ -77,6 +77,8 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 
 개인 비밀번호 계정은 Firebase REST로 앱 장부 밖에서 인증·비밀번호 변경을 시도할 수 있습니다. 임시 입장은 이 경로에서 차단했지만 정상 개인 비밀번호는 호환성을 유지합니다. Firebase Console의 Authentication 비밀번호 정책(Require·최소 8자·영문/숫자)과 Identity Toolkit 남용 방어·할당량을 운영 수업의 동시 입장 규모에 맞춰 별도로 확인합니다. 설정의 현재 강제 여부는 이 코드 검사로 입증하지 않으며 실제 변경은 기존 사용자의 영향을 확인한 뒤 적용합니다. 관련 공식 문서: [비밀번호 정책](https://firebase.google.com/docs/auth/web/password-auth#recommended_set_a_password_policy), [할당량](https://firebase.google.com/docs/auth/limits).
 
+2026-10-02 기존 Firebase CLI 로그인으로 승인 프로젝트 `config`를 읽기 전용 조회했습니다(HTTP 200). 이메일/비밀번호 인증은 활성화돼 있고 응답에 `passwordPolicyConfig`가 없습니다. 운영 네이티브 8자 정책이 강제된 것으로 보고하지 않습니다. 후속 정책을 적용할 때 기존 사용자의 입장을 막는 `forceUpgradeOnSignin`을 먼저 확인하며, 현재 릴리스는 이 설정·계정·학생 자료를 변경하지 않았습니다.
+
 ## 데이터와 남은 한계
 
 - `csAccounts`: 역할·반·변경 필요 여부·세션 해시·무활동 시각. 평문 개인 비밀번호를 저장하지 않습니다.
