@@ -83,7 +83,7 @@ test("공통 선택 메뉴의 둥근 팝업·좁은 창·키보드·대화상자
   await page.goto("/teacher/classes?classId=2-1");
   const manage = page.getByRole("button", { name: "수업 관리", exact: true });
   await manage.click();
-  const dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog", { name: "2학년 1반 수업 관리", exact: true });
   const current = dialog.getByRole("combobox", { name: "이번 수업", exact: true });
   await current.click();
   await expect(page.getByRole("option", { name: "지정하지 않음", exact: true })).toBeVisible();

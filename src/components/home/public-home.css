@@ -540,10 +540,12 @@
 .landing-story {
   position: relative;
   background: linear-gradient(180deg, #fff, #f7f9fc 70%, #fff);
-  scroll-margin-top: 84px;
+  scroll-margin-top: 0;
 }
 .landing-story[data-pinned="true"] {
   height: 370vh;
+  /* 문서의 100px 스크롤 여백과 합쳐 고정 위치 84px에 맞춥니다. */
+  scroll-margin-top: calc(84px - 100px);
 }
 .story-pin {
   display: grid;
