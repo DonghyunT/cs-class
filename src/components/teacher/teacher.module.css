@@ -34,6 +34,15 @@
 .currentMeta { display: block; margin-top: 12px; font-size: 13px; color: #526173; line-height: 1.75; }
 .currentCopy > button { min-height: 48px; padding: 12px 21px; border-radius: 14px; margin-top: 22px; box-shadow: 0 4px 12px #376fc814; }
 .students { margin-top: 42px; scroll-margin-top: 100px; }
+.openedLessons { margin-top: 32px; }
+.openedCount { color: #526173; font-size: 14px; white-space: nowrap; }
+.lessonList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; list-style: none; padding: 0; margin: 0; }
+.lessonCard { padding: 22px; border: 1px solid #e3e8ef; border-radius: 20px; background: white; }
+.currentCard { border-color: #c5d8f5; background: #f5f8ff; }
+.lessonBadge { display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 8px; background: #f0f3f7; color: #526173; font-size: 12px; font-weight: 600; }
+.currentBadge { background: #e5eeff; color: #2e5fab; }
+.lessonCard h3 { margin: 14px 0 8px; color: #202b3a; font-size: 18px; font-weight: 650; letter-spacing: -.025em; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; }
+.lessonCard p { color: #526173; font-size: 14px; line-height: 1.75; word-break: keep-all; overflow-wrap: anywhere; }
 .sectionHeading { display: flex; justify-content: space-between; align-items: end; gap: 22px; margin-bottom: 24px; }
 .sectionHeading h2 { font-size: 25px; font-weight: 700; margin-bottom: 8px; letter-spacing: -.035em; }
 .lessonPicker { max-width: 310px; min-width: 230px; }
@@ -114,6 +123,8 @@
   .rowActions button + button { margin-top: 0; }
 }
 @media (max-width: 900px) {
+  .lessonList { grid-template-columns: 1fr; }
+  .openedLessons .sectionHeading { flex-direction: row; align-items: center; }
   .heading { flex-direction: column; align-items: flex-start; gap: 14px; }
   .toolbar { align-items: center; flex-wrap: wrap; }
   .refresh { gap: 12px; }

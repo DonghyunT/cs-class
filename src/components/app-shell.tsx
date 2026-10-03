@@ -161,7 +161,6 @@ export function AppShell({
             >
               <Home size={19} />
               대시보드
-              <ChevronRight size={15} />
             </Link>
             <Link
               className={path === `${home}/${teacher ? "students" : "lessons"}` ? styles.active : ""}

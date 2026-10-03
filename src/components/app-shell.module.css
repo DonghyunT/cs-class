@@ -245,7 +245,6 @@
   transition: background-color 160ms, color 160ms;
 }
 
-.layout .appSidebar nav a svg:last-child:not(:first-child) { margin-left: auto; }
 
 .layout .appContent { min-width: 0; flex: 1; }
 

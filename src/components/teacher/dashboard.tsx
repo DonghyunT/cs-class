@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Toast } from "@base-ui/react/toast";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, ClipboardCheck, RefreshCw, Search, ShieldCheck, Users } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
@@ -9,6 +10,7 @@ import { useSession } from "@/components/session-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { SuccessToasts } from "@/components/ui/toast";
 import { classroomApi } from "@/lib/classroom/client";
 import { progressFor, STATUS_LABELS } from "@/lib/classroom/progress";
 import type { ClassSettings, Progress, TeacherDashboard, Work } from "@/lib/classroom/types";
@@ -28,6 +30,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId }: { 
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [toastManager] = useState(() => Toast.createToastManager());
   const [search, setSearch] = useState(studentId ?? "");
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const request = useRef(0);
@@ -77,22 +80,25 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId }: { 
   const active = matching ? data : null;
   const lesson = active?.lessons.find((item) => item.id === active.selectedLessonId);
   const current = active?.lessons.find((item) => item.id === active.classroom.currentLessonId);
+  const openedLessons = active?.lessons.filter((item) => active.classroom.openedLessonIds.includes(item.id)) ?? [];
   const filtered = active?.students.filter((student) => student.studentId.includes(search.trim())) ?? [];
   const completed = active && lesson ? active.students.filter((student) => progressFor(lesson, student.work).status === "completed").length : 0;
   const submitted = active?.students.filter((student) => student.work?.submission).length ?? 0;
 
   function selectClass(classId: string) {
+    toastManager.close();
     request.current += 1; setFetching(true); setSelection({ classId }); setSearch(""); setNotice(""); setError("");
   }
 
   function updateSettings(settings: ClassSettings) {
     setData((previous) => previous ? { ...previous, classroom: settings, classrooms: previous.classrooms.map((item) => item.id === settings.id ? settings : item) } : null);
-    setNotice(`${settings.name} 수업 설정을 저장했어요.`);
+    toastManager.add({ id: "class-settings", title: `${settings.name} 수업 설정을 저장했어요.`, priority: "low" });
     setFetching(true);
     void load();
   }
 
   return <div className={styles.page}>
+    <SuccessToasts manager={toastManager} />
     <div className={styles.heading}>
       <div><p className={styles.kicker}>선생님 공간</p><h1>우리 반 수업을 살펴봐요.</h1><p>수업을 준비하고, 학생이 어디까지 해냈는지 확인해요.</p></div>
       <span className={styles.role}><ShieldCheck size={16} aria-hidden="true" />{instructor ? "강사 · 담당 반 관리" : "교사 · 수업 관리"}</span>
@@ -109,7 +115,16 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId }: { 
         <div className={styles.currentCopy}><p className={styles.kicker}><span className={styles.dot} />{active.classroom.name} · 이번 수업</p><h2 id="current-lesson-title">{current?.title ?? "이번 수업을 지정해 주세요."}</h2><p>{current?.description ?? "수업을 열고 지정하면 학생 대시보드에 먼저 보여요."}</p><span className={styles.currentMeta}>열린 수업 {active.classroom.openedLessonIds.length}개 · 기존 수업은 계속 복습할 수 있어요.</span><ManageLessons key={active.classroom.id} classroom={active.classroom} lessons={active.lessons} onSaved={updateSettings} onLock={lockMutation} onRefresh={load} /></div>
         <DashboardArt variant="teacher" className={styles.heroArt} />
       </section>}
-      {view === "classes" && <p className={styles.inlineNote}><Link href={`/teacher/students?classId=${active.classroom.id}`}>학생 진행·제출 작품·계정 관리로 이동</Link></p>}
+      {view === "classes" && <section className={styles.openedLessons} aria-labelledby="opened-lessons-title">
+        <div className={styles.sectionHeading}><div><h2 id="opened-lessons-title">열린 수업</h2><p>학생이 학습하고 복습할 수 있는 수업이에요.</p></div><span className={styles.openedCount}>{openedLessons.length}개</span></div>
+        {openedLessons.length ? <ul className={styles.lessonList}>{openedLessons.map((item) => {
+          const isCurrent = item.id === active.classroom.currentLessonId;
+          return <li key={item.id} className={`${styles.lessonCard} ${isCurrent ? styles.currentCard : ""}`}>
+            <span className={`${styles.lessonBadge} ${isCurrent ? styles.currentBadge : ""}`}>{isCurrent ? "이번 수업" : "복습 가능"}</span>
+            <h3>{item.title}</h3><p>{item.description}</p>
+          </li>;
+        })}</ul> : <div className={styles.empty}><h3>아직 열린 수업이 없어요.</h3><p>위의 수업 관리에서 학생에게 열어 줄 수업을 선택해 주세요.</p></div>}
+      </section>}
       {view === "students" && <section className={styles.students} aria-labelledby="students-title">
         <div className={styles.sectionHeading}><div><h2 id="students-title">학생별 학습 현황</h2><p>개념·퀴즈·실습의 진행과 제출된 작품을 확인해요.</p></div><label className={styles.lessonPicker}>확인할 수업<Select label="확인할 수업" value={active.selectedLessonId ?? ""} disabled={!active.classroom.openedLessonIds.length} onValueChange={(value) => { request.current += 1; setFetching(true); setSelection({ classId: active.classroom.id, lessonId: value }); setError(""); }} options={[...(!active.selectedLessonId ? [{ value: "", label: "열린 수업이 없어요" }] : []), ...active.lessons.filter((item) => active.classroom.openedLessonIds.includes(item.id)).map((item) => ({ value: item.id, label: item.title }))]} /></label></div>
         <div className={styles.summary}>
