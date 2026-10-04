@@ -31,7 +31,9 @@ function Hint({ hint }: { hint: string }) {
   return <details className={styles.hint}><summary><Lightbulb size={16} aria-hidden="true" />힌트 보기</summary><p>{hint}</p></details>;
 }
 
-export function LessonWorkspace({ lesson, uid }: { lesson: Lesson; uid: string }) {
+type WorkspaceView = { workspaceWide: boolean; onWorkspaceWideChange: (wide: boolean) => void };
+
+export function LessonWorkspace({ lesson, uid, workspaceWide, onWorkspaceWideChange }: { lesson: Lesson; uid: string } & WorkspaceView) {
   const [initial, setInitial] = useState<Work | null>(null);
   const [dashboard, setDashboard] = useState<StudentDashboard | null>(null);
   const [error, setError] = useState("");
@@ -59,7 +61,7 @@ export function LessonWorkspace({ lesson, uid }: { lesson: Lesson; uid: string }
   }, []);
   if (!initial) return <div className={styles.workspace}><Link href="/student" className={styles.back}><ArrowLeft size={17} />대시보드로</Link>{error ? <div className={styles.empty} role="alert"><h1>수업에 들어가지 못했어요.</h1><p>{error}</p><Button onClick={() => setAttempt((value) => value + 1)}>다시 불러오기</Button></div> : <div className={styles.loading} role="status"><BookOpen />저장된 학습을 불러오고 있어요.</div>}</div>;
   const otherCurrent = dashboard?.lessons.find((item) => item.id === dashboard.classroom.currentLessonId && item.id !== lesson.id);
-  return <WorkEditor lesson={lesson} initial={initial} uid={uid} otherCurrent={otherCurrent} />;
+  return <WorkEditor lesson={lesson} initial={initial} uid={uid} otherCurrent={otherCurrent} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} />;
 }
 
 function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }) {
@@ -73,7 +75,7 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
   </ul>;
 }
 
-function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; initial: Work; uid: string; otherCurrent?: Lesson }) {
+function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorkspaceWideChange }: { lesson: Lesson; initial: Work; uid: string; otherCurrent?: Lesson } & WorkspaceView) {
   const entryExport = useRef<(() => Promise<string | null>) | null>(null);
   const readEditorDraft = useCallback(async (current: WorkDraft) => {
     if (!entryExport.current) return current;
@@ -99,10 +101,12 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
   const quizQuestions = work.quizRoundIds.map((id) => lesson.quiz.find((question) => question.id === id)).filter((question): question is Question => !!question);
   const unanswered = quizQuestions.filter((question) => !draft.quizAnswers[question.id]).length;
   const quizComplete = progress.quiz.percent === 100;
+  const entryPractice = draft.stage === "practice" && (lesson.practice.type === "entryjs" || lesson.practice.type === "programming");
+  const saveLabel = controller.conflict ? "저장 기록 충돌" : saveState === "saved" ? work.updatedAt ? "저장 완료" : "아직 학습 기록이 없어요" : saveState === "saving" ? "저장 중…" : saveState === "failed" ? "저장 확인 필요" : "변경 내용 저장 대기";
   async function switchStage(stage: Stage, focusTab = false) {
     if (switching || busy) return;
     setSwitching(true);
-    try { if (await controller.switchStage(stage)) setFocusRequest({ id: focusTab ? `tab-${stage}` : `stage-heading-${stage}` }); }
+    try { if (await controller.switchStage(stage)) { if (stage !== "practice") onWorkspaceWideChange(false); setFocusRequest({ id: focusTab ? `tab-${stage}` : `stage-heading-${stage}` }); } }
     finally { setSwitching(false); }
   }
   function tabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
@@ -127,18 +131,18 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
     const direction = destination === 0 ? "down" : destination === order.length - 1 ? "up" : delta < 0 ? "up" : "down";
     setFocusRequest({ id: `move-${id}-${direction}`, preventScroll: true });
   }
-  return <div className={styles.workspace}>
+  return <div className={styles.workspace} data-workspace-wide={workspaceWide}>
     <div className={styles.workspaceTop}><Link href="/student" className={styles.back}><ArrowLeft size={17} />대시보드로</Link>
-      <span className={styles.saveState} role="status">{saveState === "saving" ? <LoaderCircle size={16} className={styles.spin} /> : saveState === "saved" ? <CloudCheck size={17} /> : <Save size={16} />}{saveState === "saved" ? work.updatedAt ? "저장 완료" : "아직 학습 기록이 없어요" : saveState === "saving" ? "저장 중…" : saveState === "failed" ? "저장 확인 필요" : "변경 내용 저장 대기"}</span>
+      <details className={styles.lessonProgress}><summary>자세한 학습 진행</summary><div><p>{lesson.description}</p><ProgressSummary lesson={lesson} work={{ ...work, validation: draftMatchesValidation ? work.validation : null }} /></div></details>
+      <span className={styles.saveState} role={entryPractice ? undefined : "status"}>{saveState === "saving" ? <LoaderCircle size={16} className={styles.spin} /> : saveState === "saved" ? <CloudCheck size={17} /> : <Save size={16} />}{saveLabel}</span>
     </div>
     {otherCurrent && <div className={styles.notice} role="status"><div><strong>선생님이 지정한 이번 수업은 ‘{otherCurrent.title}’이에요.</strong><p>하던 학습을 계속하거나 저장한 뒤 이동할 수 있어요.</p></div><Button variant="outline" nativeButton={false} render={<Link href={`/classroom/${otherCurrent.id}`} />}>이번 수업으로<ArrowRight size={16} /></Button></div>}
-    <header className={styles.lessonHeader}><div><span className={styles.eyebrow}>{lesson.category ?? "알고리즘 · 순차 구조"}</span><h1>{lesson.title}</h1><p>{lesson.description}</p></div><LearningStatus lesson={lesson} work={work} /></header>
-    <div className={styles.lessonProgress}><ProgressSummary lesson={lesson} work={{ ...work, validation: draftMatchesValidation ? work.validation : null }} /></div>
-    {error && <section className={styles.errorPanel} role="alert"><strong>{controller.conflict ? "저장 기록이 서로 달라요." : "요청을 완료하지 못했어요."}</strong><p>{error}</p><p>현재 입력은 이 화면에 유지하고 있어요. 확인 전에는 창을 닫지 마세요.</p><Button variant="outline" disabled={busy} onClick={() => void (controller.conflict ? controller.compare() : controller.retry())}>{controller.conflict ? "서버 기록과 비교" : "저장 다시 확인"}</Button></section>}
+    <header className={styles.lessonHeader}><div><span className={styles.eyebrow}>{lesson.category ?? "알고리즘 · 순차 구조"}</span><h1>{lesson.title}</h1></div><LearningStatus lesson={lesson} work={work} /></header>
+    {error && <section id="work-save-error" tabIndex={-1} className={styles.errorPanel} role="alert"><strong>{controller.conflict ? "저장 기록이 서로 달라요." : "요청을 완료하지 못했어요."}</strong><p>{error}</p><p>현재 입력은 이 화면에 유지하고 있어요. 확인 전에는 창을 닫지 마세요.</p><Button variant="outline" disabled={busy} onClick={() => void (controller.conflict ? controller.compare() : controller.retry())}>{controller.conflict ? "서버 기록과 비교" : "저장 다시 확인"}</Button></section>}
     {controller.remote && <section className={styles.conflictPanel} aria-label="저장 충돌 비교"><h2>어떤 입력으로 이어갈까요?</h2><p>서버의 완료·제출 기록은 유지돼요. 입력 내용은 아래에서 직접 선택하세요.</p><div className={styles.comparisonGrid}><div><h3>이 화면의 입력</h3><DraftComparison lesson={lesson} draft={draft} /></div><div><h3>서버에 저장된 입력</h3><DraftComparison lesson={lesson} draft={controller.remote.draft} /></div></div><div className={styles.actions}><Button disabled={busy} onClick={() => void controller.resolve(true)}>현재 입력을 새 버전으로 저장</Button><Button variant="outline" disabled={busy} onClick={() => void controller.resolve(false)}>서버 기록으로 이어하기</Button></div></section>}
     <div className={styles.tabs} role="tablist" aria-label="수업 단계">{stages.map((stage, index) => <button key={stage.id} id={`tab-${stage.id}`} type="button" role="tab" aria-selected={draft.stage === stage.id} aria-controls={`panel-${stage.id}`} tabIndex={draft.stage === stage.id ? 0 : -1} disabled={locked} onKeyDown={(event) => tabKey(event, index)} onClick={() => void switchStage(stage.id, true)}><stage.icon size={18} /><span>{stage.label}</span><span className={styles.tabPercent}>{progress[stage.id].percent}%</span></button>)}</div>
 
-    {lesson.practice.type === "programming" && <ProgrammingLearningStage lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} />}
+    {lesson.practice.type === "programming" && <ProgrammingLearningStage lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} />}
 
     {lesson.practice.type !== "programming" && draft.stage === "concept" && <section id="panel-concept" role="tabpanel" aria-labelledby="tab-concept" tabIndex={0} className={styles.stagePanel}>
       <div className={styles.stageHeading}><div><h2 id="stage-heading-concept" tabIndex={-1}>설명을 읽고 바로 확인해요</h2><p>개념 확인 문제를 해결하면 자동으로 완료돼요.</p></div><span>{progress.concept.completed} / {progress.concept.total}개 완료</span></div>
@@ -181,6 +185,10 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
             busy={busy}
             update={update}
             runAction={runAction}
+            saveLabel={saveLabel}
+            saveState={saveState}
+            workspaceWide={workspaceWide}
+            onWorkspaceWideChange={onWorkspaceWideChange}
           />
         ) : (
           <>

@@ -87,13 +87,14 @@ git ls-files --others --exclude-standard
 
 ## 대시보드 파일럿
 
-학생 `/student`·교사 `/teacher`는 공통 할 일·일정·수업 바로가기를 사용합니다. 학생의 전체 수업은 `/student/lessons`, 교사의 수업 설정은 `/teacher/classes`, 학생 진행·제출·계정은 `/teacher/students`, 전체 일정은 각각 `/student/schedule`·`/teacher/schedule`입니다. 교사 상세 링크의 `classId`·`lessonId`·`studentId`는 서버 권한 안에서 조회 조건으로 사용합니다.
+학생 `/student`·교사 `/teacher`는 공통 할 일·일정·수업 바로가기를 사용합니다. 학생의 전체 수업은 `/student/lessons`, 교사의 수업 설정은 `/teacher/classes`, 학생 진행·제출·계정은 `/teacher/students`, 전체 일정은 각각 `/student/schedule`·`/teacher/schedule`입니다. 교사 상세 링크의 `classId`·`lessonId`·`studentId`는 서버 권한 안에서 조회 조건으로 사용합니다. `SessionProvider`의 `useTeacherClass`는 UID·현재 담당 반을 검증한 탭 단위 `sessionStorage` 선택을 메뉴에 연결하며 실제 로그인/로그아웃·세션 종료 시 초기화합니다. 새 반 선택은 현재 URL만 갱신하고 다른 메뉴에는 `classId`만 전달합니다. 스토리지가 차단되면 메모리 선택을 사용합니다.
 
 - 공통 화면·목록·일정·담당 CSS는 `src/components/dashboard/`에 둡니다. `use-saved-list.ts`는 두 목록의 직렬 저장·실패 의도·명시적 충돌 재시도를 공유합니다. `todos.tsx`는 이 큐로 개인 할 일의 즉시 삭제/완료 표시와 실패 시 삭제 행 복원을 처리하고 저장 중인 행만 잠급니다. 반 일정의 삭제 처리는 기존대로 유지합니다. 기존 학습 저장·이동 보호를 재사용하며 개인 체크가 `csWork`를 변경하지 않습니다.
 - 교사 상세 화면은 `src/components/teacher/dashboard.tsx`·`teacher.module.css`에서 서버의 `openedLessonIds`로 전체 열린 수업을 표시하고 `currentLessonId`로 이번 수업을 구분합니다. 수업 설정 성공 알림은 `src/components/ui/toast.tsx`·`toast.module.css`와 설치된 Base UI Toast를 사용합니다. 화면별 manager를 만들고 동일 저장 알림은 갱신하며 반 전환 시 닫습니다. 기존 저장 실패·충돌·비밀번호 초기화 안내는 유지합니다.
 - `tests/teacher-class-management.spec.ts`는 열린 수업 전체·이번 수업 미지정·열린 수업 없음·저장 실패와 재시도·토스트 타이머/초점·학생/교사 메뉴 일관성을 검사합니다. 공용 탐색 변경의 최종 검증에는 기존 `navigation.spec.ts`·`dashboard-pilot.spec.ts`·`platform.spec.ts`·`interface-polish.spec.ts`를 함께 포함합니다.
 - 서버 저장과 권한은 `src/lib/server/planner.ts`, 계약·한국 날짜는 `src/lib/classroom/planner.ts`에서 관리합니다. 저장 모델은 [Firebase 안내](FIREBASE_SETUP.md#데이터와-남은-한계), 파일럿 가정·한도·미전송 내용의 경계는 [PRD](PRD.md#작은-버전의-경계와-저장-동작)를 따릅니다.
 - 로컬 `dev:emulator`를 계속 실행한 상태에서 목록을 추가한 뒤 새로고침·로그아웃·같은 합성 계정 재로그인으로 복원을 확인합니다. 교사 입장의 강사는 담당 10·11반의 일정을 등록하고 해당 반의 합성 학생은 조회합니다. 운영 계정·자료는 사용하지 않습니다.
+- `progress.ts`의 `submissionCountFor`는 알려진 미션의 최신 작품 수를 세며 교사 제출 인원과 대시보드 작품 수가 공유합니다. `lesson-navigation.ts`는 현재/진행 수업 정렬과 저장된 단계·미션의 이어갈 위치를 안내합니다. 새 `ui-dashboard-refinement.spec.ts`·`ui-teacher-refinement.spec.ts`는 재로그인/UID/담당 범위·집계·필터·모바일 상세·5개 일정과 실제 화면 조작을 검사합니다.
 - 대상 검사는 `tests/dashboard-pilot.spec.ts`·`tests/loading-states.spec.ts`입니다. 변경 중에는 실행 중인 에뮬레이터에서 `npm run test:e2e:running -- tests/<target>.spec.ts`로 확인하며 최종 통합은 [전체 검증](#검증)을 따릅니다.
 
 Next.js 가이드는 설치본 `node_modules/next/dist/docs/`에 있습니다. 패치 버전 차이는 설치본을 기준으로 하고, 라이브러리 문서 확인 규칙은 AGENTS를 따릅니다. 이번 조회 구현의 SDK 근거는 아래 성능 측정 절에 있습니다.
@@ -138,6 +139,7 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 - 실행 결과는 중지 **전**에 수집합니다. EntryJS는 중지하면 오브젝트를 실행 전 상태로 되돌리고 `exportProject`도 실행을 중지하므로, 실행 중 자동 저장은 정지 상태의 작품에 현재 코드만 반영합니다. 15초가 지나면 실행을 멈춥니다. 이 과제의 서버 채점은 지원 블록의 연결 구조·상수 값을 검사하며 서버에서 EntryJS를 실행하지 않습니다. 다른 과제의 반복·입력·충돌·난수 검사는 별도 설계합니다.
 - 네이티브 입력의 붙여넣기·IME는 `input`을 `keyup` 처리로 연결합니다. 단계 이동·화면 이동·검증·제출 전에는 편집기의 현재 작품을 읽고 저장하며 실패하면 이동을 멈춥니다. 드래그 중 임시 블록은 저장하지 않습니다. 작품을 불러올 때 작업실 `dReDraw`와 팔레트 `reDraw`의 예약을 순서대로 `flush()`한 뒤 편집을 허용합니다. 늦은 초기 갱신이 입력창을 닫지 않도록 하며, 자동 저장 이후 초점과 연속 입력도 검사합니다. EntryJS 팔레트 좌표 갱신에는 지연이 있으므로 UI 검사는 블록 모델의 좌표 준비 후 시작합니다.
 - [EntryJS 브라우저 검사](../tests/entryjs-ui.spec.ts)는 실제 드래그·숫자 입력·실행·무대 복원·저장·검증·제출·재접속, 저장/파일 로딩 실패 복구, 좁은 창·Esc·키보드 가로 이동을 확인합니다. 라이브러리 번들과 공개된 라이선스·NOTICE·COPYING·패키지 메타데이터는 자산 준비 시 함께 보존합니다.
+- `Classroom`은 사용자·수업별 넓게 보기 선택을 `AppShell`과 `LessonWorkspace`에 전달합니다. CSS로 배치만 바꾸며 iframe key/src와 작품을 유지합니다. 작업실 가까운 저장 표시는 기존 `useWork`를 사용하고 실제 제출·현재 작품의 검증과 구분합니다. [실습 UI 검사](../tests/ui-workspace-refinement.spec.ts)는 기본 높이·같은 iframe/작품·820/821px와 넓게 보기 메뉴 전환 초점·저장 503 실패/409 충돌·이전 제출 보존을 확인합니다. 화면 밖 iframe 촬영·조립 전에는 해당 작업실로 스크롤하고 좌표/그리기 준비를 확인합니다.
 
 공식 근거: [설치 예제](https://github.com/entrylabs/example/tree/main/base), [프로젝트 API](https://docs.playentry.org/entryjs/api/2024-02-29-api.html), [실행 이벤트](https://docs.playentry.org/entryjs/api/2024-02-29-event.html). Context7에서 EntryJS를 찾지 못해 고정 버전 패키지의 README·배포 소스와 공식 문서를 확인했습니다.
 

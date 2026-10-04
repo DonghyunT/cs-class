@@ -6,6 +6,7 @@ import { ArrowRight, BookOpen, Check, RefreshCw, Layers3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/components/session-provider";
 import { classroomApi } from "@/lib/classroom/client";
+import { prioritizedLessons, resumeLabelFor } from "@/lib/classroom/lesson-navigation";
 import { progressFor } from "@/lib/classroom/progress";
 import type { StudentDashboard } from "@/lib/classroom/types";
 import { LearningStatus, ProgressSummary } from "./progress-summary";
@@ -38,7 +39,7 @@ export function StudentDashboardView() {
   if (!data) return <div className={styles.empty} role="alert"><BookOpen size={32} /><h1>수업을 불러오지 못했어요.</h1><p>{error}</p><Button onClick={() => void refresh()}>다시 불러오기</Button></div>;
   const current = data.lessons.find((lesson) => lesson.id === data.classroom.currentLessonId);
   const completed = data.lessons.filter((lesson) => progressFor(lesson, data.work[lesson.id]).status === "completed").length;
-  const shown = data.lessons.filter((lesson) => filter === "all" || (progressFor(lesson, data.work[lesson.id]).status === "completed") === (filter === "completed"));
+  const shown = prioritizedLessons(data.lessons, data.classroom.currentLessonId, data.work).filter((lesson) => filter === "all" || (progressFor(lesson, data.work[lesson.id]).status === "completed") === (filter === "completed"));
   return <div className={styles.dashboard}>
     <header className={styles.heading}>
       <div><span className={styles.eyebrow}>{data.classroom.name} · 나의 학습 공간</span><h1>열린 수업을 살펴봐요.</h1><p>{session?.studentId} 학생의 학습 기록을 확인해요.</p></div>
@@ -55,7 +56,7 @@ export function StudentDashboardView() {
       <div className={styles.lessonList}>{shown.map((lesson) => <article key={lesson.id} className={styles.lessonCard}>
         <div className={styles.cardHeading}><span className={styles.lessonNumber}><Layers3 size={24} /></span><div><div className={styles.inline}>{current?.id === lesson.id && <span className={styles.tag}>이번 수업</span>}<LearningStatus lesson={lesson} work={data.work[lesson.id]} /></div><h3>{lesson.title}</h3><p>{lesson.description}</p></div></div>
         <ProgressSummary lesson={lesson} work={data.work[lesson.id]} />
-        <div className={styles.cardFooter}><span><Check size={15} />필수 활동을 모두 마치면 수업 완료</span><Button variant="outline" nativeButton={false} render={<Link href={`/classroom/${lesson.id}`} />}>{progressFor(lesson, data.work[lesson.id]).status === "completed" ? "다시 보기" : data.work[lesson.id]?.updatedAt ? "이어하기" : "수업 시작"}<ArrowRight size={16} /></Button></div>
+        <div className={styles.cardFooter}><span>{data.work[lesson.id]?.updatedAt && progressFor(lesson, data.work[lesson.id]).status !== "completed" ? <>이어갈 곳: {resumeLabelFor(lesson, data.work[lesson.id])}</> : <><Check size={15} />필수 활동을 모두 마치면 수업 완료</>}</span><Button variant="outline" nativeButton={false} render={<Link href={`/classroom/${lesson.id}`} />}>{progressFor(lesson, data.work[lesson.id]).status === "completed" ? "다시 보기" : data.work[lesson.id]?.updatedAt ? "이어하기" : "수업 시작"}<ArrowRight size={16} /></Button></div>
       </article>)}</div>
       {!shown.length && <div className={styles.empty}><BookOpen size={32} /><h3>{data.lessons.length ? "해당하는 수업이 없어요." : "아직 열린 수업이 없어요."}</h3><p>{data.lessons.length ? "전체 수업에서 학습할 수업을 확인하세요." : "선생님이 수업을 열면 이곳에서 시작할 수 있어요."}</p>{data.lessons.length > 0 && <Button variant="outline" onClick={() => setFilter("all")}>전체 수업 보기</Button>}</div>}
     </section>

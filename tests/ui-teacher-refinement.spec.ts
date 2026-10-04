@@ -1,0 +1,139 @@
+import { expect, test, type Page } from "@playwright/test";
+import { LESSONS } from "../src/lib/classroom/catalog";
+import { buildProgrammingProject, programmingMissions } from "../src/lib/classroom/programming-entry";
+import { emptyWork, progressFor, submissionCountFor } from "../src/lib/classroom/progress";
+import type { StudentRow, TeacherDashboard, Work } from "../src/lib/classroom/types";
+import { localOnly, readyTeacher } from "./emulator";
+
+const lesson = LESSONS.find((item) => item.id === "programming-13")!;
+const project = buildProgrammingProject();
+function workWith(missions: string[], edited = false): Work {
+  const work = emptyWork(lesson);
+  work.updatedAt = missions.length ? 1000 : null;
+  work.conceptSolved = missions.length === 4 ? lesson.concepts.map((item) => item.id) : [];
+  work.quizSolved = missions.length === 4 ? lesson.quiz.map((item) => item.id) : [];
+  work.missions = Object.fromEntries(missions.map((id) => [id, { validation: null, submission: { id: `submission-${id}`, order: [], entryProject: project, submittedAt: 1000 } }]));
+  work.draft.programming!.projects = Object.fromEntries(missions.map((id) => [id, edited ? buildProgrammingProject([[{ type: "when_run_button_click", params: [null] }, { type: "move_direction", params: [{ type: "number", params: [10] }, null] }]]) : project]));
+  return work;
+}
+const rows: StudentRow[] = [[], ["name"], ["name", "multiply", "move"], ["name", "multiply", "move", "keys"], ["average"], ["name"]].map((missions, index) => ({ uid: `ui-teacher-${index}`, studentId: `2018${index + 1}`, mustChangePassword: index === 0, work: workWith(missions, index === 5) }));
+
+async function syntheticRows(page: Page, state: "normal" | "no-lesson" | "no-students" = "normal") {
+  await localOnly(page.request);
+  await readyTeacher(page.request);
+  await page.route("**/api/classroom/teacher?**", async (route) => {
+    const url = new URL(route.request().url());
+    const selectedLessonId = state === "no-lesson" ? null : url.searchParams.get("lessonId") ?? lesson.id;
+    url.searchParams.delete("lessonId");
+    const response = await route.fetch({ url: url.toString() });
+    expect(response.status()).toBe(200);
+    const data = await response.json() as TeacherDashboard;
+    await route.fulfill({ response, json: { ...data, selectedLessonId, lessons: LESSONS, classroom: { ...data.classroom, currentLessonId: selectedLessonId, openedLessonIds: state === "no-lesson" ? [] : [lesson.id, "sequence-lab"] }, students: state === "no-students" ? [] : rows.map((row) => state === "no-lesson" ? { ...row, work: null } : row) } });
+  });
+  await page.goto(`/teacher/students?classId=2-1${state === "no-lesson" ? "" : `&lessonId=${lesson.id}`}`);
+  if (state !== "no-students") await expect(page.locator("tbody tr")).toHaveCount(6);
+}
+async function filter(page: Page, name: string, choice: string) {
+  await page.getByRole("combobox", { name, exact: true }).click();
+  await page.getByRole("option", { name: choice, exact: true }).click();
+}
+
+test("알려진 최근 작품만 집계하며 선택 도전과 수정 중 제출본은 기본 완료와 분리", () => {
+  expect(rows.map((row) => submissionCountFor(lesson, row.work))).toEqual([0, 1, 3, 4, 1, 1]);
+  expect(rows.filter((row) => submissionCountFor(lesson, row.work) > 0)).toHaveLength(5);
+  expect(rows.map((row) => progressFor(lesson, row.work).practice.completed)).toEqual([0, 1, 3, 4, 0, 1]);
+  const unknown = workWith(["unknown"]);
+  expect(submissionCountFor(lesson, unknown)).toBe(0);
+  const ordinary = LESSONS.find((item) => item.id === "sequence-lab")!;
+  expect(submissionCountFor(ordinary, rows[1].work)).toBe(0);
+  unknown.submission = { id: "ordinary", order: [], submittedAt: 1000 };
+  expect(submissionCountFor(ordinary, unknown)).toBe(1);
+  expect(programmingMissions).toHaveLength(5);
+});
+
+test("교사 집계·진행/제출 필터·검색 복구는 부분 제출과 선택 도전을 정확히 표시", async ({ page }) => {
+  await syntheticRows(page);
+  const summary = page.locator('[class*="summary"]');
+  await expect(summary).toContainText("수업 완료1명");
+  await expect(summary).toContainText("실습 제출5명");
+  await expect(page.locator("tbody tr").filter({ hasText: "20186" })).toContainText("수정 중");
+  await expect(page.locator("tbody tr").filter({ hasText: "20185" })).toContainText("도전 제출");
+  await filter(page, "제출 상태", "제출함");
+  await expect(page.locator("tbody tr")).toHaveCount(5);
+  await filter(page, "진행 상태", "완료");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.locator("tbody tr")).toContainText("20184");
+  await filter(page, "진행 상태", "시작 전");
+  await expect(page.getByText("조건에 맞는 학생이 없어요.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "검색·필터 초기화" }).click();
+  await expect(page.locator("tbody tr")).toHaveCount(6);
+  await page.getByRole("searchbox", { name: "학번 검색" }).fill("20183");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.getByText("1명 표시 · 전체 6명", { exact: true })).toBeVisible();
+  await filter(page, "확인할 수업", LESSONS.find((item) => item.id === "sequence-lab")!.title);
+  await expect(page.locator("tbody tr")).toHaveCount(6);
+  await expect(page.getByRole("searchbox", { name: "학번 검색" })).toHaveValue("");
+  await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("모든 진행");
+  await expect(page.getByRole("combobox", { name: "제출 상태", exact: true })).toHaveText("모든 제출");
+  await filter(page, "제출 상태", "미제출");
+  await page.getByRole("searchbox", { name: "학번 검색" }).fill("20181");
+  await filter(page, "담당 반", "2학년 2반");
+  await expect(page.locator("tbody tr")).toHaveCount(6);
+  await expect(page.getByRole("searchbox", { name: "학번 검색" })).toHaveValue("");
+  await expect(page.getByRole("combobox", { name: "제출 상태", exact: true })).toHaveText("모든 제출");
+});
+
+test("열린 수업 없음은 학습 필터만 비활성화하고 계정 조회·검색을 유지", async ({ page }) => {
+  await syntheticRows(page, "no-lesson");
+  await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toBeDisabled();
+  await expect(page.getByRole("combobox", { name: "제출 상태", exact: true })).toBeDisabled();
+  await page.getByRole("searchbox", { name: "학번 검색" }).fill("20181");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "20181 비밀번호 초기화", exact: true })).toBeVisible();
+});
+
+test("등록 학생 없음은 필터 결과 없음과 구분", async ({ page }) => {
+  await syntheticRows(page, "no-students");
+  await expect(page.getByText("등록된 학생이 없어요.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "검색·필터 초기화" })).toHaveCount(0);
+});
+
+test("좁은 학생 행은 요약·상세를 분리하고 대화상자/화면 전환 뒤 초점을 보존", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  await page.setViewportSize({ width: 390, height: 900 });
+  await syntheticRows(page);
+  const row = page.locator("tbody tr").filter({ hasText: "20182" });
+  const toggle = row.getByRole("button", { name: "20182 상세 보기" });
+  const viewer = page.getByRole("button", { name: "20182 제출 작품 보기", exact: true });
+  const reset = page.getByRole("button", { name: "20182 비밀번호 초기화", exact: true });
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(viewer).toBeHidden();
+  await expect(reset).toBeHidden();
+  await toggle.focus(); await page.keyboard.press("Enter");
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await viewer.click();
+  const dialog = page.getByRole("dialog", { name: "20182 학생의 제출 작품", exact: true });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(viewer).toBeFocused();
+  await reset.click();
+  const confirm = page.getByRole("alertdialog");
+  await expect(confirm.getByRole("button", { name: "취소", exact: true })).toBeFocused();
+  await page.keyboard.press("Escape"); await expect(reset).toBeFocused();
+  await page.setViewportSize({ width: 1440, height: 900 }); await expect(reset).toBeFocused();
+  await page.setViewportSize({ width: 768, height: 900 }); await expect(reset).toBeFocused();
+  await toggle.click(); await expect(viewer).toBeHidden();
+  await toggle.focus();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(row.locator("th")).toBeFocused(); await expect(viewer).toBeVisible();
+  await viewer.click();
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.keyboard.press("Escape"); await expect(viewer).toBeFocused();
+  for (const width of [320, 768, 1180, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  expect(errors).toEqual([]);
+});

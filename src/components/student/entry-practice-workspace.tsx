@@ -1,25 +1,30 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import { Check, CheckCircle2, Play, RotateCcw, Send, Square } from "lucide-react";
+import { Check, CheckCircle2, Maximize2, Minimize2, Play, RotateCcw, Send, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Lesson, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { buildEntryProject, parseEntryProject } from "@/lib/classroom/entry-project";
 import { practiceMatches } from "@/lib/classroom/progress";
 import { buildProgrammingProject, parseProgrammingProject, type ProgrammingMission } from "@/lib/classroom/programming-entry";
 import { checkNameMission, type NameRun } from "@/lib/prototype/name-entry";
+import type { useWork } from "./use-work";
 import common from "./student.module.css";
 import styles from "./entry-practice-workspace.module.css";
 
 const CHANNEL = "cs-class-entryjs";
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
-export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, update, runAction, exportRef, mission }: {
+export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, update, runAction, exportRef, mission, saveLabel, saveState, workspaceWide, onWorkspaceWideChange }: {
   lesson: Lesson; work: Work; draft: WorkDraft; locked: boolean; busy: boolean;
   update: (next: WorkDraft) => void;
   runAction: (action: WorkAction, focusId: string) => Promise<void>;
   exportRef: RefObject<(() => Promise<string | null>) | null>;
   mission?: ProgrammingMission;
+  saveLabel: string;
+  saveState: ReturnType<typeof useWork>["saveState"];
+  workspaceWide: boolean;
+  onWorkspaceWideChange: (wide: boolean) => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const editorProject = useRef<string | null>(null);
@@ -35,6 +40,12 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
   const [result, setResult] = useState("블록을 연결한 뒤 실행해 보세요.");
   const runs = useRef<NameRun[]>([]);
   const currentRun = useRef<{ id: string; key: string } | null>(null);
+  const viewToggle = useRef<HTMLButtonElement>(null);
+  const previousWide = useRef(workspaceWide);
+  useEffect(() => {
+    if (previousWide.current !== workspaceWide) viewToggle.current?.focus({ preventScroll: true });
+    previousWide.current = workspaceWide;
+  }, [workspaceWide]);
   const parse = mission ? parseProgrammingProject : parseEntryProject;
   const program = parse(draft.entryProject);
   const validation = practiceMatches(draft, work.validation) ? work.validation : null;
@@ -148,8 +159,17 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
           {running ? <Square size={14} /> : <Play size={14} />}{running ? "실행 정지" : "실행하기"}
         </Button>
         <Button size="sm" variant="outline" disabled={locked || preparing || phase !== "ready"} onClick={() => send("reset-stage")}><RotateCcw size={14} />무대 처음 위치로</Button>
+        <Button ref={viewToggle} size="sm" variant="outline" aria-pressed={workspaceWide} onClick={() => onWorkspaceWideChange(!workspaceWide)} onKeyDown={(event) => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); onWorkspaceWideChange(false); } }}>
+          {workspaceWide ? <Minimize2 size={14} /> : <Maximize2 size={14} />}{workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"}
+        </Button>
       </div></div>
-      <p className={styles.help} id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 실행 버튼으로 돌아와요.</p>
+      <div className={styles.workStates} role="group" aria-label="작품 저장·검증·제출 상태">
+        <span role="status" aria-atomic="true" data-save-state={saveState}><strong>저장</strong>{saveLabel}</span>
+        <span><strong>검증</strong>{validation ? validation.passed ? "검증 통과" : "조건 보완 필요" : work.validation ? "다시 검증 필요" : "검증 전"}</span>
+        <span><strong>제출</strong>{submitted ? "현재 작품 제출 완료" : work.submission ? "이전 제출 유지 · 수정 중" : "아직 제출 전"}</span>
+        {saveState === "failed" && <Button size="sm" variant="ghost" onClick={() => document.getElementById("work-save-error")?.focus()}>저장 오류 확인</Button>}
+      </div>
+      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 실행 버튼으로 돌아와요.</p></details>
       {(!program || error) && <div role="alert" className={styles.error}><p>{error || "저장된 작품을 읽지 못했어요. 기존 저장본은 유지돼요."}</p>{phase === "failed" && program && <Button variant="outline" onClick={retry}>작업실 다시 불러오기</Button>}
         {!program && <Button variant="outline" disabled={locked} onClick={() => { if (window.confirm("현재 편집 중인 블록을 시작 블록 하나로 바꿀까요? 이전 제출본은 유지돼요.")) { const starter = mission ? buildProgrammingProject() : buildEntryProject(); update({ ...draft, entryProject: starter, practiceOrder: mission ? [] : ["when_run_button_click"] }); retry(); } }}>시작 블록으로 다시 만들기</Button>}
       </div>}
@@ -168,9 +188,9 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
         })}</ul>
       </div>
       <div className={styles.actions}>
-        <Button disabled={locked || preparing || running || phase !== "ready" || !program} onClick={() => void act({ type: "validate-practice" }, "practice-feedback")}>{busy || preparing ? "확인 중…" : "조건 검증"}</Button>
+        <Button variant={validation?.passed && !submitted ? "outline" : "default"} disabled={locked || preparing || running || phase !== "ready" || !program} onClick={() => void act({ type: "validate-practice" }, "practice-feedback")}>{busy || preparing ? "확인 중…" : "조건 검증"}</Button>
         {validation && <p id="practice-feedback" tabIndex={-1} role="status" className={validation.passed ? common.feedbackGood : common.feedbackRetry}>{validation.message}</p>}
-        <Button variant="outline" disabled={locked || preparing || running || phase !== "ready" || !validation?.passed || submitted} onClick={() => void act({ type: "submit-practice" }, "submitted-heading")}><Send size={16} />{submitted ? "이 작품 제출 완료" : work.submission ? "수정한 작품 제출" : "작품 제출"}</Button>
+        <Button variant={validation?.passed && !submitted ? "default" : "outline"} disabled={locked || preparing || running || phase !== "ready" || !validation?.passed || submitted} onClick={() => void act({ type: "submit-practice" }, "submitted-heading")}><Send size={16} />{submitted ? "이 작품 제출 완료" : work.submission ? "수정한 작품 제출" : "작품 제출"}</Button>
         {!work.submission && validation?.passed && <p className={common.smallNote}>검증 통과 · 아직 제출 전이에요.</p>}
       </div>
     </aside>

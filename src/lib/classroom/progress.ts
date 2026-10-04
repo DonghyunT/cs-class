@@ -3,6 +3,9 @@ import { buildProgrammingProject, programmingMissions, programmingProjectMatches
 import type { Lesson, Progress, ValidationResult, Work, WorkDraft } from "./types";
 
 export const STATUS_LABELS = { "not-started": "시작 전", "in-progress": "진행 중", completed: "완료" };
+export function submissionCountFor(lesson: Lesson, work?: Work | null): number {
+  return lesson.practice.type === "programming" ? programmingMissions.filter((mission) => work?.missions?.[mission.id]?.submission).length : work?.submission ? 1 : 0;
+}
 export function emptyWork(lesson: Lesson): Work {
   return {
     lessonId: lesson.id, revision: 0,
