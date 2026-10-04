@@ -135,6 +135,8 @@ test("설정 저장: 실패 시 입력 유지·재시도·초점 복귀·토스�
   await expect(toast).toBeVisible();
   await manage.press("Enter");
   await expect(dialog).toBeVisible();
+  // Base UI queues initial focus on the next frame; visibility alone is not keyboard readiness.
+  await expect.poll(() => dialog.evaluate((node) => node.contains(document.activeElement))).toBe(true);
   await page.keyboard.press("F6");
   expect(await dialog.evaluate((node) => node.contains(document.activeElement))).toBe(true);
   await page.keyboard.press("Escape");
