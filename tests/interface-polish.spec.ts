@@ -74,8 +74,11 @@ test("공통 선택 메뉴의 둥근 팝업·좁은 창·키보드·대화상자
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
   await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("option", { name: "2학년 1반", exact: true })).toBeVisible();
   await page.keyboard.press("Home");
+  await expect(page.getByRole("option", { name: "2학년 1반", exact: true })).toHaveAttribute("data-highlighted", "");
   await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("option", { name: "2학년 2반", exact: true })).toHaveAttribute("data-highlighted", "");
   await page.keyboard.press("Enter");
   await expect(classes).toHaveText("2학년 2반");
   await expect(page.getByRole("combobox", { name: "확인할 수업", exact: true })).toBeDisabled();

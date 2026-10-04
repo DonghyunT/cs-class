@@ -30,28 +30,28 @@ test("수업 관리: 이번 수업과 열린 수업 전체·미지정·빈 반·
   const opened = page.getByRole("region", { name: "열린 수업", exact: true });
   const current = page.locator('section[aria-labelledby="current-lesson-title"]');
   await expect(current.getByRole("heading", { level: 2 })).toHaveText(LESSONS[0].title);
-  await expect(opened.getByRole("listitem")).toHaveCount(3);
+  await expect(opened.getByRole("listitem")).toHaveCount(LESSONS.length);
   for (const lesson of LESSONS) {
     const item = opened.getByRole("listitem").filter({ has: page.getByRole("heading", { level: 3, name: lesson.title, exact: true }) });
     await expect(item).toContainText(lesson.description);
     await expect(item.getByText(lesson.id === lessonId ? "이번 수업" : "복습 가능", { exact: true })).toBeVisible();
   }
   await expect(opened.getByText("이번 수업", { exact: true })).toHaveCount(1);
-  await expect(opened.getByText("복습 가능", { exact: true })).toHaveCount(2);
+  await expect(opened.getByText("복습 가능", { exact: true })).toHaveCount(LESSONS.length - 1);
   await expect(page.getByRole("link", { name: "학생 진행·제출 작품·계정 관리로 이동", exact: true })).toHaveCount(0);
   for (const width of [1440, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await expect(opened.getByRole("heading", { level: 3 })).toHaveCount(3);
+    await expect(opened.getByRole("heading", { level: 3 })).toHaveCount(LESSONS.length);
     if (width === 1440 || width === 390) await page.screenshot({ path: testInfo.outputPath(`opened-lessons-${width}.png`), fullPage: true });
   }
 
   await classRef.update({ currentLessonId: null });
   await page.reload();
   await expect(current.getByRole("heading", { level: 2 })).toHaveText("이번 수업을 지정해 주세요.");
-  await expect(opened.getByRole("listitem")).toHaveCount(3);
+  await expect(opened.getByRole("listitem")).toHaveCount(LESSONS.length);
   await expect(opened.getByText("이번 수업", { exact: true })).toHaveCount(0);
-  await expect(opened.getByText("복습 가능", { exact: true })).toHaveCount(3);
+  await expect(opened.getByText("복습 가능", { exact: true })).toHaveCount(LESSONS.length);
 
   await page.getByRole("combobox", { name: "담당 반", exact: true }).click();
   await page.getByRole("option", { name: "2학년 2반", exact: true }).click();
@@ -135,6 +135,8 @@ test("설정 저장: 실패 시 입력 유지·재시도·초점 복귀·토스�
   await expect(toast).toBeVisible();
   await manage.press("Enter");
   await expect(dialog).toBeVisible();
+  // Base UI queues initial focus on the next frame; visibility alone is not keyboard readiness.
+  await expect.poll(() => dialog.evaluate((node) => node.contains(document.activeElement))).toBe(true);
   await page.keyboard.press("F6");
   expect(await dialog.evaluate((node) => node.contains(document.activeElement))).toBe(true);
   await page.keyboard.press("Escape");

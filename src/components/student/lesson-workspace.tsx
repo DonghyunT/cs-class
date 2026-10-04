@@ -11,6 +11,8 @@ import type { Lesson, Question, Stage, StudentDashboard, Work, WorkAction, WorkD
 import { LearningStatus, ProgressSummary } from "./progress-summary";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
 import { useWork } from "./use-work";
+import { ProgrammingLearningStage } from "./programming-lesson";
+import { parseProgrammingProject, programmingMissions } from "@/lib/classroom/programming-entry";
 import styles from "./student.module.css";
 
 const stages = [{ id: "concept", label: "개념", icon: BookOpen }, { id: "quiz", label: "퀴즈", icon: CheckCircle2 }, { id: "practice", label: "실습", icon: Layers3 }] as const;
@@ -66,6 +68,7 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
     <li><strong>이어갈 단계</strong>{stages.find((stage) => stage.id === draft.stage)?.label}</li>
     {lesson.concepts.map((concept, i) => <li key={concept.id}><strong>개념 {i + 1}</strong>{label(concept.question, draft.conceptAnswers[concept.id])}</li>)}
     {lesson.quiz.map((question, i) => <li key={question.id}><strong>퀴즈 {i + 1}</strong>{label(question, draft.quizAnswers[question.id])}</li>)}
+    {lesson.practice.type === "programming" && programmingMissions.map((mission) => <li key={mission.id}><strong>{mission.title}</strong>{draft.programming?.projects[mission.id] ? `${parseProgrammingProject(draft.programming.projects[mission.id])?.order.length ?? 0}개 블록` : "아직 시작하지 않았어요"}</li>)}
     <li><strong>{lesson.practice.type === "entryjs" ? "엔트리 블록" : "실습 순서"}</strong>{lesson.practice.type === "entryjs" ? `${draft.practiceOrder.length}개 블록 조립됨` : draft.practiceOrder.map((id) => lesson.practice.blocks.find((block) => block.id === id)?.label).filter(Boolean).join(" → ")}</li>
   </ul>;
 }
@@ -75,11 +78,12 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
   const readEditorDraft = useCallback(async (current: WorkDraft) => {
     if (!entryExport.current) return current;
     const serialized = await entryExport.current();
-    const project = parseEntryProject(serialized);
+    const project = lesson.practice.type === "programming" ? parseProgrammingProject(serialized) : parseEntryProject(serialized);
     if (!serialized || !project) throw new Error("작품을 확인하지 못했어요. 블록과 입력값을 확인하고 다시 시도해 주세요.");
+    if (lesson.practice.type === "programming" && current.programming) return { ...current, programming: { ...current.programming, projects: { ...current.programming.projects, [current.programming.mission]: JSON.stringify(project.project) } } };
     return { ...current, entryProject: serialized, practiceOrder: project.order };
-  }, []);
-  const controller = useWork(initial, uid, lesson.practice.type === "entryjs" ? readEditorDraft : undefined);
+  }, [lesson.practice.type]);
+  const controller = useWork(initial, uid, lesson.practice.type === "entryjs" || lesson.practice.type === "programming" ? readEditorDraft : undefined);
   const { work, draft, busy, update, perform, saveState, error } = controller;
   const progress = progressFor(lesson, work);
   const [moveMessage, setMoveMessage] = useState("");
@@ -134,7 +138,9 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
     {controller.remote && <section className={styles.conflictPanel} aria-label="저장 충돌 비교"><h2>어떤 입력으로 이어갈까요?</h2><p>서버의 완료·제출 기록은 유지돼요. 입력 내용은 아래에서 직접 선택하세요.</p><div className={styles.comparisonGrid}><div><h3>이 화면의 입력</h3><DraftComparison lesson={lesson} draft={draft} /></div><div><h3>서버에 저장된 입력</h3><DraftComparison lesson={lesson} draft={controller.remote.draft} /></div></div><div className={styles.actions}><Button disabled={busy} onClick={() => void controller.resolve(true)}>현재 입력을 새 버전으로 저장</Button><Button variant="outline" disabled={busy} onClick={() => void controller.resolve(false)}>서버 기록으로 이어하기</Button></div></section>}
     <div className={styles.tabs} role="tablist" aria-label="수업 단계">{stages.map((stage, index) => <button key={stage.id} id={`tab-${stage.id}`} type="button" role="tab" aria-selected={draft.stage === stage.id} aria-controls={`panel-${stage.id}`} tabIndex={draft.stage === stage.id ? 0 : -1} disabled={locked} onKeyDown={(event) => tabKey(event, index)} onClick={() => void switchStage(stage.id, true)}><stage.icon size={18} /><span>{stage.label}</span><span className={styles.tabPercent}>{progress[stage.id].percent}%</span></button>)}</div>
 
-    {draft.stage === "concept" && <section id="panel-concept" role="tabpanel" aria-labelledby="tab-concept" tabIndex={0} className={styles.stagePanel}>
+    {lesson.practice.type === "programming" && <ProgrammingLearningStage lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} />}
+
+    {lesson.practice.type !== "programming" && draft.stage === "concept" && <section id="panel-concept" role="tabpanel" aria-labelledby="tab-concept" tabIndex={0} className={styles.stagePanel}>
       <div className={styles.stageHeading}><div><h2 id="stage-heading-concept" tabIndex={-1}>설명을 읽고 바로 확인해요</h2><p>개념 확인 문제를 해결하면 자동으로 완료돼요.</p></div><span>{progress.concept.completed} / {progress.concept.total}개 완료</span></div>
       {lesson.concepts.map((concept, index) => {
         const solved = work.conceptSolved.includes(concept.id);
@@ -149,13 +155,13 @@ function WorkEditor({ lesson, initial, uid, otherCurrent }: { lesson: Lesson; in
       <div className={styles.stageFooter}><p>{progress.concept.percent === 100 ? "개념을 모두 확인했어요. 퀴즈에서 다시 적용해 볼까요?" : "필요할 때 개념을 다시 살펴볼 수 있어요."}</p><Button disabled={locked} onClick={() => void switchStage("quiz")}>퀴즈로 이동<ArrowRight size={16} /></Button></div>
     </section>}
 
-    {draft.stage === "quiz" && <section id="panel-quiz" role="tabpanel" aria-labelledby="tab-quiz" tabIndex={0} className={styles.stagePanel}>
+    {lesson.practice.type !== "programming" && draft.stage === "quiz" && <section id="panel-quiz" role="tabpanel" aria-labelledby="tab-quiz" tabIndex={0} className={styles.stagePanel}>
       <div className={styles.stageHeading}><div><h2 id="stage-heading-quiz" tabIndex={-1}>{quizComplete ? "모든 문제를 해결했어요" : work.quizRound > 1 ? `틀린 문제에 다시 도전해요 · ${work.quizRound}회차` : "배운 내용을 확인해요"}</h2><p>{quizComplete ? "해결한 기록은 남아 있어요. 실습으로 이어가세요." : "한 바퀴를 마치면 틀린 문제만 다시 풀어요. 필요할 때 힌트를 열어 보세요."}</p></div><span>{progress.quiz.completed} / {progress.quiz.total}문항 해결</span></div>
       <div className={styles.quizGrid}>{quizQuestions.map((question, index) => <article key={`${work.quizRound}-${question.id}`} className={styles.quizCard}><div className={styles.questionNumber}>문제 {lesson.quiz.findIndex((item) => item.id === question.id) + 1}<span>{index + 1} / {quizQuestions.length}</span></div><AnswerChoices question={question} answer={draft.quizAnswers[question.id]} disabled={locked || work.quizRoundGraded} onChange={(answer) => update({ ...draft, quizAnswers: { ...draft.quizAnswers, [question.id]: answer } })} /><Hint hint={question.hint} />{work.quizRoundGraded && work.quizFeedback[question.id] && <p role="status" className={work.quizFeedback[question.id].correct ? styles.feedbackGood : styles.feedbackRetry}>{work.quizFeedback[question.id].correct && <Check size={16} />}{work.quizFeedback[question.id].message}</p>}</article>)}</div>
       <div className={styles.stageFooter}><div><p>{quizComplete ? "퀴즈 100% 완료" : work.quizRoundGraded ? `${lesson.quiz.length - work.quizSolved.length}문항을 다시 풀면 퀴즈가 완료돼요.` : unanswered ? `${unanswered}문항을 더 선택하면 결과를 확인할 수 있어요.` : "모든 답을 선택했어요. 결과를 확인해 보세요."}</p>{!quizComplete && (!work.quizRoundGraded ? <Button disabled={locked || unanswered > 0} onClick={() => void runAction({ type: "grade-quiz" }, "stage-heading-quiz")}>{busy ? "확인 중…" : "이번 문제 결과 확인"}</Button> : <Button disabled={locked} onClick={() => void runAction({ type: "retry-quiz" }, "stage-heading-quiz")}><RotateCcw size={16} />틀린 문제만 다시 풀기</Button>)}</div><Button variant={quizComplete ? "default" : "outline"} disabled={locked} onClick={() => void switchStage("practice")}>{quizComplete ? "실습으로 이동" : "먼저 실습하기"}<ArrowRight size={16} /></Button></div>
     </section>}
 
-    {draft.stage === "practice" && (
+    {lesson.practice.type !== "programming" && draft.stage === "practice" && (
       <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" tabIndex={0} className={styles.stagePanel}>
         <div className={styles.stageHeading}>
           <div>

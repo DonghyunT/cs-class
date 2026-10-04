@@ -8,7 +8,8 @@ import { useSession } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { PLANNER_LIMIT, eventDate, seoulToday, type ClassEvent, type ScheduleData } from "@/lib/classroom/planner";
+import { PLANNER_LIMIT, TIMETABLE_SCHOOL, eventDate, seoulToday, type ClassEvent, type ScheduleData } from "@/lib/classroom/planner";
+import { api } from "@/lib/classroom/client";
 import { useSavedList } from "./use-saved-list";
 import { composing } from "./todos";
 import { LoadingList } from "./loading-list";
@@ -24,6 +25,9 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
   const list = useSavedList<ClassEvent, ScheduleData>(path, `classroom/schedule/${classId ?? ""}`, uid);
   const [draft, setDraft] = useState<{ id: string | null; title: string; date: string; lessonId: string | null }>({ id: null, title: "", date: seoulToday(), lessonId: null });
   const [focus, setFocus] = useState(0);
+  const [refreshingTimetable, setRefreshingTimetable] = useState(false);
+  const [timetableMessage, setTimetableMessage] = useState("");
+  const [timetableError, setTimetableError] = useState("");
   const form = useRef<HTMLFormElement>(null);
   const title = useRef<HTMLInputElement>(null);
   const { register, beforeLeave } = useNavigationGuard();
@@ -53,22 +57,48 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
   // The concrete class comes from the authorized response, including the default class.
   const resolvedClassId = classId ?? list.data?.classroom.id;
   const today = seoulToday();
-  const sorted = [...list.items].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+  const timetable = list.data?.timetable;
+  const sorted = [
+    ...list.items.map((item) => ({ ...item, slot: null })),
+    ...(timetable?.items ?? []).map((slot) => ({ id: slot.id, title: `정보 · ${slot.period}교시`, date: slot.date, lessonId: null, slot })),
+  ].sort((a, b) => a.date.localeCompare(b.date) || (a.slot?.period ?? 99) - (b.slot?.period ?? 99) || a.id.localeCompare(b.id));
   const items = summary ? sorted.filter((item) => item.date >= today).slice(0, 3) : sorted;
-  const locked = list.saving || !!list.error || !!list.loadError;
+  const locked = list.saving || !!list.error || !!list.loadError || refreshingTimetable;
+  async function refreshSchool() {
+    if (!resolvedClassId || refreshingTimetable || !(await flush())) return;
+    setRefreshingTimetable(true); setTimetableError(""); setTimetableMessage("");
+    try {
+      await api<ScheduleData>(`classroom/timetable/${encodeURIComponent(resolvedClassId)}`, {}, "POST", uid);
+      if (await list.refresh()) setTimetableMessage("학교 시간표를 갱신했어요.");
+    } catch (error) {
+      setTimetableError(error instanceof Error ? error.message : "학교 시간표를 갱신하지 못했어요.");
+      await list.refresh();
+    } finally { setRefreshingTimetable(false); }
+  }
   return <section className={summary ? `${styles.panel} ${styles.schedulePanel}` : styles.page} aria-labelledby="schedule-heading">
     {!summary && <header className={styles.heading}><div><span className={styles.eyebrow}>우리 반 일정</span><h1>다가오는 일을 살펴봐요.</h1><p>날짜는 한국 시간 기준이에요. 날짜가 지나도 수업·제출은 계속할 수 있어요.</p></div><CalendarDays aria-hidden="true" /></header>}
     <div className={styles.sectionHeading}><div className={styles.sectionTitle}>{summary && <span className={`${styles.titleIcon} ${styles.scheduleIcon}`}><CalendarDays size={19} aria-hidden="true" /></span>}<h2 id="schedule-heading">{summary ? "다가오는 일정" : "전체 일정"}</h2></div>{summary ? <Link href={`${home}/schedule${teacher && classId ? `?classId=${encodeURIComponent(classId)}` : ""}`}>전체 보기 <ArrowRight size={15} aria-hidden="true" /></Link> : list.data && <label className={styles.classPicker}>담당 반{teacher ? <Select label="담당 반" value={list.data.classroom.id} onValueChange={async (selected) => { if (await beforeLeave()) router.push(`${home}/schedule?classId=${encodeURIComponent(selected)}`); }} options={list.data.classrooms.map((item) => ({ value: item.id, label: item.name }))} /> : <span>{list.data.classroom.name}</span>}</label>}</div>
-    {summary && <MonthCalendar today={today} events={list.data?.items ?? []} pending={!list.data} />}
+    {summary && <MonthCalendar today={today} events={sorted} pending={!list.data} />}
     {!summary && <button type="button" className={styles.textButton} disabled={locked} onClick={() => void list.refresh()}><RefreshCw size={15} aria-hidden="true" />일정 새로고침</button>}
     {list.loadError && <div className={styles.error} role="alert"><p>{list.loadError} {list.data && "마지막으로 조회한 일정이에요."}</p><Button variant="outline" disabled={list.saving} onClick={() => void list.refresh()}>일정 다시 불러오기</Button></div>}
     {!list.data && !list.loadError && <LoadingList label="일정을 불러오고 있어요." />}
     {list.data && <>
+      {!summary && timetable && <div className={styles.timetableNotice}>
+        <div><strong>{TIMETABLE_SCHOOL.name} · 정보 수업 시간표</strong><p>{timetable.scheduled ? "매일 저녁 7시경 갱신해요." : "선생님이 학교 시간표를 가져오면 각 반에 표시돼요."} {timetable.checkedAt ? <>마지막 확인 <time dateTime={new Date(timetable.checkedAt).toISOString()}>{new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit", hour12: false }).format(timetable.checkedAt)}</time></> : "아직 가져온 시간표가 없어요."}</p>
+          {timetable.rangeStart && timetable.rangeEnd && <p>공개된 기간 {eventDate(timetable.rangeStart)} ~ {eventDate(timetable.rangeEnd)}</p>}
+          <a href={TIMETABLE_SCHOOL.url} target="_blank" rel="noopener noreferrer">학교 시간표 보기<span className="sr-only"> · 새 창</span></a>
+        </div>
+        {teacher && <Button variant="outline" disabled={list.saving || !!list.error || !!list.loadError || !resolvedClassId || (!!timetable.refreshing && !refreshingTimetable)} aria-disabled={refreshingTimetable} aria-busy={refreshingTimetable} onClick={() => void refreshSchool()}><RefreshCw size={15} aria-hidden="true" />{refreshingTimetable ? "시간표 갱신 중" : "학교 시간표 지금 갱신"}</Button>}
+      </div>}
+      {timetable?.error && <p className={styles.error}>{timetable.error}</p>}
+      {timetable?.stale && <p className={styles.muted}>시간표 갱신이 늦어지고 있어요. 마지막 확인 시각을 확인해 주세요.</p>}
+      {!summary && timetableError && <p className={styles.error} role="alert">{timetableError}</p>}
+      {!summary && <p role="status" className={styles.saveStatus}>{refreshingTimetable ? "학교의 공개 시간표를 가져오고 있어요." : timetableMessage}</p>}
       {!items.length && <p className={styles.empty}>{summary ? "다가오는 일정이 없어요." : "아직 등록된 일정이 없어요."}{!teacher && " 선생님이 일정을 등록하면 여기에 보여요."}</p>}
       <ul className={styles.eventList}>{items.map((item) => <li key={item.id}>
         <time dateTime={item.date}>{eventDate(item.date)}{!summary && item.date < today && <small>지난 일정</small>}</time>
-        <div><strong>{item.title}</strong>{item.lessonId && <Link href={teacher ? `/teacher/students?classId=${resolvedClassId}&lessonId=${encodeURIComponent(item.lessonId)}` : `/classroom/${encodeURIComponent(item.lessonId)}`}>{list.data!.lessons.find((lesson) => lesson.id === item.lessonId)?.title ?? "연결된 수업"}<ArrowRight size={14} aria-hidden="true" /></Link>}{list.changes.some((change) => change.id === item.id) && <small>{list.error ? "저장 실패 · 변경 보관 중" : "저장 중"}</small>}</div>
-        {!summary && teacher && <div className={styles.rowActions}><button type="button" aria-label={`${item.title} 수정`} disabled={locked} onClick={() => { setDraft(item); setFocus((value) => value + 1); }}><Pencil size={16} aria-hidden="true" /></button><button type="button" aria-label={`${item.title} 삭제`} disabled={locked} onClick={() => { send({ id: item.id, item: null }); setFocus((value) => value + 1); }}><Trash2 size={16} aria-hidden="true" /></button></div>}
+        <div><strong>{item.title}</strong>{item.slot && <><small>{item.slot.startsAt} 시작 · 학교 시간표</small>{item.slot.changed && <small className={styles.timetableChanged}>변경된 수업</small>}</>}{item.lessonId && <Link href={teacher ? `/teacher/students?classId=${resolvedClassId}&lessonId=${encodeURIComponent(item.lessonId)}` : `/classroom/${encodeURIComponent(item.lessonId)}`}>{list.data!.lessons.find((lesson) => lesson.id === item.lessonId)?.title ?? "연결된 수업"}<ArrowRight size={14} aria-hidden="true" /></Link>}{list.changes.some((change) => change.id === item.id) && <small>{list.error ? "저장 실패 · 변경 보관 중" : "저장 중"}</small>}</div>
+        {!summary && teacher && !item.slot && <div className={styles.rowActions}><button type="button" aria-label={`${item.title} 수정`} disabled={locked} onClick={() => { setDraft({ id: item.id, title: item.title, date: item.date, lessonId: item.lessonId }); setFocus((value) => value + 1); }}><Pencil size={16} aria-hidden="true" /></button><button type="button" aria-label={`${item.title} 삭제`} disabled={locked} onClick={() => { send({ id: item.id, item: null }); setFocus((value) => value + 1); }}><Trash2 size={16} aria-hidden="true" /></button></div>}
       </li>)}</ul>
       {!summary && teacher && <ScheduleForm key={resolvedClassId} resolvedClassId={resolvedClassId} draft={draft} setDraft={setDraft} form={form} title={title} locked={locked} lessons={list.data.lessons} submit={submit} cancel={() => { setDraft({ id: null, title: "", date: seoulToday(), lessonId: null }); setFocus((value) => value + 1); }} />}
       {!summary && teacher && list.items.length >= PLANNER_LIMIT && <p className={styles.muted}>파일럿은 반 일정 {PLANNER_LIMIT}개까지 저장해요. 필요 없는 일정을 지워 주세요.</p>}
@@ -78,7 +108,7 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
   </section>;
 }
 
-function MonthCalendar({ today, events, pending }: { today: string; events: ClassEvent[]; pending: boolean }) {
+function MonthCalendar({ today, events, pending }: { today: string; events: Pick<ClassEvent, "date">[]; pending: boolean }) {
   const [year, month] = today.split("-").map(Number);
   const start = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7;
   const days = new Date(Date.UTC(year, month, 0)).getUTCDate();

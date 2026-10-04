@@ -1,5 +1,6 @@
 import type { Lesson } from "./types";
 import { buildEntryProject } from "./entry-project";
+import { PROGRAMMING_LESSON } from "./programming-lesson";
 
 export const SAMPLE_LESSON: Lesson = {
   id: "sequence-lab",
@@ -222,7 +223,7 @@ export const ENTRY_BOT_LESSON: Lesson = {
   },
 };
 
-export const LESSONS: Lesson[] = [SAMPLE_LESSON, FLOWCHART_LESSON, ENTRY_BOT_LESSON];
+export const LESSONS: Lesson[] = [SAMPLE_LESSON, FLOWCHART_LESSON, ENTRY_BOT_LESSON, PROGRAMMING_LESSON];
 
 export function findLesson(id: string) {
   return LESSONS.find((lesson) => lesson.id === id);

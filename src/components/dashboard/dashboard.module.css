@@ -83,6 +83,13 @@
 .eventList li > div:not(.rowActions) { min-width: 0; flex: 1; }
 .eventList strong { display: block; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
 .eventList .rowActions { margin-left: auto; }
+.timetableNotice { display: flex; gap: 16px; align-items: center; justify-content: space-between; background: #fff8f3; border: 1px solid #efdfd7; border-radius: 16px; padding: 16px; margin: 12px 0; }
+.timetableNotice > div { min-width: 0; }
+.timetableNotice strong { font-size: 14px; }
+.timetableNotice p { color: #526173; font-size: 12px; margin: 6px 0; overflow-wrap: anywhere; }
+.timetableNotice a { color: #2e5fab; display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; }
+.timetableNotice > button { flex-shrink: 0; }
+.eventList small.timetableChanged { color: #8e4b2c; font-weight: 650; }
 .monthCalendar { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 2px 4px; margin: 2px 0 12px; }
 .monthCalendar caption { text-align: left; padding: 0 0 10px; }
 .monthCalendar caption > span:first-child { font-size: 15px; font-weight: 700; color: #202b3a; }
@@ -121,5 +128,6 @@
   .eventList time { width: auto; }
   .eventList .rowActions { flex-basis: 100%; justify-content: end; }
   .classPicker { flex-wrap: wrap; }
+  .timetableNotice { flex-direction: column; align-items: start; }
   .allLessons { justify-content: start; }
 }

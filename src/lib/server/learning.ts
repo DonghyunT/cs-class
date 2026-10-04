@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Lesson, Work, WorkAction } from "../classroom/types";
 import { parseEntryProject } from "../classroom/entry-project";
+import { checkProgrammingMission, missionById, parseProgrammingProject, programmingProjectMatches } from "../classroom/programming-entry";
 import { practiceMatches } from "../classroom/progress";
 import { requireCondition } from "./errors";
 import { getLessonSolution } from "./solutions";
@@ -14,14 +15,15 @@ export const draftSchema = z.object({
   quizAnswers: z.record(z.string().max(30), z.string().max(30)),
   practiceOrder: z.array(z.string().max(30)).max(50),
   entryProject: z.string().max(100000).nullable().optional(),
+  programming: z.object({ mission: z.string().max(20), projects: z.record(z.string().max(20), z.string().max(80000)), reflection: z.string().max(500) }).strict().optional(),
 }).strict();
 
 export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("check-concept"), conceptId: z.string().max(30) }).strict(),
   z.object({ type: z.literal("grade-quiz") }).strict(),
   z.object({ type: z.literal("retry-quiz") }).strict(),
-  z.object({ type: z.literal("validate-practice") }).strict(),
-  z.object({ type: z.literal("submit-practice") }).strict(),
+  z.object({ type: z.literal("validate-practice"), missionId: z.string().max(20).optional() }).strict(),
+  z.object({ type: z.literal("submit-practice"), missionId: z.string().max(20).optional() }).strict(),
 ]);
 
 export function sameOrder(a: string[], b: string[]) {
@@ -35,6 +37,12 @@ export function validateDraft(draft: z.infer<typeof draftSchema>, lesson: Lesson
   for (const [id, value] of Object.entries(draft.quizAnswers)) {
     requireCondition(lesson.quiz.find((q) => q.id === id)?.options.some((option) => option.id === value), 400, "INVALID_ANSWER", "퀴즈 답안을 확인해 주세요.");
   }
+  if (lesson.practice.type === "programming") {
+    requireCondition(draft.programming && missionById(draft.programming.mission) && Object.keys(draft.programming.projects).length <= 5 && Object.entries(draft.programming.projects).every(([id, raw]) => missionById(id) && parseProgrammingProject(raw)), 400, "INVALID_PROJECT", "미션의 작품과 입력값을 확인해 주세요.");
+    requireCondition(Object.values(draft.programming!.projects).every((raw) => Buffer.byteLength(raw, "utf8") <= 32768) && Buffer.byteLength(JSON.stringify(draft), "utf8") <= 120000, 400, "PROJECT_TOO_LARGE", "작품이 저장 한도를 넘었어요. 현재 블록을 보존하고 필요한 블록만 남겨 다시 시도해 주세요.");
+    return { ...draft, entryProject: null, practiceOrder: [] };
+  }
+  requireCondition(!draft.programming, 400, "INVALID_PROJECT", "이 수업의 작품 형식을 확인해 주세요.");
   if (lesson.practice.type === "entryjs") {
     const blocks = parseEntryProject(draft.entryProject);
     requireCondition(blocks, 400, "INVALID_PROJECT", "이 실습에서 사용하는 블록과 값을 확인해 주세요.");
@@ -50,6 +58,25 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
   const next = structuredClone(work);
   const solution = getLessonSolution(lesson.id);
   requireCondition(solution, 500, "SOLUTION_MISSING", "수업 정답 정보가 준비되지 않았어요.");
+
+  if (action.type === "validate-practice" || action.type === "submit-practice") {
+    if (lesson.practice.type === "programming") {
+      const id = action.missionId;
+      requireCondition(id && missionById(id), 400, "MISSION_REQUIRED", "확인할 미션을 선택해 주세요.");
+      const project = next.draft.programming?.projects[id];
+      requireCondition(project && parseProgrammingProject(project), 400, "INVALID_PROJECT", "현재 작품을 확인해 주세요.");
+      const checked = checkProgrammingMission(id, project);
+      const previous = next.missions?.[id] ?? { validation: null, submission: null };
+      if (action.type === "validate-practice") next.missions = { ...next.missions, [id]: { ...previous, validation: { ...checked, order: [], entryProject: project } } };
+      else {
+        requireCondition(previous.validation?.passed && programmingProjectMatches(project, previous.validation.entryProject) && checked.passed, 409, "VALIDATION_REQUIRED", "현재 작품을 검증한 뒤 제출해 주세요.");
+        next.missions = { ...next.missions, [id]: { ...previous, submission: { id: randomUUID(), order: [], entryProject: project, submittedAt: Date.now() } } };
+      }
+      next.revision += 1; next.updatedAt = Date.now();
+      return next;
+    }
+    requireCondition(!action.missionId, 400, "INVALID_MISSION", "이 수업의 실습을 확인해 주세요.");
+  }
 
   if (action.type === "check-concept") {
     const concept = lesson.concepts.find((c) => c.id === action.conceptId);

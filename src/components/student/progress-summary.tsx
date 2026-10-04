@@ -16,7 +16,7 @@ export function ProgressSummary({ lesson, work }: { lesson: Lesson; work?: Work 
     {([['concept', '개념'], ['quiz', '퀴즈'], ['practice', '실습']] as const).map(([stage, label]) => {
       const part = progress[stage];
       const detail = stage === "practice"
-        ? work?.submission ? "제출 완료" : work?.validation?.passed ? "검증 통과 · 제출 전" : "제출 전"
+        ? lesson.practice.type === "programming" ? `기본 ${part.total}개 미션 중 ${part.completed}개 제출` : work?.submission ? "제출 완료" : work?.validation?.passed ? "검증 통과 · 제출 전" : "제출 전"
         : `${part.total}${stage === "quiz" ? "문항" : "개"} 중 ${part.completed}${stage === "quiz" ? "문항 해결" : "개 완료"}`;
       return <div key={stage} className={styles.progressItem}>
         <dt>{label}<strong>{part.percent}%</strong></dt>

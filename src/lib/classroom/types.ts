@@ -25,7 +25,7 @@ export interface Question {
   options: { id: string; label: string }[];
   hint: string;
 }
-export type PracticeType = "ordering" | "entryjs";
+export type PracticeType = "ordering" | "entryjs" | "programming";
 
 export interface PracticeBlock {
   id: string;
@@ -61,6 +61,7 @@ export interface WorkDraft {
   quizAnswers: Record<string, string>;
   practiceOrder: string[];
   entryProject?: string | null;
+  programming?: { mission: string; projects: Record<string, string>; reflection: string };
 }
 export interface Feedback { correct: boolean; message: string }
 export interface Submission {
@@ -89,6 +90,7 @@ export interface Work {
   quizFeedback: Record<string, Feedback>;
   validation: ValidationResult | null;
   submission: Submission | null;
+  missions?: Record<string, { validation: ValidationResult | null; submission: Submission | null }>;
   updatedAt: number | null;
 }
 export interface Progress {
@@ -119,5 +121,5 @@ export type WorkAction =
   | { type: "check-concept"; conceptId: string }
   | { type: "grade-quiz" }
   | { type: "retry-quiz" }
-  | { type: "validate-practice" }
-  | { type: "submit-practice" };
+  | { type: "validate-practice"; missionId?: string }
+  | { type: "submit-practice"; missionId?: string };

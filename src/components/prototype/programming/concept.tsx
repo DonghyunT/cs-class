@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { concepts, type PrototypeState } from "@/lib/prototype/programming";
 import styles from "./programming.module.css";
 
-export function Concept({ state, update, focus, next }: { state: PrototypeState; update: (next: PrototypeState) => void; focus: (id: string) => void; next: () => void }) {
+export function Concept({ state, update, focus, next, onCheck, serverFeedback, locked = false }: { state: PrototypeState; update: (next: PrototypeState) => void; focus: (id: string) => void; next: () => void; onCheck?: () => void; serverFeedback?: string; locked?: boolean }) {
   const [language, setLanguage] = useState("block");
   const [name, setName] = useState("초코");
   const [greeting, setGreeting] = useState("");
@@ -22,7 +22,7 @@ export function Concept({ state, update, focus, next }: { state: PrototypeState;
   }
   function direction(dx: number, dy: number) { setPosition((p) => ({ x: Math.max(-3, Math.min(3, p.x + dx)), y: Math.max(-2, Math.min(2, p.y + dy)) })); }
   return <div className={styles.conceptLayout}>
-    <nav className={styles.conceptNav} aria-label="개념 목록">{concepts.map((item, i) => <button key={item.title} type="button" aria-current={i === state.concept ? "step" : undefined} onClick={() => move(i)}><span>{state.conceptDone.includes(i) ? <Check size={16} /> : `0${i + 1}`}</span><div><strong>{item.title}</strong><small>{["블록과 텍스트", "입력 → 처리 → 출력", "변수와 연산", "시작 버튼 · 방향키"][i]}</small></div></button>)}<p>직접 바꾸고, 결과를 보고,<br />한 번 더 생각해 보세요.</p></nav>
+    <nav className={styles.conceptNav} aria-label="개념 목록">{concepts.map((item, i) => <button key={item.title} type="button" disabled={locked} aria-current={i === state.concept ? "step" : undefined} onClick={() => move(i)}><span>{state.conceptDone.includes(i) ? <Check size={16} /> : `0${i + 1}`}</span><div><strong>{item.title}</strong><small>{["블록과 텍스트", "입력 → 처리 → 출력", "변수와 연산", "시작 버튼 · 방향키"][i]}</small></div></button>)}<p>직접 바꾸고, 결과를 보고,<br />한 번 더 생각해 보세요.</p></nav>
     <div>
       <div className={styles.sectionHeading}><span className={styles.eyebrow}>CONCEPT {String(state.concept + 1).padStart(2, "0")} / 04</span><h2 id="concept-title" tabIndex={-1}>{c.title}</h2><p>{c.subtitle}</p></div>
       <div className={styles.experiment}>
@@ -48,11 +48,11 @@ export function Concept({ state, update, focus, next }: { state: PrototypeState;
           <p className={styles.takeaway}>무대에 초점을 두고 방향키를 누르거나 옆의 버튼을 눌러보세요. 시작 신호 → 방향 정하기 → 이동하기로 연결돼요.</p>
         </>}
       </div>
-      <fieldset className={styles.conceptCheck}><legend><span className={styles.eyebrow}>한 번만 확인해 볼까요?</span>{c.question}</legend><div className={styles.compactOptions}>{c.options.map((option, i) => <label key={option} data-selected={answer === i}><input type="radio" name={`concept-${state.concept}`} checked={answer === i} disabled={done} onChange={() => { update({ ...state, conceptAnswers: { ...state.conceptAnswers, [state.concept]: i } }); setFeedback(""); }} /><span>{option}</span></label>)}</div>
-        <Button variant={done ? "outline" : "default"} disabled={done || answer === undefined} onClick={() => { const correct = answer === c.correct; if (correct) update({ ...state, conceptDone: [...state.conceptDone, state.concept] }); setFeedback(correct ? c.explanation : "다시 실험해 보고 골라보세요. 위의 변화가 단서예요."); focus("concept-feedback"); }}>{done ? <><Check size={16} />개념 확인 완료</> : "생각 확인하기"}</Button>
-        {(feedback || done) && <p id="concept-feedback" tabIndex={-1} role="status" className={done ? styles.good : styles.feedback}>{feedback || c.explanation}</p>}
+      <fieldset className={styles.conceptCheck} disabled={locked}><legend><span className={styles.eyebrow}>한 번만 확인해 볼까요?</span>{c.question}</legend><div className={styles.compactOptions}>{c.options.map((option, i) => <label key={option} data-selected={answer === i}><input type="radio" name={`concept-${state.concept}`} checked={answer === i} disabled={done} onChange={() => { update({ ...state, conceptAnswers: { ...state.conceptAnswers, [state.concept]: i } }); setFeedback(""); }} /><span>{option}</span></label>)}</div>
+        <Button variant={done ? "outline" : "default"} disabled={done || answer === undefined} onClick={() => { if (onCheck) { onCheck(); return; } const correct = answer === c.correct; if (correct) update({ ...state, conceptDone: [...state.conceptDone, state.concept] }); setFeedback(correct ? c.explanation : "다시 실험해 보고 골라보세요. 위의 변화가 단서예요."); focus("concept-feedback"); }}>{done ? <><Check size={16} />개념 확인 완료</> : "생각 확인하기"}</Button>
+        {((onCheck ? serverFeedback : feedback) || done) && <p id="concept-feedback" tabIndex={-1} role="status" className={done ? styles.good : styles.feedback}>{(onCheck ? serverFeedback : feedback) || c.explanation}</p>}
       </fieldset>
-      <div className={styles.footer}><Button variant="ghost" disabled={state.concept === 0} onClick={() => move(state.concept - 1)}><ArrowLeft size={16} />이전 개념</Button>{state.concept < concepts.length - 1 ? <Button variant="outline" onClick={() => move(state.concept + 1)}>다음 개념<ArrowRight size={16} /></Button> : <Button onClick={next}>퀴즈에 도전하기<ArrowRight size={16} /></Button>}</div>
+      <div className={styles.footer}><Button variant="ghost" disabled={locked || state.concept === 0} onClick={() => move(state.concept - 1)}><ArrowLeft size={16} />이전 개념</Button>{state.concept < concepts.length - 1 ? <Button variant="outline" disabled={locked} onClick={() => move(state.concept + 1)}>다음 개념<ArrowRight size={16} /></Button> : <Button disabled={locked} onClick={next}>퀴즈에 도전하기<ArrowRight size={16} /></Button>}</div>
     </div>
   </div>;
 }

@@ -10,6 +10,8 @@ temp_*.txt
 temp/
 *.tmp
 scratch/
+/private/
+/outputs/classroom-readiness/
 
 # 개인 자기점검 보고서 및 일회성 Git 차이 출력
 teacher_tacit_knowledge_report.html

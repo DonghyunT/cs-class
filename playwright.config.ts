@@ -14,6 +14,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
+    env: { CS_TIMETABLE_FIXTURE: "1", CRON_SECRET: "cron-local-test-only-73194826" },
     command: "node scripts/dev-emulator.mjs",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,

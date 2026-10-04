@@ -83,6 +83,8 @@ git ls-files --others --exclude-standard
 
 로그인 구현은 `src/components/login-screen.tsx`와 인접 CSS Module에 있습니다. 비밀번호 방식의 인증 역할은 기존 `instructor`이며 공통 세션·권한 계약을 사용합니다. 디자인 기준은 [DESIGN](DESIGN.md#확정된-공통-기준), 검사는 `tests/interface-polish.spec.ts`의 로그인 실패/복원·담당 반 권한·키보드·대화상자·320/390/768/1440px와 기존 일정/교사/프로그래밍 흐름을 따릅니다. 선택 검사는 네이티브 `selectOption` 대신 combobox를 열고 실제 option을 선택합니다.
 
+`src/lib/server/auth.ts`의 로그인 제한 장부는 같은 서버 인스턴스의 같은 키 요청을 Promise로 순서 처리해 동시 쓰기의 잠금 경합을 줄입니다. 처리 중인 키만 유지하고 성공·거부 후 마지막 요청이 끝나면 제거합니다. 제한 판정·횟수는 기존 Firestore 트랜잭션이 모든 인스턴스에 걸쳐 적용하며 출처·비밀번호 예산은 [제품 정책](PRD.md#로그인-정책)을 유지합니다. `tests/auth-security.spec.ts`의 27명 동시 입장·제한 거부 뒤 정상 요청과 후속 대시보드 검사를 같은 실행에서 확인합니다.
+
 ## 대시보드 파일럿
 
 학생 `/student`·교사 `/teacher`는 공통 할 일·일정·수업 바로가기를 사용합니다. 학생의 전체 수업은 `/student/lessons`, 교사의 수업 설정은 `/teacher/classes`, 학생 진행·제출·계정은 `/teacher/students`, 전체 일정은 각각 `/student/schedule`·`/teacher/schedule`입니다. 교사 상세 링크의 `classId`·`lessonId`·`studentId`는 서버 권한 안에서 조회 조건으로 사용합니다.
@@ -95,6 +97,14 @@ git ls-files --others --exclude-standard
 - 대상 검사는 `tests/dashboard-pilot.spec.ts`·`tests/loading-states.spec.ts`입니다. 변경 중에는 실행 중인 에뮬레이터에서 `npm run test:e2e:running -- tests/<target>.spec.ts`로 확인하며 최종 통합은 [전체 검증](#검증)을 따릅니다.
 
 Next.js 가이드는 설치본 `node_modules/next/dist/docs/`에 있습니다. 패치 버전 차이는 설치본을 기준으로 하고, 라이브러리 문서 확인 규칙은 AGENTS를 따릅니다. 이번 조회 구현의 SDK 근거는 아래 성능 측정 절에 있습니다.
+
+### 학교 시간표 연동
+
+공통 일정 계약은 `src/lib/classroom/planner.ts`, 공개 응답 검증·정보 교시 추출은 `src/lib/classroom/timetable.ts`, 요청·학교 공통 저장본·lease·재조회 제한은 `src/lib/server/timetable.ts`에 있습니다. 일정 API는 저장본만 읽으며 교사의 `/api/classroom/timetable/{classId}` POST와 인증된 `/api/cron/timetable` GET만 외부를 조회합니다. Cron 경로는 `src/app/api/cron/timetable/route.ts`, 시간·활성화 절차는 [서버 안내](FIREBASE_SETUP.md#학교-시간표-자동-갱신)에 모읍니다. 앱 일정 화면과 대시보드 달력은 직접 일정과 시간표를 함께 표시하고 외부 응답 검증 코드는 브라우저에 가져오지 않습니다.
+
+`tests/timetable.spec.ts`는 합성 응답의 교시·변경·열람 제한·구조 거부, 학생/담당 반/전송/Cron 권한, 하루 중복·동시 실행·5분 간격, 중간 실패/잘못된 구조의 정상본 보존, 수동 일정과 입력 보존, 학생 화면·달력·327/390/768/1440px·키보드·콘솔을 검사합니다. 27회 동시 조회에서 외부 요청 증가 없음도 확인합니다. 자동 검사는 `scripts/timetable-fixture.mjs`의 127.0.0.1:4781 합성 서버를 사용합니다. Playwright webServer에서 `CS_TIMETABLE_FIXTURE=1`과 합성 Cron 인증값을 전달하며 fixture 전환은 Vercel이 아니고 프로젝트/두 에뮬레이터가 정확히 demo-cs-class·127.0.0.1:9099/8080일 때만 허용합니다. 운영 원본·교사 이름을 fixture로 저장하지 않습니다.
+
+대상 단독 검사는 기존 준비 환경변수와 `CI=1`을 설정한 뒤 `npx.cmd firebase emulators:exec --only auth,firestore --project demo-cs-class "npx playwright test tests/timetable.spec.ts"`로 실행합니다. `npm run test:e2e -- tests/...`의 뒤 인자는 Firebase CLI에 전달되므로 대상 지정에 쓰지 않습니다. 실행 중 앱을 재사용하려면 그 앱도 fixture 설정으로 시작했는지 확인합니다. 원본 응답에는 JSON 끝 공백·줄바꿈 뒤 NUL 패딩이 올 수 있어 합성 응답도 이를 재현하며 다른 문자가 붙은 응답은 거부합니다. 수동 실제 학교 확인은 공개 조회와 demo 앱 연결까지 수행하고 정규화한 반·교시 결과만 남기며 운영 DB 쓰기로 대체하지 않습니다.
 
 ### 대시보드 성능 측정
 
@@ -142,7 +152,7 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 - 이동·도움·확인·완료 전에 활성 입력을 확정하고 작품을 내보냅니다. 단계·미션·교사/홈 이동은 탭 저장까지 확인하며 실패 시 작업실을 유지합니다. 초기 로딩/파일 실패만 있고 실제 편집이 없으면 저장된 초안으로 이동할 수 있습니다. 도움은 `mini | entry`의 고정 작품·실행 스냅샷이며 실제 전송은 없습니다. 실행 근거/확인 결과는 화면 메모리로, 단계/미션 이동·새로고침 후에는 다시 실행합니다.
 - 변경 중에는 typecheck와 [파일럿 검사](../tests/name-entry-pilot.spec.ts)를 사용합니다. 공개 체험·공용 EntryJS 브리지의 영향 범위를 함께 확인할 때는 다음 대상 검사를 사용합니다: `npm run test:e2e:running -- tests/name-entry-pilot.spec.ts tests/programming-prototype.spec.ts tests/entryjs-ui.spec.ts`. 이 명령은 로컬 demo 에뮬레이터가 실행 중일 때만 씁니다. 최종 통합은 [검증](#검증)을 따르고 실제 실행 범위·한계는 HANDOFF에 남깁니다.
 
-곱셈/평균·방향키 미션의 실제 Entry 전환, 운영 Lesson/Work 편입, 서버 범용 실행 검사·AI·교사 전송은 후속 설계입니다. Context7 검색의 Entry UI 라이브러리를 EntryJS 근거로 쓰지 않으며 위 [공식 API/이벤트](#entryjs-실습)와 설치본 4.0.23을 확인합니다.
+이 절은 10/1 공개 이름 파일럿의 구현 범위입니다. 곱셈/평균·방향키의 실제 Entry와 Lesson/Work 편입은 아래 [운영 프로그래밍 수업](#운영-프로그래밍-수업)을 따릅니다. 서버 범용 실행·AI·도움 요청 전송은 후속 설계입니다. Context7 검색의 Entry UI 라이브러리를 EntryJS 근거로 쓰지 않으며 위 [공식 API/이벤트](#entryjs-실습)와 설치본 4.0.23을 확인합니다.
 
 ## 프로그래밍 수업 프로토타입
 
@@ -196,6 +206,45 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 5. 학생이 `다시 해보고 해결했어요`를 선택한 뒤 교사 시점에서 요청 당시 코드와 최신 코드 차이를 확인합니다. 교사 답변은 실제 전송이나 AI 호출이 아닙니다. 새로고침 시 이 도움 요청이 사라지는 안내도 확인합니다.
 
 변경 중에는 `npm run typecheck`와 실행 중인 로컬 에뮬레이터의 `npm run test:e2e:running -- tests/programming-prototype.spec.ts`를 우선 실행합니다. 필요하면 [실제 EntryJS 검사](../tests/entryjs-ui.spec.ts)도 해당 범위로 확인합니다. 최종 앱 통합은 아래 공통 검증, 문서만 수정한 작업은 내용·활성 링크/앵커·`git diff --check`·이식 파일 목록/해시를 확인하고 앱 검사 과거 결과와 구분해 기록합니다.
+
+## 운영 프로그래밍 수업
+
+`/classroom/programming-13`은 기존 계정·반별 수업 열기·서버 저장·교사 조회를 사용합니다. 공개 체험과 다른 계정 학습 기록입니다. [제품 기준](PRD.md#프로그래밍-13차시--실제-수업-구성)을 먼저 확인합니다.
+
+- 수업은 `src/lib/classroom/programming-lesson.ts`, 미션·고정 자산·초안 파서·제한된 서버 검증기는 `programming-entry.ts`입니다. 허용 블록만 정규화하며 임의 JavaScript를 실행하지 않습니다. 최대 16줄·160블록·표현식 깊이 8, 작품별 UTF-8 32KiB·전체 초안 120KB를 제한합니다. API의 큰 본문 허용은 이 수업의 저장 요청에만 적용합니다.
+- `src/components/student/programming-lesson.tsx`는 기존 개념 실험, 한 문제씩 퀴즈, 미션 이동을 구성합니다. `use-work.ts`의 직렬 저장과 이동 전 native 입력 확정을 사용합니다. 방향키 작품 복사는 처음 선택할 때만 수행합니다. 미션별 검증·제출은 `Work.missions`, 편집은 `draft.programming.projects`에 저장합니다.
+- `public/entryjs/workspace.js`의 `exercise=programming&mission=...`는 목표별 팔레트와 고정 A/B 변수를 사용합니다. 질문·말하기는 실제 엔진 이벤트로 확인하며 방향키 미션은 실행을 유지해 키 이벤트를 받습니다. 실행 중 전체 export로 엔진을 멈추지 않는 기존 정책을 유지합니다.
+- 대상 검사는 `tests/programming-classroom.spec.ts`·`tests/programming-learning.spec.ts`입니다. 실제 Entry 팔레트 조립·질문·변수 계산·네 방향키·중지와 무대 복원·저장 실패·미완성 복원·독립 제출·27명 병렬 API 흐름과 개념·퀴즈 오답 재도전·교사 제출 화면을 포함합니다. 화면 아래 iframe은 Chromium이 그리기를 미룰 수 있으므로 작업실로 스크롤한 뒤 팔레트 좌표 준비를 확인합니다. 브라우저와 API가 같은 작품을 수정하는 검사에서는 화면 이동으로 자동 저장을 마친 뒤 새 버전을 조회합니다. 최종 통합은 아래 전체 검증을 따릅니다.
+
+## 실학생 명부 준비와 반별 발급
+
+운영 적용은 실제 명부·학년도·Firebase 대상·복구 범위를 확인한 뒤 승인된 범위에서만 수행합니다. 아래 명령의 `--apply`는 학생 계정 또는 비공개 파일을 실제로 변경합니다. 첫 확인에는 `validate`와 기본 계획만 사용합니다. 모든 입력·전달·백업 파일은 Git 제외 `private/`에 두고 폴더의 Windows 접근 권한을 선생님만 볼 수 있도록 설정합니다. Git 제외는 파일 접근 보호를 대신하지 않습니다.
+
+기존 Excel은 2학년의 `1반`~`11반` 시트, 첫 행의 `번호`·`학번`을 읽습니다. 학생별 번호는 1~27, 학번은 학년1자리+반2자리+번호2자리입니다. 이름·기존 공통 비밀번호 열은 복사하지 않습니다. 원본은 읽기만 하고 새 CSV는 기존 파일을 덮어쓰지 않습니다. 변환기는 Windows PowerShell 5의 한국어 해석을 위해 UTF-8 BOM으로 저장합니다.
+
+명부가 없으면 같은 두 열을 가진 11개 시트로 작성합니다. 이번 PC의 빈 양식은 Git 제외 `outputs/classroom-readiness/학생명부_작성양식.xlsx`이며 실제 번호를 입력하면 학번을 자동 계산합니다. 없는 학생의 번호는 비워 두고, 작성한 파일은 Excel에서 계산·저장하여 `private/`에 별도로 보관합니다. 시트 이름과 첫 행의 두 제목을 유지하며 모든 반의 실제 자료가 준비된 뒤 변환합니다. 양식 산출물은 저장소 복제에 포함되지 않습니다.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/roster-from-xlsx.ps1 -Source '<실제 명부의 절대 경로>' -Output private/student-roster.csv
+node scripts/student-roster.mjs --csv private/student-roster.csv --year 2026 --mode validate
+# 실제 프로젝트 연결을 불러오지만 기본 동작은 읽기 전용 계획입니다.
+node --env-file=.env.local scripts/student-roster.mjs --csv private/student-roster.csv --year 2026
+```
+
+전체 명부·기존 Account/Auth·반 기록·이메일 충돌을 사전 확인하고, 다른 명부나 학년도의 동일 학번은 거절합니다. 운영 대상은 `cs-class-f74c4`, 합성 검사는 demo 프로젝트·Auth9099/Firestore8080만 허용하며 혼합 설정·Vercel 실행을 거절합니다. 운영 전 현재 자료의 백업과 계정 충돌 처리를 별도로 검토합니다.
+
+```powershell
+# 승인 후 사전 등록: 최초 입장용 비밀번호를 아직 발급하지 않습니다.
+node --env-file=.env.local scripts/student-roster.mjs --csv private/student-roster.csv --year 2026 --mode register --apply --confirm-project cs-class-f74c4
+# 1반 수업 직전: 개별 임시값은 발급 후 30분 만료합니다.
+node --env-file=.env.local scripts/student-roster.mjs --csv private/student-roster.csv --year 2026 --mode issue --class 2-1 --output private/class-1-new.ndjson --apply --confirm-project cs-class-f74c4
+```
+
+발급 파일의 `pending` 행에는 해당 학생의 임시값이 있습니다. 같은 학번의 `issued` 확인 행이 있는 것만 그 학생에게 개별 전달합니다. 공용 화면에 전체 파일을 띄우지 않으며 로그에는 비밀번호·학번 목록을 출력하지 않습니다. 이미 개인 비밀번호를 정한 학생은 일괄 재발급에서 거절하고 기존 교사 초기화 화면을 사용합니다. 11개 반을 일주일 전에 한꺼번에 발급하면 실제 수업 전에 만료되므로 등록과 발급을 분리합니다.
+
+등록 중단은 Account를 비활성·잠금으로 보존합니다. 같은 명부·학년도·발급 도구 표시가 일치하는 중단만 `register`에 `--resume`를 더해 재개합니다. 기존 다른 계정은 채택하지 않습니다. 발급 중단은 완료된 학생과 실패 학생을 비공개 파일에서 확인하고, 남은 잠금은 [계정 변경 복구](FIREBASE_SETUP.md#계정-변경-장애-복구)를 사용합니다. 계정·작품을 삭제하고 다시 등록하는 방식으로 복구하지 않습니다.
+
+등록된 명부의 수업 기록 백업은 `--mode backup --output private/learning-new.json --apply --confirm-project cs-class-f74c4`로 만듭니다. 반 설정·선택 학생의 비밀 없는 계정 정보·`csWork`를 포함하며 Auth 자격 증명·세션·임시값·일정/할 일은 제외합니다. 수업 편집을 멈춘 상태에서 캡처하고, 자동 복원·계정 이관·학년도 교체를 지원하는 전체 시스템 백업으로 해석하지 않습니다. 복원은 대상·기존 기록·복구 범위를 별도로 검토합니다. 검사 코드는 `tests/student-roster.spec.ts`이며 운영 자료를 사용하지 않습니다.
 
 ## 검증
 

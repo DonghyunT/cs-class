@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Transaction } from "firebase-admin/firestore";
 import { LESSONS, findLesson } from "../classroom/catalog";
 import { emptyWork, practiceMatches } from "../classroom/progress";
+import { programmingProjectMatches } from "../classroom/programming-entry";
 import type { ClassSettings, StudentDashboard, TeacherDashboard, Work } from "../classroom/types";
 import { admin } from "./firebase";
 import { authorized, identity, type Account } from "./auth";
@@ -14,7 +15,7 @@ function workRef(uid: string, lessonId: string) { return admin().db.collection("
 function toWork(data: StoredWork | undefined, lessonId: string): Work {
   const lesson = findLesson(lessonId)!;
   if (!data) return emptyWork(lesson);
-  return { lessonId: data.lessonId, revision: data.revision, draft: data.draft, conceptSolved: data.conceptSolved, conceptFeedback: data.conceptFeedback, quizSolved: data.quizSolved, quizRound: data.quizRound, quizRoundIds: data.quizRoundIds, quizRoundGraded: data.quizRoundGraded, quizFeedback: data.quizFeedback, validation: data.validation, submission: data.submission, updatedAt: data.updatedAt };
+  return { lessonId: data.lessonId, revision: data.revision, draft: data.draft, conceptSolved: data.conceptSolved, conceptFeedback: data.conceptFeedback, quizSolved: data.quizSolved, quizRound: data.quizRound, quizRoundIds: data.quizRoundIds, quizRoundGraded: data.quizRoundGraded, quizFeedback: data.quizFeedback, validation: data.validation, submission: data.submission, updatedAt: data.updatedAt, ...(data.missions ? { missions: data.missions } : {}) };
 }
 async function studentClass(tx: Transaction, account: Account) {
   requireCondition(account.role === "student" && account.classId, 403, "FORBIDDEN", "학생 계정으로 입장해 주세요.");
@@ -57,14 +58,20 @@ export async function mutateWork(lessonId: string, payload: unknown, actionReque
       a.stage === b.stage &&
       samePractice(a, b) &&
       JSON.stringify(a.conceptAnswers) === JSON.stringify(b.conceptAnswers) &&
-      JSON.stringify(a.quizAnswers) === JSON.stringify(b.quizAnswers);
+      JSON.stringify(a.quizAnswers) === JSON.stringify(b.quizAnswers) &&
+      JSON.stringify(a.programming) === JSON.stringify(b.programming);
     if (save && sameDraft(save.draft, previous.draft)) return previous;
     if (act?.action.type === "submit-practice" && previous.submission && previous.validation?.passed && practiceMatches(previous.draft, previous.validation) && practiceMatches(previous.draft, previous.submission)) return previous;
+    if (act?.action.type === "submit-practice" && act.action.missionId) {
+      const mission = previous.missions?.[act.action.missionId];
+      if (mission?.submission && mission.validation?.passed && programmingProjectMatches(previous.draft.programming?.projects[act.action.missionId], mission.submission.entryProject) && programmingProjectMatches(mission.validation.entryProject, mission.submission.entryProject)) return previous;
+    }
     requireCondition(previous.revision === (save?.revision ?? act?.revision), 409, "REVISION_CONFLICT", "다른 탭에서 작업이 바뀌었어요. 현재 내용을 보관한 뒤 최신 기록을 확인해 주세요.");
     let next: Work;
     if (save) {
       next = { ...previous, draft: save.draft, revision: previous.revision + 1, updatedAt: Date.now(), validation: practiceMatches(save.draft, previous.validation) ? previous.validation : null };
       next.conceptFeedback = { ...previous.conceptFeedback };
+      if (previous.missions) next.missions = Object.fromEntries(Object.entries(previous.missions).map(([id, record]) => [id, { ...record, validation: programmingProjectMatches(save.draft.programming?.projects[id], record.validation?.entryProject) ? record.validation : null }]));
       for (const id of Object.keys(next.conceptFeedback)) {
         if (previous.draft.conceptAnswers[id] !== save.draft.conceptAnswers[id]) delete next.conceptFeedback[id];
       }
