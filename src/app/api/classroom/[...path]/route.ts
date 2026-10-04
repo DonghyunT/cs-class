@@ -1,9 +1,10 @@
 import { body, failure, json } from "@/lib/server/http";
 import { getWork, mutateWork, studentDashboard, teacherDashboard, updateClass } from "@/lib/server/classroom";
 import { resetStudentPassword } from "@/lib/server/auth";
-import { readTodos, saveTodos, readSchedule, saveSchedule } from "@/lib/server/planner";
+import { readTodos, saveTodos, readSchedule, saveSchedule, refreshScheduleTimetable } from "@/lib/server/planner";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 type Context = { params: Promise<{ path: string[] }> };
 export async function GET(request: Request, context: Context) {
   try {
@@ -18,9 +19,11 @@ export async function GET(request: Request, context: Context) {
 }
 export async function POST(request: Request, context: Context) {
   try {
-    const input = await body(request); const { path } = await context.params;
+    const { path } = await context.params;
+    const input = await body(request, path.length === 2 && path[0] === "work" && path[1] === "programming-13" ? 192000 : 32768);
     if (path.length === 1 && path[0] === "todos") return json(await saveTodos(input));
     if (path.length === 2 && path[0] === "schedule" && /^2-(?:[1-9]|1[01])$/.test(path[1])) return json(await saveSchedule(path[1], input));
+    if (path.length === 2 && path[0] === "timetable" && /^2-(?:[1-9]|1[01])$/.test(path[1])) return json(await refreshScheduleTimetable(path[1], input));
     if (path.length === 2 && path[0] === "classes") return json(await updateClass(path[1], input));
     if (path.length === 3 && path[0] === "students" && path[2] === "reset" && /^[a-zA-Z0-9_-]{1,128}$/.test(path[1])) return json(await resetStudentPassword(path[1]));
     if (path.length === 2 && path[0] === "work") return json(await mutateWork(path[1], input, false));

@@ -1,0 +1,66 @@
+import { expect, test } from "@playwright/test";
+import { buildProgrammingProject } from "../src/lib/classroom/programming-entry";
+import type { Work } from "../src/lib/classroom/types";
+import { db, headers, readyStudent, readyTeacher } from "./emulator";
+
+test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의 미션 제출 화면", async ({ page }) => {
+  test.setTimeout(60000);
+  const id = "programming-13", endpoint = `/api/classroom/work/${id}`, classRef = db.collection("csClasses").doc("2-1"), workRef = db.collection("csWork").doc(`student-20101__${id}`);
+  const original = (await classRef.get()).data()!;
+  const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  try {
+    await readyStudent(page.request); await workRef.delete();
+    await classRef.update({ currentLessonId: id, openedLessonIds: [id] });
+    await page.goto(`/classroom/${id}`);
+    const answers = ["컴퓨터가 할 일을 명령으로 표현해요", "출력", "3", "오른쪽 화살표 키를 누를 때"];
+    for (let i = 0; i < answers.length; i++) {
+      await page.getByRole("radio", { name: answers[i], exact: true }).check();
+      if (i === 0) {
+        let release!: () => void;
+        const gate = new Promise<void>((resolve) => { release = resolve; });
+        await page.route(`**${endpoint}/action`, async (route) => { const response = await route.fetch(); await gate; await route.fulfill({ response }); }, { times: 1 });
+        const checking = page.waitForRequest((request) => request.url().endsWith(`${endpoint}/action`));
+        await page.getByRole("button", { name: "생각 확인하기" }).click(); await checking;
+        try { await expect(page.getByRole("button", { name: "다음 개념", exact: true })).toBeDisabled(); }
+        finally { release(); }
+      } else await page.getByRole("button", { name: "생각 확인하기" }).click();
+      await expect(page.locator("#concept-feedback")).toBeFocused();
+      await expect(page.getByRole("button", { name: "개념 확인 완료" })).toBeDisabled();
+      if (i < 3) await page.getByRole("button", { name: "다음 개념", exact: true }).click();
+    }
+    await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
+    await page.getByRole("button", { name: "퀴즈에 도전하기" }).click();
+    for (const [i, answer] of ["명령을 표현하는 방법", "수 입력 → 곱하기 → 결과 보여주기", "6", "각 대답을 받은 직후 해당 변수에 저장하기", "90°"].entries()) {
+      await page.getByRole("radio", { name: answer, exact: false }).check();
+      if (i < 4) await page.getByRole("button", { name: "다음 문제", exact: true }).click();
+    }
+    await page.getByRole("button", { name: "이번 문제 결과 확인" }).click();
+    await expect(page.getByRole("tab", { name: "퀴즈 80%" })).toBeVisible();
+    await expect(page.locator("#programming-quiz-result")).toBeFocused();
+    await page.getByRole("button", { name: "틀린 문제만 다시 풀기" }).click();
+    await expect(page.getByRole("radio")).toHaveCount(3);
+    await expect(page.locator("#programming-question")).toBeFocused();
+    await page.getByRole("radio", { name: "3", exact: true }).check();
+    await page.getByRole("button", { name: "이번 문제 결과 확인" }).click();
+    await expect(page.getByRole("tab", { name: "퀴즈 100%" })).toBeVisible();
+    await page.reload(); await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "퀴즈 100%" })).toBeVisible();
+    await page.getByRole("link", { name: "대시보드로", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
+    const current: Work = await (await page.request.get(endpoint)).json();
+    const project = buildProgrammingProject([[{ type: "when_run_button_click", params: [null] }, { type: "move_direction", params: [{ type: "number", params: [10] }, null] }]]);
+    current.draft.programming!.mission = "move"; current.draft.programming!.projects.move = project;
+    let response = await page.request.post(endpoint, { headers, data: { revision: current.revision, draft: current.draft } }); expect(response.status()).toBe(200);
+    for (const type of ["validate-practice", "submit-practice"]) { const work: Work = await response.json(); response = await page.request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type, missionId: "move" } } }); expect(response.status()).toBe(200); }
+    await readyTeacher(page.request);
+    await page.goto(`/teacher/students?classId=2-1&lessonId=${id}`);
+    const open = page.getByRole("button", { name: "20101 제출 작품 보기", exact: true }); await open.click();
+    const dialog = page.getByRole("dialog", { name: "20101 학생의 제출 작품", exact: true });
+    await expect(dialog.locator("details")).toHaveCount(1);
+    await dialog.locator("summary").click();
+    await expect(dialog.getByText("이동 방향으로 10만큼 움직이기", { exact: false })).toBeVisible();
+    for (const width of [320, 390, 768, 1440]) { await page.setViewportSize({ width, height: 900 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }
+    await page.keyboard.press("Escape"); await expect(dialog).toBeHidden(); await expect(open).toBeFocused();
+    expect(errors).toEqual([]);
+  } finally { await workRef.delete(); await classRef.set(original); }
+});

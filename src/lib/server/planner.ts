@@ -8,6 +8,7 @@ import { authorized, identity, type Account } from "./auth";
 import { admin } from "./firebase";
 import { requireCondition } from "./errors";
 import { revisionSchema } from "./learning";
+import { readClassTimetable, refreshTimetable } from "./timetable";
 
 const id = z.string().uuid();
 const todo = z.object({ id, text: z.string().trim().min(1).max(180), completed: z.boolean() }).strict();
@@ -55,7 +56,7 @@ export async function readSchedule(classId?: string): Promise<ScheduleData> {
   return authorized(await identity(), async (tx, account) => {
     const scope = await scheduleScope(tx, account, classId);
     const value = (await tx.get(admin().db.collection("csSchedules").doc(scope.classroom.id))).data() as SavedList<ClassEvent> | undefined;
-    return { ...scope, ...(value ?? { revision: 0, items: [] }) };
+    return { ...scope, ...(value ?? { revision: 0, items: [] }), timetable: await readClassTimetable(tx, scope.classroom.id) };
   });
 }
 export async function saveSchedule(classId: string, payload: unknown) {
@@ -66,6 +67,16 @@ export async function saveSchedule(classId: string, payload: unknown) {
     requireCondition(next.items.every((item) => !item.lessonId || scope.lessons.some((lesson) => lesson.id === item.lessonId)), 400, "INVALID_LESSON", "담당 반에 열린 수업만 연결할 수 있어요.");
     const ref = admin().db.collection("csSchedules").doc(scope.classroom.id);
     const previous = (await tx.get(ref)).data() as SavedList<ClassEvent> | undefined ?? { revision: 0, items: [] };
-    return { ...scope, ...saveList(tx, ref, previous, next) };
+    const timetable = await readClassTimetable(tx, scope.classroom.id);
+    return { ...scope, ...saveList(tx, ref, previous, next), timetable };
   });
+}
+export async function refreshScheduleTimetable(classId: string, payload: unknown) {
+  z.object({}).strict().parse(payload);
+  await authorized(await identity(), async (tx, account) => {
+    requireCondition(account.role !== "student", 403, "FORBIDDEN", "시간표 갱신은 담당 선생님이 관리해요.");
+    await scheduleScope(tx, account, classId);
+  });
+  await refreshTimetable();
+  return readSchedule(classId);
 }

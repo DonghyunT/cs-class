@@ -183,5 +183,5 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
     return () => { clearInterval(timer); document.removeEventListener("visibilitychange", visible); };
   }, [flush, isDirty]);
 
-  return { work, draft, saveState, error, conflict, remote, busy, update, perform, retry, compare, resolve, switchStage };
+  return { work, draft, saveState, error, conflict, remote, busy, update, perform, retry, compare, resolve, switchStage, flush, getDraft: () => local.current };
 }

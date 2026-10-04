@@ -2,7 +2,11 @@
 "use strict";
 
 const CHANNEL = "cs-class-entryjs";
-const namePilot = new URLSearchParams(location.search).get("exercise") === "name";
+const params = new URLSearchParams(location.search);
+const namePilot = params.get("exercise") === "name";
+const programming = params.get("exercise") === "programming";
+const traced = namePilot || programming;
+const mission = params.get("mission");
 const send = (type, details = {}) => parent.postMessage({ channel: CHANNEL, type, ...details }, location.origin);
 let loading = false;
 let locked = false;
@@ -38,7 +42,7 @@ function result(reason) {
   const speech = entity.dialog?.message_?.replaceAll("\n", "") ?? "";
   if (speech) lastSpeech = speech;
   send("result", { x: entity.getX(), y: entity.getY(), speech: lastSpeech, reason });
-  if (namePilot && nameRun) { send("name-run", { run: { ...nameRun, reason: nameRun.failed ? "error" : reason } }); nameRun = null; }
+  if (traced && nameRun) { send("name-run", { run: { ...nameRun, reason: nameRun.failed ? "error" : reason } }); nameRun = null; }
 }
 
 async function stop(reason) {
@@ -62,8 +66,17 @@ try {
     } });
   }
   EntryStatic.fontFamily = "sans-serif";
-  EntryStatic.getAllBlocks = () => namePilot ? [
-    { category: "start", blocks: ["when_run_button_click", "when_some_key_pressed"] },
+  if (programming && mission === "keys") Entry.block.when_some_key_pressed.def.params = [null, "38"];
+  EntryStatic.getAllBlocks = () => programming && mission !== "name" ? (mission === "move" || mission === "keys" ? [
+    { category: "start", blocks: mission === "keys" ? ["when_run_button_click", "when_some_key_pressed"] : ["when_run_button_click"] },
+    { category: "moving", blocks: ["move_direction", "direction_absolute"] },
+  ] : [
+    { category: "start", blocks: ["when_run_button_click"] },
+    { category: "variable", blocks: ["ask_and_wait", "get_canvas_input_value", "set_variable", "get_variable"] },
+    { category: "looks", blocks: ["dialog_time"] },
+    { category: "calc", blocks: ["calc_basic", "combine_something"] },
+  ]) : namePilot || programming ? [
+    { category: "start", blocks: programming ? ["when_run_button_click"] : ["when_run_button_click", "when_some_key_pressed"] },
     { category: "variable", blocks: ["ask_and_wait", "get_canvas_input_value"] },
     { category: "looks", blocks: ["dialog_time"] },
     { category: "calc", blocks: ["combine_something"] },
@@ -84,7 +97,7 @@ try {
     blockSaveImageEnable: false, iframeDomAccess: "none", fullScreenEnable: false,
     commentDisable: true,
   });
-  if (namePilot) {
+  if (traced) {
     const ask = Entry.block.ask_and_wait.func;
     Entry.block.ask_and_wait.func = function (entity, script) {
       try {
@@ -96,7 +109,7 @@ try {
         const result = ask.call(this, entity, script);
         if (first) {
           const field = Entry.stage.inputField;
-          field._hiddenInput.setAttribute("aria-label", "강아지 이름 대답");
+          field._hiddenInput.setAttribute("aria-label", programming && mission !== "name" ? "강아지 질문 대답" : "강아지 이름 대답");
           field._hiddenInput.maxLength = 180;
           field.focus();
         }
@@ -116,20 +129,20 @@ try {
   Entry.creationChangedEvent.attach(window, () => queueMicrotask(changed));
   document.addEventListener("input", (event) => {
     // Native fields listen to keyup. Paste/IME input also needs to reach the model.
-    if (!(event.target instanceof HTMLInputElement) || !(event.target.classList.contains("entry-widget-input-field") || (namePilot && event.target.classList.contains("entryCanvasHiddenInput")))) return;
+    if (!(event.target instanceof HTMLInputElement) || !(event.target.classList.contains("entry-widget-input-field") || (traced && event.target.classList.contains("entryCanvasHiddenInput")))) return;
     event.target.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true }));
     queueMicrotask(changed);
   });
-  if (namePilot) document.addEventListener("input", () => send("editing"));
-  if (namePilot) document.addEventListener("keydown", (event) => {
+  if (traced) document.addEventListener("input", () => send("editing"));
+  if (traced) document.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && event.isComposing && event.target instanceof HTMLInputElement && event.target.classList.contains("entryCanvasHiddenInput")) event.stopImmediatePropagation();
   }, true);
   document.addEventListener("mouseup", () => queueMicrotask(changed));
   document.addEventListener("touchend", () => queueMicrotask(changed));
   Entry.addEventListener("run", () => {
     if (locked) { void stop("stopped"); return; }
-    if (!namePilot) changed();
-    if (namePilot) {
+    if (!traced) changed();
+    if (traced) {
       // The run event fires during the engine transition. A full export here
       // calls toggleStop; capture the code without changing engine state.
       original.objects[0].script = Entry.container.getObject("entrybot").getScriptText();
@@ -142,12 +155,12 @@ try {
     send("running", { running: true });
     clearInterval(monitor);
     monitor = setInterval(() => {
-      if (namePilot) { const now = Date.now(); if (!awaitingAnswer) activeTime += now - lastTick; lastTick = now; }
+      if (traced) { const now = Date.now(); if (!awaitingAnswer) activeTime += now - lastTick; lastTick = now; }
       const object = Entry.container.getObject("entrybot");
       const speech = object?.entity.dialog?.message_?.replaceAll("\n", "");
       if (speech) lastSpeech = speech;
-      if (object && object.script.executors.length === 0) void stop("finished");
-      else if ((namePilot ? activeTime : Date.now() - startedAt) >= 15000) void stop("timeout");
+      if (object && object.script.executors.length === 0 && !(programming && mission === "keys")) void stop("finished");
+      else if ((traced ? activeTime : Date.now() - startedAt) >= 15000) void stop("timeout");
     }, 100);
   });
   Entry.addEventListener("beforeStop", () => {
@@ -162,8 +175,11 @@ try {
         loading = true;
         await stop("stopped");
         Entry.clearProject();
+        if (programming) for (const variable of message.project.variables ?? []) {
+          if (["cs-A", "cs-B"].includes(variable.id)) variable.visible = ["multiply", "average"].includes(mission);
+        }
         Entry.loadProject(message.project);
-        if (namePilot) Entry.playground.blockMenu.setMenu();
+        if (traced) Entry.playground.blockMenu.setMenu();
         // The workspace redraw schedules a second palette redraw. Drain both
         // before exposing the editor, since selectMenu closes active inputs.
         Entry.getMainWS().dReDraw.flush();
@@ -181,6 +197,8 @@ try {
       } else if (message.type === "run" && !locked && Entry.engine.isState("stop")) {
         changed();
         Entry.engine.toggleRun();
+      } else if (message.type === "key" && programming && !locked && Entry.engine.isState("run") && ["37", "38", "39", "40"].includes(message.key)) {
+        Entry.container.mapEntityIncludeCloneOnScene(Entry.engine.raiseKeyEvent, ["keyPress", Number(message.key)]);
       } else if (message.type === "stop" || message.type === "reset-stage") {
         await stop("stopped");
         if (message.type === "reset-stage") {

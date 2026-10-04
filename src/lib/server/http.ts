@@ -4,7 +4,7 @@ import { ZodError } from "zod";
 import { ServiceError, requireCondition } from "./errors";
 
 export function json(value: unknown, status = 200) { return NextResponse.json(value, { status, headers: { "Cache-Control": "no-store, private", "Vary": "Cookie", "X-Content-Type-Options": "nosniff" } }); }
-export async function body(request: Request) {
+export async function body(request: Request, maxBytes = 32768) {
   requireCondition(request.headers.get("X-CS-Class") === "1", 403, "ORIGIN", "올바른 화면에서 다시 시도해 주세요.");
   const origin = request.headers.get("origin");
   // Next's internal URL can normalize 127.0.0.1 to localhost. Browsers send
@@ -20,7 +20,7 @@ export async function body(request: Request) {
   while (true) {
     const item = await reader.read(); if (item.done) break;
     length += item.value.byteLength;
-    if (length > 32768) { await reader.cancel(); throw new ServiceError(413, "TOO_LARGE", "한 번에 저장할 수 있는 크기를 넘었어요."); }
+    if (length > maxBytes) { await reader.cancel(); throw new ServiceError(413, "TOO_LARGE", "한 번에 저장할 수 있는 크기를 넘었어요."); }
     chunks.push(item.value);
   }
   try { return JSON.parse(Buffer.concat(chunks).toString("utf8")); }

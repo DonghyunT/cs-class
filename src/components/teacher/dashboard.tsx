@@ -161,6 +161,7 @@ function StageProgress({ value, unit }: { value: Progress["concept"]; unit: stri
 }
 
 function practiceLabel(work: Work | null) {
+  if (work?.missions) return `${["name", "multiply", "move", "keys"].filter((id) => work.missions?.[id]?.submission).length}/4 미션 제출`;
   if (work?.submission) return work.draft.practiceOrder.join("|") === work.submission.order.join("|") ? "제출 완료" : "제출 완료 · 수정 중";
   if (work?.validation?.passed) return "검증 통과 · 제출 전";
   return "아직 제출하지 않았어요";

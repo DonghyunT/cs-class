@@ -55,14 +55,24 @@ export async function readSession() {
 async function setSessionCookie(uid: string, secret: string) {
   (await cookies()).set(SESSION_COOKIE, `${uid}.${secret}`, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/" });
 }
+const loginLimitQueues = new Map<string, Promise<void>>();
 async function limitLogin(key: string, maximum: number, windowMs: number) {
-  const { db } = admin(); const ref = db.collection("csRateLimits").doc(hash(key)); const now = Date.now();
-  await db.runTransaction(async (tx) => {
-    const data = (await tx.get(ref)).data();
-    const fresh = !data || now - data.start >= windowMs;
-    requireCondition(fresh || data.count < maximum, 429, "LOGIN_LIMIT", "로그인 요청이 많아요. 잠시 후 다시 시도해 주세요.");
-    tx.set(ref, { start: fresh ? now : data.start, count: fresh ? 1 : data.count + 1 });
+  const { db } = admin(); const ref = db.collection("csRateLimits").doc(hash(key));
+  // Serialize this instance's same-key writes; transactions enforce limits across instances.
+  const previous = loginLimitQueues.get(ref.id) ?? Promise.resolve();
+  const attempt = previous.then(async () => {
+    const now = Date.now();
+    await db.runTransaction(async (tx) => {
+      const data = (await tx.get(ref)).data();
+      const fresh = !data || now - data.start >= windowMs;
+      requireCondition(fresh || data.count < maximum, 429, "LOGIN_LIMIT", "로그인 요청이 많아요. 잠시 후 다시 시도해 주세요.");
+      tx.set(ref, { start: fresh ? now : data.start, count: fresh ? 1 : data.count + 1 });
+    });
   });
+  const settled = attempt.then(() => {}, () => {});
+  loginLimitQueues.set(ref.id, settled);
+  try { await attempt; }
+  finally { if (loginLimitQueues.get(ref.id) === settled) loginLimitQueues.delete(ref.id); }
 }
 async function openSession(uid: string, expectedVersion: number, expectedRole: Role) {
   const { db } = admin(); const secret = randomBytes(32).toString("hex"); const ref = db.collection("csAccounts").doc(uid);

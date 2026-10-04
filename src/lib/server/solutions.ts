@@ -1,6 +1,7 @@
 import "server-only";
 import type { WorkDraft } from "../classroom/types";
 import { runnableEntryBlocks } from "../classroom/entry-project";
+import { concepts, questions } from "../prototype/programming";
 
 export interface OrderingSolution {
   type: "ordering";
@@ -31,6 +32,13 @@ export interface LessonSolution {
 }
 
 export const SOLUTIONS: Record<string, LessonSolution> = {
+  "programming-13": {
+    lessonId: "programming-13",
+    conceptAnswers: Object.fromEntries(concepts.map((c, i) => [`pc${i}`, String(c.correct)])),
+    quizAnswers: Object.fromEntries(questions.map((q) => [q.id, String(q.correct)])),
+    quizFeedback: Object.fromEntries(questions.map((q) => [q.id, { correct: q.explanation, incorrect: q.hint }])),
+    practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
+  },
   "sequence-lab": {
     lessonId: "sequence-lab",
     conceptAnswers: { algorithm: "clear", sequence: "save" },
