@@ -58,6 +58,9 @@
 .inlineNote { font-size: 14px; color: #526173; padding: 15px 18px; line-height: 1.7; border-radius: 12px; background: #edf1f7; margin-bottom: 20px; }
 .listToolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 14px; }
 .listToolbar > span { font-size: 15px; font-weight: 650; word-break: keep-all; }
+.filters { display: flex; flex-wrap: wrap; justify-content: end; align-items: center; gap: 10px; }
+.filters :global([data-slot="select-trigger"]) { min-width: 135px; }
+.resultCount { color: #526173; font-size: 13px; margin: 0 0 14px; }
 .search { position: relative; width: 230px; flex-shrink: 0; }
 .search svg { position: absolute; top: 15px; left: 13px; pointer-events: none; color: #526173; }
 .search input { min-height: 46px; font-size: 15px; padding-left: 39px; background: white; border: 1px solid #d1d9e5; }
@@ -68,7 +71,7 @@
 .table thead th { font-weight: 550; padding-top: 14px; padding-bottom: 14px; }
 .table tbody tr:last-child th, .table tbody tr:last-child td { border-bottom: none; }
 .studentIdentity > span { display: inline-flex; vertical-align: middle; }
-.studentIdentity > span:last-child { flex-direction: column; gap: 5px; }
+.studentIdentity > span:nth-child(2) { flex-direction: column; gap: 5px; }
 .studentIdentity strong { font-size: 15px; font-weight: 650; }
 .studentIdentity small { font-size: 13px; color: #526173; font-weight: 450; }
 .avatar { width: 36px; height: 36px; border-radius: 12px; align-items: center; justify-content: center; background: #eaf2ff; font-size: 14px; color: #2e5fab; margin-right: 12px; }
@@ -85,6 +88,8 @@
 .rowActions button + button { margin-top: 5px; color: #526173; }
 .noRecord { color: #526173; font-size: 13px; }
 .mobileLabel { display: none; }
+.detailToggle, .mobilePractice { display: none; }
+.studentIdentity:focus-visible { outline: 2px solid #376fc8; outline-offset: -3px; border-radius: 8px; }
 .empty { display: grid; justify-items: center; text-align: center; gap: 13px; padding: 54px 22px; background: white; border: 1px solid #e3e8ef; border-radius: 22px; color: #526173; }
 .empty h3 { color: #202b3a; font-size: 18px; font-weight: 650; }
 .empty p { font-size: 14px; line-height: 1.7; }
@@ -113,10 +118,18 @@
   .summary > div { padding-inline: 20px; }
   .table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .table, .table tbody { display: block; }
-  .table tbody tr { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 20px; gap: 18px 14px; border-bottom: 1px solid #e3e8ef; }
+  .table tbody tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 20px; gap: 18px 14px; border-bottom: 1px solid #e3e8ef; }
   .table tbody tr:last-child { border-bottom: none; }
   .table th, .table td { display: block; padding: 0; border: none; }
   .studentIdentity { grid-column: 1 / -1; }
+  .studentIdentity { display: flex !important; align-items: center; position: relative; padding-right: 108px !important; min-height: 44px; }
+  .studentIdentity > span:nth-child(2) { min-width: 0; overflow-wrap: anywhere; }
+  .studentIdentity > .avatar { flex-shrink: 0; }
+  .detailToggle { display: inline-flex; position: absolute; right: 0; top: 0; min-height: 44px; padding: 8px 12px; font-size: 13px; }
+  .rowSummary { grid-column: 1 / -1; grid-row: 2; display: flex !important; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+  .rowSummary > .mobileLabel { display: none; }
+  .mobilePractice { display: inline; color: #526173; font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+  .studentRow[data-expanded="false"] .rowDetail:not(:focus-within) { display: none !important; }
   .mobileLabel { display: block; font-size: 12px; color: #526173; margin-bottom: 9px; }
   .rowActions { grid-column: 1 / -1; display: flex !important; width: auto; gap: 10px; justify-content: end; }
   .rowActions button { width: auto; min-height: 44px; font-size: 13px; padding: 8px 14px; }
@@ -135,7 +148,7 @@
   .lessonPicker { min-width: 0; width: 100%; max-width: 100%; }
   .summary > div { padding-inline: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
   .summary svg { display: none; }
-  .table tbody tr { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .table tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 600px) {
   .heading { margin-bottom: 24px; }
@@ -159,8 +172,11 @@
   .summary strong { font-size: 26px; }
   .summary small { margin-left: 3px; font-size: 12px; }
   .listToolbar { align-items: start; flex-direction: column; gap: 12px; }
+  .filters { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filters :global([data-slot="select-trigger"]) { min-width: 0; width: 100%; }
+  .filters .search { grid-column: 1 / -1; }
   .search { width: 100%; }
-  .table tbody tr { padding: 20px 16px; gap: 20px 16px; }
+  .table tbody tr { padding: 20px 16px; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .rowActions { flex-wrap: wrap; justify-content: start; gap: 4px; }
   .rowActions button { padding: 8px 10px; }
   .listFooter { flex-direction: column; gap: 5px; font-size: 12px; }

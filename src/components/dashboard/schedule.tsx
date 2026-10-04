@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, CalendarDays, Pencil, Trash2, RefreshCw } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { useSession } from "@/components/session-provider";
+import { useSession, useTeacherClass } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -17,7 +17,8 @@ import styles from "./dashboard.module.css";
 
 export function ScheduleScreen({ teacher = false, classId }: { teacher?: boolean; classId?: string }) {
   const { session } = useSession();
-  const selected = classId ?? (session?.role === "student" ? session.classId ?? undefined : session?.classIds[0]);
+  const selection = useTeacherClass(classId);
+  const selected = teacher ? selection.classId : session?.classId ?? undefined;
   return <AppShell teacher={teacher} title="반 일정">{session && selected ? <ScheduleList key={`${session.uid}:${selected}`} uid={session.uid} teacher={teacher} classId={selected} /> : <p className={styles.empty}>담당 반이 연결되면 일정을 확인할 수 있어요.</p>}</AppShell>;
 }
 export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: string; teacher: boolean; classId?: string; summary?: boolean }) {
@@ -62,7 +63,8 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
     ...list.items.map((item) => ({ ...item, slot: null })),
     ...(timetable?.items ?? []).map((slot) => ({ id: slot.id, title: `정보 · ${slot.period}교시`, date: slot.date, lessonId: null, slot })),
   ].sort((a, b) => a.date.localeCompare(b.date) || (a.slot?.period ?? 99) - (b.slot?.period ?? 99) || a.id.localeCompare(b.id));
-  const items = summary ? sorted.filter((item) => item.date >= today).slice(0, 3) : sorted;
+  const upcoming = sorted.filter((item) => item.date >= today);
+  const items = summary ? upcoming.slice(0, 5) : sorted;
   const locked = list.saving || !!list.error || !!list.loadError || refreshingTimetable;
   async function refreshSchool() {
     if (!resolvedClassId || refreshingTimetable || !(await flush())) return;
@@ -100,6 +102,7 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
         <div><strong>{item.title}</strong>{item.slot && <><small>{item.slot.startsAt} 시작 · 학교 시간표</small>{item.slot.changed && <small className={styles.timetableChanged}>변경된 수업</small>}</>}{item.lessonId && <Link href={teacher ? `/teacher/students?classId=${resolvedClassId}&lessonId=${encodeURIComponent(item.lessonId)}` : `/classroom/${encodeURIComponent(item.lessonId)}`}>{list.data!.lessons.find((lesson) => lesson.id === item.lessonId)?.title ?? "연결된 수업"}<ArrowRight size={14} aria-hidden="true" /></Link>}{list.changes.some((change) => change.id === item.id) && <small>{list.error ? "저장 실패 · 변경 보관 중" : "저장 중"}</small>}</div>
         {!summary && teacher && !item.slot && <div className={styles.rowActions}><button type="button" aria-label={`${item.title} 수정`} disabled={locked} onClick={() => { setDraft({ id: item.id, title: item.title, date: item.date, lessonId: item.lessonId }); setFocus((value) => value + 1); }}><Pencil size={16} aria-hidden="true" /></button><button type="button" aria-label={`${item.title} 삭제`} disabled={locked} onClick={() => { send({ id: item.id, item: null }); setFocus((value) => value + 1); }}><Trash2 size={16} aria-hidden="true" /></button></div>}
       </li>)}</ul>
+      {summary && upcoming.length > items.length && <Link className={styles.scheduleRemainder} href={`${home}/schedule${teacher && resolvedClassId ? `?classId=${encodeURIComponent(resolvedClassId)}` : ""}`}>외 {upcoming.length - items.length}개 · 전체 보기<ArrowRight size={15} aria-hidden="true" /></Link>}
       {!summary && teacher && <ScheduleForm key={resolvedClassId} resolvedClassId={resolvedClassId} draft={draft} setDraft={setDraft} form={form} title={title} locked={locked} lessons={list.data.lessons} submit={submit} cancel={() => { setDraft({ id: null, title: "", date: seoulToday(), lessonId: null }); setFocus((value) => value + 1); }} />}
       {!summary && teacher && list.items.length >= PLANNER_LIMIT && <p className={styles.muted}>파일럿은 반 일정 {PLANNER_LIMIT}개까지 저장해요. 필요 없는 일정을 지워 주세요.</p>}
       {!summary && teacher && <p role="status" className={styles.saveStatus}>{list.saving ? "일정을 저장하고 있어요." : list.error ? "아직 저장하지 못했어요." : list.loadError ? "마지막 조회 자료 · 최신 기록 확인 필요" : list.saved ? "저장 완료" : "담당 선생님이 관리하는 반 일정이에요."}</p>}

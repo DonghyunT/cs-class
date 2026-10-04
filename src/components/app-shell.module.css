@@ -254,6 +254,13 @@
 
 .layout .dashboardMain:focus { outline: none; }
 
+/* Explicit workspace mode keeps the existing editor mounted in the main flow. */
+.layout[data-workspace-wide="true"] .dashboardMain { max-width: none; padding-block: 24px 40px; }
+@media (min-width: 821px) {
+  .layout[data-workspace-wide="true"] .appSidebar { display: none; }
+  .layout[data-workspace-wide="true"] .dashboardMain { padding-inline: 24px; }
+}
+
 @media (max-width: 1100px) {
   .layout .appSidebar { width: 208px; padding-inline: 16px; }
   .layout .dashboardMain { padding: 32px 28px 40px; }

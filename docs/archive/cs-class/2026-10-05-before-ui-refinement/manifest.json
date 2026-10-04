@@ -1,0 +1,13 @@
+[
+  {
+    "preservedAt": "2026-10-05",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/classroom-ui-refinement",
+    "baseCommit": "d6192777a7be6f18aa1bf9a7641e61f186bac306",
+    "source": "clean Windows working-tree HANDOFF before approved seven UI refinements; Git-normalized content matches baseCommit",
+    "baseGitBlobSha256": "9aefbbc4b2283c44e6cd6096516c1d4aa9e9c14026a8a3f5adc628d3d087f1de",
+    "original": "docs/HANDOFF.md",
+    "preserved": "HANDOFF.md",
+    "sha256": "ff702209af571a449656b3195098f6d97fdd3f426a653168b471c80fdff36f78"
+  }
+]

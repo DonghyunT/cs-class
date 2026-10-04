@@ -255,7 +255,7 @@ test("미편집 목록의 첫 조회 대기·실패는 홈·메뉴·로그아웃
     await page.goto("/teacher/schedule");
     await expect(page.locator("main").getByRole("alert")).toContainText("목록 조회 점검");
     await page.getByRole("link", { name: "수업 관리", exact: true }).click();
-    await expect(page).toHaveURL(/\/teacher\/classes$/);
+    await expect(page).toHaveURL(/\/teacher\/classes\?classId=2-1$/);
   } finally { release(); }
 });
 

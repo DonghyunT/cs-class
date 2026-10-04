@@ -11,7 +11,7 @@ import { EntryPracticeWorkspace } from "./entry-practice-workspace";
 import type { useWork } from "./use-work";
 import styles from "./programming-lesson.module.css";
 
-type Props = { lesson: Lesson; controller: ReturnType<typeof useWork>; locked: boolean; runAction: (action: WorkAction, focusId: string) => Promise<void>; focus: (id: string) => void; next: (stage: WorkDraft["stage"]) => void; exportRef: RefObject<(() => Promise<string | null>) | null> };
+type Props = { lesson: Lesson; controller: ReturnType<typeof useWork>; locked: boolean; runAction: (action: WorkAction, focusId: string) => Promise<void>; focus: (id: string) => void; next: (stage: WorkDraft["stage"]) => void; exportRef: RefObject<(() => Promise<string | null>) | null>; workspaceWide: boolean; onWorkspaceWideChange: (wide: boolean) => void; saveLabel: string };
 
 export function ProgrammingLearningStage(props: Props) {
   const { controller, locked } = props;
@@ -58,7 +58,7 @@ function ProgrammingQuiz({ lesson, controller, locked, runAction, next, focus }:
   </div>;
 }
 
-function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exportRef }: Props) {
+function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exportRef, workspaceWide, onWorkspaceWideChange, saveLabel }: Props) {
   const { work, draft, update } = controller;
   const [switching, setSwitching] = useState(false);
   const mission = missionById(draft.programming?.mission ?? "name")!;
@@ -82,7 +82,7 @@ function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exp
     <div className={styles.heading}><div><span>{"optional" in mission ? "선택 도전 · 기본 완료 조건에 포함되지 않아요" : `MISSION 0${programmingMissions.findIndex((m) => m.id === mission.id) + 1}`}</span><h3 id="programming-mission-title" tabIndex={-1}>{mission.title}</h3><p>{mission.goal}</p></div></div>
     {mission.id === "keys" && <p className={styles.carry}>앞 미션의 작품이 있으면 처음 시작할 때 가져와요. 아직 없다면 시작 블록에서 만들 수 있어요. 각 미션의 저장본과 제출본은 따로 유지돼요.</p>}
     <details className={styles.hint}><summary><Lightbulb size={17} />먼저 해볼 작은 실험</summary><p>{mission.experiment}</p><p>{mission.hint}</p></details>
-    <EntryPracticeWorkspace key={mission.id} mission={mission} lesson={lesson} work={{ ...work, validation: current.validation, submission: current.submission }} draft={{ ...draft, entryProject: raw, practiceOrder: [] }} locked={locked || switching} busy={controller.busy} exportRef={exportRef} runAction={runAction} update={(next) => {
+    <EntryPracticeWorkspace key={mission.id} mission={mission} lesson={lesson} work={{ ...work, validation: current.validation, submission: current.submission }} draft={{ ...draft, entryProject: raw, practiceOrder: [] }} locked={locked || switching} busy={controller.busy} exportRef={exportRef} runAction={runAction} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} saveState={controller.saveState} update={(next) => {
       const current = controller.getDraft();
       if (current.programming && next.entryProject) update({ ...current, programming: { ...current.programming, projects: { ...current.programming.projects, [mission.id]: next.entryProject } } });
     }} />

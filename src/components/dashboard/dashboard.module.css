@@ -79,6 +79,8 @@
 .actionList small { display: block; font-size: 13px; color: #526173; margin-top: 4px; }
 .actionList svg { flex-shrink: 0; color: #376fc8; box-sizing: content-box; padding: 8px; border-radius: 10px; background: #eaf2ff; }
 .eventList > li { display: flex; gap: 16px; align-items: start; padding: 18px 0; }
+.schedulePanel .eventList > li { padding: 12px 0; }
+.scheduleRemainder { display: flex; align-items: center; justify-content: end; gap: 8px; min-height: 44px; border-top: 1px solid #efdfd7; color: #2e5fab; font-size: 13px; font-weight: 600; }
 .eventList time { color: #8e4b2c; font-size: 12px; font-weight: 650; width: 100px; flex-shrink: 0; padding: 6px 8px; border-radius: 9px; background: #fff0e8; text-align: center; }
 .eventList li > div:not(.rowActions) { min-width: 0; flex: 1; }
 .eventList strong { display: block; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
