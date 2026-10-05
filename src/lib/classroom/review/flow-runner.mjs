@@ -1,6 +1,6 @@
 import { validateFlowGraph } from './flow-graph.mjs';
 import { parseFlowchartAssign, parseFlowchartCond, evalFlowchartAST, evalFlowchartCond } from './flow-expressions.mjs';
-/** @typedef {{current:string,vars:Record<string,number>,log:string[],steps:number,done:boolean,waiting:null|{kind:'input'|'choice',name:string},error:string}} FlowRun */
+/** @typedef {{current:string,vars:Record<string,number|string>,log:string[],steps:number,done:boolean,waiting:null|{kind:'input'|'choice',name:string,inputMode?:'text'|'decimal'},error:string}} FlowRun */
 
 /** @returns {FlowRun} */
 export function createFlowRun(project) {
@@ -25,11 +25,14 @@ export function stepFlowRun(project, previous, answer) {
       Object.defineProperty(run.vars,assign.name,{value,writable:true,enumerable:true,configurable:true}); run.log.push(`${assign.name} = ${value}`);
     } else if (node.shape === 'io' && /입력|받기|센서|측정|감지/.test(text) && !/출력|표시/.test(text)) {
       const name = text.replace(/입력받기|입력|받기|센서|측정|감지/g,'').replace(/[()[\]:]/g,'').trim() || '값';
-      if (answer === undefined) { run.waiting={kind:'input',name}; return run; }
-      if (!String(answer).trim() || !Number.isFinite(Number(answer))) throw Error('유한한 숫자를 입력해 주세요.');
-      Object.defineProperty(run.vars,name,{value:Number(answer),writable:true,enumerable:true,configurable:true}); run.log.push(`${name} 입력: ${answer}`);
+      const isText = project.textInputs?.includes(node.id) === true;
+      if (answer === undefined) { run.waiting={kind:'input',name,inputMode:isText?'text':'decimal'}; return run; }
+      if (!isText && (!String(answer).trim() || !Number.isFinite(Number(answer)))) throw Error('유한한 숫자를 입력해 주세요.');
+      Object.defineProperty(run.vars,name,{value:isText?String(answer):Number(answer),writable:true,enumerable:true,configurable:true}); run.log.push(`${name} 입력: ${answer}`);
     } else if (node.shape === 'decision') {
-      if (/[<>=!]/.test(text)) branch=evalFlowchartCond(parseFlowchartCond(text.replace(/\?$/,'')),run.vars)?'예':'아니오';
+      const comparison = project.textComparisons?.[node.id];
+      if (comparison) branch=run.vars[comparison.variable]===comparison.expected?'예':'아니오';
+      else if (/[<>=!]/.test(text)) branch=evalFlowchartCond(parseFlowchartCond(text.replace(/\?$/,'')),run.vars)?'예':'아니오';
       else if (answer === undefined) { run.waiting={kind:'choice',name:text}; return run; }
       else if (answer==='예'||answer==='아니오') branch=answer;
       else throw Error('예 또는 아니오를 선택해 주세요.');

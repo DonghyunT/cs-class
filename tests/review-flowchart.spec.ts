@@ -61,7 +61,12 @@ test("세 퍼즐은 오류 관찰·실행·각 제출·재접속 기록을 유�
   }
   await page.reload(); await expect(page.getByRole("button", { name: /3\. 반복 퍼즐/ })).toHaveAttribute("aria-pressed", "true");
   const run = page.getByRole("region", { name: "순서도 실행" }); await run.getByRole("button", { name: "실행 준비 / 다시 시작" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click();
-  await run.getByLabel("비밀번호 입력값").fill("1111"); await run.getByRole("button", { name: "입력값 적용" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click(); await expect(run).toContainText("아니오"); await run.getByRole("button", { name: "한 단계 실행" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click(); await run.getByLabel("비밀번호 입력값").fill("7777"); await run.getByRole("button", { name: "입력값 적용" }).click(); await run.getByRole("button", { name: "자동 실행", exact: true }).click(); await expect(run.getByText("종료에 도달했어요!", { exact: true })).toBeVisible(); expect(errors).toEqual([]);
+  for (const wrong of ["1111", "07777", "abc", " 7777", ""]) {
+    await expect(run.getByLabel("비밀번호 입력값")).toHaveAttribute("inputmode", "text");
+    await run.getByLabel("비밀번호 입력값").fill(wrong); await run.getByRole("button", { name: "입력값 적용" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click();
+    await expect(run.getByRole("status")).toContainText("현재 기호: '비밀번호 불일치'"); await run.getByRole("button", { name: "한 단계 실행" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click();
+  }
+  await run.getByLabel("비밀번호 입력값").fill("7777"); await run.getByRole("button", { name: "입력값 적용" }).click(); await run.getByRole("button", { name: "자동 실행", exact: true }).click(); await expect(run.getByText("종료에 도달했어요!", { exact: true })).toBeVisible(); expect(errors).toEqual([]);
   const work = await (await page.request.get(`/api/classroom/work/${id}`)).json(); expect(Object.values(work.missions).filter((m: unknown) => (m as { submission: unknown }).submission)).toHaveLength(3);
 });
 test("자유 캔버스·공방·키보드·추상화 복사·교사 승인은 수정본과 독립이다", async ({ page, playwright }) => {

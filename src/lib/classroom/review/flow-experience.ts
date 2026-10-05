@@ -10,7 +10,13 @@ export function puzzleGraph(id: string, placed: Record<string, string>) {
 export function puzzleExecutionGraph(id: string, placed: Record<string, string>) {
   const graph = puzzleGraph(id, placed);
   const expressions: Record<string, string> = { "b-m2-1": "키 입력", "b-m2-2": "키 >= 150", "b-m3-chk": "비밀번호 == 7777" };
-  return { ...graph, unavailable: graph.nodes.some(node => node.text === "빈 기호") ? "빈 기호를 먼저 채워 주세요." : "", nodes: graph.nodes.map(node => expressions[placed[node.id]] ? { ...node, text: expressions[placed[node.id]] } : node) };
+  return {
+    ...graph,
+    unavailable: graph.nodes.some(node => node.text === "빈 기호") ? "빈 기호를 먼저 채워 주세요." : "",
+    nodes: graph.nodes.map(node => expressions[placed[node.id]] ? { ...node, text: expressions[placed[node.id]] } : node),
+    textInputs: graph.nodes.filter(node => placed[node.id] === "b-m3-in").map(node => node.id),
+    textComparisons: Object.fromEntries(graph.nodes.filter(node => placed[node.id] === "b-m3-chk").map(node => [node.id, { variable: "비밀번호", expected: "7777" }]))
+  };
 }
 export function guideGraph(step: number): Pick<FlowchartProject, "nodes" | "edges"> {
   const steps = level2Walkthrough.steps;

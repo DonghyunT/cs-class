@@ -29,7 +29,7 @@ function FlowExecution({ graph }: { graph: Graph }) {
     </div>
     {run && <>
       <p role="status">{run.done ? "종료에 도달했어요!" : run.error || `현재 기호: ${graph.nodes.find(node => node.id === run.current)?.text} · ${run.steps}단계`}</p>{run.waiting?.kind === "input" && <form onSubmit={event => { event.preventDefault(); step(answer); }} className={styles.actions}>
-        <label className={styles.field}>{run.waiting.name} 입력값<input ref={waitingInput} aria-label={`${run.waiting.name} 입력값`} value={answer} onChange={event => setAnswer(event.target.value)} inputMode="decimal" />
+        <label className={styles.field}>{run.waiting.name} 입력값<input ref={waitingInput} aria-label={`${run.waiting.name} 입력값`} value={answer} onChange={event => setAnswer(event.target.value)} inputMode={run.waiting.inputMode ?? "decimal"} />
         </label>
         <Button type="submit">입력값 적용</Button>
       </form>}{run.waiting?.kind === "choice" && <div className={styles.actions}>
