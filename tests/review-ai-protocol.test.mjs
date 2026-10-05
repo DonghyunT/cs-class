@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { quotaWindow, parseSolarEnvelope, hasExplicitPreparation } from '../src/lib/classroom/review/ai-protocol.mjs';
+import { quotaWindow, parseSolarEnvelope, hasExplicitPreparation, groundFlowReview } from '../src/lib/classroom/review/ai-protocol.mjs';
 
 test('한국 날짜 경계와 최근 60초 15회·하루 70회 경계를 구분한다', () => {
   const now = Date.parse('2026-10-05T15:00:00Z');
@@ -23,4 +23,17 @@ test('Solar의 잘린 응답·형식 오류·여러 선택지를 성공으로 �
   assert.throws(() => parseSolarEnvelope(envelope('{"message":"안내"}', 'length')));
   assert.throws(() => parseSolarEnvelope(envelope('```json\n{}\n```')));
   assert.throws(() => parseSolarEnvelope({ choices: [] }));
+});
+
+test('순서도 통과의 조건 근거는 실제 기호에서 인용하며 기획서나 없는 문장을 근거로 쓰지 않는다', () => {
+  const result = { message: '조건을 충족했어요.', verdict: 'pass' };
+  const project = { conditions: ['준비물을 챙긴다'], nodes: [{ id: 'ready', text: '일어나 씻고 준비물을 챙긴다' }] };
+  const checks = [{ conditionIndex: 0, status: 'met', nodeId: 'ready', evidence: '준비물을 챙긴다' }];
+  assert.deepEqual(groundFlowReview(result, checks, project), result);
+  const missing = { ...project, nodes: [{ id: 'ready', text: '일어나 씻는다' }] };
+  assert.equal(groundFlowReview(result, checks, missing).verdict, 'uncertain');
+  assert.equal(groundFlowReview(result, [{ ...checks[0], status: 'missing', nodeId: '', evidence: '' }], missing).verdict, 'needs-changes');
+  assert.equal(groundFlowReview(result, [], project).verdict, 'uncertain');
+  assert.equal(groundFlowReview(result, [checks[0], checks[0]], project).verdict, 'uncertain');
+  assert.equal(groundFlowReview(result, [{ ...checks[0], nodeId: 'planning-card' }], project).verdict, 'uncertain');
 });

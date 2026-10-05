@@ -41,6 +41,20 @@ test("서버 실행·중복 요청·서명 검증·제출본 보존", async ({ r
   work = await reset.json(); expect(work.validation).toBeNull(); expect(work.submission).toEqual(submitted);
   const reconnected = await (await request.get(`/api/classroom/work/${id}`)).json(); expect(reconnected.draft.reviewProject.input).toBe("미완성 명령");
 });
+test("모호하다는 AI 판정에 섞인 실행 명령은 저장하지 않고 초안을 보존한다", async ({ request }) => {
+  let work = await prepare(request);
+  if (work.draft.reviewProject?.type !== "sandwich") throw Error("wrong lesson");
+  work.draft.reviewProject.input = "이거 발라 줘";
+  const saved = await request.post(`/api/classroom/work/${id}`, { headers, data: { revision: work.revision, draft: work.draft } });
+  expect(saved.status()).toBe(200); work = await saved.json();
+  const result = await command(request, work, "fixture-clarify-actions", "sandwich-command");
+  expect(result.response.status()).toBe(502); expect(result.reply.code).toBe("AI_FORMAT");
+  const latest = await (await request.get(`/api/classroom/work/${id}`)).json();
+  expect(latest.revision).toBe(work.revision); expect(latest.draft).toEqual(work.draft);
+  expect((await db.collection("csAiUsage").doc(uid).get()).data()?.failures).toBe(1);
+  expect((await db.collection("csAiCache").get()).empty).toBe(true);
+});
+
 test("AI 캐시·중복은 차감하지 않고 실패·분당·일일 경계를 적용", async ({ request }) => {
   const work = await prepare(request);
   const first = await command(request, work, "알아서 만들어", "sandwich-command"); expect(first.response.status()).toBe(200);
