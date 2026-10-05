@@ -1,7 +1,7 @@
 // Illustration and geometry from Algorithm Studio bc8d51f; state comes from the existing replay engine.
 import type { initialSandwich, reviewSandwich } from "@/lib/classroom/review/sandwich-engine.mjs";
 export function SandwichStage({state, review, error, action}: {state: ReturnType<typeof initialSandwich>; review: ReturnType<typeof reviewSandwich>; error: boolean; action?: string}) {
-  const knife = action?.startsWith("SPREAD_") ? `translate(${action.includes("BREAD2") ? 540 : 350},${action.endsWith("EDGE") ? 235 : 270}) rotate(15)` : state.knifeHolding === "jam" ? "translate(800,240) rotate(-15)" : state.knifeHolding === "pb" ? "translate(700,240) rotate(-15)" : "translate(905,290) rotate(-25)";
+  const knife = !error && action?.startsWith("SPREAD_") ? `translate(${action.includes("BREAD2") ? 540 : 350},${action.endsWith("EDGE") ? 235 : 270}) rotate(15)` : state.knifeHolding === "jam" ? "translate(800,240) rotate(-15)" : state.knifeHolding === "pb" ? "translate(700,240) rotate(-15)" : "translate(905,290) rotate(-25)";
   return <svg viewBox="0 0 980 450" role="img" aria-label={`접시에 빵 ${state.breadOnPlate}장. ${state.completed ? review.title : "아직 조립 중"}`}>
                 <rect x="20" y="295" width="940" height="145" rx="16" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="4"/>
                 <rect x="20" y="295" width="940" height="24" fill="#e2e8f0" opacity="0.6"/>

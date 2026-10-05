@@ -24,10 +24,12 @@ test("원작 조리대의 실제 도구·8개 상태와 명령 오류를 보여 
   await expect(stage).toHaveAttribute("viewBox", "0 0 980 450");
   await expect(stage.locator('[data-part="knife"]')).toBeVisible();
   await expect(page.getByRole("list", { name: "재료와 조리 상태" }).locator("li")).toHaveCount(8);
-  await page.getByLabel("자연어 명령").fill("식빵을 꺼내");
+  await page.getByLabel("자연어 명령").fill("식빵 1의 넓은 면에 잼을 발라");
   await page.getByRole("button", { name: "규칙 해석으로 실행" }).click();
-  await expect(page.getByRole("status").filter({ hasText: /봉지/ }).first()).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /접시에 식빵이 없습니다/ }).first()).toBeVisible();
   await expect(stage.locator('[data-part="error"]')).toBeVisible();
+  await expect(page.getByRole("list", { name:"누적 알고리즘 파이프라인" }).locator("li").last()).toHaveAttribute("data-active","true");
+  expect(await stage.locator('[data-part="knife"]').getAttribute("transform")).toBe("translate(905,290) rotate(-25)");
   await page.getByLabel("자연어 명령").fill("빵 봉지를 열어");
   await page.getByRole("button", { name: "규칙 해석으로 실행" }).click();
   await expect(page.getByRole("list", { name: "재료와 조리 상태" }).locator("li").first()).toContainText("열림");
