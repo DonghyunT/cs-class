@@ -2,9 +2,9 @@
 
 중학교 정보 수업을 위한 온라인 교실입니다. 학생은 이번 수업을 시작하고 지난 활동을 이어가며, 교사는 반별 수업을 준비합니다.
 
-Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 학습 플랫폼**입니다. 학생·교사 로그인, 반별 수업 관리, 학습 기록 저장·복원과 제출을 구현했습니다. 순서·순서도·엔트리봇 수업이 있으며 엔트리봇 실습은 실제 EntryJS 편집기와 실행 무대를 사용합니다. 실제 학생 계정 등록은 별도입니다.
+Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 학습 플랫폼**입니다. 학생·교사 로그인, 반별 수업 관리, 학습 기록 저장·복원과 제출을 구현했습니다. 「강아지와 시작하는 프로그래밍」은 실제 EntryJS 편집기·무대를 사용하며, 문제 추상화·알고리즘 설계·순서도 연구소는 수업별 AI를 연결한 선택 복습 공간입니다. 실제 학생 계정 등록은 별도입니다.
 
-현재 앱에는 실제 EntryJS로 구성한 [프로그래밍 13차시](docs/PRD.md#프로그래밍-13차시--실제-수업-구성)와 [명부 준비·반별 발급 도구](docs/DEVELOPMENT.md#실학생-명부-준비와-반별-발급)를 추가했습니다. 운영 사이트 적용 여부는 [HANDOFF](docs/HANDOFF.md#현재-작업-상태)를 확인합니다.
+현재 운영에는 실제 EntryJS로 구성한 [프로그래밍 13차시](docs/PRD.md#프로그래밍-13차시--실제-수업-구성)와 [세 복습 수업](docs/PRD.md#알고리즘-선택-복습--2026-10-05-확정)을 반영했습니다. 복습 실습은 원작의 그림·색·조작을 살리고 성적에 반영하지 않습니다. [명부 준비·반별 발급 도구](docs/DEVELOPMENT.md#실학생-명부-준비와-반별-발급)는 마련했으며, 첫 실제 수업 준비와 검증 범위는 [HANDOFF](docs/HANDOFF.md#다음에-이어갈-작업)를 확인합니다.
 
 학생·교사 공통 대시보드에 개인 할 일·이번 달 달력과 반 일정, 조회 대기 안내를 제공합니다. 금옥중학교 반별 정보 교시의 일일 갱신·교사용 갱신은 [시간표 연동](docs/DEVELOPMENT.md#학교-시간표-연동)을 따릅니다. 수업 목록·교사의 학생 현황과 수업 관리는 별도 메뉴에서 확인합니다. 로컬 확인은 [파일럿 실행 안내](docs/DEVELOPMENT.md#대시보드-파일럿)를 따릅니다.
 
@@ -35,7 +35,7 @@ Firebase 키 없이 사용하는 가상 계정 개발 모드입니다. [로컬 �
 | 설치·검증·Stitch·개발 도구는 어디에 있나요? | [DEVELOPMENT · 개발 안내](docs/DEVELOPMENT.md) |
 | Firebase·Google 로그인과 서버 비밀 설정은 어떻게 준비하나요? | [FIREBASE_SETUP · 서버 설정](docs/FIREBASE_SETUP.md) |
 | 후속 기능의 비용 가정은 무엇인가요? | [운영비 예상안 · 참고 자료](docs/reference/OPERATING_COST_ESTIMATE.md) |
-| 이전 사이트의 알고리즘 세 수업을 어떤 기준으로 옮기나요? | [알고리즘 복습 통합 · 구현 기준](docs/reference/algorithm-review-integration.md) |
+| 알고리즘 세 수업의 원본과 AI 품질 근거는 어디에 있나요? | [알고리즘 복습 · 원본 이식과 품질 검증](docs/reference/algorithm-review-integration.md) |
 | 원본 PPT 없이 13차시 내용과 체험을 어떻게 파악하나요? | [프로그래밍 13차시 · 수업 자료와 체험 기록](docs/reference/programming-13.md) |
 | 완료된 구현 지시와 이전 판단 근거는 어디에 있나요? | [문서 보관함](docs/archive/README.md) |
 | 에이전트는 어떤 규칙을 지켜야 하나요? | [AGENTS · 작업 규칙](AGENTS.md) |

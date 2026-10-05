@@ -258,7 +258,7 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 
 ## 알고리즘 복습 수업
 
-제품 정책은 [PRD](PRD.md#알고리즘-선택-복습--2026-10-05-확정), 단계별 승인·검증 근거는 [통합 기준](reference/algorithm-review-integration.md), 현재 공개 상태는 [HANDOFF](HANDOFF.md)를 따릅니다.
+제품 정책은 [PRD](PRD.md#알고리즘-선택-복습--2026-10-05-확정), 원본 이식·AI 품질 근거는 [참고 자료](reference/algorithm-review-integration.md), 현재 공개 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 세 복습은 이미 11반에 공개했으며 아래 공개 명령은 후속 변경·복구의 절차입니다. 문서 재개만으로 운영 계획을 다시 적용하지 않습니다.
 
 - `src/lib/classroom/review/`에 원본 기준 순수 샌드위치/순서도 실행·검사·미션·추상화 데이터를 둡니다. React 화면은 `src/components/student/review/`에 모으고 기존 단일 저장 writer·revision·메모리 복구를 사용합니다. 학습 내용의 스냅샷과 화면 위치·탭을 구분합니다. 작품 수정 시 이전 제출본과 고정 교사 요청본은 유지합니다.
 - 실습 표현은 원작 SVG·색상·배치를 재사용합니다. `sandwich-stage.tsx`는 실행 상태만 받아 그림을 표시하고 `studio.module.css`는 세 복습 실습 안에만 적용합니다. 원본의 전역 DOM 조작·인증·외부 호출은 옮기지 않습니다. `tests/review-practice-ui.spec.ts`에서 실제 기호 놓기·실행 강조·넓게 보기·320/390/820/821px·줄인 모션을 확인하고, 저장·AI·교사 경계는 기존 세 복습 검사와 함께 실행합니다. Chromium의 HTML 끌어놓기 검사는 목표 위에서 두 번 움직여 `dragover`와 실제 `drop`을 발생시킵니다.
