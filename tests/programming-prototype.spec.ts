@@ -79,6 +79,8 @@ test("개념→퀴즈 오답 재도전→실습·도움·교사 피드백과 재
   }
   await page.getByRole("button", { name: "미션 조건 확인" }).click();
   await page.getByRole("button", { name: "내 작업에 완료 표시" }).click();
+  await expect(page.getByRole("tab", { name: "실습 1/3" })).toHaveAttribute("aria-selected", "true");
+  await expect.poll(() => page.evaluate(key => JSON.parse(sessionStorage.getItem(key)!).completed.includes(0), STORAGE_KEY)).toBe(true);
   await page.reload();
   await expect(page.getByRole("tab", { name: "실습 1/3" })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("button", { name: "곱셈 계산기", exact: false }).click();

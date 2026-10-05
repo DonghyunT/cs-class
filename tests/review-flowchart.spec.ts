@@ -37,6 +37,18 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
   expect(fresh).toMatchObject({ placements: p.placements, guideStep: 4, current: p.current, goal: p.goal, conditions: p.conditions, core: p.core, cards: p.cards, edges: [], pan: { x: 0, y: 0 } }); expect(fresh.nodes).toHaveLength(2);
   await page.getByRole("button", { name: "편집 되돌리기", exact: true }).click(); await expect(page.getByRole("button", { name: "처리 기호: 추가 처리", exact: true })).toBeVisible();
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(page.getByLabel("현재 상태", { exact: true })).toHaveValue("현재 기록");
+  await page.getByRole("button", { name: "처리 기호: 추가 처리", exact: true }).click(); await page.getByRole("button", { name: "선택 기호와 연결 삭제", exact: true }).click();
+  await page.getByRole("button", { name: "처리 기호 추가", exact: true }).click(); await page.getByLabel("기호 내용", { exact: true }).fill("알람 켜기");
+  await page.getByRole("combobox", { name: "출발 기호", exact: true }).selectOption({ label: "시작" }); await page.getByRole("combobox", { name: "도착 기호", exact: true }).selectOption({ label: "알람 켜기" }); await page.getByRole("button", { name: "이 화살표 연결", exact: true }).click();
+  await page.getByRole("combobox", { name: "출발 기호", exact: true }).selectOption({ label: "알람 켜기" }); await page.getByRole("combobox", { name: "도착 기호", exact: true }).selectOption({ label: "종료" }); await page.getByRole("button", { name: "이 화살표 연결", exact: true }).click();
+  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  const beforeMove = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.nodes.find((n: { text: string }) => n.text === "알람 켜기");
+  const alarm = page.getByRole("button", { name: "처리 기호: 알람 켜기", exact: true }); await alarm.scrollIntoViewIfNeeded(); const box = await alarm.boundingBox(); if (!box) throw new Error("No visible node");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down(); await page.mouse.move(box.x + box.width / 2 + 50, box.y + box.height / 2 + 30, { steps: 4 }); await page.mouse.up();
+  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); const moved = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
+  expect(moved.nodes).toHaveLength(3); expect(moved.edges).toHaveLength(2); expect(moved.nodes.find((n: { text: string }) => n.text === "알람 켜기").x).toBeGreaterThan(beforeMove.x);
+  await page.reload(); await expect(page.getByRole("button", { name: "처리 기호: 알람 켜기", exact: true })).toBeVisible();
+  expect((await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.nodes).toEqual(moved.nodes);
 });
 test("세 퍼즐은 오류 관찰·실행·각 제출·재접속 기록을 유지한다", async ({ page }) => {
   await prepare(page.request); await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
