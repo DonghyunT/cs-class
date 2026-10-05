@@ -2,14 +2,14 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TUT_SCENARIOS } from "@/lib/classroom/review/abstraction-data.mjs";
-import { basicReviewCheck, type AbstractionProject } from "@/lib/classroom/review/project";
+import { abstractionSchema, basicReviewCheck, type AbstractionProject } from "@/lib/classroom/review/project";
 import { ReviewSubmit, useReviewAi, type ReviewController } from "./shared";
 import styles from "./review.module.css";
 
 export function Abstraction({ controller }: { controller: ReviewController }) {
   const project = controller.draft.reviewProject;
   const fieldId = useId();
-  const ai = useReviewAi(controller), [chat, setChat] = useState(""), [copied, setCopied] = useState("");
+  const ai = useReviewAi(controller), [chat, setChat] = useState(""), [copied, setCopied] = useState(""), [adoptionError, setAdoptionError] = useState("");
   const { clear } = ai, step = project?.type === "abstraction" ? project.step : null;
   const heading = useRef<HTMLHeadingElement>(null), [focus, setFocus] = useState(0);
   useEffect(() => { if (focus) heading.current?.focus(); }, [focus]);
@@ -25,8 +25,15 @@ export function Abstraction({ controller }: { controller: ReviewController }) {
     if (kind === "state") { const pair = /^현재:\s*(.+)\s*\/\s*목표:\s*(.+)$/.exec(value); if (pair) change({ current: pair[1].trim(), goal: pair[2].trim(), adopted }); }
     else {
       const field = kind === "condition" ? "conditions" : kind === "plan" ? "plans" : kind;
-      change({ [field]: [...p[field].filter(item => item !== value), value].slice(-30), ...(kind === "core" ? { noise: p.noise.filter(item => item !== value) } : kind === "noise" ? { core: p.core.filter(item => item !== value) } : {}), adopted });
+      const values = p[field].includes(value) ? p[field] : [...p[field], value];
+      const fields = { [field]: values, ...(kind === "core" ? { noise: p.noise.filter(item => item !== value) } : kind === "noise" ? { core: p.core.filter(item => item !== value) } : {}), adopted };
+      const next = { ...p, ...fields };
+      if (!abstractionSchema.safeParse(next).success || new TextEncoder().encode(JSON.stringify({ ...controller.getDraft(), reviewProject: next })).length > 160000) {
+        setAdoptionError("제안이 저장 한도를 넘어요. 기존 내용을 보존했어요. 필요한 항목을 정리한 뒤 다시 채택해 주세요."); return;
+      }
+      change(fields);
     }
+    setAdoptionError("");
   }
   const field = (label: string, key: "current" | "goal" | "topic" | "conditions" | "core" | "noise" | "plans", multiline = false) => <div className={styles.field}>
     <label htmlFor={`${fieldId}-${key}`}>{label}</label>{multiline ? <>
@@ -88,7 +95,7 @@ export function Abstraction({ controller }: { controller: ReviewController }) {
           <h3>추상화 닥터</h3>
           <p className={styles.muted}>추천은 직접 골라 채택해요. 내 말로 수정해도 좋아요.</p>
           <Button disabled={locked || p.step === 1 && !p.topic.trim()} onClick={() => void ai.ask(p.step === 4 ? "abstraction-plan" : "abstraction-help", p.topic)}>{locked ? "닥터가 생각 중…" : p.step === 1 ? "현재·목표 후보 받기" : p.step === 2 ? "조건 추천 받기" : p.step === 3 ? "생각 다이어트 단어 받기" : "해결 계획 추천 받기"}</Button>
-          {ai.error && <p role="alert" className={styles.error}>{ai.error}</p>}{ai.result && <>
+          {adoptionError && <p role="alert" className={styles.error}>{adoptionError}</p>}{ai.error && <p role="alert" className={styles.error}>{ai.error}</p>}{ai.result && <>
             <p role="status" className={styles.feedback}>{ai.result.message}</p>
             <ul className={styles.suggestions}>{ai.result.options.map((value, index) => <li key={`${index}-${value}`}>
               <p>{value}</p>

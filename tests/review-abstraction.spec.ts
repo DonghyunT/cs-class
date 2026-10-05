@@ -69,9 +69,15 @@ test("제공자 시간 초과·연결·JSON 오류도 현재 작품의 교사 �
   }
 });
 
-test("31줄의 불완전 편집과 최대 길이 직접 입력을 보존한다", async ({ page }) => {
+test("31줄의 불완전 편집은 AI 채택과 재접속 뒤에도 보존하며 직접 입력 상한을 안내한다", async ({ page }) => {
   await prepare(page.request); await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click(); await page.getByRole("button", { name: "실전 워크북", exact: true }).click(); await page.getByRole("button", { name: "2. 조건", exact: true }).click();
   const input = page.getByLabel("지킬 조건", { exact: true }), lines = Array.from({ length: 31 }, (_, i) => `조건${i}`).join("\n");
   await input.fill(lines); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue(lines);
+  await db.collection("csAiUsage").doc("student-20101").delete();
+  await page.getByRole("button", { name: "조건 추천 받기" }).click(); await page.getByRole("button", { name: "이 제안 채택" }).first().click();
+  await expect(input).toHaveValue(`${lines}\n조건을 지키기`); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue(`${lines}\n조건을 지키기`);
   await expect(input).toHaveAttribute("maxlength", "1000"); await input.fill("가".repeat(1000)); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue("가".repeat(1000));
+  await input.fill("\n".repeat(1000)); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "조건 추천 받기" }).click(); await page.getByRole("button", { name: "이 제안 채택" }).first().click();
+  await expect(page.getByRole("complementary", { name: "추상화 닥터" }).getByRole("alert")).toContainText("제안이 저장 한도를 넘어요"); await expect(input).toHaveValue("\n".repeat(1000)); await page.reload(); await expect(input).toHaveValue("\n".repeat(1000));
 });

@@ -12,6 +12,32 @@ async function action(request: APIRequestContext, work: Work, type: string, miss
   const response = await request.post(`/api/classroom/work/${id}/action`, { headers, data: { revision: work.revision, action: { type, missionId } } }); expect(response.status()).toBe(200); return await response.json() as Work;
 }
 const correct = [{ s2: "b-m1-1", s3: "b-m1-2", s4: "b-m1-3" }, { s2: "b-m2-1", s3: "b-m2-2", s4_yes: "b-m2-yes", s4_no: "b-m2-no" }, { s2: "b-m3-in", s3: "b-m3-chk", s4_yes: "b-m3-yes", s4_no: "b-m3-no" }];
+test("퍼즐 실행은 실제 선택한 출력 기호를 실행하고 빈 기호를 보정하지 않는다", async ({ page }) => {
+  const work = await prepare(page.request);
+  if (work.draft.reviewProject?.type !== "flowchart") throw new Error("wrong lesson");
+  Object.assign(work.draft.reviewProject, { mission: "2", placements: { "2": { ...correct[1], s2: "b-m2-yes" } } });
+  expect((await page.request.post(`/api/classroom/work/${id}`, { headers, data: { revision: work.revision, draft: work.draft } })).status()).toBe(200);
+  await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
+  const run = page.getByRole("region", { name: "순서도 실행" });
+  await run.getByRole("button", { name: "실행 준비 / 다시 시작" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click();
+  await expect(run.getByLabel("키 입력값")).toHaveCount(0); await expect(run).toContainText("출력: 탑승 가능");
+  await page.locator('select[id$="-s2"]').selectOption(""); await run.getByRole("button", { name: "실행 준비 / 다시 시작" }).click();
+  await expect(run).toContainText("빈 기호를 먼저 채워 주세요."); await expect(run.getByRole("button", { name: "한 단계 실행" })).toBeDisabled();
+});
+test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 기호만 되돌릴 수 있다", async ({ page }) => {
+  const work = await prepare(page.request);
+  if (work.draft.reviewProject?.type !== "flowchart") throw new Error("wrong lesson");
+  const p = work.draft.reviewProject;
+  Object.assign(p, { mission: "free", placements: Object.fromEntries(correct.map((value, i) => [String(i + 1), value])), guideStep: 4, current: "현재 기록", goal: "목표 기록", conditions: ["필수 조건"], core: ["핵심 요소"], cards: [{ id: "plan", type: "sequence", text: "계획 보존", yes: "", no: "" }], nodes: [...p.nodes, { id: "step", shape: "process", text: "추가 처리", x: 80, y: 160 }], edges: [{ from: "start", to: "step", label: "" }, { from: "step", to: "end", label: "" }], pan: { x: 100, y: 100 } });
+  expect((await page.request.post(`/api/classroom/work/${id}`, { headers, data: { revision: work.revision, draft: work.draft } })).status()).toBe(200);
+  await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click(); await page.getByRole("button", { name: "캔버스 초기화", exact: true }).click();
+  await expect(page.getByRole("button", { name: "자유 캔버스", exact: true })).toHaveAttribute("aria-pressed", "true"); await expect(page.getByLabel("현재 상태", { exact: true })).toHaveValue("현재 기록");
+  await expect(page.getByLabel("계획 / 판단 조건", { exact: true })).toHaveValue("계획 보존"); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  const fresh = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
+  expect(fresh).toMatchObject({ placements: p.placements, guideStep: 4, current: p.current, goal: p.goal, conditions: p.conditions, core: p.core, cards: p.cards, edges: [], pan: { x: 0, y: 0 } }); expect(fresh.nodes).toHaveLength(2);
+  await page.getByRole("button", { name: "편집 되돌리기", exact: true }).click(); await expect(page.getByRole("button", { name: "처리 기호: 추가 처리", exact: true })).toBeVisible();
+  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(page.getByLabel("현재 상태", { exact: true })).toHaveValue("현재 기록");
+});
 test("세 퍼즐은 오류 관찰·실행·각 제출·재접속 기록을 유지한다", async ({ page }) => {
   await prepare(page.request); await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));

@@ -5,13 +5,13 @@ import { classroomApi } from "@/lib/classroom/client";
 import { abstractionPresets } from "@/lib/classroom/review/abstraction-data.mjs";
 import { missions, level2Walkthrough } from "@/lib/classroom/review/flowchart-data.mjs";
 import { basicReviewCheck, initialReviewProject, sameReviewProject, type AbstractionProject, type FlowchartProject, type FlowNode } from "@/lib/classroom/review/project";
-import { guideGraph, puzzleGraph } from "@/lib/classroom/review/flow-experience";
+import { guideGraph, puzzleGraph, puzzleExecutionGraph } from "@/lib/classroom/review/flow-experience";
 import { createFlowRun, stepFlowRun } from "@/lib/classroom/review/flow-runner.mjs";
 import { FlowDiagram } from "./flow-diagram";
 import { ReviewSubmit, useReviewAi, type ReviewController } from "./shared";
 import styles from "./review.module.css";
 
-type Graph = Pick<FlowchartProject, "nodes" | "edges">;
+type Graph = Pick<FlowchartProject, "nodes" | "edges"> & { unavailable?: string };
 function FlowExecution({ graph }: { graph: Graph }) {
   const [run, setRun] = useState<ReturnType<typeof createFlowRun> | null>(null), [automatic, setAutomatic] = useState(false), [answer, setAnswer] = useState("");
   const waitingInput = useRef<HTMLInputElement>(null), choice = useRef<HTMLButtonElement>(null);
@@ -22,7 +22,7 @@ function FlowExecution({ graph }: { graph: Graph }) {
     <h3>실행하며 흐름 관찰하기</h3>
     <p className={styles.muted}>실제 화살표를 따라가요. 자연어 조건은 예·아니오를 직접 선택하고, 변수 = 식과 비교식은 계산해요.</p>
     <div className={styles.actions}>
-      <Button onClick={() => { setRun(createFlowRun(graph)); setAutomatic(false); }}>실행 준비 / 다시 시작</Button>
+      <Button onClick={() => { const initial = createFlowRun(graph); setRun(graph.unavailable ? { ...initial, error: graph.unavailable } : initial); setAutomatic(false); }}>실행 준비 / 다시 시작</Button>
       <Button variant="outline" disabled={!run || run.done || !!run.error || !!run.waiting} onClick={() => step()}>한 단계 실행</Button>
       <Button variant="outline" disabled={!run || run.done || !!run.error} onClick={() => setAutomatic(value => !value)}>{automatic ? "자동 실행 일시정지" : "자동 실행"}</Button>
       <Button variant="outline" disabled={!run} onClick={() => { setRun(null); setAutomatic(false); }}>실행 중지</Button>
@@ -84,7 +84,7 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
         </section>
         <FlowDiagram {...graph} />
       </div>
-      <FlowExecution key={JSON.stringify([p.nodes.map(({ id, shape, text }) => ({ id, shape, text })), p.edges, p.placements, p.mission])} graph={{ ...graph, nodes: graph.nodes.map(n => p.mission === "2" && n.id === "s2" ? { ...n, text: "키 입력" } : p.mission === "2" && n.id === "s3" ? { ...n, text: "키 >= 150" } : p.mission === "3" && n.id === "s3" ? { ...n, text: "비밀번호 == 7777" } : n) }} />
+      <FlowExecution key={JSON.stringify([p.nodes.map(({ id, shape, text }) => ({ id, shape, text })), p.edges, p.placements, p.mission])} graph={puzzleExecutionGraph(p.mission, p.placements[p.mission] ?? {})} />
     </> : p.mission === "guide" ? <>
       <h3 ref={heading} tabIndex={-1}>{level2Walkthrough.title.replace(/^[^지]+/, "")}</h3>
       <p>예시 공방은 선택 연습이에요. 카드를 차례로 열며 기호와 분기 연결이 만들어지는 모습을 살펴보세요.</p>
@@ -150,7 +150,7 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
           </>}
           <div className={styles.actions}>
             <Button variant="outline" disabled={locked || !history.length} onClick={() => { const previous = history.at(-1); setHistory(history.slice(0, -1)); if (previous) edit(previous, false); }}>편집 되돌리기</Button>
-            <Button variant="outline" disabled={locked} onClick={() => edit(initialReviewProject("flowchart") as FlowchartProject)}>캔버스 초기화</Button>
+            <Button variant="outline" disabled={locked} onClick={() => { const { nodes, edges, pan } = initialReviewProject("flowchart") as FlowchartProject; edit({ nodes, edges, pan }); setSelected(""); setFrom("start"); setTo("end"); }}>캔버스 초기화</Button>
             <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: Math.min(10000, p.pan.x + 200), y: p.pan.y } }, false)}>화면 오른쪽</Button>
             <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: p.pan.x, y: Math.min(10000, p.pan.y + 200) } }, false)}>화면 아래쪽</Button>
             <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: 0, y: 0 } }, false)}>화면 원점</Button>
