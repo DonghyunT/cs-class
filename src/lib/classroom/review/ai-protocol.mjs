@@ -11,13 +11,14 @@ export function parseSolarEnvelope(envelope) {
 export function groundFlowReview(result, checks, project) {
   if (result.verdict !== 'pass') return result;
   const uncertain = () => ({ ...result, verdict: 'uncertain', message: 'AI가 필수 조건과 실제 기호의 근거를 일치시키지 못했어요. 내용을 확인하거나 선생님 확인을 요청해 주세요.' });
-  if (checks.length !== project.conditions.length || new Set(checks.map(c => c.conditionIndex)).size !== checks.length) return uncertain();
-  for (let index = 0; index < project.conditions.length; index++) {
+  const conditions = project.conditions.map((text, index) => ({ text, index })).filter(c => c.text.trim());
+  if (!conditions.length || checks.length !== conditions.length || new Set(checks.map(c => c.conditionIndex)).size !== checks.length) return uncertain();
+  for (const { text, index } of conditions) {
     const check = checks.find(c => c.conditionIndex === index);
     if (!check) return uncertain();
-    if (check.status === 'missing') return { ...result, verdict: 'needs-changes', message: `필수 조건 '${project.conditions[index]}'을 실제 기호와 연결 흐름에 반영했는지 확인해 주세요.` };
+    if (check.status === 'missing') return { ...result, verdict: 'needs-changes', message: `필수 조건 '${text}'을 실제 기호와 연결 흐름에 반영했는지 확인해 주세요.` };
     const node = project.nodes.find(n => n.id === check.nodeId);
-    if (check.status !== 'met' || !check.evidence?.trim() || !node?.text.includes(check.evidence)) return uncertain();
+    if (check.status !== 'met' || !check.evidence?.trim() || node?.shape === 'terminal' || !node?.text.includes(check.evidence)) return uncertain();
   }
   return result;
 }

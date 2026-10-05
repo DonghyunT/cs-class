@@ -18,7 +18,7 @@ import { findLesson } from "../classroom/catalog";
 import { draftSchema, validateDraft } from "./learning";
 
 const inputSchema = z.object({ lessonId: z.string().max(80), task: aiTaskSchema, requestId: z.string().uuid(), revision: z.number().int().min(0), input: z.string().max(1000), missionId: z.enum(["1", "2", "3", "free"]).optional() }).strict();
-const promptVersion = "bc8d51f-cs-review-5";
+const promptVersion = "bc8d51f-cs-review-6";
 const conditionCheckSchema = z.object({ conditionIndex: z.number().int().min(0), status: z.enum(["met", "missing", "uncertain"]), nodeId: z.string().max(80), evidence: z.string().max(120) }).strict();
 const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const emptyResult = (message: string): AiResult => ({ message, options: [], actions: [], cards: [], verdict: "uncertain" });
@@ -31,7 +31,7 @@ function rolePrompt(task: string, project: ReviewProject) {
     if (task === "abstraction-help") return `${prompt}\n[cs-class 후보 채택 형식] options는 정확히 ${project.step === 3 ? 7 : 3}개입니다.${project.step === 1 ? ' 각 항목은 반드시 "현재: 상태 / 목표: 상태" 한 줄로 작성하세요. 무관한 질문에도 대표 고민을 이 현재·목표 쌍으로 제안하세요.' : ''} message는 짧은 조언 한 문장, actions와 cards는 []입니다.`;
     return prompt;
   }
-  if (task === "flow-review") return `${REVIEW_SYSTEM_PROMPT}\n[cs-class의 우선 판정 기준] ${reviewMinimumPolicy}\nverdict는 pass, needs-changes, uncertain 중 하나입니다. 표현·기호 수 차이만으로 보완 필요를 판정하지 마세요. conditionChecks는 conditions의 각 항목마다 0부터 시작하는 conditionIndex와 status(met/missing/uncertain)를 기록하세요. met이면 실제 실행 기호의 nodeId와 해당 node.text에서 그대로 인용한 짧은 evidence가 필수입니다. cards나 conditions에만 적힌 내용은 실행 근거가 아닙니다. 없거나 불명확하면 nodeId/evidence는 빈 문자열입니다. 판정 첫 줄 대신 JSON의 verdict를 사용합니다.`;
+  if (task === "flow-review") return `${REVIEW_SYSTEM_PROMPT}\n[cs-class의 우선 판정 기준] ${reviewMinimumPolicy}\nverdict는 pass, needs-changes, uncertain 중 하나입니다. 표현·기호 수 차이만으로 보완 필요를 판정하지 마세요. conditionChecks는 내용이 있는 conditions 항목마다 원래 배열의 0부터 시작하는 conditionIndex와 status(met/missing/uncertain)를 기록하세요. 빈 줄은 건너뛰되 인덱스를 다시 매기지 마세요. met이면 실제 실행 기호의 nodeId와 해당 node.text에서 그대로 인용한 짧은 evidence가 필수입니다. cards나 conditions에만 적힌 내용은 실행 근거가 아닙니다. 행동을 판단 질문이나 시작/종료 문구에 적기만 한 것은 실행이 아닙니다. 반드시 edges의 예/아니오를 따라, 조건이 적용되는 각 경로가 필수 행동을 수행하는지 확인하세요. 무조건 필요한 행동을 한 갈래에서 건너뛰거나 분기 행동을 반대로 연결하면 missing입니다. '비가 오면 우산'처럼 조건부 행동은 그 조건에 해당하는 갈래에서만 수행해도 타당합니다. 없거나 불명확하면 nodeId/evidence는 빈 문자열입니다. 판정 첫 줄 대신 JSON의 verdict를 사용합니다.`;
   if (task === "flow-plan") return "중학생의 순서도 설계 파트너입니다. 현재·목표·조건·핵심에 맞춰 순차·선택·반복을 활용한 자연어 기획 카드 3개를 cards에 제안하세요. id는 서로 다른 c1,c2,c3, type은 sequence/selection/loop 중 하나입니다. text는 60자 이내, yes/no는 40자 이내로 간결하게 작성하고 sequence의 yes/no는 빈 문자열로 만드세요. message는 조언 한 문장, options와 actions는 []입니다. 완성된 기존 카드를 응답에 복사하지 마세요.";
   return "중학교 정보 순서도 퍼즐의 오류 설명 튜터입니다. 현재 배치와 기본 검사 결과를 보고 오류와 이유를 두 문장으로 설명하고 힌트 하나만 주세요. 완성 정답을 그대로 주지 마세요.";
 }
@@ -44,7 +44,7 @@ function outputSchema(task: string, project: ReviewProject) {
 }
 function providerSchema(task: string, project: ReviewProject) {
   const schema = outputSchema(task, project);
-  if (task === "flow-review" && project.type === "flowchart") return schema.extend({ conditionChecks: z.array(conditionCheckSchema).length(project.conditions.length) });
+  if (task === "flow-review" && project.type === "flowchart") return schema.extend({ conditionChecks: z.array(conditionCheckSchema).length(project.conditions.filter(condition => condition.trim()).length) });
   if (task === "flow-plan") return schema.extend({ message: z.string().min(1).max(220), cards: z.array(aiResultSchema.shape.cards.element.extend({ text: z.string().max(60), yes: z.string().max(40), no: z.string().max(40) })).min(3).max(5) });
   return schema;
 }
@@ -82,7 +82,7 @@ async function solar(task: string, project: ReviewProject, input: string, missio
   try {
     const decoded = parseSolarEnvelope(envelope);
     if (task === "flow-review" && project.type === "flowchart") {
-      const { conditionChecks, ...answer } = outputSchema(task, project).extend({ conditionChecks: z.array(conditionCheckSchema).length(project.conditions.length) }).parse(decoded);
+      const { conditionChecks, ...answer } = outputSchema(task, project).extend({ conditionChecks: z.array(conditionCheckSchema).length(project.conditions.filter(condition => condition.trim()).length) }).parse(decoded);
       result = checkResult(groundFlowReview(answer, conditionChecks, project), task, input, project);
     } else result = checkResult(aiResultSchema.parse(providerSchema(task, project).parse(decoded)), task, input, project);
   }

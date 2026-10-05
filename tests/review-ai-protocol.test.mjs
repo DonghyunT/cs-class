@@ -37,3 +37,14 @@ test('순서도 통과의 조건 근거는 실제 기호에서 인용하며 기�
   assert.equal(groundFlowReview(result, [checks[0], checks[0]], project).verdict, 'uncertain');
   assert.equal(groundFlowReview(result, [{ ...checks[0], nodeId: 'planning-card' }], project).verdict, 'uncertain');
 });
+
+test('빈 조건 줄은 보존하되 검토에서 제외하고 단말의 행동 문구를 실행 근거로 삼지 않는다', () => {
+  const result = { message: '조건을 충족했어요.', verdict: 'pass' };
+  const project = { conditions: ['', '준비물을 챙긴다', '  '], nodes: [{ id: 'ready', shape: 'process', text: '씻고 준비물을 챙긴다' }] };
+  const checks = [{ conditionIndex: 1, status: 'met', nodeId: 'ready', evidence: '준비물을 챙긴다' }];
+  assert.deepEqual(groundFlowReview(result, checks, project), result);
+  assert.deepEqual(project.conditions, ['', '준비물을 챙긴다', '  ']);
+  assert.equal(groundFlowReview(result, [{ ...checks[0], conditionIndex: 0 }], project).verdict, 'uncertain');
+  assert.equal(groundFlowReview(result, [], { ...project, conditions: ['  '] }).verdict, 'uncertain');
+  assert.equal(groundFlowReview(result, checks, { ...project, nodes: [{ ...project.nodes[0], shape: 'terminal' }] }).verdict, 'uncertain');
+});
