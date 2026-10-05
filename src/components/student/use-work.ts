@@ -126,25 +126,26 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
     try {
       if (!(await flush(true)) || !active.current) return null;
       const captured = local.current;
+      const adoptResponse = (next: Work) => {
+        const incoming = next.draft.reviewProject, edited = local.current.reviewProject;
+        if (incoming?.type === "sandwich" && edited?.type === "sandwich" && incoming.runId === edited.runId) {
+          local.current = { ...local.current, reviewProject: { ...incoming, input: edited.input === input ? incoming.input : edited.input } };
+          setDraft(local.current);
+        }
+        adopt(next, captured);
+        setSaveState(sameDraft(local.current, next.draft) ? "saved" : "dirty");
+      };
       const operation = (async () => {
         try {
         const reply = await classroomApi.ai(initial.lessonId, server.current.revision, task, input, requestId, missionId, uid);
         if (!active.current) return null;
         // AI appends a signed command while the student may already be typing the next one.
         // Merge only that server change; keep edits made both during preparation and the call.
-        const incoming = reply.work.draft.reviewProject;
-        const edited = local.current.reviewProject;
-        if (incoming?.type === "sandwich" && edited?.type === "sandwich" && incoming.runId === edited.runId) {
-          const nextInput = edited.input === input ? incoming.input : edited.input;
-          local.current = { ...local.current, reviewProject: { ...incoming, input: nextInput } };
-          setDraft(local.current);
-        }
-        adopt(reply.work, captured);
-        setSaveState(sameDraft(local.current, reply.work.draft) ? "saved" : "dirty");
-        return incoming?.type === "sandwich" || sameDraft(local.current, reply.work.draft) ? reply : null;
+        adoptResponse(reply.work);
+        return reply.work.draft.reviewProject?.type === "sandwich" || sameDraft(local.current, reply.work.draft) ? reply : null;
         } catch (problem) {
           // Failed reviews may leave a snapshot-bound teacher request available.
-          try { const latest = await classroomApi.work(initial.lessonId); if (active.current && latest.revision >= server.current.revision) { adopt(latest, captured); setSaveState(sameDraft(local.current, latest.draft) ? "saved" : "dirty"); } } catch { /* Keep the original error and local input. */ }
+          try { const latest = await classroomApi.work(initial.lessonId); if (active.current && latest.revision >= server.current.revision) adoptResponse(latest); } catch { /* Keep the original error and local input. */ }
           throw problem;
         }
       })();

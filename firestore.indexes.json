@@ -1,1 +1,7 @@
-{ "indexes": [], "fieldOverrides": [] }
+{
+  "indexes": [],
+  "fieldOverrides": [
+    { "collectionGroup": "csAiRequests", "fieldPath": "expiresAt", "ttl": true, "indexes": [] },
+    { "collectionGroup": "csAiCache", "fieldPath": "expiresAt", "ttl": true, "indexes": [] }
+  ]
+}

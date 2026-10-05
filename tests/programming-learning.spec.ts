@@ -57,6 +57,9 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     const open = page.getByRole("button", { name: "20101 제출 작품 보기", exact: true }); await open.click();
     const dialog = page.getByRole("dialog", { name: "20101 학생의 제출 작품", exact: true });
     await expect(dialog.locator("details")).toHaveCount(1);
+    await expect(dialog.getByText("이동 방향으로 10만큼 움직이기", { exact: false })).toBeVisible();
+    await dialog.locator("summary").click();
+    await expect(dialog.getByText("이동 방향으로 10만큼 움직이기", { exact: false })).toBeHidden();
     await dialog.locator("summary").click();
     await expect(dialog.getByText("이동 방향으로 10만큼 움직이기", { exact: false })).toBeVisible();
     for (const width of [320, 390, 768, 1440]) { await page.setViewportSize({ width, height: 900 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }

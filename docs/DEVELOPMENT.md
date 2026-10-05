@@ -256,6 +256,34 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 4. 저장 실패 때 입력이 남는지, 재시도 뒤 같은 작업을 이어가는지 확인합니다. 학교망·실제 OS 입력기·로그아웃 후 재접속은 로컬 에뮬레이터 성공과 별도로 기록합니다. 확인할 때 학생 비밀번호·작품 원문을 공개 화면이나 로그에 남기지 않습니다.
 5. 수업 종료 전 교사의 `학생 현황·계정`에서 해당 반의 진행과 제출을 확인합니다. 제출 학생 수와 작품 수를 구분하고, 학생은 저장 완료를 확인한 뒤 종료합니다. 다음 수업의 이어하기와 실제 사용 중 발견한 문제를 [HANDOFF](HANDOFF.md#현재-작업-상태)에 범위·환경과 함께 남깁니다.
 
+## 알고리즘 복습 수업
+
+제품 정책은 [PRD](PRD.md#알고리즘-선택-복습--2026-10-05-확정), 단계별 승인·검증 근거는 [통합 기준](reference/algorithm-review-integration.md), 현재 공개 상태는 [HANDOFF](HANDOFF.md)를 따릅니다.
+
+- `src/lib/classroom/review/`에 원본 기준 순수 샌드위치/순서도 실행·검사·미션·추상화 데이터를 둡니다. React 화면은 `src/components/student/review/`에 모으고 기존 단일 저장 writer·revision·메모리 복구를 사용합니다. 학습 내용의 스냅샷과 화면 위치·탭을 구분합니다. 작품 수정 시 이전 제출본과 고정 교사 요청본은 유지합니다.
+- `POST /api/classroom/ai`는 `lessonId,task,requestId(UUID),revision,input,missionId?`를 받고 서버가 현재 작품·열린 수업·학생 권한을 재확인합니다. 샌드위치 해석의 HMAC은 사용자·실행회차·명령 ID·원문·동작·제공자에 연결됩니다. 저장과 제출은 서명과 원본 실행 규칙을 다시 검사합니다.
+- 교사 목록은 `WorkSummary`(해결 수·편집/검증·제출/미션·요청 상태)만 반환합니다. `GET /api/classroom/students/:uid/work/:lessonId`에서 담당 반 작품을 상세 조회하고 `POST .../review/:lessonId`의 `requestId,decision(approve|changes),message`로 처리합니다. 승인한 요청 ID/스냅샷과 현재 수정본을 분리하며 이전 요청의 처리를 거부합니다.
+- `csAiUsage/{uid}`는 최근60초·한국 날짜의 학생별 공통 제한과 호출/토큰/지연/실패 집계를 저장합니다. `csAiRequests`는 요청 해시·처리 상태, `csAiCache`는 해시로 주소를 정한 역할/입력/작품/프롬프트 버전별 구조화 결과를 보관합니다. 캐시 유효기간은24시간입니다. 자유 상담의 입력·답변 전문은 두 컬렉션에 보관하지 않습니다. 완료된 상담 요청 ID는 추가 호출 없이 완료 안내를 반환하며 이전 전문은 브라우저 화면에서만 확인합니다.
+- `firestore.indexes.json`의 두 AI 컬렉션 `expiresAt` TTL 정책을 공개 전에 적용·확인합니다. 만료 캐시는 즉시 재사용하지 않으며 실제 TTL 삭제 완료 시간과 캐시 유효기간을 구분합니다. 학생 작품·제출·요청본에는 TTL을 적용하지 않습니다. 서버 키·제공자 설정은 [연결 안내](FIREBASE_SETUP.md#복습-ai-서버-설정)를 따릅니다.
+
+엔진·프로토콜·반 변경 계획의 순수 검사는 `npm run test:review`, 브라우저·저장·권한·경합은 `tests/review-*.spec.ts`로 확인합니다. Playwright는 `.spec.ts`만 수집합니다. 로컬 테스트 서버의 `CS_AI_FIXTURE=1`은 `demo-cs-class`+에뮬레이터+비배포 조건에서만 합성 제공자를 사용합니다. 형식/시간/연결/JSON 오류와 느린 응답을 실제 Solar 품질 검사로 표현하지 않습니다. 작은 실제 Solar 합성 예제집 검사에는 테스트 DB 시드나 운영 학생 계정을 사용하지 않습니다.
+
+반 공개는 기본 읽기 전용 계획부터 실행합니다. Git 제외 출력은 11개 반의 수업 ID·이번 수업·revision만 담으며 학생 기록·인증값을 포함하지 않습니다.
+
+```powershell
+node scripts/review-rollout.mjs --mode plan --phase sandwich --output scratch/review-lessons/sandwich-plan.json
+# 저장한 계획의 11개 before/after와 실제 프로젝트를 확인한 뒤 적용합니다.
+node scripts/review-rollout.mjs --mode apply --plan scratch/review-lessons/sandwich-plan.json --confirm-project cs-class-f74c4
+```
+
+`--phase abstraction`은 샌드위치+추상화, `--phase flowchart`는 세 복습을 엽니다. 각 검증·리뷰 단계 뒤 새 계획을 만듭니다. 폐기 테스트 ID만 열린 목록에서 제거하고 다른 수업 설정은 유지하며 새 복습을 이번 수업으로 자동 지정하지 않습니다. 11개 설정이 계획 후 바뀌면 전체 쓰기를 거부합니다. 반복 적용은 동일 완료 상태이면 추가 revision 없이 완료 안내합니다.
+
+문제 발생 시 `CS_AI_PAUSED=1`을 적용한 배포로 AI 진입을 멈추고 아래처럼 해당 단계의 반 설정을 복원합니다. 복원도 적용 후 예상 설정/revision을 검사하므로 이후 교사 변경이 있으면 덮어쓰지 않습니다. 새 작품과 기존 기록은 보존합니다.
+
+```powershell
+node scripts/review-rollout.mjs --mode restore --plan scratch/review-lessons/sandwich-plan.json --confirm-project cs-class-f74c4
+```
+
 ## 검증
 
 저장소 루트에서 실행합니다. Java 21+와 최초 `npx playwright install chromium`이 필요합니다. 실제 Firebase에 연결한 3000번 서버는 종료한 뒤 실행합니다.

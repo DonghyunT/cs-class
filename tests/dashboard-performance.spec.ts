@@ -98,8 +98,13 @@ test("일괄 조회 경계: 빈 반·열린 수업 없음·누락 작품·누락
     const populated = await get("/api/classroom/teacher?classId=2-1");
     expect(populated.classrooms.map((item: { id: string }) => item.id)).toEqual(Array.from({ length: 11 }, (_, i) => `2-${i + 1}`));
     expect(populated.students.map((item: { studentId: string }) => item.studentId)).toEqual(data.ids);
-    expect(populated.students[0].work).toMatchObject({ revision: 2, updatedAt: 1000, draft: { stage: "quiz" } });
-    expect(populated.students[1].work).toEqual(emptyWork(LESSONS.find((lesson) => lesson.id === lessonId)!));
+    expect(populated.students[0].work).toMatchObject({ revision: 2, updatedAt: 1000 });
+    expect(populated.students[0].work.draft).toBeUndefined();
+    const emptyWorkSummary = populated.students[1].work;
+    expect(emptyWorkSummary).toMatchObject({ lessonId, revision: 0, conceptSolved: [], quizSolved: [], submission: null, edited: false, validated: false });
+    expect(emptyWorkSummary.draft).toBeUndefined();
+    const detail = await get(`/api/classroom/students/student-${data.ids[0]}/work/${lessonId}`);
+    expect(detail.draft.stage).toBe("quiz");
     const empty = await get("/api/classroom/teacher?classId=2-2");
     expect(empty.students).toEqual([]); expect(empty.selectedLessonId).toBeNull();
     await db.doc("csClasses/2-1").update({ currentLessonId: null, openedLessonIds: [] });

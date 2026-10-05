@@ -125,6 +125,9 @@ async function executeAi(payload: unknown, deadline: number) {
       if (process.env.CS_AI_FIXTURE === "1" && !process.env.VERCEL && process.env.FIREBASE_PROJECT_ID === "demo-cs-class" && process.env.FIRESTORE_EMULATOR_HOST) {
         if (input.input === "fixture-slow") await new Promise(resolve => setTimeout(resolve, 1800));
         if (input.input === "fixture-malformed") throw new ServiceError(502, "AI_FORMAT", "합성 형식 오류");
+        if (input.input === "fixture-timeout") throw new DOMException("합성 시간 초과", "TimeoutError");
+        if (input.input === "fixture-network") throw new TypeError("합성 연결 오류");
+        if (input.input === "fixture-json") throw new SyntaxError("합성 응답 JSON 오류");
         const parsed = parseSandwichCommand(input.input);
         result = { ...emptyResult("합성 AI 피드백"), actions: input.task === "sandwich-command" ? parsed?.actions ?? [] : [], options: prepared.project.type === "abstraction" && input.task === "abstraction-help" && prepared.project.step === 1 ? ["현재: 지각함 / 목표: 정시 등교함", "현재: 과제가 밀림 / 목표: 제출 완료함", "현재: 공부를 미룸 / 목표: 목표 분량을 끝냄"] : prepared.project.type === "abstraction" && prepared.project.step === 3 ? ["현재 시각", "알람", "준비 시간", "옷 색", "꿈", "급식", "이동 거리"] : ["조건을 지키기", "핵심을 확인하기", "목표에 도달하기"], cards: input.task === "flow-plan" ? ["상태 확인", "조건 확인", "목표 실행"].map((text, i) => ({ id: `card-${i}`, type: "sequence" as const, text, yes: "", no: "" })) : [], verdict: input.input === "fixture-pass" ? "pass" : "uncertain" };
       } else {
@@ -156,17 +159,17 @@ async function executeAi(payload: unknown, deadline: number) {
     });
     return { result: finalResult, work, reused: prepared.reused, remaining: prepared.remaining };
   } catch (error) {
+    const problem = error instanceof ServiceError ? error : new ServiceError(error instanceof Error && error.name === "TimeoutError" ? 504 : 502, error instanceof Error && error.name === "TimeoutError" ? "AI_TIMEOUT" : "AI_PROVIDER", "AI 응답을 완료하지 못했어요. 입력은 보존됩니다.");
     failure = true;
     await requestRef.set({ status: "failed" }, { merge: true });
-    if (["flow-review", "abstraction-review"].includes(input.task) && error instanceof ServiceError && error.code !== "AI_STALE" && Date.now() < deadline) {
+    if (["flow-review", "abstraction-review"].includes(input.task) && problem.code !== "AI_STALE" && Date.now() < deadline) {
       await authorized(who, async (tx, account) => {
         const ref = workRef(account.uid, input.lessonId), current = toWork((await tx.get(ref)).data() as Work & { uid: string; classId: string } | undefined, input.lessonId);
         const classroom = await studentClass(tx, account);
         if (Date.now() < deadline && classroom.openedLessonIds.includes(input.lessonId) && current.revision === input.revision && sameReviewProject(current.draft.reviewProject, prepared.project, input.missionId)) tx.set(ref, { ...current, aiReview: { project: projectSnapshot(prepared.project, input.missionId), ...(input.missionId ? { missionId: input.missionId } : {}), verdict: "uncertain", message: "AI가 리뷰를 완료하지 못했어요. 선생님 확인을 요청할 수 있어요." }, revision: current.revision + 1, uid: account.uid, classId: account.classId });
       });
     }
-    if (error instanceof Error && error.name === "TimeoutError") throw new ServiceError(504, "AI_TIMEOUT", "AI 응답이 늦어졌어요. 입력은 보존됩니다.");
-    throw error;
+    throw problem;
   } finally {
     if (!prepared.reused) {
       const { FieldValue } = await import("firebase-admin/firestore");

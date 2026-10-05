@@ -56,3 +56,22 @@ test("추상화의 보완 요청은 고정한 작품을 승인하며 재요청 �
   const edit = await request.post(`/api/classroom/work/${id}`, { headers, data: { revision: work.revision, draft: work.draft } }); expect(edit.status()).toBe(200);
   const approved = await decide(work.review!.id); expect(approved.status()).toBe(200); const latest = await approved.json(); expect(latest.submission.reviewProject.goal).toBe("정시 등교함"); expect(latest.draft.reviewProject.goal).toBe("수정 중인 다른 목표"); await teacher.dispose();
 });
+
+test("제공자 시간 초과·연결·JSON 오류도 현재 작품의 교사 확인을 허용한다", async ({ request }) => {
+  let work = await prepare(request); await db.collection("csAiUsage").doc("student-20101").delete();
+  if (work.draft.reviewProject?.type !== "abstraction") throw new Error("wrong lesson");
+  Object.assign(work.draft.reviewProject, { current: "지각함", goal: "등교함", conditions: ["시간 준수"], core: ["시각"], plans: ["알람 설정"] });
+  work = await (await request.post(`/api/classroom/work/${id}`, { headers, data: { revision: work.revision, draft: work.draft } })).json();
+  for (const input of ["fixture-timeout", "fixture-network", "fixture-json"]) {
+    const response = await request.post("/api/classroom/ai", { headers, data: { lessonId: id, task: "abstraction-review", requestId: randomUUID(), revision: work.revision, input } }); expect(response.status()).toBe(input === "fixture-timeout" ? 504 : 502);
+    work = await (await request.get(`/api/classroom/work/${id}`)).json(); expect(work.aiReview?.verdict).toBe("uncertain");
+    const ask = await request.post(`/api/classroom/work/${id}/action`, { headers, data: { revision: work.revision, action: { type: "request-review" } } }); expect(ask.status()).toBe(200); work = await ask.json();
+  }
+});
+
+test("31줄의 불완전 편집과 최대 길이 직접 입력을 보존한다", async ({ page }) => {
+  await prepare(page.request); await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click(); await page.getByRole("button", { name: "실전 워크북", exact: true }).click(); await page.getByRole("button", { name: "2. 조건", exact: true }).click();
+  const input = page.getByLabel("지킬 조건", { exact: true }), lines = Array.from({ length: 31 }, (_, i) => `조건${i}`).join("\n");
+  await input.fill(lines); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue(lines);
+  await expect(input).toHaveAttribute("maxlength", "1000"); await input.fill("가".repeat(1000)); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue("가".repeat(1000));
+});

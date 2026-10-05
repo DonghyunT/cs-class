@@ -106,6 +106,17 @@ test("150개 명령에서 외부 호출 전에 제한하고 입력·기존 기�
   expect((await db.collection("csAiUsage").doc(uid).get()).exists).toBe(false);
   const latest = await (await request.get(`/api/classroom/work/${id}`)).json(); expect(latest.draft.reviewProject.commands).toHaveLength(150); expect(latest.draft.reviewProject.input).toBe("계속 작성 중");
 });
+
+test("명령 저장 뒤 응답만 유실되어도 복구 GET은 실행 기록과 다음 입력을 유지한다", async ({ page }) => {
+  await prepare(page.request); await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
+  let committed = false, release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/api/classroom/ai", async route => { await route.fetch(); committed = true; await gate; await route.abort("failed"); });
+  const input = page.getByLabel("자연어 명령"); await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "AI로 명령 실행" }).click();
+  await expect.poll(() => committed).toBe(true); await input.fill("응답 유실 뒤 다음 입력"); release();
+  await expect(page.getByRole("alert").filter({ hasText: "연결하지 못했어요" })).toBeVisible();
+  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue("응답 유실 뒤 다음 입력");
+  const work = await (await page.request.get(`/api/classroom/work/${id}`)).json(); expect(work.draft.reviewProject.commands).toHaveLength(1);
+});
 test("복습 카드·키보드·44px·명령 실패·재접속·교사 상세", async ({ page, browser }) => {
   let work = await prepare(page.request);
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));

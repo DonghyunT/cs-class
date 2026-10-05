@@ -9,6 +9,7 @@ import { parseEntryProject, entryInstructionLabel } from "@/lib/classroom/entry-
 import { programmingMissions, programmingProjectLines } from "@/lib/classroom/programming-entry";
 import { replaySandwich } from "@/lib/classroom/review/sandwich-engine.mjs";
 import { missions } from "@/lib/classroom/review/flowchart-data.mjs";
+import { FlowDiagram } from "@/components/student/review/flow-diagram";
 import { dateLabel, problemMessage } from "./presentation";
 import styles from "./teacher.module.css";
 
@@ -22,7 +23,7 @@ export function ReviewProjectPreview({ project }: { project: ReviewProject }) {
     const mission = missions.find(m => String(m.id) === project.mission);
     return <ol>{mission?.slots.map(slot => <li key={slot.id}>{slot.fixed ? slot.label : mission.palette.find(block => block.id === project.placements[project.mission]?.[slot.id])?.text || "빈 기호"}</li>)}</ol>;
   }
-  return <><p>현재: {project.current} / 목표: {project.goal}</p><p>조건: {project.conditions.join(" / ")}</p><h4>기획서</h4><ol>{project.cards.map(card => <li key={card.id}>{card.text}{card.type !== "sequence" && ` · 예: ${card.yes} / 아니오: ${card.no}`}</li>)}</ol><h4>실제 기호와 연결</h4><ol>{project.nodes.map(node => <li key={node.id}>{node.shape} · {node.text}<ul>{project.edges.filter(edge => edge.from === node.id).map((edge, i) => <li key={i}>{edge.label || "다음"} → {project.nodes.find(n => n.id === edge.to)?.text}</li>)}</ul></li>)}</ol></>;
+  return <><p>현재: {project.current} / 목표: {project.goal}</p><p>조건: {project.conditions.join(" / ")}</p><h4>기획서</h4><ol>{project.cards.map(card => <li key={card.id}>{card.text}{card.type !== "sequence" && ` · 예: ${card.yes} / 아니오: ${card.no}`}</li>)}</ol><h4>실제 기호와 연결</h4><FlowDiagram nodes={project.nodes} edges={project.edges} /><ol>{project.nodes.map(node => <li key={node.id}>{node.shape} · {node.text}<ul>{project.edges.filter(edge => edge.from === node.id).map((edge, i) => <li key={i}>{edge.label || "다음"} → {project.nodes.find(n => n.id === edge.to)?.text}</li>)}</ul></li>)}</ol></>;
 }
 export function WorkDetails({ uid, lesson }: { uid: string; lesson: Lesson }) {
   const { session } = useSession();

@@ -4,7 +4,8 @@ import { validateFlowGraph } from "./flow-graph.mjs";
 import { missions } from "./flowchart-data.mjs";
 
 const text = z.string().max(1000);
-const list = z.array(text).max(30);
+// A 1,000-character multiline editor can contain 1,001 empty/incomplete lines.
+const list = z.array(text).max(1001);
 export const abstractionSchema = z.object({ type: z.literal("abstraction"), step: z.number().int().min(1).max(4), tutorialStep: z.number().int().min(1).max(4), tutorialDone: z.boolean(), view: z.enum(["tutorial", "workbook"]).default("tutorial"), tutorialScenario: z.enum(["chat", "late", "game"]).default("chat"), tutorialNoise: list.default([]), topic: text.default(""), adopted: z.array(z.object({ kind: z.enum(["state", "condition", "core", "noise", "plan"]), value: text }).strict()).max(100).default([]), current: text, goal: text, conditions: list, core: list, noise: list, plans: list }).strict();
 export const sandwichSchema = z.object({ type: z.literal("sandwich"), runId: z.string().max(80), input: text, commands: z.array(z.object({ id: z.string().max(80), text, actions: z.array(z.enum(sandwichActions as [string, ...string[]])).max(30), source: z.enum(["solar", "rules"]), proof: z.string().max(100) }).strict()).max(150) }).strict();
 export const flowNodeSchema = z.object({ id: z.string().max(80), shape: z.enum(["terminal", "io", "process", "decision"]), text, x: z.number().finite().min(-10000).max(10000), y: z.number().finite().min(-10000).max(10000) }).strict();
@@ -34,6 +35,7 @@ export function projectSnapshot(project: ReviewProject, missionId?: string): Rev
 export function sameReviewProject(a?: ReviewProject, b?: ReviewProject, missionId?: string) { return !!a && !!b && JSON.stringify(projectSnapshot(a, missionId)) === JSON.stringify(projectSnapshot(b, missionId)); }
 export function frozenReviewProject(project: ReviewProject, missionId?: string): ReviewProject {
   const snapshot = projectSnapshot(project, missionId);
+  if (snapshot.type === "abstraction" && project.type === "abstraction") return { ...snapshot, adopted: structuredClone(project.adopted) };
   return snapshot.type === "flowchart" && snapshot.mission === "free" && project.type === "flowchart" ? { ...snapshot, nodes: structuredClone(project.nodes), pan: { ...project.pan } } : structuredClone(snapshot);
 }
 export function basicReviewCheck(project: ReviewProject, missionId?: string) {
@@ -51,6 +53,8 @@ export function basicReviewCheck(project: ReviewProject, missionId?: string) {
     return { passed, message: passed ? "기호와 흐름을 확인했어요." : "기호의 역할과 예·아니오, 돌아가는 연결을 확인해 주세요." };
   }
   const graph = validateFlowGraph(project.nodes, project.edges.map(edge => ({ ...edge, fromPort: edge.label === "예" ? "yes" : edge.label === "아니오" ? "no" : "out" })));
+  const labels = project.edges.every(edge => project.nodes.find(node => node.id === edge.from)?.shape === "decision" ? edge.label !== "" : edge.label === "");
+  const activity = project.nodes.some(node => node.shape === "io" || node.shape === "process");
   const complete = !!project.current.trim() && !!project.goal.trim() && project.conditions.some(value => value.trim()) && project.cards.length > 0 && project.cards.every(card => card.text.trim() && (card.type === "sequence" || (card.yes.trim() && card.no.trim())));
-  return { passed: graph.valid && complete, message: !graph.valid ? graph.issues.map((issue: { message: string }) => issue.message).join(" ") : complete ? "기본 구조를 확인했어요. AI가 계획과 연결 흐름을 비교해요." : "현재 상태·목표·조건과 자연어 기획서를 채워 주세요." };
+  return { passed: graph.valid && labels && activity && complete, message: !graph.valid ? graph.issues.map((issue: { message: string }) => issue.message).join(" ") : !labels ? "예·아니오는 판단 기호의 연결에만 붙여 주세요." : !activity ? "활동을 나타내는 입출력이나 처리 기호를 연결해 주세요." : complete ? "기본 구조를 확인했어요. AI가 계획과 연결 흐름을 비교해요." : "현재 상태·목표·조건과 자연어 기획서를 채워 주세요." };
 }
