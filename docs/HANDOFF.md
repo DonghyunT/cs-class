@@ -6,11 +6,11 @@
 
 | 항목 | 상태 |
 | --- | --- |
-| 브랜치·미커밋 | `codex/original-practice-ui`, 기준 main `6d0d49c`. 원작 실습 표현 복원과 로컬 검증을 마쳤으며 커밋·독립 리뷰·CI·운영 반영을 준비합니다. 이전 통합과 공개 결과는 PR #21·#22로 병합했습니다 |
+| 브랜치·미커밋 | `codex/original-practice-ui-release`, 기준 main `448d61f`. 기능 `12b00e7`은 PR #23으로 병합·운영 반영했습니다. 현재 분기는 배포 기록만 변경하며 기록 커밋 뒤 미커밋 없음 |
 | 승인 범위 | 2026-10-05 사용자 승인 [통합 구현 기준](reference/algorithm-review-integration.md). 운영 비밀 변수 등록·사용자의 직접 결제 연결·AI TTL 활성화·단계별 공개를 완료했습니다. 18:42 KST에 11반 모두 세 복습이 열려 있으며 학생 계정·명부·기존 작품은 변경하지 않았습니다 |
-| 다음 행동 | 원작 실습 복원 커밋의 독립 리뷰와 전체 CI를 확인한 뒤 같은 운영 대상으로 반영합니다. 기존 저장·AI·교사 확인·11반 공개는 유지합니다. 이 UI 수정은 아직 배포하지 않았습니다 |
+| 다음 행동 | 첫 실제 수업에서 원작 실습의 가독성·학습 흐름과 교사 확인 사용성을 관찰합니다. 저장·AI·교사 확인·11반 설정은 유지하며 전체 롤백·추가 설정 적용은 필요하지 않습니다 |
 | 사용자 선택 | 반은 메뉴·새로고침 동안만 기억하고 실제 재로그인하면 기본 반. 기본 실습 화면을 간결하게 하고 넓게 보기는 학생이 선택 |
-| 검증 | 이번 UI: Windows·Node24·Java21·Chromium·demo Auth9099/Firestore8080·`next start`, typecheck/lint/build·순수12개·최종 영향26개 통과. 기존 CLI 복구를 포함한 직전27개도 통과했습니다. 아래 원작 복원 기록과 이전 통합 `9ac8142`의 전체 CI·실제 Solar 결과를 구분합니다. 새 유료 AI 호출·새 Google OAuth·학교망은 이번 UI 검사에 포함하지 않았습니다 |
+| 검증 | 최종 UI `12b00e7`: Windows·Node24·Java21·Chromium·demo Auth9099/Firestore8080·`next start`, typecheck/lint/build·순수12개·영향26개 통과(1.6분). 독립 재검토 추가 지적 없음. Linux PR/브랜치 전체 CI 각각135개 성공·Windows 전용1개 제외. 운영 SHA/별칭·익명 인증/API·로그인 화면/콘솔·11반 설정 동일·AI 집계0호출을20:10 KST 확인했습니다. 새 유료 AI 호출·새 Google OAuth·학교망은 이번 UI 검사에 포함하지 않았습니다 |
 
 ## 이번 작업의 구현·수업 준비
 
@@ -34,6 +34,14 @@
 ## 통합·배포 상태
 
 프로젝트 `cs-class`/`cs-class-f74c4`, [운영 사이트](https://cs-class-donghyunt.vercel.app)입니다. 세 복습 통합과 11반 공개를 완료했습니다. 이전 기능 릴리스와 작업 재개 시 확인은 아래에 구분합니다.
+
+### 10/5 원작 실습 UI 복원 공개
+
+- 기능 `12b00e7dd6559059836eb34b1b9f3a768159ce7b` → [PR #23](https://github.com/DonghyunT/cs-class/pull/23) → main `448d61f512940211859d31bc49421b1145e3f646`, 전체 트리 차이 없음. [PR CI](https://github.com/DonghyunT/cs-class/actions/runs/37299369055)·[브랜치 CI](https://github.com/DonghyunT/cs-class/actions/runs/37299363271)는 lint/typecheck/순수12개/build와 각각 전체135개 성공·Windows 기본 .NET 명부 변환1개 제외입니다. E2E는12.0/10.7분, 전체 job14분39초/13분9초입니다. Windows 로컬은 같은 수정본 영향26개 성공(1.6분)이며 이전27개에 반 설정 CLI 복구도 포함합니다.
+- `d3c73ca` 고정 독립 리뷰의 P3(실패 도포의 칼 이동)를 실제 빌드 중간 재생에서 재현·수정했습니다. `12b00e7` 재검토는 해당 P3 해결·P1/P2/추가 지적 없음입니다. 원작 SVG/색·실제 기호 놓기·실행 강조·320/390/820/821px·모션 줄이기·키보드/초점/44px·콘솔·작성/제출/교사 요청과 기존 강아지 작업실을 확인했습니다. 초기 화면 외 작성된 처방전·자유 순서도의 모바일 캡처도 확인했습니다.
+- 배포 `dpl_ArsRbzJJqkKQuXHt6QQLPtTEdTJu`/`cs-class-di8ugl37e-donghyunt.vercel.app`: READY·Production·위 main SHA·운영 별칭 일치.20:10 KST `/api/auth/config`는 configured=true·`cs-class-f74c4`·에뮬레이터 없음·게스트 비활성화, `/api/auth/session`은200/세션없음 JSON이며 익명 학생/교사/AI API는401입니다. 실제 학생 로그인 화면의 준비·입력 가능·초점·콘솔 오류0을 확인했습니다. 새 계정을 운영에 넣거나 실제 Solar/Google OAuth를 실행하지 않았습니다.
+- 배포 전후11반의 열린 수업/이번 수업/revision을 읽기 전용으로 대조해 동일함을 확인했습니다. 운영 AI 집계는0레코드/0호출이며 새 유료 AI 호출은 없습니다. 소스650개·브라우저 빌드40개에서 서버 비밀값 포함0건입니다. 로컬 검증 계정/공유 반 설정을 복구하고 격리 미리보기 작품을 정리한 뒤3000·9099·8080과 에뮬레이터 보조 포트의 리스너가 없음을 확인했습니다.
+- 원작 음성 입출력·픽셀 단위 동일성·실기기 터치 끌기·화면 읽기 프로그램 음성·새 Google OAuth·학교망은 이번 검증 범위에 포함하지 않습니다. 실제 Solar의 기존 오판 한계는 [실행 장부](reference/algorithm-review-integration.md#실행-장부)를 유지합니다. 이 후속 기록은 문서만 변경하며 검증한 기능 코드와 동일함을 확인한 뒤 내용/링크/`git diff --check`로 검사합니다.
 
 ### 10/5 세 복습 운영 공개
 
