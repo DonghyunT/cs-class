@@ -9,16 +9,21 @@ import { guideGraph, puzzleGraph, puzzleExecutionGraph } from "@/lib/classroom/r
 import { createFlowRun, stepFlowRun } from "@/lib/classroom/review/flow-runner.mjs";
 import { FlowDiagram } from "./flow-diagram";
 import { ReviewSubmit, useReviewAi, type ReviewController } from "./shared";
-import styles from "./review.module.css";
+import base from "./review.module.css";
+import studio from "./studio.module.css";
+const styles = { ...base, ...studio };
 
 type Graph = Pick<FlowchartProject, "nodes" | "edges"> & { unavailable?: string };
-function FlowExecution({ graph }: { graph: Graph }) {
+function FlowExecution({ graph, onActive }: { graph: Graph; onActive?: (id: string | undefined) => void }) {
   const [run, setRun] = useState<ReturnType<typeof createFlowRun> | null>(null), [automatic, setAutomatic] = useState(false), [answer, setAnswer] = useState("");
   const waitingInput = useRef<HTMLInputElement>(null), choice = useRef<HTMLButtonElement>(null);
+  const activeId = run?.current ?? undefined;
+  useEffect(() => { onActive?.(activeId); }, [onActive,activeId]);
   useEffect(() => { if (run?.waiting?.kind === "input") waitingInput.current?.focus(); else if (run?.waiting?.kind === "choice") choice.current?.focus(); }, [run?.waiting?.kind]);
   useEffect(() => { if (!automatic || !run || run.done || run.error || run.waiting) return; const timer = setTimeout(() => setRun(stepFlowRun(graph, run)), 500); return () => clearTimeout(timer); }, [automatic, graph, run]);
   const step = (value?: string) => { if (run) setRun(stepFlowRun(graph, run, value)); setAnswer(""); };
-  return <section className={styles.panel} aria-label="순서도 실행">
+  return <section className={`${styles.panel} ${styles.simulation}`} aria-label="순서도 실행">
+    <small className={styles.eyebrow}>I/O &amp; Simulation</small>
     <h3>실행하며 흐름 관찰하기</h3>
     <p className={styles.muted}>실제 화살표를 따라가요. 자연어 조건은 예·아니오를 직접 선택하고, 변수 = 식과 비교식은 계산해요.</p>
     <div className={styles.actions}>
@@ -39,14 +44,14 @@ function FlowExecution({ graph }: { graph: Graph }) {
         <dt>{key}</dt>
         <dd>{String(value)}</dd>
       </div>)}</dl>
-      <ol className={styles.log}>{run.log.map((line, i) => <li key={i}>{line}</li>)}</ol>
+      <ol className={styles.tracer} aria-label="실시간 데이터 흐름">{run.log.map((line, i) => <li key={i}>{line}</li>)}</ol>
     </>}
   </section>;
 }
 export function Flowchart({ controller }: { controller: ReviewController }) {
   const project = controller.draft.reviewProject, ai = useReviewAi(controller), { clear } = ai;
   const [selected, setSelected] = useState(""), [from, setFrom] = useState("start"), [to, setTo] = useState("end"), [branch, setBranch] = useState<"" | "예" | "아니오">(""), [imported, setImported] = useState<AbstractionProject | null>(null), [sourceError, setSourceError] = useState(""), [reading, setReading] = useState(false), [sourceKind, setSourceKind] = useState<"draft" | "submission">("submission");
-  const [history, setHistory] = useState<FlowchartProject[]>([]);
+  const [history, setHistory] = useState<FlowchartProject[]>([]), [paletteBlock,setPaletteBlock] = useState(""), [activeNode,setActiveNode] = useState<string | undefined>();
   const heading = useRef<HTMLHeadingElement>(null), [focus, setFocus] = useState(0), fieldId = useId();
   const missionId = project?.type === "flowchart" ? project.mission : null;
   useEffect(() => { clear(); }, [clear, missionId]);
@@ -69,22 +74,22 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
   }
   const mission = missions.find(item => String(item.id) === p.mission), selectedNode = p.nodes.find(node => node.id === selected);
   const graph = mission ? puzzleGraph(p.mission, p.placements[p.mission] ?? {}) : guideGraph(p.guideStep);
-  return <>
+  const place = (slotId: string, blockId: string) => { if (locked || !mission?.slots.some(slot => slot.id === slotId && !slot.fixed) || !mission.palette.some(block => block.id === blockId)) return; edit({ placements: { ...p.placements, [p.mission]: { ...p.placements[p.mission], [slotId]: blockId } } }); };
+  return <div className={styles.studio} data-practice="flowchart">
     <nav className={styles.stepNav} aria-label="순서도 실습">{["1", "2", "3", "guide", "free"].map((id, index) => <button key={id} disabled={locked} aria-pressed={p.mission === id} onClick={() => { edit({ mission: id as FlowchartProject["mission"] }, false); setFocus(n => n + 1); }}>{["1. 순차 퍼즐", "2. 선택 퍼즐", "3. 반복 퍼즐", "예시 공방 (선택)", "자유 캔버스"][index]}{controller.work.missions?.[id]?.submission ? " · 제출 기록 있음" : ""}</button>)}</nav>
     {mission ? <>
       <h3 ref={heading} tabIndex={-1}>{mission.title}</h3>
       <p>{mission.desc}</p>
-      <div className={styles.columns}>
-        <section className={styles.panel}>
-          <h3>기호 보관함에서 배치하기</h3>{mission.slots.filter(slot => !slot.fixed).map(slot => <div key={slot.id} className={styles.field}>
+      <div className={styles.flowColumns}>
+        <section className={styles.panel} aria-label="순서도 기호 보관함"><small className={styles.eyebrow}>Symbol Palette</small><h3>순서도 기호 보관함</h3><p className={styles.muted}>기호를 빈칸으로 끌어 놓아요. 클릭하거나 Enter로 기호를 고른 뒤 빈칸을 눌러도 좋아요.</p><div className={styles.palette}>{mission.palette.map(block => <button key={block.id} className={styles.symbolBlock} data-shape={block.shape} aria-label={block.text} aria-pressed={paletteBlock === block.id} disabled={locked} draggable={!locked} onDragStart={event => { event.dataTransfer.setData("text/plain",block.id); event.dataTransfer.effectAllowed = "copy"; setPaletteBlock(block.id); }} onClick={() => setPaletteBlock(block.id)}><span aria-hidden="true">{block.shape === "io" ? "▱" : block.shape === "decision" ? "◇" : "▭"}</span><strong>{block.text}</strong></button>)}</div><p className={styles.feedback} role="status">{mission.palette.find(block => block.id === paletteBlock)?.text ? `선택: ${mission.palette.find(block => block.id === paletteBlock)?.text} · 놓을 기호를 누르세요.` : "보관함에서 기호를 골라 보세요."}</p><div className={styles.symbolGuide}><strong>💡 표준 기호 가이드</strong><p>⬭ 단말: 시작과 종료<br />▱ 입출력: 데이터 입력·출력<br />▭ 처리: 연산·명령 실행<br />◇ 판단: 조건 검사·분기</p></div>
+          <details><summary>목록으로 배치하기</summary><div className={styles.stack}>{mission.slots.filter(slot => !slot.fixed).map(slot => <div key={slot.id} className={styles.field}>
             <label htmlFor={`${fieldId}-${slot.id}`}>{slot.hint}</label>
             <select id={`${fieldId}-${slot.id}`} disabled={locked} value={p.placements[p.mission]?.[slot.id] ?? ""} onChange={event => edit({ placements: { ...p.placements, [p.mission]: { ...p.placements[p.mission], [slot.id]: event.target.value } } })}>
               <option value="">빈 기호</option>{mission.palette.map(block => <option key={block.id} value={block.id}>{block.shape === "decision" ? "◇" : block.shape === "io" ? "▱" : "▭"} {block.text}</option>)}</select>
-          </div>)}<Button variant="outline" disabled={locked} onClick={() => void ai.ask("flow-puzzle", "현재 배치에서 고칠 부분의 이유와 힌트를 알려 주세요.", p.mission)}>AI 오류 설명과 힌트</Button>{ai.error && <p className={styles.error} role="alert">{ai.error}</p>}{ai.result && <p className={styles.feedback} role="status">{ai.result.message}</p>}<ReviewSubmit controller={controller} missionId={p.mission} />
-        </section>
-        <FlowDiagram {...graph} />
+          </div>)}</div></details></section>
+        <section className={styles.panel}><header className={styles.stageHeader}><h3>🧩 순서도 조립 캔버스</h3><Button variant="outline" disabled={locked} onClick={() => edit({ placements: { ...p.placements,[p.mission]: {} } })}>다시 조립</Button></header><FlowDiagram {...graph} active={activeNode} select={slotId => place(slotId,paletteBlock)} drop={place} /></section>
+        <div className={styles.stack}><FlowExecution onActive={setActiveNode} key={JSON.stringify([p.placements,p.mission])} graph={puzzleExecutionGraph(p.mission,p.placements[p.mission] ?? {})} /><section className={styles.panel}><h3>🤖 순서도 진단기</h3><Button variant="outline" disabled={locked} onClick={() => void ai.ask("flow-puzzle", "현재 배치에서 고칠 부분의 이유와 힌트를 알려 주세요.", p.mission)}>AI 오류 설명과 힌트</Button>{ai.error && <p className={styles.error} role="alert">{ai.error}</p>}{ai.result && <p className={styles.feedback} role="status">{ai.result.message}</p>}<ReviewSubmit controller={controller} missionId={p.mission} /></section></div>
       </div>
-      <FlowExecution key={JSON.stringify([p.nodes.map(({ id, shape, text }) => ({ id, shape, text })), p.edges, p.placements, p.mission])} graph={puzzleExecutionGraph(p.mission, p.placements[p.mission] ?? {})} />
     </> : p.mission === "guide" ? <>
       <h3 ref={heading} tabIndex={-1}>{level2Walkthrough.title.replace(/^[^지]+/, "")}</h3>
       <p>예시 공방은 선택 연습이에요. 카드를 차례로 열며 기호와 분기 연결이 만들어지는 모습을 살펴보세요.</p>
@@ -111,13 +116,13 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
           <Button disabled={locked} onClick={() => { edit({ current: imported.current, goal: imported.goal, conditions: [...imported.conditions], core: [...imported.core] }); setImported(null); }}>이 정의를 내 작품에 복사</Button>
         </>}<div className={styles.actions}>{abstractionPresets.map(preset => <Button key={preset.topic} variant="outline" disabled={locked} onClick={() => edit({ current: preset.currentStatus, goal: preset.goalStatus, conditions: [...preset.conditions], core: [...preset.coreVariables] })}>{preset.topic}</Button>)}</div>
       </details>
-      <div className={styles.columns}>
-        <section className={styles.panel}>
+      <div className={styles.freeColumns}>
+        <section className={`${styles.panel} ${styles.planner}`}>
           <h3>문제 정의와 자연어 기획서</h3>{field("현재 상태", "current")}{field("목표 상태", "goal")}{field("필수 조건", "conditions", true)}{field("핵심 요소", "core", true)}<Button variant="outline" disabled={locked || !p.current.trim() || !p.goal.trim()} onClick={() => void ai.ask("flow-plan", "조건에 맞는 자연어 설계 카드를 제안해 주세요.", "free")}>AI 기획서 제안 받기</Button>{ai.error && <p role="alert" className={styles.error}>{ai.error}</p>}{ai.result && <p role="status" className={styles.feedback}>{ai.result.message}</p>}{!!ai.result?.cards.length && <>
             <ol>{ai.result.cards.map(card => <li key={card.id}>{card.text}</li>)}</ol>
             <Button disabled={locked} onClick={() => { if (ai.result) edit({ cards: ai.result.cards.map(card => ({ ...card, id: crypto.randomUUID() })) }); }}>제안 기획서 채택</Button>
           </>}
-          {p.cards.map((card, i) => <fieldset key={card.id} className={styles.card}>
+          {p.cards.map((card, i) => <fieldset key={card.id} className={styles.card} data-structure={card.type}>
             <legend>기획서 {i + 1}</legend>
             <label className={styles.field}>구조<select value={card.type} disabled={locked} onChange={e => edit({ cards: p.cards.map(c => c.id === card.id ? { ...c, type: e.target.value as typeof card.type } : c) })}>
               <option value="sequence">순차</option>
@@ -134,12 +139,20 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
             </div>
           </fieldset>)}<Button variant="outline" disabled={locked || p.cards.length >= 50} onClick={() => edit({ cards: [...p.cards, { id: crypto.randomUUID(), type: "sequence", text: "", yes: "", no: "" }] })}>계획 카드 추가</Button>
         </section>
+        <section className={`${styles.panel} ${styles.freePalette}`} aria-label="자유 기호 보관함"><h3>기호 보관함</h3>{(["terminal", "io", "process", "decision"] as const).map(shape => <button key={shape} className={styles.symbolBlock} data-shape={shape} disabled={locked || p.nodes.length >= 200} onClick={() => add(shape)}><span aria-hidden="true">{shape === "terminal" ? "⬭" : shape === "io" ? "▱" : shape === "process" ? "▭" : "◇"}</span>{shape === "terminal" ? "시작·종료" : shape === "io" ? "입출력" : shape === "process" ? "처리" : "판단"} 기호 추가</button>)}<small className={styles.muted}>기호를 눌러 추가하고 캔버스에서 움직여요.</small></section>
         <section className={styles.panel}>
-          <h3>기호와 연결 편집</h3>
-          <div className={styles.actions}>{(["terminal", "io", "process", "decision"] as const).map(shape => <Button key={shape} variant="outline" disabled={locked || p.nodes.length >= 200} onClick={() => add(shape)}>{shape === "terminal" ? "시작·종료" : shape === "io" ? "입출력" : shape === "process" ? "처리" : "판단"} 기호 추가</Button>)}</div>
+          <small className={styles.eyebrow}>Flowchart Canvas</small><h3>기호와 연결 편집</h3>
+
           <p className={styles.muted}>기호를 끌어 이동하거나 초점을 놓고 방향키로 이동해요. 선택하면 아래에서 내용을 고칠 수 있어요.</p>
-          <FlowDiagram nodes={p.nodes} edges={p.edges} selected={selected} pan={p.pan} select={setSelected} move={locked ? undefined : move} />
-          <label className={styles.field}>편집할 기호<select value={selectedNode?.id ?? ""} onChange={e => setSelected(e.target.value)}>
+          <div className={styles.actions}>
+            <Button variant="outline" disabled={locked || !history.length} onClick={() => { const previous = history.at(-1); setHistory(history.slice(0, -1)); if (previous) edit(previous, false); }}>편집 되돌리기</Button>
+            <Button variant="outline" disabled={locked} onClick={() => { const { nodes, edges, pan } = initialReviewProject("flowchart") as FlowchartProject; edit({ nodes, edges, pan }); setSelected(""); setFrom("start"); setTo("end"); }}>캔버스 초기화</Button>
+            <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: Math.min(10000, p.pan.x + 200), y: p.pan.y } }, false)}>화면 오른쪽</Button>
+            <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: p.pan.x, y: Math.min(10000, p.pan.y + 200) } }, false)}>화면 아래쪽</Button>
+            <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: 0, y: 0 } }, false)}>화면 원점</Button>
+          </div>
+          <FlowDiagram nodes={p.nodes} edges={p.edges} active={activeNode} selected={selected} pan={p.pan} select={setSelected} move={locked ? undefined : move} />
+          <details className={styles.inspector} open={selectedNode ? true : undefined}><summary>기호와 연결 설정</summary><label className={styles.field}>편집할 기호<select value={selectedNode?.id ?? ""} onChange={e => setSelected(e.target.value)}>
             <option value="">기호 선택</option>{p.nodes.map(n => <option value={n.id} key={n.id}>{n.text || "빈 기호"}</option>)}</select>
           </label>{selectedNode && <>
             <div className={styles.field}>
@@ -148,13 +161,7 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
             </div>
             <Button variant="outline" disabled={locked} onClick={() => { edit({ nodes: p.nodes.filter(n => n.id !== selected), edges: p.edges.filter(e => e.from !== selected && e.to !== selected) }); setSelected(""); }}>선택 기호와 연결 삭제</Button>
           </>}
-          <div className={styles.actions}>
-            <Button variant="outline" disabled={locked || !history.length} onClick={() => { const previous = history.at(-1); setHistory(history.slice(0, -1)); if (previous) edit(previous, false); }}>편집 되돌리기</Button>
-            <Button variant="outline" disabled={locked} onClick={() => { const { nodes, edges, pan } = initialReviewProject("flowchart") as FlowchartProject; edit({ nodes, edges, pan }); setSelected(""); setFrom("start"); setTo("end"); }}>캔버스 초기화</Button>
-            <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: Math.min(10000, p.pan.x + 200), y: p.pan.y } }, false)}>화면 오른쪽</Button>
-            <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: p.pan.x, y: Math.min(10000, p.pan.y + 200) } }, false)}>화면 아래쪽</Button>
-            <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: 0, y: 0 } }, false)}>화면 원점</Button>
-          </div>
+
           <h4>화살표 연결</h4>{[["출발 기호", from, setFrom], ["도착 기호", to, setTo]].map(([label, value, setter]) => <label className={styles.field} key={label as string}>{label as string}<select value={value as string} disabled={locked} onChange={e => (setter as (value: string) => void)(e.target.value)}>{p.nodes.map(n => <option key={n.id} value={n.id}>{n.text || "빈 기호"}</option>)}</select>
           </label>)}<label className={styles.field}>갈래<select value={branch} disabled={locked} onChange={e => setBranch(e.target.value as typeof branch)}>
             <option value="">다음</option>
@@ -166,15 +173,15 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
           <ul className={styles.suggestions}>{p.edges.map((edge, i) => <li key={`${i}-${edge.from}`}>
             <p>{p.nodes.find(n => n.id === edge.from)?.text} → {edge.label || "다음"} → {p.nodes.find(n => n.id === edge.to)?.text}</p>
             <Button variant="outline" disabled={locked} onClick={() => edit({ edges: p.edges.filter((_, index) => i !== index) })}>화살표 삭제</Button>
-          </li>)}</ul>
+          </li>)}</ul></details>
         </section>
       </div>
-      <FlowExecution key={JSON.stringify([p.nodes.map(({ id, shape, text }) => ({ id, shape, text })), p.edges, p.placements, p.mission])} graph={p} />
+      <FlowExecution onActive={setActiveNode} key={JSON.stringify([p.nodes.map(({ id, shape, text }) => ({ id, shape, text })), p.edges, p.placements, p.mission])} graph={p} />
       <section className={styles.panel}>
         <h3>설계 리뷰</h3>
         <p className={styles.muted}>목표·조건·실제 연결을 검토해요. 타당한 단계 묶음이나 배치 차이는 개선 의견으로 안내해요.</p>
         <Button disabled={locked || !basicReviewCheck(p, "free").passed} onClick={() => void ai.ask("flow-review", "목표·필수 조건·실제 연결을 검토해 주세요.", "free")}>AI 설계 리뷰 받기</Button>{controller.work.aiReview && <p className={styles.feedback}>{sameReviewProject(p, controller.work.aiReview.project, "free") ? "현재 작품 리뷰: " : "이전 작품 리뷰: "}{controller.work.aiReview.message}</p>}{ai.remaining !== null && <p className={styles.muted}>오늘 AI 도움 {ai.remaining}회 남음</p>}<ReviewSubmit controller={controller} missionId="free" />
       </section>
     </>}
-  </>;
+  </div>;
 }

@@ -261,6 +261,7 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 제품 정책은 [PRD](PRD.md#알고리즘-선택-복습--2026-10-05-확정), 단계별 승인·검증 근거는 [통합 기준](reference/algorithm-review-integration.md), 현재 공개 상태는 [HANDOFF](HANDOFF.md)를 따릅니다.
 
 - `src/lib/classroom/review/`에 원본 기준 순수 샌드위치/순서도 실행·검사·미션·추상화 데이터를 둡니다. React 화면은 `src/components/student/review/`에 모으고 기존 단일 저장 writer·revision·메모리 복구를 사용합니다. 학습 내용의 스냅샷과 화면 위치·탭을 구분합니다. 작품 수정 시 이전 제출본과 고정 교사 요청본은 유지합니다.
+- 실습 표현은 원작 SVG·색상·배치를 재사용합니다. `sandwich-stage.tsx`는 실행 상태만 받아 그림을 표시하고 `studio.module.css`는 세 복습 실습 안에만 적용합니다. 원본의 전역 DOM 조작·인증·외부 호출은 옮기지 않습니다. `tests/review-practice-ui.spec.ts`에서 실제 기호 놓기·실행 강조·넓게 보기·320/390/820/821px·줄인 모션을 확인하고, 저장·AI·교사 경계는 기존 세 복습 검사와 함께 실행합니다. Chromium의 HTML 끌어놓기 검사는 목표 위에서 두 번 움직여 `dragover`와 실제 `drop`을 발생시킵니다.
 - `POST /api/classroom/ai`는 `lessonId,task,requestId(UUID),revision,input,missionId?`를 받고 서버가 현재 작품·열린 수업·학생 권한을 재확인합니다. 샌드위치 해석의 HMAC은 사용자·실행회차·명령 ID·원문·동작·제공자에 연결됩니다. 저장과 제출은 서명과 원본 실행 규칙을 다시 검사합니다.
 - Solar 출력 스키마는 역할마다 후보·명령·기획 카드의 허용 범위를 제한합니다. 모호한 판정과 실행 명령이 함께 오면 실행하지 않고 입력을 보존합니다. 형식 오류·잘린 응답도 제공자가 반환한 사용 토큰은 집계합니다.
 - 자유 순서도 리뷰의 조건 근거는 원래 조건 인덱스와 실제 기호 원문으로 제한합니다. 빈 줄은 초안·스냅샷에 보존하며 검토에서만 제외합니다. 같은 조건을 여러 갈래의 다른 표현으로 수행하면 여러 기호를 근거로 허용합니다. 무조건 필요한 행동은 근거 기호들을 건너뛰고 종료하는 경로가 있는지도 서버가 확인합니다. 조건부 행동의 적용 범위·자연어 의미는 AI 판정이므로 형식·근거·경로가 불명확하면 선생님 확인을 허용하는 `uncertain`으로 안내합니다. 이 검사를 모든 자연어 알고리즘의 정확성 증명으로 표현하지 않습니다. 순서도 리뷰는 `temperature=0`·`reasoning_effort=minimal`, 나머지는 `temperature=0.4`·`none`이며 출력800토큰·시간 제한은 유지합니다.
