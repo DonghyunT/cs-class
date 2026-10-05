@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CheckCircle2, ClipboardCheck, KeyRound, Settings2 } from "lucide-react";
+import { ClipboardCheck, KeyRound, Settings2 } from "lucide-react";
 import { useSession } from "@/components/session-provider";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -9,9 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ApiError, classroomApi } from "@/lib/classroom/client";
 import type { ClassSettings, Lesson, StudentRow, TeacherDashboard } from "@/lib/classroom/types";
-import { entryInstructionLabel, parseEntryProject } from "@/lib/classroom/entry-project";
-import { programmingMissions, programmingProjectLines } from "@/lib/classroom/programming-entry";
-import { dateLabel, problemMessage } from "./presentation";
+import { WorkDetails } from "./work-details";
+import { problemMessage } from "./presentation";
 import styles from "./teacher.module.css";
 
 export function ManageLessons({ classroom, lessons, onSaved, onLock, onRefresh }: {
@@ -67,17 +66,12 @@ export function ManageLessons({ classroom, lessons, onSaved, onLock, onRefresh }
 }
 
 export function SubmissionViewer({ student, lesson }: { student: StudentRow; lesson: Lesson }) {
-  const missionSubmissions = programmingMissions.flatMap((mission) => {
-    const submission = student.work?.missions?.[mission.id]?.submission;
-    return submission ? [{ mission, submission }] : [];
-  });
-  const submission = student.work?.submission ?? missionSubmissions[0]?.submission;
-  const labels = new Map(lesson.practice.blocks.map((block) => [block.id, block.label]));
-  const blocks = submission?.entryProject ? parseEntryProject(submission.entryProject)?.threads.flat().map(entryInstructionLabel) : null;
-  return <Dialog>
-    <DialogTrigger render={<Button variant="outline" disabled={!submission} aria-label={`${student.studentId} 제출 작품 보기`} />}><ClipboardCheck size={15} aria-hidden="true" />{submission ? "제출 작품" : "미제출"}</DialogTrigger>
+  const [open, setOpen] = useState(false);
+  const available = !!student.work?.submission || Object.values(student.work?.missions ?? {}).some(record => record.submission) || student.work?.review?.status === "pending";
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger render={<Button variant="outline" disabled={!available} aria-label={`${student.studentId} 제출 작품 보기`} />}><ClipboardCheck size={15} aria-hidden="true" />{student.work?.review?.status === "pending" ? "확인 요청" : available ? "제출 작품" : "미제출"}</DialogTrigger>
     <DialogContent className={styles.dialog}><DialogHeader><DialogTitle>{student.studentId} 학생의 제출 작품</DialogTitle><DialogDescription>{lesson.title} · {lesson.practice.title}</DialogDescription></DialogHeader>
-      {lesson.practice.type === "programming" ? <>{missionSubmissions.map(({ mission, submission }) => <details key={mission.id}><summary>{mission.title} · {dateLabel(submission.submittedAt)} 제출</summary><ol className={styles.submission}>{programmingProjectLines(submission.entryProject).map((line, i) => <li key={i}><span>{i + 1}</span>{line}</li>)}</ol></details>)}<p className={styles.dialogNote}>미션별 최근 제출본이에요. 학생이 수정 중인 작품과 이전 미션의 제출본은 따로 유지돼요.</p></> : submission && <><p className={styles.submittedTime}><CheckCircle2 size={16} aria-hidden="true" />{dateLabel(submission.submittedAt)} 제출</p><ol className={styles.submission}>{(blocks ?? submission.order.map((id) => labels.get(id) ?? id)).map((label, index) => <li key={index}><span>{index + 1}</span>{label}</li>)}</ol>{submission.entryProject && <p className={styles.dialogNote}>엔트리 블록 코딩 프로젝트가 보존되어 있어요.</p>}<p className={styles.dialogNote}>서버에 저장된 최근 제출본이에요. 학생이 수정 중인 내용은 다시 제출하기 전까지 여기에 반영되지 않아요.</p></>}
+      {open && <WorkDetails uid={student.uid} lesson={lesson} />}
     </DialogContent>
   </Dialog>;
 }

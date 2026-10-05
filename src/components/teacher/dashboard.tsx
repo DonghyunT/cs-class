@@ -12,9 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { SuccessToasts } from "@/components/ui/toast";
 import { classroomApi } from "@/lib/classroom/client";
-import { practiceMatches, progressFor, STATUS_LABELS, submissionCountFor } from "@/lib/classroom/progress";
-import { programmingMissions, programmingProjectMatches } from "@/lib/classroom/programming-entry";
-import type { ClassSettings, Lesson, Progress, StudentRow, TeacherDashboard, Work } from "@/lib/classroom/types";
+import { progressFor, STATUS_LABELS, submissionCountFor } from "@/lib/classroom/progress";
+import { programmingMissions } from "@/lib/classroom/programming-entry";
+import type { ClassSettings, Lesson, Progress, StudentRow, TeacherDashboard, WorkSummary } from "@/lib/classroom/types";
 import { ManageLessons, ResetPassword, SubmissionViewer } from "./dialogs";
 import { dateLabel, problemMessage } from "./presentation";
 import styles from "./teacher.module.css";
@@ -195,18 +195,16 @@ function TeacherStudentRow({ student, lesson, onLock, onReset }: { student: Stud
   </tr>;
 }
 
-function practiceLabel(lesson: Lesson, work: Work | null) {
+function practiceLabel(lesson: Lesson, work: WorkSummary | null) {
   if (lesson.practice.type === "programming") {
     const required = programmingMissions.filter((mission) => !("optional" in mission));
     const submitted = required.filter((mission) => work?.missions?.[mission.id]?.submission).length;
-    const edited = programmingMissions.some((mission) => {
-      const submission = work?.missions?.[mission.id]?.submission;
-      return submission && !programmingProjectMatches(work?.draft.programming?.projects[mission.id], submission.entryProject);
-    });
+    const edited = work?.edited;
     const challenge = work?.missions?.average?.submission;
     return `기본 ${submitted}/4 제출${challenge ? " · 도전 제출" : ""}${edited ? " · 수정 중" : ""}`;
   }
-  if (work?.submission) return practiceMatches(work.draft, work.submission) ? "제출 완료" : "제출 완료 · 수정 중";
-  if (work?.validation?.passed && practiceMatches(work.draft, work.validation)) return "검증 통과 · 제출 전";
+  if (work?.submission) return work.edited ? "제출 완료 · 수정 중" : "제출 완료";
+  if (lesson.practice.type === "flowchart") return `${Object.values(work?.missions ?? {}).filter(record => record.submission).length}/4 작품 제출${work?.review?.status === "pending" ? " · 확인 대기" : ""}`;
+  if (work?.validated) return "검증 통과 · 제출 전";
   return "아직 제출하지 않았어요";
 }

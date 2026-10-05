@@ -1,5 +1,6 @@
 // Synthetic values used only with the demo project; never production credentials.
 export const testEnv = {
+  CS_AI_FIXTURE: "1",
   FIREBASE_PROJECT_ID: "demo-cs-class", FIREBASE_WEB_API_KEY: "emulator-only",
   FIREBASE_AUTH_DOMAIN: "demo-cs-class.firebaseapp.com",
   FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099", FIRESTORE_EMULATOR_HOST: "127.0.0.1:8080",

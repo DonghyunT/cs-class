@@ -16,11 +16,16 @@ function workWith(missions: string[], edited = false): Work {
   work.draft.programming!.projects = Object.fromEntries(missions.map((id) => [id, edited ? buildProgrammingProject([[{ type: "when_run_button_click", params: [null] }, { type: "move_direction", params: [{ type: "number", params: [10] }, null] }]]) : project]));
   return work;
 }
-const rows: StudentRow[] = [[], ["name"], ["name", "multiply", "move"], ["name", "multiply", "move", "keys"], ["average"], ["name"]].map((missions, index) => ({ uid: `ui-teacher-${index}`, studentId: `2018${index + 1}`, mustChangePassword: index === 0, work: workWith(missions, index === 5) }));
+const rows: StudentRow[] = [[], ["name"], ["name", "multiply", "move"], ["name", "multiply", "move", "keys"], ["average"], ["name"]].map((missions, index) => ({ uid: `ui-teacher-${index}`, studentId: `2018${index + 1}`, mustChangePassword: index === 0, work: { ...workWith(missions, index === 5), edited: index === 5, validated: false } }));
 
 async function syntheticRows(page: Page, state: "normal" | "no-lesson" | "no-students" = "normal") {
   await localOnly(page.request);
   await readyTeacher(page.request);
+  await page.route("**/api/classroom/students/ui-teacher-*/work/**", async route => {
+    const uid = new URL(route.request().url()).pathname.split("/")[4];
+    const row = rows.find(row => row.uid === uid);
+    await route.fulfill({ status: row ? 200 : 404, contentType: "application/json", body: JSON.stringify(row?.work ?? {}) });
+  });
   await page.route("**/api/classroom/teacher?**", async (route) => {
     const url = new URL(route.request().url());
     const selectedLessonId = state === "no-lesson" ? null : url.searchParams.get("lessonId") ?? lesson.id;

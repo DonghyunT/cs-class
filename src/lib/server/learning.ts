@@ -7,6 +7,7 @@ import { checkProgrammingMission, missionById, parseProgrammingProject, programm
 import { practiceMatches } from "../classroom/progress";
 import { requireCondition } from "./errors";
 import { getLessonSolution } from "./solutions";
+import { basicReviewCheck, frozenReviewProject, isReviewType, reviewMissionIds, reviewProjectSchema, sameReviewProject } from "../classroom/review/project";
 
 export const revisionSchema = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 export const draftSchema = z.object({
@@ -16,6 +17,7 @@ export const draftSchema = z.object({
   practiceOrder: z.array(z.string().max(30)).max(50),
   entryProject: z.string().max(100000).nullable().optional(),
   programming: z.object({ mission: z.string().max(20), projects: z.record(z.string().max(20), z.string().max(80000)), reflection: z.string().max(500) }).strict().optional(),
+  reviewProject: reviewProjectSchema.optional(),
 }).strict();
 
 export const actionSchema = z.discriminatedUnion("type", [
@@ -24,6 +26,7 @@ export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("retry-quiz") }).strict(),
   z.object({ type: z.literal("validate-practice"), missionId: z.string().max(20).optional() }).strict(),
   z.object({ type: z.literal("submit-practice"), missionId: z.string().max(20).optional() }).strict(),
+  z.object({ type: z.literal("request-review"), missionId: z.string().max(20).optional() }).strict(),
 ]);
 
 export function sameOrder(a: string[], b: string[]) {
@@ -37,6 +40,12 @@ export function validateDraft(draft: z.infer<typeof draftSchema>, lesson: Lesson
   for (const [id, value] of Object.entries(draft.quizAnswers)) {
     requireCondition(lesson.quiz.find((q) => q.id === id)?.options.some((option) => option.id === value), 400, "INVALID_ANSWER", "퀴즈 답안을 확인해 주세요.");
   }
+  if (isReviewType(lesson.practice.type)) {
+    requireCondition(draft.reviewProject?.type === lesson.practice.type && !draft.programming && !draft.entryProject && !draft.practiceOrder.length, 400, "INVALID_PROJECT", "이 복습 수업의 작품 형식을 확인해 주세요.");
+    requireCondition(Buffer.byteLength(JSON.stringify(draft), "utf8") <= 160000, 400, "PROJECT_TOO_LARGE", "작품이 저장 한도를 넘었어요. 입력을 보존하고 필요한 내용만 남겨 주세요.");
+    return draft;
+  }
+  requireCondition(!draft.reviewProject, 400, "INVALID_PROJECT", "이 수업의 작품 형식을 확인해 주세요.");
   if (lesson.practice.type === "programming") {
     requireCondition(draft.programming && missionById(draft.programming.mission) && Object.keys(draft.programming.projects).length <= 5 && Object.entries(draft.programming.projects).every(([id, raw]) => missionById(id) && parseProgrammingProject(raw)), 400, "INVALID_PROJECT", "미션의 작품과 입력값을 확인해 주세요.");
     requireCondition(Object.values(draft.programming!.projects).every((raw) => Buffer.byteLength(raw, "utf8") <= 32768) && Buffer.byteLength(JSON.stringify(draft), "utf8") <= 120000, 400, "PROJECT_TOO_LARGE", "작품이 저장 한도를 넘었어요. 현재 블록을 보존하고 필요한 블록만 남겨 다시 시도해 주세요.");
@@ -58,6 +67,35 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
   const next = structuredClone(work);
   const solution = getLessonSolution(lesson.id);
   requireCondition(solution, 500, "SOLUTION_MISSING", "수업 정답 정보가 준비되지 않았어요.");
+
+  if (isReviewType(lesson.practice.type) && ["validate-practice", "submit-practice", "request-review"].includes(action.type)) {
+    const project = next.draft.reviewProject!;
+    const missionId = "missionId" in action ? action.missionId : undefined;
+    requireCondition(project.type === "flowchart" ? !!missionId && reviewMissionIds.includes(missionId) : !missionId, 400, "INVALID_MISSION", "현재 실습을 선택해 주세요.");
+    const checked = basicReviewCheck(project, missionId);
+    const snapshot = frozenReviewProject(project, missionId);
+    const previous = missionId ? next.missions?.[missionId] ?? { validation: null, submission: null } : next;
+    const needsAi = project.type === "flowchart" && missionId === "free";
+    const review = next.aiReview;
+    const aiPassed = !needsAi || !!review && review.verdict === "pass" && review.missionId === missionId && sameReviewProject(project, review.project, missionId);
+    if (action.type === "validate-practice") {
+      const validation = { ...checked, passed: checked.passed && aiPassed, order: [], reviewProject: snapshot, message: checked.passed && !aiPassed ? "기본 검사를 통과했어요. 현재 작품의 AI 설계 리뷰를 받아 주세요." : checked.message };
+      if (missionId) next.missions = { ...next.missions, [missionId]: { ...previous, validation, submission: previous.submission } };
+      else next.validation = validation;
+    } else if (action.type === "request-review") {
+      requireCondition(checked.passed && review && review.verdict !== "pass" && review.missionId === missionId, 409, "REVIEW_NOT_AVAILABLE", "기본 검사를 통과하고 AI가 보완이나 확인을 안내한 작품을 요청해 주세요.");
+      requireCondition(review && sameReviewProject(project, review.project, missionId), 409, "AI_REVIEW_REQUIRED", "현재 작품의 AI 리뷰를 먼저 받아 주세요.");
+      next.review = { id: randomUUID(), ...(missionId ? { missionId } : {}), project: snapshot, status: "pending", message: review.message, requestedAt: Date.now() };
+    } else {
+      requireCondition(checked.passed && aiPassed && previous.validation?.passed && sameReviewProject(project, previous.validation.reviewProject, missionId), 409, "VALIDATION_REQUIRED", "현재 작품을 검증한 뒤 제출해 주세요.");
+      const submission = { id: randomUUID(), order: [], reviewProject: snapshot, submittedAt: Date.now() };
+      if (missionId) next.missions = { ...next.missions, [missionId]: { validation: previous.validation, submission } };
+      else next.submission = submission;
+      if (next.review?.status === "pending") next.review = { ...next.review, status: "replaced" };
+    }
+    next.revision++; next.updatedAt = Date.now(); return next;
+  }
+  requireCondition(action.type !== "request-review", 400, "INVALID_ACTION", "이 수업에서는 확인 요청을 사용할 수 없어요.");
 
   if (action.type === "validate-practice" || action.type === "submit-practice") {
     if (lesson.practice.type === "programming") {

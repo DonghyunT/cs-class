@@ -1,6 +1,6 @@
 # Firebase 연결과 검증
 
-문서 갱신: 2026-10-04. 실제 환경 확인 날짜·범위는 HANDOFF를 따릅니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다.
+문서 갱신: 2026-10-05. 실제 환경 확인 날짜·범위는 HANDOFF를 따릅니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다.
 
 ## 연결 기준
 
@@ -59,6 +59,20 @@ Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 �
 배포 후 Cron 인증 없는 요청의 401, 담당 교사의 첫 수동 갱신, 학생 본인 반 조회·직접 일정 보존을 확인합니다. Vercel Cron 설정·실제 예약 실행 로그와 `csTimetables/74022.checkedAt`을 확인한 뒤에만 운영 일일 갱신이 검증됐다고 기록합니다. 로컬 `next start`의 호출 검증을 실제 예약 실행으로 표현하지 않습니다.
 
 2026-10-04 운영에 등록했습니다. Production 전용 sensitive CRON_SECRET·일일 예약 Enabled, 인증된 첫 갱신 200·정보 26개 저장·기존 반 설정/직접 일정 보존·일별 중복 방지와 Vercel 플랫폼 수동 Run 200을 확인했습니다. 첫 자연 예약은 10/5 한국 19:00~19:59이며 아직 관측한 것으로 표현하지 않습니다. 배포 SHA·확인 환경·운영 증거와 범위는 [운영 릴리스 기록](HANDOFF.md#104-실제-수업시간표-운영-릴리스)을 따릅니다.
+
+### 복습 AI 서버 설정
+
+cs-class Vercel 프로젝트(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Production 서버 설정에 `UPSTAGE_API_KEY`와 임의 생성한32자 이상 `CS_AI_COMMAND_SECRET`을 Sensitive로 등록합니다. 키를 채팅·Git·로그·브라우저 `NEXT_PUBLIC_*`에 넣지 않습니다. 기존 Algorithm Studio의 Sensitive 키는 재조회/이식할 수 없는 경우 직접 등록이 필요합니다. Preview에 운영 인증값이나 AI 키를 자동 복사하지 않습니다.
+
+공개 전 실제 제공자 확인에는 이 PC의 Git 제외 `.env.local` 또는 사용자가 지정한 비공개 로컬 설정 경로도 필요합니다. Vercel에 Sensitive로 등록한 키는 다시 읽어 로컬 검사에 가져올 수 있다고 가정하지 않습니다. 합성 제공자 검사와 실제 Solar12회 품질 검사의 준비·범위는 [개발 안내](DEVELOPMENT.md#알고리즘-복습-수업)를 따릅니다.
+
+서버는 [Upstage 공식 Chat API](https://console.upstage.ai/api/chat)의 `solar-pro4`·구조화 JSON 출력·800토큰 한도를 사용합니다. 제공자25초·전체45초·브라우저50초이며 응답 잘림·형식 오류를 성공으로 처리하지 않습니다. AI 제한·비보관·월 예산 정책은 [PRD](PRD.md#알고리즘-선택-복습--2026-10-05-확정), 실행/복구는 [DEVELOPMENT](DEVELOPMENT.md#알고리즘-복습-수업)를 따릅니다. `CS_AI_PAUSED=1`로 새 AI 요청을 중지할 수 있습니다.
+
+공개 전 AI 캐시/요청 장부에만 `expiresAt` TTL을 활성화합니다. 기존 인덱스 설정을 읽어 보존하고 `firestore.indexes.json`의 두 컬렉션을 확인한 뒤 승인된 프로젝트에 `npx firebase deploy --only firestore:indexes --project cs-class-f74c4`로 적용합니다. [공식 TTL/인덱스 정의](https://firebase.google.com/docs/reference/firestore/indexes)를 따르며 Firestore 비용·활성 상태를 확인합니다. 학생 작품/제출 컬렉션에는 적용하지 않습니다. 현재 적용 여부·실제 Solar 품질·배포 SHA/로그인·반 공개는 HANDOFF에서 확인합니다.
+
+2026-10-05 사용자 승인으로 Vercel `cs-class`의 `UPSTAGE_API_KEY`·`CS_AI_COMMAND_SECRET`을 Production 전용 Sensitive 변수로 등록했습니다. 로컬 `.env.local`은 Git 제외이며 이 PC의 파일 접근 권한도 제한했습니다. Preview/Development에 복사하지 않습니다. 기존 비밀 파일 전체를 env pull로 덮어쓰거나 원문을 로그·명령 인자·문서에 옮기지 않습니다.
+
+같은 날 사용자가 프로젝트 결제 계정을 직접 연결했습니다. `billingEnabled=true` 확인 후 두 AI 컬렉션 TTL만 적용했고 17:48 KST에 `ACTIVE`를 확인했습니다. 적용 전 복합 인덱스/필드 override는 모두 비어 있었으며 Git 제외 `scratch/review-lessons/production-indexes-before-ttl-20261005.json`에 백업했습니다. 만료 직후 삭제 완료를 보장하지 않으며 실제 정리·청구와 월 AI 예산은 운영 집계로 확인합니다.
 
 ## 실제 프로젝트 초기화와 시험
 
