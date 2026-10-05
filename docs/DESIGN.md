@@ -237,6 +237,8 @@
 
 AI가 원문 근거·연결을 확신하지 못한 경우는 미완성이나 점수 하락으로 강조하지 않고, 내용을 확인하거나 선생님 확인을 요청하는 다음 행동을 안내합니다. 작성한 작품·이전 제출본과 현재 요청 상태를 함께 유지합니다.
 
+위 흐름을 구현해 11반에 공개했습니다. 모바일·키보드·저장 실패의 로컬 검사와 운영 로그인 화면 확인, 실제 계정/학교망의 미검증 범위는 [공개 기록](HANDOFF.md#105-세-복습-운영-공개)에서 구분합니다.
+
 ## 9. 참고 화면과 UI Component Lab
 
 공개 홈의 승인된 화면은 [데스크톱](reference/home-hero-1440.png)·[모바일](reference/home-hero-390.png), [입장 선택창](reference/home-entry-1440.png)·[320px](reference/home-entry-320.png), [공간 안내](reference/home-role-anchor.png)·[마지막 화면](reference/home-finale-1440.png)에 있습니다. 후속 대시보드·로그인 캡처와 검증 범위는 [HANDOFF](HANDOFF.md#다른-pc에서-이어가기)를 따릅니다.

@@ -6,16 +6,16 @@
 
 | 항목 | 상태 |
 | --- | --- |
-| 브랜치·미커밋 | `codex/algorithm-review-lessons`. UI·세 수업·최종 회귀 수정과 실제 Solar 출력 보강 `f2b4514`·빈 줄 보존 `0a7800e`를 보존했습니다. 이후 근거·분기 검증과 이 문서 갱신을 함께 커밋합니다 |
-| 승인 범위 | 2026-10-05 사용자 승인 [통합 구현 기준](reference/algorithm-review-integration.md). 키와 서명 비밀값의 Production 등록 승인을 받았고 사용자가 결제 계정을 직접 연결했습니다. 샌드위치→추상화→순서도를 단계별 검증·독립 리뷰 후 11개 반에 공개합니다. AI TTL만 운영 적용했으며 학생 자료·반 설정·앱 배포는 아직 변경하지 않았습니다 |
-| 다음 행동 | 운영 비밀 변수·로컬 접근 보호·AI TTL ACTIVE 확인 완료. 최종 실제 제공자 경계·영향 검사·독립 리뷰와 최신 CI를 확인한 뒤 [PR #21](https://github.com/DonghyunT/cs-class/pull/21) 병합·운영 인증/화면·샌드위치→추상화→순서도 11반 공개를 진행합니다 |
+| 브랜치·미커밋 | `codex/review-release-record`에서 공개 결과 문서만 반영합니다. 구현 `9ac8142`는 [PR #21](https://github.com/DonghyunT/cs-class/pull/21)로 main `6bad59b`에 병합했고 두 트리의 차이는 없습니다. 문서 외 앱 변경은 없습니다 |
+| 승인 범위 | 2026-10-05 사용자 승인 [통합 구현 기준](reference/algorithm-review-integration.md). 운영 비밀 변수 등록·사용자의 직접 결제 연결·AI TTL 활성화·단계별 공개를 완료했습니다. 18:42 KST에 11반 모두 세 복습이 열려 있으며 학생 계정·명부·기존 작품은 변경하지 않았습니다 |
+| 다음 행동 | 실제 계정의 새 로그인과 첫 수업에서 저장·AI·교사 확인을 관찰하고, 호출/토큰/실패 집계로 월 예산을 결정합니다. 정상 작품도 AI가 오판할 수 있으므로 선생님 확인을 통한 완료를 안내합니다. 운영 공개나 키 등록 승인은 더 이상 대기 상태가 아닙니다 |
 | 사용자 선택 | 반은 메뉴·새로고침 동안만 기억하고 실제 재로그인하면 기본 반. 기본 실습 화면을 간결하게 하고 넓게 보기는 학생이 선택 |
-| 검증 | 2026-10-05 Windows·Node24·Java21·Chromium·demo Auth9099/Firestore8080·`next start`에서 기존 최종 앱 `c892d66` 전체130개 성공(8.9분). `f2b4514` 복습 영향19개 성공(2.3분), 실제 Solar 기본12개 통과·상담 비보관 확인. `0a7800e` Linux PR/브랜치 CI는 전체130개·Windows 전용1개 제외 성공(11.5/11.8분). 이후 최종 AI 근거/분기 보강의 typecheck/lint/build·순수12개는 통과했고 실제 경계·영향/최신 CI는 확인 중입니다. 이전 결과를 최신 추가 변경의 전체 실행으로 표현하지 않습니다 |
+| 검증 | 최종 `9ac8142`: Windows·Node24·Java21·Chromium·demo Auth9099/Firestore8080·`next start`의 복습 영향19개 성공(2.2분), typecheck/lint/build·순수12개 통과·독립 리뷰 P1/P2 없음. Linux PR/브랜치 CI 전체130개 성공·Windows 전용1개 제외(11.1/11.5분). 실제 Solar 기본12개는 `f2b4514`에서 통과했으며 최종 경계7개는 기대 판정5개 일치·정상 작품2개 오판입니다. 운영 익명 인증/API·로그인 화면과 11반 단계별 설정을 확인했으며 실제 새 Google OAuth·실학생 학교망은 미검증입니다 |
 
 ## 이번 작업의 구현·수업 준비
 
 - 알고리즘 세 복습의 학생·교사 흐름을 구현했습니다. 응답 유실 복구·제공자 오류의 교사 확인·불완전 입력·이전 제출본을 보존합니다. 최종 독립 리뷰의 목록 잘림·캔버스 초기화·퍼즐 실행 보정을 재현 후 수정했습니다. 실제 Solar에서 발견한 타 역할 명령 혼입·모호한 판정의 실행 명령·필수 조건 false pass도 보강했고, 빈 줄 P2는 수정·독립 재검토를 마쳤습니다. 실제 연결·근거 검사의 검증 범위와 남은 한계는 [구현 기준](reference/algorithm-review-integration.md)을 따릅니다. 키는 Production Sensitive·Git 제외 로컬 파일에만 두며 코드·로그·문서에 원문을 보관하지 않습니다. 운영 키 등록 승인 대기는 해소됐습니다.
-- 운영 반 설정은 초기 계획과 새 `scratch/review-lessons/production-sandwich-plan-release-20261005.json`에 Git 제외 백업/계획으로 저장했습니다. 2-1만 폐기 테스트 세 수업이 열려 있고 나머지 반은 비어 있으며 11개 반 모두 이번 수업은 없습니다. 기존 강아지 설정 등 다른 설정은 유지하며 자동 이번 수업 지정은 없습니다. Firestore `(default)`·Standard·서울에서 인덱스/필드 override를 백업한 뒤 AI 요청·캐시 TTL 두 항목만 적용해 17:48 KST에 ACTIVE를 확인했습니다. 학생 작품·제출에는 TTL을 적용하지 않았습니다.
+- 운영 반 설정은 샌드위치→추상화→순서도 순서로 각각 백업/계획·11반 원자적 적용·읽기 전용 대조를 마쳤습니다. 2-1의 열린 테스트 세 수업만 제외했고 11반 모두 새 복습 세 개·이번 수업 null입니다. revision은 2-1이6→9, 나머지0→3입니다. 기존 강아지 설정 등 다른 설정과 작품/계정은 보존합니다. Firestore `(default)`·Standard·서울에서 인덱스/필드 override를 백업한 뒤 AI 요청·캐시 TTL 두 항목만 적용해 17:48 KST에 ACTIVE를 확인했습니다. 학생 작품·제출에는 TTL을 적용하지 않았습니다.
 
 - 열린 수업 첫 조회는 공통 스켈레톤을 재사용하고, 수동 새로고침·재시도는 처리 표시를 제공하며 기존 기록·버튼 초점을 유지합니다. 실패·느린 조회 중에도 화면 탐색은 가능합니다. 진행 상세·저장 안내의 가독성과 순서 이동·힌트 터치 영역을 보강했으며 학습·제출 규칙과 DB 계약은 유지했습니다.
 - 계층형 검증으로 지연·실패·재시도 검사부터 실행하고, 영향 범위의 저장·재접속·실제 Entry 조립/실행/중지·제출을 확인했습니다. 독립 리뷰에서 Critical/Important 0, 카드 전용 CSS의 글자 크기 override 1건을 발견해 수정했습니다. 별도로 빌드 캡처에서 공통 Skeleton 규칙의 크기 override를 발견해 수정 전 카드 형태 검사의 실패를 재현하고, 화면 컨테이너로 CSS 우선순위를 한정해 수정했습니다. 최종 빌드 검사24개는 실패0이며 마지막 수정의 독립 리뷰도 추가 지적 없이 완료했습니다. 실제 화면 읽기 프로그램의 음성 출력은 검사하지 않았습니다. 화면·검사 산출물은 Git 제외 `scratch/ui-polish-2026-10-05/final/`, 수정 전 재현은 같은 폴더 상위의 `skeleton-red/`에 둡니다. 검사용 앱·에뮬레이터는 종료하고 3000·9099·8080의 리스너가 없음을 확인했습니다.
@@ -31,7 +31,16 @@
 
 ## 통합·배포 상태
 
-프로젝트 `cs-class`/`cs-class-f74c4`, [운영 사이트](https://cs-class-donghyunt.vercel.app)입니다. 이번 복습 통합은 로컬 검증·독립 리뷰 단계입니다. 이전 기능 릴리스와 작업 재개 시 운영 확인은 아래에 구분합니다.
+프로젝트 `cs-class`/`cs-class-f74c4`, [운영 사이트](https://cs-class-donghyunt.vercel.app)입니다. 세 복습 통합과 11반 공개를 완료했습니다. 이전 기능 릴리스와 작업 재개 시 확인은 아래에 구분합니다.
+
+### 10/5 세 복습 운영 공개
+
+- 구현 `9ac8142667dea3bbd0c146be99d6fa5fed762521` → [PR #21](https://github.com/DonghyunT/cs-class/pull/21) → main `6bad59bfe2c8e71ff5cea7a6bacdbef7eba0df73`, 전체 트리 차이 없음. [PR CI](https://github.com/DonghyunT/cs-class/actions/runs/37289819986)·[브랜치 CI](https://github.com/DonghyunT/cs-class/actions/runs/37289813560)는 lint/typecheck/순수12개/build와 전체130개 성공·Windows 전용1개 제외입니다. 기존 Windows 전체130개는 `c892d66`의 결과(8.9분)이며 이후 최신 영향19개와 Linux 전체 결과를 구분합니다.
+- 배포 `dpl_F72EVtuCbrewSa6V4MEixHPv1bcA`/`cs-class-a3mdztiow-donghyunt.vercel.app`: READY·Production·위 main SHA·운영 별칭 일치. 18:40 KST 운영 `/api/auth/config`는200/configured=true/승인 프로젝트/에뮬레이터 없음/게스트 비활성화, `/api/auth/session`은200/세션없음 JSON이며 인증 없는 학생·교사·AI API는401입니다. 실제 화면에서 학생1280px 입장 버튼과 교사390px Google 버튼 준비·가로 넘침 없음·콘솔 오류0을 확인했습니다. Google 버튼 준비를 새 OAuth 세션 성공으로 표현하지 않습니다.
+- 18:41~18:42 KST 샌드위치→추상화→순서도 11반 공개를 각각 적용했습니다. 단계별 before/after/revision 대조와 마지막 계획 재적용의 `already-completed`를 확인했습니다. 운영 AI 장부는18:42 시점0문서/0호출이며 운영 학생 자료로 품질 검사를 하지 않았습니다.
+- Git 제외 `scratch/review-lessons/production-{sandwich,abstraction,flowchart}-plan-release-20261005.json`과 전후 점검 JSON을 이 PC에 보존합니다. 전체 공개 전 설정으로 한 번에 복구하는 `production-full-restore-plan-release-20261005.json`은 원본 백업을 유지하며 현재 공개 설정/revision에 맞춰 준비했습니다. 원본 revision을 되살리지 않고 현재값을 증가시킵니다. 독립 리뷰 P1/P2 없음이며 실행은 [복구 절차](DEVELOPMENT.md#알고리즘-복습-수업)를 따릅니다. 이 파일들은 Git clone에 포함되지 않으므로 다른 PC에서 복구하려면 비공개로 따로 전달해야 합니다.
+- 동일 전체 복구 계획의 프로젝트 ID만 demo로 바꿔 새 로컬 Auth9099/Firestore8080에서 실제 CLI 복구·반복 적용·중간 설정 변경의 전체 거부·다른 필드 보존을 확인했습니다. 운영에서는 복구를 실행하지 않았습니다. 이 추가 확인은 기존 전체 E2E 결과와 별도입니다.
+- 키 원문은 추적647파일·브라우저 배포37파일·당시 로컬 작업34파일 검사에서0건입니다. Production Sensitive와 Git 제외 로컬 ACL 제한을 확인했고 임시 비밀 참조를 정리했습니다. 실제 AI 오판·합성 유료 호출·미검증 범위는 [실행 장부](reference/algorithm-review-integration.md#실행-장부)를 따릅니다.
 
 ### 10/5 작업 재개 시 운영 확인
 
@@ -50,7 +59,7 @@
 
 ### 10/3 운영 테스트 계정 발급
 
-사용자가 승인한 운영 체험 학생11개·교사1개와 담당1~11반의 일회 발급 근거는 [보존 원문](archive/cs-class/2026-10-05-before-ui-refinement/HANDOFF.md#103-운영-테스트-계정-발급)에 있습니다. 발급 원문/비밀은 Git에 넣지 않습니다. 이번 작업은 운영 계정·명부·수업 공개·학습 기록을 변경하지 않습니다.
+사용자가 승인한 운영 체험 학생11개·교사1개와 담당1~11반의 일회 발급 근거는 [보존 원문](archive/cs-class/2026-10-05-before-ui-refinement/HANDOFF.md#103-운영-테스트-계정-발급)에 있습니다. 발급 원문/비밀은 Git에 넣지 않습니다. 이번 복습 통합은 반별 열린 수업만 변경했으며 운영 계정·명부·학습 기록은 유지했습니다.
 
 ## 다른 PC에서 이어가기
 
