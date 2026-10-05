@@ -83,7 +83,7 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
       if (missionId) next.missions = { ...next.missions, [missionId]: { ...previous, validation, submission: previous.submission } };
       else next.validation = validation;
     } else if (action.type === "request-review") {
-      requireCondition(checked.passed && needsAi && !aiPassed, 409, "REVIEW_NOT_AVAILABLE", "기본 검사를 통과하고 AI가 보완이나 확인을 안내한 작품을 요청해 주세요.");
+      requireCondition(checked.passed && review && review.verdict !== "pass" && review.missionId === missionId, 409, "REVIEW_NOT_AVAILABLE", "기본 검사를 통과하고 AI가 보완이나 확인을 안내한 작품을 요청해 주세요.");
       requireCondition(review && sameReviewProject(project, review.project, missionId), 409, "AI_REVIEW_REQUIRED", "현재 작품의 AI 리뷰를 먼저 받아 주세요.");
       next.review = { id: randomUUID(), ...(missionId ? { missionId } : {}), project: snapshot, status: "pending", message: review.message, requestedAt: Date.now() };
     } else {

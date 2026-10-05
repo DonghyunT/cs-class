@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { useWork } from "../use-work";
 import { basicReviewCheck, sameReviewProject } from "@/lib/classroom/review/project";
@@ -13,7 +13,8 @@ export function useReviewAi(controller: ReviewController) {
     try { const reply = await controller.requestAi(task, input, missionId); if (reply) { setResult(reply.result); setRemaining(reply.remaining); } else setError("작품이 바뀌었거나 저장을 완료하지 못했어요. 현재 입력을 확인하고 다시 요청해 주세요."); }
     catch (error) { setError(error instanceof Error ? error.message : "AI 도움을 받지 못했어요. 입력은 보존됩니다."); }
   }
-  return { result, error, remaining, ask };
+  const clear = useCallback(() => { setResult(null); setError(""); }, []);
+  return { result, error, remaining, ask, clear };
 }
 export function ReviewSubmit({ controller, missionId }: { controller: ReviewController; missionId?: string }) {
   const { draft, work } = controller, project = draft.reviewProject!, saved = missionId ? work.missions?.[missionId] : work;

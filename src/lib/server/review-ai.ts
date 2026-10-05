@@ -15,14 +15,16 @@ import { commandProof, verifyCommands } from "./review-proof";
 import { ServiceError, requireCondition } from "./errors";
 import type { Work } from "../classroom/types";
 import { findLesson } from "../classroom/catalog";
+import { draftSchema, validateDraft } from "./learning";
 
 const inputSchema = z.object({ lessonId: z.string().max(80), task: aiTaskSchema, requestId: z.string().uuid(), revision: z.number().int().min(0), input: z.string().max(1000), missionId: z.enum(["1", "2", "3", "free"]).optional() }).strict();
-const promptVersion = "bc8d51f-cs-review-1";
+const promptVersion = "bc8d51f-cs-review-2";
 const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const emptyResult = (message: string): AiResult => ({ message, options: [], actions: [], cards: [], verdict: "uncertain" });
 function rolePrompt(task: string, project: ReviewProject) {
   if (project.type === "sandwich") return sandwichPrompt;
   if (project.type === "abstraction") {
+    if (task === "abstraction-review") return "추상화 닥터로서 학생의 처방전이 현재·목표·조건·핵심·계획을 일관되게 연결하는지 검토하세요. 타당하면 pass, 명확한 누락이나 모순은 needs-changes, 맥락이 부족하면 uncertain입니다. 실천 계획의 표현이나 단계 수 차이는 개선 의견으로 안내하세요. options는 []입니다.";
     if (task === "abstraction-plan") return "추상화 닥터로서 현재 상태·목표·조건·핵심 요소를 반영한 해결 계획 3~5개를 options에 제안하세요. 학생의 선택을 대신하지 마세요.";
     return STEP_PROMPTS[task === "abstraction-chat" ? 4 : project.step as 1 | 2 | 3 | 4];
   }
@@ -30,13 +32,18 @@ function rolePrompt(task: string, project: ReviewProject) {
   if (task === "flow-plan") return "중학생의 순서도 설계 파트너입니다. 현재·목표·조건·핵심에 맞춰 순차·선택·반복을 활용한 자연어 기획서 3~5개를 cards에 제안하세요. 각 카드에 id,type,text,yes,no를 넣고 순차는 yes,no를 빈 문자열로 만드세요.";
   return "중학교 정보 순서도 퍼즐의 오류 설명 튜터입니다. 현재 배치와 기본 검사 결과를 보고 오류와 이유를 두 문장으로 설명하고 힌트 하나만 주세요. 완성 정답을 그대로 주지 마세요.";
 }
-function checkResult(result: AiResult, task: string, input: string) {
+function checkResult(result: AiResult, task: string, input: string, project: ReviewProject) {
   requireCondition(result.actions.every(action => sandwichActions.includes(action)), 502, "AI_FORMAT", "AI의 명령 형식을 확인하지 못했어요. 입력을 보존하고 다시 시도해 주세요.");
   if (task === "sandwich-command") {
     requireCondition(result.actions.length || result.verdict !== "pass", 502, "AI_FORMAT", "AI가 명령을 반환하지 않았어요.");
     requireCondition(hasExplicitPreparation(input, result.actions), 502, "AI_IMPLICIT_ACTION", "AI 해석에 말하지 않은 준비 행동이 포함됐어요. 명령을 더 구체적으로 쓰거나 규칙 해석을 선택해 주세요.");
   }
   if (task === "flow-plan") requireCondition(result.cards.length >= 3 && new Set(result.cards.map(c => c.id)).size === result.cards.length, 502, "AI_FORMAT", "AI 기획서가 완전하지 않아요. 다시 요청해 주세요.");
+  if (task === "abstraction-help" && project.type === "abstraction") {
+    requireCondition(result.options.length === (project.step === 3 ? 7 : 3), 502, "AI_FORMAT", "AI 후보 목록이 완전하지 않아요. 입력은 보존됩니다.");
+    if (project.step === 1) requireCondition(result.options.every(value => /^현재:\s*.+\s*\/\s*목표:\s*.+$/.test(value)), 502, "AI_FORMAT", "현재·목표 후보 형식을 확인하지 못했어요.");
+  }
+  if (task === "abstraction-plan") requireCondition(result.options.length >= 3 && result.options.length <= 5, 502, "AI_FORMAT", "해결 계획이 완전하지 않아요.");
   return result;
 }
 async function solar(task: string, project: ReviewProject, input: string, missionId?: string): Promise<{ result: AiResult; tokens: number; inputTokens: number }> {
@@ -52,7 +59,7 @@ async function solar(task: string, project: ReviewProject, input: string, missio
   requireCondition(response.ok, 502, "AI_PROVIDER", "AI에 연결하지 못했어요. 잠시 후 다시 요청하거나 규칙 해석을 선택해 주세요.");
   const envelope = await response.json();
   let result: AiResult;
-  try { result = checkResult(aiResultSchema.parse(parseSolarEnvelope(envelope)), task, input); }
+  try { result = checkResult(aiResultSchema.parse(parseSolarEnvelope(envelope)), task, input, project); }
   catch (error) { if (error instanceof ServiceError) throw error; throw new ServiceError(502, "AI_FORMAT", "AI 응답이 잘렸거나 형식이 맞지 않아요. 입력은 그대로 보존됩니다."); }
   return { result, tokens: Number(envelope.usage?.completion_tokens) || 0, inputTokens: Number(envelope.usage?.prompt_tokens) || 0 };
 }
@@ -82,10 +89,16 @@ async function executeAi(payload: unknown, deadline: number) {
     requireCondition(!existing || existing.fingerprint === fingerprint, 409, "REQUEST_CONFLICT", "요청 ID가 다른 입력에 사용됐어요.");
     if (existing) {
       requireCondition(existing.status === "done", existing.status === "pending" ? 409 : 502, existing.status === "pending" ? "AI_PENDING" : "AI_FAILED", existing.status === "pending" ? "같은 요청을 처리하고 있어요. 입력을 보존하고 잠시 후 확인해 주세요." : "이 요청은 실패했어요. 새 요청으로 다시 시도해 주세요.");
-      return { work, project, result: existing.result as AiResult, reused: true, remaining: Math.max(0, 70 - (quotaSnap.data()?.count ?? 0)), cached: true, cacheRef: null };
+      return { work, project, result: existing.result as AiResult ?? emptyResult("이미 완료된 상담이에요. 상담 내용은 서버에 보관하지 않아요. 화면의 답변을 확인해 주세요."), reused: true, remaining: Math.max(0, 70 - quotaWindow(quotaSnap.data(), Date.now()).count), cached: true, cacheRef: null };
     }
     requireCondition(work.revision === input.revision, 409, "REVISION_CONFLICT", "작품이 바뀌었어요. 현재 내용을 저장한 뒤 다시 요청해 주세요.");
+    if (project.type === "sandwich") {
+      requireCondition(project.commands.length < 150, 400, "COMMAND_LIMIT", "명령 기록이 150개에 도달했어요. 입력과 기록은 보존됩니다. 되돌리거나 새 레시피를 시작해 주세요.");
+      const proposed = { ...work.draft, reviewProject: { ...project, input: "", commands: [...project.commands, { id: input.requestId, text: input.input, actions: Array(30).fill("SPREAD_PB_BREAD2_FLAT"), source: "solar", proof: "0".repeat(64) }] } };
+      validateDraft(draftSchema.parse(proposed), findLesson(input.lessonId)!);
+    }
     if (input.task === "flow-review") requireCondition(basicReviewCheck(project, input.missionId).passed && input.missionId === "free", 400, "BASIC_CHECK_REQUIRED", "기본 구조와 기획서를 완성한 뒤 설계 리뷰를 요청해 주세요.");
+    if (input.task === "abstraction-review") requireCondition(basicReviewCheck(project).passed, 400, "BASIC_CHECK_REQUIRED", "처방전의 필수 작성 내용을 채운 뒤 리뷰를 요청해 주세요.");
     const cacheRef = db.collection("csAiCache").doc(digest([account.uid, input.task, input.input, projectSnapshot(project, input.missionId), project.type === "abstraction" ? project.step : null, promptVersion]));
     const cache = (await tx.get(cacheRef)).data();
     requireCondition(Date.now() < deadline, 504, "AI_TIMEOUT", "AI 요청 준비 시간이 길어졌어요. 입력은 보존됩니다.");
@@ -113,13 +126,13 @@ async function executeAi(payload: unknown, deadline: number) {
         if (input.input === "fixture-slow") await new Promise(resolve => setTimeout(resolve, 1800));
         if (input.input === "fixture-malformed") throw new ServiceError(502, "AI_FORMAT", "합성 형식 오류");
         const parsed = parseSandwichCommand(input.input);
-        result = { ...emptyResult("합성 AI 피드백"), actions: input.task === "sandwich-command" ? parsed?.actions ?? [] : [], options: ["조건을 지키기", "핵심을 확인하기", "목표에 도달하기"] };
+        result = { ...emptyResult("합성 AI 피드백"), actions: input.task === "sandwich-command" ? parsed?.actions ?? [] : [], options: prepared.project.type === "abstraction" && input.task === "abstraction-help" && prepared.project.step === 1 ? ["현재: 지각함 / 목표: 정시 등교함", "현재: 과제가 밀림 / 목표: 제출 완료함", "현재: 공부를 미룸 / 목표: 목표 분량을 끝냄"] : prepared.project.type === "abstraction" && prepared.project.step === 3 ? ["현재 시각", "알람", "준비 시간", "옷 색", "꿈", "급식", "이동 거리"] : ["조건을 지키기", "핵심을 확인하기", "목표에 도달하기"], cards: input.task === "flow-plan" ? ["상태 확인", "조건 확인", "목표 실행"].map((text, i) => ({ id: `card-${i}`, type: "sequence" as const, text, yes: "", no: "" })) : [], verdict: input.input === "fixture-pass" ? "pass" : "uncertain" };
       } else {
         const response = await solar(input.task, prepared.project, input.input, input.missionId);
         result = response.result; tokens = response.tokens; inputTokens = response.inputTokens;
       }
     }
-    requireCondition(Date.now() - started < 45000, 504, "AI_TIMEOUT", "AI 응답 시간이 길어졌어요. 입력을 보존하고 다시 요청해 주세요.");
+    requireCondition(Date.now() < deadline, 504, "AI_TIMEOUT", "AI 응답 시간이 길어졌어요. 입력을 보존하고 다시 요청해 주세요.");
     const finalResult = result;
     aiResultSchema.parse(finalResult);
     const work = await authorized(who, async (tx, account) => {
@@ -130,13 +143,14 @@ async function executeAi(payload: unknown, deadline: number) {
       if (prepared.project.type === "sandwich" && finalResult.actions.length) {
         const command = { id: input.requestId, text: input.input, actions: finalResult.actions, source: input.task === "sandwich-rules" ? "rules" as const : "solar" as const };
         current.draft.reviewProject = { ...prepared.project, input: "", commands: [...prepared.project.commands, { ...command, proof: commandProof(account.uid, prepared.project.runId, command) }] };
+        validateDraft(draftSchema.parse(current.draft), findLesson(input.lessonId)!);
         current.validation = null; current.revision++; current.updatedAt = Date.now();
         tx.set(ref, { ...current, uid: account.uid, classId: account.classId });
-      } else if (input.task === "flow-review") {
+      } else if (input.task === "flow-review" || input.task === "abstraction-review") {
         current.aiReview = { project: projectSnapshot(prepared.project, input.missionId), ...(input.missionId ? { missionId: input.missionId } : {}), verdict: finalResult.verdict, message: finalResult.message };
         current.revision++; current.updatedAt = Date.now(); tx.set(ref, { ...current, uid: account.uid, classId: account.classId });
       }
-      tx.set(requestRef, { status: "done", result: finalResult }, { merge: true });
+      tx.set(requestRef, { status: "done", ...(input.task !== "abstraction-chat" ? { result: finalResult } : {}) }, { merge: true });
       if (prepared.cacheRef && input.task !== "abstraction-chat") tx.set(prepared.cacheRef, { result: finalResult, expiresAt: new Date(Date.now() + 86400000) });
       return current;
     });
@@ -144,10 +158,11 @@ async function executeAi(payload: unknown, deadline: number) {
   } catch (error) {
     failure = true;
     await requestRef.set({ status: "failed" }, { merge: true });
-    if (input.task === "flow-review" && error instanceof ServiceError && error.code !== "AI_STALE") {
+    if (["flow-review", "abstraction-review"].includes(input.task) && error instanceof ServiceError && error.code !== "AI_STALE" && Date.now() < deadline) {
       await authorized(who, async (tx, account) => {
         const ref = workRef(account.uid, input.lessonId), current = toWork((await tx.get(ref)).data() as Work & { uid: string; classId: string } | undefined, input.lessonId);
-        if (current.revision === input.revision && sameReviewProject(current.draft.reviewProject, prepared.project, input.missionId)) tx.set(ref, { ...current, aiReview: { project: projectSnapshot(prepared.project, input.missionId), missionId: input.missionId ?? "free", verdict: "uncertain", message: "AI가 리뷰를 완료하지 못했어요. 선생님 확인을 요청할 수 있어요." }, revision: current.revision + 1, uid: account.uid, classId: account.classId });
+        const classroom = await studentClass(tx, account);
+        if (Date.now() < deadline && classroom.openedLessonIds.includes(input.lessonId) && current.revision === input.revision && sameReviewProject(current.draft.reviewProject, prepared.project, input.missionId)) tx.set(ref, { ...current, aiReview: { project: projectSnapshot(prepared.project, input.missionId), ...(input.missionId ? { missionId: input.missionId } : {}), verdict: "uncertain", message: "AI가 리뷰를 완료하지 못했어요. 선생님 확인을 요청할 수 있어요." }, revision: current.revision + 1, uid: account.uid, classId: account.classId });
       });
     }
     if (error instanceof Error && error.name === "TimeoutError") throw new ServiceError(504, "AI_TIMEOUT", "AI 응답이 늦어졌어요. 입력은 보존됩니다.");

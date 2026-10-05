@@ -15,6 +15,7 @@ import { ProgrammingLearningStage } from "./programming-lesson";
 import { parseProgrammingProject, programmingMissions } from "@/lib/classroom/programming-entry";
 import { isReviewType } from "@/lib/classroom/review/project";
 import { Sandwich } from "./review/sandwich";
+import { Abstraction } from "./review/abstraction";
 import { ReviewConcepts } from "./review/concepts";
 import reviewStyles from "./review/review.module.css";
 import styles from "./student.module.css";
@@ -173,6 +174,7 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
     </section>}
 
     {lesson.practice.type === "sandwich" && draft.stage === "practice" && <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2><Sandwich controller={controller} /></section>}
+    {lesson.practice.type === "abstraction" && draft.stage === "practice" && <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2><Abstraction controller={controller} /></section>}
     {lesson.practice.type !== "programming" && !isReviewType(lesson.practice.type) && draft.stage === "practice" && (
       <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" tabIndex={0} className={styles.stagePanel}>
         <div className={styles.stageHeading}>

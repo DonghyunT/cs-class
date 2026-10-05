@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { db, headers, readyStudent, readyTeacher, studentPassword, loginStudent } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 
@@ -67,6 +67,44 @@ test("진행 중 중복·요청 ID 충돌·늦은 AI 응답은 새 초안을 덮
   const delayed = await pending; expect(delayed.status()).toBe(409); expect((await delayed.json()).code).toBe("AI_STALE");
   const latest = await (await request.get(`/api/classroom/work/${id}`)).json(); expect(latest.draft.reviewProject.input).toBe("새로 작성한 명령"); expect(latest.draft.reviewProject.commands).toEqual([]);
   expect((await db.collection("csAiUsage").doc(uid).get()).data()?.count).toBe(1);
+});
+
+test("AI 준비·응답 대기 중 작성한 다음 입력과 서버 명령을 함께 보존한다", async ({ page }) => {
+  await prepare(page.request); await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
+  const input = page.getByLabel("자연어 명령");
+  let releaseSave!: () => void;
+  const gate = new Promise<void>(resolve => { releaseSave = resolve; });
+  let saving = false;
+  await page.route(`**/api/classroom/work/${id}`, async route => {
+    if (route.request().method() === "POST" && !saving) { saving = true; await gate; }
+    await route.continue();
+  });
+  await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "AI로 명령 실행" }).click();
+  await expect.poll(() => saving).toBe(true); await input.fill("준비 중 새로 쓴 명령"); releaseSave();
+  await expect(page.getByText("알고리즘 실행 기록")).toBeVisible();
+  await expect(page.locator("ol").filter({ hasText: "빵 봉지를 열어" })).toBeVisible();
+  await expect(input).toHaveValue("준비 중 새로 쓴 명령"); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await input.fill("fixture-slow"); await page.getByRole("button", { name: "AI로 명령 실행" }).click();
+  await expect(page.getByRole("button", { name: "명령을 해석하고 있어요…" })).toBeVisible(); await input.fill("응답 중 다음 명령");
+  await expect(page.getByRole("button", { name: "AI로 명령 실행" })).toBeEnabled();
+  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload();
+  await expect(input).toHaveValue("응답 중 다음 명령");
+  const work = await (await page.request.get(`/api/classroom/work/${id}`)).json(); expect(work.draft.reviewProject.commands).toHaveLength(1);
+});
+
+test("150개 명령에서 외부 호출 전에 제한하고 입력·기존 기록을 보존한다", async ({ request }) => {
+  const work = await prepare(request), project = work.draft.reviewProject;
+  if (project?.type !== "sandwich") throw new Error("wrong lesson");
+  project.input = "계속 작성 중";
+  project.commands = Array.from({ length: 150 }, () => {
+    const command = { id: randomUUID(), text: "빵 봉지를 열어", actions: ["OPEN_BAG"], source: "rules" as const };
+    const proof = createHmac("sha256", "demo-only-command-proof").update(JSON.stringify([uid, project.runId, command.id, command.text, command.actions, command.source])).digest("hex");
+    return { ...command, proof };
+  });
+  await db.collection("csWork").doc(`${uid}__${id}`).set(work);
+  const result = await command(request, work, "식빵 꺼내", "sandwich-command"); expect(result.response.status()).toBe(400); expect(result.reply.code).toBe("COMMAND_LIMIT");
+  expect((await db.collection("csAiUsage").doc(uid).get()).exists).toBe(false);
+  const latest = await (await request.get(`/api/classroom/work/${id}`)).json(); expect(latest.draft.reviewProject.commands).toHaveLength(150); expect(latest.draft.reviewProject.input).toBe("계속 작성 중");
 });
 test("복습 카드·키보드·44px·명령 실패·재접속·교사 상세", async ({ page, browser }) => {
   let work = await prepare(page.request);
