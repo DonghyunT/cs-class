@@ -21,7 +21,7 @@ test("퍼즐 실행은 실제 선택한 출력 기호를 실행하고 빈 기호
   const run = page.getByRole("region", { name: "순서도 실행" });
   await run.getByRole("button", { name: "실행 준비 / 다시 시작" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click();
   await expect(run.getByLabel("키 입력값")).toHaveCount(0); await expect(run).toContainText("출력: 탑승 가능");
-  await page.locator('select[id$="-s2"]').selectOption(""); await run.getByRole("button", { name: "실행 준비 / 다시 시작" }).click();
+  await page.getByText("목록으로 배치하기", { exact: true }).click(); await page.locator('select[id$="-s2"]').selectOption(""); await run.getByRole("button", { name: "실행 준비 / 다시 시작" }).click();
   await expect(run).toContainText("빈 기호를 먼저 채워 주세요."); await expect(run.getByRole("button", { name: "한 단계 실행" })).toBeDisabled();
 });
 test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 기호만 되돌릴 수 있다", async ({ page }) => {
@@ -56,6 +56,7 @@ test("세 퍼즐은 오류 관찰·실행·각 제출·재접속 기록을 유�
   await page.getByRole("button", { name: "작품 검증", exact: true }).click(); await expect(page.getByText("기호의 역할과 예·아니오, 돌아가는 연결을 확인해 주세요.", { exact: true })).toBeVisible();
   for (let i = 0; i < 3; i++) {
     if (i) await page.getByRole("button", { name: i === 1 ? /2\. 선택 퍼즐/ : /3\. 반복 퍼즐/ }).click();
+    if (!(await page.locator('select[id$="-s2"]').isVisible())) await page.getByText("목록으로 배치하기", { exact: true }).click();
     for (const [slot, block] of Object.entries(correct[i])) await page.locator(`select[id$="-${slot}"]`).selectOption(block);
     await page.getByRole("button", { name: "작품 검증", exact: true }).click(); await page.getByRole("button", { name: "작품 제출", exact: true }).click(); await expect(page.getByText("복습 작품을 저장했어요.")).toBeVisible();
   }

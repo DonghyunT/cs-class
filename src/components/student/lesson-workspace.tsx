@@ -98,6 +98,11 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
   const [moveMessage, setMoveMessage] = useState("");
   const [switching, setSwitching] = useState(false);
   const [focusRequest, setFocusRequest] = useState<{ id: string; preventScroll?: boolean } | null>(null);
+  const reviewViewToggle = useRef<HTMLButtonElement>(null), previousReviewWide = useRef(workspaceWide);
+  useEffect(() => {
+    if (previousReviewWide.current !== workspaceWide) reviewViewToggle.current?.focus({ preventScroll: true });
+    previousReviewWide.current = workspaceWide;
+  }, [workspaceWide]);
   useEffect(() => {
     // Focus after React commits the new feedback or enabled controls, not on the next animation frame.
     if (focusRequest) document.getElementById(focusRequest.id)?.focus({ preventScroll: focusRequest.preventScroll });
@@ -174,9 +179,7 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
       <div className={styles.stageFooter}><div><p>{quizComplete ? "퀴즈 100% 완료" : work.quizRoundGraded ? `${lesson.quiz.length - work.quizSolved.length}문항을 다시 풀면 퀴즈가 완료돼요.` : unanswered ? `${unanswered}문항을 더 선택하면 결과를 확인할 수 있어요.` : "모든 답을 선택했어요. 결과를 확인해 보세요."}</p>{!quizComplete && (!work.quizRoundGraded ? <Button disabled={locked || unanswered > 0} onClick={() => void runAction({ type: "grade-quiz" }, "stage-heading-quiz")}>{busy ? "확인 중…" : "이번 문제 결과 확인"}</Button> : <Button disabled={locked} onClick={() => void runAction({ type: "retry-quiz" }, "stage-heading-quiz")}><RotateCcw size={16} />틀린 문제만 다시 풀기</Button>)}</div><Button variant={quizComplete ? "default" : "outline"} disabled={locked} onClick={() => void switchStage("practice")}>{quizComplete ? "실습으로 이동" : "먼저 실습하기"}<ArrowRight size={16} /></Button></div>
     </section>}
 
-    {lesson.practice.type === "sandwich" && draft.stage === "practice" && <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2><Sandwich controller={controller} /></section>}
-    {lesson.practice.type === "abstraction" && draft.stage === "practice" && <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2><Abstraction controller={controller} /></section>}
-    {lesson.practice.type === "flowchart" && draft.stage === "practice" && <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2><Flowchart controller={controller} /></section>}
+    {isReviewType(lesson.practice.type) && draft.stage === "practice" && <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><header className={reviewStyles.practiceHeader}><h2 id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2><Button ref={reviewViewToggle} variant="outline" aria-pressed={workspaceWide} onClick={() => onWorkspaceWideChange(!workspaceWide)} onKeyDown={event => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); onWorkspaceWideChange(false); } }}>{workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"}</Button></header>{lesson.practice.type === "sandwich" ? <Sandwich controller={controller} /> : lesson.practice.type === "abstraction" ? <Abstraction controller={controller} /> : <Flowchart controller={controller} />}</section>}
     {lesson.practice.type !== "programming" && !isReviewType(lesson.practice.type) && draft.stage === "practice" && (
       <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" tabIndex={0} className={styles.stagePanel}>
         <div className={styles.stageHeading}>
