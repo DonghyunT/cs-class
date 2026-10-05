@@ -295,11 +295,13 @@ node scripts/review-rollout.mjs --mode apply --plan scratch/review-lessons/sandw
 
 `--phase abstraction`은 샌드위치+추상화, `--phase flowchart`는 세 복습을 엽니다. 각 검증·리뷰 단계 뒤 새 계획을 만듭니다. 폐기 테스트 ID만 열린 목록에서 제거하고 다른 수업 설정은 유지하며 새 복습을 이번 수업으로 자동 지정하지 않습니다. 11개 설정이 계획 후 바뀌면 전체 쓰기를 거부합니다. 반복 적용은 동일 완료 상태이면 추가 revision 없이 완료 안내합니다.
 
-문제 발생 시 `CS_AI_PAUSED=1`을 적용한 배포로 AI 진입을 멈추고 아래처럼 해당 단계의 반 설정을 복원합니다. 복원도 적용 후 예상 설정/revision을 검사하므로 이후 교사 변경이 있으면 덮어쓰지 않습니다. 새 작품과 기존 기록은 보존합니다.
+문제 발생 시 `CS_AI_PAUSED=1`을 적용한 배포로 AI 진입을 멈추고 아래처럼 해당 단계의 반 설정을 복원합니다. 복원도 적용 후 예상 설정/revision을 검사하므로 이후 교사 변경이 있으면 덮어쓰지 않습니다. 새 작품과 기존 기록은 보존합니다. 단계별 계획을 역순으로 연속 복원하면 앞 복원에서 증가한 revision 때문에 다음 계획이 거부됩니다. 전체 공개 전 설정으로 돌아갈 때는 원본 백업은 수정하지 않고 현재 공개 설정을 예상값으로 삼는 전체 복구 계획을 사용합니다. 복구할 열린/현재 수업은 원본과 같고 revision은 현재값보다1 증가하며, 11반 전체를 한 트랜잭션으로 검사·복원합니다. 이 PC의 실제 전체 복구 파일과 점검 결과는 [공개 기록](HANDOFF.md#105-세-복습-운영-공개)에 있습니다.
 
 ```powershell
 node scripts/review-rollout.mjs --mode restore --plan scratch/review-lessons/sandwich-plan.json --confirm-project cs-class-f74c4
 ```
+
+2026-10-05 전체 공개의 복구 파일은 `scratch/review-lessons/production-full-restore-plan-release-20261005.json`입니다. 해당 파일을 `--plan`에 지정하면 공개 전의11반 설정을 복원합니다. 생성 당시 예상값은 2-1 revision9·나머지3이며, 이후 설정 변경이 있으면 거부합니다. 다른 PC에서 파일이 없다는 이유로 현재 반 설정을 덮어쓰거나 원본 백업의 revision을 직접 수정하지 않습니다.
 
 ## 검증
 
