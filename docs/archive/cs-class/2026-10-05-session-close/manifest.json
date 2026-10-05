@@ -1,0 +1,22 @@
+[
+  {
+    "preservedAt": "2026-10-05",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/session-handoff-20261005",
+    "baseCommit": "9af5b9de5e4b6a6416166745c9fe4e345f490be9",
+    "source": "clean Windows working tree at origin/main before requested session closure and document cleanup",
+    "original": "docs/HANDOFF.md",
+    "preserved": "HANDOFF.md",
+    "sha256": "cdf97684115b24ab3c8e1dc34df2783af0b03336c945278771a2d068d5327890"
+  },
+  {
+    "preservedAt": "2026-10-05",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/session-handoff-20261005",
+    "baseCommit": "9af5b9de5e4b6a6416166745c9fe4e345f490be9",
+    "source": "clean Windows working tree at origin/main before requested session closure and document cleanup",
+    "original": "docs/reference/algorithm-review-integration.md",
+    "preserved": "algorithm-review-integration.md",
+    "sha256": "db4b54155050c6f879cd4c19d119859cc99b206b0a0b3a5a4caf13d492badd3f"
+  }
+]
