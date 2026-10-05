@@ -1,3 +1,5 @@
+import { validateFlowGraph } from './flow-graph.mjs';
+
 export function quotaWindow(previous, now) {
   const day = new Date(now + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const calls = (previous?.calls ?? []).filter(time => time > now - 60000);
@@ -17,8 +19,24 @@ export function groundFlowReview(result, checks, project) {
     const check = checks.find(c => c.conditionIndex === index);
     if (!check) return uncertain();
     if (check.status === 'missing') return { ...result, verdict: 'needs-changes', message: `필수 조건 '${text}'을 실제 기호와 연결 흐름에 반영했는지 확인해 주세요.` };
-    const node = project.nodes.find(n => n.id === check.nodeId);
-    if (check.status !== 'met' || !check.evidence?.trim() || node?.shape === 'terminal' || !node?.text.includes(check.evidence)) return uncertain();
+    const sources = [{ nodeId: check.nodeId, evidence: check.evidence }, ...(check.additionalEvidence ?? [])];
+    if (check.status !== 'met' || sources.some(source => {
+      const node = project.nodes.find(n => n.id === source.nodeId);
+      return !source.evidence?.trim() || node?.shape === 'terminal' || !node?.text.includes(source.evidence);
+    })) return uncertain();
+    if (check.appliesTo === 'every-path') {
+      const graph = validateFlowGraph(project.nodes, project.edges.map(edge => ({ ...edge, fromPort: edge.label === '예' ? 'yes' : edge.label === '아니오' ? 'no' : 'out' })));
+      if (!graph.valid) return uncertain();
+      const visited = new Set(), todo = [graph.startId];
+      while (todo.length) {
+        const id = todo.pop();
+        if (sources.some(source => source.nodeId === id) || visited.has(id)) continue;
+        visited.add(id);
+        const exits = graph.out.get(id) ?? [];
+        if (!exits.length) return uncertain();
+        exits.forEach(edge => todo.push(edge.to));
+      }
+    }
   }
   return result;
 }

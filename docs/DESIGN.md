@@ -235,6 +235,8 @@
 
 주요 조작은 최소44px, 단계/검증 뒤 초점은 갱신한 DOM에서 이동합니다. AI 대기 중 새 입력을 보존하고 결과·진행·저장·제출을 구분합니다. 규칙 대체 해석과 이전 작품의 AI 리뷰는 명시적으로 표시합니다. 교사 상세는 고정 요청본·최근 제출본을 보여 주며 현재 수정본을 승인한 것으로 표현하지 않습니다.
 
+AI가 원문 근거·연결을 확신하지 못한 경우는 미완성이나 점수 하락으로 강조하지 않고, 내용을 확인하거나 선생님 확인을 요청하는 다음 행동을 안내합니다. 작성한 작품·이전 제출본과 현재 요청 상태를 함께 유지합니다.
+
 ## 9. 참고 화면과 UI Component Lab
 
 공개 홈의 승인된 화면은 [데스크톱](reference/home-hero-1440.png)·[모바일](reference/home-hero-390.png), [입장 선택창](reference/home-entry-1440.png)·[320px](reference/home-entry-320.png), [공간 안내](reference/home-role-anchor.png)·[마지막 화면](reference/home-finale-1440.png)에 있습니다. 후속 대시보드·로그인 캡처와 검증 범위는 [HANDOFF](HANDOFF.md#다른-pc에서-이어가기)를 따릅니다.

@@ -48,3 +48,19 @@ test('빈 조건 줄은 보존하되 검토에서 제외하고 단말의 행동 
   assert.equal(groundFlowReview(result, [], { ...project, conditions: ['  '] }).verdict, 'uncertain');
   assert.equal(groundFlowReview(result, checks, { ...project, nodes: [{ ...project.nodes[0], shape: 'terminal' }] }).verdict, 'uncertain');
 });
+
+test('무조건 필요한 행동을 건너뛰는 종료 경로는 통과하지 않고 조건부 행동은 분기를 허용한다', () => {
+  const result = { message: '조건을 충족했어요.', verdict: 'pass' };
+  const nodes = [{ id: 'start', shape: 'terminal', text: '시작' }, { id: 'check', shape: 'decision', text: '비가 오는가?' }, { id: 'prep', shape: 'process', text: '준비물을 챙긴다' }, { id: 'end', shape: 'terminal', text: '종료' }];
+  const edges = [{ from: 'start', to: 'check', label: '' }, { from: 'check', to: 'prep', label: '예' }, { from: 'check', to: 'end', label: '아니오' }, { from: 'prep', to: 'end', label: '' }];
+  const check = { conditionIndex: 0, status: 'met', nodeId: 'prep', evidence: '준비물을 챙긴다', appliesTo: 'every-path' };
+  const project = { conditions: ['준비물을 챙긴다'], nodes, edges };
+  assert.equal(groundFlowReview(result, [check], project).verdict, 'uncertain');
+  assert.equal(groundFlowReview(result, [{ ...check, appliesTo: 'conditional-path' }], { ...project, conditions: ['비가 오면 준비물을 챙긴다'] }).verdict, 'pass');
+  const linear = { ...project, nodes: nodes.filter(n => n.id !== 'check'), edges: [{ from: 'start', to: 'prep', label: '' }, { from: 'prep', to: 'end', label: '' }] };
+  assert.equal(groundFlowReview(result, [check], linear).verdict, 'pass');
+  const duplicated = { ...project, nodes: [...nodes, { id: 'other', shape: 'process', text: '가방에 준비물을 넣는다' }], edges: edges.map(e => e.from === 'check' && e.label === '아니오' ? { ...e, to: 'other' } : e).concat({ from: 'other', to: 'end', label: '' }) };
+  const both = { ...check, additionalEvidence: [{ nodeId: 'other', evidence: '가방에 준비물을 넣는다' }] };
+  assert.equal(groundFlowReview(result, [both], duplicated).verdict, 'pass');
+  assert.equal(groundFlowReview(result, [{ ...both, additionalEvidence: [{ nodeId: 'other', evidence: '없는 행동' }] }], duplicated).verdict, 'uncertain');
+});
