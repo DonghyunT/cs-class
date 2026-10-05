@@ -142,6 +142,8 @@ test("직접 Firestore 읽기·쓰기 차단", async ({ request }) => {
 
 test("다중 수업 지원 · 순서도 및 엔트리 실습 검증과 제출", async ({ request }) => {
   await readyStudent(request);
+  // Historical lessons remain compatible; retired definitions cannot be newly opened.
+  await db.collection("csClasses").doc("2-1").update({ openedLessonIds: ["sequence-lab", "flowchart-lab", "entry-bot-lab"] });
   await db.collection("csWork").doc("student-20101__entry-bot-lab").delete();
   await readyTeacher(request);
   const classRes = await request.get("/api/classroom/teacher?classId=2-1");

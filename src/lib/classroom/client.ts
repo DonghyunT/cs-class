@@ -1,5 +1,6 @@
 "use client";
 import type { ClassSettings, Session, StudentDashboard, TeacherDashboard, Work, WorkAction, WorkDraft } from "./types";
+import type { AiReply, AiTask } from "./review/ai";
 
 export class ApiError extends Error {
   constructor(public code: string, message: string, public status: number) { super(message); }
@@ -14,7 +15,7 @@ export async function api<T>(path: string, body?: unknown, method = body === und
   const requestingEpoch = sessionEpoch;
   let response: Response;
   try {
-    response = await fetch(`/api/${path}`, { method, cache: "no-store", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CS-Class": "1", ...(expectedUser ? { "X-CS-User": expectedUser } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
+    response = await fetch(`/api/${path}`, { method, ...(path === "classroom/ai" ? { signal: AbortSignal.timeout(50000) } : {}), cache: "no-store", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CS-Class": "1", ...(expectedUser ? { "X-CS-User": expectedUser } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
   } catch { throw new ApiError("NETWORK", "서버에 연결하지 못했어요. 연결을 확인하고 다시 시도해 주세요.", 0); }
   const payload = await response.json().catch(() => ({}));
   if (requestingUser !== expectedUser || requestingEpoch !== sessionEpoch) throw new ApiError("SESSION_REPLACED", "계정이 바뀌어 이전 요청을 중단했어요.", 401);
@@ -40,4 +41,7 @@ export const classroomApi = {
   work: (lessonId: string) => api<Work>(`classroom/work/${encodeURIComponent(lessonId)}`),
   saveWork: (lessonId: string, revision: number, draft: WorkDraft, expectedUid?: string) => api<Work>(`classroom/work/${encodeURIComponent(lessonId)}`, { revision, draft }, "POST", expectedUid),
   act: (lessonId: string, revision: number, action: WorkAction, expectedUid?: string) => api<Work>(`classroom/work/${encodeURIComponent(lessonId)}/action`, { revision, action }, "POST", expectedUid),
+  ai: (lessonId: string, revision: number, task: AiTask, input: string, requestId: string, missionId?: string, expectedUid?: string) => api<AiReply>("classroom/ai", { lessonId, revision, task, input, requestId, ...(missionId ? { missionId } : {}) }, "POST", expectedUid),
+  detail: (uid: string, lessonId: string) => api<Work>(`classroom/students/${encodeURIComponent(uid)}/work/${encodeURIComponent(lessonId)}`),
+  decideReview: (uid: string, lessonId: string, requestId: string, decision: "approve" | "changes", message: string, expectedUid?: string) => api<Work>(`classroom/students/${encodeURIComponent(uid)}/review/${encodeURIComponent(lessonId)}`, { requestId, decision, message }, "POST", expectedUid),
 };

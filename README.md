@@ -35,6 +35,7 @@ Firebase 키 없이 사용하는 가상 계정 개발 모드입니다. [로컬 �
 | 설치·검증·Stitch·개발 도구는 어디에 있나요? | [DEVELOPMENT · 개발 안내](docs/DEVELOPMENT.md) |
 | Firebase·Google 로그인과 서버 비밀 설정은 어떻게 준비하나요? | [FIREBASE_SETUP · 서버 설정](docs/FIREBASE_SETUP.md) |
 | 후속 기능의 비용 가정은 무엇인가요? | [운영비 예상안 · 참고 자료](docs/reference/OPERATING_COST_ESTIMATE.md) |
+| 이전 사이트의 알고리즘 세 수업을 어떤 기준으로 옮기나요? | [알고리즘 복습 통합 · 구현 기준](docs/reference/algorithm-review-integration.md) |
 | 원본 PPT 없이 13차시 내용과 체험을 어떻게 파악하나요? | [프로그래밍 13차시 · 수업 자료와 체험 기록](docs/reference/programming-13.md) |
 | 완료된 구현 지시와 이전 판단 근거는 어디에 있나요? | [문서 보관함](docs/archive/README.md) |
 | 에이전트는 어떤 규칙을 지켜야 하나요? | [AGENTS · 작업 규칙](AGENTS.md) |

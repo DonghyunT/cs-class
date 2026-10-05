@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigationGuard } from "@/components/navigation-provider";
 import { ApiError, classroomApi } from "@/lib/classroom/client";
 import type { Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
+import type { AiReply, AiTask } from "@/lib/classroom/review/ai";
 
 type SaveState = "saved" | "dirty" | "saving" | "failed";
 type Recovery = { revision: number; draft: WorkDraft; at: number };
@@ -28,6 +29,9 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
   const [conflict, setConflict] = useState(false);
   const [remote, setRemote] = useState<Work | null>(null);
   const [busy, setBusy] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const pendingAi = useRef<Promise<AiReply | null> | null>(null);
+  const preparingAi = useRef(false);
   const server = useRef(initial);
   const local = useRef(draft);
   const active = useRef(true);
@@ -56,6 +60,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
   }, []);
 
   const flush = useCallback(function flushWork(captureEditor = false): Promise<boolean> {
+    if (pendingAi.current) return pendingAi.current.then(() => flushWork(captureEditor));
     if (saving.current) return captureEditor ? saving.current.then((saved) => saved ? flushWork(true) : false) : saving.current;
     if (!active.current || blocked.current) return Promise.resolve(false);
     if (!isDirty() && !(captureEditor && readEditorDraft)) { setSaveState("saved"); return Promise.resolve(true); }
@@ -97,7 +102,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
   }, [key]);
 
   const perform = useCallback((action: WorkAction): Promise<boolean> => {
-    if (actionPending.current || !active.current) return Promise.resolve(false);
+    if (actionPending.current || pendingAi.current || !active.current) return Promise.resolve(false);
     actionPending.current = true; setBusy(true);
     const operation = (async () => {
       try {
@@ -113,6 +118,31 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
     pendingAction.current = operation;
     return operation;
   }, [adopt, fail, flush, initial.lessonId, uid]);
+
+  const requestAi = useCallback(async (task: AiTask, input: string, missionId?: string, requestId = crypto.randomUUID()): Promise<AiReply | null> => {
+    if (actionPending.current || pendingAi.current || preparingAi.current || !active.current) return null;
+    preparingAi.current = true;
+    setAiBusy(true);
+    try {
+      if (!(await flush(true)) || !active.current) return null;
+      const captured = local.current;
+      const operation = (async () => {
+        try {
+        const reply = await classroomApi.ai(initial.lessonId, server.current.revision, task, input, requestId, missionId, uid);
+        if (!active.current) return null;
+        adopt(reply.work, captured);
+        setSaveState(sameDraft(local.current, reply.work.draft) ? "saved" : "dirty");
+        return sameDraft(local.current, reply.work.draft) ? reply : null;
+        } catch (problem) {
+          // Failed reviews may leave a snapshot-bound teacher request available.
+          try { const latest = await classroomApi.work(initial.lessonId); if (active.current && latest.revision >= server.current.revision) { adopt(latest, captured); setSaveState(sameDraft(local.current, latest.draft) ? "saved" : "dirty"); } } catch { /* Keep the original error and local input. */ }
+          throw problem;
+        }
+      })();
+      pendingAi.current = operation.catch(() => null);
+      return await operation;
+    } finally { pendingAi.current = null; preparingAi.current = false; if (active.current) setAiBusy(false); }
+  }, [adopt, flush, initial.lessonId, uid]);
 
   const retry = useCallback(async () => { blocked.current = false; setError(""); return flush(true); }, [flush]);
   const compare = useCallback(async () => {
@@ -166,10 +196,11 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
 
   useEffect(() => register({
     flush: async () => {
+      if (pendingAi.current) await pendingAi.current;
       if (pendingAction.current && !(await pendingAction.current)) return false;
       return flush(true);
     },
-    isDirty: () => isDirty() || actionPending.current,
+    isDirty: () => isDirty() || actionPending.current || !!pendingAi.current,
   }), [flush, isDirty, register]);
   useEffect(() => {
     if (saveState !== "dirty") return;
@@ -183,5 +214,5 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
     return () => { clearInterval(timer); document.removeEventListener("visibilitychange", visible); };
   }, [flush, isDirty]);
 
-  return { work, draft, saveState, error, conflict, remote, busy, update, perform, retry, compare, resolve, switchStage, flush, getDraft: () => local.current };
+  return { work, draft, saveState, error, conflict, remote, busy, aiBusy, requestAi, update, perform, retry, compare, resolve, switchStage, flush, getDraft: () => local.current };
 }

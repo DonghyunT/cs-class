@@ -13,6 +13,10 @@ import { EntryPracticeWorkspace } from "./entry-practice-workspace";
 import { useWork } from "./use-work";
 import { ProgrammingLearningStage } from "./programming-lesson";
 import { parseProgrammingProject, programmingMissions } from "@/lib/classroom/programming-entry";
+import { isReviewType } from "@/lib/classroom/review/project";
+import { Sandwich } from "./review/sandwich";
+import { ReviewConcepts } from "./review/concepts";
+import reviewStyles from "./review/review.module.css";
 import styles from "./student.module.css";
 
 const stages = [{ id: "concept", label: "개념", icon: BookOpen }, { id: "quiz", label: "퀴즈", icon: CheckCircle2 }, { id: "practice", label: "실습", icon: Layers3 }] as const;
@@ -71,6 +75,7 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
     {lesson.concepts.map((concept, i) => <li key={concept.id}><strong>개념 {i + 1}</strong>{label(concept.question, draft.conceptAnswers[concept.id])}</li>)}
     {lesson.quiz.map((question, i) => <li key={question.id}><strong>퀴즈 {i + 1}</strong>{label(question, draft.quizAnswers[question.id])}</li>)}
     {lesson.practice.type === "programming" && programmingMissions.map((mission) => <li key={mission.id}><strong>{mission.title}</strong>{draft.programming?.projects[mission.id] ? `${parseProgrammingProject(draft.programming.projects[mission.id])?.order.length ?? 0}개 블록` : "아직 시작하지 않았어요"}</li>)}
+    {draft.reviewProject && <li><strong>복습 작품</strong>{draft.reviewProject.type === "sandwich" ? `${draft.reviewProject.commands.length}개 명령 · 작성 중: ${draft.reviewProject.input}` : draft.reviewProject.type === "abstraction" ? `${draft.reviewProject.current} → ${draft.reviewProject.goal}` : `${draft.reviewProject.nodes.length}개 기호 · ${draft.reviewProject.edges.length}개 연결`}</li>}
     <li><strong>{lesson.practice.type === "entryjs" ? "엔트리 블록" : "실습 순서"}</strong>{lesson.practice.type === "entryjs" ? `${draft.practiceOrder.length}개 블록 조립됨` : draft.practiceOrder.map((id) => lesson.practice.blocks.find((block) => block.id === id)?.label).filter(Boolean).join(" → ")}</li>
   </ul>;
 }
@@ -138,6 +143,7 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
     </div>
     {otherCurrent && <div className={styles.notice} role="status"><div><strong>선생님이 지정한 이번 수업은 ‘{otherCurrent.title}’이에요.</strong><p>하던 학습을 계속하거나 저장한 뒤 이동할 수 있어요.</p></div><Button variant="outline" nativeButton={false} render={<Link href={`/classroom/${otherCurrent.id}`} />}>이번 수업으로<ArrowRight size={16} /></Button></div>}
     <header className={styles.lessonHeader}><div><span className={styles.eyebrow}>{lesson.category ?? "알고리즘 · 순차 구조"}</span><h1>{lesson.title}</h1></div><LearningStatus lesson={lesson} work={work} /></header>
+    {lesson.mode === "review" && <p className={reviewStyles.notice}>새 사이트에서 다시 해 본 활동을 기록해요. 성적에는 반영하지 않아요.</p>}
     {error && <section id="work-save-error" tabIndex={-1} className={styles.errorPanel} role="alert"><strong>{controller.conflict ? "저장 기록이 서로 달라요." : "요청을 완료하지 못했어요."}</strong><p>{error}</p><p>현재 입력은 이 화면에 유지하고 있어요. 확인 전에는 창을 닫지 마세요.</p><Button variant="outline" disabled={busy} onClick={() => void (controller.conflict ? controller.compare() : controller.retry())}>{controller.conflict ? "서버 기록과 비교" : "저장 다시 확인"}</Button></section>}
     {controller.remote && <section className={styles.conflictPanel} aria-label="저장 충돌 비교"><h2>어떤 입력으로 이어갈까요?</h2><p>서버의 완료·제출 기록은 유지돼요. 입력 내용은 아래에서 직접 선택하세요.</p><div className={styles.comparisonGrid}><div><h3>이 화면의 입력</h3><DraftComparison lesson={lesson} draft={draft} /></div><div><h3>서버에 저장된 입력</h3><DraftComparison lesson={lesson} draft={controller.remote.draft} /></div></div><div className={styles.actions}><Button disabled={busy} onClick={() => void controller.resolve(true)}>현재 입력을 새 버전으로 저장</Button><Button variant="outline" disabled={busy} onClick={() => void controller.resolve(false)}>서버 기록으로 이어하기</Button></div></section>}
     <div className={styles.tabs} role="tablist" aria-label="수업 단계">{stages.map((stage, index) => <button key={stage.id} id={`tab-${stage.id}`} type="button" role="tab" aria-selected={draft.stage === stage.id} aria-controls={`panel-${stage.id}`} tabIndex={draft.stage === stage.id ? 0 : -1} disabled={locked} onKeyDown={(event) => tabKey(event, index)} onClick={() => void switchStage(stage.id, true)}><stage.icon size={18} /><span>{stage.label}</span><span className={styles.tabPercent}>{progress[stage.id].percent}%</span></button>)}</div>
@@ -145,6 +151,7 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
     {lesson.practice.type === "programming" && <ProgrammingLearningStage lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} />}
 
     {lesson.practice.type !== "programming" && draft.stage === "concept" && <section id="panel-concept" role="tabpanel" aria-labelledby="tab-concept" tabIndex={0} className={styles.stagePanel}>
+      {isReviewType(lesson.practice.type) && <ReviewConcepts type={lesson.practice.type} />}
       <div className={styles.stageHeading}><div><h2 id="stage-heading-concept" tabIndex={-1}>설명을 읽고 바로 확인해요</h2><p>개념 확인 문제를 해결하면 자동으로 완료돼요.</p></div><span>{progress.concept.completed} / {progress.concept.total}개 완료</span></div>
       {lesson.concepts.map((concept, index) => {
         const solved = work.conceptSolved.includes(concept.id);
@@ -165,7 +172,8 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
       <div className={styles.stageFooter}><div><p>{quizComplete ? "퀴즈 100% 완료" : work.quizRoundGraded ? `${lesson.quiz.length - work.quizSolved.length}문항을 다시 풀면 퀴즈가 완료돼요.` : unanswered ? `${unanswered}문항을 더 선택하면 결과를 확인할 수 있어요.` : "모든 답을 선택했어요. 결과를 확인해 보세요."}</p>{!quizComplete && (!work.quizRoundGraded ? <Button disabled={locked || unanswered > 0} onClick={() => void runAction({ type: "grade-quiz" }, "stage-heading-quiz")}>{busy ? "확인 중…" : "이번 문제 결과 확인"}</Button> : <Button disabled={locked} onClick={() => void runAction({ type: "retry-quiz" }, "stage-heading-quiz")}><RotateCcw size={16} />틀린 문제만 다시 풀기</Button>)}</div><Button variant={quizComplete ? "default" : "outline"} disabled={locked} onClick={() => void switchStage("practice")}>{quizComplete ? "실습으로 이동" : "먼저 실습하기"}<ArrowRight size={16} /></Button></div>
     </section>}
 
-    {lesson.practice.type !== "programming" && draft.stage === "practice" && (
+    {lesson.practice.type === "sandwich" && draft.stage === "practice" && <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2><Sandwich controller={controller} /></section>}
+    {lesson.practice.type !== "programming" && !isReviewType(lesson.practice.type) && draft.stage === "practice" && (
       <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" tabIndex={0} className={styles.stagePanel}>
         <div className={styles.stageHeading}>
           <div>

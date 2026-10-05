@@ -1,0 +1,98 @@
+import { expect, test, type APIRequestContext } from "@playwright/test";
+import { randomUUID } from "node:crypto";
+import { db, headers, readyStudent, readyTeacher, studentPassword, loginStudent } from "./emulator";
+import type { Work } from "../src/lib/classroom/types";
+
+const id = "review-sandwich", uid = "student-20101";
+async function prepare(request: APIRequestContext) {
+  await readyStudent(request);
+  await db.collection("csClasses").doc("2-1").update({ openedLessonIds: ["sequence-lab", id], currentLessonId: "sequence-lab" });
+  await db.collection("csWork").doc(`${uid}__${id}`).delete();
+  await db.collection("csAiUsage").doc(uid).delete();
+  for (const collection of ["csAiRequests", "csAiCache"]) { const snaps = await db.collection(collection).get(); await Promise.all(snaps.docs.map(doc => doc.ref.delete())); }
+  return (await (await request.get(`/api/classroom/work/${id}`)).json()) as Work;
+}
+async function command(request: APIRequestContext, work: Work, input: string, task = "sandwich-rules", requestId = randomUUID()) {
+  const data = { lessonId: id, revision: work.revision, task, input, requestId };
+  const response = await request.post("/api/classroom/ai", { headers, data });
+  return { response, data, reply: await response.json() };
+}
+async function action(request: APIRequestContext, work: Work, type: string) {
+  const response = await request.post(`/api/classroom/work/${id}/action`, { headers, data: { revision: work.revision, action: { type } } });
+  expect(response.status()).toBe(200); return await response.json() as Work;
+}
+const recipe = ["빵 봉지를 열어", "식빵 두 장을 꺼내", "잼 뚜껑을 열어", "칼에 잼을 묻혀", "식빵 1의 넓은 면에 잼을 발라", "식빵 2를 식빵 1 위에 덮어"];
+
+test("서버 실행·중복 요청·서명 검증·제출본 보존", async ({ request }) => {
+  let work = await prepare(request);
+  let response = await command(request, work, "식빵 꺼내"); expect(response.response.status()).toBe(200); work = response.reply.work;
+  expect(work.draft.reviewProject?.type).toBe("sandwich");
+  work = await action(request, work, "validate-practice"); expect(work.validation?.passed).toBe(false);
+  work.draft.reviewProject = { type: "sandwich", runId: randomUUID(), input: "", commands: [] };
+  const saved = await request.post(`/api/classroom/work/${id}`, { headers, data: { revision: work.revision, draft: work.draft } }); expect(saved.status()).toBe(200); work = await saved.json();
+  for (const input of recipe) { response = await command(request, work, input); expect(response.response.status()).toBe(200); work = response.reply.work; }
+  const duplicate = await request.post("/api/classroom/ai", { headers, data: response.data }); expect(duplicate.status()).toBe(200); expect((await duplicate.json()).work.revision).toBe(work.revision);
+  work = await action(request, work, "validate-practice"); expect(work.validation?.passed).toBe(true);
+  work = await action(request, work, "submit-practice"); const submitted = work.submission;
+  const forged = structuredClone(work.draft); if (forged.reviewProject?.type === "sandwich") forged.reviewProject.commands[0].actions = ["TAKE_BREAD"];
+  expect((await request.post(`/api/classroom/work/${id}`, { headers, data: { revision: work.revision, draft: forged } })).status()).toBe(400);
+  work.draft.reviewProject = { type: "sandwich", runId: randomUUID(), input: "미완성 명령", commands: [] };
+  const reset = await request.post(`/api/classroom/work/${id}`, { headers, data: { revision: work.revision, draft: work.draft } }); expect(reset.status()).toBe(200);
+  work = await reset.json(); expect(work.validation).toBeNull(); expect(work.submission).toEqual(submitted);
+  const reconnected = await (await request.get(`/api/classroom/work/${id}`)).json(); expect(reconnected.draft.reviewProject.input).toBe("미완성 명령");
+});
+test("AI 캐시·중복은 차감하지 않고 실패·분당·일일 경계를 적용", async ({ request }) => {
+  const work = await prepare(request);
+  const first = await command(request, work, "알아서 만들어", "sandwich-command"); expect(first.response.status()).toBe(200);
+  const cached = await command(request, work, "알아서 만들어", "sandwich-command"); expect(cached.response.status()).toBe(200); expect(cached.reply.reused).toBe(true);
+  expect((await db.collection("csAiUsage").doc(uid).get()).data()?.count).toBe(1);
+  const broken = await command(request, work, "fixture-malformed", "sandwich-command"); expect(broken.response.status()).toBe(502);
+  expect((await db.collection("csAiUsage").doc(uid).get()).data()?.count).toBe(2);
+  const now = Date.now(), day = new Date(now + 9 * 3600000).toISOString().slice(0,10);
+  await db.collection("csAiUsage").doc(uid).set({ day, count: 15, calls: Array(15).fill(now) });
+  expect((await command(request, work, "분당 제한 확인", "sandwich-command")).response.status()).toBe(429);
+  await db.collection("csAiUsage").doc(uid).set({ day, count: 70, calls: [] });
+  expect((await command(request, work, "일일 제한 확인", "sandwich-command")).response.status()).toBe(429);
+  expect((await command(request, work, "빵 봉지를 열어", "sandwich-rules")).response.status()).toBe(200);
+});
+test("진행 중 중복·요청 ID 충돌·늦은 AI 응답은 새 초안을 덮어쓰지 않는다", async ({ request }) => {
+  const work = await prepare(request), requestId = randomUUID();
+  const data = { lessonId: id, revision: work.revision, task: "sandwich-command", input: "fixture-slow", requestId };
+  const pending = request.post("/api/classroom/ai", { headers, data });
+  await expect.poll(async () => (await db.collection("csAiUsage").doc(uid).get()).data()?.count).toBe(1);
+  const duplicate = await request.post("/api/classroom/ai", { headers, data }); expect(duplicate.status()).toBe(409); expect((await duplicate.json()).code).toBe("AI_PENDING");
+  const conflict = await request.post("/api/classroom/ai", { headers, data: { ...data, input: "다른 요청" } }); expect(conflict.status()).toBe(409); expect((await conflict.json()).code).toBe("REQUEST_CONFLICT");
+  if (work.draft.reviewProject?.type === "sandwich") work.draft.reviewProject.input = "새로 작성한 명령";
+  const saved = await request.post(`/api/classroom/work/${id}`, { headers, data: { revision: work.revision, draft: work.draft } }); expect(saved.status()).toBe(200);
+  const delayed = await pending; expect(delayed.status()).toBe(409); expect((await delayed.json()).code).toBe("AI_STALE");
+  const latest = await (await request.get(`/api/classroom/work/${id}`)).json(); expect(latest.draft.reviewProject.input).toBe("새로 작성한 명령"); expect(latest.draft.reviewProject.commands).toEqual([]);
+  expect((await db.collection("csAiUsage").doc(uid).get()).data()?.count).toBe(1);
+});
+test("복습 카드·키보드·44px·명령 실패·재접속·교사 상세", async ({ page, browser }) => {
+  let work = await prepare(page.request);
+  const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/student/lessons");
+  const card = page.locator("article").filter({ has: page.getByRole("heading", { name: "알고리즘 설계", exact: true }) });
+  await expect(card).toContainText("복습 수업"); await expect(card).not.toContainText("0%"); await card.getByRole("button", { name: "다시 둘러보기" }).click();
+  await expect(page.getByText("새 사이트에서 다시 해 본 활동을 기록해요. 성적에는 반영하지 않아요.")).toBeVisible();
+  await page.getByRole("tab", { name: /실습/ }).click();
+  const input = page.getByLabel("자연어 명령"); await input.fill("식빵 꺼내"); await page.getByRole("button", { name: "규칙 해석으로 실행" }).click();
+  await expect(page.getByText("오류: 빵 봉지가 닫혀 있습니다!", { exact: false }).first()).toBeVisible();
+  await input.fill("쓰다가 멈춘 명령"); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await page.reload(); await expect(input).toHaveValue("쓰다가 멈춘 명령");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "scratch/review-lessons/sandwich-mobile.png", fullPage: true });
+  const bounds = await page.getByRole("button", { name: "규칙 해석으로 실행" }).boundingBox(); expect(bounds?.height).toBeGreaterThanOrEqual(44);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await input.focus(); await page.keyboard.press("Tab"); await expect(page.getByRole("button", { name: "AI로 명령 실행" })).toBeFocused(); expect(errors).toEqual([]);
+  // Submit a separate recipe using the same real server contract.
+  work = await (await page.request.get(`/api/classroom/work/${id}`)).json();
+  for (const text of recipe) { const result = await command(page.request, work, text); expect(result.response.status()).toBe(200); work = result.reply.work; }
+  work = await action(page.request, work, "validate-practice"); await action(page.request, work, "submit-practice");
+  const teacher = await browser.newContext(); await readyTeacher(teacher.request);
+  const list = await (await teacher.request.get(`/api/classroom/teacher?classId=2-1&lessonId=${id}`)).json(); const row = list.students.find((student: { uid: string }) => student.uid === uid); expect(row.work.draft).toBeUndefined(); expect(row.work.submission.reviewProject).toBeUndefined();
+  const detail = await teacher.request.get(`/api/classroom/students/${uid}/work/${id}`); expect(detail.status()).toBe(200); expect((await detail.json()).submission.reviewProject.commands.length).toBeGreaterThan(0);
+  expect((await page.request.get(`/api/classroom/students/${uid}/work/${id}`)).status()).toBe(403);
+  await teacher.close();
+  expect((await loginStudent(page.request, studentPassword)).status()).toBe(200);
+});

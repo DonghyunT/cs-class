@@ -25,7 +25,8 @@ export interface Question {
   options: { id: string; label: string }[];
   hint: string;
 }
-export type PracticeType = "ordering" | "entryjs" | "programming";
+import type { ReviewProject } from "./review/project";
+export type PracticeType = "ordering" | "entryjs" | "programming" | "abstraction" | "sandwich" | "flowchart";
 
 export interface PracticeBlock {
   id: string;
@@ -51,6 +52,7 @@ export interface Lesson {
   title: string;
   description: string;
   category?: string;
+  mode?: "review";
   concepts: { id: string; title: string; explanation: string; example: string; question: Question }[];
   quiz: Question[];
   practice: PracticeDef;
@@ -62,6 +64,7 @@ export interface WorkDraft {
   practiceOrder: string[];
   entryProject?: string | null;
   programming?: { mission: string; projects: Record<string, string>; reflection: string };
+  reviewProject?: ReviewProject;
 }
 export interface Feedback { correct: boolean; message: string }
 export interface Submission {
@@ -69,6 +72,8 @@ export interface Submission {
   order: string[];
   entryProject?: string | null;
   submittedAt: number;
+  reviewProject?: ReviewProject;
+  approvedByTeacher?: boolean;
 }
 export interface ValidationResult {
   passed: boolean;
@@ -76,6 +81,7 @@ export interface ValidationResult {
   order: string[];
   entryProject?: string | null;
   criteriaResults?: { id: string; passed: boolean; message: string }[];
+  reviewProject?: ReviewProject;
 }
 export interface Work {
   lessonId: string;
@@ -92,6 +98,8 @@ export interface Work {
   submission: Submission | null;
   missions?: Record<string, { validation: ValidationResult | null; submission: Submission | null }>;
   updatedAt: number | null;
+  review?: { id: string; missionId?: string; project: ReviewProject; status: "pending" | "approved" | "changes" | "replaced"; message: string; requestedAt: number; decidedAt?: number };
+  aiReview?: { project: ReviewProject; missionId?: string; verdict: "pass" | "needs-changes" | "uncertain"; message: string };
 }
 export interface Progress {
   concept: { completed: number; total: number; percent: number };
@@ -108,8 +116,15 @@ export interface StudentRow {
   uid: string;
   studentId: string;
   mustChangePassword: boolean;
-  work: Work | null;
+  work: WorkSummary | null;
 }
+export type WorkSummary = Pick<Work, "lessonId" | "revision" | "conceptSolved" | "quizSolved" | "updatedAt"> & {
+  edited: boolean;
+  validated: boolean;
+  submission: Pick<Submission, "id" | "submittedAt"> | null;
+  missions?: Record<string, { submission: Pick<Submission, "id" | "submittedAt"> | null }>;
+  review?: Pick<NonNullable<Work["review"]>, "id" | "status" | "requestedAt" | "missionId">;
+};
 export interface TeacherDashboard {
   classrooms: ClassSettings[];
   lessons: Lesson[];
@@ -122,4 +137,5 @@ export type WorkAction =
   | { type: "grade-quiz" }
   | { type: "retry-quiz" }
   | { type: "validate-practice"; missionId?: string }
-  | { type: "submit-practice"; missionId?: string };
+  | { type: "submit-practice"; missionId?: string }
+  | { type: "request-review"; missionId?: string };

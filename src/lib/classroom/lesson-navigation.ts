@@ -8,6 +8,7 @@ export function prioritizedLessons(lessons: Lesson[], currentLessonId: string | 
 }
 
 export function resumeLabelFor(lesson: Lesson, work?: Work | null) {
+  if (lesson.mode === "review") return work?.updatedAt ? "이어서 복습하기" : "다시 둘러보기";
   if (!work?.updatedAt) return "수업 시작";
   if (progressFor(lesson, work).status === "completed") return "필수 활동 완료 · 복습하기";
   if (work.draft.stage === "practice") {

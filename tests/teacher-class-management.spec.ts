@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { DocumentSnapshot } from "firebase-admin/firestore";
-import { LESSONS } from "../src/lib/classroom/catalog";
+import { LESSONS, RELEASED_LESSONS } from "../src/lib/classroom/catalog";
 import { db, lessonId, localOnly, readyStudent, readyTeacher } from "./emulator";
 
 const classRef = db.collection("csClasses").doc("2-1");
@@ -82,24 +82,24 @@ test("설정 저장: 실패 시 입력 유지·재시도·초점 복귀·토스�
   await manage.focus();
   await manage.press("Enter");
   const dialog = page.getByRole("dialog", { name: "2학년 1반 수업 관리", exact: true });
-  const added = dialog.getByRole("checkbox", { name: new RegExp(LESSONS[1].title) });
+  const added = dialog.getByRole("checkbox", { name: new RegExp(RELEASED_LESSONS[1].title) });
   await added.check();
   const currentPicker = dialog.getByRole("combobox", { name: "이번 수업", exact: true });
   await currentPicker.click();
-  await page.getByRole("option", { name: LESSONS[1].title, exact: true }).click();
+  await page.getByRole("option", { name: RELEASED_LESSONS[1].title, exact: true }).click();
   await dialog.getByRole("button", { name: "설정 저장", exact: true }).click();
   await expect(dialog.getByRole("alert")).toContainText("수업 설정을 저장하지 못했어요");
   await expect(added).toBeChecked();
-  await expect(currentPicker).toHaveText(LESSONS[1].title);
+  await expect(currentPicker).toHaveText(RELEASED_LESSONS[1].title);
   await expect(toast).toHaveCount(0);
   expect((await classRef.get()).data()).toMatchObject({ revision: 0, currentLessonId: lessonId, openedLessonIds: [lessonId] });
 
   await dialog.getByRole("button", { name: "설정 저장", exact: true }).press("Enter");
   await expect(dialog).toBeHidden();
   await expect(manage).toBeFocused();
-  await expect(page.locator("#current-lesson-title")).toHaveText(LESSONS[1].title);
+  await expect(page.locator("#current-lesson-title")).toHaveText(RELEASED_LESSONS[1].title);
   await expect(toast).toBeVisible();
-  expect((await classRef.get()).data()).toMatchObject({ revision: 1, currentLessonId: LESSONS[1].id, openedLessonIds: [lessonId, LESSONS[1].id] });
+  expect((await classRef.get()).data()).toMatchObject({ revision: 1, currentLessonId: RELEASED_LESSONS[1].id, openedLessonIds: [lessonId, RELEASED_LESSONS[1].id] });
   await toast.hover();
   await page.clock.fastForward(6000);
   await expect(toast).toBeVisible();
