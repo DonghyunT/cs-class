@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, BookOpen, Check, RefreshCw, Layers3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner, LoadingState, Skeleton } from "@/components/ui/loading-state";
 import { useSession } from "@/components/session-provider";
 import { classroomApi } from "@/lib/classroom/client";
 import { prioritizedLessons, resumeLabelFor } from "@/lib/classroom/lesson-navigation";
@@ -17,15 +18,17 @@ export function StudentDashboardView() {
   const [data, setData] = useState<StudentDashboard | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<"all" | "unfinished" | "completed">("all");
   const alive = useRef(true);
   const fetching = useRef(false);
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (requested = false) => {
+    if (requested) setRefreshing(true);
     if (fetching.current) return;
     fetching.current = true;
     try { const result = await classroomApi.student(); if (alive.current) { setData(result); setError(""); } }
     catch (problem) { if (alive.current) setError(problem instanceof Error ? problem.message : "수업을 불러오지 못했어요."); }
-    finally { fetching.current = false; if (alive.current) setLoading(false); }
+    finally { fetching.current = false; if (alive.current) { setLoading(false); setRefreshing(false); } }
   }, []);
   useEffect(() => {
     alive.current = true;
@@ -35,8 +38,14 @@ export function StudentDashboardView() {
     window.addEventListener("focus", visibleRefresh);
     return () => { alive.current = false; clearInterval(timer); window.removeEventListener("focus", visibleRefresh); };
   }, [refresh]);
-  if (loading) return <div className={styles.loading} role="status"><BookOpen aria-hidden="true" />우리 반 수업을 불러오고 있어요.</div>;
-  if (!data) return <div className={styles.empty} role="alert"><BookOpen size={32} /><h1>수업을 불러오지 못했어요.</h1><p>{error}</p><Button onClick={() => void refresh()}>다시 불러오기</Button></div>;
+  if (loading) return <div className={styles.dashboard} aria-busy="true">
+    <div className={styles.lessonLoadingHeader} aria-hidden="true"><Skeleton /><Skeleton /></div>
+    <LoadingState>열린 수업을 불러오고 있어요.</LoadingState>
+    <div className={`${styles.lessonList} ${styles.lessonLoadingList}`} aria-hidden="true">{[0, 1, 2].map((row) => <div key={row} className={styles.lessonCard}>
+      <Skeleton className={styles.lessonLoadingTitle} /><Skeleton className={styles.lessonLoadingDescription} /><Skeleton className={styles.lessonLoadingProgress} /><Skeleton className={styles.lessonLoadingAction} />
+    </div>)}</div>
+  </div>;
+  if (!data) return <div className={styles.empty} role="alert"><BookOpen size={32} /><h1>수업을 불러오지 못했어요.</h1><p>{error}</p>{refreshing && <LoadingState>수업 기록을 확인하고 있어요.</LoadingState>}<Button aria-disabled={refreshing} onClick={() => void refresh(true)}>다시 불러오기</Button></div>;
   const current = data.lessons.find((lesson) => lesson.id === data.classroom.currentLessonId);
   const completed = data.lessons.filter((lesson) => progressFor(lesson, data.work[lesson.id]).status === "completed").length;
   const shown = prioritizedLessons(data.lessons, data.classroom.currentLessonId, data.work).filter((lesson) => filter === "all" || (progressFor(lesson, data.work[lesson.id]).status === "completed") === (filter === "completed"));
@@ -45,9 +54,10 @@ export function StudentDashboardView() {
       <div><span className={styles.eyebrow}>{data.classroom.name} · 나의 학습 공간</span><h1>열린 수업을 살펴봐요.</h1><p>{session?.studentId} 학생의 학습 기록을 확인해요.</p></div>
       <div className={styles.headingTools}>
         <dl className={styles.overview} aria-label="학습 현황"><div><dt>열린 수업</dt><dd>{data.lessons.length}<small>개</small></dd></div><div><dt>완료한 수업</dt><dd>{completed}<small>개</small></dd></div></dl>
-        <Button variant="ghost" aria-label="수업 새로고침" onClick={() => void refresh()}><RefreshCw size={16} aria-hidden="true" /><span>새로고침</span></Button>
+        <Button variant="ghost" aria-label="수업 새로고침" aria-disabled={refreshing} onClick={() => void refresh(true)}>{refreshing ? <LoadingSpinner /> : <RefreshCw size={16} aria-hidden="true" />}<span>{refreshing ? "확인 중" : "새로고침"}</span></Button>
       </div>
     </header>
+    <span className={styles.srOnly} role="status" aria-live="polite">{refreshing ? "수업 기록을 확인하고 있어요." : ""}</span>
     {error && <div className={styles.notice} role="alert">{error} 마지막으로 확인한 수업을 보여드리고 있어요.</div>}
     <section className={styles.library} aria-labelledby="lessons-heading">
       <div className={styles.sectionHeading}><div><h2 id="lessons-heading">열린 수업 <span>{data.lessons.length}</span></h2><p>단계별 진행을 확인하고 하던 곳에서 이어가세요.</p></div>
