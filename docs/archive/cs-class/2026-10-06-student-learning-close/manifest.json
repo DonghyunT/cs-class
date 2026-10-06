@@ -1,0 +1,12 @@
+[
+  {
+    "preservedAt": "2026-10-06",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/student-learning-readability",
+    "baseCommit": "603b8ee09e2ea977d0dc1905290ddcdc80b58bf1",
+    "source": "Clean Windows working tree before requested session closure",
+    "original": "docs/HANDOFF.md",
+    "preserved": "HANDOFF.md",
+    "sha256": "3d294159d1c66bc808324ec945cdb179666ff1f47007400119a1eb329fc2cf08"
+  }
+]
