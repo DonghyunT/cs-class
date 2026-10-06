@@ -5,6 +5,82 @@ import { STORAGE_KEY, checkMission, initialState, newBlock, restoreState, runPro
 const make = (...items: [BlockKind, string][]): Block[] => items.map(([kind, value], i) => ({ ...newBlock(kind, String(i)), value }));
 const calculator = make(["start", "click"], ["ask", "a"], ["store", "A"], ["ask", "b"], ["store", "B"], ["calculate", "multiply"]);
 
+test("programming-readability: 서로 다른 체험의 실행 결과가 개념 왕복에서 섞이지 않는다", async ({ page }) => {
+  await page.goto("/prototype/programming");
+  await page.getByRole("button", { name: "이 명령 실행하기" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /^안녕!$/ })).toBeVisible();
+  await page.getByRole("button", { name: "다음 개념", exact: true }).click();
+  await expect(page.getByText("말풍선이 기다리고 있어요", { exact: true })).toBeVisible();
+  await page.getByLabel("강아지 이름", { exact: true }).fill("보리");
+  await page.getByRole("button", { name: "인사말 만들어 보기" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /^내 이름은 보리!$/ })).toBeVisible();
+  await page.getByRole("button", { name: "이전 개념", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: /^안녕!$/ })).toBeVisible();
+  await page.getByRole("button", { name: "체험 초기화", exact: true }).click();
+  await page.getByRole("button", { name: "다음 개념", exact: true }).click();
+  await expect(page.getByLabel("강아지 이름", { exact: true })).toHaveValue("보리");
+  await expect(page.getByRole("status").filter({ hasText: /^내 이름은 보리!$/ })).toBeVisible();
+});
+
+test("programming-readability: 관찰하며 체험을 초기화해도 답안과 완료는 유지", async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  await page.goto("/prototype/programming");
+  const experiment = page.getByRole("group", { name: /개념 체험$/ });
+  const observation = page.locator("#programming-observation");
+  const reset = page.getByRole("button", { name: "체험 초기화", exact: true });
+  await expect(experiment).toHaveAccessibleDescription(/블록.*텍스트.*결과/);
+  await expect(observation).toBeVisible();
+  await page.getByRole("button", { name: "텍스트", exact: true }).click();
+  await page.getByRole("button", { name: "이 명령 실행하기" }).click();
+  await expect(experiment.getByText("안녕!", { exact: true })).toBeVisible();
+  await page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true }).check();
+  await page.getByRole("button", { name: "생각 확인하기" }).click();
+  await reset.click();
+  await expect(page.getByRole("button", { name: "블록", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(experiment.getByText("어떤 명령을 줄까?", { exact: true })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true })).toBeChecked();
+  await expect(page.getByRole("button", { name: "개념 확인 완료" })).toBeDisabled();
+  await page.getByRole("button", { name: "다음 개념", exact: true }).click();
+  await expect(experiment).toHaveAccessibleDescription(/이름.*인사말/);
+  await page.getByLabel("강아지 이름", { exact: true }).fill("보리");
+  await page.getByRole("button", { name: "인사말 만들어 보기" }).click();
+  await expect(experiment.getByText("내 이름은 보리!", { exact: true })).toBeVisible();
+  await page.getByRole("radio", { name: "출력", exact: true }).check();
+  await reset.click();
+  await expect(page.getByLabel("강아지 이름", { exact: true })).toHaveValue("초코");
+  await expect(experiment.getByText("말풍선이 기다리고 있어요", { exact: true })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "출력", exact: true })).toBeChecked();
+  await page.getByRole("button", { name: "다음 개념", exact: true }).click();
+  await expect(experiment).toHaveAccessibleDescription(/A.*B.*계산 결과/);
+  await page.getByLabel("변수 A", { exact: true }).fill("-2");
+  await page.getByLabel("변수 B", { exact: true }).fill("3");
+  await expect(experiment.getByText("-6", { exact: true })).toBeVisible();
+  await reset.click();
+  await expect(page.getByLabel("변수 A", { exact: true })).toHaveValue("6");
+  await expect(page.getByLabel("변수 B", { exact: true })).toHaveValue("4");
+  await expect(experiment.getByText("24", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "다음 개념", exact: true }).click();
+  await expect(experiment).toHaveAccessibleDescription(/방향키.*좌표/);
+  const stage = page.getByRole("group", { name: "방향키 실험 무대" });
+  await stage.focus(); await stage.press("ArrowRight");
+  await expect(stage).toContainText("x 10 · y 0");
+  await reset.click();
+  await expect(stage).toContainText("x 0 · y 0");
+  for (const width of [1280, 390, 320]) {
+    await page.setViewportSize({ width, height: 720 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+    expect(await observation.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(width > 600 ? 18 : 16);
+    expect(await stage.locator("span").evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(16);
+    await page.screenshot({ path: info.outputPath(`programming-concept-${width}.png`), fullPage: true });
+  }
+  const state = restoreState(await page.evaluate((key) => sessionStorage.getItem(key), STORAGE_KEY));
+  expect(state?.conceptDone).toEqual([0]);
+  expect(state?.conceptAnswers).toEqual({ 0: 0, 1: 2 });
+  expect(errors).toEqual([]);
+});
+
 test("실행기는 대답 덮어쓰기·0/음수·평균·방향 신호·잘못된 복원을 구분한다", () => {
   const inputs = { name: "초코", a: "-2", b: "0" };
   expect(runProgram(calculator, inputs).frames.at(-1)?.speech).toBe("A × B = 0");

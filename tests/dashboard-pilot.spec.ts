@@ -356,7 +356,7 @@ test("학생·교사 실제 배치: 7개 너비·키보드·모바일·빈 상�
   expect((await page.request.post(schedulePath, { headers, data: { revision: 0, items: [event("정보 수업 준비"), event("작품 살펴보기")] } })).status()).toBe(200);
   for (const role of ["student", "teacher"] as const) {
     if (role === "student") expect((await loginStudent(page.request, studentPassword)).status()).toBe(200);
-    else { await page.getByRole("button", { name: "로그아웃", exact: true }).click(); await expect(page).toHaveURL(/\/login\/student$/); await readyTeacher(page.request); }
+    else { await page.getByRole("button", { name: "학생 메뉴", exact: true }).click(); await page.getByRole("button", { name: "로그아웃", exact: true }).click(); await expect(page).toHaveURL(/\/login\/student$/); await readyTeacher(page.request); }
     await page.goto(`/${role}`); await expect(todos(page).getByText(/아직 내 할 일이 없어요/)).toBeVisible();
     await add(page, role === "student" ? "궁금한 점 정리하기" : "학생 작품 살펴보기"); await saved(page);
     await expect(page.locator("#current-heading")).toHaveText("순서가 만드는 알고리즘");
@@ -388,9 +388,9 @@ test("학생·교사 실제 배치: 7개 너비·키보드·모바일·빈 상�
     if (role === "student") {
       await page.getByRole("button", { name: "수업 시작", exact: true }).click();
       await page.getByRole("radio", { name: "컵에 물을 200mL 따른다", exact: true }).check();
-      await page.getByRole("link", { name: "대시보드로", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
+      await page.getByRole("link", { name: "수업 나가기", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
       await page.getByRole("button", { name: "이어하기", exact: true }).click(); await expect(page.getByRole("radio", { name: "컵에 물을 200mL 따른다", exact: true })).toBeChecked();
-      await page.getByRole("link", { name: "대시보드로", exact: true }).click();
+      await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.getByRole("navigation", { name: "교실 메뉴" }).getByRole("link", { name: "열린 수업", exact: true }).click();
       await expect(page.getByRole("heading", { name: "열린 수업을 살펴봐요.", exact: true })).toBeVisible();

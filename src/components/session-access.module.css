@@ -1,0 +1,5 @@
+.accessState{min-height:calc(100dvh - 32px);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:23px;padding:30px;text-align:center}
+.accessState p{color:#526173;font-size:14px}
+.accessState h1{font-size:26px}
+.formIcon{display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:15px;color:var(--primary);background:#edf3ff;margin:10px 0 0}
+@media(max-width:600px){.accessState h1{font-size:23px}}

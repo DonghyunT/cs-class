@@ -41,11 +41,11 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
   const runs = useRef<NameRun[]>([]);
   const currentRun = useRef<{ id: string; key: string } | null>(null);
   const viewToggle = useRef<HTMLButtonElement>(null);
-  const previousWide = useRef(workspaceWide);
+  const manualViewFocus = useRef(false);
   useEffect(() => {
-    if (previousWide.current !== workspaceWide) viewToggle.current?.focus({ preventScroll: true });
-    previousWide.current = workspaceWide;
+    if (manualViewFocus.current) { viewToggle.current?.focus({ preventScroll: true }); manualViewFocus.current = false; }
   }, [workspaceWide]);
+  function setWide(wide: boolean) { manualViewFocus.current = true; onWorkspaceWideChange(wide); }
   const parse = mission ? parseProgrammingProject : parseEntryProject;
   const program = parse(draft.entryProject);
   const validation = practiceMatches(draft, work.validation) ? work.validation : null;
@@ -159,7 +159,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
           {running ? <Square size={14} /> : <Play size={14} />}{running ? "실행 정지" : "실행하기"}
         </Button>
         <Button size="sm" variant="outline" disabled={locked || preparing || phase !== "ready"} onClick={() => send("reset-stage")}><RotateCcw size={14} />무대 처음 위치로</Button>
-        <Button ref={viewToggle} size="sm" variant="outline" aria-pressed={workspaceWide} onClick={() => onWorkspaceWideChange(!workspaceWide)} onKeyDown={(event) => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); onWorkspaceWideChange(false); } }}>
+        <Button ref={viewToggle} size="sm" variant="outline" aria-pressed={workspaceWide} onClick={() => setWide(!workspaceWide)} onKeyDown={(event) => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); setWide(false); } }}>
           {workspaceWide ? <Minimize2 size={14} /> : <Maximize2 size={14} />}{workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"}
         </Button>
       </div></div>
@@ -181,7 +181,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
       {mission?.id === "keys" && <div className={styles.keyPad} aria-label="방향키 실행">{[["38", "↑ 위"], ["37", "← 왼쪽"], ["40", "↓ 아래"], ["39", "→ 오른쪽"]].map(([key, label]) => <Button key={key} variant="outline" size="sm" disabled={!running || locked} onClick={() => send("key", { key })}>{label}</Button>)}</div>}
     </section>
     <aside className={styles.validation}>
-      <div><h3>검증하고 제출해요</h3><p>검증을 통과한 작품을 제출하면 실습이 완료돼요.</p>
+      <div><h3>검증하고 제출해요</h3><p>실행 결과 확인 → 조건 검증 → 작품 제출 순서로 해보세요. 검증을 통과한 작품을 제출하면 실습이 완료돼요.</p>
         <ul className={styles.criteria}>{lesson.practice.criteria?.map((criterion) => {
           const feedback = validation?.criteriaResults?.find((item) => item.id === criterion.id);
           return <li key={criterion.id}>{feedback?.passed ? <Check size={16} /> : <Square size={16} />}<span>{criterion.label}<span className={common.srOnly}>{feedback ? feedback.passed ? "통과" : "보완 필요" : "확인 전"}</span></span></li>;

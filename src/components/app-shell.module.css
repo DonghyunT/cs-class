@@ -1,41 +1,5 @@
 .appError { margin: 12px 24px; padding: 14px 18px; border-radius: 12px; color: #992d2d; background: #fff0ef; }
 
-.accessState .formIcon {
-  margin: 10px 0 0;
-}
-
-.accessState p {
-  color: #8795a8;
-  font-size: 13px;
-}
-
-.accessState h1 {
-  font-size: 26px;
-}
-
-.accessState {
-  min-height: calc(100dvh - 32px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 23px;
-  padding: 30px;
-  text-align: center;
-}
-
-.formIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 50px;
-  height: 50px;
-  border-radius: 15px;
-  color: var(--primary);
-  background: #edf3ff;
-  margin-bottom: 24px;
-}
-
 .layout {
   --primary: #376fc8;
   --foreground: #202b3a;
@@ -258,7 +222,7 @@
 .layout[data-workspace-wide="true"] .dashboardMain { max-width: none; padding-block: 24px 40px; }
 @media (min-width: 821px) {
   .layout[data-workspace-wide="true"] .appSidebar { display: none; }
-  .layout[data-workspace-wide="true"] .dashboardMain { padding-inline: 24px; }
+  .layout[data-workspace-wide="true"] .dashboardMain { padding-inline: 16px; }
 }
 
 @media (max-width: 1100px) {
@@ -305,9 +269,9 @@
   .layout .dashboardMain { padding: 28px 20px 36px; }
   .layout .appFooter { padding-inline: 20px; }
   .layout .appFooter { gap: 14px; }
-  .accessState h1 { font-size: 23px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .layout .appSidebar, .layout .appSidebar nav a, .layout .mobileOnly { transition: none; }
 }
+@media (max-width:820px){.layout[data-workspace-wide="true"] .dashboardMain{padding-inline:12px}}

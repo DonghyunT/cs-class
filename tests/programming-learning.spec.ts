@@ -12,7 +12,7 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
   try {
     await readyStudent(page.request); await workRef.delete();
     await classRef.update({ currentLessonId: id, openedLessonIds: [id] });
-    await page.goto(`/classroom/${id}`);
+    await page.goto(`/classroom/${id}?from=dashboard`);
     const answers = ["컴퓨터가 할 일을 명령으로 표현해요", "출력", "3", "오른쪽 화살표 키를 누를 때"];
     for (let i = 0; i < answers.length; i++) {
       await page.getByRole("radio", { name: answers[i], exact: true }).check();
@@ -46,7 +46,7 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     await expect(page.getByRole("tab", { name: "퀴즈 100%" })).toBeVisible();
     await page.reload(); await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "퀴즈 100%" })).toBeVisible();
-    await page.getByRole("link", { name: "대시보드로", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
+    await page.getByRole("link", { name: "수업 나가기", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
     const current: Work = await (await page.request.get(endpoint)).json();
     const project = buildProgrammingProject([[{ type: "when_run_button_click", params: [null] }, { type: "move_direction", params: [{ type: "number", params: [10] }, null] }]]);
     current.draft.programming!.mission = "move"; current.draft.programming!.projects.move = project;

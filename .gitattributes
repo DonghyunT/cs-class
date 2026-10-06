@@ -6,6 +6,7 @@ docs/archive/cs-class/2026-09-30-before-dashboard-polish-release/** -text whites
 docs/archive/cs-class/2026-10-01-before-programming-release/** -text whitespace=cr-at-eol
 docs/archive/cs-class/2026-10-01-before-local-ui-release/** -text whitespace=cr-at-eol
 docs/archive/cs-class/2026-10-05-before-ui-refinement/** -text whitespace=cr-at-eol
+docs/archive/cs-class/2026-10-06-student-learning-close/** -text whitespace=cr-at-eol
 docs/reference/ui-component-lab/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 # Keep the upstream font license verbatim, including its original trailing space.
 src/app/fonts/OFL.txt -text whitespace=cr-at-eol,-blank-at-eol

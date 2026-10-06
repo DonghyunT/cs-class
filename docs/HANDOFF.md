@@ -1,83 +1,110 @@
 # 이어갈 작업
 
-갱신: 2026-10-05(Asia/Seoul), 사용자 요청에 따라 이번 작업을 마감합니다. 제품 정책은 [PRD](PRD.md), 화면 기준은 [DESIGN](DESIGN.md), 실행은 [DEVELOPMENT](DEVELOPMENT.md), 서버 대상은 [FIREBASE_SETUP](FIREBASE_SETUP.md)을 따릅니다. 단계별 상세 기록은 [세션 마감 전 보존본](archive/cs-class/2026-10-05-session-close/manifest.json)에 있습니다.
+갱신: 2026-10-07(Asia/Seoul). **현재 브랜치 `codex/student-learning-readability`; 학생 UI1~12차와 담당 문서·신규 모듈·참고 화면을 이번 커밋에 보존하며 미커밋 변경을 정리합니다. 다음 행동은 PR/CI 확인 → main 병합 → 기존 Production 배포 확인 → 최종 인계입니다.** 로컬 최종 빌드 전체178개가 단일 실행에서 통과했습니다. 선생님이 이 흐름과 실제 브라우저200%·물리 OS 한글 입력기 두 항목만 미확인으로 남기는 2번 방안을 승인했습니다.
+
+제품 정책은 [PRD](PRD.md), 시각·조작은 [DESIGN](DESIGN.md), 실행은 [DEVELOPMENT](DEVELOPMENT.md), 서버는 [FIREBASE_SETUP](FIREBASE_SETUP.md)을 따릅니다. 앞선1~7차의 상세 이력은 [마감 전 원문](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md)과 [보존 해시](archive/cs-class/2026-10-06-student-learning-close/manifest.json)에 있습니다. 원문과 해시는 변경하지 않았습니다.
 
 ## 현재 작업 상태
 
-| 항목 | 상태 |
+| 항목 | 현재 상태 |
 | --- | --- |
-| 브랜치·미커밋 | 문서 마감 브랜치 `codex/session-handoff-20261005`, 기준 main `9af5b9d`. 이 변경은 문서·보관 원문만 포함하며 마감 커밋 뒤 미커밋 없음 |
-| 완료 범위 | 교실 UI 개선, 세 알고리즘 복습의 저장·AI·교사 확인·11반 공개, 원작 실습 표현 복원, 서울 함수 배치를 운영에 반영했습니다 |
-| 사용자 확인 | 10/5 서울 배포 후 사용자가 응답이 훨씬 빨라졌다고 확인했습니다. 실제 메뉴·반 선택의 개선율이나 학교망 성능을 수치로 측정한 것은 아닙니다 |
-| 문서 마감 검사 | 활성11문서의 로컬 링크321개·Markdown 앵커146개 누락0, 보관 원문2개의 SHA-256/기준 커밋 일치, 소스653개·기존 브라우저 자산40개에서 서버 비밀값 포함0건을 확인했습니다. 앱/서버 설정은 변경하지 않아 기능 검사를 재실행하지 않았습니다 |
-| 다음 행동 | 다음 세션에서 첫 실제 수업 준비를 재개합니다. 실제 학년도·명부·첫 적용 반과 학교 브라우저를 확인하고 아래 순서로 진행합니다 |
-| 운영 변경 경계 | 이번 문서 마감은 운영 계정·명부·반 설정·작품·비밀값·유료 계약을 변경하지 않습니다. 과거 공개·키 등록 승인을 새 자료 변경이나 요금제 구매 승인으로 확대하지 않습니다 |
+| Git | `origin=https://github.com/DonghyunT/cs-class.git`. 작업 브랜치는 `codex/student-learning-readability`; 재개 기준ad4699d(앱603b8ee)에8~12차를 추가했습니다. main=origin/main=b8806a5를 재확인했고 merge-base8668cb0과 main의 파일 차이는 없습니다. 신규 소스5개·합성 참고 PNG3개도 포함합니다. 강제 reset/push하지 않았습니다. |
+| 범위 | 한 개념/문항 표시·자유 이동·학습 위치·기본/수동 실습 폭·LessonShell·7개 수업의 공통 배치와 추상화/순서도/프로그래밍 체험, 워크북/Entry 주변 읽기, 홈/학생 보조색을 구현했습니다. |
+| 소유·경계 | `useWork` 단독 저장 소유, 수업/문항/미션 ID·서버·채점·완료 계약을 유지했습니다. 체험 초기화와 저장 답안·완료·작품은 분리합니다. 새 의존성·DB 형식·인증/규칙/환경변수 변경은 없습니다. |
+| 실행 | Windows·Node24.19.0·Java21.0.12.1·Chromium·demo Auth9099/Firestore8080·localhost:3000. 최종 E2E는 `CI=1`의 `next start`와 새 합성 시드·AI/시간표 fixture입니다. 실행 후 앱/에뮬레이터는 종료됐으며 다른 PC의 demo 백업을 복원하지 않았습니다. |
+| 운영 | 기존 Vercel cs-class / Firebase cs-class-f74c4 / Production b8806a5·icn1·dpl_4QmJQKVPnKuA8tS8ogkmEXqRPZiA를 확인했습니다. 이번 UI는 아직 main에 병합/공개하지 않았습니다. 운영 DB·실학생 자료·새 합성 계정·유료 Solar 호출은 변경하지 않습니다. |
 
-## 지금 사용할 수 있는 것
+## 학생 학습 화면 개선 계획 재개
 
-- 「강아지와 시작하는 프로그래밍」: 개념 네 활동·퀴즈 다섯 문항·실제 EntryJS 기본 네 미션·선택 평균 도전, 미션별 저장/검증/제출과 교사 조회입니다. 공개 `/prototype/programming`은 별도 체험으로 유지합니다.
-- 문제 추상화·알고리즘 설계·순서도 연구소: 선택 복습이며 성적 미반영입니다. 원작의 색상 워크북·샌드위치 조리대/재료/칼·순서도 기호/캔버스/실행 강조를 살렸습니다. 수업별 Solar AI, 작품 스냅샷과 고정 교사 요청본, 저장 실패·충돌·재접속 처리를 연결했습니다.
-- 학생·교사 대시보드와 목록: 개인 할 일·반 일정·시간표, 조회 스켈레톤·재시도/새로고침 표시, 단계/미션 진행과 저장 안내, 44px 조작 영역과 넓게 보기를 제공합니다. 교사 반 선택은 메뉴 이동·새로고침 동안 기억하고 실제 재로그인 시 기본 반으로 돌아갑니다.
-- 명부 준비·반별 발급·제한된 백업 도구는 합성 자료로 검사했습니다. 실학생 등록·초기 전달은 후속이며 [첫 수업 절차](DEVELOPMENT.md#실학생-명부-준비와-반별-발급)를 따릅니다.
+[12회차 계획](reference/student-learning-readability-plan.md)은 요구와 실행 근거를, [수업 전용 틀 계획](reference/student-lesson-shell-plan.md)은 추가 설계·구현 근거를 관리합니다.
 
-## 통합·배포 상태
+- 한 개념/한 문항을 크게 표시하며 자유 이동합니다. 선택 위치·답안·완료를 구분하고 재접속은 첫 미완료/미답변·오답에서 시작합니다. 체험 초기화는 답안·완료를 지우지 않습니다.
+- 학생 수업은 LessonShell, 대시보드·열린 수업·교사는 AppShell입니다. 나가기·제목·저장·학생 메뉴·단계 탐색을 모으고 낮거나 좁은 창에서는 일반 흐름으로 읽습니다.
+- 실습은 기본 폭으로 진입합니다. 수동 넓게 보기는 같은 수업의 단계/미션에서 유지하며 새로고침·다른 수업은 기본입니다. 같은 Entry iframe·편집기·작품을 유지합니다.
+- 추상화는 남길 이유·동일5역/4연결의 두 지도·상태/조건/목표·펼치는 작은 단계, 순서도는 실제 기호·150cm 경계·틀림의 입력 복귀와 맞음의 종료를 제공합니다. 프로그래밍은 관찰 질문·큰 표시·초기화를 추가하고 두 체험의 말풍선 결과를 분리했습니다.
+- 워크북 입력과 도움·결과를 가깝게 두고 순서도 캔버스의 공간을 늘렸습니다. 크기 전환은 초기 시작 기호와 사용자가 옮긴 위치를 구분해 보존합니다. 실제 Entry는1000px/660px(700px 이하620px)을 유지합니다. 홈·학생 안내에 warm 토큰을 소량 쓰고 파랑 주요 조작과 역할/오류 색은 유지합니다.
 
-[운영 사이트](https://cs-class-donghyunt.vercel.app), Firebase `cs-class-f74c4`, Vercel `cs-class`입니다. 아래는 10/5에 확인한 기능 릴리스 근거이며 문서 마감에서 앱 검사를 새로 실행한 결과가 아닙니다.
+## 검증과 검토 자료
 
-### 10/5 서버 함수 지역 조정
+**10/7 이 PC의 실제 새 검사입니다. 이전603b8ee 결과를 이번 검증으로 세지 않습니다.** 최종 앱 소스 변경은00:43:16 KST이며 이후 두 탭 검사의 대기만 보강했습니다. 아래 최종 전체는 같은 최종 프로덕션 빌드에서 실행했습니다.
 
-운영 함수의 미국 동부 `iad1`과 Firestore 서울 `asia-northeast3`가 떨어져 있음을 실제 메타데이터로 확인했습니다. `vercel.json`의 함수 지역만 서울 `icn1`로 지정했고 저장·권한·학습·Cron 규칙은 유지했습니다. [PR #25](https://github.com/DonghyunT/cs-class/pull/25)의 기능 `986bf56`과 병합 main `eacb020`의 트리는 동일합니다.
+| 검사 | 결과·한계 |
+| --- | --- |
+| 정적·빌드·순수 | 최종 앱 lint/typecheck/Next16.3.6 build 통과. 검사 보강 후 전체 lint/typecheck도 통과. 변경 없는 엔진/AI/반 계획 순수12개는 이번 실행 중 통과했습니다. |
+| 단원·Entry 영향 | 추상화 새3개+기존5개, 순서도9개와 출력 기호/조건 경계, 프로그래밍 공개/새 체험, 실제 Entry·프로그래밍·작업실 영향12개와 합성 IME를 확인했습니다. 팔레트 조립·입력·실행/중지/무대 복원·동일 iframe·미완성 초안·저장503/409 보존을 포함합니다. |
+| 첫 전체·앱 수정 | 178개 중177개/1실패(11.0분). 390px 시작 기호의 스크롤/크기 전환 문제를 재현·수정하고 두 파일14개를 연속 재검증했습니다(1.3분). 원래 범위 조건·수동 wheel/pan·편집 초점·작품/저장을 유지했습니다. |
+| 두 번째 전체·검사 수정 | 178개 중177개/1실패(10.8분). 두 탭 충돌 검사가 이전 저장 표시를 읽어 요청을 겹치게 한 원인을 trace의 요청/응답·버전·멱등 저장으로 확인했습니다. 응답 답안·revision 증가를 기다리도록 검사만 고쳤으며 기존 충돌/보존/해결 조건·앱/서버는 유지했습니다. 해당 파일4개 통과(30.1초). |
+| 최종 전체 | `CI=1 npm.cmd run test:e2e`, 새 demo·프로덕션 빌드에서 **178/178 단일 실행 통과(10.6분)**. 두 실패를 합쳐 통과로 세거나 검사 조건을 낮추지 않았습니다. |
+| 시각·독립 리뷰·문서 | 공개 홈/pc0~pc3의12개 크기 조합과 단원/대시보드 실제 캡처·좁은 창·키보드·콘솔을 확인했습니다. warm 글자5.04:1·새 기호 경계3:1 이상. 전체 diff/새 모듈·두 후속 수정의 독립 리뷰에 남은P1/P2가 없습니다. 문서 링크179개·diff 검사 통과, 보관 원문 해시 동일입니다. |
 
-- Windows·Node24·Java21·Chromium·demo Auth9099/Firestore8080·`next start`: typecheck/lint/build·순수12개·영향32개 성공(1.4분), 독립 리뷰 P1/P2 없음. [Linux PR CI](https://github.com/DonghyunT/cs-class/actions/runs/37304913398)는 전체135개 성공·Windows .NET 전용1개 제외(12.0분)입니다. 동일 트리의 중복 push/main CI 취소는 성공으로 세지 않습니다.
-- 기록 후 main `9af5b9de5e4b6a6416166745c9fe4e345f490be9`의 배포 `dpl_5Y1oimfL1eRXSeSHTTfQcQNzdQ8L`/`cs-class-qvjui5k1c-donghyunt.vercel.app`에서 READY·Production·`regions: ["icn1"]`·SHA·정식 별칭 일치를 확인했습니다. 기능 검증본과 앱/설정은 같습니다.21:14 KST config200/configured=true/승인 프로젝트/에뮬레이터 없음/게스트 비활성화, 익명 session200/세션없음과 학생·교사·AI401을 확인했습니다. 로그인 화면/학번 초점/콘솔 오류0은 직전 기능 배포의21:03~21:04 확인입니다.
-- 배포 전후11반의 열린/이번 수업/revision은 동일했고 운영 AI 집계는21:03 시점2→2호출·실패0이었습니다. 실제 사용 집계를 초기화하거나 검사 호출로 해석하지 않습니다. 새 유료 AI 호출·운영 합성 계정/시드는 없었습니다.
-
-### 10/5 원작 실습 UI 복원 공개
-
-기능 `12b00e7` → [PR #23](https://github.com/DonghyunT/cs-class/pull/23) → main `448d61f`로 공개했습니다. 기존 저장·AI·교사 기능을 유지하고 실습 표현을 원작에 맞췄습니다. Windows 최종 영향26개·순수12개·typecheck/lint/build, Linux PR/브랜치 전체135개·Windows 전용1개 제외가 통과했습니다. 실제 그림·끌어놓기/키보드·초점/44px·320/390/820/821px·모션 줄이기·콘솔·작성/재접속/제출/교사 요청을 확인했고 독립 재검토의 추가 지적은 없었습니다. 초기 칼 움직임·캔버스 잘림의 재현/수정과20:10 운영 확인은 [보존 기록](archive/cs-class/2026-10-05-session-close/HANDOFF.md#105-원작-실습-ui-복원-공개)에 있습니다.
-
-### 10/5 세 복습 운영 공개
-
-기능 `9ac8142` → [PR #21](https://github.com/DonghyunT/cs-class/pull/21) → main `6bad59b`로 공개했습니다. Windows `c892d66` 전체130개와 이후 영향19개, Linux 최종 전체130개·Windows 전용1개 제외를 구분합니다. 18:41~18:42 KST 샌드위치→추상화→순서도 순서로 백업/계획·11반 원자적 적용·전후 대조를 완료했습니다. 새 복습을 이번 수업으로 자동 지정하지 않았고 기존 강아지 설정·작품·계정은 보존했습니다.
-
-사용자가 Firebase 결제 계정을 직접 연결한 뒤 AI 요청/캐시 TTL 두 항목의 ACTIVE를17:48에 확인했습니다. Production Sensitive와 Git 제외 로컬 설정의 보안 기준은 [서버 설정](FIREBASE_SETUP.md#복습-ai-서버-설정), 실제 Solar 품질과 오판은 [실행 장부](reference/algorithm-review-integration.md#실행-장부)를 따릅니다. 반 설정 복구 파일은 아래 로컬 자료 절에 있고 적용 절차는 [개발 안내](DEVELOPMENT.md#알고리즘-복습-수업)에 있습니다.
-
-### 10/4 실제 수업·시간표 운영 릴리스
-
-[PR #18](https://github.com/DonghyunT/cs-class/pull/18)의 13차시·명부 도구·금옥중학교 시간표는 운영에 반영했습니다. Windows97개·Linux96개/Windows 전용1개 제외, 인증된 첫 갱신과 플랫폼 수동 Run200은 [당시 보존 기록](archive/cs-class/2026-10-05-before-ui-refinement/HANDOFF.md#104-실제-수업시간표-운영-릴리스)에 있습니다. 10/5 첫 자연 예약의 관측 결과는 미확인이며 다음 점검에서 로그/`checkedAt`을 대조합니다.
-
-### 10/3 운영 테스트 계정 발급
-
-사용자가 승인한 학생11개·교사1개의 일회 발급 근거는 [보존 기록](archive/cs-class/2026-10-05-before-ui-refinement/HANDOFF.md#103-운영-테스트-계정-발급)에 있습니다. 발급 원문은 Git에 넣지 않으며 반복 자동 검사·새 운영 계정 생성에 이 승인을 적용하지 않습니다.
-
-## 교실 입장·대시보드 조회 성능
-
-10/5 같은 PC의 익명 `/api/auth/session` 측정은 아래와 같습니다. 각 표본은 첫 요청 뒤 연속5회이며 로그인한 반 조회나 DB 통신의 측정이 아닙니다.
-
-| 시간(KST)·지역 | 첫 요청 | 이후5회 중앙값 / 최대 |
-| --- | --- | --- |
-| 20:39·미국 `iad1` | 316ms | 213ms / 218ms |
-| 21:03·서울 `icn1`, 배포 직후 | 2163ms | 47ms / 1626ms |
-| 21:04·서울 `icn1`, 추가 측정 | 158ms | 48ms / 56ms |
-
-배포 직후의 느린 요청도 포함합니다. 사용자는 이후 응답이 훨씬 빨라졌다고 확인했습니다. 실제 메뉴/반 선택의 정량 개선율·학교망·초기 지연 원인은 미측정이며 저장 확인이나 AI 응답의 대기를 없앤 변경은 아닙니다. 원본 표본은 Git 제외 `scratch/review-lessons/anonymous-session-{before,after,settled}-20261005.json`에 있습니다. 운영 로그 도구403·Observability Plus 요구402로 해당 로그/집계는 확인하지 못했으며 유료 업그레이드는 하지 않았습니다. 추가 진단은 [측정 절차](DEVELOPMENT.md#대시보드-성능-측정)를 따릅니다. 이전9/30 측정은 [과거 메타데이터](reference/dashboard-performance/2026-09-30.json)와 구분합니다.
+결과 원본은 Git 제외 `scratch/round8-*`, `round9-*`, `round10-*`, `readability-built-public-20261007`, `readability-full-first-failure-20261007`, `readability-full-second-failure-20261007`와 최종 `test-results/`입니다. 다른 PC에 필요한 [8~12차 대표 PNG3장](reference/student-learning-readability-plan.md#812차-구현의-합성-검토-화면)은 Git에 포함합니다. 합성 캡처·자동 검사는 실제 학생 이해도 개선의 증거가 아닙니다.
 
 ## 다음에 이어갈 작업
 
-1. **첫 실제 수업 준비:** 학년도·실제 명부·첫 적용 반을 확인하고 명부 변환/검증/읽기 전용 계획을 준비합니다. 등록·발급·반 설정 변경은 대상과 영향·복구 범위를 확인한 뒤 승인된 범위에서 수행합니다. [수업 전 확인 순서](DEVELOPMENT.md#첫-실제-수업-확인-순서)를 사용합니다.
-2. **학교에서 흐름 확인:** 입장·개인 비밀번호 변경·활동·저장/재접속·제출·교사 확인, 브라우저 종료/창 복원 후 세션, 메뉴/반 선택 체감과 자연 Cron을 확인합니다. 실제 자료를 쓰는 관찰과 로컬 합성 검사를 구분해 기록합니다.
-3. **사용 결과로 후속 결정:** 복습 AI의 호출/토큰/지연/실패와 교사 확인 사례를 보고 월 예산·품질 보강을 정합니다. 도움/Q&A·작품집·교사 콘텐츠 편집·평가·학년도/수업 버전·보관/백업 정책은 [PRD의 미결정](PRD.md#다음에-결정할-것)이며 일괄 구현을 시작하지 않습니다.
+1. 현재 검증한 소스/문서를 커밋하고 원격 main을 보존해 병합 준비합니다. PR의 CI를 확인한 뒤 승인된 main 병합·Production 배포를 진행합니다.
+2. 배포 SHA·별칭·icn1·익명 session/권한·로그인 화면·이전 주소 이동을 확인하고 실제 결과로 이 문서를 마감합니다. READY나 로그인 버튼만으로 실제 Google OAuth 성공을 판정하지 않습니다.
+3. 실제200%·물리 OS IME는 합의된 미확인입니다. 네이티브 조작은 자동 승인 검토가 현재 브라우저 URL을 확인하지 못해 차단했습니다. CSS zoom·합성 composition을 대체 근거로 세지 않습니다.
+4. UI 공개 후 첫 실제 수업은 [첫 수업 절차](DEVELOPMENT.md#첫-실제-수업-확인-순서)의 학년도·명부·반·개별 발급부터 별도 확정합니다. 신규 Google OAuth·학교망·자연 Cron·실제 Solar 품질/예산·실학생 관찰은 별도 범위입니다.
+
 
 ## 다른 PC에서 이어가기
 
-- `AGENTS.md`와 이 문서를 읽고 현재 브랜치·미커밋/미추적 파일을 보존한 뒤 원격 `main`을 fetch/pull합니다. 과거 이식 ZIP을 최신 코드 위에 덮어쓰지 않습니다. 개발 환경·Java/캐시/EntryJS·에뮬레이터는 [새 PC 준비](DEVELOPMENT.md#다른-pc에서-시작)를 따릅니다.
-- `.env.local`·관리자 키·개인 스킬/도구 설정·`outputs/`·`scratch/`는 Git clone으로 옮겨지지 않습니다. 비밀값·학생자료를 채팅/문서/Git에 넣지 않고 필요한 파일만 지정한 비공개 경로로 따로 전달합니다. 실제 자료를 바꾸기 전 현재 값을 다시 확인합니다.
-- 로컬 복구 계획: `scratch/review-lessons/production-full-restore-plan-release-20261005.json`과 단계별 `production-{sandwich,abstraction,flowchart}-plan-release-20261005.json`. 원본 백업을 유지하며 현재값/revision이 계획과 다르면 전체 적용을 거부합니다. 학생 작품·기존 기록은 보존합니다. 파일이 없는 PC에서 추측으로 복구하지 않습니다.
-- 참고 캡처/검사: `scratch/review-lessons/`·`scratch/ui-polish-2026-10-05/final/`·`scratch/release-verification/2026-10-05-ui/`. 빈 명부 양식은 `outputs/classroom-readiness/학생명부_작성양식.xlsx`입니다. 앞선 지역 검사 종료 시 앱/에뮬레이터를 정리했으며 재개할 때 포트 상태를 다시 확인합니다.
+먼저 그 PC의 미커밋·미추적 변경과 현재 브랜치를 보존합니다. 현재 작업은 아래 origin 브랜치입니다. main이나 옛 이식 ZIP으로 덮어쓰지 않습니다.
+
+```powershell
+git status -sb
+git fetch origin
+git branch -vv
+```
+
+로컬에 작업 브랜치가 **없을 때만**:
+
+```powershell
+git switch --track -c codex/student-learning-readability origin/codex/student-learning-readability
+```
+
+이미 있을 때는 기존 변경을 보존하고 해당 브랜치로 이동한 뒤 `git merge --ff-only origin/codex/student-learning-readability`로 받습니다. 분기해 있으면 자동 reset/강제 push 대신 차이를 대조합니다. 받은 tip·README·HANDOFF·계획/참고 PNG가 있는지 확인하고, [새 PC 준비](DEVELOPMENT.md#다른-pc에서-시작)의 Node24·Java21+·EntryJS·Chromium·캐시를 준비합니다. 에뮬레이터는 실제 Firebase 키 없이 `npm.cmd ci` 후 `npm.cmd run dev:emulator`로 시작합니다. 기존 캐시를 확인하기 전에 다운로드를 반복하지 않습니다.
+
+### 로컬 기록과 전달 경계
+
+- **다른 PC의 마감 시점 로컬 기록:** `scratch/handoff-20261006/demo-review-backup.json`에 합성20102의 계정/목록/AI 장부/반/일정과 작품5건, 합계9개 존재 문서를 읽어 보존했습니다. `backup-demo.mjs`는 앱 설정과 demo 호스트를 확인하는 읽기 전용 보존 도구입니다. 당시 앱·기록을 되돌리거나 서버를 종료하지 않았습니다. 이번 PC에서는 이 백업이 없으며 앞선 검사 전8건/7건/4건 백업으로 최신 체험을 덮어쓰지 않습니다.
+- **Git에 옮겨지는 것:** 현재 브랜치의 커밋·추적 소스·새 CSS/테스트·문서·참고 PNG입니다. 미추적 소스는 없습니다. **옮겨지지 않는 것:** `.env.local`·관리자 키·개인 도구/스킬 설정·`scratch/`·`outputs/`·node_modules·빌드/Java/브라우저/EntryJS 캐시·실행 중 에뮬레이터 기록입니다. 비밀값/계정/학생 자료는 채팅·문서·Git에 추가하지 않습니다. 동일 demo 기록이 필요하면 지정한 비공개 경로로 따로 전달하고 대상의 기존 기록을 비교한 뒤 복원합니다.
+- 새 PC의 demo는 새 시드로 시작합니다. 수업을 교사 화면에서 다시 열 수 있으며, 이 PC의 공개 합성20102 준비 상태가 그대로 있다고 가정하지 않습니다. 앱/에뮬레이터 포트와 `/api/auth/config`의 projectId·호스트·fixture를 확인하고 운영 앱3000과 테스트 서버를 혼용하지 않습니다.
+- 로컬 원본 복구 계획은 `scratch/review-lessons/production-full-restore-plan-release-20261005.json` 및 단계별 계획입니다. 반 설정만 복구하며 현재 revision이 다르면 거부합니다. 없는 PC에서 추측으로 재작성·적용하지 않습니다. 빈 명부 양식은 `outputs/classroom-readiness/학생명부_작성양식.xlsx`, 이전 검사 원본은 `scratch/concept-layout-20261006/`·`lesson-shell-20261006/` 등입니다.
+
+### 새 대화에 붙일 요청문
+
+> CS Class 작업을 이어주세요. 먼저 기존 Git 변경을 보존하고 AGENTS.md → docs/HANDOFF.md → 필요한 PRD/DESIGN/DEVELOPMENT를 읽어주세요. 원격 브랜치·최신 구현/검증/배포 상태는 HANDOFF 첫머리를 확인하고 옛 계획의 미착수 상태로 되돌리지 마세요. 학생 UI1~12차·선생님 피드백·LessonShell·공통 개념 배치의 근거는 두 계획서에 있습니다. 단일 useWork의 저장 소유, 답안/완료/체험 분리, 수동 폭과 실제 Entry iframe 유지 계약을 보존해주세요. 실제200%·물리 OS IME는 합의된 미확인 항목입니다. 로컬 AI는 fixture이며 demo 기록·비밀 설정·캐시는 PC별이므로 환경과 기존 기록부터 확인해주세요. 다음 운영 자료 변경은 제가 요청하는 범위로 진행해주세요.
+
+## 통합·배포 상태
+
+**아래는10/3~10/5의 과거 운영 확인입니다. 이번 마감에서 운영 상태를 다시 조회하지 않았습니다.** [운영 사이트](https://cs-class-donghyunt.vercel.app), Firebase `cs-class-f74c4`, Vercel `cs-class`입니다. 학생 UI 작업 브랜치는 main에 미병합입니다.
+
+- 함수 지역 조정은 [PR25](https://github.com/DonghyunT/cs-class/pull/25)의 `986bf56` → main `eacb020`이며 함수 `icn1`·DB `asia-northeast3`, 뒤 문서 배포의 SHA/별칭·익명 API·로그인 화면 확인은 [당시 기록](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md#105-서버-함수-지역-조정)에 있습니다. 실제 신규 Google OAuth/학교망 검증과 구분합니다.
+
+### 10/5 원작 실습 UI 복원 공개
+
+`12b00e7` → PR23 → main `448d61f`의 원작 실습 표현·검증/운영 확인은 [당시 기록](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md#105-원작-실습-ui-복원-공개)에 있습니다. 이번 학생 UI 작업의 배포 근거가 아닙니다.
+
+### 10/5 세 복습 운영 공개
+
+`9ac8142` → PR21 → main `6bad59b`,11반의 세 선택 복습 공개·반 설정 보존·TTL ACTIVE 확인은 [당시 기록](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md#105-세-복습-운영-공개)에 있습니다. 수업별 실제 Solar 품질·오판은 [실행 장부](reference/algorithm-review-integration.md#실행-장부)를 따릅니다. 같은 운영 시험을 반복하라는 승인이 아닙니다.
+
+### 10/4 실제 수업·시간표 운영 릴리스
+
+PR18의 프로그래밍13·명부 도구·시간표, 인증된 갱신/플랫폼 수동 Run200과 자연 Cron 미확인은 [당시 기록](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md#104-실제-수업시간표-운영-릴리스)에 있습니다. 자연 예약은 실제 로그와 `checkedAt`을 다음 점검에서 확인합니다.
+
+### 10/3 운영 테스트 계정 발급
+
+승인된 학생11개·교사1개 일회 발급은 [당시 기록](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md#103-운영-테스트-계정-발급)을 따릅니다. 발급 원문은 비공개이며 이 승인을 신규 운영 계정/반복 시드로 확대하지 않습니다.
+
+## 교실 입장·대시보드 조회 성능
+
+10/5 익명 `/api/auth/session` 연속6회의 미국 지역 중앙213ms → 서울 안정 측정48ms는 [당시 측정](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md#교실-입장대시보드-조회-성능)이며 배포 직후 느린 표본도 포함했습니다. 로그인된 메뉴/반 조회 개선율은 미측정입니다. 운영 로그403·Observability Plus402로 확인하지 못한 범위와 [추가 측정 절차](DEVELOPMENT.md#대시보드-성능-측정)를 구분합니다.
 
 ## 남은 한계와 다음 결정
 
-- 실제 새 Google OAuth·학교망·자연 Cron, 실기기 터치 끌기·OS IME·화면 읽기 프로그램 음성·EntryJS 전체 블록의 접근성은 이번 검사에서 확인하지 않았습니다. 로그인 버튼 준비와 익명 API 정상 응답을 실제 OAuth 성공으로 표현하지 않습니다.
-- 원작 음성 입출력·픽셀 단위 동일성·범용 자유 제작은 추가하지 않았습니다. 순서도 AI는 타당한 두 합성 작품을 불확실/보완으로 판정한 한계가 남으며 교사 확인 경로를 사용합니다.
-- 미전송 초안은 메모리에 남고 강제 종료의 영구 복구는 보장하지 않습니다. 저장 실패·충돌·이전 제출본 보존은 [저장 정책](PRD.md#작업-저장과-통신-비용)을 따릅니다.
-- 이전 Stitch/Firebase CLI 인증 폐기·재발급 여부,9/28 의존성 중간 경고5개(운영2개), Actions/Java Action 폐기 예고는 기존 미확인 후속입니다. 이번 문서 정리에서 새 점검·해결로 표현하지 않습니다.
+- 실제200%·OS IME·실기기 터치·화면 읽기 음성·EntryJS 전체 블록의 접근성·실학생 이해도/피로도는 자동 검사로 입증하지 않았습니다. 신규 Google OAuth·학교망·자연 Cron도 별도 확인입니다.
+- 원작 음성 입출력·픽셀 단위 동일성·범용 자유 제작은 추가하지 않았습니다. 순서도 AI의 타당한 합성 작품 오판은 교사 확인 경로로 보완하며 실제 AI 품질을 이번 fixture 검사로 입증하지 않습니다.
+- 미전송 초안의 강제 종료 후 영구 복구는 보장하지 않습니다. 저장 실패·충돌·이전 제출본 보존은 [저장 정책](PRD.md#작업-저장과-통신-비용)을 따릅니다.
+- 이전 Stitch/Firebase CLI 인증 폐기·재발급,9/28 의존성 중간 경고5개(운영2개), Actions/Java Action 폐기 예고는 과거 미확인 후속입니다. 이번 마감에서 새로 해결했다고 표현하지 않습니다.

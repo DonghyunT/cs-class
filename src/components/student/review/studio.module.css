@@ -57,6 +57,15 @@
 .studio .error { background:#fff1f2; color:#9f1239; padding:14px; border-radius:12px; }
 .studio .prescription { white-space:pre-wrap; font:inherit; font-size:14px; line-height:1.8; border:2px dashed #c4b5fd; border-radius:16px; padding:20px; background:#faf5ff; overflow-wrap:anywhere; }
 .studio .workbook { border-color:#ddd6fe; padding:24px; min-height:530px; }
+.studio[data-practice=abstraction]{font-size:18px;line-height:1.7}
+.studio[data-practice=abstraction] .columns{grid-template-columns:minmax(0,2fr) minmax(280px,1fr);align-items:start}
+.studio[data-practice=abstraction] .workbook{min-height:0}
+.studio[data-practice=abstraction] h3{font-size:24px;line-height:1.4}
+.studio[data-practice=abstraction] :is(.field,.feedback,.definition,.prescription,.robotBubble,.suggestions){font-size:18px}
+.studio[data-practice=abstraction] :is(.muted,.eyebrow,.badge,.categoryCards button,.scenarioCard small,.dietColumns button){font-size:14px}
+.studio[data-practice=abstraction] .stepNav button{font-size:16px}
+@media(max-width:1000px){.studio[data-practice=abstraction] .columns{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.studio[data-practice=abstraction],.studio[data-practice=abstraction] :is(.field,.feedback,.definition,.prescription,.robotBubble,.suggestions){font-size:16px}.studio[data-practice=abstraction] .panel{padding:18px}}
 .definition { display:grid; gap:12px; border:2px solid #ddd6fe; background:#f5f3ff; padding:18px; border-radius:16px; font-size:14px; line-height:1.7; }
 .definition[data-tone=rose] { border-color:#fecdd3; background:#fff1f2; color:#9f1239; }
 .definition[data-tone=green] { border-color:#a7f3d0; background:#ecfdf5; color:#065f46; }
@@ -120,3 +129,63 @@
 @media (max-width:480px) { .studio .panel { padding:14px; border-radius:18px; } .kitchen { min-height:275px; padding-bottom:80px; } .kitchen svg { min-height:190px; } .caption { font-size:12px; left:8px; right:8px; } }
 @media (prefers-reduced-motion:no-preference) { .kitchen svg :is(g,path,circle) { transition:transform .45s ease,opacity .3s ease; } .kitchen[data-error=true] { animation:shake .25s ease 2; } }
 @keyframes shake { 25% { transform:translateX(-3px); } 75% { transform:translateX(3px); } }
+.studio[data-practice=sandwich]{--primary:#376fc8;font-size:16px;line-height:1.7}
+.studio[data-practice=sandwich] .sandwichColumns{grid-template-columns:minmax(0,2fr) minmax(340px,1fr);align-items:stretch}
+.studio[data-practice=sandwich] .panel{padding:16px;gap:12px;border-radius:18px}
+.studio[data-practice=sandwich] h3{font-size:22px}
+.studio[data-practice=sandwich] h4{font-size:18px;font-weight:700}
+.studio[data-practice=sandwich] :is(button,textarea){font-size:16px;white-space:normal}
+.studio[data-practice=sandwich] .eyebrow,.studio[data-practice=sandwich] .badge{font-size:14px}
+.studio[data-practice=sandwich] .kitchen{min-height:0;padding:0;display:block}
+.studio[data-practice=sandwich] .kitchen svg{min-height:0;max-height:450px;display:block}
+.studio[data-practice=sandwich] .caption{position:static;margin:0 10px 10px;font-size:14px}
+.studio[data-practice=sandwich] .statusCards{grid-template-columns:repeat(4,minmax(0,1fr));padding:0;margin:0;gap:8px}
+.studio[data-practice=sandwich] .statusCards :is(span,strong){font-size:14px;line-height:1.5}
+.studio[data-practice=sandwich] .statusCards li{padding:8px 4px}
+.studio[data-practice=sandwich] .console{min-height:0;min-width:0;contain:size}
+.studio[data-practice=sandwich] .chat{height:0;min-height:160px;max-height:none;margin:0;font-size:16px;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.studio[data-practice=sandwich] .chatHistory{display:grid;gap:16px}
+.studio[data-practice=sandwich] .composer{padding-top:12px;border-top:1px solid #dfe4eb;gap:8px;flex-shrink:0}
+.studio[data-practice=sandwich] .composer>label{font-weight:700;font-size:14px}
+.commandRow{display:grid;grid-template-columns:minmax(0,1fr) 64px;align-items:stretch;gap:8px}
+.studio[data-practice=sandwich] .commandRow textarea{width:100%;min-width:0;min-height:44px;height:44px;padding:8px 10px;border:1px solid #8091aa;border-radius:12px;background:#f8fafc;resize:none;font-weight:500;line-height:1.5}
+.studio[data-practice=sandwich] .commandRow textarea:focus{background:#fff;border-color:#376fc8}
+.studio[data-practice=sandwich] .commandRow>button{height:auto;background:#376fc8;color:#fff;padding:10px}
+.commandTools{display:flex;align-items:start;gap:8px;flex-wrap:wrap}
+.commandHelp{flex:1;min-width:100px}
+.commandHelp summary{cursor:pointer;display:flex;align-items:center;gap:6px;font-size:14px;color:#526173}
+.commandHelp summary::before{content:'▸'}
+.commandHelp[open] summary::before{content:'▾'}
+.commandHelp p{margin-top:6px}
+.chatAvatar{width:40px;height:40px;display:grid;place-items:center;background:#eff6ff;border-radius:12px;font-size:25px;flex-shrink:0}
+.executionPanel{grid-column:1/-1}
+.studio[data-practice=sandwich] .auxControl{font-size:14px;padding:6px 10px;color:#526173}
+.recordTools summary{cursor:pointer;min-height:44px;width:fit-content;padding:8px 4px;font-size:14px;color:#526173}
+.recordTools .actions{margin-top:4px}
+.srOnly{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.studio[data-practice=sandwich] .field{font-size:16px}
+.studio[data-practice=sandwich] .field textarea{min-height:72px;padding:10px;border-color:#8091aa}
+.studio[data-practice=sandwich] .field textarea:focus{border-color:#376fc8}
+.studio[data-practice=sandwich] .muted,.studio[data-practice=sandwich] .queue small{font-size:14px}
+.studio[data-practice=sandwich] .queue li{font-size:14px}
+.latestResult{display:grid;gap:16px}
+.latestResult:empty{display:none}
+.studio[data-practice=sandwich] .chatTurn{gap:10px}
+.studio[data-practice=sandwich] .robotBubble{padding:12px 14px;font-size:16px;align-self:start;margin-right:24px;border-radius:4px 16px 16px 16px}
+.studio[data-practice=sandwich] .robotBubble>small{color:#526173;font-size:14px;font-weight:700}
+.studio[data-practice=sandwich] .robotBubble[data-error=true]{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
+.studio[data-practice=sandwich] .studentBubble{display:grid;gap:4px;margin-left:48px;padding:12px 14px;border:0;border-radius:16px 16px 4px 16px;background:#376fc8;color:#fff}
+.studio[data-practice=sandwich] .studentBubble>small{font-size:14px;font-weight:700;color:#eaf2ff}
+.studio[data-practice=sandwich] :is(button,textarea,[tabindex]):focus-visible{outline-color:#376fc8}
+@media(min-width:1440px){.studio[data-practice=sandwich] .statusCards{grid-template-columns:repeat(8,minmax(0,1fr))}}
+@media(min-width:1440px) and (max-height:800px){.studio[data-practice=sandwich] .kitchen svg{max-height:400px}}
+@media(max-width:900px){.studio[data-practice=sandwich] .sandwichColumns{grid-template-columns:1fr}.studio[data-practice=sandwich] .console{contain:none}.studio[data-practice=sandwich] .chat{flex:none;height:320px;min-height:0}.executionPanel{grid-column:auto}}
+@media(max-width:480px){.studio[data-practice=sandwich] .statusCards{grid-template-columns:repeat(2,minmax(0,1fr))}.studio[data-practice=sandwich] .robotBubble{margin-right:12px}.studio[data-practice=sandwich] .studentBubble{margin-left:24px}}
+@media(min-width:901px) and (max-width:1439px) and (max-height:800px){
+  .studio[data-practice=sandwich] .kitchen svg{max-height:300px}
+  .studio[data-practice=sandwich] .console{align-self:start;contain:none}
+  .studio[data-practice=sandwich] .chat{height:240px;min-height:0;flex:none}
+  .studio[data-practice=sandwich] .console[data-empty=true] .chat{height:auto;min-height:140px}
+  .studio[data-practice=sandwich] .commandRow textarea{min-height:44px;height:44px;padding:8px 10px}
+  .studio[data-practice=sandwich] .commandRow>button{padding:6px}
+}

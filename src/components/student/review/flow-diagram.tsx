@@ -6,25 +6,44 @@ import styles from "./review.module.css";
 export function FlowDiagram({ nodes, edges, selected, active, pan = { x: 0, y: 0 }, select, move, drop }: Pick<FlowchartProject, "nodes" | "edges"> & { selected?: string; active?: string; pan?: { x: number; y: number }; select?: (id: string) => void; move?: (id: string, x: number, y: number) => void; drop?: (id: string, block: string) => void }) {
   const marker = useId().replace(/:/g, "");
   const viewport = useRef<HTMLDivElement>(null), centered = useRef(false);
-  function showStart() { const start = nodes.find(n => n.shape === "terminal" && /^(시작|출발)/.test(n.text)), element = viewport.current; if (start && element) { element.scrollLeft = Math.max(0, start.x - pan.x - (element.clientWidth - 160) / 2); element.scrollTop = Math.max(0, start.y - pan.y - 20); } }
-  useEffect(() => { const element = viewport.current, start = nodes.find(n => n.shape === "terminal" && /^(시작|출발)/.test(n.text)); if (!centered.current && element && start) { element.scrollLeft = Math.max(0, start.x - pan.x - (element.clientWidth - 160) / 2); centered.current = true; } }, [nodes, pan.x]);
+  const startLocation = useRef<{ x: number; label: string } | null>(null);
+  const manuallyViewed = useRef(Boolean(pan.x || pan.y)), previousPan = useRef(pan);
+  function showStart() { const start = nodes.find(n => n.shape === "terminal" && /^(시작|출발)/.test(n.text)), element = viewport.current; if (start && element) { manuallyViewed.current = false; element.scrollLeft = Math.max(0, start.x - pan.x - (element.clientWidth - 160) / 2); element.scrollTop = Math.max(0, start.y - pan.y - 20); } }
+  useEffect(() => {
+    if (previousPan.current.x !== pan.x || previousPan.current.y !== pan.y) manuallyViewed.current = true;
+    previousPan.current = { x: pan.x, y: pan.y };
+    const element = viewport.current, start = nodes.find(n => n.shape === "terminal" && /^(시작|출발)/.test(n.text));
+    startLocation.current = start ? { x: start.x - pan.x, label: `시작·종료 기호: ${start.text}` } : null;
+    if (!centered.current && element && start) { element.scrollLeft = Math.max(0, start.x - pan.x - (element.clientWidth - 160) / 2); centered.current = true; }
+  }, [nodes, pan.x, pan.y]);
   useEffect(() => {
     const element = viewport.current; if (!element) return;
-    let previousWidth = element.clientWidth;
-    // Keep the visible canvas center when the sidebar or screen width changes.
+    let previousWidth = element.clientWidth, previousLeft = element.scrollLeft;
+    const rememberScroll = () => { if (element.clientWidth === previousWidth) previousLeft = element.scrollLeft; };
+    element.addEventListener("scroll", rememberScroll);
+    // Use the pre-resize scroll position; the browser may already have clamped it.
     const observer = new ResizeObserver(() => {
       const width = element.clientWidth;
-      if (previousWidth > 0 && width > 0) element.scrollLeft = Math.max(0, element.scrollLeft + (previousWidth - width) / 2);
-      previousWidth = width;
+      if (previousWidth > 0 && width > 0) {
+        let left = Math.max(0, previousLeft + (previousWidth - width) / 2);
+        const start = startLocation.current;
+        const editingOtherNode = element.contains(document.activeElement) && document.activeElement?.getAttribute("aria-label") !== start?.label;
+        if (start && !manuallyViewed.current && !editingOtherNode && width >= 160 && start.x >= previousLeft && start.x + 160 <= previousLeft + previousWidth) {
+          // Keep a fully visible start visible without pulling a manually panned view back.
+          left = Math.max(start.x + 160 - width, Math.min(left, start.x));
+        }
+        element.scrollLeft = Math.max(0, left);
+      }
+      previousWidth = width; previousLeft = element.scrollLeft;
     });
     observer.observe(element);
-    return () => observer.disconnect();
+    return () => { observer.disconnect(); element.removeEventListener("scroll", rememberScroll); };
   }, []);
   const width = Math.max(1000, ...nodes.map(n => n.x + 350)), height = Math.max(800, ...nodes.map(n => n.y + 200));
   const renderShape = (node: FlowNode) => node.shape === "terminal" ? <ellipse cx="80" cy="42" rx="78" ry="40" /> : node.shape === "decision" ? <polygon points="80,0 160,42 80,84 0,42" /> : node.shape === "io" ? <polygon points="20,0 160,0 140,84 0,84" /> : <rect width="160" height="84" rx="8" />;
   return <div className={styles.canvas}>
     <Button variant="outline" onClick={showStart}>시작으로 보기</Button>
-    <div ref={viewport} className={styles.diagram} aria-label="실제 순서도 연결">
+    <div ref={viewport} className={styles.diagram} aria-label="실제 순서도 연결" onWheel={() => { manuallyViewed.current = true; }} onPointerDown={() => { manuallyViewed.current = true; }} onKeyDown={event => { if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"].includes(event.key)) manuallyViewed.current = true; }}>
       <svg style={{ width, height }} viewBox={`${pan.x} ${pan.y} ${width} ${height}`} role={select ? "group" : "img"} aria-label="기호와 화살표로 연결한 순서도">
         <defs>
           <marker id={marker} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">

@@ -30,6 +30,7 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   await page.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
   await page.getByRole("button", { name: "정답 확인", exact: true }).first().click();
   await expect(page.locator("#concept-feedback-algorithm")).toBeFocused();
+  await page.getByRole("button", { name: "다음 개념", exact: true }).click();
   await page.getByRole("radio", { name: "내용을 저장해요", exact: true }).check();
   await page.getByRole("button", { name: "정답 확인", exact: true }).click();
   await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
@@ -41,25 +42,37 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   await page.reload();
   await expect(page.getByRole("tab", { name: "실습 0%" })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("tab", { name: "퀴즈 0%" }).click();
+  await expect(page.locator("#quiz-question-title")).toContainText("입력한 숫자");
+  await page.getByRole("navigation", { name: "퀴즈 문항 목록" }).getByRole("button").first().click();
   await expect(page.getByRole("radio", { name: "앞으로 3칸 이동한다" })).toBeChecked();
+  await page.getByRole("button", { name: "다음 문제", exact: true }).click();
   await expect(page.getByRole("radio", { name: "숫자 입력 → 숫자 출력", exact: true })).not.toBeChecked();
   await page.getByRole("radio", { name: "숫자 출력 → 숫자 입력", exact: true }).check();
+  await page.getByRole("button", { name: "다음 문제", exact: true }).click();
   await page.getByRole("radio", { name: "결과가 달라질 수 있어요" }).check();
   await page.getByRole("button", { name: "이번 문제 결과 확인" }).click();
   await expect(page.getByRole("tab", { name: "퀴즈 67%" })).toBeVisible();
   await page.getByRole("button", { name: "틀린 문제만 다시 풀기" }).click();
   await expect(page.getByRole("radio")).toHaveCount(3);
-  await expect(page.locator("#stage-heading-quiz")).toBeFocused();
+  await expect(page.locator("#quiz-question-title")).toBeFocused();
   await expect(page.getByText("화면에 보여 줄 값을 먼저 알아야 해요.", { exact: true })).not.toBeVisible();
   await page.getByText("힌트 보기", { exact: true }).click();
   await expect(page.getByText("화면에 보여 줄 값을 먼저 알아야 해요.", { exact: true })).toBeVisible();
   await page.getByRole("radio", { name: "숫자 입력 → 숫자 출력", exact: true }).check();
   await page.getByRole("button", { name: "이번 문제 결과 확인" }).click();
   await page.getByRole("button", { name: "실습으로 이동" }).click();
-  for (let count = 0; count < 3; count++) await page.getByRole("button", { name: "시작 위로 이동", exact: true }).press("Enter");
-  await expect(page.getByRole("button", { name: "시작 아래로 이동", exact: true })).toBeFocused();
-  for (let count = 0; count < 2; count++) await page.getByRole("button", { name: "이름을 입력받는다 위로 이동", exact: true }).press("Enter");
-  for (let count = 0; count < 2; count++) await page.getByRole("button", { name: "입력한 이름으로 인사말을 만든다 위로 이동", exact: true }).press("Enter");
+  await expect(page.locator("#stage-heading-practice")).toBeFocused();
+  // Each next key starts after the previous render and its Effect have moved focus.
+  async function moveUp(label: string, positions: number[]) {
+    for (const position of positions) {
+      await page.getByRole("button", { name: `${label} 위로 이동`, exact: true }).press("Enter");
+      await expect(page.getByRole("region", { name: "순서 배열 작업" }).getByRole("listitem").nth(position - 1)).toContainText(label);
+      await expect(page.getByRole("button", { name: `${label} ${position === 1 ? "아래" : "위"}로 이동`, exact: true })).toBeFocused();
+    }
+  }
+  await moveUp("시작", [3, 2, 1]);
+  await moveUp("이름을 입력받는다", [3, 2]);
+  await moveUp("입력한 이름으로 인사말을 만든다", [4, 3]);
   await page.getByRole("button", { name: "순서 검증" }).click();
   await expect(page.getByText("검증 통과 · 아직 제출 전이에요.")).toBeVisible();
   await expect(page.getByRole("tab", { name: "실습 0%" })).toBeVisible();
@@ -72,6 +85,7 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   const persisted = await (await page.request.get(`/api/classroom/work/${lessonId}`)).json();
   expect(persisted.submission.order).toEqual(correctOrder);
   expect(persisted.draft.practiceOrder.slice(0, 2)).toEqual(["input", "start"]);
+  await page.getByRole("button", { name: "학생 메뉴", exact: true }).click();
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login\/student$/);
   await login(page, studentPassword);
@@ -98,8 +112,8 @@ test("저장 실패 때 입력과 단계 유지, 재시도 후 이동", async ({
   await expect(page.getByRole("main").getByRole("alert")).toContainText("서버에 연결하지 못했어요");
   await expect(page.getByRole("tab", { name: "개념 0%" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("radio", { name: "컵에 물을 200mL 따른다" })).toBeChecked();
-  await page.getByRole("link", { name: "대시보드로", exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}$`));
+  await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}(\\?from=dashboard)?$`));
   await page.unroute(workPath);
   await page.getByRole("button", { name: "저장 다시 확인" }).click();
   await saved(page);
@@ -112,7 +126,7 @@ test("저장 실패 때 입력과 단계 유지, 재시도 후 이동", async ({
   await page.getByRole("button", { name: "저장 다시 확인" }).click();
   await page.getByRole("tab", { name: "퀴즈 0%" }).click();
   await expect(page.getByRole("tab", { name: "퀴즈 0%" })).toHaveAttribute("aria-selected", "true");
-  await page.getByRole("link", { name: "대시보드로", exact: true }).click();
+  await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
   await expect(page).toHaveURL(/\/student$/);
 });
 
@@ -130,8 +144,8 @@ test("느린 저장 중 새 입력을 보존하고 이동 전에 최신 답안�
   await page.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
   await captured;
   await page.getByRole("radio", { name: "물을 적당히 준비한다" }).check();
-  await page.getByRole("link", { name: "대시보드로", exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}$`));
+  await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}(\\?from=dashboard)?$`));
   release();
   await expect(page).toHaveURL(/\/student$/);
   await page.getByRole("button", { name: "이어하기", exact: true }).first().click();
@@ -143,20 +157,34 @@ test("느린 저장 중 새 입력을 보존하고 이동 전에 최신 답안�
 });
 
 test("두 탭 저장 충돌은 현재 입력을 유지하고 명시적으로 해결", async ({ page, context }) => {
+  const answerSaved = (target: Page, answer: string) => target.waitForResponse(response =>
+    response.url().endsWith(`/api/classroom/work/${lessonId}`) && response.request().method() === "POST" &&
+    response.status() === 200 && response.request().postDataJSON().draft?.conceptAnswers?.algorithm === answer);
   await enter(page);
   const other = await context.newPage();
   await other.goto(`/classroom/${lessonId}`);
   await expect(other.getByRole("radio", { name: "물을 적당히 준비한다" })).toBeVisible();
+  const firstSave = answerSaved(page, "clear");
   await page.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
+  const firstRecord = await (await firstSave).json();
+  expect(firstRecord.draft.conceptAnswers.algorithm).toBe("clear");
   await saved(page);
   await other.getByRole("radio", { name: "물을 적당히 준비한다" }).check();
   await expect(other.getByRole("main").getByRole("alert")).toContainText("저장 기록이 서로 달라요");
   await expect(other.getByRole("radio", { name: "물을 적당히 준비한다" })).toBeChecked();
   await other.getByRole("button", { name: "서버 기록과 비교" }).click();
   await expect(other.getByRole("region", { name: "저장 충돌 비교" })).toContainText("컵에 물을 200mL 따른다");
+  const resolvedSave = answerSaved(other, "vague");
   await other.getByRole("button", { name: "현재 입력을 새 버전으로 저장" }).click();
+  const resolvedRecord = await (await resolvedSave).json();
+  expect(resolvedRecord.draft.conceptAnswers.algorithm).toBe("vague");
+  expect(resolvedRecord.revision).toBeGreaterThan(firstRecord.revision);
   await saved(other);
+  const newerSave = answerSaved(other, "clear");
   await other.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
+  const newerRecord = await (await newerSave).json();
+  expect(newerRecord.draft.conceptAnswers.algorithm).toBe("clear");
+  expect(newerRecord.revision).toBeGreaterThan(resolvedRecord.revision);
   await saved(other);
   await page.getByRole("radio", { name: "물을 적당히 준비한다" }).check();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("저장 기록이 서로 달라요");

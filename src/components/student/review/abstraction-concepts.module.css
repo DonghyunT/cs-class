@@ -1,0 +1,25 @@
+.reasons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;list-style:none;padding:0;margin:0}
+.reasons li{display:grid;gap:8px;border:1px solid #cbd8eb;border-radius:14px;background:#f6f8fc;padding:18px}
+.reasons strong{color:#2b568d}
+.maps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;min-width:0}
+.map{min-width:0;margin:0;border:1px solid #dde5f0;border-radius:14px;padding:14px;background:#f6f8fc}
+.map figcaption{font-weight:700;margin-bottom:10px;font-size:16px}
+.mapHint{font-size:14px;color:#526173;margin:0 0 10px}
+.mapScroll{overflow:auto;min-width:0;border-radius:8px}
+.map svg{display:block;width:100%;min-width:540px}
+.map text{fill:#334861;font-family:inherit;font-size:19px}
+.stateFlow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;padding:0;margin:0;list-style:none}
+.stateFlow li{position:relative;border:1px solid #cbd8eb;background:#f6f8fc;border-radius:14px;padding:16px}
+.stateFlow li:not(:last-child)::after{content:"→";position:absolute;right:-23px;top:24px;color:#376fc8}
+.stateFlow button{min-height:44px;padding:8px 12px;font-size:18px;border:1px solid #8091aa;border-radius:10px;background:#fff;color:#334861}
+.stateFlow button[aria-pressed=true]{background:#376fc8;color:white;border-color:#376fc8}
+.stateFlow p{margin:12px 0 0}
+.condition{padding:16px;border:1px solid var(--warm-border);background:var(--warm-surface);border-radius:14px;align-items:center;color:var(--warm-foreground)}
+.condition span{flex:1;min-width:180px}
+.steps{display:grid;gap:12px;list-style:none;padding:0;margin:0}
+.steps details{border:1px solid #cbd8eb;border-radius:14px;background:#f6f8fc;padding:4px 18px 12px}
+.steps summary{cursor:pointer;padding:10px 0;min-height:44px;font-weight:700}
+.steps summary:focus-visible{outline:3px solid #376fc8;outline-offset:4px}
+.steps p{margin:10px 0}.steps small{font-size:14px;color:#526173}
+@media(max-width:1000px){.maps{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.reasons,.stateFlow{grid-template-columns:minmax(0,1fr)}.stateFlow{gap:24px}.stateFlow li:not(:last-child)::after{content:"↓";right:auto;top:auto;bottom:-24px;left:22px}.stateFlow button{font-size:16px}.map{padding:10px}}

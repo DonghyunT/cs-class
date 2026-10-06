@@ -1,0 +1,22 @@
+.experience { min-width:0; }
+.experience .symbolScene { border:1px solid #dde5f0; border-radius:18px; padding:16px; background:#f6f8fc; min-width:0; overflow:auto; }
+.symbolScene svg { display:block; width:100%; max-width:650px; margin-inline:auto; }
+.symbolScene text { font-size:40px; font-family:inherit; fill:#202938; }
+.experience [data-shape] :is(rect,polygon,ellipse) { stroke-width:2.5; }
+.experience [data-shape=terminal] ellipse { fill:#faf5ff; stroke:#a855f7; }
+.experience [data-shape=io] polygon { fill:#ecfdf5; stroke:#087f5b; }
+.experience [data-shape=process] rect { fill:#eff6ff; stroke:#3b82f6; }
+.experience [data-shape=decision] polygon { fill:#fffbeb; stroke:#a86605; }
+.symbolMeaning { display:grid; gap:14px; }
+.symbolMeaning p { margin:0; }
+.inputSummary { font-size:16px; font-weight:600; margin:0; color:#334861; }
+.diagram { border:1px solid #dde5f0; border-radius:18px; background:#f6f8fc; padding:14px; max-width:100%; min-width:0; overflow:auto; }
+.diagram svg { display:block; width:100%; min-width:600px; max-width:760px; margin-inline:auto; }
+.diagram text { font-size:18px; font-family:inherit; fill:#202938; }
+.diagram [data-edge] { stroke:#8091aa; stroke-width:2; }
+.diagram [data-edge] text { stroke:none; font-weight:600; }
+.diagram [data-visited=true] { stroke:#376fc8; stroke-width:4; }
+.diagram [data-visited=true] text { fill:#2454a1; }
+.diagram [data-active=true] :is(rect,polygon,ellipse) { fill:#fff3db; stroke:#bb591b; stroke-width:4; }
+.experience [role=group]:focus-visible { outline:3px solid #376fc8; outline-offset:4px; }
+@media(max-width:600px) { .experience .symbolScene,.diagram { padding:10px; } }

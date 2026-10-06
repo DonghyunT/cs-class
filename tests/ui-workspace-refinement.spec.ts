@@ -59,15 +59,16 @@ test("실습 기본 배치를 줄이고 넓게 보기에서도 같은 작업실�
   await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
   await page.screenshot({ path: testInfo.outputPath("workspace-default-1280.png") });
   await expect(page.getByRole("tab", { name: "개념 0%" })).toBeVisible();
-  await page.getByText("자세한 학습 진행", { exact: true }).click();
+  await page.getByText("수업 안내 · 자세한 학습 진행", { exact: true }).click();
   await expect(page.getByRole("definition").filter({ hasText: "기본 4개 미션" })).toBeVisible();
-  await page.getByText("자세한 학습 진행", { exact: true }).click();
+  await page.getByText("수업 안내 · 자세한 학습 진행", { exact: true }).click();
   const identity = await iframe.elementHandle();
   const native = page.frames().find((frame) => frame.url().includes("exercise=programming"))!;
   const before = await native.evaluate(() => (window as unknown as { Entry: { exportProject: () => unknown } }).Entry.exportProject());
   const toggle = page.getByRole("button", { name: "작업실 넓게 보기", exact: true });
-  await toggle.click();
   const restore = page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true });
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await toggle.click();
   await expect(restore).toBeFocused();
   expect(await identity!.evaluate((element) => element === document.querySelector("iframe"))).toBe(true);
   expect(await native.evaluate(() => (window as unknown as { Entry: { exportProject: () => unknown } }).Entry.exportProject())).toEqual(before);
@@ -77,10 +78,12 @@ test("실습 기본 배치를 줄이고 넓게 보기에서도 같은 작업실�
   await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
   await page.screenshot({ path: testInfo.outputPath("workspace-wide-1280.png") });
   await page.setViewportSize({ width: 768, height: 720 });
-  await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "교실 탐색 메뉴" })).toBeVisible();
+  const account = page.getByRole("button", { name: "학생 메뉴", exact: true });
+  await account.click();
+  await expect(page.getByRole("button", { name: "로그아웃", exact: true })).toBeFocused();
   await page.setViewportSize({ width: 1280, height: 720 });
-  await expect(page.locator("#main-content")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(account).toBeFocused();
   await restore.click();
   await toggle.click();
   await restore.press("Escape");
@@ -98,6 +101,7 @@ test("실습 기본 배치를 줄이고 넓게 보기에서도 같은 작업실�
 
 test("작업실 가까이 저장·검증·제출을 구분하고 수정·저장 실패에도 이전 제출을 보존", async ({ page }) => {
   const endpoint = await enter(page, "entry-bot-lab");
+  await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
   const states = page.getByRole("group", { name: "작품 저장·검증·제출 상태" });
   await expect(states).toContainText("저장 완료");
   await expect(states).toContainText("검증 전");
@@ -127,7 +131,7 @@ test("작업실 가까이 저장·검증·제출을 구분하고 수정·저장 
   await expect(states).toContainText("저장 중");
   release();
   await expect(states).toContainText("저장 확인 필요");
-  await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
+  await page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true }).click();
   await expect(page.getByRole("alert").filter({ hasText: "현재 입력은 이 화면에 유지" })).toBeVisible();
   saveResponse = 409;
   await page.getByRole("button", { name: "저장 다시 확인", exact: true }).click();
