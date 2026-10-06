@@ -25,6 +25,8 @@ export function Sandwich({ controller }: { controller: ReviewController }) {
   const step = replay === null ? steps.at(-1) : replay === 0 ? undefined : steps[replay - 1];
   const message = replay === 0 ? "명령을 처음부터 다시 실행해요." : step?.msg;
   const review = reviewSandwich(state), locked = controller.busy || controller.aiBusy || replay !== null;
+  const latest = commands.at(-1);
+  const latestStart = commands.slice(0, -1).reduce((total, command) => total + command.actions.length, 0);
   const change = (input: string) => { const draft = controller.getDraft(); if (draft.reviewProject?.type === "sandwich") controller.update({ ...draft, reviewProject: { ...draft.reviewProject, input } }); };
   function reset() { setReplay(null); ai.clear(); controller.update({ ...controller.getDraft(), reviewProject: { type: "sandwich", runId: crypto.randomUUID(), input: "", commands: [] } }); }
   const status = [
@@ -41,13 +43,19 @@ export function Sandwich({ controller }: { controller: ReviewController }) {
       <div className={styles.actions}><Button variant="outline" disabled={!steps.length || controller.aiBusy || controller.busy} onClick={() => setReplay(replay === null ? 0 : null)}>{replay === null ? "명령 다시 실행" : "다시 실행 멈추기"}</Button><Button variant="outline" disabled={!commands.length || locked} onClick={() => { ai.clear(); controller.update({ ...controller.getDraft(), reviewProject: { ...project, commands: commands.slice(0, -1) } }); }}>마지막 명령 되돌리기</Button><Button variant="outline" disabled={locked} onClick={reset}>새 레시피 만들기</Button></div>
       {state.completed && <div className={styles.recipe} role="status"><span aria-hidden="true">🥪</span><div><h3>{review.title}</h3><p>{review.review}</p></div></div>}
     </section><section className={styles.panel}><header className={styles.stageHeader}><h3>알고리즘 실행 기록</h3><small>{steps.length}개 단계 실행됨</small></header><ol className={styles.queue} aria-label="누적 알고리즘 파이프라인">{steps.map((item,index) => <li key={index} data-error={!item.success} data-active={replay === index + 1}><span>{index + 1}</span><strong>{item.success ? "✓" : "!"} {item.name}</strong><small>{stepTexts[index]}</small><small>{item.msg}</small></li>)}</ol>{!commands.length && <p className={styles.muted}>명령을 내리면 실행한 단계가 순서대로 쌓여요.</p>}</section></div>
-    <section className={`${styles.panel} ${styles.console}`} aria-label="로봇에게 명령하기"><header className={styles.stageHeader}><h3>⌨ 명령어 입력 및 디버그</h3></header><div ref={chat} className={styles.chat}>
-      <div className={styles.robotBubble}><strong>🤖 로봇 셰프 준비 완료</strong><p>딸기잼, 땅콩버터, 치즈를 조합해 자유롭게 샌드위치를 설계해 보세요!</p><p>💡 로봇은 말한 행동만 해요. 준비가 빠졌다면 오류를 관찰하고 다음 명령으로 고쳐 보세요.</p></div>
-      {commands.map((command,index) => <div key={command.id} className={styles.chatTurn}><p className={styles.studentBubble}>{command.text}</p><div className={styles.robotBubble}><small>{command.source === "rules" ? "규칙 해석" : "AI 해석"}</small>{steps.slice(commands.slice(0,index).reduce((n,c) => n + c.actions.length,0),commands.slice(0,index + 1).reduce((n,c) => n + c.actions.length,0)).map((item,i) => <p key={i} data-error={!item.success}>{item.success ? "✓" : "❌"} {item.msg}</p>)}</div></div>)}
-      {controller.aiBusy && <p role="status" className={styles.robotBubble}>🤖 명령을 해석하고 있어요…</p>}{ai.error && <p className={styles.error} role="alert">{ai.error}</p>}{ai.result && <p className={styles.robotBubble} role="status">{ai.result.message}</p>}
-    </div><form className={styles.composer} onSubmit={event => { event.preventDefault(); if (!locked && project.input.trim()) void ai.ask("sandwich-command", project.input); }}>
+    <section className={`${styles.panel} ${styles.console}`} aria-label="로봇에게 명령하기"><header className={styles.stageHeader}><h3>로봇에게 명령하기</h3></header>
+    <p className={styles.commandIntro}>첫 명령은 ‘빵 봉지를 열어’로 시작해 보세요. 준비가 빠졌다면 결과를 보고 다음 명령으로 고쳐요.</p>
+    <form className={styles.composer} onSubmit={event => { event.preventDefault(); if (!locked && project.input.trim()) void ai.ask("sandwich-command", project.input); }}>
       <label className={styles.field}>자연어 명령<textarea value={project.input} maxLength={1000} rows={2} disabled={controller.busy} onChange={event => change(event.target.value)} placeholder="예: 빵 봉지를 열어" /></label><Button type="submit" disabled={locked || !project.input.trim()}>{controller.aiBusy ? "명령을 해석하고 있어요…" : "AI로 명령 실행"}</Button>
       <p className={styles.muted}>규칙 해석은 AI를 대신하는 제한된 해석기예요. 구체적인 동작을 한 문장씩 쓰면 좋아요.</p><Button variant="outline" disabled={locked || !project.input.trim()} onClick={() => void ai.ask("sandwich-rules", project.input)}>규칙 해석으로 실행</Button>{ai.remaining !== null && <small className={styles.muted}>오늘 AI 도움 {ai.remaining}회 남음</small>}
-    </form></section>
+    </form>
+    <section className={styles.latestResult} aria-label="최신 명령 결과">
+      <h4>최신 결과</h4>
+      {latest && <><p className={styles.studentBubble}>{latest.text}</p><div className={styles.robotBubble}><small>{latest.source === "rules" ? "규칙 해석" : "AI 해석"}</small>{steps.slice(latestStart).map((item,i) => <p key={i} data-error={!item.success}>{item.success ? "✓" : "!"} {item.msg}</p>)}</div></>}
+      {controller.aiBusy && <p role="status" className={styles.robotBubble}>명령을 해석하고 있어요. 다음 입력을 작성해도 유지돼요.</p>}{ai.error && <p className={styles.error} role="alert">{ai.error}</p>}{ai.result && <p className={styles.robotBubble} role="status">{ai.result.message}</p>}
+      {!latest && !controller.aiBusy && !ai.error && <p className={styles.muted}>명령을 실행하면 이곳과 조리대에 결과가 나타나요.</p>}
+    </section>
+    {commands.length > 1 && <section aria-label="이전 명령 기록"><h4>이전 기록 · {commands.length - 1}개 명령</h4><div ref={chat} className={styles.chat} tabIndex={0} aria-label="이전 명령 스크롤">{commands.slice(0,-1).map((command,index) => <div key={command.id} className={styles.chatTurn}><p className={styles.studentBubble}>{command.text}</p><div className={styles.robotBubble}><small>{command.source === "rules" ? "규칙 해석" : "AI 해석"}</small>{steps.slice(commands.slice(0,index).reduce((n,c) => n + c.actions.length,0),commands.slice(0,index + 1).reduce((n,c) => n + c.actions.length,0)).map((item,i) => <p key={i} data-error={!item.success}>{item.success ? "✓" : "!"} {item.msg}</p>)}</div></div>)}</div></section>}
+    </section>
   </div><ReviewSubmit controller={controller} /></div>;
 }

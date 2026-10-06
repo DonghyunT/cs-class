@@ -57,8 +57,11 @@ test("세 실습의 넓게 보기·복귀 초점·좁은 화면을 유지한다"
   for (const id of ["review-sandwich", "review-abstraction", "review-flowchart"]) {
     await openPractice(page,id);
     const toggle = page.getByRole("button", { name: "작업실 넓게 보기", exact: true });
-    await toggle.click();
     const restore = page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true });
+    await expect(restore).toHaveAttribute("aria-pressed","true");
+    await restore.click();
+    await expect(toggle).toBeFocused();
+    await toggle.click();
     await expect(restore).toBeFocused();
     await expect(restore).toHaveAttribute("aria-pressed","true");
     await restore.press("Escape"); await expect(toggle).toBeFocused();

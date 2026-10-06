@@ -258,7 +258,7 @@
 .layout[data-workspace-wide="true"] .dashboardMain { max-width: none; padding-block: 24px 40px; }
 @media (min-width: 821px) {
   .layout[data-workspace-wide="true"] .appSidebar { display: none; }
-  .layout[data-workspace-wide="true"] .dashboardMain { padding-inline: 24px; }
+  .layout[data-workspace-wide="true"] .dashboardMain { padding-inline: 16px; }
 }
 
 @media (max-width: 1100px) {
@@ -311,3 +311,4 @@
 @media (prefers-reduced-motion: reduce) {
   .layout .appSidebar, .layout .appSidebar nav a, .layout .mobileOnly { transition: none; }
 }
+@media (max-width:820px){.layout[data-workspace-wide="true"] .dashboardMain{padding-inline:12px}}

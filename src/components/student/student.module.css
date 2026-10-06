@@ -141,6 +141,33 @@
 .comparisonList{list-style:none;padding:0;margin:0;font-size:13px}.comparisonList li{display:flex;flex-direction:column;gap:3px;padding:8px 0;border-bottom:1px solid #e3e8ef}.comparisonList li:last-child{border:0}.comparisonList strong{color:#526173;font-weight:550}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
 .srOnly{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.workspace .stagePanel{font-size:18px;line-height:1.7}
+.workspace .stagePanel [data-slot="button"]{font-size:16px;min-height:44px;white-space:normal}
+.workspace .stageHeading h2,.workspace .conceptTitle h3{font-size:26px}
+.workspace .stageHeading p,.workspace .stageHeading>span,.workspace .solved,.workspace .tabPercent,.workspace .questionNumber,.workspace .questionNumber>span{font-size:14px}
+.workspace .explanation,.workspace .example p,.workspace .answers legend{font-size:18px;line-height:1.7}
+.workspace .example{background:var(--warm-surface);border-color:var(--warm-border)}
+.workspace .example>span{color:var(--warm-foreground);font-size:14px}
+.workspace .answers label{font-size:16px;min-height:48px;border-color:#8091aa}
+.workspace .answers label.selectedAnswer{border-color:#376fc8}
+.workspace .explanation{max-width:42em}
+.workspace .hint p{background:var(--warm-surface);color:var(--warm-foreground)}
+.learningNav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px}
+.learningNav>button{display:flex;align-items:center;gap:8px;min-height:44px;min-width:44px;border:1px solid #8091aa;border-radius:10px;padding:10px 14px;background:white;color:#465b78;font-size:16px;text-align:left}
+.learningNav>button[aria-current="step"]{background:#eaf2ff;border-color:#376fc8;color:#28548e;font-weight:650}
+.learningNav>button>span{font-size:14px}
+.conceptBody{max-width:1120px;margin-inline:auto}
+.quizBody{max-width:880px;margin-inline:auto}
+.answers legend.srOnly{width:1px;height:1px;float:none;margin:0;padding:0}
+.quizCard h3{font-size:26px;line-height:1.5;margin-bottom:20px}
+.quizBody .stageFooter{flex-wrap:wrap;align-items:start}
+.quizBody .stageFooter>div{display:grid;gap:12px;min-width:0}
+.quizBody .stageFooter:focus{outline:3px solid #376fc8;outline-offset:4px}
+.quizBody .stageFooter .learningNav{margin:0}
+.conceptBody h3:focus,.quizCard h3:focus{outline:3px solid #376fc8;outline-offset:5px}
+.conceptActions{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;margin-top:20px}
+.workspace:has([data-practice=sandwich]) .workspaceTop,.workspace:has([data-practice=sandwich]) .lessonHeader{margin-bottom:4px}
+@media(max-width:600px){.workspace .stagePanel,.workspace .explanation,.workspace .example p,.workspace .answers legend{font-size:16px}.workspace .stageHeading h2,.workspace .conceptTitle h3{font-size:24px}.learningNav>button{flex:1 1 auto}.conceptActions{flex-direction:column}}
 .spin{animation:spin 1.2s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:1150px){.current{padding:30px}.heroArt{width:180px}.headingTools{gap:16px}.overview{gap:18px}.overview>div+div{padding-left:18px}.practiceGrid{grid-template-columns:minmax(0,1fr)}.validationPanel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:22px}.validationPanel>.iconTile,.validationPanel>h3,.validationPanel>p:first-of-type,.validationPanel>ul{grid-column:1}.validationPanel>[data-slot="button"]{grid-column:2}.validationPanel>[data-slot="button"]:first-of-type{grid-row:1 / 3;align-self:center}.validationPanel>p.feedbackGood,.validationPanel>p.feedbackRetry,.validationPanel>.smallNote{grid-column:2}.validationPanel>[data-slot="button"]:last-of-type{grid-row:4;align-self:center}}
 

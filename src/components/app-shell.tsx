@@ -78,6 +78,12 @@ export function AppShell({
       document.getElementById("main-content")?.focus();
     }
   }, [mobileNav]);
+  useEffect(() => {
+    if (workspaceWide && !mobileNav && matchMedia(desktopQuery).matches && (sidebar.current?.contains(document.activeElement) || sidebarFocused.current && document.activeElement === document.body)) {
+      document.getElementById("main-content")?.focus({ preventScroll: true });
+      sidebarFocused.current = false;
+    }
+  }, [workspaceWide, mobileNav]);
   function closeNav() {
     setMobileNav(false);
     requestAnimationFrame(() => navToggle.current?.focus());
@@ -120,7 +126,7 @@ export function AppShell({
           onFocusCapture={() => { sidebarFocused.current = true; }}
           onBlurCapture={(event) => {
             // CSS can hide the sidebar and blur it before the media event fires.
-            if (event.relatedTarget || matchMedia(desktopQuery).matches) sidebarFocused.current = false;
+            if (event.relatedTarget || matchMedia(desktopQuery).matches && !workspaceWide) sidebarFocused.current = false;
           }}
           role={mobileNav ? "dialog" : undefined}
           aria-modal={mobileNav || undefined}

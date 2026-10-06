@@ -24,8 +24,8 @@ import styles from "./student.module.css";
 const stages = [{ id: "concept", label: "개념", icon: BookOpen }, { id: "quiz", label: "퀴즈", icon: CheckCircle2 }, { id: "practice", label: "실습", icon: Layers3 }] as const;
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
-function AnswerChoices({ question, answer, disabled, onChange }: { question: Question; answer?: string; disabled: boolean; onChange: (answer: string) => void }) {
-  return <fieldset className={styles.answers} disabled={disabled}><legend>{question.prompt}</legend>
+function AnswerChoices({ question, answer, disabled, onChange, titleId }: { question: Question; answer?: string; disabled: boolean; onChange: (answer: string) => void; titleId?: string }) {
+  return <fieldset className={styles.answers} disabled={disabled} aria-labelledby={titleId}><legend className={titleId ? styles.srOnly : undefined}>{question.prompt}</legend>
     {question.options.map((option) => <label key={option.id} className={answer === option.id ? styles.selectedAnswer : ""}>
       <input type="radio" name={`answer-${question.id}`} value={option.id} checked={answer === option.id} onChange={() => onChange(option.id)} />
       <span>{option.label}</span>
@@ -37,9 +37,9 @@ function Hint({ hint }: { hint: string }) {
   return <details className={styles.hint}><summary><Lightbulb size={16} aria-hidden="true" />힌트 보기</summary><p>{hint}</p></details>;
 }
 
-type WorkspaceView = { workspaceWide: boolean; onWorkspaceWideChange: (wide: boolean) => void };
+type WorkspaceView = { workspaceWide: boolean; onWorkspaceWideChange: (wide: boolean) => void; onWorkspaceStageChange: (stage: Stage) => void };
 
-export function LessonWorkspace({ lesson, uid, workspaceWide, onWorkspaceWideChange }: { lesson: Lesson; uid: string } & WorkspaceView) {
+export function LessonWorkspace({ lesson, uid, workspaceWide, onWorkspaceWideChange, onWorkspaceStageChange }: { lesson: Lesson; uid: string } & WorkspaceView) {
   const [initial, setInitial] = useState<Work | null>(null);
   const [dashboard, setDashboard] = useState<StudentDashboard | null>(null);
   const [error, setError] = useState("");
@@ -67,7 +67,7 @@ export function LessonWorkspace({ lesson, uid, workspaceWide, onWorkspaceWideCha
   }, []);
   if (!initial) return <div className={styles.workspace}><Link href="/student" className={styles.back}><ArrowLeft size={17} />대시보드로</Link>{error ? <div className={styles.empty} role="alert"><h1>수업에 들어가지 못했어요.</h1><p>{error}</p><Button onClick={() => setAttempt((value) => value + 1)}>다시 불러오기</Button></div> : <div className={styles.loading} role="status"><BookOpen />저장된 학습을 불러오고 있어요.</div>}</div>;
   const otherCurrent = dashboard?.lessons.find((item) => item.id === dashboard.classroom.currentLessonId && item.id !== lesson.id);
-  return <WorkEditor lesson={lesson} initial={initial} uid={uid} otherCurrent={otherCurrent} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} />;
+  return <WorkEditor lesson={lesson} initial={initial} uid={uid} otherCurrent={otherCurrent} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} onWorkspaceStageChange={onWorkspaceStageChange} />;
 }
 
 function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }) {
@@ -82,7 +82,7 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
   </ul>;
 }
 
-function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorkspaceWideChange }: { lesson: Lesson; initial: Work; uid: string; otherCurrent?: Lesson } & WorkspaceView) {
+function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorkspaceWideChange, onWorkspaceStageChange }: { lesson: Lesson; initial: Work; uid: string; otherCurrent?: Lesson } & WorkspaceView) {
   const entryExport = useRef<(() => Promise<string | null>) | null>(null);
   const readEditorDraft = useCallback(async (current: WorkDraft) => {
     if (!entryExport.current) return current;
@@ -95,14 +95,19 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
   const controller = useWork(initial, uid, lesson.practice.type === "entryjs" || lesson.practice.type === "programming" ? readEditorDraft : undefined);
   const { work, draft, busy, update, perform, saveState, error } = controller;
   const progress = progressFor(lesson, work);
+  const reviewType = lesson.practice.type === "sandwich" || lesson.practice.type === "abstraction" || lesson.practice.type === "flowchart" ? lesson.practice.type : null;
   const [moveMessage, setMoveMessage] = useState("");
   const [switching, setSwitching] = useState(false);
   const [focusRequest, setFocusRequest] = useState<{ id: string; preventScroll?: boolean } | null>(null);
-  const reviewViewToggle = useRef<HTMLButtonElement>(null), previousReviewWide = useRef(workspaceWide);
+  const [conceptId, setConceptId] = useState(() => lesson.concepts.find((item) => !initial.conceptSolved.includes(item.id))?.id ?? lesson.concepts[0]?.id);
+  const [quizQuestionId, setQuizQuestionId] = useState(() => initial.quizRoundIds.find((id) => initial.quizRoundGraded ? !initial.quizFeedback[id]?.correct : !initial.draft.quizAnswers[id]) ?? initial.quizRoundIds[0] ?? lesson.quiz[0]?.id);
+  const [experienceVersion, setExperienceVersion] = useState(0);
+  const reviewViewToggle = useRef<HTMLButtonElement>(null), manualReviewFocus = useRef(false);
   useEffect(() => {
-    if (previousReviewWide.current !== workspaceWide) reviewViewToggle.current?.focus({ preventScroll: true });
-    previousReviewWide.current = workspaceWide;
+    if (manualReviewFocus.current) { reviewViewToggle.current?.focus({ preventScroll: true }); manualReviewFocus.current = false; }
   }, [workspaceWide]);
+  useEffect(() => { onWorkspaceStageChange(draft.stage); }, [draft.stage, onWorkspaceStageChange]);
+  function setReviewWide(wide: boolean) { manualReviewFocus.current = true; onWorkspaceWideChange(wide); }
   useEffect(() => {
     // Focus after React commits the new feedback or enabled controls, not on the next animation frame.
     if (focusRequest) document.getElementById(focusRequest.id)?.focus({ preventScroll: focusRequest.preventScroll });
@@ -113,12 +118,15 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
   const quizQuestions = work.quizRoundIds.map((id) => lesson.quiz.find((question) => question.id === id)).filter((question): question is Question => !!question);
   const unanswered = quizQuestions.filter((question) => !draft.quizAnswers[question.id]).length;
   const quizComplete = progress.quiz.percent === 100;
+  const quizQuestion = quizQuestions.find((question) => question.id === quizQuestionId) ?? quizQuestions[0];
+  const quizPosition = quizQuestions.indexOf(quizQuestion);
+  function moveQuestion(id: string) { setQuizQuestionId(id); setFocusRequest({ id: "quiz-question-title" }); }
   const entryPractice = draft.stage === "practice" && (lesson.practice.type === "entryjs" || lesson.practice.type === "programming");
   const saveLabel = controller.conflict ? "저장 기록 충돌" : saveState === "saved" ? work.updatedAt ? "저장 완료" : "아직 학습 기록이 없어요" : saveState === "saving" ? "저장 중…" : saveState === "failed" ? "저장 확인 필요" : "변경 내용 저장 대기";
   async function switchStage(stage: Stage, focusTab = false) {
     if (switching || busy) return;
     setSwitching(true);
-    try { if (await controller.switchStage(stage)) { if (stage !== "practice") onWorkspaceWideChange(false); setFocusRequest({ id: focusTab ? `tab-${stage}` : `stage-heading-${stage}` }); } }
+    try { if (await controller.switchStage(stage)) setFocusRequest({ id: focusTab ? `tab-${stage}` : `stage-heading-${stage}` }); }
     finally { setSwitching(false); }
   }
   function tabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
@@ -131,7 +139,10 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
     event.preventDefault(); void switchStage(stages[next].id, true);
   }
   async function runAction(action: WorkAction, focusId: string) {
-    if (await perform(action)) setFocusRequest({ id: focusId });
+    if (await perform(action)) {
+      if (action.type === "retry-quiz") setQuizQuestionId(lesson.quiz.find((question) => !work.quizSolved.includes(question.id))?.id ?? lesson.quiz[0]?.id);
+      setFocusRequest({ id: focusId });
+    }
   }
   function moveBlock(id: string, delta: number) {
     const index = draft.practiceOrder.indexOf(id);
@@ -155,31 +166,40 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
     {controller.remote && <section className={styles.conflictPanel} aria-label="저장 충돌 비교"><h2>어떤 입력으로 이어갈까요?</h2><p>서버의 완료·제출 기록은 유지돼요. 입력 내용은 아래에서 직접 선택하세요.</p><div className={styles.comparisonGrid}><div><h3>이 화면의 입력</h3><DraftComparison lesson={lesson} draft={draft} /></div><div><h3>서버에 저장된 입력</h3><DraftComparison lesson={lesson} draft={controller.remote.draft} /></div></div><div className={styles.actions}><Button disabled={busy} onClick={() => void controller.resolve(true)}>현재 입력을 새 버전으로 저장</Button><Button variant="outline" disabled={busy} onClick={() => void controller.resolve(false)}>서버 기록으로 이어하기</Button></div></section>}
     <div className={styles.tabs} role="tablist" aria-label="수업 단계">{stages.map((stage, index) => <button key={stage.id} id={`tab-${stage.id}`} type="button" role="tab" aria-selected={draft.stage === stage.id} aria-controls={`panel-${stage.id}`} tabIndex={draft.stage === stage.id ? 0 : -1} disabled={locked} onKeyDown={(event) => tabKey(event, index)} onClick={() => void switchStage(stage.id, true)}><stage.icon size={18} /><span>{stage.label}</span><span className={styles.tabPercent}>{progress[stage.id].percent}%</span></button>)}</div>
 
-    {lesson.practice.type === "programming" && <ProgrammingLearningStage lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} />}
+    {lesson.practice.type === "programming" && <ProgrammingLearningStage lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} conceptId={conceptId} quizQuestionId={quizQuestionId} onConceptChange={setConceptId} onQuizQuestionChange={setQuizQuestionId} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} />}
 
     {lesson.practice.type !== "programming" && draft.stage === "concept" && <section id="panel-concept" role="tabpanel" aria-labelledby="tab-concept" tabIndex={0} className={styles.stagePanel}>
-      {isReviewType(lesson.practice.type) && <ReviewConcepts type={lesson.practice.type} />}
       <div className={styles.stageHeading}><div><h2 id="stage-heading-concept" tabIndex={-1}>설명을 읽고 바로 확인해요</h2><p>개념 확인 문제를 해결하면 자동으로 완료돼요.</p></div><span>{progress.concept.completed} / {progress.concept.total}개 완료</span></div>
-      {lesson.concepts.map((concept, index) => {
+      <nav className={styles.learningNav} aria-label="개념 목록">{lesson.concepts.map((concept, index) => <button key={concept.id} type="button" disabled={locked} aria-current={conceptId === concept.id ? "step" : undefined} onClick={() => { setConceptId(concept.id); setFocusRequest({ id: `concept-title-${concept.id}` }); }}><span>{work.conceptSolved.includes(concept.id) ? "✓ 완료" : String(index + 1).padStart(2, "0")}</span>{concept.title}</button>)}</nav>
+      <div className={styles.conceptBody}>{lesson.concepts.filter((concept) => concept.id === conceptId).map((concept) => {
+        const index = lesson.concepts.indexOf(concept);
         const solved = work.conceptSolved.includes(concept.id);
         const feedback = work.conceptFeedback[concept.id];
         const feedbackCurrent = draft.conceptAnswers[concept.id] === work.draft.conceptAnswers[concept.id];
-        return <article className={styles.concept} key={concept.id} id={`concept-${concept.id}`}><div className={styles.conceptTitle}><span>{String(index + 1).padStart(2, "0")}</span><h3>{concept.title}</h3>{solved && <span className={styles.solved}><Check size={15} />완료</span>}</div><p className={styles.explanation}>{concept.explanation}</p><div className={styles.example}><span>예를 들어 볼까요?</span><p>{concept.example}</p></div>
+        return <article className={styles.concept} key={concept.id} id={`concept-${concept.id}`}><div className={styles.conceptTitle}><span>{String(index + 1).padStart(2, "0")}</span><h3 id={`concept-title-${concept.id}`} tabIndex={-1}>{concept.title}</h3>{solved && <span className={styles.solved}><Check size={15} />완료</span>}</div><p className={styles.explanation}>{concept.explanation}</p><div className={styles.example}><span>예를 들어 볼까요?</span><p>{concept.example}</p></div>
+          {reviewType && <ReviewConcepts key={`${concept.id}-${experienceVersion}`} type={reviewType} conceptId={concept.id} />}
           <div className={styles.checkArea}><AnswerChoices question={concept.question} answer={draft.conceptAnswers[concept.id]} disabled={locked || solved} onChange={(answer) => update({ ...draft, conceptAnswers: { ...draft.conceptAnswers, [concept.id]: answer } })} /><Hint hint={concept.question.hint} />
             {feedback && feedbackCurrent && <p id={`concept-feedback-${concept.id}`} tabIndex={-1} role="status" className={feedback.correct ? styles.feedbackGood : styles.feedbackRetry}>{feedback.correct && <Check size={16} />}{feedback.message}</p>}
             {!solved && <Button disabled={locked || !draft.conceptAnswers[concept.id]} onClick={() => void runAction({ type: "check-concept", conceptId: concept.id }, `concept-feedback-${concept.id}`)}>{busy ? "확인 중…" : "정답 확인"}</Button>}
-          </div></article>;
-      })}
+          </div><div className={styles.conceptActions}><Button variant="ghost" disabled={locked || index === 0} onClick={() => { const id = lesson.concepts[index - 1].id; setConceptId(id); setFocusRequest({ id: `concept-title-${id}` }); }}><ArrowLeft size={16} />이전 개념</Button>{isReviewType(lesson.practice.type) && <Button variant="outline" onClick={() => setExperienceVersion((value) => value + 1)}>체험 초기화</Button>}<Button variant="outline" disabled={locked || index === lesson.concepts.length - 1} onClick={() => { const id = lesson.concepts[index + 1].id; setConceptId(id); setFocusRequest({ id: `concept-title-${id}` }); }}>다음 개념<ArrowRight size={16} /></Button></div></article>;
+      })}</div>
       <div className={styles.stageFooter}><p>{progress.concept.percent === 100 ? "개념을 모두 확인했어요. 퀴즈에서 다시 적용해 볼까요?" : "필요할 때 개념을 다시 살펴볼 수 있어요."}</p><Button disabled={locked} onClick={() => void switchStage("quiz")}>퀴즈로 이동<ArrowRight size={16} /></Button></div>
     </section>}
 
     {lesson.practice.type !== "programming" && draft.stage === "quiz" && <section id="panel-quiz" role="tabpanel" aria-labelledby="tab-quiz" tabIndex={0} className={styles.stagePanel}>
       <div className={styles.stageHeading}><div><h2 id="stage-heading-quiz" tabIndex={-1}>{quizComplete ? "모든 문제를 해결했어요" : work.quizRound > 1 ? `틀린 문제에 다시 도전해요 · ${work.quizRound}회차` : "배운 내용을 확인해요"}</h2><p>{quizComplete ? "해결한 기록은 남아 있어요. 실습으로 이어가세요." : "한 바퀴를 마치면 틀린 문제만 다시 풀어요. 필요할 때 힌트를 열어 보세요."}</p></div><span>{progress.quiz.completed} / {progress.quiz.total}문항 해결</span></div>
-      <div className={styles.quizGrid}>{quizQuestions.map((question, index) => <article key={`${work.quizRound}-${question.id}`} className={styles.quizCard}><div className={styles.questionNumber}>문제 {lesson.quiz.findIndex((item) => item.id === question.id) + 1}<span>{index + 1} / {quizQuestions.length}</span></div><AnswerChoices question={question} answer={draft.quizAnswers[question.id]} disabled={locked || work.quizRoundGraded} onChange={(answer) => update({ ...draft, quizAnswers: { ...draft.quizAnswers, [question.id]: answer } })} /><Hint hint={question.hint} />{work.quizRoundGraded && work.quizFeedback[question.id] && <p role="status" className={work.quizFeedback[question.id].correct ? styles.feedbackGood : styles.feedbackRetry}>{work.quizFeedback[question.id].correct && <Check size={16} />}{work.quizFeedback[question.id].message}</p>}</article>)}</div>
-      <div className={styles.stageFooter}><div><p>{quizComplete ? "퀴즈 100% 완료" : work.quizRoundGraded ? `${lesson.quiz.length - work.quizSolved.length}문항을 다시 풀면 퀴즈가 완료돼요.` : unanswered ? `${unanswered}문항을 더 선택하면 결과를 확인할 수 있어요.` : "모든 답을 선택했어요. 결과를 확인해 보세요."}</p>{!quizComplete && (!work.quizRoundGraded ? <Button disabled={locked || unanswered > 0} onClick={() => void runAction({ type: "grade-quiz" }, "stage-heading-quiz")}>{busy ? "확인 중…" : "이번 문제 결과 확인"}</Button> : <Button disabled={locked} onClick={() => void runAction({ type: "retry-quiz" }, "stage-heading-quiz")}><RotateCcw size={16} />틀린 문제만 다시 풀기</Button>)}</div><Button variant={quizComplete ? "default" : "outline"} disabled={locked} onClick={() => void switchStage("practice")}>{quizComplete ? "실습으로 이동" : "먼저 실습하기"}<ArrowRight size={16} /></Button></div>
+      <div className={styles.quizBody}>
+        <nav className={styles.learningNav} aria-label="퀴즈 문항 목록">{quizQuestions.map((question) => <button key={question.id} type="button" disabled={locked} aria-current={quizQuestion.id === question.id ? "step" : undefined} onClick={() => moveQuestion(question.id)}>문제 {lesson.quiz.indexOf(question) + 1}<span>{work.quizRoundGraded ? work.quizFeedback[question.id]?.correct ? "해결" : "재도전" : draft.quizAnswers[question.id] ? "답변" : "미답변"}</span></button>)}</nav>
+        {quizQuestion && <article key={`${work.quizRound}-${quizQuestion.id}`} className={styles.quizCard}><div className={styles.questionNumber}>문제 {lesson.quiz.indexOf(quizQuestion) + 1}<span>{quizPosition + 1} / {quizQuestions.length} · 이번 회차</span></div><h3 id="quiz-question-title" tabIndex={-1}>{quizQuestion.prompt}</h3><AnswerChoices titleId="quiz-question-title" question={quizQuestion} answer={draft.quizAnswers[quizQuestion.id]} disabled={locked || work.quizRoundGraded} onChange={(answer) => update({ ...draft, quizAnswers: { ...draft.quizAnswers, [quizQuestion.id]: answer } })} /><Hint hint={quizQuestion.hint} />{work.quizRoundGraded && work.quizFeedback[quizQuestion.id] && <p role="status" className={work.quizFeedback[quizQuestion.id].correct ? styles.feedbackGood : styles.feedbackRetry}>{work.quizFeedback[quizQuestion.id].correct && <Check size={16} />}{work.quizFeedback[quizQuestion.id].message}</p>}
+          <div className={styles.conceptActions}><Button variant="ghost" disabled={locked || quizPosition === 0} onClick={() => moveQuestion(quizQuestions[quizPosition - 1].id)}><ArrowLeft size={16} />이전 문제</Button><Button variant="outline" disabled={locked || quizPosition === quizQuestions.length - 1} onClick={() => moveQuestion(quizQuestions[quizPosition + 1].id)}>다음 문제<ArrowRight size={16} /></Button></div>
+        </article>}
+        <div id={work.quizRoundGraded ? "quiz-round-result" : undefined} tabIndex={-1} className={styles.stageFooter}><div><p>{quizComplete ? "퀴즈 100% 완료" : work.quizRoundGraded ? `전체 ${progress.quiz.completed}/${progress.quiz.total}문항 해결 · ${lesson.quiz.length - work.quizSolved.length}문항에 다시 도전해요.` : unanswered ? `${unanswered}문항을 더 선택하면 결과를 확인할 수 있어요.` : "모든 답을 선택했어요. 결과를 확인해 보세요."}</p>
+          {!work.quizRoundGraded && unanswered > 0 && <Button variant="outline" disabled={locked} onClick={() => moveQuestion(quizQuestions.find((question) => !draft.quizAnswers[question.id])!.id)}>답하지 않은 문제로 이동</Button>}
+          {!quizComplete && (!work.quizRoundGraded ? <Button disabled={locked || unanswered > 0} onClick={() => void runAction({ type: "grade-quiz" }, "quiz-round-result")}>{busy ? "확인 중…" : "이번 문제 결과 확인"}</Button> : <><nav className={styles.learningNav} aria-label="재도전 문항 바로가기">{quizQuestions.filter((question) => !work.quizFeedback[question.id]?.correct).map((question) => <button key={question.id} type="button" disabled={locked} onClick={() => moveQuestion(question.id)}>문제 {lesson.quiz.indexOf(question) + 1} 해설 보기</button>)}</nav><Button disabled={locked} onClick={() => void runAction({ type: "retry-quiz" }, "quiz-question-title")}><RotateCcw size={16} />틀린 문제만 다시 풀기</Button></>)}</div><Button variant={quizComplete ? "default" : "outline"} disabled={locked} onClick={() => void switchStage("practice")}>{quizComplete ? "실습으로 이동" : "먼저 실습하기"}<ArrowRight size={16} /></Button></div>
+      </div>
     </section>}
 
-    {isReviewType(lesson.practice.type) && draft.stage === "practice" && <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><header className={reviewStyles.practiceHeader}><h2 id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2><Button ref={reviewViewToggle} variant="outline" aria-pressed={workspaceWide} onClick={() => onWorkspaceWideChange(!workspaceWide)} onKeyDown={event => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); onWorkspaceWideChange(false); } }}>{workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"}</Button></header>{lesson.practice.type === "sandwich" ? <Sandwich controller={controller} /> : lesson.practice.type === "abstraction" ? <Abstraction controller={controller} /> : <Flowchart controller={controller} />}</section>}
+    {isReviewType(lesson.practice.type) && draft.stage === "practice" && <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><header className={reviewStyles.practiceHeader}><h2 id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2><Button ref={reviewViewToggle} variant="outline" aria-pressed={workspaceWide} onClick={() => setReviewWide(!workspaceWide)} onKeyDown={event => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); setReviewWide(false); } }}>{workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"}</Button></header>{lesson.practice.type === "sandwich" ? <Sandwich controller={controller} /> : lesson.practice.type === "abstraction" ? <Abstraction controller={controller} /> : <Flowchart controller={controller} />}</section>}
     {lesson.practice.type !== "programming" && !isReviewType(lesson.practice.type) && draft.stage === "practice" && (
       <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" tabIndex={0} className={styles.stagePanel}>
         <div className={styles.stageHeading}>

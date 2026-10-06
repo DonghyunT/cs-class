@@ -41,6 +41,9 @@
   --foreground: #202637;
   --muted-foreground: #626c80;
   --border: #e6e9f0;
+  --warm-surface: #fff3e8;
+  --warm-foreground: #a84f2a;
+  --warm-border: #edc3a8;
   --font-sans: var(--font-pretendard), sans-serif;
   --font-heading: var(--font-pretendard), sans-serif;
 }

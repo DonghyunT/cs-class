@@ -30,6 +30,7 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   await page.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
   await page.getByRole("button", { name: "정답 확인", exact: true }).first().click();
   await expect(page.locator("#concept-feedback-algorithm")).toBeFocused();
+  await page.getByRole("button", { name: "다음 개념", exact: true }).click();
   await page.getByRole("radio", { name: "내용을 저장해요", exact: true }).check();
   await page.getByRole("button", { name: "정답 확인", exact: true }).click();
   await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
@@ -41,15 +42,19 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   await page.reload();
   await expect(page.getByRole("tab", { name: "실습 0%" })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("tab", { name: "퀴즈 0%" }).click();
+  await expect(page.locator("#quiz-question-title")).toContainText("입력한 숫자");
+  await page.getByRole("navigation", { name: "퀴즈 문항 목록" }).getByRole("button").first().click();
   await expect(page.getByRole("radio", { name: "앞으로 3칸 이동한다" })).toBeChecked();
+  await page.getByRole("button", { name: "다음 문제", exact: true }).click();
   await expect(page.getByRole("radio", { name: "숫자 입력 → 숫자 출력", exact: true })).not.toBeChecked();
   await page.getByRole("radio", { name: "숫자 출력 → 숫자 입력", exact: true }).check();
+  await page.getByRole("button", { name: "다음 문제", exact: true }).click();
   await page.getByRole("radio", { name: "결과가 달라질 수 있어요" }).check();
   await page.getByRole("button", { name: "이번 문제 결과 확인" }).click();
   await expect(page.getByRole("tab", { name: "퀴즈 67%" })).toBeVisible();
   await page.getByRole("button", { name: "틀린 문제만 다시 풀기" }).click();
   await expect(page.getByRole("radio")).toHaveCount(3);
-  await expect(page.locator("#stage-heading-quiz")).toBeFocused();
+  await expect(page.locator("#quiz-question-title")).toBeFocused();
   await expect(page.getByText("화면에 보여 줄 값을 먼저 알아야 해요.", { exact: true })).not.toBeVisible();
   await page.getByText("힌트 보기", { exact: true }).click();
   await expect(page.getByText("화면에 보여 줄 값을 먼저 알아야 해요.", { exact: true })).toBeVisible();
