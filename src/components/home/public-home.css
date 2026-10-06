@@ -770,8 +770,9 @@
   color: #715ca1;
 }
 .landing-badge.apricot {
-  background: #f9eae0;
-  color: #91664c;
+  background: var(--warm-surface);
+  color: var(--warm-foreground);
+  border: 1px solid var(--warm-border);
 }
 .lesson-cover {
   height: 135px;
@@ -919,7 +920,11 @@
   text-align: center;
   margin-top: 18px;
   font-size: 13px;
-  color: #66758a;
+  color: var(--warm-foreground);
+  background: var(--warm-surface);
+  border: 1px solid var(--warm-border);
+  border-radius: 12px;
+  padding: 10px 14px;
 }
 .quiz-options {
   display: grid;

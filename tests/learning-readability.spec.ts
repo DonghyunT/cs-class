@@ -31,6 +31,104 @@ async function action(page: Page, endpoint: string, value: object) {
   return response.json() as Promise<Work>;
 }
 
+test("abstraction: 남기는 이유와 두 지도에서 같은 역·연결을 보존한다", async ({ page }, testInfo) => {
+  await prepare(page, "review-abstraction");
+  const experience = page.getByRole("region", { name: "추상화 개념 체험" });
+  for (const name of ["노트 표지 색", "필기구 브랜드", "책상 장식"]) await experience.getByRole("button", { name, exact: true }).click();
+  await expect(experience.getByRole("status")).toContainText("핵심 정보 세 가지");
+  const reasons = experience.getByRole("list", { name: "남기는 정보와 이유" });
+  await expect(reasons).toContainText("목표 공부 시간");
+  await expect(reasons).toContainText("남은 과제");
+  await expect(reasons).toContainText("현재 시각");
+  const maps = experience.getByRole("img");
+  await expect(maps).toHaveCount(2);
+  const network = await maps.evaluateAll(elements => elements.map(svg => ({
+    stations: [...svg.querySelectorAll("[data-station]")].map(node => node.getAttribute("data-station")),
+    edges: [...svg.querySelectorAll("[data-edge]")].map(node => node.getAttribute("data-edge")),
+  })));
+  expect(network[0].stations.length).toBeGreaterThanOrEqual(3);
+  expect(network[0].edges.length).toBeGreaterThanOrEqual(2);
+  expect(network[0]).toEqual(network[1]);
+  for (const width of [1440, 821, 390, 320]) {
+    await page.setViewportSize({ width, height: 720 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.screenshot({ path: testInfo.outputPath("abstraction-essential-mobile.png"), fullPage: true });
+  await page.getByRole("button", { name: "체험 초기화", exact: true }).click();
+  await expect(experience.getByRole("button", { name: "노트 표지 색", exact: true })).toBeVisible();
+});
+
+test("abstraction: 상태·조건과 목표를 연결하고 하위 단계를 펼쳐도 완료 답안을 보존한다", async ({ page }) => {
+  const endpoint = await prepare(page, "review-abstraction");
+  await page.getByRole("navigation", { name: "개념 목록" }).getByRole("button", { name: /현재에서 목표로/ }).click();
+  const experience = page.getByRole("region", { name: "추상화 개념 체험" });
+  await expect(experience.getByRole("list", { name: "현재에서 목표로 가는 흐름" })).toContainText("초기 상태");
+  await experience.getByRole("button", { name: "조건", exact: true }).click();
+  await expect(experience.getByRole("status")).toContainText("밤 10시");
+  await experience.getByRole("button", { name: "목표 상태", exact: true }).click();
+  await expect(experience.getByRole("status")).toContainText("제출");
+  await page.getByRole("radio", { name: "목표 상태", exact: true }).check();
+  await page.getByRole("button", { name: "정답 확인", exact: true }).click();
+  await expect(page.locator("#concept-feedback-state")).toBeFocused();
+  await page.getByRole("navigation", { name: "개념 목록" }).getByRole("button", { name: /분해하고 핵심/ }).click();
+  await expect(experience.getByText("목표: 안전하게 라면을 끓여 먹기", { exact: true })).toBeVisible();
+  await experience.locator("summary").first().focus();
+  await page.keyboard.press("Enter");
+  await expect(experience.getByText("냄비·물·라면을 준비해요.", { exact: true })).toBeVisible();
+  await experience.getByRole("button", { name: "등교하기", exact: true }).click();
+  await expect(experience.getByText("목표: 준비물을 챙겨 정시에 학교에 도착하기", { exact: true })).toBeVisible();
+  await page.getByRole("tab", { name: /실습/ }).click();
+  await page.getByRole("tab", { name: /개념/ }).click();
+  await expect(page.locator("#concept-decompose")).toBeVisible();
+  await page.reload();
+  expect((await savedWork(page, endpoint)).conceptSolved).toContain("state");
+  expect((await savedWork(page, endpoint)).draft.conceptAnswers.state).toBe("0");
+});
+
+test("abstraction-workbook: AI 대기·실패와 저장503·충돌409 뒤에도 입력을 복원한다", async ({ page }, testInfo) => {
+  const endpoint = await prepare(page, "review-abstraction");
+  await page.getByRole("tab", { name: /실습/ }).click();
+  await page.getByRole("button", { name: "실전 워크북", exact: true }).click();
+  await page.getByLabel("고민 키워드", { exact: true }).fill("과제 계획");
+  const current = page.getByLabel("현재 상태", { exact: true });
+  await current.fill("과제 하나가 남았어요");
+  await page.getByLabel("목표 상태", { exact: true }).fill("밤 10시 전에 제출함");
+  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/api/classroom/ai", async route => { await gate; await route.fulfill({ status: 503, json: { message: "합성 AI 연결 실패", code: "UNAVAILABLE" } }); });
+  const coach = page.getByRole("complementary", { name: "추상화 닥터" });
+  await coach.getByRole("button", { name: "현재·목표 후보 받기", exact: true }).click();
+  await expect(coach.getByRole("button", { name: "닥터가 생각 중…", exact: true })).toBeDisabled();
+  await current.fill("기다리면서도 내 상태를 다듬어요");
+  release();
+  await expect(coach.getByRole("alert")).toContainText("합성 AI 연결 실패");
+  await expect(current).toHaveValue("기다리면서도 내 상태를 다듬어요");
+  await page.unroute("**/api/classroom/ai");
+  let failure = 503;
+  await page.route(`**${endpoint}`, async route => { if (route.request().method() === "POST") await route.fulfill({ status: failure, json: { message: "합성 저장 실패", code: failure === 409 ? "REVISION_CONFLICT" : "UNAVAILABLE" } }); else await route.continue(); });
+  await current.fill("저장되지 않은 나의 현재 상태");
+  await expect(page.locator("#work-save-error")).toBeVisible();
+  await page.getByRole("tab", { name: /퀴즈/ }).click();
+  await expect(current).toHaveValue("저장되지 않은 나의 현재 상태");
+  failure = 409;
+  await page.getByRole("button", { name: "저장 다시 확인", exact: true }).click();
+  await expect(page.locator("#work-save-error")).toContainText("저장 기록이 서로 달라요");
+  await page.getByRole("button", { name: "서버 기록과 비교", exact: true }).click();
+  await expect(page.getByRole("region", { name: "저장 충돌 비교" })).toContainText("저장되지 않은 나의 현재 상태");
+  await page.unroute(`**${endpoint}`);
+  await page.getByRole("button", { name: "현재 입력을 새 버전으로 저장", exact: true }).click();
+  await expect(page.locator("#work-save-error")).toHaveCount(0);
+  await page.getByRole("tab", { name: /퀴즈/ }).click();
+  await page.getByRole("tab", { name: /실습/ }).click();
+  await page.reload();
+  await expect(current).toHaveValue("저장되지 않은 나의 현재 상태");
+  await expect(page.getByLabel("목표 상태", { exact: true })).toHaveValue("밤 10시 전에 제출함");
+  await page.setViewportSize({ width: 390, height: 720 });
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("abstraction-workbook-mobile.png"), fullPage: true });
+});
+
 test("representative-flow: demo 대표 수업의 답안·작품과 단계 왕복·재접속", async ({ page }, testInfo) => {
   const endpoint = await prepare(page);
   const work = await savedWork(page, endpoint);

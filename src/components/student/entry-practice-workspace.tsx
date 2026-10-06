@@ -181,7 +181,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
       {mission?.id === "keys" && <div className={styles.keyPad} aria-label="방향키 실행">{[["38", "↑ 위"], ["37", "← 왼쪽"], ["40", "↓ 아래"], ["39", "→ 오른쪽"]].map(([key, label]) => <Button key={key} variant="outline" size="sm" disabled={!running || locked} onClick={() => send("key", { key })}>{label}</Button>)}</div>}
     </section>
     <aside className={styles.validation}>
-      <div><h3>검증하고 제출해요</h3><p>검증을 통과한 작품을 제출하면 실습이 완료돼요.</p>
+      <div><h3>검증하고 제출해요</h3><p>실행 결과 확인 → 조건 검증 → 작품 제출 순서로 해보세요. 검증을 통과한 작품을 제출하면 실습이 완료돼요.</p>
         <ul className={styles.criteria}>{lesson.practice.criteria?.map((criterion) => {
           const feedback = validation?.criteriaResults?.find((item) => item.id === criterion.id);
           return <li key={criterion.id}>{feedback?.passed ? <Check size={16} /> : <Square size={16} />}<span>{criterion.label}<span className={common.srOnly}>{feedback ? feedback.passed ? "통과" : "보완 필요" : "확인 전"}</span></span></li>;

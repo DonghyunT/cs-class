@@ -1,17 +1,19 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import styles from "./review.module.css";
+
 import scenes from "./concepts.module.css";
+import { AbstractionConcepts } from "./abstraction-concepts";
+import { FlowchartConcepts } from "./flowchart-concepts";
 
 const conditions = [
   ["입력", "문제를 해결할 때 필요한 자료예요. 입력은 없을 수도 있어요."], ["출력", "해결 결과가 하나 이상 나와야 해요."], ["명확성", "명령이 모호하지 않고 같은 뜻으로 이해되어야 해요."], ["유한성", "한정된 단계 뒤에 반드시 끝나야 해요."], ["수행 가능성", "각 명령을 실제로 실행할 수 있어야 해요."],
 ];
-const symbols = [["단말", "시작과 종료", "시작하기·끝내기"], ["입출력", "입력받기·결과 보여 주기", "묻고 대답 기다리기·말하기"], ["처리", "동작·계산", "변수 바꾸기·움직이기"], ["판단", "조건에 따라 예·아니오로 나누기", "만일 조건이라면"]];
 type ConceptProps = { type: "sandwich" | "abstraction" | "flowchart"; conceptId: string };
 
 export function ReviewConcepts(props: ConceptProps) {
-  if (props.type !== "sandwich") return <ExistingReviewConcepts {...props} />;
+  if (props.type === "abstraction") return <AbstractionConcepts conceptId={props.conceptId} />;
+  if (props.type === "flowchart") return <FlowchartConcepts conceptId={props.conceptId} />;
   return <section className={scenes.experience} aria-label="알고리즘 개념 체험">
     {props.conceptId === "clear" ? <ClearExperience /> : props.conceptId === "finite" ? <FiniteExperience /> : <StructureExperience />}
     <p className={scenes.note}>체험 장면은 다시 들어오면 처음부터 시작해요. 확인한 답안과 완료 기록은 저장돼요.</p>
@@ -135,23 +137,4 @@ function StructureExperience() {
     <p className={scenes.result} role="status">{running ? "실행 중" : position === path.length ? "정한 단계 뒤 자동 종료했어요." : position ? "멈춘 위치에서 한 단계씩 이어갈 수 있어요." : "실행하면 아래에 실제로 지난 경로가 나타나요."}</p>
     <ol className={scenes.flow} aria-label="이번 실행 경로">{path.slice(0, position).map((label, i) => <li key={i}>{label}</li>)}</ol>
   </>;
-}
-function ExistingReviewConcepts({ type, conceptId }: { type: "sandwich" | "abstraction" | "flowchart"; conceptId: string }) {
-  const [selected, setSelected] = useState(0), [message, setMessage] = useState(""), [running, setRunning] = useState<"flow" | null>(null), [tick, setTick] = useState(0), [map, setMap] = useState(false), [discarded, setDiscarded] = useState<number[]>([]), [scenario, setScenario] = useState(0), [structure, setStructure] = useState(conceptId === "loop" ? "반복" : "선택");
-  useEffect(() => {
-    if (!running) return;
-    const timer = setInterval(() => { setTick(value => value + 1); }, 650);
-    return () => clearInterval(timer);
-  }, [running]);
-  useEffect(() => { if (running === "flow" && tick >= 6) queueMicrotask(() => { setRunning(null); setMessage("종료에 도달했어요."); }); }, [running, tick]);
-  function start(mode: "flow") { setTick(0); setRunning(mode); setMessage(""); }
-  if (type === "abstraction") {
-    const words = ["노트 표지 색", "목표 공부 시간", "필기구 브랜드", "남은 과제", "책상 장식", "현재 시각"];
-    return <section className={styles.workspace} aria-label="추상화 개념 체험"><div hidden={conceptId !== "state"} className={styles.panel}><h3>문제 상황의 네 가지 요소</h3><div className={styles.stepNav}>{["초기 상태", "현재 상태", "조건", "목표 상태"].map((label, i) => <button key={label} aria-pressed={selected === i} onClick={() => setSelected(i)}>{label}</button>)}</div><p className={styles.feedback}>{["과제를 시작하기 전, 아직 해야 할 일이 남아 있어요.", "시간이 지났지만 과제를 끝내지 못했어요.", "오늘 밤 10시 안에, 필요한 과제부터 끝내야 해요.", "마감 전에 과제를 모두 제출한 상태예요."][selected]}</p></div>
-      <div hidden={conceptId !== "essential"} className={styles.panel}><h3>생각 다이어트: 불필요한 정보 덜어내기</h3><p>정해진 시간에 과제를 끝내는 데 불필요한 정보만 눌러 덜어내 보세요.</p><div className={styles.tags}>{words.map((word, i) => !discarded.includes(i) && <button key={word} onClick={() => { if (i % 2 === 0) { setDiscarded([...discarded, i]); setMessage(discarded.length === 2 ? "핵심 정보 세 가지만 남았어요!" : "목적과 관계없는 정보를 덜어냈어요."); } else setMessage("이 정보는 시간 안에 과제를 끝내는 데 필요해요. 남겨 두세요."); }}>{word}</button>)}</div><p role="status">{message}</p></div>
-      <div className={styles.columns}><div hidden={conceptId !== "essential"} className={styles.panel}><h3>지하철 노선도 모델링 비교</h3><p>역과 연결은 같아요. 어떤 표현이 환승역을 찾기 쉬운가요?</p><svg viewBox="0 0 380 150" role="img" aria-label={map ? "연결을 정리한 노선도" : "실제 지형처럼 구불구불한 노선"}><path d={map ? "M30 80H160L220 30H350" : "M30 80C65 10 130 140 160 80S240 140 250 30S320 80 350 30"} fill="none" stroke="#a78bfa" strokeWidth="7"/><path d="M40 30L160 80L320 120" fill="none" stroke="#34d399" strokeWidth="7"/>{[[30,80,"출발"],[160,80,"환승"],[350,30,"도착"]].map(([x,y,label]) => <g key={label}><circle cx={x} cy={y} r="8" fill="white" stroke="#475569"/><text x={Number(x)-14} y={Number(y)+28} fontSize="13" fill="currentColor">{label}</text></g>)}</svg><Button variant="outline" onClick={() => setMap(!map)}>{map ? "지형 표현 보기" : "핵심 연결만 보기"}</Button></div><div hidden={conceptId !== "decompose"} className={styles.panel}><h3>문제 분해</h3><div className={styles.stepNav}>{["라면 끓이기", "등교하기"].map((label, i) => <button key={label} aria-pressed={scenario === i} onClick={() => setScenario(i)}>{label}</button>)}</div><ol>{(scenario === 0 ? ["재료 준비", "물 끓이기", "면과 스프 넣기", "익히고 담기"] : ["잠에서 깨기", "씻고 옷 입기", "준비물 확인", "교통편 이용"]).map(item => <li key={item}>{item}</li>)}</ol></div></div></section>;
-  }
-  if (type !== "flowchart") return null;
-  const sequence = structure === "순차" ? ["시작", "입력", "처리", "출력", "종료"] : structure === "선택" ? ["시작", "조건 확인", "예 → 처리 A", "합류", "종료"] : ["시작", "입력", "조건 확인", "아니오 → 다시 입력", "조건 확인", "예 → 종료"];
-  return <section className={styles.workspace} aria-label="순서도 개념 체험"><div hidden={conceptId !== "symbols"} className={styles.panel}><h3>순서도 기호와 엔트리 동작 연결</h3><div className={styles.stepNav}>{symbols.map(([label], i) => <button key={label} aria-pressed={selected === i} onClick={() => setSelected(i)}>{label}</button>)}</div><p className={styles.feedback}>{symbols[selected][1]} · 엔트리: {symbols[selected][2]}</p></div><div hidden={conceptId === "symbols"} className={styles.panel}><h3>순차·선택·반복 불빛 흐름 체험</h3><div className={styles.stepNav}>{["순차", "선택", "반복"].map(label => <button key={label} aria-pressed={structure === label} onClick={() => { setStructure(label); setRunning(null); setTick(0); }}>{label}</button>)}</div><ol>{sequence.map((step, i) => <li key={i} style={{ fontWeight: tick % sequence.length === i && running ? 700 : 400 }}>{tick % sequence.length === i && running ? "● " : "○ "}{step}</li>)}</ol><div className={styles.actions}><Button onClick={() => start("flow")}>흐름 실행</Button><Button variant="outline" disabled={!running} onClick={() => setRunning(null)}>중지</Button></div></div></section>;
 }

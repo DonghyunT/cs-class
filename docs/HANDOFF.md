@@ -1,61 +1,51 @@
 # 이어갈 작업
 
-갱신: 2026-10-06(Asia/Seoul). **사용자 요청으로 여기서 작업을 마감합니다. 작업 브랜치는 `codex/student-learning-readability`, 최신 앱 소스·검사는 `603b8ee`입니다. 이 문서를 포함한 마감 커밋을 같은 이름의 origin 브랜치에 보존하고 미커밋 없이 인계합니다.** 1~7차와 사용 피드백, 수업 전용 틀, 7개 수업의 공통 개념 배치를 구현했습니다. 실제200% 확대·OS 한글 입력기 확인은 남았고8~12차는 미착수입니다. 새 기능·main 병합·운영 배포를 자동 시작하지 않습니다.
+갱신: 2026-10-07(Asia/Seoul). **현재 브랜치 `codex/student-learning-readability`; 학생 UI1~12차와 담당 문서·신규 모듈·참고 화면을 이번 커밋에 보존하며 미커밋 변경을 정리합니다. 다음 행동은 PR/CI 확인 → main 병합 → 기존 Production 배포 확인 → 최종 인계입니다.** 로컬 최종 빌드 전체178개가 단일 실행에서 통과했습니다. 선생님이 이 흐름과 실제 브라우저200%·물리 OS 한글 입력기 두 항목만 미확인으로 남기는 2번 방안을 승인했습니다.
 
-제품 정책은 [PRD](PRD.md), 시각·조작 기준은 [DESIGN](DESIGN.md), 실행 절차는 [DEVELOPMENT](DEVELOPMENT.md), 서버 대상은 [FIREBASE_SETUP](FIREBASE_SETUP.md)을 따릅니다. 단계별 검사·리뷰·배포 상세는 [마감 전 원문](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md)과 [보존 해시](archive/cs-class/2026-10-06-student-learning-close/manifest.json)에 남겼습니다. 보관본의 당시 미완료·로컬 전용 표현은 최신 상태가 아닙니다.
+제품 정책은 [PRD](PRD.md), 시각·조작은 [DESIGN](DESIGN.md), 실행은 [DEVELOPMENT](DEVELOPMENT.md), 서버는 [FIREBASE_SETUP](FIREBASE_SETUP.md)을 따릅니다. 앞선1~7차의 상세 이력은 [마감 전 원문](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md)과 [보존 해시](archive/cs-class/2026-10-06-student-learning-close/manifest.json)에 있습니다. 원문과 해시는 변경하지 않았습니다.
 
 ## 현재 작업 상태
 
-| 항목 | 인계 상태 |
+| 항목 | 현재 상태 |
 | --- | --- |
-| Git·원격 | `origin=https://github.com/DonghyunT/cs-class.git`. 이 마감 커밋까지 `origin/codex/student-learning-readability`에서 이어갑니다. 최초 계획 브랜치 `codex/session-handoff-20261005`나 main만 받으면 최신 UI가 없습니다. 최종 tip은 `git log -1 --oneline`으로 확인합니다. |
-| main과의 관계 | 10/6 마감 때 fetch하여 `main=origin/main=b8806a5`를 확인했습니다. 앱 기준 `603b8ee`에서 main 쪽1개/작업 쪽8개 커밋이 분기합니다(마감 문서 커밋 제외). main 쪽1개는 과거 세션 문서 정리입니다. 자동 병합·reset하지 않았으며 향후 PR에서 문서 차이를 대조합니다. |
-| 구현·검토 | 최초1~7차=`1757414`, 큰 조리대·대화=`a178ba5`, 조작/배치 피드백=`7600b82`, 수업 전용 틀=`fe10311`, 공통 개념 배치=`603b8ee`. 선생님 직접 체험 피드백은 반영·재검증했고 ‘많이 나아졌다’는 확인을 받았습니다. 새 공통 개념 화면은 후속 검토할 수 있습니다. |
-| 로컬 실행 | 마감 때 localhost:3000 앱·Auth9099·Firestore8080 실행을 확인하고 유지했습니다. 앱은 `603b8ee`의 프로덕션 빌드(`CI=1`, `next start`), projectId=`demo-cs-class`, emulatorHost=`127.0.0.1:9099`입니다. PID·포트는 다음 실행에서 다시 확인합니다. |
-| AI·운영 경계 | 로컬은 `CS_AI_FIXTURE=1`의 합성 응답입니다. 실제 Solar 호출·품질·비용 검증이 아닙니다. 이번 UI 작업과 마감에서 운영 DB·실학생 자료 변경·main 병합·운영 배포를 하지 않았습니다. 원격 브랜치 보존을 Production 반영으로 세지 않습니다. |
+| Git | `origin=https://github.com/DonghyunT/cs-class.git`. 작업 브랜치는 `codex/student-learning-readability`; 재개 기준ad4699d(앱603b8ee)에8~12차를 추가했습니다. main=origin/main=b8806a5를 재확인했고 merge-base8668cb0과 main의 파일 차이는 없습니다. 신규 소스5개·합성 참고 PNG3개도 포함합니다. 강제 reset/push하지 않았습니다. |
+| 범위 | 한 개념/문항 표시·자유 이동·학습 위치·기본/수동 실습 폭·LessonShell·7개 수업의 공통 배치와 추상화/순서도/프로그래밍 체험, 워크북/Entry 주변 읽기, 홈/학생 보조색을 구현했습니다. |
+| 소유·경계 | `useWork` 단독 저장 소유, 수업/문항/미션 ID·서버·채점·완료 계약을 유지했습니다. 체험 초기화와 저장 답안·완료·작품은 분리합니다. 새 의존성·DB 형식·인증/규칙/환경변수 변경은 없습니다. |
+| 실행 | Windows·Node24.19.0·Java21.0.12.1·Chromium·demo Auth9099/Firestore8080·localhost:3000. 최종 E2E는 `CI=1`의 `next start`와 새 합성 시드·AI/시간표 fixture입니다. 실행 후 앱/에뮬레이터는 종료됐으며 다른 PC의 demo 백업을 복원하지 않았습니다. |
+| 운영 | 기존 Vercel cs-class / Firebase cs-class-f74c4 / Production b8806a5·icn1·dpl_4QmJQKVPnKuA8tS8ogkmEXqRPZiA를 확인했습니다. 이번 UI는 아직 main에 병합/공개하지 않았습니다. 운영 DB·실학생 자료·새 합성 계정·유료 Solar 호출은 변경하지 않습니다. |
 
 ## 학생 학습 화면 개선 계획 재개
 
-[12회차 계획](reference/student-learning-readability-plan.md)은 원래 명세·회차 경계를, [수업 전용 틀 계획](reference/student-lesson-shell-plan.md)은 추가 설계·적용 판단을 맡습니다. 계획의 체크박스를 전체 완료 선언으로 사용하지 말고 아래 구현·검증 경계를 먼저 읽습니다.
+[12회차 계획](reference/student-learning-readability-plan.md)은 요구와 실행 근거를, [수업 전용 틀 계획](reference/student-lesson-shell-plan.md)은 추가 설계·구현 근거를 관리합니다.
 
-- **학생에게 읽기 편한 흐름:** 한 개념/한 문항을 크게 보여주되 자유 이동합니다. 개념 선택·확인 답안·완료를 구분하고, 재접속은 첫 미완료 개념/첫 미답변 또는 첫 오답에서 시작합니다. 체험 초기화는 답안·완료를 지우지 않습니다. 자동 단계 이동을 강요하지 않습니다.
-- **실습과 대화:** 실제 샌드위치 조리대 도형을 크게 했습니다. 오른쪽은 시간순 대화와 아래 입력, 실행 기록은 두 열 전체 폭입니다. Enter 전송·Shift+Enter 줄바꿈, 조합 확인 Enter 제외(`isComposing`·229)입니다. 평소 실행은 하나이고 실패 때만 ‘AI 없이 실행’을 제공합니다. 새 레시피는 대화창 근처, 재실행/되돌리기는 접힌 기록 도구, 체험 초기화는 체험 근처에 둡니다.
-- **폭은 학생이 선택:** 실습 진입·새로고침은 기본 폭입니다. ‘작업실 넓게 보기’로 확장하고 같은 수업의 단계 왕복/미션 변경에서는 수동 선택을 유지합니다. 같은 편집기·Entry iframe·작품을 유지합니다. 이전 자동 확대 계획보다 선생님의 후속 선택을 우선합니다.
-- **수업 전용 틀:** 학생 `/classroom/[id]`는 대시보드 사이드바 없이 수업 나가기·제목·저장 상태·학생 메뉴·개념/퀴즈/실습 탐색을 사용합니다. 대시보드/열린 수업/교사 화면은 기존 AppShell입니다. `from=dashboard|lessons`만 복귀 경로로 쓰며 직접/알 수 없는 출처는 열린 수업으로 돌아갑니다. 상단 고정은821px 이상 폭·801px 이상 높이, 낮고 좁은 창에서는 일반 흐름입니다.
-- **모든 수업의 공통 개념 배치:** 현재 catalog7개(기존 일반3개·프로그래밍13·복습3개)를 같은 구조로 맞췄습니다. 최대1120px의 왼쪽 목록/오른쪽 본문,760px 이하 상단 목록,420px 이하 한 열입니다. 제목·설명 → 예시/기존 체험 → 확인/피드백 → 이전/다음 순서이며 마지막 개념에서 퀴즈로 이어집니다. 목록 제목16px·설명14px 이상, 조작44px 이상입니다. 공통 CSS만 공유하고 새 활동 내용까지 확장한 것은 아닙니다.
-- **유지할 구현 경계:** WorkEditor의 `use-work`가 학습·저장을 단독 소유합니다. LessonShell은 표현과 탐색을 맡고, memo로 상단 변경 때문에 편집기/iframe이 재생성되지 않게 합니다. 학습 갱신 후 초점은 Effect에서 옮깁니다. 새 저장소·API·DB 형식·의존성을 추가하지 않았습니다. 저장 실패/충돌·미완성 입력·기존 제출본을 보존합니다.
-
-### 이어갈 코드와 검사
-
-| 대상 | 먼저 읽을 파일 |
-| --- | --- |
-| 전용 틀·복귀·상단 메뉴 | `src/components/student/lesson-shell.tsx`와 인접 CSS, `src/components/classroom.tsx` |
-| 단계·개념/퀴즈 어댑터·초점 | `src/components/student/lesson-workspace.tsx`, 저장 소유자 `use-work.ts` |
-| 공통 개념 표현·프로그래밍 | `src/components/ui/concept-layout.module.css`, `src/components/prototype/programming/concept.tsx`, `src/components/student/programming-lesson.tsx` |
-| 수업별 기존 체험 | `src/components/student/review/`의 `concepts.tsx`·`sandwich.tsx`·`abstraction.tsx`·`flowchart.tsx`와 인접 CSS |
-| 내용·완료·서버 계약 | `src/lib/classroom/catalog.ts`·`progress.ts`·`types.ts`·`review/lessons.ts`, `src/lib/server/learning.ts` |
-| 관련 회귀 검사 | `tests/concept-layout.spec.ts`, `learning-readability.spec.ts`, `sandwich-conversation.spec.ts`, `student-ui.spec.ts`, `programming-learning.spec.ts`, `programming-prototype.spec.ts` 및 수업 전용 틀 검사 |
+- 한 개념/한 문항을 크게 표시하며 자유 이동합니다. 선택 위치·답안·완료를 구분하고 재접속은 첫 미완료/미답변·오답에서 시작합니다. 체험 초기화는 답안·완료를 지우지 않습니다.
+- 학생 수업은 LessonShell, 대시보드·열린 수업·교사는 AppShell입니다. 나가기·제목·저장·학생 메뉴·단계 탐색을 모으고 낮거나 좁은 창에서는 일반 흐름으로 읽습니다.
+- 실습은 기본 폭으로 진입합니다. 수동 넓게 보기는 같은 수업의 단계/미션에서 유지하며 새로고침·다른 수업은 기본입니다. 같은 Entry iframe·편집기·작품을 유지합니다.
+- 추상화는 남길 이유·동일5역/4연결의 두 지도·상태/조건/목표·펼치는 작은 단계, 순서도는 실제 기호·150cm 경계·틀림의 입력 복귀와 맞음의 종료를 제공합니다. 프로그래밍은 관찰 질문·큰 표시·초기화를 추가하고 두 체험의 말풍선 결과를 분리했습니다.
+- 워크북 입력과 도움·결과를 가깝게 두고 순서도 캔버스의 공간을 늘렸습니다. 크기 전환은 초기 시작 기호와 사용자가 옮긴 위치를 구분해 보존합니다. 실제 Entry는1000px/660px(700px 이하620px)을 유지합니다. 홈·학생 안내에 warm 토큰을 소량 쓰고 파랑 주요 조작과 역할/오류 색은 유지합니다.
 
 ## 검증과 검토 자료
 
-**아래는10/6 구현 때 실행한 결과이며 이번 문서 마감에서 앱 검사를 다시 실행하지 않았습니다.** Windows·Node24·Java21·Chromium·demo Auth9099/Firestore8080·localhost:3000의 빌드 앱에서 검사했습니다. 순차 통과와 한 번의 전체 통과를 구분합니다.
+**10/7 이 PC의 실제 새 검사입니다. 이전603b8ee 결과를 이번 검증으로 세지 않습니다.** 최종 앱 소스 변경은00:43:16 KST이며 이후 두 탭 검사의 대기만 보강했습니다. 아래 최종 전체는 같은 최종 프로덕션 빌드에서 실행했습니다.
 
-| 소스 기준 | 실제 근거·한계 |
+| 검사 | 결과·한계 |
 | --- | --- |
-| `603b8ee` 공통 개념 | typecheck/lint/프로덕션 build 통과. 새 검사2개는 이전 소스에서 실패를 확인한 뒤 수정했습니다. 7개 수업×1440/821/760/390/320px의 배치·크기·넘침·페이지 오류, 일반6개 수업의 답안/피드백 복원·마지막 퀴즈 이동을 확인했습니다. |
-| 같은 빌드의 영향 검사 | 관련6개 파일32개 중31개 통과(3.1분). 순서 실습의 연속 Enter가 이전 이동의 Effect 초점을 앞서는 검사 결함을 위치/초점 대기로 보강했습니다. 앱 소스는 그대로 두고 `student-ui`4개+새 개념2개를 함께 재검증해6개 통과(44.6초). ‘32개 단일 실행 모두 통과’로 표현하지 않습니다. |
-| 실제 브라우저 확인 | 합성20102 계정의 기존 답안·완료·개념 선택·제목 초점, 콘솔 오류0을 확인했습니다. 실제200%와 OS 입력기 확인은 제외합니다. |
-| `fe10311` 전용 틀의 과거 전체 | 전체167개 중166개 통과(14.1분). 숨겨진 로그아웃을 직접 찾던 기존 검사1개를 학생 메뉴를 여는 실제 흐름으로 수정해 단독 통과(23.4초). 이후 공통 개념 변경의 새 전체 검사로 재사용하지 않습니다. |
-| 이번 마감 | 문서 로컬 연결342개·앵커 누락0, 보관 원문 SHA-256 일치, 참고 PNG11장 추적, 최신 demo 백업의 Git 제외와 `git diff --check`를 확인했습니다. 최종 원격 SHA와 작업 트리는 마감 커밋 기준으로 대조합니다. 새 기능·앱 소스 변경은 없습니다. |
+| 정적·빌드·순수 | 최종 앱 lint/typecheck/Next16.3.6 build 통과. 검사 보강 후 전체 lint/typecheck도 통과. 변경 없는 엔진/AI/반 계획 순수12개는 이번 실행 중 통과했습니다. |
+| 단원·Entry 영향 | 추상화 새3개+기존5개, 순서도9개와 출력 기호/조건 경계, 프로그래밍 공개/새 체험, 실제 Entry·프로그래밍·작업실 영향12개와 합성 IME를 확인했습니다. 팔레트 조립·입력·실행/중지/무대 복원·동일 iframe·미완성 초안·저장503/409 보존을 포함합니다. |
+| 첫 전체·앱 수정 | 178개 중177개/1실패(11.0분). 390px 시작 기호의 스크롤/크기 전환 문제를 재현·수정하고 두 파일14개를 연속 재검증했습니다(1.3분). 원래 범위 조건·수동 wheel/pan·편집 초점·작품/저장을 유지했습니다. |
+| 두 번째 전체·검사 수정 | 178개 중177개/1실패(10.8분). 두 탭 충돌 검사가 이전 저장 표시를 읽어 요청을 겹치게 한 원인을 trace의 요청/응답·버전·멱등 저장으로 확인했습니다. 응답 답안·revision 증가를 기다리도록 검사만 고쳤으며 기존 충돌/보존/해결 조건·앱/서버는 유지했습니다. 해당 파일4개 통과(30.1초). |
+| 최종 전체 | `CI=1 npm.cmd run test:e2e`, 새 demo·프로덕션 빌드에서 **178/178 단일 실행 통과(10.6분)**. 두 실패를 합쳐 통과로 세거나 검사 조건을 낮추지 않았습니다. |
+| 시각·독립 리뷰·문서 | 공개 홈/pc0~pc3의12개 크기 조합과 단원/대시보드 실제 캡처·좁은 창·키보드·콘솔을 확인했습니다. warm 글자5.04:1·새 기호 경계3:1 이상. 전체 diff/새 모듈·두 후속 수정의 독립 리뷰에 남은P1/P2가 없습니다. 문서 링크179개·diff 검사 통과, 보관 원문 해시 동일입니다. |
 
-최신 [공통 개념 화면](reference/student-learning-readability/concept-common-layout-after-20261006.png), [전용 틀 개념](reference/student-learning-readability/lesson-shell-concept-after-20261006.png), [전용 틀 실습](reference/student-learning-readability/lesson-shell-practice-after-20261006.png), [기본 폭](reference/student-learning-readability/practice-default-after-20261006.png), [대화·실행 기록](reference/student-learning-readability/practice-conversation-after-20261006.png)은 Git에 있습니다. PNG는 각 당시 소스의 검토 자료이며 실제 학생 관찰 근거는 아닙니다. 세부 명령·재현·로그 경로는 [마감 전 원문](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md#모든-수업의-공통-개념-배치--2026-10-06)에 있습니다.
+결과 원본은 Git 제외 `scratch/round8-*`, `round9-*`, `round10-*`, `readability-built-public-20261007`, `readability-full-first-failure-20261007`, `readability-full-second-failure-20261007`와 최종 `test-results/`입니다. 다른 PC에 필요한 [8~12차 대표 PNG3장](reference/student-learning-readability-plan.md#812차-구현의-합성-검토-화면)은 Git에 포함합니다. 합성 캡처·자동 검사는 실제 학생 이해도 개선의 증거가 아닙니다.
 
 ## 다음에 이어갈 작업
 
-1. **재개할 범위부터 확인:** Git과 아래 환경을 확인하고 새 공통 개념 화면을 검토합니다. 이미 반영한 직접 체험 피드백을 처음부터 반복하지 않습니다. 실제 브라우저200%에서 개념/퀴즈/실습·메뉴·Tab/Shift+Tab·글자/버튼/넘침을 확인한 뒤100%로 복귀합니다. CSS zoom/창 축소는 대체 근거가 아닙니다. OS 한글 입력기로 조합 확인 Enter와 다음 Enter 전송을 확인합니다. localhost 접근은 현재 가능하며 과거 저장된 차단 때문에 다시 권한을 묻지 않습니다.
-2. **사용자가 이어서 요청하면 8~12차:** 8 추상화(남길 정보/이유·연결 지도·상태/조건·분해), 9 순서도(기호·140/160 분기·오답 복귀/정답 종료·캔버스), 10 프로그래밍/실제 EntryJS의 관찰·읽기, 11 사이트 보조색, 12 최종 통합입니다. 각 회차의 정확한 완료 조건은 [계획 6절](reference/student-learning-readability-plan.md#6-구현-작업과-인터페이스)을 따릅니다. 공통 개념 배치 구현을 8~10차 체험 완료로 간주하지 않습니다.
-3. **시간/비용 효율:** 반복 수정은 typecheck+대상 검사와 실제 조작, 최종 인계는 lint/build+영향 E2E로 확인합니다. 공용 부품의 영향이 전체면 최종 전체를 한 번 실행합니다. 12차는 순수 `test:review`·전체 빌드 E2E·남은 화면/접근성 검증을 포함합니다. 새 변경·실패·위험이 없으면 이미 확인한 검사를 반복하지 않습니다.
-4. **별도 후속:** 첫 실제 수업의 학년도/명부/적용 반·등록/발급은 [첫 수업 절차](DEVELOPMENT.md#첫-실제-수업-확인-순서)를 따르고 실제 대상·복구 범위를 확인합니다. 학교망/로그인/저장/제출/교사 확인·자연 Cron, 실제 Solar 품질/예산·PRD 미결정은 별도 범위입니다. 이 UI 인계만으로 운영 변경을 시작하지 않습니다.
+1. 현재 검증한 소스/문서를 커밋하고 원격 main을 보존해 병합 준비합니다. PR의 CI를 확인한 뒤 승인된 main 병합·Production 배포를 진행합니다.
+2. 배포 SHA·별칭·icn1·익명 session/권한·로그인 화면·이전 주소 이동을 확인하고 실제 결과로 이 문서를 마감합니다. READY나 로그인 버튼만으로 실제 Google OAuth 성공을 판정하지 않습니다.
+3. 실제200%·물리 OS IME는 합의된 미확인입니다. 네이티브 조작은 자동 승인 검토가 현재 브라우저 URL을 확인하지 못해 차단했습니다. CSS zoom·합성 composition을 대체 근거로 세지 않습니다.
+4. UI 공개 후 첫 실제 수업은 [첫 수업 절차](DEVELOPMENT.md#첫-실제-수업-확인-순서)의 학년도·명부·반·개별 발급부터 별도 확정합니다. 신규 Google OAuth·학교망·자연 Cron·실제 Solar 품질/예산·실학생 관찰은 별도 범위입니다.
+
 
 ## 다른 PC에서 이어가기
 
@@ -77,14 +67,14 @@ git switch --track -c codex/student-learning-readability origin/codex/student-le
 
 ### 로컬 기록과 전달 경계
 
-- **이번 종료 시점의 최신 로컬 기록:** `scratch/handoff-20261006/demo-review-backup.json`에 합성20102의 계정/목록/AI 장부/반/일정과 작품5건, 합계9개 존재 문서를 새로 읽어 보존했습니다. `backup-demo.mjs`는 앱 설정과 demo 호스트를 확인하는 읽기 전용 보존 도구입니다. 현재 앱·기록을 되돌리거나 서버를 종료하지 않았습니다. 앞선 검사 전8건/7건/4건 백업으로 최신 체험을 덮어쓰지 않습니다.
+- **다른 PC의 마감 시점 로컬 기록:** `scratch/handoff-20261006/demo-review-backup.json`에 합성20102의 계정/목록/AI 장부/반/일정과 작품5건, 합계9개 존재 문서를 읽어 보존했습니다. `backup-demo.mjs`는 앱 설정과 demo 호스트를 확인하는 읽기 전용 보존 도구입니다. 당시 앱·기록을 되돌리거나 서버를 종료하지 않았습니다. 이번 PC에서는 이 백업이 없으며 앞선 검사 전8건/7건/4건 백업으로 최신 체험을 덮어쓰지 않습니다.
 - **Git에 옮겨지는 것:** 현재 브랜치의 커밋·추적 소스·새 CSS/테스트·문서·참고 PNG입니다. 미추적 소스는 없습니다. **옮겨지지 않는 것:** `.env.local`·관리자 키·개인 도구/스킬 설정·`scratch/`·`outputs/`·node_modules·빌드/Java/브라우저/EntryJS 캐시·실행 중 에뮬레이터 기록입니다. 비밀값/계정/학생 자료는 채팅·문서·Git에 추가하지 않습니다. 동일 demo 기록이 필요하면 지정한 비공개 경로로 따로 전달하고 대상의 기존 기록을 비교한 뒤 복원합니다.
 - 새 PC의 demo는 새 시드로 시작합니다. 수업을 교사 화면에서 다시 열 수 있으며, 이 PC의 공개 합성20102 준비 상태가 그대로 있다고 가정하지 않습니다. 앱/에뮬레이터 포트와 `/api/auth/config`의 projectId·호스트·fixture를 확인하고 운영 앱3000과 테스트 서버를 혼용하지 않습니다.
 - 로컬 원본 복구 계획은 `scratch/review-lessons/production-full-restore-plan-release-20261005.json` 및 단계별 계획입니다. 반 설정만 복구하며 현재 revision이 다르면 거부합니다. 없는 PC에서 추측으로 재작성·적용하지 않습니다. 빈 명부 양식은 `outputs/classroom-readiness/학생명부_작성양식.xlsx`, 이전 검사 원본은 `scratch/concept-layout-20261006/`·`lesson-shell-20261006/` 등입니다.
 
 ### 새 대화에 붙일 요청문
 
-> CS Class의 마감 작업을 이어주세요. 먼저 기존 Git 변경을 보존하고 origin/codex/student-learning-readability의 최신 마감 커밋을 확인해주세요. AGENTS.md → docs/HANDOFF.md → 필요한 PRD/DESIGN/DEVELOPMENT와 두 계획서를 읽어주세요. 1~7차·선생님 사용 피드백·LessonShell·7개 수업의 개념 배치는 구현했고 앱 기준은603b8ee입니다. 기록/저장의 단독 소유와 실제 Entry iframe을 유지해주세요. 실제200%·OS 입력기 확인은 남았고8~12차는 미착수이며, 제가 요청하는 범위로 이어주세요. 로컬 AI는 fixture이고 운영 변경/배포는 별도입니다. 다른 PC의 demo 기록·비밀 설정·캐시는 자동 전달되지 않으므로 환경과 현재 기록부터 확인해주세요.
+> CS Class 작업을 이어주세요. 먼저 기존 Git 변경을 보존하고 AGENTS.md → docs/HANDOFF.md → 필요한 PRD/DESIGN/DEVELOPMENT를 읽어주세요. 원격 브랜치·최신 구현/검증/배포 상태는 HANDOFF 첫머리를 확인하고 옛 계획의 미착수 상태로 되돌리지 마세요. 학생 UI1~12차·선생님 피드백·LessonShell·공통 개념 배치의 근거는 두 계획서에 있습니다. 단일 useWork의 저장 소유, 답안/완료/체험 분리, 수동 폭과 실제 Entry iframe 유지 계약을 보존해주세요. 실제200%·물리 OS IME는 합의된 미확인 항목입니다. 로컬 AI는 fixture이며 demo 기록·비밀 설정·캐시는 PC별이므로 환경과 기존 기록부터 확인해주세요. 다음 운영 자료 변경은 제가 요청하는 범위로 진행해주세요.
 
 ## 통합·배포 상태
 

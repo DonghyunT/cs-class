@@ -12,3 +12,5 @@
 .quiz{max-width:880px}.quiz [data-slot="button"]{min-height:44px;font-size:16px;white-space:normal}.quiz .hint{background:var(--warm-surface);border-color:var(--warm-border)}.quiz .hint summary{min-height:44px}.quiz .hint p{color:var(--warm-foreground);font-size:16px}.quiz .result:focus{outline:3px solid #376fc8;outline-offset:4px}.quiz .scene code{font-size:18px}
 .practice .heading{margin:12px 0}.practice .heading h3{font-size:24px;margin:2px 0}.practice .heading p{margin:4px 0 0}
 .practice .hint{padding:0 14px;margin-bottom:12px}.practice .hint summary{min-height:44px}.practice .hint[open]{padding-bottom:12px}.practice .carry{padding:10px 14px;margin-block:8px}
+.practice .heading p,.practice .footer p{font-size:18px}.practice .heading span,.practice .missions small{font-size:14px}.practice .hint p,.practice .carry{font-size:16px}.reflection label{font-size:18px}.reflection p{font-size:14px}
+@media(max-width:600px){.practice .heading p,.practice .footer p,.reflection label{font-size:16px}}

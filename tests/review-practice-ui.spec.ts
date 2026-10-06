@@ -51,7 +51,7 @@ test("추상화는 색으로 구분한 핵심·노이즈 작업 영역을 제공
   await expect(page.getByLabel("핵심 요소")).toHaveValue("현재 시각\n");
 });
 
-test("세 실습의 넓게 보기·복귀 초점·좁은 화면을 유지한다", async ({ page }) => {
+test("세 실습의 넓게 보기·복귀 초점·좁은 화면을 유지한다", async ({ page }, testInfo) => {
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
   page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
   for (const id of ["review-sandwich", "review-abstraction", "review-flowchart"]) {
@@ -70,11 +70,19 @@ test("세 실습의 넓게 보기·복귀 초점·좁은 화면을 유지한다"
       await page.setViewportSize({ width,height:844 });
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       if (id === "review-flowchart") {
-        await expect.poll(async () => {
-          const node = await page.getByRole("button", { name:"시작·종료 기호: 시작",exact:true }).boundingBox();
-          const viewport = await page.getByLabel("실제 순서도 연결", { exact:true }).boundingBox();
-          return !!node && !!viewport && node.x >= viewport.x && node.x + node.width <= viewport.x + viewport.width;
-        }).toBe(true);
+        let geometry: unknown;
+        try {
+          await expect.poll(async () => {
+            const node = await page.getByRole("button", { name:"시작·종료 기호: 시작",exact:true }).boundingBox();
+            const viewport = await page.getByLabel("실제 순서도 연결", { exact:true }).boundingBox();
+            const scroll = await page.getByLabel("실제 순서도 연결", { exact:true }).evaluate(element => ({ left: element.scrollLeft, width: element.clientWidth }));
+            geometry = { screenWidth: width, node, viewport, scroll };
+            return !!node && !!viewport && node.x >= viewport.x && node.x + node.width <= viewport.x + viewport.width;
+          }).toBe(true);
+        } catch (error) {
+          await testInfo.attach("flowchart-viewport-geometry", { body: JSON.stringify(geometry), contentType: "application/json" });
+          throw error;
+        }
       }
     }
     await page.setViewportSize({ width:390,height:844 });

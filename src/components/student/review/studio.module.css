@@ -57,6 +57,15 @@
 .studio .error { background:#fff1f2; color:#9f1239; padding:14px; border-radius:12px; }
 .studio .prescription { white-space:pre-wrap; font:inherit; font-size:14px; line-height:1.8; border:2px dashed #c4b5fd; border-radius:16px; padding:20px; background:#faf5ff; overflow-wrap:anywhere; }
 .studio .workbook { border-color:#ddd6fe; padding:24px; min-height:530px; }
+.studio[data-practice=abstraction]{font-size:18px;line-height:1.7}
+.studio[data-practice=abstraction] .columns{grid-template-columns:minmax(0,2fr) minmax(280px,1fr);align-items:start}
+.studio[data-practice=abstraction] .workbook{min-height:0}
+.studio[data-practice=abstraction] h3{font-size:24px;line-height:1.4}
+.studio[data-practice=abstraction] :is(.field,.feedback,.definition,.prescription,.robotBubble,.suggestions){font-size:18px}
+.studio[data-practice=abstraction] :is(.muted,.eyebrow,.badge,.categoryCards button,.scenarioCard small,.dietColumns button){font-size:14px}
+.studio[data-practice=abstraction] .stepNav button{font-size:16px}
+@media(max-width:1000px){.studio[data-practice=abstraction] .columns{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.studio[data-practice=abstraction],.studio[data-practice=abstraction] :is(.field,.feedback,.definition,.prescription,.robotBubble,.suggestions){font-size:16px}.studio[data-practice=abstraction] .panel{padding:18px}}
 .definition { display:grid; gap:12px; border:2px solid #ddd6fe; background:#f5f3ff; padding:18px; border-radius:16px; font-size:14px; line-height:1.7; }
 .definition[data-tone=rose] { border-color:#fecdd3; background:#fff1f2; color:#9f1239; }
 .definition[data-tone=green] { border-color:#a7f3d0; background:#ecfdf5; color:#065f46; }

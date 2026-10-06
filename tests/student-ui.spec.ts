@@ -157,20 +157,34 @@ test("느린 저장 중 새 입력을 보존하고 이동 전에 최신 답안�
 });
 
 test("두 탭 저장 충돌은 현재 입력을 유지하고 명시적으로 해결", async ({ page, context }) => {
+  const answerSaved = (target: Page, answer: string) => target.waitForResponse(response =>
+    response.url().endsWith(`/api/classroom/work/${lessonId}`) && response.request().method() === "POST" &&
+    response.status() === 200 && response.request().postDataJSON().draft?.conceptAnswers?.algorithm === answer);
   await enter(page);
   const other = await context.newPage();
   await other.goto(`/classroom/${lessonId}`);
   await expect(other.getByRole("radio", { name: "물을 적당히 준비한다" })).toBeVisible();
+  const firstSave = answerSaved(page, "clear");
   await page.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
+  const firstRecord = await (await firstSave).json();
+  expect(firstRecord.draft.conceptAnswers.algorithm).toBe("clear");
   await saved(page);
   await other.getByRole("radio", { name: "물을 적당히 준비한다" }).check();
   await expect(other.getByRole("main").getByRole("alert")).toContainText("저장 기록이 서로 달라요");
   await expect(other.getByRole("radio", { name: "물을 적당히 준비한다" })).toBeChecked();
   await other.getByRole("button", { name: "서버 기록과 비교" }).click();
   await expect(other.getByRole("region", { name: "저장 충돌 비교" })).toContainText("컵에 물을 200mL 따른다");
+  const resolvedSave = answerSaved(other, "vague");
   await other.getByRole("button", { name: "현재 입력을 새 버전으로 저장" }).click();
+  const resolvedRecord = await (await resolvedSave).json();
+  expect(resolvedRecord.draft.conceptAnswers.algorithm).toBe("vague");
+  expect(resolvedRecord.revision).toBeGreaterThan(firstRecord.revision);
   await saved(other);
+  const newerSave = answerSaved(other, "clear");
   await other.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
+  const newerRecord = await (await newerSave).json();
+  expect(newerRecord.draft.conceptAnswers.algorithm).toBe("clear");
+  expect(newerRecord.revision).toBeGreaterThan(resolvedRecord.revision);
   await saved(other);
   await page.getByRole("radio", { name: "물을 적당히 준비한다" }).check();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("저장 기록이 서로 달라요");

@@ -16,6 +16,7 @@
 .lessonLoadingList .lessonLoadingProgress{height:100px;margin-top:22px}
 .lessonLoadingList .lessonLoadingAction{height:44px;width:124px;margin:20px 0 0 auto}
 .eyebrow{font-weight:650;color:#376fc8;font-size:14px;display:flex;align-items:center;gap:8px}
+.dashboard>.heading .eyebrow{display:inline-flex;padding:5px 11px;border:1px solid var(--warm-border);border-radius:999px;background:var(--warm-surface);color:var(--warm-foreground)}
 .current{display:flex;align-items:center;justify-content:space-between;gap:32px;border:1px solid #dce7f8;border-radius:28px;background:linear-gradient(110deg,#eff5ff,#f8faff);padding:36px 40px;min-height:288px;overflow:hidden;box-shadow:0 6px 24px #376fc805}
 .currentCopy{min-width:0;max-width:620px}
 .currentCopy h2{font-size:clamp(25px,2.4vw,32px);line-height:1.4;font-weight:720;letter-spacing:-.04em;margin:14px 0 10px;text-wrap:balance}
