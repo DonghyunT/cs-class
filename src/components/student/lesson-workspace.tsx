@@ -20,6 +20,7 @@ import { Flowchart } from "./review/flowchart";
 import { ReviewConcepts } from "./review/concepts";
 import reviewStyles from "./review/review.module.css";
 import styles from "./student.module.css";
+import conceptStyles from "@/components/ui/concept-layout.module.css";
 import { LessonShell, type LessonOrigin } from "./lesson-shell";
 
 const stages = [{ id: "concept", label: "개념", icon: BookOpen }, { id: "quiz", label: "퀴즈", icon: CheckCircle2 }, { id: "practice", label: "실습", icon: Layers3 }] as const;
@@ -169,22 +170,26 @@ const WorkEditor = memo(function WorkEditor({ lesson, initial, uid, otherCurrent
 
     {lesson.practice.type === "programming" && <ProgrammingLearningStage lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} conceptId={conceptId} quizQuestionId={quizQuestionId} onConceptChange={setConceptId} onQuizQuestionChange={setQuizQuestionId} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} />}
 
-    {lesson.practice.type !== "programming" && draft.stage === "concept" && <section id="panel-concept" role="tabpanel" aria-labelledby="tab-concept" tabIndex={0} className={`${styles.stagePanel} ${styles.conceptPanel}`}>
-      <div className={styles.stageHeading}><div><h2 id="stage-heading-concept" tabIndex={-1}>설명을 읽고 바로 확인해요</h2><p>개념 확인 문제를 해결하면 자동으로 완료돼요.</p></div><span>{progress.concept.completed} / {progress.concept.total}개 완료</span></div>
-      <nav className={styles.learningNav} aria-label="개념 목록">{lesson.concepts.map((concept, index) => <button key={concept.id} type="button" disabled={locked} aria-current={conceptId === concept.id ? "step" : undefined} onClick={() => { setConceptId(concept.id); setFocusRequest({ id: `concept-title-${concept.id}` }); }}><span>{work.conceptSolved.includes(concept.id) ? "✓ 완료" : String(index + 1).padStart(2, "0")}</span>{concept.title}</button>)}</nav>
-      <div className={styles.conceptBody}>{lesson.concepts.filter((concept) => concept.id === conceptId).map((concept) => {
+    {lesson.practice.type !== "programming" && draft.stage === "concept" && <section id="panel-concept" role="tabpanel" aria-labelledby="tab-concept" tabIndex={0} className={styles.stagePanel}>
+      <h2 id="stage-heading-concept" tabIndex={-1} className={styles.srOnly}>설명을 읽고 바로 확인해요</h2>
+      <div className={conceptStyles.layout}>
+      <nav className={conceptStyles.nav} aria-label="개념 목록">{lesson.concepts.map((concept, index) => {
+        const solved = work.conceptSolved.includes(concept.id);
+        return <button key={concept.id} type="button" disabled={locked} aria-current={conceptId === concept.id ? "step" : undefined} onClick={() => { setConceptId(concept.id); setFocusRequest({ id: `concept-title-${concept.id}` }); }}><span>{solved ? <Check size={16} aria-hidden="true" /> : String(index + 1).padStart(2, "0")}</span><div><strong>{concept.title}</strong><small>{solved ? "확인 완료" : conceptId === concept.id ? "지금 보는 개념" : "확인 전"}</small></div></button>;
+      })}<p>직접 바꾸고, 결과를 보고,<br />한 번 더 생각해 보세요.</p></nav>
+      <div className={conceptStyles.content}>{lesson.concepts.filter((concept) => concept.id === conceptId).map((concept) => {
         const index = lesson.concepts.indexOf(concept);
         const solved = work.conceptSolved.includes(concept.id);
         const feedback = work.conceptFeedback[concept.id];
         const feedbackCurrent = draft.conceptAnswers[concept.id] === work.draft.conceptAnswers[concept.id];
-        return <article className={styles.concept} key={concept.id} id={`concept-${concept.id}`}><div className={styles.conceptTitle}><span>{String(index + 1).padStart(2, "0")}</span><h3 id={`concept-title-${concept.id}`} tabIndex={-1}>{concept.title}</h3>{solved && <span className={styles.solved}><Check size={15} />완료</span>}</div><p className={styles.explanation}>{concept.explanation}</p><div className={styles.example}><span>예를 들어 볼까요?</span><p>{concept.example}</p></div>
+        return <article key={concept.id} id={`concept-${concept.id}`}><header className={conceptStyles.heading}><div className={conceptStyles.meta}><span className={conceptStyles.eyebrow}>CONCEPT {String(index + 1).padStart(2, "0")} / {String(lesson.concepts.length).padStart(2, "0")}</span>{solved && <span className={styles.solved}><Check size={15} aria-hidden="true" />완료</span>}</div><h3 id={`concept-title-${concept.id}`} tabIndex={-1}>{concept.title}</h3><p className={styles.explanation}>{concept.explanation}</p></header><div className={conceptStyles.surface}><div className={styles.example}><span>예를 들어 볼까요?</span><p>{concept.example}</p></div>
           {reviewType && <div className={styles.experienceBlock} data-concept-experience><header className={styles.experienceHeading}><strong>개념 체험</strong><Button variant="ghost" onClick={() => setExperienceVersion((value) => value + 1)}><RotateCcw size={16} aria-hidden="true" />체험 초기화</Button></header><ReviewConcepts key={`${concept.id}-${experienceVersion}`} type={reviewType} conceptId={concept.id} /></div>}
-          <div className={styles.checkArea}><AnswerChoices question={concept.question} answer={draft.conceptAnswers[concept.id]} disabled={locked || solved} onChange={(answer) => update({ ...draft, conceptAnswers: { ...draft.conceptAnswers, [concept.id]: answer } })} /><Hint hint={concept.question.hint} />
+          </div><div className={`${styles.checkArea} ${conceptStyles.check}`}><AnswerChoices question={concept.question} answer={draft.conceptAnswers[concept.id]} disabled={locked || solved} onChange={(answer) => update({ ...draft, conceptAnswers: { ...draft.conceptAnswers, [concept.id]: answer } })} /><Hint hint={concept.question.hint} />
             {feedback && feedbackCurrent && <p id={`concept-feedback-${concept.id}`} tabIndex={-1} role="status" className={feedback.correct ? styles.feedbackGood : styles.feedbackRetry}>{feedback.correct && <Check size={16} />}{feedback.message}</p>}
             {!solved && <Button disabled={locked || !draft.conceptAnswers[concept.id]} onClick={() => void runAction({ type: "check-concept", conceptId: concept.id }, `concept-feedback-${concept.id}`)}>{busy ? "확인 중…" : "정답 확인"}</Button>}
-          </div><div className={styles.conceptActions}><Button variant="ghost" disabled={locked || index === 0} onClick={() => { const id = lesson.concepts[index - 1].id; setConceptId(id); setFocusRequest({ id: `concept-title-${id}` }); }}><ArrowLeft size={16} />이전 개념</Button><Button variant="ghost" disabled={locked || index === lesson.concepts.length - 1} onClick={() => { const id = lesson.concepts[index + 1].id; setConceptId(id); setFocusRequest({ id: `concept-title-${id}` }); }}>다음 개념<ArrowRight size={16} /></Button></div></article>;
+          </div><div className={conceptStyles.footer}><Button variant="ghost" disabled={locked || index === 0} onClick={() => { const id = lesson.concepts[index - 1].id; setConceptId(id); setFocusRequest({ id: `concept-title-${id}` }); }}><ArrowLeft size={16} />이전 개념</Button>{index < lesson.concepts.length - 1 ? <Button variant="ghost" disabled={locked} onClick={() => { const id = lesson.concepts[index + 1].id; setConceptId(id); setFocusRequest({ id: `concept-title-${id}` }); }}>다음 개념<ArrowRight size={16} /></Button> : <Button disabled={locked} onClick={() => void switchStage("quiz")}>퀴즈로 이동<ArrowRight size={16} /></Button>}</div></article>;
       })}</div>
-      <div className={styles.stageFooter}><p>{progress.concept.percent === 100 ? "개념을 모두 확인했어요. 퀴즈에서 다시 적용해 볼까요?" : "필요할 때 개념을 다시 살펴볼 수 있어요."}</p><Button disabled={locked} onClick={() => void switchStage("quiz")}>퀴즈로 이동<ArrowRight size={16} /></Button></div>
+      </div>
     </section>}
 
     {lesson.practice.type !== "programming" && draft.stage === "quiz" && <section id="panel-quiz" role="tabpanel" aria-labelledby="tab-quiz" tabIndex={0} className={styles.stagePanel}>

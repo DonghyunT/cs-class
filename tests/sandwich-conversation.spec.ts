@@ -101,9 +101,12 @@ test("개념 기준선과 체험 초기화 위치·선택 표현을 맞추고 �
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.getByRole("tab", { name: /개념/ }).click();
   const nav = page.getByRole("navigation", { name: "개념 목록" }), article = page.locator("#concept-clear");
-  const footer = page.getByRole("button", { name: "퀴즈로 이동", exact: true }).locator("..");
+  const footer = article.getByRole("button", { name: "다음 개념", exact: true }).locator("..");
   const bounds = await Promise.all([nav, article, footer].map(item => item.boundingBox()));
-  for (const item of bounds.slice(1)) { expect(Math.abs(item!.x - bounds[0]!.x)).toBeLessThan(2); expect(Math.abs(item!.width - bounds[0]!.width)).toBeLessThan(2); }
+  expect(bounds[0]!.x + bounds[0]!.width).toBeLessThan(bounds[1]!.x);
+  expect(Math.abs(bounds[0]!.y - bounds[1]!.y)).toBeLessThan(20);
+  expect(Math.abs(bounds[2]!.x - bounds[1]!.x)).toBeLessThan(2);
+  expect(Math.abs(bounds[2]!.width - bounds[1]!.width)).toBeLessThan(2);
   const experience = article.locator('[data-concept-experience]');
   const reset = experience.getByRole("button", { name: "체험 초기화", exact: true });
   await expect(reset).toBeVisible();

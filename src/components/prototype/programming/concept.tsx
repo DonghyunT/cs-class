@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Check, Code2, Dog, Keyboard, Play } from "lucide
 import { Button } from "@/components/ui/button";
 import { concepts, type PrototypeState } from "@/lib/prototype/programming";
 import styles from "./programming.module.css";
+import conceptStyles from "@/components/ui/concept-layout.module.css";
 
 export function Concept({ state, update, focus, next, onCheck, serverFeedback, locked = false }: { state: PrototypeState; update: (next: PrototypeState) => void; focus: (id: string) => void; next: () => void; onCheck?: () => void; serverFeedback?: string; locked?: boolean }) {
   const [language, setLanguage] = useState("block");
@@ -21,10 +22,10 @@ export function Concept({ state, update, focus, next, onCheck, serverFeedback, l
     update({ ...state, concept: index }); setFeedback(""); focus("concept-title");
   }
   function direction(dx: number, dy: number) { setPosition((p) => ({ x: Math.max(-3, Math.min(3, p.x + dx)), y: Math.max(-2, Math.min(2, p.y + dy)) })); }
-  return <div className={styles.conceptLayout}>
-    <nav className={styles.conceptNav} aria-label="개념 목록">{concepts.map((item, i) => <button key={item.title} type="button" disabled={locked} aria-current={i === state.concept ? "step" : undefined} onClick={() => move(i)}><span>{state.conceptDone.includes(i) ? <Check size={16} /> : `0${i + 1}`}</span><div><strong>{item.title}</strong><small>{["블록과 텍스트", "입력 → 처리 → 출력", "변수와 연산", "시작 버튼 · 방향키"][i]}</small></div></button>)}<p>직접 바꾸고, 결과를 보고,<br />한 번 더 생각해 보세요.</p></nav>
-    <div>
-      <div className={styles.sectionHeading}><span className={styles.eyebrow}>CONCEPT {String(state.concept + 1).padStart(2, "0")} / 04</span><h2 id="concept-title" tabIndex={-1}>{c.title}</h2><p>{c.subtitle}</p></div>
+  return <div className={conceptStyles.layout}>
+    <nav className={conceptStyles.nav} aria-label="개념 목록">{concepts.map((item, i) => <button key={item.title} type="button" disabled={locked} aria-current={i === state.concept ? "step" : undefined} onClick={() => move(i)}><span>{state.conceptDone.includes(i) ? <Check size={16} aria-label="확인 완료" /> : `0${i + 1}`}</span><div><strong>{item.title}</strong><small>{["블록과 텍스트", "입력 → 처리 → 출력", "변수와 연산", "시작 버튼 · 방향키"][i]}</small></div></button>)}<p>직접 바꾸고, 결과를 보고,<br />한 번 더 생각해 보세요.</p></nav>
+    <div className={conceptStyles.content}>
+      <div className={conceptStyles.heading}><span className={conceptStyles.eyebrow}>CONCEPT {String(state.concept + 1).padStart(2, "0")} / 04</span><h2 id="concept-title" tabIndex={-1}>{c.title}</h2><p>{c.subtitle}</p></div>
       <div className={styles.experiment}>
         {state.concept === 0 && <>
           <div className={styles.experimentTop}><span><Code2 size={17} />같은 명령, 두 가지 표현</span><div className={styles.segment}><button type="button" aria-pressed={language === "block"} onClick={() => setLanguage("block")}>블록</button><button type="button" aria-pressed={language === "text"} onClick={() => setLanguage("text")}>텍스트</button></div></div>

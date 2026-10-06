@@ -32,15 +32,6 @@
 .sectionHeading { margin-bottom: 22px; }
 .sectionHeading h2 { font-size: clamp(24px, 2.2vw, 30px); font-weight: 750; }
 .sectionHeading p { color: var(--quiet); font-size: 14px; margin-top: 8px; }
-.conceptLayout { display: grid; grid-template-columns: 234px minmax(0, 1fr); gap: 38px; }
-.conceptNav { padding-top: 9px; }
-.conceptNav button { display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; border: 1px solid transparent; padding: 16px 12px; border-radius: 12px; margin-bottom: 8px; }
-.conceptNav button > span { display: grid; place-items: center; width: 28px; height: 28px; flex-shrink: 0; font-size: 11px; background: #e7ebf1; color: var(--quiet); border-radius: 9px; }
-.conceptNav button strong { display: block; font-size: 13px; }
-.conceptNav small { display: block; font-size: 11px; color: var(--quiet); margin-top: 3px; }
-.conceptNav button[aria-current] { background: white; border-color: var(--line); color: #2e5fab; }
-.conceptNav button[aria-current] > span { background: #eaf2ff; color: #2e5fab; }
-.conceptNav p { font-size: 12px; color: var(--quiet); padding: 14px; line-height: 1.9; }
 .experiment { background: white; border: 1px solid var(--line); border-radius: 20px; padding: 25px 28px; overflow: hidden; }
 .experimentTop { display: flex; align-items: center; justify-content: space-between; gap: 14px; font-size: 12px; font-weight: 600; color: var(--quiet); }
 .experimentTop > span { display: flex; align-items: center; gap: 7px; }
@@ -241,9 +232,6 @@
 .pageFooter p { font-size: 11px; color: var(--quiet); line-height: 1.8; }
 .pageFooter > button { flex-shrink: 0; }
 @media (max-width: 1000px) {
-  .conceptLayout { grid-template-columns: 185px minmax(0, 1fr); gap: 22px; }
-  .conceptNav button { gap: 8px; padding: 13px 7px; }
-  .conceptNav button strong { font-size: 12px; }
   .languageDemo { grid-template-columns: minmax(0, 1fr) 165px; gap: 18px; }
   .dogDemo { width: 165px; height: 185px; }
   .variableDemo { gap: 11px; }
@@ -262,11 +250,6 @@
   .localStatus { display: none; }
   .lessonStamp { display: none; }
   .lessonHeader { padding-bottom: 23px; }
-  .conceptLayout { grid-template-columns: 1fr; gap: 20px; }
-  .conceptNav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 0; }
-  .conceptNav button { margin: 0; min-height: 64px; padding: 9px; }
-  .conceptNav p { display: none; }
-  .conceptNav small { font-size: 10px; }
   .experiment { padding: 20px; }
   .sectionHeading h2 { font-size: 25px; }
   .workbench { grid-template-columns: 1fr; }
@@ -297,9 +280,6 @@
   .tabs button > svg { width: 16px; }
   .tabs button > svg:last-child:not(:first-child) { display: none; }
   .tabs small { font-size: 10px; }
-  .conceptNav button > span { width: 24px; height: 24px; }
-  .conceptNav button strong { font-size: 11px; }
-  .conceptNav small { font-size: 9px; }
   .languageDemo { grid-template-columns: 1fr; gap: 20px; }
   .dogDemo { justify-self: center; width: 180px; height: 190px; }
   .experimentTop { flex-wrap: wrap; }

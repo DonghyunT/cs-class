@@ -61,10 +61,18 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   await page.getByRole("radio", { name: "숫자 입력 → 숫자 출력", exact: true }).check();
   await page.getByRole("button", { name: "이번 문제 결과 확인" }).click();
   await page.getByRole("button", { name: "실습으로 이동" }).click();
-  for (let count = 0; count < 3; count++) await page.getByRole("button", { name: "시작 위로 이동", exact: true }).press("Enter");
-  await expect(page.getByRole("button", { name: "시작 아래로 이동", exact: true })).toBeFocused();
-  for (let count = 0; count < 2; count++) await page.getByRole("button", { name: "이름을 입력받는다 위로 이동", exact: true }).press("Enter");
-  for (let count = 0; count < 2; count++) await page.getByRole("button", { name: "입력한 이름으로 인사말을 만든다 위로 이동", exact: true }).press("Enter");
+  await expect(page.locator("#stage-heading-practice")).toBeFocused();
+  // Each next key starts after the previous render and its Effect have moved focus.
+  async function moveUp(label: string, positions: number[]) {
+    for (const position of positions) {
+      await page.getByRole("button", { name: `${label} 위로 이동`, exact: true }).press("Enter");
+      await expect(page.getByRole("region", { name: "순서 배열 작업" }).getByRole("listitem").nth(position - 1)).toContainText(label);
+      await expect(page.getByRole("button", { name: `${label} ${position === 1 ? "아래" : "위"}로 이동`, exact: true })).toBeFocused();
+    }
+  }
+  await moveUp("시작", [3, 2, 1]);
+  await moveUp("이름을 입력받는다", [3, 2]);
+  await moveUp("입력한 이름으로 인사말을 만든다", [4, 3]);
   await page.getByRole("button", { name: "순서 검증" }).click();
   await expect(page.getByText("검증 통과 · 아직 제출 전이에요.")).toBeVisible();
   await expect(page.getByRole("tab", { name: "실습 0%" })).toBeVisible();
