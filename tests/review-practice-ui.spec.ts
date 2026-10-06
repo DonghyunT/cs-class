@@ -21,7 +21,7 @@ async function openPractice(page: import("@playwright/test").Page, id: string) {
 test("원작 조리대의 실제 도구·8개 상태와 명령 오류를 보여 준다", async ({ page }) => {
   await openPractice(page, "review-sandwich");
   const stage = page.getByRole("img", { name: /접시에 빵/ });
-  await expect(stage).toHaveAttribute("viewBox", "0 0 980 450");
+  await expect(stage).toHaveAttribute("viewBox", "0 40 980 410");
   await expect(stage.locator('[data-part="knife"]')).toBeVisible();
   await expect(page.getByRole("list", { name: "재료와 조리 상태" }).locator("li")).toHaveCount(8);
   await page.getByLabel("자연어 명령").fill("식빵 1의 넓은 면에 잼을 발라");

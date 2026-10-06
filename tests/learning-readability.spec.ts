@@ -331,6 +331,10 @@ test("sandwich-layout: 낮은 창의 초기 입력·실행·결과와 실제 기
   for (const rect of initialBounds) {
     expect(rect).not.toBeNull(); expect(rect!.y).toBeGreaterThanOrEqual(0); expect(rect!.y + rect!.height).toBeLessThanOrEqual(720);
   }
+  const conversation = page.getByRole("region", { name: "로봇과의 대화", exact: true });
+  const [feedBounds, welcomeBounds] = await Promise.all([conversation.boundingBox(), conversation.getByText(/재료 준비가 끝났어요!/).boundingBox()]);
+  expect(welcomeBounds!.y).toBeGreaterThanOrEqual(feedBounds!.y);
+  expect(welcomeBounds!.y + welcomeBounds!.height).toBeLessThanOrEqual(feedBounds!.y + feedBounds!.height);
   await page.screenshot({ path: "scratch/readability-20261006/after/practice-1280.png" });
   await expect(page.getByRole("region", { name: "이전 명령 기록" })).toHaveCount(0);
   await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "규칙 해석으로 실행", exact: true }).click();
