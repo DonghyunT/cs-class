@@ -23,7 +23,7 @@ Firebase 키 없이 사용하는 가상 계정 개발 모드입니다. [로컬 �
 
 [프로그래밍 13차시 프로토타입](https://cs-class-donghyunt.vercel.app/prototype/programming)은 로그인 없이 개념–퀴즈–실습과 도움·교사 피드백을 체험하는 화면입니다. [로컬 체험](http://localhost:3000/prototype/programming)도 같은 경로로 열립니다. 이름 짓기는 실제 EntryJS, 다른 미션은 미니 작업실을 사용합니다. 학습 초안은 이 탭에만 보관하며 실제 수업 제출·교사 전송은 연결하지 않습니다. 최종 정책과 구분한 범위는 [PRD](docs/PRD.md#프로그래밍-13차시--경험-검토용-프로토타입)를 따릅니다.
 
-**다른 PC에서 이어갈 때는** [HANDOFF](docs/HANDOFF.md#현재-작업-상태)에서 현재 브랜치·미착수 계획을 먼저 확인합니다. 이번 계획은 `codex/session-handoff-20261005`의 인계 커밋으로 받으며 `main`만으로 전달됐다고 가정하지 않습니다. 전달 범위와 새 대화용 요청문은 [다른 PC에서 이어가기](docs/HANDOFF.md#다른-pc에서-이어가기), 수업 내용은 [13차시 자료 요약](docs/reference/programming-13.md), 구현 경계·검사는 [개발 안내](docs/DEVELOPMENT.md#프로그래밍-수업-프로토타입)에 있습니다.
+**다른 PC에서 이어갈 때는** [HANDOFF](docs/HANDOFF.md#현재-작업-상태)에서 현재 브랜치·미착수 계획을 먼저 확인합니다. 현재 가독성 구현과 수업 전용 틀의 제안 계획은 이 PC의 `codex/student-learning-readability`에 있으며, 원격의 최초 계획 브랜치나 `main`만으로 최신 작업을 받았다고 가정하지 않습니다. 전달 범위와 새 대화용 요청문은 [다른 PC에서 이어가기](docs/HANDOFF.md#다른-pc에서-이어가기), 수업 내용은 [13차시 자료 요약](docs/reference/programming-13.md), 구현 경계·검사는 [개발 안내](docs/DEVELOPMENT.md#프로그래밍-수업-프로토타입)에 있습니다.
 
 ## 필요한 문서 찾기
 
@@ -38,6 +38,7 @@ Firebase 키 없이 사용하는 가상 계정 개발 모드입니다. [로컬 �
 | 알고리즘 세 수업의 원본과 AI 품질 근거는 어디에 있나요? | [알고리즘 복습 · 원본 이식과 품질 검증](docs/reference/algorithm-review-integration.md) |
 | 원본 PPT 없이 13차시 내용과 체험을 어떻게 파악하나요? | [프로그래밍 13차시 · 수업 자료와 체험 기록](docs/reference/programming-13.md) |
 | 학생 학습 화면 가독성·체험 개선은 어떻게 계획했나요? | [합의한 계획 · 12개 회차·검증 통합·휴먼 리뷰](docs/reference/student-learning-readability-plan.md) |
+| 수업에 들어간 뒤 사용하는 별도 공통 UI는 어떻게 계획하나요? | [수업 전용 공통 틀 · 설계와 적용 순서 제안](docs/reference/student-lesson-shell-plan.md) |
 | 완료된 구현 지시와 이전 판단 근거는 어디에 있나요? | [문서 보관함](docs/archive/README.md) |
 | 에이전트는 어떤 규칙을 지켜야 하나요? | [AGENTS · 작업 규칙](AGENTS.md) |
 
