@@ -25,13 +25,13 @@ test("원작 조리대의 실제 도구·8개 상태와 명령 오류를 보여 
   await expect(stage.locator('[data-part="knife"]')).toBeVisible();
   await expect(page.getByRole("list", { name: "재료와 조리 상태" }).locator("li")).toHaveCount(8);
   await page.getByLabel("자연어 명령").fill("식빵 1의 넓은 면에 잼을 발라");
-  await page.getByRole("button", { name: "규칙 해석으로 실행" }).click();
+  await page.getByRole("button", { name: "실행" }).click();
   await expect(page.getByRole("status").filter({ hasText: /접시에 식빵이 없습니다/ }).first()).toBeVisible();
   await expect(stage.locator('[data-part="error"]')).toBeVisible();
   await expect(page.getByRole("list", { name:"누적 알고리즘 파이프라인" }).locator("li").last()).toHaveAttribute("data-active","true");
   expect(await stage.locator('[data-part="knife"]').getAttribute("transform")).toBe("translate(905,290) rotate(-25)");
   await page.getByLabel("자연어 명령").fill("빵 봉지를 열어");
-  await page.getByRole("button", { name: "규칙 해석으로 실행" }).click();
+  await page.getByRole("button", { name: "실행" }).click();
   await expect(page.getByRole("list", { name: "재료와 조리 상태" }).locator("li").first()).toContainText("열림");
   await expect(stage.locator('[data-part="error"]')).toHaveCount(0);
   await page.reload();
@@ -58,9 +58,7 @@ test("세 실습의 넓게 보기·복귀 초점·좁은 화면을 유지한다"
     await openPractice(page,id);
     const toggle = page.getByRole("button", { name: "작업실 넓게 보기", exact: true });
     const restore = page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true });
-    await expect(restore).toHaveAttribute("aria-pressed","true");
-    await restore.click();
-    await expect(toggle).toBeFocused();
+    await expect(toggle).toHaveAttribute("aria-pressed","false");
     await toggle.click();
     await expect(restore).toBeFocused();
     await expect(restore).toHaveAttribute("aria-pressed","true");
@@ -122,7 +120,8 @@ test("순서도 보관함에서 선택해 실제 기호 빈칸에 놓고 저장�
 test("한 번에 지시한 샌드위치 행동도 조리대에서 차례로 보여 준다", async ({ page }) => {
   await openPractice(page,"review-sandwich");
   await page.getByLabel("자연어 명령").fill("빵 봉지를 열어, 식빵 두 장을 꺼내, 잼 뚜껑을 열어");
-  await page.getByRole("button", { name:"규칙 해석으로 실행",exact:true }).click();
+  await page.getByRole("button", { name:"실행",exact:true }).click();
+  await page.getByRole("region", { name: "알고리즘 실행 기록", exact: true }).getByText("기록 도구", { exact: true }).click();
   await expect(page.getByRole("button", { name:"다시 실행 멈추기",exact:true })).toBeVisible();
   await expect(page.getByRole("button", { name:"명령 다시 실행",exact:true })).toBeVisible();
   await expect(page.getByRole("img", { name:/접시에 빵/ })).toHaveAttribute("aria-label",/접시에 빵 2장/);

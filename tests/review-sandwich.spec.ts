@@ -93,14 +93,14 @@ test("AI 준비·응답 대기 중 작성한 다음 입력과 서버 명령을 �
     if (route.request().method() === "POST" && !saving) { saving = true; await gate; }
     await route.continue();
   });
-  await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "AI로 명령 실행" }).click();
+  await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "실행" }).click();
   await expect.poll(() => saving).toBe(true); await input.fill("준비 중 새로 쓴 명령"); releaseSave();
   await expect(page.getByText("알고리즘 실행 기록")).toBeVisible();
   await expect(page.locator("ol").filter({ hasText: "빵 봉지를 열어" })).toBeVisible();
   await expect(input).toHaveValue("준비 중 새로 쓴 명령"); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
-  await input.fill("fixture-slow"); await page.getByRole("button", { name: "AI로 명령 실행" }).click();
+  await input.fill("fixture-slow"); await page.getByRole("button", { name: "실행" }).click();
   await expect(page.getByRole("button", { name: "명령을 해석하고 있어요…" })).toBeVisible(); await input.fill("응답 중 다음 명령");
-  await expect(page.getByRole("button", { name: "AI로 명령 실행" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "실행" })).toBeEnabled();
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload();
   await expect(input).toHaveValue("응답 중 다음 명령");
   const work = await (await page.request.get(`/api/classroom/work/${id}`)).json(); expect(work.draft.reviewProject.commands).toHaveLength(1);
@@ -125,7 +125,7 @@ test("명령 저장 뒤 응답만 유실되어도 복구 GET은 실행 기록과
   await prepare(page.request); await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
   let committed = false, release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
   await page.route("**/api/classroom/ai", async route => { await route.fetch(); committed = true; await gate; await route.abort("failed"); });
-  const input = page.getByLabel("자연어 명령"); await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "AI로 명령 실행" }).click();
+  const input = page.getByLabel("자연어 명령"); await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "실행" }).click();
   await expect.poll(() => committed).toBe(true); await input.fill("응답 유실 뒤 다음 입력"); release();
   await expect(page.getByRole("alert").filter({ hasText: "연결하지 못했어요" })).toBeVisible();
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue("응답 유실 뒤 다음 입력");
@@ -139,15 +139,15 @@ test("복습 카드·키보드·44px·명령 실패·재접속·교사 상세", 
   await expect(card).toContainText("복습 수업"); await expect(card).not.toContainText("0%"); await card.getByRole("button", { name: "다시 둘러보기" }).click();
   await expect(page.getByText("새 사이트에서 다시 해 본 활동을 기록해요. 성적에는 반영하지 않아요.")).toBeVisible();
   await page.getByRole("tab", { name: /실습/ }).click();
-  const input = page.getByLabel("자연어 명령"); await input.fill("식빵 꺼내"); await page.getByRole("button", { name: "규칙 해석으로 실행" }).click();
+  const input = page.getByLabel("자연어 명령"); await input.fill("식빵 꺼내"); await page.getByRole("button", { name: "실행" }).click();
   await expect(page.getByText("오류: 빵 봉지가 닫혀 있습니다!", { exact: false }).first()).toBeVisible();
   await input.fill("쓰다가 멈춘 명령"); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.reload(); await expect(input).toHaveValue("쓰다가 멈춘 명령");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: "scratch/review-lessons/sandwich-mobile.png", fullPage: true });
-  const bounds = await page.getByRole("button", { name: "규칙 해석으로 실행" }).boundingBox(); expect(bounds?.height).toBeGreaterThanOrEqual(44);
+  const bounds = await page.getByRole("button", { name: "실행" }).boundingBox(); expect(bounds?.height).toBeGreaterThanOrEqual(44);
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await input.focus(); await page.keyboard.press("Tab"); await expect(page.getByRole("button", { name: "AI로 명령 실행" })).toBeFocused(); expect(errors).toEqual([]);
+  await input.focus(); await page.keyboard.press("Tab"); await expect(page.getByRole("button", { name: "실행" })).toBeFocused(); expect(errors).toEqual([]);
   // Submit a separate recipe using the same real server contract.
   work = await (await page.request.get(`/api/classroom/work/${id}`)).json();
   for (const text of recipe) { const result = await command(page.request, work, text); expect(result.response.status()).toBe(200); work = result.reply.work; }

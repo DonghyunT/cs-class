@@ -7,6 +7,8 @@
 .controls{display:flex;flex-wrap:wrap;gap:10px}
 .controls button{min-height:44px;min-width:44px;font-size:16px;padding:10px 16px;border:1px solid #8091aa;border-radius:10px;background:white;color:#334861;white-space:normal}
 .controls button[aria-pressed=true]{color:#fff;background:#376fc8;border-color:#376fc8}
+.controls button.primaryAction{color:#fff;background:#376fc8;border-color:#376fc8}
+.controls button.secondaryAction{font-size:14px;border-color:transparent;background:transparent;color:#526173}
 .controls button:disabled{opacity:.5;cursor:default}
 .result{border-left:4px solid #376fc8;background:#eef4ff;border-radius:8px;padding:14px 18px;font-size:18px;line-height:1.7}
 .note{font-size:14px;color:#526173}

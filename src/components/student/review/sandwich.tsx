@@ -1,5 +1,6 @@
 "use client";
 import { Fragment, useEffect, useRef, useState } from "react";
+import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { initialSandwich, replaySandwich, reviewSandwich } from "@/lib/classroom/review/sandwich-engine.mjs";
 import { ReviewSubmit, useReviewAi, type ReviewController } from "./shared";
@@ -22,6 +23,9 @@ export function Sandwich({ controller }: { controller: ReviewController }) {
   const followChat = useRef(true);
   const [request, setRequest] = useState<{ text: string; source: string; after: number } | null>(null);
   const [replies, setReplies] = useState<LocalReply[]>([]);
+  const commandInput = useRef<HTMLTextAreaElement>(null);
+  const [focusCommand, setFocusCommand] = useState(0);
+  useEffect(() => { if (focusCommand) commandInput.current?.focus(); }, [focusCommand]);
   // 이전 대화를 읽는 동안에는 새 응답이 와도 읽던 위치를 유지한다.
   useEffect(() => { if (followChat.current) chat.current?.scrollTo({ top: chat.current.scrollHeight }); }, [commands.length, controller.aiBusy, ai.error, ai.result]);
   useEffect(() => { if (replay === null) return; const timer = setTimeout(() => setReplay(replay >= steps.length ? null : replay + 1), 650); return () => clearTimeout(timer); }, [replay, steps.length]);
@@ -35,9 +39,10 @@ export function Sandwich({ controller }: { controller: ReviewController }) {
     // 실행이 없는 확인 질문·연결 실패는 다음 요청이 시작돼도 대화에 남긴다.
     if (request && (ai.error || ai.result && !ai.result.actions.length)) setReplies(previous => [...previous, { ...request, id: crypto.randomUUID(), message: ai.error || ai.result!.message, failed: !!ai.error }]);
     setRequest({ text: project.input, source: task === "sandwich-rules" ? "규칙 해석" : "AI 해석", after: commands.length });
+    setFocusCommand(value => value + 1);
     void ai.ask(task, project.input);
   };
-  function reset() { setReplay(null); ai.clear(); setReplies([]); setRequest(null); followChat.current = true; controller.update({ ...controller.getDraft(), reviewProject: { type: "sandwich", runId: crypto.randomUUID(), input: "", commands: [] } }); }
+  function reset() { setReplay(null); ai.clear(); setReplies([]); setRequest(null); followChat.current = true; controller.update({ ...controller.getDraft(), reviewProject: { type: "sandwich", runId: crypto.randomUUID(), input: "", commands: [] } }); setFocusCommand(value => value + 1); }
   const repliesAfter = (after: number) => replies.filter(reply => reply.after === after).map(reply => <div key={reply.id} className={styles.chatTurn}>
     <div className={styles.studentBubble}><small>나의 명령</small><p>{reply.text}</p></div>
     <div className={styles.robotBubble} data-error={reply.failed}><small>🤖 샌드위치 로봇 · {reply.source}</small><p>{reply.message}</p></div>
@@ -65,7 +70,7 @@ export function Sandwich({ controller }: { controller: ReviewController }) {
       {state.completed && <div className={styles.recipe} role="status"><span aria-hidden="true">🥪</span><div><h3>{review.title}</h3><p>{review.review}</p></div></div>}
     </section>
     <section className={`${styles.panel} ${styles.console}`} aria-label="로봇에게 명령하기" data-empty={!commands.length}>
-      <header className={styles.stageHeader}><span className={styles.chatAvatar} aria-hidden="true">🤖</span><div><h3>로봇에게 명령하기</h3></div></header>
+      <header className={styles.stageHeader}><span className={styles.chatAvatar} aria-hidden="true">🤖</span><div><h3>로봇과 대화</h3></div><Button variant="ghost" className={styles.auxControl} disabled={locked || !commands.length && !project.input && !request} onClick={reset} title="현재 명령과 대화를 비우고 새 레시피 시작"><RotateCcw size={16} aria-hidden="true" />새 레시피</Button></header>
       <div ref={chat} className={styles.chat} role="region" tabIndex={0} aria-label="로봇과의 대화" onScroll={event => { const element = event.currentTarget; followChat.current = element.scrollHeight - element.scrollTop - element.clientHeight < 32; }}>
         <div className={styles.robotBubble}><small>🤖 샌드위치 로봇</small><p>재료 준비가 끝났어요! 첫 명령은 ‘빵 봉지를 열어’로 시작해 보세요. 결과를 보고 다음 명령을 내려 주세요.</p></div>
         {repliesAfter(0)}
@@ -79,12 +84,11 @@ export function Sandwich({ controller }: { controller: ReviewController }) {
         </section>
       </div>
       <form className={styles.composer} onSubmit={event => { event.preventDefault(); if (!locked && project.input.trim()) ask("sandwich-command"); }}>
-        <label htmlFor="sandwich-command-input">자연어 명령</label>
-        <div className={styles.commandRow}><textarea id="sandwich-command-input" value={project.input} maxLength={1000} rows={2} disabled={controller.busy} onChange={event => change(event.target.value)} placeholder="예: 빵 봉지를 열어" /><Button type="submit" disabled={locked || !project.input.trim()}>{controller.aiBusy ? "명령을 해석하고 있어요…" : "AI로 명령 실행"}</Button></div>
-        <div className={styles.commandTools}><Button variant="outline" disabled={locked || !project.input.trim()} onClick={() => ask("sandwich-rules")}>규칙 해석으로 실행</Button><details className={styles.commandHelp}><summary>실행 안내</summary><p className={styles.muted}>구체적인 동작을 한 문장씩 쓰면 좋아요. 규칙 해석은 AI를 대신하는 제한된 해석기예요.</p></details></div>
-        {ai.remaining !== null && <small className={styles.muted}>오늘 AI 도움 {ai.remaining}회 남음</small>}
+        <label htmlFor="sandwich-command-input" className={styles.srOnly}>자연어 명령</label>
+        <div className={styles.commandRow}><textarea ref={commandInput} id="sandwich-command-input" value={project.input} maxLength={1000} rows={1} disabled={controller.busy} onChange={event => change(event.target.value)} onKeyDown={event => { if (event.key !== "Enter" || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return; if (!event.shiftKey) { event.preventDefault(); if (!locked && project.input.trim()) event.currentTarget.form?.requestSubmit(); } }} placeholder="명령을 지시하세요…" /><Button type="submit" disabled={locked || !project.input.trim()} aria-label={controller.aiBusy ? "명령을 해석하고 있어요…" : "실행"}>{controller.aiBusy ? "해석 중…" : "실행"}</Button></div>
+        <div className={styles.commandTools}>{ai.error && <Button variant="ghost" className={styles.auxControl} disabled={locked || !project.input.trim()} onClick={() => ask("sandwich-rules")} title="제한된 규칙으로 현재 입력을 해석합니다">AI 없이 실행</Button>}<details className={styles.commandHelp}><summary>입력 도움말</summary><p className={styles.muted}>Enter로 보내고 Shift+Enter로 줄을 바꿔요. 구체적인 동작을 한 문장씩 써 보세요. AI 연결 실패 때만 ‘AI 없이 실행’으로 제한된 규칙 해석을 사용할 수 있어요.</p>{ai.remaining !== null && <p className={styles.muted}>오늘 남은 AI 요청: {ai.remaining}회</p>}</details></div>
       </form>
     </section>
-    <section className={`${styles.panel} ${styles.executionPanel}`}><header className={styles.stageHeader}><h3>알고리즘 실행 기록</h3><small>{steps.length}개 단계 실행됨</small></header><div className={styles.actions}><Button variant="outline" disabled={!steps.length || controller.aiBusy || controller.busy} onClick={() => setReplay(replay === null ? 0 : null)}>{replay === null ? "명령 다시 실행" : "다시 실행 멈추기"}</Button><Button variant="outline" disabled={!commands.length || locked} onClick={() => { ai.clear(); setRequest(null); setReplies(previous => previous.filter(reply => reply.after < commands.length)); controller.update({ ...controller.getDraft(), reviewProject: { ...project, commands: commands.slice(0, -1) } }); }}>마지막 명령 되돌리기</Button><Button variant="outline" disabled={locked} onClick={reset}>새 레시피 만들기</Button></div><ol className={styles.queue} aria-label="누적 알고리즘 파이프라인">{steps.map((item,index) => <li key={index} data-error={!item.success} data-active={replay === index + 1}><span>{index + 1}</span><strong>{item.success ? "✓" : "!"} {item.name}</strong><small>{stepTexts[index]}</small><small>{item.msg}</small></li>)}</ol>{!commands.length && <p className={styles.muted}>명령을 내리면 실행한 단계가 순서대로 쌓여요.</p>}</section>
+    <section className={`${styles.panel} ${styles.executionPanel}`} aria-label="알고리즘 실행 기록"><header className={styles.stageHeader}><h3>알고리즘 실행 기록</h3><small>{steps.length}개 단계 실행됨</small></header><ol className={styles.queue} aria-label="누적 알고리즘 파이프라인">{steps.map((item,index) => <li key={index} data-error={!item.success} data-active={replay === index + 1}><span>{index + 1}</span><strong>{item.success ? "✓" : "!"} {item.name}</strong><small>{stepTexts[index]}</small><small>{item.msg}</small></li>)}</ol>{!commands.length ? <p className={styles.muted}>명령을 내리면 실행한 단계가 순서대로 쌓여요.</p> : <details className={styles.recordTools}><summary>기록 도구</summary><div className={styles.actions}><Button variant="ghost" className={styles.auxControl} disabled={!steps.length || controller.aiBusy || controller.busy} onClick={() => setReplay(replay === null ? 0 : null)}>{replay === null ? "명령 다시 실행" : "다시 실행 멈추기"}</Button><Button variant="ghost" className={styles.auxControl} disabled={!commands.length || locked} onClick={() => { ai.clear(); setRequest(null); setReplies(previous => previous.filter(reply => reply.after < commands.length)); controller.update({ ...controller.getDraft(), reviewProject: { ...project, commands: commands.slice(0, -1) } }); setFocusCommand(value => value + 1); }}>마지막 명령 되돌리기</Button></div></details>}</section>
   </div><ReviewSubmit controller={controller} /></div>;
 }

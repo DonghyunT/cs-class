@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import styles from "./review.module.css";
 import scenes from "./concepts.module.css";
@@ -31,7 +31,7 @@ function ClearExperience() {
       {jam === "flat" && <path data-jam="flat" d="M212 207V108C193 61 255 62 290 88C340 52 403 58 414 108L455 207Z" fill="#cf5474" stroke="#b83959" strokeWidth="3" />}
       <text x="350" y="277" textAnchor="middle">{jam === "edge" ? "테두리에만 묻은 잼" : jam === "flat" ? "넓은 면에 골고루 묻은 잼" : "명령을 기다리는 식빵"}</text>
     </svg></div>
-    <div className={scenes.controls}><Button variant="outline" onClick={() => setJam("edge")}>잼을 발라</Button><Button onClick={() => setJam("flat")}>넓은 면에 골고루 발라</Button></div>
+    <div className={scenes.controls} role="group" aria-label="바르는 면 비교"><Button variant="outline" aria-pressed={jam === "edge"} onClick={() => setJam("edge")}>잼을 발라</Button><Button variant="outline" aria-pressed={jam === "flat"} onClick={() => setJam("flat")}>넓은 면에 골고루 발라</Button></div>
     <p className={scenes.result} role="status">{jam === "edge" ? "바르는 면을 정하지 않아 이 로봇은 테두리에 발랐어요. 넓은 면을 지정해 다시 비교해 보세요." : jam === "flat" ? "바르는 위치를 지정하니 넓은 면에 잼을 발랐어요. 두 그림의 차이를 설명해 볼까요?" : "명령을 선택하면 잼이 묻는 면이 그림에 나타나요."}</p>
     <p className={scenes.note}>이 체험 로봇의 해석 예시예요. 모든 컴퓨터가 같은 모호한 명령을 이렇게 해석하는 것은 아니에요.</p>
   </>;
@@ -43,19 +43,25 @@ function FiniteExperience() {
   const [mode, setMode] = useState<"finite" | "infinite">("finite");
   const [running, setRunning] = useState(false);
   const [ending, setEnding] = useState<"idle" | "auto" | "external">("idle");
+  const controls = useRef<HTMLDivElement>(null), returnFocus = useRef(false);
+  const finish = useCallback((next: "auto" | "external") => {
+    returnFocus.current = controls.current?.contains(document.activeElement) ?? false;
+    setRunning(false); setEnding(next);
+  }, []);
+  useEffect(() => { if (!running && returnFocus.current) { controls.current?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]')?.focus(); returnFocus.current = false; } }, [running]);
   function advance() {
     const next = count + 1;
     setCount(next);
-    if (mode === "finite" && next >= 3) { setRunning(false); setEnding("auto"); }
+    if (mode === "finite" && next >= 3) finish("auto");
   }
   useEffect(() => {
     if (!running || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const timer = setTimeout(() => {
       setCount(count + 1);
-      if (mode === "finite" && count + 1 >= 3) { setRunning(false); setEnding("auto"); }
+      if (mode === "finite" && count + 1 >= 3) finish("auto");
     }, 650);
     return () => clearTimeout(timer);
-  }, [running, count, mode]);
+  }, [running, count, mode, finish]);
   function start(next: "finite" | "infinite") {
     const immediate = next === "finite" && matchMedia("(prefers-reduced-motion: reduce)").matches;
     setMode(next); setCount(immediate ? 3 : 0); setRunning(!immediate); setEnding(immediate ? "auto" : "idle");
@@ -69,7 +75,7 @@ function FiniteExperience() {
       <path d={`M${260 - Math.min(count, 3) * 5} ${235 - Math.min(count, 3) * 52}H${440 + Math.min(count, 3) * 5}L440 235H260Z`} fill="#80b8ea" />
       <text x="350" y="264" textAnchor="middle">물 붓기 {count}회</text>
     </svg></div>
-    <div className={scenes.controls}><Button variant="outline" onClick={() => start("infinite")}>끝없이 반복</Button><Button onClick={() => start("finite")}>3번만 반복</Button><Button variant="outline" disabled={!running} onClick={advance}>한 단계 실행</Button><Button variant="outline" disabled={!running} onClick={() => { setRunning(false); setEnding("external"); }}>실행 중지</Button></div>
+    <div ref={controls} className={scenes.controls} role="group" aria-label="반복 실행"><Button variant="outline" aria-pressed={mode === "infinite" && (running || ending !== "idle")} onClick={() => start("infinite")}>끝없이 반복</Button><Button variant="outline" aria-pressed={mode === "finite" && (running || ending !== "idle")} onClick={() => start("finite")}>3번만 반복</Button>{running && <><Button className={scenes.secondaryAction} variant="ghost" onClick={advance}>한 단계 실행</Button><Button className={scenes.secondaryAction} variant="ghost" onClick={() => finish("external")}>실행 중지</Button></>}</div>
     <p className={scenes.result} role="status" aria-label="반복 결과">{count}회 · {running ? "실행 중" : ending === "auto" ? "자동 종료" : ending === "external" ? "외부에서 중지" : "아직 실행하지 않았어요"}</p>
     <p>{ending === "external" ? "중지 버튼은 밖에서 실행을 멈춘 것이에요. 끝없는 반복 자체에 종료 조건이 생긴 것은 아니에요." : "3번 반복은 정한 횟수가 되면 스스로 끝나요. 끝없이 반복하는 명령에는 끝나는 조건이 없어요."}</p>
     <p className={scenes.note}>컵의 물높이는 최대 3회까지만 표시해요. 실제 실행 횟수는 위 결과에서 확인해요. 움직임을 줄인 환경에서는 한 단계씩 비교할 수 있어요.</p>
@@ -106,10 +112,12 @@ function SelectionFlowchart({ milk }: { milk: boolean }) {
 function StructureExperience() {
   const [structure, setStructure] = useState("순차"), [milk, setMilk] = useState(true), [times, setTimes] = useState(3), [representation, setRepresentation] = useState("자연어");
   const [position, setPosition] = useState(0), [running, setRunning] = useState(false);
+  const controls = useRef<HTMLDivElement>(null), runButton = useRef<HTMLButtonElement>(null), returnFocus = useRef(false);
+  useEffect(() => { if (!running && returnFocus.current) { runButton.current?.focus(); returnFocus.current = false; } }, [running, position]);
   const path = ["시작", "컵 준비", structure === "선택" && !milk ? "물 넣기" : "우유 넣기", ...(structure === "반복" ? Array.from({ length: times }, () => "젓기") : ["젓기"]), "종료"];
   useEffect(() => {
     if (!running) return;
-    const timer = setTimeout(() => { setPosition(position + 1); if (position + 1 >= path.length) setRunning(false); }, 650);
+    const timer = setTimeout(() => { setPosition(position + 1); if (position + 1 >= path.length) { returnFocus.current = controls.current?.contains(document.activeElement) ?? false; setRunning(false); } }, 650);
     return () => clearTimeout(timer);
   }, [running, position, path.length]);
   function change(action: () => void) { action(); setPosition(0); setRunning(false); }
@@ -123,7 +131,7 @@ function StructureExperience() {
     {structure === "반복" && <div className={scenes.controls} aria-label="젓는 횟수">{[1, 3].map((value) => <button key={value} type="button" aria-pressed={times === value} onClick={() => change(() => setTimes(value))}>{value}회</button>)}</div>}
     <div className={scenes.controls}>{["자연어", "순서도", "의사 코드"].map((value) => <button key={value} type="button" aria-pressed={representation === value} onClick={() => setRepresentation(value)}>{value}</button>)}</div>
     <div className={scenes.representation}>{representation === "순서도" ? structure === "선택" ? <><SelectionFlowchart milk={milk} /><p className={scenes.note}>현재 조건: {milk ? "우유 있음 → 예 → 우유 넣기" : "우유 없음 → 아니오 → 물 넣기"}. 두 경로는 젓기 전에 합쳐져요.</p></> : <svg viewBox="0 0 900 150" role="img" aria-label="선택한 알고리즘의 순서도">{instructions.map((label, i) => <g key={i} transform={`translate(${i * 180},0)`}>{i === 0 || i === instructions.length - 1 ? <rect x="5" y="35" width="165" height="80" rx="40" fill="#eef4ff" stroke="#376fc8" /> : <rect x="5" y="35" width="165" height="80" fill="#fff" stroke="#376fc8" />}<text x="85" y="70" textAnchor="middle">{label}</text>{i < instructions.length - 1 && <text x="172" y="78">→</text>}</g>)}</svg> : <pre>{representation === "자연어" ? instructions.join(" → ") : pseudocode}</pre>}</div>
-    <div className={scenes.controls}><Button onClick={() => { const immediate = matchMedia("(prefers-reduced-motion: reduce)").matches; setPosition(immediate ? path.length : 0); setRunning(!immediate); }}>흐름 실행</Button><Button variant="outline" disabled={position >= path.length} onClick={() => { setRunning(false); setPosition(position + 1); }}>한 단계 실행</Button><Button variant="outline" disabled={!running} onClick={() => setRunning(false)}>실행 중지</Button></div>
+    <div ref={controls} className={scenes.controls} role="group" aria-label="흐름 실행 조작"><Button ref={runButton} className={scenes.primaryAction} onClick={() => { const immediate = matchMedia("(prefers-reduced-motion: reduce)").matches; setPosition(immediate ? path.length : 0); setRunning(!immediate); }}>흐름 실행</Button><Button className={scenes.secondaryAction} variant="ghost" disabled={position >= path.length} onClick={() => { if (position + 1 >= path.length) returnFocus.current = controls.current?.contains(document.activeElement) ?? false; setRunning(false); setPosition(position + 1); }}>한 단계 실행</Button>{running && <Button className={scenes.secondaryAction} variant="ghost" onClick={() => { returnFocus.current = controls.current?.contains(document.activeElement) ?? false; setRunning(false); }}>실행 중지</Button>}</div>
     <p className={scenes.result} role="status">{running ? "실행 중" : position === path.length ? "정한 단계 뒤 자동 종료했어요." : position ? "멈춘 위치에서 한 단계씩 이어갈 수 있어요." : "실행하면 아래에 실제로 지난 경로가 나타나요."}</p>
     <ol className={scenes.flow} aria-label="이번 실행 경로">{path.slice(0, position).map((label, i) => <li key={i}>{label}</li>)}</ol>
   </>;
@@ -140,7 +148,7 @@ function ExistingReviewConcepts({ type, conceptId }: { type: "sandwich" | "abstr
   if (type === "abstraction") {
     const words = ["노트 표지 색", "목표 공부 시간", "필기구 브랜드", "남은 과제", "책상 장식", "현재 시각"];
     return <section className={styles.workspace} aria-label="추상화 개념 체험"><div hidden={conceptId !== "state"} className={styles.panel}><h3>문제 상황의 네 가지 요소</h3><div className={styles.stepNav}>{["초기 상태", "현재 상태", "조건", "목표 상태"].map((label, i) => <button key={label} aria-pressed={selected === i} onClick={() => setSelected(i)}>{label}</button>)}</div><p className={styles.feedback}>{["과제를 시작하기 전, 아직 해야 할 일이 남아 있어요.", "시간이 지났지만 과제를 끝내지 못했어요.", "오늘 밤 10시 안에, 필요한 과제부터 끝내야 해요.", "마감 전에 과제를 모두 제출한 상태예요."][selected]}</p></div>
-      <div hidden={conceptId !== "essential"} className={styles.panel}><h3>생각 다이어트: 불필요한 정보 덜어내기</h3><p>정해진 시간에 과제를 끝내는 데 불필요한 정보만 눌러 덜어내 보세요.</p><div className={styles.tags}>{words.map((word, i) => !discarded.includes(i) && <button key={word} onClick={() => { if (i % 2 === 0) { setDiscarded([...discarded, i]); setMessage(discarded.length === 2 ? "핵심 정보 세 가지만 남았어요!" : "목적과 관계없는 정보를 덜어냈어요."); } else setMessage("이 정보는 시간 안에 과제를 끝내는 데 필요해요. 남겨 두세요."); }}>{word}</button>)}</div><p role="status">{message}</p><Button variant="outline" onClick={() => { setDiscarded([]); setMessage(""); }}>다시 체험하기</Button></div>
+      <div hidden={conceptId !== "essential"} className={styles.panel}><h3>생각 다이어트: 불필요한 정보 덜어내기</h3><p>정해진 시간에 과제를 끝내는 데 불필요한 정보만 눌러 덜어내 보세요.</p><div className={styles.tags}>{words.map((word, i) => !discarded.includes(i) && <button key={word} onClick={() => { if (i % 2 === 0) { setDiscarded([...discarded, i]); setMessage(discarded.length === 2 ? "핵심 정보 세 가지만 남았어요!" : "목적과 관계없는 정보를 덜어냈어요."); } else setMessage("이 정보는 시간 안에 과제를 끝내는 데 필요해요. 남겨 두세요."); }}>{word}</button>)}</div><p role="status">{message}</p></div>
       <div className={styles.columns}><div hidden={conceptId !== "essential"} className={styles.panel}><h3>지하철 노선도 모델링 비교</h3><p>역과 연결은 같아요. 어떤 표현이 환승역을 찾기 쉬운가요?</p><svg viewBox="0 0 380 150" role="img" aria-label={map ? "연결을 정리한 노선도" : "실제 지형처럼 구불구불한 노선"}><path d={map ? "M30 80H160L220 30H350" : "M30 80C65 10 130 140 160 80S240 140 250 30S320 80 350 30"} fill="none" stroke="#a78bfa" strokeWidth="7"/><path d="M40 30L160 80L320 120" fill="none" stroke="#34d399" strokeWidth="7"/>{[[30,80,"출발"],[160,80,"환승"],[350,30,"도착"]].map(([x,y,label]) => <g key={label}><circle cx={x} cy={y} r="8" fill="white" stroke="#475569"/><text x={Number(x)-14} y={Number(y)+28} fontSize="13" fill="currentColor">{label}</text></g>)}</svg><Button variant="outline" onClick={() => setMap(!map)}>{map ? "지형 표현 보기" : "핵심 연결만 보기"}</Button></div><div hidden={conceptId !== "decompose"} className={styles.panel}><h3>문제 분해</h3><div className={styles.stepNav}>{["라면 끓이기", "등교하기"].map((label, i) => <button key={label} aria-pressed={scenario === i} onClick={() => setScenario(i)}>{label}</button>)}</div><ol>{(scenario === 0 ? ["재료 준비", "물 끓이기", "면과 스프 넣기", "익히고 담기"] : ["잠에서 깨기", "씻고 옷 입기", "준비물 확인", "교통편 이용"]).map(item => <li key={item}>{item}</li>)}</ol></div></div></section>;
   }
   if (type !== "flowchart") return null;

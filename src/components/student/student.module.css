@@ -152,11 +152,17 @@
 .workspace .answers label.selectedAnswer{border-color:#376fc8}
 .workspace .explanation{max-width:42em}
 .workspace .hint p{background:var(--warm-surface);color:var(--warm-foreground)}
-.learningNav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px}
-.learningNav>button{display:flex;align-items:center;gap:8px;min-height:44px;min-width:44px;border:1px solid #8091aa;border-radius:10px;padding:10px 14px;background:white;color:#465b78;font-size:16px;text-align:left}
+.learningNav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px;padding:6px;border-radius:14px;background:#f3f6fa}
+.learningNav>button{display:flex;align-items:center;gap:8px;min-height:44px;min-width:44px;border:1px solid transparent;border-radius:10px;padding:10px 14px;background:transparent;color:#465b78;font-size:16px;text-align:left}
 .learningNav>button[aria-current="step"]{background:#eaf2ff;border-color:#376fc8;color:#28548e;font-weight:650}
 .learningNav>button>span{font-size:14px}
 .conceptBody{max-width:1120px;margin-inline:auto}
+.conceptPanel > :is(.stageHeading,.learningNav,.stageFooter){max-width:1120px;margin-inline:auto}
+.experienceBlock{margin:24px 0}
+.experienceHeading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.experienceHeading strong{font-size:14px;color:#526173}
+.workspace .experienceHeading button{font-size:14px;color:#526173;padding-inline:10px}
+.experienceBlock > section{margin-top:12px}
 .quizBody{max-width:880px;margin-inline:auto}
 .answers legend.srOnly{width:1px;height:1px;float:none;margin:0;padding:0}
 .quizCard h3{font-size:26px;line-height:1.5;margin-bottom:20px}

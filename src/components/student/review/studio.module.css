@@ -138,8 +138,8 @@
 .studio[data-practice=sandwich] .chatHistory{display:grid;gap:16px}
 .studio[data-practice=sandwich] .composer{padding-top:12px;border-top:1px solid #dfe4eb;gap:8px;flex-shrink:0}
 .studio[data-practice=sandwich] .composer>label{font-weight:700;font-size:14px}
-.commandRow{display:grid;grid-template-columns:minmax(0,1fr) 120px;align-items:stretch;gap:8px}
-.studio[data-practice=sandwich] .commandRow textarea{width:100%;min-width:0;min-height:64px;padding:10px;border:2px solid #8091aa;border-radius:12px;background:#f8fafc;resize:vertical;font-weight:500;line-height:1.5}
+.commandRow{display:grid;grid-template-columns:minmax(0,1fr) 64px;align-items:stretch;gap:8px}
+.studio[data-practice=sandwich] .commandRow textarea{width:100%;min-width:0;min-height:44px;height:44px;padding:8px 10px;border:1px solid #8091aa;border-radius:12px;background:#f8fafc;resize:none;font-weight:500;line-height:1.5}
 .studio[data-practice=sandwich] .commandRow textarea:focus{background:#fff;border-color:#376fc8}
 .studio[data-practice=sandwich] .commandRow>button{height:auto;background:#376fc8;color:#fff;padding:10px}
 .commandTools{display:flex;align-items:start;gap:8px;flex-wrap:wrap}
@@ -149,7 +149,11 @@
 .commandHelp[open] summary::before{content:'▾'}
 .commandHelp p{margin-top:6px}
 .chatAvatar{width:40px;height:40px;display:grid;place-items:center;background:#eff6ff;border-radius:12px;font-size:25px;flex-shrink:0}
-.executionPanel{grid-column:1}
+.executionPanel{grid-column:1/-1}
+.studio[data-practice=sandwich] .auxControl{font-size:14px;padding:6px 10px;color:#526173}
+.recordTools summary{cursor:pointer;min-height:44px;width:fit-content;padding:8px 4px;font-size:14px;color:#526173}
+.recordTools .actions{margin-top:4px}
+.srOnly{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
 .studio[data-practice=sandwich] .field{font-size:16px}
 .studio[data-practice=sandwich] .field textarea{min-height:72px;padding:10px;border-color:#8091aa}
 .studio[data-practice=sandwich] .field textarea:focus{border-color:#376fc8}
@@ -167,7 +171,7 @@
 @media(min-width:1440px){.studio[data-practice=sandwich] .statusCards{grid-template-columns:repeat(8,minmax(0,1fr))}}
 @media(min-width:1440px) and (max-height:800px){.studio[data-practice=sandwich] .kitchen svg{max-height:400px}}
 @media(max-width:900px){.studio[data-practice=sandwich] .sandwichColumns{grid-template-columns:1fr}.studio[data-practice=sandwich] .console{contain:none}.studio[data-practice=sandwich] .chat{flex:none;height:320px;min-height:0}.executionPanel{grid-column:auto}}
-@media(max-width:480px){.studio[data-practice=sandwich] .statusCards{grid-template-columns:repeat(2,minmax(0,1fr))}.commandRow{grid-template-columns:1fr}.studio[data-practice=sandwich] .robotBubble{margin-right:12px}.studio[data-practice=sandwich] .studentBubble{margin-left:24px}}
+@media(max-width:480px){.studio[data-practice=sandwich] .statusCards{grid-template-columns:repeat(2,minmax(0,1fr))}.studio[data-practice=sandwich] .robotBubble{margin-right:12px}.studio[data-practice=sandwich] .studentBubble{margin-left:24px}}
 @media(min-width:901px) and (max-width:1439px) and (max-height:800px){
   .studio[data-practice=sandwich] .kitchen svg{max-height:190px}
   .studio[data-practice=sandwich] .console{align-self:start;contain:none}

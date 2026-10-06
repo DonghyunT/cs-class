@@ -49,7 +49,7 @@ test("representative-flow: demo 대표 수업의 답안·작품과 단계 왕복
   await expect(page.getByLabel("자연어 명령")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("practice-1280.png") });
   await page.getByLabel("자연어 명령").fill("빵 봉지를 열어");
-  await page.getByRole("button", { name: "규칙 해석으로 실행", exact: true }).click();
+  await page.getByRole("button", { name: "실행", exact: true }).click();
   await expect(page.getByRole("list", { name: "재료와 조리 상태" }).locator("li").first()).toContainText("열림");
   await page.getByRole("tab", { name: /개념/ }).click();
   await page.getByRole("tab", { name: /실습/ }).click();
@@ -248,12 +248,13 @@ test("reading-layout: 실제 개념·퀴즈 화면 크기와 키보드·가로 �
   expect(errors).toEqual([]);
 });
 
-test("workspace-width: 기본 확대·수동 선택·단계 저장 실패·재접속", async ({ page }) => {
+test("workspace-width: 기본 폭·수동 확대·단계 저장 실패·재접속", async ({ page }) => {
   await prepare(page);
   const layout = page.locator('[data-workspace-wide]').first();
   await page.getByRole("tab", { name: /실습/ }).click();
-  await expect(layout).toHaveAttribute("data-workspace-wide", "true");
+  await expect(layout).toHaveAttribute("data-workspace-wide", "false");
   await expect(page.getByRole("tab", { name: /실습/ })).toBeFocused();
+  await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
   const restore = page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true });
   await restore.click();
   const expand = page.getByRole("button", { name: "작업실 넓게 보기", exact: true });
@@ -271,7 +272,7 @@ test("workspace-width: 기본 확대·수동 선택·단계 저장 실패·재�
   await expect(layout).toHaveAttribute("data-workspace-wide", "false");
   await expect(expand).toBeFocused();
   await page.reload();
-  await expect(layout).toHaveAttribute("data-workspace-wide", "true");
+  await expect(layout).toHaveAttribute("data-workspace-wide", "false");
   await expect(page.getByLabel("자연어 명령")).toHaveValue("빵 봉지를 열어");
   await page.getByRole("tab", { name: /개념/ }).click();
   await page.route("**/api/classroom/work/review-sandwich", async route => {
@@ -284,13 +285,14 @@ test("workspace-width: 기본 확대·수동 선택·단계 저장 실패·재�
   await expect(layout).toHaveAttribute("data-workspace-wide", "false");
 });
 
-test("workspace-width: 연결된 네 수업의 자동 확대와 수동 선택", async ({ page }) => {
+test("workspace-width: 연결된 네 수업의 기본 폭과 수동 선택", async ({ page }) => {
   test.setTimeout(120_000);
   for (const id of lessonIds.slice(0, 4)) {
     await prepare(page, id);
     await page.getByRole("tab", { name: /실습/ }).click();
-    await expect(page.locator('[data-workspace-wide]').first()).toHaveAttribute("data-workspace-wide", "true");
+    await expect(page.locator('[data-workspace-wide]').first()).toHaveAttribute("data-workspace-wide", "false");
     await expect(page.getByRole("tab", { name: /실습/ })).toBeFocused();
+    await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
     await page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true }).click();
     await page.getByRole("tab", { name: /개념/ }).click();
     await page.getByRole("tab", { name: /실습/ }).click();
@@ -298,7 +300,7 @@ test("workspace-width: 연결된 네 수업의 자동 확대와 수동 선택", 
   }
 });
 
-test("workspace-width: 숨겨질 탐색의 초점 복구와 순서 배열의 기본 폭", async ({ page }) => {
+test("workspace-width: 기본 폭에서 탐색 초점 유지와 순서 배열의 기본 폭", async ({ page }) => {
   const endpoint = await prepare(page);
   const work = await savedWork(page, endpoint);
   expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice" } } })).status()).toBe(200);
@@ -309,8 +311,8 @@ test("workspace-width: 숨겨질 탐색의 초점 복구와 순서 배열의 기
   const sidebarLink = page.getByRole("navigation", { name: "교실 메뉴" }).getByRole("link").first();
   await sidebarLink.focus(); await expect(sidebarLink).toBeFocused();
   release();
-  await expect(page.locator('[data-workspace-wide]').first()).toHaveAttribute("data-workspace-wide", "true");
-  await expect(page.locator("#main-content")).toBeFocused();
+  await expect(page.locator('[data-workspace-wide]').first()).toHaveAttribute("data-workspace-wide", "false");
+  await expect(sidebarLink).toBeFocused();
   await page.unroute(`**${endpoint}`);
   await prepare(page, "sequence-lab");
   await page.getByRole("tab", { name: /실습/ }).click();
@@ -324,7 +326,7 @@ test("sandwich-layout: 낮은 창의 초기 입력·실행·결과와 실제 기
   const endpoint = await prepare(page);
   await page.getByRole("tab", { name: /실습/ }).click();
   await page.evaluate(() => window.scrollTo(0, 0));
-  const input = page.getByLabel("자연어 명령"), execute = page.getByRole("button", { name: "AI로 명령 실행", exact: true });
+  const input = page.getByLabel("자연어 명령"), execute = page.getByRole("button", { name: "실행", exact: true });
   const caption = page.getByText("조리대 위에 재료들이 준비되어 있어요. 첫 명령을 내려 보세요!", { exact: true });
   const initialBounds = await Promise.all([input, execute, caption].map(target => target.boundingBox()));
   await writeFile("scratch/readability-20261006/after/practice-initial-bounds.json", JSON.stringify(initialBounds));
@@ -337,12 +339,13 @@ test("sandwich-layout: 낮은 창의 초기 입력·실행·결과와 실제 기
   expect(welcomeBounds!.y + welcomeBounds!.height).toBeLessThanOrEqual(feedBounds!.y + feedBounds!.height);
   await page.screenshot({ path: "scratch/readability-20261006/after/practice-1280.png" });
   await expect(page.getByRole("region", { name: "이전 명령 기록" })).toHaveCount(0);
-  await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "규칙 해석으로 실행", exact: true }).click();
+  await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "실행", exact: true }).click();
   const latest = page.getByRole("region", { name: "최신 명령 결과" });
   await expect(latest).toContainText("빵 봉지를 열어");
   await expect(page.getByRole("list", { name: "재료와 조리 상태" }).locator("li").first()).toContainText("열림");
-  await page.getByRole("button", { name: "명령 다시 실행", exact: true }).waitFor();
-  await input.fill("식빵 두 장을 꺼내"); await page.getByRole("button", { name: "규칙 해석으로 실행", exact: true }).click();
+  await page.getByRole("region", { name: "알고리즘 실행 기록", exact: true }).getByText("기록 도구", { exact: true }).click();
+  await expect(page.getByRole("button", { name: "명령 다시 실행", exact: true })).toBeEnabled();
+  await input.fill("식빵 두 장을 꺼내"); await page.getByRole("button", { name: "실행", exact: true }).click();
   await expect(latest).toContainText("식빵 두 장을 꺼내");
   await expect(page.getByRole("region", { name: "이전 명령 기록" })).toContainText("빵 봉지를 열어");
   await page.getByRole("button", { name: "명령 다시 실행", exact: true }).waitFor();
@@ -361,10 +364,10 @@ test("sandwich-layout: AI 대기 중 다음 입력·긴 오류·실행 중 폭 �
   const gate = new Promise<void>(resolve => { release = resolve; });
   const message = "현재 명령을 해석하지 못했어요. 입력은 유지되어 있으니 한 동작씩 구체적으로 작성해 다시 실행해 주세요. ".repeat(12);
   await page.route("**/api/classroom/ai", async route => { await gate; await route.fulfill({ status: 503, json: { message, code: "UNAVAILABLE" } }); });
-  await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "AI로 명령 실행", exact: true }).click();
+  await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "실행", exact: true }).click();
   await expect(page.getByRole("button", { name: "명령을 해석하고 있어요…", exact: true })).toBeVisible();
   await input.fill("다음에 실행할 명령");
-  await page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true }).click();
+  await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
   await expect(input).toHaveValue("다음에 실행할 명령");
   release();
   await expect(page.getByRole("region", { name: "최신 명령 결과" }).getByRole("alert")).toHaveText(message);
@@ -377,9 +380,10 @@ test("sandwich-layout: AI 대기 중 다음 입력·긴 오류·실행 중 폭 �
   }
   await page.unroute("**/api/classroom/ai");
   await input.fill("빵 봉지를 열어, 식빵 두 장을 꺼내, 잼 뚜껑을 열어");
-  await page.getByRole("button", { name: "규칙 해석으로 실행", exact: true }).click();
+  await page.getByRole("button", { name: "AI 없이 실행", exact: true }).click();
+  await page.getByRole("region", { name: "알고리즘 실행 기록", exact: true }).getByText("기록 도구", { exact: true }).click();
   await expect(page.getByRole("button", { name: "다시 실행 멈추기", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
+  await page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true }).click();
   await expect(page.getByRole("button", { name: "명령 다시 실행", exact: true })).toBeVisible();
   await expect(page.getByRole("list", { name: "재료와 조리 상태" })).toContainText("2 장");
 });
