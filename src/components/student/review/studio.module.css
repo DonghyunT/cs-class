@@ -173,10 +173,10 @@
 @media(max-width:900px){.studio[data-practice=sandwich] .sandwichColumns{grid-template-columns:1fr}.studio[data-practice=sandwich] .console{contain:none}.studio[data-practice=sandwich] .chat{flex:none;height:320px;min-height:0}.executionPanel{grid-column:auto}}
 @media(max-width:480px){.studio[data-practice=sandwich] .statusCards{grid-template-columns:repeat(2,minmax(0,1fr))}.studio[data-practice=sandwich] .robotBubble{margin-right:12px}.studio[data-practice=sandwich] .studentBubble{margin-left:24px}}
 @media(min-width:901px) and (max-width:1439px) and (max-height:800px){
-  .studio[data-practice=sandwich] .kitchen svg{max-height:190px}
+  .studio[data-practice=sandwich] .kitchen svg{max-height:300px}
   .studio[data-practice=sandwich] .console{align-self:start;contain:none}
   .studio[data-practice=sandwich] .chat{height:240px;min-height:0;flex:none}
-  .studio[data-practice=sandwich] .console[data-empty=true] .chat{height:140px}
+  .studio[data-practice=sandwich] .console[data-empty=true] .chat{height:auto;min-height:140px}
   .studio[data-practice=sandwich] .commandRow textarea{min-height:44px;height:44px;padding:8px 10px}
   .studio[data-practice=sandwich] .commandRow>button{padding:6px}
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ArrowLeft, ArrowRight, ArrowDown, ArrowUp, BookOpen, Check, CheckCircle2, CloudCheck, Layers3, Lightbulb, LoaderCircle, RotateCcw, Save, Send } from "lucide-react";
+import { memo, useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { ArrowLeft, ArrowRight, ArrowDown, ArrowUp, BookOpen, Check, CheckCircle2, Layers3, Lightbulb, RotateCcw, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { classroomApi } from "@/lib/classroom/client";
 import { practiceMatches, progressFor } from "@/lib/classroom/progress";
@@ -20,6 +20,7 @@ import { Flowchart } from "./review/flowchart";
 import { ReviewConcepts } from "./review/concepts";
 import reviewStyles from "./review/review.module.css";
 import styles from "./student.module.css";
+import { LessonShell, type LessonOrigin } from "./lesson-shell";
 
 const stages = [{ id: "concept", label: "개념", icon: BookOpen }, { id: "quiz", label: "퀴즈", icon: CheckCircle2 }, { id: "practice", label: "실습", icon: Layers3 }] as const;
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
@@ -37,9 +38,12 @@ function Hint({ hint }: { hint: string }) {
   return <details className={styles.hint}><summary><Lightbulb size={16} aria-hidden="true" />힌트 보기</summary><p>{hint}</p></details>;
 }
 
-type WorkspaceView = { workspaceWide: boolean; onWorkspaceWideChange: (wide: boolean) => void; onWorkspaceStageChange: (stage: Stage) => void };
+type LessonFrame = { saveLabel: string; learningStatus: ReactNode; navigation: ReactNode; information: ReactNode; focusRequest: { id: string; preventScroll?: boolean } | null };
 
-export function LessonWorkspace({ lesson, uid, workspaceWide, onWorkspaceWideChange, onWorkspaceStageChange }: { lesson: Lesson; uid: string } & WorkspaceView) {
+type WorkspaceView = { returnOrigin: LessonOrigin; workspaceWide: boolean; onWorkspaceWideChange: (wide: boolean) => void; onWorkspaceStageChange: (stage: Stage) => void };
+
+export function LessonWorkspace({ lesson, uid, returnOrigin, workspaceWide, onWorkspaceWideChange, onWorkspaceStageChange }: { lesson: Lesson; uid: string } & WorkspaceView) {
+  const [frame, setFrame] = useState<LessonFrame | null>(null);
   const [initial, setInitial] = useState<Work | null>(null);
   const [dashboard, setDashboard] = useState<StudentDashboard | null>(null);
   const [error, setError] = useState("");
@@ -65,9 +69,10 @@ export function LessonWorkspace({ lesson, uid, workspaceWide, onWorkspaceWideCha
     window.addEventListener("focus", focused);
     return () => { cancelled = true; clearInterval(timer); window.removeEventListener("focus", focused); };
   }, []);
-  if (!initial) return <div className={styles.workspace}><Link href="/student" className={styles.back}><ArrowLeft size={17} />대시보드로</Link>{error ? <div className={styles.empty} role="alert"><h1>수업에 들어가지 못했어요.</h1><p>{error}</p><Button onClick={() => setAttempt((value) => value + 1)}>다시 불러오기</Button></div> : <div className={styles.loading} role="status"><BookOpen />저장된 학습을 불러오고 있어요.</div>}</div>;
   const otherCurrent = dashboard?.lessons.find((item) => item.id === dashboard.classroom.currentLessonId && item.id !== lesson.id);
-  return <WorkEditor lesson={lesson} initial={initial} uid={uid} otherCurrent={otherCurrent} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} onWorkspaceStageChange={onWorkspaceStageChange} />;
+  return <LessonShell lesson={lesson} returnOrigin={returnOrigin} workspaceWide={workspaceWide} saveLabel={frame?.saveLabel ?? (error ? "학습 기록 확인 필요" : "학습 불러오는 중…")} learningStatus={frame?.learningStatus} navigation={frame?.navigation} information={frame?.information} focusRequest={frame?.focusRequest}>
+    {initial ? <WorkEditor lesson={lesson} initial={initial} uid={uid} otherCurrent={otherCurrent} returnOrigin={returnOrigin} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} onWorkspaceStageChange={onWorkspaceStageChange} onFrameChange={setFrame} /> : error ? <div className={styles.empty} role="alert"><h2>수업을 불러오지 못했어요.</h2><p>{error}</p><Button onClick={() => setAttempt(value => value + 1)}>다시 불러오기</Button></div> : <div className={styles.loading} role="status"><BookOpen />저장된 학습을 불러오고 있어요.</div>}
+  </LessonShell>;
 }
 
 function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }) {
@@ -82,7 +87,8 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
   </ul>;
 }
 
-function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorkspaceWideChange, onWorkspaceStageChange }: { lesson: Lesson; initial: Work; uid: string; otherCurrent?: Lesson } & WorkspaceView) {
+// Keep the editor independent of its presentation snapshots: header updates never recreate its controller or iframe.
+const WorkEditor = memo(function WorkEditor({ lesson, initial, uid, otherCurrent, returnOrigin, workspaceWide, onWorkspaceWideChange, onWorkspaceStageChange, onFrameChange }: { lesson: Lesson; initial: Work; uid: string; otherCurrent?: Lesson; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
   const entryExport = useRef<(() => Promise<string | null>) | null>(null);
   const readEditorDraft = useCallback(async (current: WorkDraft) => {
     if (!entryExport.current) return current;
@@ -108,10 +114,6 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
   }, [workspaceWide]);
   useEffect(() => { onWorkspaceStageChange(draft.stage); }, [draft.stage, onWorkspaceStageChange]);
   function setReviewWide(wide: boolean) { manualReviewFocus.current = true; onWorkspaceWideChange(wide); }
-  useEffect(() => {
-    // Focus after React commits the new feedback or enabled controls, not on the next animation frame.
-    if (focusRequest) document.getElementById(focusRequest.id)?.focus({ preventScroll: focusRequest.preventScroll });
-  }, [focusRequest]);
   const locked = busy || switching;
   const draftMatchesValidation = work.validation?.passed && practiceMatches(draft, work.validation);
   const draftMatchesSubmission = practiceMatches(draft, work.submission);
@@ -121,15 +123,14 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
   const quizQuestion = quizQuestions.find((question) => question.id === quizQuestionId) ?? quizQuestions[0];
   const quizPosition = quizQuestions.indexOf(quizQuestion);
   function moveQuestion(id: string) { setQuizQuestionId(id); setFocusRequest({ id: "quiz-question-title" }); }
-  const entryPractice = draft.stage === "practice" && (lesson.practice.type === "entryjs" || lesson.practice.type === "programming");
   const saveLabel = controller.conflict ? "저장 기록 충돌" : saveState === "saved" ? work.updatedAt ? "저장 완료" : "아직 학습 기록이 없어요" : saveState === "saving" ? "저장 중…" : saveState === "failed" ? "저장 확인 필요" : "변경 내용 저장 대기";
-  async function switchStage(stage: Stage, focusTab = false) {
+  const switchStage = useCallback(async (stage: Stage, focusTab = false) => {
     if (switching || busy) return;
     setSwitching(true);
     try { if (await controller.switchStage(stage)) setFocusRequest({ id: focusTab ? `tab-${stage}` : `stage-heading-${stage}` }); }
     finally { setSwitching(false); }
-  }
-  function tabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+  }, [controller, switching, busy]);
+  const tabKey = useCallback((event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     let next: number;
     if (event.key === "ArrowRight") next = (index + 1) % stages.length;
     else if (event.key === "ArrowLeft") next = (index + stages.length - 1) % stages.length;
@@ -137,7 +138,7 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
     else if (event.key === "End") next = stages.length - 1;
     else return;
     event.preventDefault(); void switchStage(stages[next].id, true);
-  }
+  }, [switchStage]);
   async function runAction(action: WorkAction, focusId: string) {
     if (await perform(action)) {
       if (action.type === "retry-quiz") setQuizQuestionId(lesson.quiz.find((question) => !work.quizSolved.includes(question.id))?.id ?? lesson.quiz[0]?.id);
@@ -154,17 +155,17 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
     const direction = destination === 0 ? "down" : destination === order.length - 1 ? "up" : delta < 0 ? "up" : "down";
     setFocusRequest({ id: `move-${id}-${direction}`, preventScroll: true });
   }
-  return <div className={styles.workspace} data-workspace-wide={workspaceWide}>
-    <div className={styles.workspaceTop}><Link href="/student" className={styles.back}><ArrowLeft size={17} />대시보드로</Link>
-      <details className={styles.lessonProgress}><summary>자세한 학습 진행</summary><div><p>{lesson.description}</p><ProgressSummary lesson={lesson} work={{ ...work, validation: draftMatchesValidation ? work.validation : null }} /></div></details>
-      <span className={styles.saveState} role={entryPractice ? undefined : "status"}>{saveState === "saving" ? <LoaderCircle size={16} className={styles.spin} /> : saveState === "saved" ? <CloudCheck size={17} /> : <Save size={16} />}{saveLabel}</span>
-    </div>
-    {otherCurrent && <div className={styles.notice} role="status"><div><strong>선생님이 지정한 이번 수업은 ‘{otherCurrent.title}’이에요.</strong><p>하던 학습을 계속하거나 저장한 뒤 이동할 수 있어요.</p></div><Button variant="outline" nativeButton={false} render={<Link href={`/classroom/${otherCurrent.id}`} />}>이번 수업으로<ArrowRight size={16} /></Button></div>}
-    <header className={styles.lessonHeader}><div><span className={styles.eyebrow}>{lesson.category ?? "알고리즘 · 순차 구조"}</span><h1>{lesson.title}</h1></div><LearningStatus lesson={lesson} work={work} /></header>
-    {lesson.mode === "review" && <p className={reviewStyles.notice}>새 사이트에서 다시 해 본 활동을 기록해요. 성적에는 반영하지 않아요.</p>}
+  useEffect(() => {
+    const progress = progressFor(lesson, work);
+    const stageSummary = (stage: Stage) => stage === "concept" ? `${progress.concept.completed}/${progress.concept.total}개 확인` : stage === "quiz" ? `${progress.quiz.completed}/${progress.quiz.total}문제 해결` : progress.practice.percent === 100 ? "완료" : work.updatedAt ? "진행 중" : "시작 전";
+    const navigation = <div className={styles.tabs} role="tablist" aria-label="수업 단계">{stages.map((stage, index) => <button key={stage.id} id={`tab-${stage.id}`} type="button" role="tab" aria-label={`${stage.label} ${progress[stage.id].percent}%`} aria-describedby={`tab-${stage.id}-progress`} aria-selected={draft.stage === stage.id} aria-controls={`panel-${stage.id}`} tabIndex={draft.stage === stage.id ? 0 : -1} disabled={locked} onKeyDown={(event) => tabKey(event, index)} onClick={() => void switchStage(stage.id, true)}><stage.icon size={18} aria-hidden="true" /><span>{stage.label}</span><span id={`tab-${stage.id}-progress`} className={styles.tabPercent}>{stageSummary(stage.id)}</span></button>)}</div>;
+    // Only presentation goes to the persistent frame; useWork remains the sole owner of learning and saves.
+    onFrameChange({ saveLabel, learningStatus: <LearningStatus lesson={lesson} work={work} />, navigation, information: <ProgressSummary lesson={lesson} work={{ ...work, validation: draftMatchesValidation ? work.validation : null }} />, focusRequest });
+  }, [onFrameChange, saveLabel, lesson, work, locked, draft.stage, tabKey, switchStage, draftMatchesValidation, focusRequest]);
+  const content = <>
     {error && <section id="work-save-error" tabIndex={-1} className={styles.errorPanel} role="alert"><strong>{controller.conflict ? "저장 기록이 서로 달라요." : "요청을 완료하지 못했어요."}</strong><p>{error}</p><p>현재 입력은 이 화면에 유지하고 있어요. 확인 전에는 창을 닫지 마세요.</p><Button variant="outline" disabled={busy} onClick={() => void (controller.conflict ? controller.compare() : controller.retry())}>{controller.conflict ? "서버 기록과 비교" : "저장 다시 확인"}</Button></section>}
     {controller.remote && <section className={styles.conflictPanel} aria-label="저장 충돌 비교"><h2>어떤 입력으로 이어갈까요?</h2><p>서버의 완료·제출 기록은 유지돼요. 입력 내용은 아래에서 직접 선택하세요.</p><div className={styles.comparisonGrid}><div><h3>이 화면의 입력</h3><DraftComparison lesson={lesson} draft={draft} /></div><div><h3>서버에 저장된 입력</h3><DraftComparison lesson={lesson} draft={controller.remote.draft} /></div></div><div className={styles.actions}><Button disabled={busy} onClick={() => void controller.resolve(true)}>현재 입력을 새 버전으로 저장</Button><Button variant="outline" disabled={busy} onClick={() => void controller.resolve(false)}>서버 기록으로 이어하기</Button></div></section>}
-    <div className={styles.tabs} role="tablist" aria-label="수업 단계">{stages.map((stage, index) => <button key={stage.id} id={`tab-${stage.id}`} type="button" role="tab" aria-selected={draft.stage === stage.id} aria-controls={`panel-${stage.id}`} tabIndex={draft.stage === stage.id ? 0 : -1} disabled={locked} onKeyDown={(event) => tabKey(event, index)} onClick={() => void switchStage(stage.id, true)}><stage.icon size={18} /><span>{stage.label}</span><span className={styles.tabPercent}>{progress[stage.id].percent}%</span></button>)}</div>
+
 
     {lesson.practice.type === "programming" && <ProgrammingLearningStage lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} conceptId={conceptId} quizQuestionId={quizQuestionId} onConceptChange={setConceptId} onQuizQuestionChange={setQuizQuestionId} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} />}
 
@@ -327,5 +328,6 @@ function WorkEditor({ lesson, initial, uid, otherCurrent, workspaceWide, onWorks
         </div>
       </section>
     )}
-  </div>;
-}
+  </>;
+  return <div className={styles.workspace}>{otherCurrent && <div className={styles.notice} role="status"><div><strong>선생님이 지정한 이번 수업은 ‘{otherCurrent.title}’이에요.</strong><p>하던 학습을 계속하거나 저장한 뒤 이동할 수 있어요.</p></div><Button variant="outline" nativeButton={false} render={<Link href={`/classroom/${otherCurrent.id}?from=${returnOrigin}`} />}>이번 수업으로<ArrowRight size={16} /></Button></div>}{content}</div>;
+});

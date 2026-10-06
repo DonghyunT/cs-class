@@ -59,9 +59,9 @@ test("실습 기본 배치를 줄이고 넓게 보기에서도 같은 작업실�
   await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
   await page.screenshot({ path: testInfo.outputPath("workspace-default-1280.png") });
   await expect(page.getByRole("tab", { name: "개념 0%" })).toBeVisible();
-  await page.getByText("자세한 학습 진행", { exact: true }).click();
+  await page.getByText("수업 안내 · 자세한 학습 진행", { exact: true }).click();
   await expect(page.getByRole("definition").filter({ hasText: "기본 4개 미션" })).toBeVisible();
-  await page.getByText("자세한 학습 진행", { exact: true }).click();
+  await page.getByText("수업 안내 · 자세한 학습 진행", { exact: true }).click();
   const identity = await iframe.elementHandle();
   const native = page.frames().find((frame) => frame.url().includes("exercise=programming"))!;
   const before = await native.evaluate(() => (window as unknown as { Entry: { exportProject: () => unknown } }).Entry.exportProject());
@@ -78,10 +78,12 @@ test("실습 기본 배치를 줄이고 넓게 보기에서도 같은 작업실�
   await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
   await page.screenshot({ path: testInfo.outputPath("workspace-wide-1280.png") });
   await page.setViewportSize({ width: 768, height: 720 });
-  await page.getByRole("button", { name: "메뉴 열기", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "교실 탐색 메뉴" })).toBeVisible();
+  const account = page.getByRole("button", { name: "학생 메뉴", exact: true });
+  await account.click();
+  await expect(page.getByRole("button", { name: "로그아웃", exact: true })).toBeFocused();
   await page.setViewportSize({ width: 1280, height: 720 });
-  await expect(page.locator("#main-content")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(account).toBeFocused();
   await restore.click();
   await toggle.click();
   await restore.press("Escape");

@@ -5,7 +5,6 @@ import {
   BookOpen,
   CalendarDays,
   ChevronRight,
-  GraduationCap,
   Home,
   LogOut,
   Menu,
@@ -16,7 +15,7 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Brand } from "@/components/visuals";
 import { Button } from "@/components/ui/button";
-import { LoadingState } from "@/components/ui/loading-state";
+import { SessionAccess } from "@/components/session-access";
 import { useSession } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
 import styles from "./app-shell.module.css";
@@ -34,7 +33,7 @@ export function AppShell({
   teacher?: boolean;
   workspaceWide?: boolean;
 }) {
-  const { session, logout, loading, configured, error, refresh, teacherClassId } = useSession();
+  const { session, logout, teacherClassId } = useSession();
   const { beforeLeave } = useNavigationGuard();
   const [logoutError, setLogoutError] = useState("");
   const router = useRouter();
@@ -88,38 +87,10 @@ export function AppShell({
     setMobileNav(false);
     requestAnimationFrame(() => navToggle.current?.focus());
   }
-  const valid = teacher
-    ? session && session.role !== "student"
-    : session?.role === "student" && !session.mustChangePassword;
-  if (loading) return <main id="main-content" className={styles.accessState}><Brand /><h1>교실을 준비하고 있어요.</h1><LoadingState>로그인 상태를 확인하고 있어요.</LoadingState><Link href="/">공개 홈 둘러보기</Link></main>;
-  if (!valid)
-    return (
-      <>
-        <main id="main-content" className={styles.accessState}>
-          <Brand />
-          <span className={styles.formIcon}>
-            <GraduationCap />
-          </span>
-          <h1>
-            {session?.mustChangePassword
-              ? "먼저 비밀번호를 바꿔 주세요."
-              : "교실에 입장해 주세요."}
-          </h1>
-          <p role={error ? "alert" : undefined}>{error || (!configured ? "로그인 서비스를 연결하고 있어요. 선생님께 알려 주세요." : "본인의 계정으로 로그인하면 저장한 수업을 이어갈 수 있어요.")}</p>
-          {error && <Button variant="outline" onClick={() => void refresh()}>접속 다시 확인</Button>}
-          <Button
-            nativeButton={false}
-            render={<Link href={`/login/${teacher ? "teacher" : "student"}`} />}
-          >
-            입장 화면으로 <ChevronRight size={16} />
-          </Button>
-        </main>
-      </>
-    );
   const home = teacher ? "/teacher" : "/student";
   const classLink = (href: string) => teacher && teacherClassId ? `${href}?${new URLSearchParams({ classId: teacherClassId })}` : href;
   return (
-    <>
+    <SessionAccess teacher={teacher}>
       <div className={styles.layout} data-workspace-wide={workspaceWide}>
         <aside
           ref={sidebar}
@@ -263,6 +234,6 @@ export function AppShell({
           </footer>
         </div>
       </div>
-    </>
+    </SessionAccess>
   );
 }

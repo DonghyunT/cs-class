@@ -7,10 +7,14 @@ import { ServiceError } from "@/lib/server/errors";
 import { redirect } from "next/navigation";
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string | string[] }>;
 }) {
   const { id } = await params;
+  const from = (await searchParams).from;
+  const returnOrigin = from === "dashboard" ? "dashboard" : "lessons";
   const lesson = findLesson(id);
   if (!lesson) notFound();
   if (!isConfigured()) return <Classroom lesson={null} />;
@@ -20,5 +24,5 @@ export default async function Page({
     if (error instanceof ServiceError && error.status === 403) redirect("/student");
     throw error;
   }
-  return <Classroom lesson={lesson} />;
+  return <Classroom lesson={lesson} returnOrigin={returnOrigin} />;
 }

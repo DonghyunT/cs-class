@@ -77,6 +77,7 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   const persisted = await (await page.request.get(`/api/classroom/work/${lessonId}`)).json();
   expect(persisted.submission.order).toEqual(correctOrder);
   expect(persisted.draft.practiceOrder.slice(0, 2)).toEqual(["input", "start"]);
+  await page.getByRole("button", { name: "학생 메뉴", exact: true }).click();
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login\/student$/);
   await login(page, studentPassword);
@@ -103,8 +104,8 @@ test("저장 실패 때 입력과 단계 유지, 재시도 후 이동", async ({
   await expect(page.getByRole("main").getByRole("alert")).toContainText("서버에 연결하지 못했어요");
   await expect(page.getByRole("tab", { name: "개념 0%" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("radio", { name: "컵에 물을 200mL 따른다" })).toBeChecked();
-  await page.getByRole("link", { name: "대시보드로", exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}$`));
+  await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}(\\?from=dashboard)?$`));
   await page.unroute(workPath);
   await page.getByRole("button", { name: "저장 다시 확인" }).click();
   await saved(page);
@@ -117,7 +118,7 @@ test("저장 실패 때 입력과 단계 유지, 재시도 후 이동", async ({
   await page.getByRole("button", { name: "저장 다시 확인" }).click();
   await page.getByRole("tab", { name: "퀴즈 0%" }).click();
   await expect(page.getByRole("tab", { name: "퀴즈 0%" })).toHaveAttribute("aria-selected", "true");
-  await page.getByRole("link", { name: "대시보드로", exact: true }).click();
+  await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
   await expect(page).toHaveURL(/\/student$/);
 });
 
@@ -135,8 +136,8 @@ test("느린 저장 중 새 입력을 보존하고 이동 전에 최신 답안�
   await page.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
   await captured;
   await page.getByRole("radio", { name: "물을 적당히 준비한다" }).check();
-  await page.getByRole("link", { name: "대시보드로", exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}$`));
+  await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}(\\?from=dashboard)?$`));
   release();
   await expect(page).toHaveURL(/\/student$/);
   await page.getByRole("button", { name: "이어하기", exact: true }).first().click();

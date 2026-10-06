@@ -308,7 +308,7 @@ test("workspace-width: 기본 폭에서 탐색 초점 유지와 순서 배열의
   const gate = new Promise<void>(resolve => { release = resolve; });
   await page.route(`**${endpoint}`, async route => { if (route.request().method() === "GET") await gate; await route.continue(); });
   await page.reload();
-  const sidebarLink = page.getByRole("navigation", { name: "교실 메뉴" }).getByRole("link").first();
+  const sidebarLink = page.getByRole("link", { name: "수업 나가기", exact: true });
   await sidebarLink.focus(); await expect(sidebarLink).toBeFocused();
   release();
   await expect(page.locator('[data-workspace-wide]').first()).toHaveAttribute("data-workspace-wide", "false");
@@ -317,7 +317,7 @@ test("workspace-width: 기본 폭에서 탐색 초점 유지와 순서 배열의
   await prepare(page, "sequence-lab");
   await page.getByRole("tab", { name: /실습/ }).click();
   await expect(page.locator('[data-workspace-wide]').first()).toHaveAttribute("data-workspace-wide", "false");
-  await expect(page.getByRole("navigation", { name: "교실 메뉴" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "교실 메뉴" })).toHaveCount(0);
   await db.collection("csWork").doc(`${uid}__sequence-lab`).delete();
 });
 

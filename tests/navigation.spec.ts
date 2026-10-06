@@ -74,7 +74,7 @@ test("뒤로가기 저장 실패는 원래 수업 유지 · 재시도 후 이동
   await page.getByRole("radio", { name: answerName }).check();
   await back(page);
   await expect(page.locator("main").getByRole("alert")).toContainText("저장 연결 확인");
-  await expect(page).toHaveURL(new RegExp(`${classPath}$`));
+  await expect(page).toHaveURL(new RegExp(`${classPath}(\\?from=dashboard)?$`));
   await expect(page.getByRole("radio", { name: answerName })).toBeChecked();
   expect(await page.evaluate(() => history.length)).toBe(historyLength);
   expect(await savedAnswer()).toBeUndefined();
@@ -111,7 +111,7 @@ test("저장 응답 대기 중 뒤로가기 · 한 번 저장 후 원래 목적�
   await back(page);
   const observedPops = () => page.evaluate(() => (window as unknown as { navigationTestEvents: string[] }).navigationTestEvents);
   await expect.poll(observedPops).toEqual(["/student", classPath]);
-  await expect(page).toHaveURL(new RegExp(`${classPath}$`));
+  await expect(page).toHaveURL(new RegExp(`${classPath}(\\?from=dashboard)?$`));
   await expect(page.getByRole("radio", { name: answerName })).toBeChecked();
   // Another press while the same save is pending must not escape the editor.
   await back(page);
@@ -123,7 +123,7 @@ test("저장 응답 대기 중 뒤로가기 · 한 번 저장 후 원래 목적�
   expect(await page.evaluate(() => history.length)).toBe(historyLength);
   for (let index = 0; index < 3; index += 1) {
     await forward(page);
-    await expect(page).toHaveURL(new RegExp(`${classPath}$`));
+    await expect(page).toHaveURL(new RegExp(`${classPath}(\\?from=dashboard)?$`));
     await expect(page.getByRole("radio", { name: answerName })).toBeChecked();
     expect(await page.evaluate(() => Boolean(history.state?.__NA && history.state?.__PRIVATE_NEXTJS_INTERNALS_TREE))).toBe(true);
     await back(page);
@@ -137,7 +137,7 @@ test("앞으로가기의 새 답안도 저장 · Next 이력 상태와 추가 st
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await openLesson(page);
-  await page.getByRole("link", { name: "대시보드로", exact: true }).click();
+  await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
   await expect(page).toHaveURL(/\/student$/);
   await back(page);
   await expect(page.getByRole("radio", { name: answerName })).toBeVisible();
@@ -156,7 +156,7 @@ test("앞으로가기의 새 답안도 저장 · Next 이력 상태와 추가 st
 
 test("여러 항목을 건너뛰는 이력 이동도 저장하고 기존 앞뒤 경로 유지", async ({ page }) => {
   await openLesson(page);
-  await page.getByRole("link", { name: "대시보드로", exact: true }).click();
+  await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
   await expect(page).toHaveURL(/\/student$/);
   await page.getByRole("button", { name: "수업 시작", exact: true }).first().click();
   await expect(page.getByRole("radio", { name: answerName })).toBeVisible();
