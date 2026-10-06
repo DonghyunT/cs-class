@@ -1,6 +1,6 @@
 # 이어갈 작업
 
-갱신: 2026-10-07(Asia/Seoul). **현재 브랜치 `codex/student-learning-readability`; 학생 UI1~12차와 담당 문서·신규 모듈·참고 화면을 이번 커밋에 보존하며 미커밋 변경을 정리합니다. 다음 행동은 PR/CI 확인 → main 병합 → 기존 Production 배포 확인 → 최종 인계입니다.** 로컬 최종 빌드 전체178개가 단일 실행에서 통과했습니다. 선생님이 이 흐름과 실제 브라우저200%·물리 OS 한글 입력기 두 항목만 미확인으로 남기는 2번 방안을 승인했습니다.
+갱신: 2026-10-07(Asia/Seoul). **현재 브랜치 `main`, 미커밋 없음(마감 문서 커밋 기준), 기능 릴리스 기준 `477fac7`(PR28); 학생 UI1~12차·수업 전용 틀·공통 개념 배치를 운영에 반영했습니다. 다음 행동은 선생님과 첫 실제 수업 준비 범위를 확정하는 것입니다.** 로컬 최종 빌드 전체178개·PR/브랜치/main CI·독립 리뷰와 실제 운영 확인을 통과했습니다. 선생님이 실제 브라우저200%·물리 OS 한글 입력기 두 항목만 미확인으로 남기는 2번 방안을 승인했습니다.
 
 제품 정책은 [PRD](PRD.md), 시각·조작은 [DESIGN](DESIGN.md), 실행은 [DEVELOPMENT](DEVELOPMENT.md), 서버는 [FIREBASE_SETUP](FIREBASE_SETUP.md)을 따릅니다. 앞선1~7차의 상세 이력은 [마감 전 원문](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md)과 [보존 해시](archive/cs-class/2026-10-06-student-learning-close/manifest.json)에 있습니다. 원문과 해시는 변경하지 않았습니다.
 
@@ -8,11 +8,11 @@
 
 | 항목 | 현재 상태 |
 | --- | --- |
-| Git | `origin=https://github.com/DonghyunT/cs-class.git`. 작업 브랜치는 `codex/student-learning-readability`; 재개 기준ad4699d(앱603b8ee)에8~12차를 추가했습니다. main=origin/main=b8806a5를 재확인했고 merge-base8668cb0과 main의 파일 차이는 없습니다. 신규 소스5개·합성 참고 PNG3개도 포함합니다. 강제 reset/push하지 않았습니다. |
+| Git | `origin=https://github.com/DonghyunT/cs-class.git`. UI 커밋7c3c133·main 동기화aab298c → [PR28](https://github.com/DonghyunT/cs-class/pull/28) → main477fac7과 후속 마감 문서 커밋입니다. 검증한 PR과 병합 main의 파일 트리가 동일하며 후속 변경은 문서뿐입니다. 새 소스5개·합성 참고 PNG3개까지 추적하며 강제 reset/push하지 않았습니다. |
 | 범위 | 한 개념/문항 표시·자유 이동·학습 위치·기본/수동 실습 폭·LessonShell·7개 수업의 공통 배치와 추상화/순서도/프로그래밍 체험, 워크북/Entry 주변 읽기, 홈/학생 보조색을 구현했습니다. |
 | 소유·경계 | `useWork` 단독 저장 소유, 수업/문항/미션 ID·서버·채점·완료 계약을 유지했습니다. 체험 초기화와 저장 답안·완료·작품은 분리합니다. 새 의존성·DB 형식·인증/규칙/환경변수 변경은 없습니다. |
 | 실행 | Windows·Node24.19.0·Java21.0.12.1·Chromium·demo Auth9099/Firestore8080·localhost:3000. 최종 E2E는 `CI=1`의 `next start`와 새 합성 시드·AI/시간표 fixture입니다. 실행 후 앱/에뮬레이터는 종료됐으며 다른 PC의 demo 백업을 복원하지 않았습니다. |
-| 운영 | 기존 Vercel cs-class / Firebase cs-class-f74c4 / Production b8806a5·icn1·dpl_4QmJQKVPnKuA8tS8ogkmEXqRPZiA를 확인했습니다. 이번 UI는 아직 main에 병합/공개하지 않았습니다. 운영 DB·실학생 자료·새 합성 계정·유료 Solar 호출은 변경하지 않습니다. |
+| 운영 | Vercel cs-class / Firebase cs-class-f74c4. 기능 릴리스477fac7의 Production READY·별칭·icn1·실제 API/화면을 확인했습니다. 아래 배포 기록은 이 기능 SHA 기준이며 이후 문서만 추가된 tip은 `git log -1`과 Vercel 메타데이터로 확인합니다. 운영 DB·실학생 자료·새 합성 계정·유료 Solar 호출은 변경하지 않았습니다. |
 
 ## 학생 학습 화면 개선 계획 재개
 
@@ -35,21 +35,21 @@
 | 첫 전체·앱 수정 | 178개 중177개/1실패(11.0분). 390px 시작 기호의 스크롤/크기 전환 문제를 재현·수정하고 두 파일14개를 연속 재검증했습니다(1.3분). 원래 범위 조건·수동 wheel/pan·편집 초점·작품/저장을 유지했습니다. |
 | 두 번째 전체·검사 수정 | 178개 중177개/1실패(10.8분). 두 탭 충돌 검사가 이전 저장 표시를 읽어 요청을 겹치게 한 원인을 trace의 요청/응답·버전·멱등 저장으로 확인했습니다. 응답 답안·revision 증가를 기다리도록 검사만 고쳤으며 기존 충돌/보존/해결 조건·앱/서버는 유지했습니다. 해당 파일4개 통과(30.1초). |
 | 최종 전체 | `CI=1 npm.cmd run test:e2e`, 새 demo·프로덕션 빌드에서 **178/178 단일 실행 통과(10.6분)**. 두 실패를 합쳐 통과로 세거나 검사 조건을 낮추지 않았습니다. |
-| 시각·독립 리뷰·문서 | 공개 홈/pc0~pc3의12개 크기 조합과 단원/대시보드 실제 캡처·좁은 창·키보드·콘솔을 확인했습니다. warm 글자5.04:1·새 기호 경계3:1 이상. 전체 diff/새 모듈·두 후속 수정의 독립 리뷰에 남은P1/P2가 없습니다. 문서 링크179개·diff 검사 통과, 보관 원문 해시 동일입니다. |
+| 시각·독립 리뷰·문서 | 공개 홈/pc0~pc3의12개 크기 조합과 단원/대시보드 실제 캡처·좁은 창·키보드·콘솔을 확인했습니다. warm 글자5.04:1·새 기호 경계3:1 이상. 전체 diff/새 모듈·두 후속 수정의 독립 리뷰에 남은P1/P2가 없습니다. 활성 문서5개의 링크/앵커·diff 검사를 확인하며 보관 원문 해시는 동일합니다. |
+| CI | aab298c의 [PR CI](https://github.com/DonghyunT/cs-class/actions/runs/37494611925)·[브랜치 CI](https://github.com/DonghyunT/cs-class/actions/runs/37494521159), main477fac7의 [후속 CI](https://github.com/DonghyunT/cs-class/actions/runs/37496943276) 모두 성공. Ubuntu·Node24·Java21에서 lint/typecheck/순수/build·에뮬레이터178개 수집을 확인했습니다. main E2E는177개 통과(11.5분)·Windows 전용 .NET 명부 변환1개를 환경 조건으로 생략했습니다. 해당 검사는 이 PC의 최종178/178에 포함됐습니다. 앱 변경 없는 마감 문서 커밋은 `[skip ci]`로 중복 전체 실행을 생략하고 문서 검사·실제 배포 확인을 적용합니다. |
 
 결과 원본은 Git 제외 `scratch/round8-*`, `round9-*`, `round10-*`, `readability-built-public-20261007`, `readability-full-first-failure-20261007`, `readability-full-second-failure-20261007`와 최종 `test-results/`입니다. 다른 PC에 필요한 [8~12차 대표 PNG3장](reference/student-learning-readability-plan.md#812차-구현의-합성-검토-화면)은 Git에 포함합니다. 합성 캡처·자동 검사는 실제 학생 이해도 개선의 증거가 아닙니다.
 
 ## 다음에 이어갈 작업
 
-1. 현재 검증한 소스/문서를 커밋하고 원격 main을 보존해 병합 준비합니다. PR의 CI를 확인한 뒤 승인된 main 병합·Production 배포를 진행합니다.
-2. 배포 SHA·별칭·icn1·익명 session/권한·로그인 화면·이전 주소 이동을 확인하고 실제 결과로 이 문서를 마감합니다. READY나 로그인 버튼만으로 실제 Google OAuth 성공을 판정하지 않습니다.
-3. 실제200%·물리 OS IME는 합의된 미확인입니다. 네이티브 조작은 자동 승인 검토가 현재 브라우저 URL을 확인하지 못해 차단했습니다. CSS zoom·합성 composition을 대체 근거로 세지 않습니다.
-4. UI 공개 후 첫 실제 수업은 [첫 수업 절차](DEVELOPMENT.md#첫-실제-수업-확인-순서)의 학년도·명부·반·개별 발급부터 별도 확정합니다. 신규 Google OAuth·학교망·자연 Cron·실제 Solar 품질/예산·실학생 관찰은 별도 범위입니다.
+1. 다음 제품 작업은 [첫 수업 절차](DEVELOPMENT.md#첫-실제-수업-확인-순서)의 학년도·명부·반·개별 발급부터 선생님과 확정합니다. 이번 UI 배포 승인을 운영 자료 변경으로 확대하지 않습니다.
+2. 실제200%·물리 OS IME는 합의된 미확인입니다. 네이티브 조작은 자동 승인 검토가 현재 브라우저 URL을 확인하지 못해 차단했습니다. CSS zoom·합성 composition을 대체 근거로 세지 않습니다. 준비되는 환경에서 실제로 확인해 기록합니다.
+3. 신규 Google OAuth·학교망·자연 Cron·실제 Solar 품질/예산·실학생 관찰은 별도 범위입니다. READY·로그인 버튼 준비 상태를 실제 OAuth 성공으로 세지 않습니다.
 
 
 ## 다른 PC에서 이어가기
 
-먼저 그 PC의 미커밋·미추적 변경과 현재 브랜치를 보존합니다. 현재 작업은 아래 origin 브랜치입니다. main이나 옛 이식 ZIP으로 덮어쓰지 않습니다.
+먼저 그 PC의 미커밋·미추적 변경과 현재 브랜치를 보존합니다. 최신 학생 UI는 `origin/main`에 병합했습니다. 옛 계획 브랜치나 이식 ZIP으로 덮어쓰지 않습니다.
 
 ```powershell
 git status -sb
@@ -57,13 +57,14 @@ git fetch origin
 git branch -vv
 ```
 
-로컬에 작업 브랜치가 **없을 때만**:
+기존 변경을 보존하고 작업 트리가 정리됐을 때:
 
 ```powershell
-git switch --track -c codex/student-learning-readability origin/codex/student-learning-readability
+git switch main
+git merge --ff-only origin/main
 ```
 
-이미 있을 때는 기존 변경을 보존하고 해당 브랜치로 이동한 뒤 `git merge --ff-only origin/codex/student-learning-readability`로 받습니다. 분기해 있으면 자동 reset/강제 push 대신 차이를 대조합니다. 받은 tip·README·HANDOFF·계획/참고 PNG가 있는지 확인하고, [새 PC 준비](DEVELOPMENT.md#다른-pc에서-시작)의 Node24·Java21+·EntryJS·Chromium·캐시를 준비합니다. 에뮬레이터는 실제 Firebase 키 없이 `npm.cmd ci` 후 `npm.cmd run dev:emulator`로 시작합니다. 기존 캐시를 확인하기 전에 다운로드를 반복하지 않습니다.
+로컬 main이 분기해 있으면 자동 reset/강제 push 대신 차이를 대조합니다. 기존 `codex/student-learning-readability`는 PR28에 병합한 이력으로 남깁니다. 받은 tip·README·HANDOFF·계획/참고 PNG가 있는지 확인하고, [새 PC 준비](DEVELOPMENT.md#다른-pc에서-시작)의 Node24·Java21+·EntryJS·Chromium·캐시를 준비합니다. 에뮬레이터는 실제 Firebase 키 없이 `npm.cmd ci` 후 `npm.cmd run dev:emulator`로 시작합니다. 기존 캐시를 확인하기 전에 다운로드를 반복하지 않습니다.
 
 ### 로컬 기록과 전달 경계
 
@@ -78,7 +79,14 @@ git switch --track -c codex/student-learning-readability origin/codex/student-le
 
 ## 통합·배포 상태
 
-**아래는10/3~10/5의 과거 운영 확인입니다. 이번 마감에서 운영 상태를 다시 조회하지 않았습니다.** [운영 사이트](https://cs-class-donghyunt.vercel.app), Firebase `cs-class-f74c4`, Vercel `cs-class`입니다. 학생 UI 작업 브랜치는 main에 미병합입니다.
+**10/7 기능 릴리스의 실제 운영 확인입니다.** [운영 사이트](https://cs-class-donghyunt.vercel.app), Firebase `cs-class-f74c4`, Vercel `cs-class`입니다. 학생 UI는 PR28로 main에 병합·공개했습니다.
+
+- 기능 SHA `477fac7ab3755dc81b9dd0b4708330f8f14b68b9`, 배포 `dpl_2Y8rQnjW7oXkiX7yYVk5VQ1stRo4` / `cs-class-cf04ri3zu-donghyunt.vercel.app`, READY·`icn1`. 운영 별칭 `cs-class-donghyunt.vercel.app`·이전 `cs-class-sigma.vercel.app`·git-main 별칭을 확인했습니다.
+- 10/7 01:38KST 읽기 전용 운영 확인: `/api/auth/config`200·configured=true·cs-class-f74c4·emulatorHost=null·guest=false, 익명 `/api/auth/session`200/session=null, 학생/교사 API401. 1440×900 로그인 화면의 Google/비밀번호 버튼 준비·공개 홈·넘침/새 페이지 오류0을 확인했습니다. 실제 Google 로그인은 실행하지 않았습니다.
+- 이전 주소 `/login/teacher`는307로 동일 경로의 현재 주소로 이동합니다. 운영 DB·학생 자료·새 계정·규칙·환경변수 변경은 없었습니다. 새 Preview의 config는configured=false·빈projectId이고 운영 Firebase/인증/AI 변수는Production 전용입니다.
+- 배포 전 복구 후보는 `b8806a5` / `dpl_4QmJQKVPnKuA8tS8ogkmEXqRPZiA`입니다. 복구 절차·함수/DB 지역 기준은 [서버 설정](FIREBASE_SETUP.md#vercel-서버-설정)을 따릅니다. 문서 마감 tip은 앱 코드를 바꾸지 않습니다.
+
+아래10/3~10/5 이력은 당시 운영 확인이며 이번 UI 결과와 구분합니다.
 
 - 함수 지역 조정은 [PR25](https://github.com/DonghyunT/cs-class/pull/25)의 `986bf56` → main `eacb020`이며 함수 `icn1`·DB `asia-northeast3`, 뒤 문서 배포의 SHA/별칭·익명 API·로그인 화면 확인은 [당시 기록](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md#105-서버-함수-지역-조정)에 있습니다. 실제 신규 Google OAuth/학교망 검증과 구분합니다.
 
