@@ -43,6 +43,8 @@
 .experimentTop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; font-size: 14px; font-weight: 600; color: var(--quiet); }
 .experimentTop > span { display: flex; align-items: center; gap: 7px; }
 .experimentTop > button { min-height: 44px; color: #2e5fab; }
+.experimentTools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.concept .experiment .auxControl:global([data-slot="button"]) { min-height: 44px; min-width: 44px; padding: 8px 10px; font-size: 14px; color: #526173; border-radius: 10px; }
 .segment { display: flex; gap: 3px; background: #f1f4f8; padding: 3px; border-radius: 9px; }
 .segment button { padding: 8px 16px; min-height: 39px; border-radius: 7px; color: var(--quiet); }
 .segment button[aria-pressed="true"] { background: white; color: #2e5fab; box-shadow: 0 1px 4px #20304a0a; }
@@ -57,7 +59,6 @@
 .dogDemo { position: relative; display: flex; flex-direction: column; gap: 22px; align-items: center; justify-content: center; color: #8b633e; border-radius: 50%; background: #f9eade; width: 210px; height: 210px; }
 .speech { background: white; border: 1px solid #dde4ed; padding: 9px 16px; border-radius: 14px 14px 14px 3px; font-size: 18px; font-weight: 600; color: var(--ink); max-width: 210px; text-align: center; overflow-wrap: anywhere; }
 .takeaway { font-size: 18px; color: var(--quiet); line-height: 1.8; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
-.miniLabel { background: #f4f1fa; color: #62507e; font-size: 14px; padding: 5px 9px; border-radius: 7px; }
 .experimentActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 18px; }
 .experimentActions p { flex: 1 1 260px; margin: 0; color: #526173; font-size: 14px; line-height: 1.7; }
 .flowDemo { display: grid; grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr) 20px minmax(0, 1fr); gap: 12px; margin: 30px 0 22px; align-items: center; }
@@ -185,6 +186,7 @@
 .actor .speech { position: absolute; bottom: 89px; left: 50%; transform: translateX(-50%); min-width: 142px; max-width: 190px; }
 .coordinates { position: absolute; bottom: 9px; left: 12px; font-size: 16px; color: var(--quiet); background: #f7f9fcbb; padding: 2px 4px; }
 .runTools { display: flex; gap: 8px; align-items: center; margin-top: 15px; }
+.entryEditor .runTools .auxControl:global([data-slot="button"]) { min-height: 44px; min-width: 44px; padding: 8px 10px; font-size: 14px; color: #526173; border-radius: 10px; }
 .iconButton { display: inline-grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--line); background: white; border-radius: 9px; color: #526173; flex-shrink: 0; }
 .keyButtons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin-top: 10px; }
 .keyButtons button { background: #f2f5fa; border: 1px solid var(--line); border-radius: 8px; font-size: 11px; min-height: 44px; padding: 6px; }

@@ -8,6 +8,8 @@ Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 학습 플랫폼*
 
 학생·교사 공통 대시보드에 개인 할 일·이번 달 달력과 반 일정, 조회 대기 안내를 제공합니다. 금옥중학교 반별 정보 교시의 일일 갱신·교사용 갱신은 [시간표 연동](docs/DEVELOPMENT.md#학교-시간표-연동)을 따릅니다. 수업 목록·교사의 학생 현황과 수업 관리는 별도 메뉴에서 확인합니다. 로컬 확인은 [파일럿 실행 안내](docs/DEVELOPMENT.md#대시보드-파일럿)를 따릅니다.
 
+학생/교사 진도 그래프·작은 목록/격자, 개인 설정, 우리 반 질문·답변·해결, 저장된 실습을 확인하는 손들기를 연결했습니다. 일정은 대시보드 달력에서 접근합니다. 검증 범위는 [학급 기능 통합](docs/HANDOFF.md#학급-ui설정질문손들기--107-최신-로컬-통합), 커밋·병합·운영 반영 상태는 [인계 문서](docs/HANDOFF.md#통합배포-상태)에서 확인합니다.
+
 [운영 사이트 열기](https://cs-class-donghyunt.vercel.app) · 배포·접근 보호·실제 로그인 확인 범위와 진행 중인 작업은 [HANDOFF](docs/HANDOFF.md)를 먼저 확인합니다. 개발은 아래 에뮬레이터 모드로 진행할 수 있습니다.
 
 ## 빠르게 시작하기
@@ -113,6 +115,7 @@ cs-class/
 - `app/globals.css`는 글꼴·색상·기본 요소·공통 UI·브랜드를 담당합니다. 홈 스타일은 `components/home/public-home.css`, 셸·로그인·세션 안내·학생·교사·수업 미리보기 스타일은 담당 컴포넌트 옆의 CSS Module에 둡니다.
 - 학생·교사 첫 화면은 `components/dashboard/dashboard.tsx`를 사용하며 목록·일정·스타일을 같은 폴더에 둡니다. 학생 수업 목록은 `app/student/lessons/page.tsx`로 연결합니다.
 - 교사 상세 페이지는 `app/teacher/classes/page.tsx`·`app/teacher/students/page.tsx`입니다. `components/teacher/dashboard.tsx`가 조회·반 선택·학생 목록을, `dialogs.tsx`가 수업 설정·제출 작품 조회·비밀번호 초기화를 담당합니다. 함께 쓰는 날짜·오류 표현만 `presentation.ts`에 둡니다.
+- `app/student/community`·`app/teacher/community`는 `components/community`의 반 질문으로, 각 `settings` 페이지는 `components/settings`의 개인 설정으로 연결합니다. 손들기 UI는 `components/classroom`, 권한과 저장은 `lib/server/community.ts`·`help.ts`·기존 인증 서비스가 담당합니다. 교사 공통 반 선택은 `components/teacher/teacher-toolbar.tsx`를 사용합니다.
 - 프로그래밍 체험의 진입점은 [page.tsx](src/app/prototype/programming/page.tsx), 기능별 UI와 CSS는 `components/prototype/programming/`, 차시 데이터·순수 실행/조건 확인·복원은 [programming.ts](src/lib/prototype/programming.ts), 대상 검사는 [programming-prototype.spec.ts](tests/programming-prototype.spec.ts)·[name-entry-pilot.spec.ts](tests/name-entry-pilot.spec.ts)입니다. 이름 미션의 작품 읽기·실행 조건은 [name-entry.ts](src/lib/prototype/name-entry.ts), 호환 경계는 개발 안내를 먼저 읽습니다.
 
 ## 로컬 개발과 실제 로그인

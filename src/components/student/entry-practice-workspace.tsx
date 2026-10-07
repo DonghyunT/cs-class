@@ -158,7 +158,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
         <Button id="entry-run" size="sm" disabled={locked || preparing || phase !== "ready" || !program} onClick={() => send(running ? "stop" : "run")}>
           {running ? <Square size={14} /> : <Play size={14} />}{running ? "실행 정지" : "실행하기"}
         </Button>
-        <Button size="sm" variant="outline" disabled={locked || preparing || phase !== "ready"} onClick={() => send("reset-stage")}><RotateCcw size={14} />무대 처음 위치로</Button>
+        <Button className={styles.auxControl} size="sm" variant="ghost" aria-label="무대 처음 위치로 초기화" title="무대만 초기화 · 블록과 제출 기록 유지" disabled={locked || preparing || phase !== "ready"} onClick={() => send("reset-stage")}><RotateCcw size={14} aria-hidden="true" />초기화</Button>
         <Button ref={viewToggle} size="sm" variant="outline" aria-pressed={workspaceWide} onClick={() => setWide(!workspaceWide)} onKeyDown={(event) => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); setWide(false); } }}>
           {workspaceWide ? <Minimize2 size={14} /> : <Maximize2 size={14} />}{workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"}
         </Button>

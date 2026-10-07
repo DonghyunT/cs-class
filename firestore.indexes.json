@@ -1,5 +1,7 @@
 {
-  "indexes": [],
+  "indexes": [
+    { "collectionGroup": "csQuestions", "queryScope": "COLLECTION", "fields": [ { "fieldPath": "classId", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" } ] }
+  ],
   "fieldOverrides": [
     { "collectionGroup": "csAiRequests", "fieldPath": "expiresAt", "ttl": true, "indexes": [] },
     { "collectionGroup": "csAiCache", "fieldPath": "expiresAt", "ttl": true, "indexes": [] }

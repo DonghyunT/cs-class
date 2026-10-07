@@ -142,12 +142,11 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
         </section>
         <section className={`${styles.panel} ${styles.freePalette}`} aria-label="자유 기호 보관함"><h3>기호 보관함</h3>{(["terminal", "io", "process", "decision"] as const).map(shape => <button key={shape} className={styles.symbolBlock} data-shape={shape} disabled={locked || p.nodes.length >= 200} onClick={() => add(shape)}><span aria-hidden="true">{shape === "terminal" ? "⬭" : shape === "io" ? "▱" : shape === "process" ? "▭" : "◇"}</span>{shape === "terminal" ? "시작·종료" : shape === "io" ? "입출력" : shape === "process" ? "처리" : "판단"} 기호 추가</button>)}<small className={styles.muted}>기호를 눌러 추가하고 캔버스에서 움직여요.</small></section>
         <section className={styles.panel}>
-          <small className={styles.eyebrow}>Flowchart Canvas</small><h3>기호와 연결 편집</h3>
+          <small className={styles.eyebrow}>Flowchart Canvas</small><header className={styles.stageHeader}><h3>기호와 연결 편집</h3><Button className={readable.auxControl} variant="ghost" aria-label="캔버스 초기화" title="기호와 연결만 초기화 · 기획서와 제출 기록 유지" disabled={locked} onClick={() => { const { nodes, edges, pan } = initialReviewProject("flowchart") as FlowchartProject; edit({ nodes, edges, pan }); setSelected(""); setFrom("start"); setTo("end"); }}>초기화</Button></header>
 
           <p className={styles.muted}>기호를 끌어 이동하거나 초점을 놓고 방향키로 이동해요. 선택하면 아래에서 내용을 고칠 수 있어요.</p>
           <div className={styles.actions}>
             <Button variant="outline" disabled={locked || !history.length} onClick={() => { const previous = history.at(-1); setHistory(history.slice(0, -1)); if (previous) edit(previous, false); }}>편집 되돌리기</Button>
-            <Button variant="outline" disabled={locked} onClick={() => { const { nodes, edges, pan } = initialReviewProject("flowchart") as FlowchartProject; edit({ nodes, edges, pan }); setSelected(""); setFrom("start"); setTo("end"); }}>캔버스 초기화</Button>
             <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: Math.min(10000, p.pan.x + 200), y: p.pan.y } }, false)}>화면 오른쪽</Button>
             <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: p.pan.x, y: Math.min(10000, p.pan.y + 200) } }, false)}>화면 아래쪽</Button>
             <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: 0, y: 0 } }, false)}>화면 원점</Button>

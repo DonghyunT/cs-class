@@ -4,6 +4,7 @@ export type LearningStatus = "not-started" | "in-progress" | "completed";
 
 export interface Session {
   uid: string;
+  nickname?: string;
   role: Role;
   studentId: string | null;
   classId: string | null;
@@ -114,6 +115,8 @@ export interface StudentDashboard {
 }
 export interface StudentRow {
   uid: string;
+  nickname?: string;
+  lastActiveAt?: number | null;
   studentId: string;
   mustChangePassword: boolean;
   work: WorkSummary | null;

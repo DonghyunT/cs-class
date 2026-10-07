@@ -18,25 +18,26 @@ function workWith(missions: string[], edited = false): Work {
 }
 const rows: StudentRow[] = [[], ["name"], ["name", "multiply", "move"], ["name", "multiply", "move", "keys"], ["average"], ["name"]].map((missions, index) => ({ uid: `ui-teacher-${index}`, studentId: `2018${index + 1}`, mustChangePassword: index === 0, work: { ...workWith(missions, index === 5), edited: index === 5, validated: false } }));
 
-async function syntheticRows(page: Page, state: "normal" | "no-lesson" | "no-students" = "normal") {
+async function syntheticRows(page: Page, state: "normal" | "no-lesson" | "no-students" | "review" = "normal", students = rows) {
+  const initialLessonId = state === "review" ? LESSONS.find(item => item.mode === "review")!.id : lesson.id;
   await localOnly(page.request);
   await readyTeacher(page.request);
   await page.route("**/api/classroom/students/ui-teacher-*/work/**", async route => {
     const uid = new URL(route.request().url()).pathname.split("/")[4];
-    const row = rows.find(row => row.uid === uid);
+    const row = students.find(row => row.uid === uid);
     await route.fulfill({ status: row ? 200 : 404, contentType: "application/json", body: JSON.stringify(row?.work ?? {}) });
   });
   await page.route("**/api/classroom/teacher?**", async (route) => {
     const url = new URL(route.request().url());
-    const selectedLessonId = state === "no-lesson" ? null : url.searchParams.get("lessonId") ?? lesson.id;
+    const selectedLessonId = state === "no-lesson" ? null : state === "review" ? LESSONS.find(item => item.mode === "review")!.id : url.searchParams.get("lessonId") ?? lesson.id;
     url.searchParams.delete("lessonId");
     const response = await route.fetch({ url: url.toString() });
     expect(response.status()).toBe(200);
     const data = await response.json() as TeacherDashboard;
-    await route.fulfill({ response, json: { ...data, selectedLessonId, lessons: LESSONS, classroom: { ...data.classroom, currentLessonId: selectedLessonId, openedLessonIds: state === "no-lesson" ? [] : [lesson.id, "sequence-lab"] }, students: state === "no-students" ? [] : rows.map((row) => state === "no-lesson" ? { ...row, work: null } : row) } });
+    await route.fulfill({ response, json: { ...data, selectedLessonId, lessons: LESSONS, classroom: { ...data.classroom, currentLessonId: selectedLessonId, openedLessonIds: state === "no-lesson" ? [] : [...new Set([lesson.id, "sequence-lab", ...(state === "review" ? [selectedLessonId!] : [])])] }, students: state === "no-students" ? [] : students.map((row) => state === "no-lesson" ? { ...row, work: null } : row) } });
   });
-  await page.goto(`/teacher/students?classId=2-1${state === "no-lesson" ? "" : `&lessonId=${lesson.id}`}`);
-  if (state !== "no-students") await expect(page.locator("tbody tr")).toHaveCount(6);
+  await page.goto(`/teacher/students?classId=2-1${state === "no-lesson" ? "" : `&lessonId=${initialLessonId}`}`);
+  if (state !== "no-students") await expect(page.locator("tbody tr")).toHaveCount(students.length);
 }
 async function filter(page: Page, name: string, choice: string) {
   await page.getByRole("combobox", { name, exact: true }).click();
@@ -56,19 +57,26 @@ test("알려진 최근 작품만 집계하며 선택 도전과 수정 중 제출
   expect(programmingMissions).toHaveLength(5);
 });
 
-test("교사 집계·진행/제출 필터·검색 복구는 부분 제출과 선택 도전을 정확히 표시", async ({ page }) => {
+test("교사 집계·진행 필터·검색 복구는 부분 제출과 선택 도전을 정확히 표시", async ({ page }) => {
   await syntheticRows(page);
   const summary = page.locator('[class*="summary"]');
   await expect(summary).toContainText("수업 완료1명");
   await expect(summary).toContainText("실습 제출5명");
+  await expect(page.getByRole("combobox", { name: "제출 상태", exact: true })).toHaveCount(0);
   await expect(page.locator("tbody tr").filter({ hasText: "20186" })).toContainText("수정 중");
-  await expect(page.locator("tbody tr").filter({ hasText: "20185" })).toContainText("도전 제출");
-  await filter(page, "제출 상태", "제출함");
-  await expect(page.locator("tbody tr")).toHaveCount(5);
+  const challenge = page.locator("tbody tr").filter({ hasText: "20185" });
+  await expect(challenge.getByRole("progressbar", { name: "20185 실습 진도", exact: true })).toHaveAttribute("aria-valuenow", "0");
+  await expect(challenge.getByRole("button", { name: "20185 제출 작품 보기", exact: true })).toBeEnabled();
+  await challenge.getByRole("button", { name: "20185 상세 보기", exact: true }).click();
+  await expect(challenge.getByText("기본 0/4 제출 · 도전 제출", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "20181 제출 작품 보기", exact: true })).toBeDisabled();
   await filter(page, "진행 상태", "완료");
   await expect(page.locator("tbody tr")).toHaveCount(1);
   await expect(page.locator("tbody tr")).toContainText("20184");
   await filter(page, "진행 상태", "시작 전");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.locator("tbody tr")).toContainText("20181");
+  await page.getByRole("searchbox", { name: "학번 검색" }).fill("20183");
   await expect(page.getByText("조건에 맞는 학생이 없어요.", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "검색·필터 초기화" }).click();
   await expect(page.locator("tbody tr")).toHaveCount(6);
@@ -79,19 +87,19 @@ test("교사 집계·진행/제출 필터·검색 복구는 부분 제출과 선
   await expect(page.locator("tbody tr")).toHaveCount(6);
   await expect(page.getByRole("searchbox", { name: "학번 검색" })).toHaveValue("");
   await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("모든 진행");
-  await expect(page.getByRole("combobox", { name: "제출 상태", exact: true })).toHaveText("모든 제출");
-  await filter(page, "제출 상태", "미제출");
+  await filter(page, "진행 상태", "시작 전");
   await page.getByRole("searchbox", { name: "학번 검색" }).fill("20181");
   await filter(page, "담당 반", "2학년 2반");
   await expect(page.locator("tbody tr")).toHaveCount(6);
   await expect(page.getByRole("searchbox", { name: "학번 검색" })).toHaveValue("");
-  await expect(page.getByRole("combobox", { name: "제출 상태", exact: true })).toHaveText("모든 제출");
+  await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("모든 진행");
 });
 
 test("열린 수업 없음은 학습 필터만 비활성화하고 계정 조회·검색을 유지", async ({ page }) => {
   await syntheticRows(page, "no-lesson");
   await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "제출 상태", exact: true })).toBeDisabled();
+  await expect(page.getByRole("combobox", { name: "제출 상태", exact: true })).toHaveCount(0);
+  await expect(page.locator("tbody").getByRole("progressbar")).toHaveCount(0);
   await page.getByRole("searchbox", { name: "학번 검색" }).fill("20181");
   await expect(page.locator("tbody tr")).toHaveCount(1);
   await expect(page.getByRole("button", { name: "20181 비밀번호 초기화", exact: true })).toBeVisible();
@@ -132,7 +140,7 @@ test("좁은 학생 행은 요약·상세를 분리하고 대화상자/화면 �
   await toggle.click(); await expect(viewer).toBeHidden();
   await toggle.focus();
   await page.setViewportSize({ width: 1440, height: 900 });
-  await expect(row.locator("th")).toBeFocused(); await expect(viewer).toBeVisible();
+  await expect(toggle).toBeFocused(); await expect(viewer).toBeVisible();
   await viewer.click();
   await page.setViewportSize({ width: 390, height: 900 });
   await page.keyboard.press("Escape"); await expect(viewer).toBeFocused();
@@ -141,4 +149,108 @@ test("좁은 학생 행은 요약·상세를 분리하고 대화상자/화면 �
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
   expect(errors).toEqual([]);
+});
+
+test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패 뒤 상태를 유지", async ({ page }) => {
+  await syntheticRows(page);
+  const list = page.getByRole("button", { name: "목록 보기", exact: true });
+  const grid = page.getByRole("button", { name: "격자 보기", exact: true });
+  await expect(list).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("tbody").getByRole("progressbar")).toHaveCount(18);
+  const challenge = page.locator("tbody tr").filter({ hasText: "20185" });
+  await expect(challenge.getByRole("progressbar", { name: "20185 실습 진도", exact: true })).toHaveAttribute("aria-valuetext", "0/4개 완료, 0%");
+
+  await grid.focus(); await page.keyboard.press("Enter");
+  await expect(grid).toBeFocused();
+  await expect(grid).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("tbody").getByRole("progressbar")).toHaveCount(6);
+  await expect(page.locator("tbody tr").filter({ hasText: "20184" }).getByRole("progressbar", { name: "20184 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "100");
+  await expect(challenge.getByRole("progressbar", { name: "20185 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "0");
+  await expect(challenge.locator("svg [data-stage]")).toHaveCount(3);
+  await expect(challenge.getByRole("button", { name: "20185 제출 작품 보기", exact: true })).toBeEnabled();
+  await expect(challenge.getByRole("button", { name: "20185 비밀번호 초기화", exact: true })).toBeVisible();
+
+  await filter(page, "진행 상태", "진행 중");
+  await page.getByRole("searchbox", { name: "학번 검색" }).fill("20182");
+  const row = page.locator("tbody tr");
+  await expect(row).toHaveCount(1);
+  await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuetext", "필수 활동 1/13개 완료");
+  const viewer = row.getByRole("button", { name: "20182 제출 작품 보기", exact: true });
+  await viewer.click();
+  await expect(page.getByRole("dialog", { name: "20182 학생의 제출 작품", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape"); await expect(viewer).toBeFocused();
+  await row.getByRole("button", { name: "20182 비밀번호 초기화", exact: true }).click();
+  await expect(page.getByRole("alertdialog").getByRole("button", { name: "취소", exact: true })).toBeFocused();
+  await page.keyboard.press("Escape");
+
+  await list.focus(); await page.keyboard.press("Space");
+  await expect(list).toBeFocused();
+  await expect(list).toHaveAttribute("aria-pressed", "true");
+  await expect(row.getByRole("progressbar", { name: "20182 실습 진도", exact: true })).toHaveAttribute("aria-valuenow", "25");
+  await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("진행 중");
+  await expect(page.getByRole("searchbox", { name: "학번 검색" })).toHaveValue("20182");
+  await grid.click();
+  await page.route("**/api/classroom/teacher?**", route => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ code: "FETCH_UNAVAILABLE", message: "학습 기록을 불러오지 못했어요. 다시 시도해 주세요." }) }));
+  const refresh = page.getByRole("button", { name: "수업 새로고침", exact: true });
+  await refresh.click();
+  await expect(page.getByRole("alert").filter({ hasText: "학습 기록을 불러오지 못했어요" })).toContainText("학습 기록을 불러오지 못했어요");
+  await expect(refresh).toBeEnabled();
+  await expect(grid).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("searchbox", { name: "학번 검색" })).toHaveValue("20182");
+  await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("진행 중");
+  await expect(row).toHaveCount(1);
+  await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "8");
+});
+
+test("선택 복습과 미지정 학생은 목록·격자에서 정규 완료율을 만들지 않음", async ({ page }) => {
+  const review = LESSONS.find(item => item.mode === "review")!;
+  const students = rows.map(row => ({ ...row, work: { ...emptyWork(review), edited: false, validated: false } }));
+  await syntheticRows(page, "review", students);
+  await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toBeDisabled();
+  await expect(page.locator('[class*="summary"]')).toContainText("수업 완료—");
+  await expect(page.locator("tbody").getByRole("progressbar")).toHaveCount(0);
+  await expect(page.locator("tbody tr").first()).toContainText("선택 복습");
+  await page.getByRole("button", { name: "격자 보기", exact: true }).click();
+  await expect(page.locator("tbody").getByRole("progressbar")).toHaveCount(0);
+  await expect(page.getByText("선택 복습은 수업 완료율에 포함하지 않아요.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "20181 비밀번호 초기화", exact: true })).toBeVisible();
+  await page.getByRole("searchbox", { name: "학번 검색" }).fill("20181");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+
+  await page.unroute("**/api/classroom/teacher?**");
+  await syntheticRows(page, "no-lesson");
+  await page.getByRole("button", { name: "격자 보기", exact: true }).click();
+  await expect(page.locator("tbody").getByRole("progressbar")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "20181 비밀번호 초기화", exact: true })).toBeVisible();
+});
+
+test("27명 기본 목록은 작은 행과 3색 막대를 유지하며 두 보기 모두 좁은 창에 맞음", async ({ page }, testInfo) => {
+  // Response-only fixtures do not create student accounts or write classroom records.
+  const students: StudentRow[] = Array.from({ length: 27 }, (_, index) => ({ ...rows[index % rows.length], uid: `ui-teacher-density-${index}`, studentId: `231${String(index + 1).padStart(2, "0")}`, nickname: `연습 학생 ${index + 1}` }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await syntheticRows(page, "normal", students);
+  const studentRows = page.locator("tbody tr");
+  await expect(studentRows).toHaveCount(27);
+  await expect(page.locator("tbody").getByRole("progressbar")).toHaveCount(81);
+  const heights = await studentRows.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().height));
+  expect(Math.max(...heights)).toBeLessThanOrEqual(88);
+  await testInfo.attach("student-list-row-density", { body: JSON.stringify({ count: heights.length, minimum: Math.min(...heights), maximum: Math.max(...heights), average: heights.reduce((sum, height) => sum + height, 0) / heights.length }), contentType: "application/json" });
+  await page.screenshot({ path: testInfo.outputPath("teacher-students-list-27.png"), fullPage: true });
+  const view = page.getByRole("group", { name: "학생 현황 보기", exact: true });
+  for (const layout of ["목록 보기", "격자 보기"]) {
+    await view.getByRole("button", { name: layout, exact: true }).click();
+    for (const width of [1440, 1180, 768, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await expect(studentRows).toHaveCount(27);
+      const first = studentRows.first();
+      await expect(first.getByRole("progressbar")).toHaveCount(layout === "목록 보기" ? 3 : 1);
+      const toggle = first.getByRole("button", { name: "23101 상세 보기", exact: true });
+      const bounds = await toggle.boundingBox();
+      expect(bounds?.width).toBeGreaterThanOrEqual(44); expect(bounds?.height).toBeGreaterThanOrEqual(44);
+      if (layout === "격자 보기") await expect(first.getByRole("button", { name: "23101 비밀번호 초기화", exact: true })).toBeVisible();
+    }
+  }
+  await page.reload();
+  await expect(view.getByRole("button", { name: "목록 보기", exact: true })).toHaveAttribute("aria-pressed", "true");
 });

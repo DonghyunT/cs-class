@@ -21,7 +21,7 @@ export function ProgressSummary({ lesson, work }: { lesson: Lesson; work?: Work 
         : `${part.total}${stage === "quiz" ? "문항" : "개"} 중 ${part.completed}${stage === "quiz" ? "문항 해결" : "개 완료"}`;
       return <div key={stage} className={styles.progressItem}>
         <dt>{label}<strong>{part.percent}%</strong></dt>
-        <dd><span className={styles.track}><span style={{ width: `${part.percent}%` }} /></span><span>{detail}</span></dd>
+        <dd><span className={styles.track} role="progressbar" aria-label={`${label} 완료율`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={part.percent} aria-valuetext={detail}><span style={{ width: `${part.percent}%` }} /></span><span>{detail}</span></dd>
       </div>;
     })}
   </dl>;

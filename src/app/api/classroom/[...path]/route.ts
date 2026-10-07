@@ -3,6 +3,8 @@ import { decideReview, getWork, mutateWork, studentDashboard, teacherDashboard, 
 import { classroomAi } from "@/lib/server/review-ai";
 import { resetStudentPassword } from "@/lib/server/auth";
 import { readTodos, saveTodos, readSchedule, saveSchedule, refreshScheduleTimetable } from "@/lib/server/planner";
+import { clearHelp, raiseHelp, readHelp, readHelpSnapshot } from "@/lib/server/help";
+import { createQuestion, readCommunity, readQuestion, replyQuestion, resolveQuestion } from "@/lib/server/community";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -10,6 +12,10 @@ type Context = { params: Promise<{ path: string[] }> };
 export async function GET(request: Request, context: Context) {
   try {
     const { path } = await context.params; const query = new URL(request.url).searchParams;
+    if (path.length === 1 && path[0] === "community") return json(await readCommunity(query.get("classId") ?? undefined, query.get("after") ?? undefined));
+    if (path.length === 2 && path[0] === "community") return json(await readQuestion(path[1]));
+    if (path.length === 1 && path[0] === "help") return json(await readHelp(query.get("classId") ?? undefined));
+    if (path.length === 2 && path[0] === "help" && /^[a-zA-Z0-9_-]{1,128}$/.test(path[1])) return json(await readHelpSnapshot(path[1], query.get("id"), query.get("latest") === "1"));
     if (path.length === 1 && path[0] === "todos") return json(await readTodos());
     if (path.length === 1 && path[0] === "schedule") return json(await readSchedule(query.get("classId") ?? undefined));
     if (path.length === 1 && path[0] === "student") return json(await studentDashboard());
@@ -23,6 +29,12 @@ export async function POST(request: Request, context: Context) {
   try {
     const { path } = await context.params;
     const input = await body(request, path.length === 2 && path[0] === "work" && (path[1] === "programming-13" || path[1].startsWith("review-")) ? 192000 : 32768);
+    if (path.length === 2 && path[0] === "community") return json(await createQuestion(path[1], input));
+    if (path.length === 3 && path[0] === "community" && path[2] === "answers") return json(await replyQuestion(path[1], input));
+    if (path.length === 3 && path[0] === "community" && path[2] === "resolve") return json(await resolveQuestion(path[1], input));
+    if (path.length === 1 && path[0] === "help") return json(await raiseHelp(input));
+    if (path.length === 2 && path[0] === "help" && path[1] === "cancel") return json(await clearHelp(undefined, input));
+    if (path.length === 3 && path[0] === "help" && path[2] === "resolve" && /^[a-zA-Z0-9_-]{1,128}$/.test(path[1])) return json(await clearHelp(path[1], input));
     if (path.length === 1 && path[0] === "ai") return json(await classroomAi(input));
     if (path.length === 4 && path[0] === "students" && path[2] === "review" && /^[a-zA-Z0-9_-]{1,128}$/.test(path[1])) return json(await decideReview(path[1], path[3], input));
     if (path.length === 1 && path[0] === "todos") return json(await saveTodos(input));

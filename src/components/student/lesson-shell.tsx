@@ -8,6 +8,7 @@ import { useSession } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
 import type { Lesson } from "@/lib/classroom/types";
 import styles from "./lesson-shell.module.css";
+import { HelpButton } from "@/components/classroom/help-button";
 
 export type LessonOrigin = "dashboard" | "lessons";
 export function LessonShell({ lesson, returnOrigin, workspaceWide, saveLabel, learningStatus, navigation, information, focusRequest, children }: {
@@ -43,6 +44,7 @@ export function LessonShell({ lesson, returnOrigin, workspaceWide, saveLabel, le
         <Link className={styles.leave} href={returnOrigin === "dashboard" ? "/student" : "/student/lessons"}><ArrowLeft size={18} aria-hidden="true" />수업 나가기</Link>
         <div className={styles.title}><h1>{lesson.title}</h1><div className={styles.lessonState}>{learningStatus}{lesson.mode === "review" && <span>성적에 반영하지 않아요</span>}</div></div>
         <span className={styles.save} role="status">{saveLabel === "저장 완료" ? <CloudCheck size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}{saveLabel}</span>
+        <HelpButton lessonId={lesson.id} />
         <details ref={menu} className={styles.account} onToggle={event => setOpen(event.currentTarget.open)} onKeyDown={event => {
           if (event.key === "Escape" && menu.current?.open) { event.preventDefault(); event.stopPropagation(); menu.current.open = false; menuToggle.current?.focus({ preventScroll: true }); }
         }}>

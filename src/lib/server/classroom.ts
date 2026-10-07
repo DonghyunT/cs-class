@@ -101,7 +101,7 @@ export async function teacherDashboard(classId?: string, lessonId?: string): Pro
     const roster = await tx.get(admin().db.collection("csAccounts").where("classId", "==", selectedClassId));
     const students = roster.docs.map((doc) => doc.data() as Account).filter((student): student is Account & { studentId: string } => student.role === "student" && !student.disabled && !!student.studentId);
     const workSnapshots = selectedLessonId && students.length ? await tx.getAll(...students.map((student) => workRef(student.uid, selectedLessonId))) : [];
-    const records = students.map((student, index) => ({ uid: student.uid, studentId: student.studentId, mustChangePassword: student.mustChangePassword, work: selectedLessonId ? workSummary(toWork(workSnapshots[index].data() as StoredWork | undefined, selectedLessonId)) : null }));
+    const records = students.map((student, index) => ({ uid: student.uid, studentId: student.studentId, ...(student.nickname ? { nickname: student.nickname } : {}), lastActiveAt: student.session?.lastActivityAt ?? null, mustChangePassword: student.mustChangePassword, work: selectedLessonId ? workSummary(toWork(workSnapshots[index].data() as StoredWork | undefined, selectedLessonId)) : null }));
     records.sort((a, b) => a.studentId.localeCompare(b.studentId));
     return { classrooms, lessons: LESSONS.filter(lesson => RELEASED_LESSONS.includes(lesson) || classrooms.some(classroom => classroom.openedLessonIds.includes(lesson.id))), classroom, selectedLessonId, students: records };
   });

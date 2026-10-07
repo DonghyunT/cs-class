@@ -3,6 +3,7 @@
 .workspace :global([data-slot="button"]){min-height:44px;height:auto;font-size:16px;line-height:1.5;white-space:normal}
 .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 16px;border-bottom:1px solid #e3e8ef}.toolbar>div{display:flex;gap:8px;flex-wrap:wrap}
 .toolbar>strong{font-size:18px;flex-shrink:0}
+.workspace .toolbar .auxControl:global([data-slot="button"]){min-height:44px;min-width:44px;font-size:14px;padding:8px 10px;border-radius:10px;color:#526173}
 .help{font-size:16px;line-height:1.7;color:#526173;margin:0;padding:0 16px;background:#f6f8fb}.help summary{min-height:44px;align-content:center;cursor:pointer}.help p{margin:0;padding-block:0 12px}
 .workStates{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:8px 16px;border-bottom:1px solid #e3e8ef;font-size:16px;color:#526173}.workStates>span{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.workStates strong{font-weight:650;color:#202b3a}.workStates [data-save-state=failed]{color:#a12c28}
 .frameScroll{position:relative;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;background:#f5f8fc}.frameScroll:focus-visible{outline:3px solid #376fc8;outline-offset:-3px}

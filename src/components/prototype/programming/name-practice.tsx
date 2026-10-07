@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useEffectEvent, useRef, useState, type RefObject } from "react";
-import { Check, Lightbulb, Play, Square } from "lucide-react";
+import { Check, Lightbulb, Play, RotateCcw, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { checkNameMission, nameProjectLines, parseNameProject, type NameRun } from "@/lib/prototype/name-entry";
 import { blockLabels, type PrototypeState, type PrototypeUpdate } from "@/lib/prototype/programming";
@@ -99,7 +99,7 @@ export function NamePractice({ state, update, focus, help, editorRef }: {
     <section className={styles.entryEditor} aria-label="블록 조립 작업실"><p className={styles.smallText}>질문·대답·말하기 블록을 직접 끌어 연결하세요. 이번 파일럿은 이 미션에 필요한 블록만 지원해요. 질문창은 실행 무대 안에 나타나요.</p>
       <div className={styles.entryScroll} tabIndex={0} role="region" aria-label="엔트리 작업실 가로 이동"><iframe key={attempt} ref={frame} title="강아지 이름 짓기 엔트리 작업실" sandbox="allow-scripts" src="/entryjs/workspace.html?exercise=name" className={styles.entryFrame} />{phase === "loading" && <p className={styles.loading}>엔트리 작업실을 준비하고 있어요.</p>}</div>
       {error && <div role="alert" className={styles.feedback}><p>{error}</p><Button variant="outline" onClick={async () => { if (dirty.current && !await read()) return; setPhase("loading"); setRunning(false); setError(""); currentRun.current = null; setAttempt((n) => n + 1); }}>다시 불러오기</Button></div>}
-      <div className={styles.runTools}><Button id="name-run" disabled={running || phase !== "ready"} onClick={() => { send("export", { id: "before-run" }); send("run"); }}><Play size={16} />실행하기</Button><Button variant="outline" disabled={!running} onClick={() => send("stop")}><Square size={14} />중지</Button><Button variant="ghost" disabled={phase !== "ready"} onClick={() => send("reset-stage")}>무대 처음 위치로</Button></div><p className={styles.runStatus} role="status">{message}</p>
+      <div className={styles.runTools}><Button id="name-run" disabled={running || phase !== "ready"} onClick={() => { send("export", { id: "before-run" }); send("run"); }}><Play size={16} />실행하기</Button><Button variant="outline" disabled={!running} onClick={() => send("stop")}><Square size={14} />중지</Button><Button className={styles.auxControl} variant="ghost" aria-label="무대 처음 위치로 초기화" title="무대만 초기화 · 블록과 완료 기록 유지" disabled={phase !== "ready"} onClick={() => send("reset-stage")}><RotateCcw size={16} aria-hidden="true" />초기화</Button></div><p className={styles.runStatus} role="status">{message}</p>
     </section>
     <details className={styles.hint}><summary>먼저 해볼 작은 실험</summary><p>1. 서로 다른 이름으로 다시 실행해 보세요.</p><p>2. 질문 뒤에 ‘대답’ 값이 바뀌는지 살펴보세요.</p><p>3. 말하기 입력칸에 ‘대답’ 블록을 연결해 보세요.</p></details>
     <details className={styles.trace}><summary>실행 발자국 · {runs.length}번</summary>{runs.map((r, i) => <div key={r.id}><strong>{i + 1}번 실행 · {r.reason === "finished" ? "실행 마침" : "중지됨"}</strong><ol>{r.steps.map((s, j) => <li key={j}>{({ ask: "질문", answer: "대답", say: "말하기" })[s.kind]}: {s.value}</li>)}</ol></div>)}</details>
