@@ -39,7 +39,7 @@ function SymbolExperience() {
       </svg>
     </div>
     <div className={styles.symbolMeaning}><p className={scenes.result} role="status"><strong>{symbol.name}</strong> · {symbol.meaning}</p><p><strong>엔트리에서 연결해 보기</strong><br />{symbol.entry}</p><p>{symbol.note}</p></div>
-    <div className={scenes.controls}><Button variant="ghost" className={scenes.secondaryAction} onClick={() => setSelected(0)}>처음부터 보기</Button></div>
+    <div className={scenes.controls}><Button variant="ghost" className={scenes.secondaryAction} aria-label="기호 선택 초기화" title="기호 선택만 초기화 · 답안과 완료 기록 유지" onClick={() => setSelected(0)}>초기화</Button></div>
   </>;
 }
 
@@ -101,7 +101,7 @@ function PathExperience({ loop }: { loop: boolean }) {
       <Button ref={runButton} className={scenes.primaryAction} onClick={start}>흐름 실행</Button>
       <Button variant="ghost" className={scenes.secondaryAction} disabled={done} onClick={() => { setRunning(false); advance(); }}>한 단계 실행</Button>
       {running && <Button variant="ghost" className={scenes.secondaryAction} onClick={() => { finish(); setStopped(true); }}>실행 중지</Button>}
-      <Button variant="ghost" className={scenes.secondaryAction} onClick={reset}>처음부터 보기</Button>
+      <Button variant="ghost" className={scenes.secondaryAction} aria-label="예시 흐름 초기화" title="예시 흐름만 초기화 · 답안과 완료 기록 유지" onClick={reset}>초기화</Button>
     </div>
     <p className={scenes.result} role="status">{done ? `종료에 도달했어요. ${loop ? "맞는 입력은 예 경로로 로그인 성공 안내를 거쳐 끝나요." : `${height}cm는 ${run.decision ? "예 → 탑승 가능 안내" : "아니오 → 대기 안내"} 경로를 지났어요.`}` : stopped ? `실행을 중지했어요. 현재 위치: ${labels[current ?? "start"]}. 한 단계씩 이어갈 수 있어요.` : returned ? "입력 단계로 돌아왔어요. 맞는 예시를 선택하고 다시 조건을 확인해 보세요." : running ? `실행 중 · 현재 위치: ${labels[current ?? "start"]}` : current ? `현재 위치: ${labels[current]}${current === "decision" ? ` · ${run.decision ? "예" : "아니오"} 경로로 진행해요.` : " · 다음 단계를 실행해 보세요."}` : "아직 실행하지 않았어요. 화살표의 방향과 예·아니오를 먼저 살펴보세요."}</p>
     <ol className={scenes.flow} aria-label="이번 실행 경로">{run.history.map((node, index) => <li key={index}>{node === "input" && !loop ? inputLabel : labels[node]}</li>)}</ol>

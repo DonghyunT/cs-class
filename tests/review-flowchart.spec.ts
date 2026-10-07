@@ -42,7 +42,7 @@ test.describe("flowchart 개념과 읽기 배치", () => {
       await expect(diagram).toContainText(example); await expect(scene.getByRole("status")).toContainText(meaning);
       await expect(scene.getByText(entry, { exact: false })).toBeVisible();
     }
-    await scene.getByRole("button", { name: "처음부터 보기", exact: true }).click();
+    await scene.getByRole("button", { name: "기호 선택 초기화", exact: true }).click();
     await expect(scene.getByRole("button", { name: "단말", exact: true })).toHaveAttribute("aria-pressed", "true");
     for (const width of [1440, 821, 390, 320]) {
       await page.setViewportSize({ width, height: 720 });
@@ -66,7 +66,7 @@ test.describe("flowchart 개념과 읽기 배치", () => {
       await expect(scene.locator(`[data-edge="${branch === "yes" ? "no" : "yes"}"]`)).toHaveAttribute("data-visited", "false");
       await expect(scene.getByRole("list", { name: "이번 실행 경로" })).toContainText(output);
     }
-    await scene.getByRole("button", { name: "처음부터 보기", exact: true }).click();
+    await scene.getByRole("button", { name: "예시 흐름 초기화", exact: true }).click();
     await scene.getByRole("button", { name: "한 단계 실행", exact: true }).click();
     await expect(scene.getByRole("list", { name: "이번 실행 경로" }).getByRole("listitem")).toHaveCount(1);
     await scene.getByRole("button", { name: "흐름 실행", exact: true }).click();
@@ -75,7 +75,7 @@ test.describe("flowchart 개념과 읽기 배치", () => {
     const stopped = await scene.getByRole("list", { name: "이번 실행 경로" }).textContent();
     await page.waitForTimeout(850);
     expect(await scene.getByRole("list", { name: "이번 실행 경로" }).textContent()).toBe(stopped);
-    await scene.getByRole("button", { name: "처음부터 보기", exact: true }).click();
+    await scene.getByRole("button", { name: "예시 흐름 초기화", exact: true }).click();
     await page.emulateMedia({ reducedMotion: "reduce" });
     await scene.getByRole("button", { name: "150cm", exact: true }).click();
     await scene.getByRole("button", { name: "흐름 실행", exact: true }).click();
@@ -102,7 +102,7 @@ test.describe("flowchart 개념과 읽기 배치", () => {
     await expect(scene.getByRole("status")).toContainText("종료에 도달");
     await expect(scene.locator('[data-edge="yes"]')).toHaveAttribute("data-visited", "true");
     await expect(scene.getByRole("button", { name: "흐름 실행", exact: true })).toBeFocused();
-    await scene.getByRole("button", { name: "처음부터 보기", exact: true }).click();
+    await scene.getByRole("button", { name: "예시 흐름 초기화", exact: true }).click();
     await page.emulateMedia({ reducedMotion: "reduce" });
     await scene.getByRole("button", { name: "흐름 실행", exact: true }).click();
     await expect(scene.getByRole("status")).toContainText("입력 단계로 돌아왔어요");

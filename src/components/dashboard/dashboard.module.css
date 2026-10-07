@@ -15,6 +15,7 @@
 .dashboardHome[data-role=student] .footnote { padding:14px 16px;background:var(--warm-surface);color:var(--warm-foreground);border:1px solid var(--warm-border);border-radius:14px; }
 .heading h1 { margin: 8px 0 10px; font-size: clamp(28px, 3vw, 36px); font-weight: 720; letter-spacing: -.045em; line-height: 1.4; word-break: keep-all; }
 .heading p, .muted, .footnote { color: #526173; font-size: 14px; margin: 6px 0 12px; }
+.todoSubtitle{color:#697589;font-size:12px;line-height:1.6;margin:4px 0 14px;padding-bottom:12px;border-bottom:1px solid #edf0f6}
 .heading time { display: inline-flex; align-items: center; gap: 8px; color: #385477; font-size: 13px; font-weight: 600; white-space: nowrap; padding: 8px 12px; border: 1px solid #e3e8ef; border-radius: 999px; background: #fff; }
 .heading time svg { color: #376fc8; }
 .heading > svg { color: #376fc8; width: 32px; height: 32px; flex-shrink: 0; }
@@ -24,11 +25,16 @@
 .page input, .panel input { color: #202b3a; background: white; border: 1px solid #d1d9e5; border-radius: 10px; min-width: 0; min-height: 44px; padding: 10px 12px; font: inherit; width: 100%; }
 .page :global([data-slot="select-trigger"]), .panel :global([data-slot="select-trigger"]) { width: 100%; }
 .classPicker :global([data-slot="select-trigger"]) { width: auto; max-width: 100%; }
-.refresh { margin: -12px 0 14px; color: #526173; }
+.headingTools { display: flex; align-items: center; justify-content: end; gap: 8px; flex-shrink: 0; }
+.page .refresh[data-slot="button"] { min-height: 44px; min-width: 44px; width: 44px; height: 44px; padding: 0; color: #526173; border-radius: 10px; }
+.sectionTools { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 12px; margin-left: auto; max-width: 100%; }
+.page .compactControl[data-slot="button"] { min-height: 44px; min-width: 44px; padding: 8px 10px; gap: 6px; font-size: 13px; border-radius: 10px; color: #526173; white-space: nowrap; }
 .current { position: relative; isolation: isolate; overflow: hidden; border: 1px solid #d7e3f7; border-radius: 22px; background: linear-gradient(112deg, #eaf2ff 0%, #f1f4ff 68%, #fff5ef 100%); box-shadow: 0 18px 38px -34px #376fc8; padding: 24px 28px; display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 26px; }
 .current::before { content: ""; position: absolute; right: 12%; top: -145px; width: 280px; height: 280px; border: 1px solid #fff; border-radius: 50%; background: #ffffff52; pointer-events: none; }
 .current::after { content: ""; position: absolute; right: 27%; top: 27px; width: 19px; height: 19px; border-radius: 5px; background: #a8c5f0; box-shadow: 25px 30px 0 #e9e4f7, -24px 45px 0 #f8e1d5; transform: rotate(12deg); opacity: .72; pointer-events: none; }
 .current > div { min-width: 0; flex: 1; position: relative; z-index: 1; }
+.dashboardHome[data-role=teacher] .current::after{display:none}
+.dashboardHome[data-role=teacher] .current>div:last-child{flex:0 1 380px}
 .current h2 { margin: 6px 0; font-size: 22px; font-weight: 700; line-height: 1.5; letter-spacing: -.035em; word-break: keep-all; }
 .current p { color: #526173; font-size: 14px; margin: 0; word-break: keep-all; }
 .current > [data-slot="button"] { flex-shrink: 0; position: relative; z-index: 1; }
@@ -117,8 +123,10 @@
 @media (max-width: 600px) {
   .heading { flex-direction: column; gap: 8px; margin-bottom: 22px; }
   .heading time { padding: 7px 11px; }
+  .headingTools { align-self: flex-end; }
   .current { padding: 20px; align-items: start; flex-direction: column; gap: 16px; }
   .current > div { width: 100%; }
+  .dashboardHome[data-role=teacher] .current>div:last-child{flex:none}
   .current h2 { font-size: 21px; }
   .panel { padding: 20px 16px; border-radius: 18px; }
   .columns, .mainColumn { gap: 20px; }

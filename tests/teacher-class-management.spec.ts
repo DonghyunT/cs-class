@@ -29,6 +29,10 @@ test("수업 관리: 이번 수업과 열린 수업 전체·미지정·빈 반·
   await page.goto("/teacher/classes?classId=2-1");
   const opened = page.getByRole("region", { name: "열린 수업", exact: true });
   const current = page.locator('section[aria-labelledby="current-lesson-title"]');
+  await expect(current.getByRole("button", { name: "수업 관리", exact: true })).toHaveCount(0);
+  const manage = page.getByRole("button", { name: "수업 관리", exact: true });
+  await expect(manage).toBeVisible();
+  await expect(manage.locator("..").getByRole("button", { name: "수업 새로고침", exact: true })).toBeVisible();
   await expect(current.getByRole("heading", { level: 2 })).toHaveText(LESSONS[0].title);
   await expect(opened.getByRole("listitem")).toHaveCount(LESSONS.length);
   for (const lesson of LESSONS) {
@@ -42,6 +46,9 @@ test("수업 관리: 이번 수업과 열린 수업 전체·미지정·빈 반·
   for (const width of [1440, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const refreshBox = await page.getByRole("button", { name: "수업 새로고침", exact: true }).boundingBox();
+    expect(refreshBox?.width).toBe(44); expect(refreshBox?.height).toBe(44);
+    await expect(manage).toBeVisible();
     await expect(opened.getByRole("heading", { level: 3 })).toHaveCount(LESSONS.length);
     if (width === 1440 || width === 390) await page.screenshot({ path: testInfo.outputPath(`opened-lessons-${width}.png`), fullPage: true });
   }
@@ -181,7 +188,7 @@ test("교사·학생 탐색 메뉴: 동일한 아이콘 수·현재 화면 표�
       }
       const navigation = page.getByRole("navigation", { name: "교실 메뉴", exact: true });
       const links = navigation.getByRole("link");
-      await expect(links).toHaveCount(role === "teacher" ? 4 : 3);
+      await expect(links).toHaveCount(role === "teacher" ? 5 : 4);
       for (const link of await links.all()) await expect(link.locator("svg")).toHaveCount(1);
       await expect(navigation.locator('a[aria-current="page"]')).toHaveCount(1);
       await expect(navigation.getByRole("link", { name: role === "teacher" ? "수업 관리" : "열린 수업", exact: true })).toHaveAttribute("aria-current", "page");

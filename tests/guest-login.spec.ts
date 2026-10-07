@@ -96,7 +96,8 @@ test("게스트 학생·교사 바로 입장, 로컬 기록 복원, 화면 크�
   const restored = await page.request.get(endpoint);
   expect(restored.status()).toBe(200);
   expect((await restored.json()).draft.conceptAnswers.algorithm).toBe("clear");
-  await page.request.post("/api/auth/logout", { headers, data: {} });
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
+  await expect(page).toHaveURL(/\/login\/student$/);
   await page.goto("/login/teacher");
   await page.getByRole("button", { name: "게스트 교사", exact: true }).click();
   await expect(page).toHaveURL(/\/teacher$/);

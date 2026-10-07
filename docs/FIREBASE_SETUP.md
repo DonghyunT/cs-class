@@ -1,6 +1,6 @@
 # Firebase 연결과 검증
 
-문서 갱신: 2026-10-05. 실제 환경 확인 날짜·범위는 HANDOFF를 따릅니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다.
+문서 갱신: 2026-10-07. 실제 환경 확인 날짜·범위는 HANDOFF를 따릅니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다.
 
 ## 연결 기준
 
@@ -37,6 +37,8 @@ Google 로그인을 확인할 때는 승인된 `localhost`를 사용해 [교사 
 호스팅에는 로컬 파일 경로를 옮기지 않습니다. 승인된 호스팅의 서버 비밀 설정 또는 해당 플랫폼의 관리형 인증을 사용하며, 비공개 키를 `NEXT_PUBLIC_*`로 등록하지 않습니다. Auth·Firestore 에뮬레이터 변수와 로컬 게스트용 `CS_TEST_GUEST_PASSWORD`는 호스팅에 넣지 않습니다. 게스트 준비 조건은 [개발 안내](DEVELOPMENT.md#로컬-게스트-입장)에 있습니다. 현재 코드는 Vercel에서 에뮬레이터 변수가 감지되면 거부합니다.
 
 ## Vercel 서버 설정
+
+기본 질문 기능은 `firestore.indexes.json`의 `csQuestions` 복합 인덱스(`classId ASC / createdAt DESC`)를 사용합니다. 운영 공개 전 실제 프로젝트의 기존 인덱스·AI TTL을 확인·보존하고 적용한 인덱스의 `READY`를 확인합니다. 로컬 에뮬레이터 성공만으로 운영 인덱스 준비를 판단하지 않습니다. 질문/답변·손들기/저장본·한도 장부도 기존 전체 서버 전용 규칙으로 직접 DB 접근을 거부합니다. 현재 적용 여부와 배포 근거는 [통합·배포 기록](HANDOFF.md#통합배포-상태)을 따릅니다.
 
 연결 프로젝트는 `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)입니다. Root Directory는 비워 둔 저장소 루트, Framework Preset은 Next.js, Node.js는 24.x이며 빌드·설치·출력은 프레임워크 기본값을 사용합니다. Git 연동의 작업 브랜치는 Preview, `main`은 Production입니다. MCP는 프로젝트 연결로 호출하고 팀 범위를 임의로 덧붙이지 않습니다. 응답에 루트 설정이 없으면 Build and Deployment 화면에서 확인합니다. 한 도구의 403을 전체 연결 불가로 일반화하지 않습니다.
 

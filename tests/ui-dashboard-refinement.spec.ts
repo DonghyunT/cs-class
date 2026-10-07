@@ -28,7 +28,8 @@ test('반은 메뉴·새로고침에서 유지하고 유효하지 않은 URL은 
   await expect(page).toHaveURL(/classId=2-5/);
   await page.reload();
   await expect(page.getByRole('combobox', { name: '담당 반', exact: true })).toContainText('2학년 5반');
-  await page.getByRole('link', { name: '반 일정', exact: true }).click();
+  await page.getByRole('region', { name: '다가오는 일정', exact: true }).getByRole('link', { name: '전체 보기', exact: true }).click();
+  await expect(page).toHaveURL(/\/teacher\/schedule\?classId=2-5$/);
   await expect(page.getByRole('combobox', { name: '담당 반', exact: true })).toContainText('2학년 5반');
   await page.goto('/teacher');
   await expect(page.getByRole('combobox', { name: '담당 반', exact: true })).toContainText('2학년 5반');
@@ -87,9 +88,10 @@ test('학생 이번 수업 우선·구체적 이어갈 곳과 다음 일정 5개
   const agenda = page.getByRole('region', { name: '다가오는 일정', exact: true });
   await expect(agenda.locator('ul > li')).toHaveCount(5);
   await expect(agenda.getByRole('link', { name: '외 2개 · 전체 보기' })).toBeVisible();
-  const actions = page.getByRole('region', { name: '수업에서 할 일', exact: true });
-  await expect(actions.locator('li').first()).toContainText(programming.title);
-  await expect(actions.locator('li').first()).toContainText('곱셈 계산기');
+  const lessonProgress = page.getByRole('region', { name: '수업별 학습 진도', exact: true });
+  const firstLesson = lessonProgress.getByRole('article').first();
+  await expect(firstLesson).toContainText(programming.title);
+  await expect(firstLesson.getByRole('link', { name: `${programming.title} · 실습 · 곱셈 계산기`, exact: true })).toHaveAttribute('href', `/classroom/${programming.id}?from=dashboard`);
   await page.getByRole('link', { name: '열린 수업', exact: true }).click();
   const cards = page.locator('article');
   await expect(cards.first()).toContainText(programming.title);

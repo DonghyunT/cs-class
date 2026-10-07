@@ -95,26 +95,13 @@
   margin-top: auto;
 }
 
-.layout .sidebarTip {
-  padding: 18px;
-  border: 0;
-  border-radius: 18px;
-  background: #f5f7fa;
-}
-
-.layout .sidebarTip strong {
-  font-size: 14px;
-  font-weight: 650;
-}
-
-.layout .sidebarTip p {
-  margin-top: 8px;
-  color: #526173;
-  font-size: 13px;
-  line-height: 1.75;
-  word-break: keep-all;
-  white-space: pre-line;
-}
+.layout .sidebarProfile{display:flex;align-items:center;gap:9px;padding:14px 12px;border-radius:16px;background:#f5f7fa;min-height:72px;text-decoration:none;color:#202b3a}
+.layout .sidebarProfile>span:nth-child(2){min-width:0;flex:1;display:grid;gap:3px}
+.layout .sidebarProfile strong{font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.layout .sidebarProfile small{font-size:11px;color:#627087}
+.layout .profileAvatar{display:grid;place-items:center;width:32px;height:32px;flex-shrink:0;border-radius:10px;background:#e6efff;color:#376fc8;font-size:12px;font-weight:700}
+.layout .sidebarProfile:hover{background:#edf2fa}
+@media(prefers-reduced-motion:no-preference){.layout :global(.brand-symbol){transition:transform 240ms}.layout :global(.brand):is(:hover,:focus-visible) :global(.brand-symbol){transform:rotate(0)}}
 
 .layout .sidebarHome {
   min-height: 44px;

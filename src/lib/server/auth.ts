@@ -2,6 +2,7 @@ import "server-only";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import type { Transaction } from "firebase-admin/firestore";
+import type { UserRecord } from "firebase-admin/auth";
 import type { Role, Session } from "../classroom/types";
 import { admin } from "./firebase";
 import { guestLoginEnabled } from "./guest-mode";
@@ -11,6 +12,7 @@ import { requireCondition, ServiceError } from "./errors";
 export const SESSION_COOKIE = "cs_session";
 export interface Account {
   uid: string; role: Role; studentId: string | null; classId: string | null; classIds: string[];
+  nickname?: string;
   mustChangePassword: boolean; disabled: boolean; authVersion: number; authBusy: string | null;
   authBusyAt?: number | null;
   temporaryPassword?: { hash: string; expiresAt: number } | null;
@@ -20,7 +22,7 @@ export interface Identity { uid: string; secret: string }
 export function hash(value: string) { return createHash("sha256").update(value).digest("hex"); }
 export function timeoutFor(role: Role) { return role === "student" ? 10 * 60_000 : 4 * 60 * 60_000; }
 export function publicSession(account: Account): Session {
-  return { uid: account.uid, role: account.role, studentId: account.studentId, classId: account.classId, classIds: account.classIds, mustChangePassword: account.mustChangePassword, lastActivityAt: account.session!.lastActivityAt, idleTimeoutMs: timeoutFor(account.role) };
+  return { uid: account.uid, ...(account.nickname ? { nickname: account.nickname } : {}), role: account.role, studentId: account.studentId, classId: account.classId, classIds: account.classIds, mustChangePassword: account.mustChangePassword, lastActivityAt: account.session!.lastActivityAt, idleTimeoutMs: timeoutFor(account.role) };
 }
 export async function identity(): Promise<Identity> {
   const value = (await cookies()).get(SESSION_COOKIE)?.value ?? "";
@@ -163,17 +165,26 @@ export async function logout() {
   // Server-side revocation is authoritative. Do not send an expired Set-Cookie:
   // a delayed logout response from another tab could erase a newer login cookie.
 }
-export async function changePassword(password: string) {
+function validatePassword(password: string) {
   requireCondition(password.length >= 8 && password.length <= 128 && /[a-zA-Z]/.test(password) && /\d/.test(password), 400, "PASSWORD_POLICY", "영문과 숫자를 포함해 8자 이상으로 만들어 주세요.");
   requireCondition(!["password1", "password123", "qwerty12", "abc12345", "a1234567", "abcd1234"].includes(password.toLowerCase()) && password !== process.env.CS_INITIAL_PASSWORD && password !== process.env.CS_RESET_PASSWORD, 400, "PASSWORD_COMMON", "쉽게 추측할 수 있는 비밀번호는 피해주세요.");
-  const who = await identity(); const { db, auth } = admin(); const ref = db.collection("csAccounts").doc(who.uid); const lock = randomBytes(16).toString("hex");
+}
+export async function changePassword(password: string) {
+  validatePassword(password);
+  const who = await identity(); const { db } = admin(); const ref = db.collection("csAccounts").doc(who.uid); const lock = randomBytes(16).toString("hex");
   await authorized(who, async (tx, account) => {
     requireCondition(account.role === "student" && account.mustChangePassword, 403, "PASSWORD_NOT_REQUIRED", "현재 비밀번호 변경 대상이 아니에요.");
     requireCondition(account.temporaryPassword?.hash !== passwordDigest(password), 400, "PASSWORD_COMMON", "임시 비밀번호와 다른 비밀번호를 사용해 주세요.");
     tx.update(ref, { authBusy: lock, authBusyAt: Date.now() });
   }, true);
+  return replacePassword(who, lock, password);
+}
+async function replacePassword(who: Identity, lock: string, password: string, revokeTokens = false) {
+  const { db, auth } = admin(); const ref = db.collection("csAccounts").doc(who.uid);
   try { await auth.updateUser(who.uid, { password }); }
   catch (error) { await releaseLock(ref.path, lock); throw error; }
+  // After the provider changed, any finalization failure keeps the account locked.
+  if (revokeTokens) await auth.revokeRefreshTokens(who.uid);
   const secret = randomBytes(32).toString("hex");
   const session = await db.runTransaction(async (tx) => {
     const account = (await tx.get(ref)).data() as Account;
@@ -182,6 +193,53 @@ export async function changePassword(password: string) {
     tx.set(ref, next); return publicSession(next);
   });
   await setSessionCookie(who.uid, secret); return session;
+}
+function passwordProvider(user: UserRecord): "password" | "google" | "unavailable" {
+  if (user.providerData.some(provider => provider.providerId === "google.com")) return "google";
+  return user.providerData.some(provider => provider.providerId === "password") && user.email ? "password" : "unavailable";
+}
+export async function readProfile() {
+  const who = await identity();
+  await authorized(who, async () => undefined);
+  const user = await admin().auth.getUser(who.uid);
+  requireCondition(!user.disabled, 401, "SIGNED_OUT", "사용할 수 없는 계정이에요. 선생님께 알려 주세요.");
+  const session = await authorized(who, async (_tx, account) => publicSession(account));
+  return { session, nickname: session.nickname ?? "", passwordProvider: passwordProvider(user) };
+}
+export async function updateNickname(nickname: string) {
+  const who = await identity();
+  const value = nickname.trim();
+  requireCondition(value.length <= 20 && !/\p{Cc}/u.test(nickname), 400, "NICKNAME", "닉네임은 제어 문자 없이 20자 이내로 입력해 주세요.");
+  return authorized(who, async (tx, account) => {
+    tx.update(admin().db.collection("csAccounts").doc(who.uid), { nickname: value });
+    return publicSession({ ...account, nickname: value });
+  });
+}
+export async function changeOwnPassword(currentPassword: string, password: string) {
+  validatePassword(password);
+  requireCondition(password !== currentPassword, 400, "PASSWORD_SAME", "현재 비밀번호와 다른 비밀번호를 사용해 주세요.");
+  const who = await identity(); const { auth, db } = admin();
+  const version = await authorized(who, async (_tx, account) => account.authVersion);
+  const user = await auth.getUser(who.uid);
+  requireCondition(!user.disabled, 401, "SIGNED_OUT", "사용할 수 없는 계정이에요. 선생님께 알려 주세요.");
+  requireCondition(passwordProvider(user) === "password" && user.email, 403, "PASSWORD_PROVIDER", "이 계정의 비밀번호는 로그인 제공 서비스에서 관리해 주세요.");
+  await limitLogin(`password-change:${who.uid}`, 8, 15 * 60_000);
+  const host = process.env.FIREBASE_AUTH_EMULATOR_HOST;
+  const endpoint = host ? `http://${host}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword` : "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword";
+  const response = await fetch(`${endpoint}?key=${encodeURIComponent(process.env.FIREBASE_WEB_API_KEY!)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: user.email, password: currentPassword, returnSecureToken: true }), cache: "no-store", signal: AbortSignal.timeout(15000) });
+  requireCondition(response.status < 500, 503, "PASSWORD_VERIFY", "현재 비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.");
+  requireCondition(response.ok, 403, "CURRENT_PASSWORD", "현재 비밀번호를 확인해 주세요.");
+  const data = await response.json();
+  let token;
+  try { token = await auth.verifyIdToken(data.idToken, true); }
+  catch { throw new ServiceError(403, "CURRENT_PASSWORD", "현재 비밀번호를 확인해 주세요."); }
+  requireCondition(token.uid === who.uid && token.firebase.sign_in_provider === "password", 403, "CURRENT_PASSWORD", "현재 비밀번호를 확인해 주세요.");
+  const ref = db.collection("csAccounts").doc(who.uid); const lock = randomBytes(16).toString("hex");
+  await authorized(who, async (tx, account) => {
+    requireCondition(account.authVersion === version, 409, "ACCOUNT_CHANGED", "계정 정보가 변경됐어요. 다시 확인해 주세요.");
+    tx.update(ref, { authBusy: lock, authBusyAt: Date.now() });
+  });
+  return replacePassword(who, lock, password, true);
 }
 async function releaseLock(path: string, lock: string) {
   const { db } = admin(); const ref = db.doc(path);

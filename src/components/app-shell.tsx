@@ -3,7 +3,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen,
-  CalendarDays,
+  MessageCircle,
+  Settings,
   ChevronRight,
   Home,
   LogOut,
@@ -160,10 +161,11 @@ export function AppShell({
               {teacher ? "학생 현황·계정" : "열린 수업"}
             </Link>
             {teacher && <Link className={path === "/teacher/classes" ? styles.active : ""} aria-current={path === "/teacher/classes" ? "page" : undefined} href={classLink("/teacher/classes")} onClick={() => setMobileNav(false)}><BookOpen size={19} />수업 관리</Link>}
-            <Link className={path === `${home}/schedule` ? styles.active : ""} aria-current={path === `${home}/schedule` ? "page" : undefined} href={classLink(`${home}/schedule`)} onClick={() => setMobileNav(false)}><CalendarDays size={19} />반 일정</Link>
+            <Link className={path === `${home}/community` ? styles.active : ""} aria-current={path === `${home}/community` ? "page" : undefined} href={classLink(`${home}/community`)} onClick={() => setMobileNav(false)}><MessageCircle size={19} />우리 반 질문</Link>
+            <Link className={path === `${home}/settings` ? styles.active : ""} aria-current={path === `${home}/settings` ? "page" : undefined} href={classLink(`${home}/settings`)} onClick={() => setMobileNav(false)}><Settings size={19} />설정</Link>
           </nav>
           <div className={styles.sidebarBottom}>
-            <div className={styles.sidebarTip}><strong>{teacher ? "수업 운영" : "저장하고 이어가기"}</strong><p>{teacher ? "담당 반의 수업과 학생 기록을 확인해요." : "저장 완료를 확인하면 다음에도 이어갈 수 있어요."}</p></div>
+            <Link href={classLink(`${home}/settings`)} className={styles.sidebarProfile} onClick={() => setMobileNav(false)}><span className={styles.profileAvatar}>{session?.nickname?.slice(0, 1) || (teacher ? "T" : session?.studentId?.slice(-2))}</span><span><strong>{session?.nickname || (teacher ? "선생님" : `${session?.studentId} 학생`)}</strong><small>{teacher ? "나의 프로필" : `${session?.studentId} · ${session?.classId?.split("-")[0]}학년 ${session?.classId?.split("-")[1]}반`}</small></span><Settings size={15} aria-hidden="true" /></Link>
             <Link href="/" className={styles.sidebarHome}>
               <PanelLeftClose size={16} /> 공개 홈 둘러보기
             </Link>
@@ -202,11 +204,11 @@ export function AppShell({
                 {teacher ? "T" : session?.studentId?.slice(-2)}
               </span>
               <span className={styles.userName}>
-                {teacher
+                {session?.nickname || (teacher
                   ? session?.role === "instructor"
                     ? "강사님"
                     : "선생님"
-                  : `${session?.studentId} 학생`}
+                  : `${session?.studentId} 학생`)}
               </span>
               <Button
                 variant="ghost"

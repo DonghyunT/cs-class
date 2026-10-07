@@ -94,7 +94,7 @@ test("열린 수업 첫 조회: 스켈레톤·탐색 초점·좁은 화면 유�
     expect(await skeletons.first().evaluate((element) => getComputedStyle(element, "::after").animationName)).toBe("none");
     await page.screenshot({ path: testInfo.outputPath("opened-lessons-loading-320.png"), fullPage: true });
     await page.setViewportSize({ width: 1440, height: 900 });
-    const menu = page.getByRole("link", { name: "반 일정", exact: true });
+    const menu = page.getByRole("navigation", { name: "교실 메뉴", exact: true }).getByRole("link", { name: "우리 반 질문", exact: true });
     await menu.focus();
     release();
     await expect(page.getByRole("heading", { name: "순서가 만드는 알고리즘", exact: true })).toBeVisible();
@@ -151,8 +151,9 @@ test("열린 수업 첫 조회 실패: 스켈레톤 종료·재시도 상태·�
     fail = false;
     await page.getByRole("button", { name: "다시 불러오기", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "수업 기록을 확인하고 있어요." })).toBeVisible();
-    await page.getByRole("link", { name: "반 일정", exact: true }).press("Enter");
-    await expect(page).toHaveURL(/\/student\/schedule$/);
+    await page.getByRole("navigation", { name: "교실 메뉴", exact: true }).getByRole("link", { name: "우리 반 질문", exact: true }).press("Enter");
+    await expect(page).toHaveURL(/\/student\/community$/);
+    await expect(page.getByRole("navigation", { name: "교실 메뉴", exact: true }).getByRole("link", { name: "우리 반 질문", exact: true })).toHaveAttribute("aria-current", "page");
     release();
     await expect(page.getByRole("heading", { name: "수업을 불러오지 못했어요." })).toHaveCount(0);
   } finally { release(); }

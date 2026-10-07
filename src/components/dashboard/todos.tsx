@@ -59,7 +59,7 @@ export function TodoList({ uid }: { uid: string }) {
   const items = list.items.filter((item) => list.error || !list.changes.some((change) => change.id === item.id && !change.item));
   return <section ref={section} className={`${styles.panel} ${styles.todoPanel}`} aria-labelledby="todos-heading">
     <div className={styles.sectionHeading}><div className={styles.sectionTitle}><span className={`${styles.titleIcon} ${styles.todoIcon}`}><ListTodo size={19} aria-hidden="true" /></span><h2 id="todos-heading">내 할 일</h2></div><div className={styles.panelTools}><span>나만 보는 목록</span><button type="button" aria-label="할 일 새로고침" disabled={list.saving || locked} onClick={() => void list.refresh()}><RefreshCw size={16} aria-hidden="true" /></button></div></div>
-    <p className={styles.muted}>개인 체크리스트예요. 체크해도 수업·제출 기록은 바뀌지 않아요.</p>
+    <p className={styles.todoSubtitle}>개인 체크리스트예요. 체크해도 수업·제출 기록은 바뀌지 않아요.</p>
     {list.loadError && <div className={styles.error} role="alert"><p>{list.loadError} {list.data && "마지막으로 조회한 목록이에요."}</p><Button variant="outline" onClick={() => void list.refresh()} disabled={list.saving}>목록 다시 불러오기</Button></div>}
     {!list.data && !list.loadError && <LoadingList label="할 일을 불러오고 있어요." checklist />}
     {list.data && <>
