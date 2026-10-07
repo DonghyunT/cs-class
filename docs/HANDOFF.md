@@ -1,6 +1,6 @@
 # 이어갈 작업
 
-갱신: 2026-10-07(Asia/Seoul). **현재 브랜치는 `main`, 기능 기준은 PR29 병합 `9820dcf`이며 그 뒤 릴리스 확인용 문서 커밋으로 마감합니다. 학생/교사 진도·작은 목록/격자·설정·우리 반 질문·저장본 손들기를 운영에 공개했습니다. 미커밋 변경 없이 마감합니다. 다음 행동은 테스트 계정으로 정규 수업 준비 → 학생 학습·손들기 → 교사 저장본 확인·질문 답변·설정을 직접 사용해 보는 리허설입니다. 실제 명부가 없으므로 연습 후 준비가 끝나면 실학생 명부를 적용하기로 한 결정은 유지합니다.** 최신 로컬·CI·운영 확인은 아래에 구분합니다. 실제 브라우저200%·물리 OS 한글 입력기·신규 Google OAuth·학교망·실학생 관찰의 미확인도 유지합니다.
+갱신: 2026-10-08(Asia/Seoul). **현재 로컬·원격 브랜치는 `main` 하나이며 정리 기준 HEAD는 `301c162`입니다. 병합된 세 작업 브랜치를 정리했고 결과를 문서 커밋으로 마감합니다. 기능 기준은 PR29 병합 `9820dcf`입니다. 학생/교사 진도·작은 목록/격자·설정·우리 반 질문·저장본 손들기를 운영에 공개했습니다. 미커밋 변경 없이 마감합니다. 다음 행동은 테스트 계정으로 정규 수업 준비 → 학생 학습·손들기 → 교사 저장본 확인·질문 답변·설정을 직접 사용해 보는 리허설입니다. 실제 명부가 없으므로 연습 후 준비가 끝나면 실학생 명부를 적용하기로 한 결정은 유지합니다.** 최신 로컬·CI·운영 확인은 아래에 구분합니다. 실제 브라우저200%·물리 OS 한글 입력기·신규 Google OAuth·학교망·실학생 관찰의 미확인도 유지합니다.
 
 제품 정책은 [PRD](PRD.md), 시각·조작은 [DESIGN](DESIGN.md), 실행은 [DEVELOPMENT](DEVELOPMENT.md), 서버는 [FIREBASE_SETUP](FIREBASE_SETUP.md)을 따릅니다. 앞선1~7차의 상세 이력은 [마감 전 원문](archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md)과 [보존 해시](archive/cs-class/2026-10-06-student-learning-close/manifest.json)에 있습니다. 원문과 해시는 변경하지 않았습니다.
 
@@ -8,7 +8,7 @@
 
 | 항목 | 현재 상태 |
 | --- | --- |
-| Git | `origin=https://github.com/DonghyunT/cs-class.git`. 기능 `d945542` → [PR29](https://github.com/DonghyunT/cs-class/pull/29) → main `9820dcf` → 문서 마감입니다. PR 기능 트리와 main 병합 트리가 같음을 확인했습니다. 신규29파일을 포함한68파일을 기능 커밋에 담았습니다. 기존 두 작업 브랜치는 이미 main에 포함됐으며 이번에는 리허설 브랜치 하나만 병합했습니다. 로컬 main을 원격에 fast-forward했고 작업 폴더는 하나입니다. |
+| Git | `origin=https://github.com/DonghyunT/cs-class.git`. 기능 `d945542` → [PR29](https://github.com/DonghyunT/cs-class/pull/29) → main `9820dcf` → 문서 마감입니다. PR 기능 트리와 main 병합 트리가 같음을 확인했습니다. 신규29파일을 포함한68파일을 기능 커밋에 담았습니다. 기존 두 작업 브랜치는 이미 main에 포함됐으며 이번에는 리허설 브랜치 하나만 병합했습니다. 로컬 main을 원격에 fast-forward했고 작업 폴더는 하나입니다. 10/8 사용자 승인으로 세 작업 브랜치를 로컬·원격에서 정리해 main만 남겼습니다. 원격 tip이 바뀌면 중단하는 lease와 atomic 삭제, 로컬의 안전한 `-d`를 사용했으며 모든 커밋 이력은 main에 보존됐습니다. |
 | 범위 | 기존 LessonShell·7개 수업의 공통 배치·학습 위치·기본/수동 실습 폭·체험을 유지합니다. 이번 릴리스는 학생 세 구간 원형·수업별 막대·목록/격자·작은 보조 조작, 교사 공통 반 맥락·합산 진도·작은 학생 목록/격자, 프로필·설정·우리 반 질문·저장본 손들기를 연결합니다. |
 | 소유·경계 | `useWork` 단독 학습 저장·채점·완료 계약을 유지하고 손들기는 기존 flush 성공 뒤 저장본을 읽습니다. 새 의존성·환경변수는 없으며 계정에 선택 닉네임, 질문/답변·손들기/저장본·한도 장부와 질문 복합 인덱스를 추가했습니다. 자기 비밀번호 변경은 현재 비밀번호 확인·쿠키 회전·공급자 토큰 폐기를 사용합니다. 직접 DB 접근 거부 규칙은 유지합니다. |
 | 실행 | Windows·Node24.19.0·Java21.0.12.1·기존 사용자 Chromium 캐시를 확인했습니다. 재개 시 사용 중인 앱/에뮬레이터 포트가 없음을 확인한 뒤 새 demo 시드·AI/시간표 fixture로 `next dev`·Auth9099·Firestore8080을 실행했습니다. `/api/auth/config`의 demo 프로젝트·Auth 호스트·게스트 활성과 실제 포트를 확인했습니다. 다른 PC의 demo 백업은 복원하지 않았습니다. |
@@ -87,7 +87,7 @@
 
 ```powershell
 git status -sb
-git fetch origin
+git fetch --prune origin
 git branch -vv
 ```
 
@@ -98,7 +98,7 @@ git switch main
 git merge --ff-only origin/main
 ```
 
-로컬 main이 분기해 있으면 자동 reset/강제 push 대신 차이를 대조합니다. 기존 `codex/student-learning-readability`는 PR28에 병합한 이력으로 남깁니다. 받은 tip·README·HANDOFF·계획/참고 PNG가 있는지 확인하고, [새 PC 준비](DEVELOPMENT.md#다른-pc에서-시작)의 Node24·Java21+·EntryJS·Chromium·캐시를 준비합니다. 에뮬레이터는 실제 Firebase 키 없이 `npm.cmd ci` 후 `npm.cmd run dev:emulator`로 시작합니다. 기존 캐시를 확인하기 전에 다운로드를 반복하지 않습니다.
+로컬 main이 분기해 있으면 자동 reset/강제 push 대신 차이를 대조합니다. 병합된 `codex/session-handoff-20261005`(`3b31c06`)·`codex/student-learning-readability`(`aab298c`)·`codex/classroom-rehearsal`(`d945542`)은 10/8 정리했습니다. PR과 main의 커밋 이력은 유지합니다. 다른 PC의 로컬 브랜치는 자동 삭제되지 않으며 미커밋·미추적·미푸시 변경은 직접 확인 전까지 미확인입니다. main 동기화 뒤 남은 로컬 브랜치의 포함 여부를 `git branch --merged main`으로 확인하고, 필요할 때 `git branch -d <브랜치명>`으로 정리합니다. 추가 작업 때문에 거부되면 강제 삭제하지 않고 먼저 보존합니다. 받은 tip·README·HANDOFF·계획/참고 PNG가 있는지 확인하고, [새 PC 준비](DEVELOPMENT.md#다른-pc에서-시작)의 Node24·Java21+·EntryJS·Chromium·캐시를 준비합니다. 에뮬레이터는 실제 Firebase 키 없이 `npm.cmd ci` 후 `npm.cmd run dev:emulator`로 시작합니다. 기존 캐시를 확인하기 전에 다운로드를 반복하지 않습니다.
 
 ### 로컬 기록과 전달 경계
 
