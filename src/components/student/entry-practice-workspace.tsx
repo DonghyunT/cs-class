@@ -7,23 +7,27 @@ import type { Lesson, Work, WorkAction, WorkDraft } from "@/lib/classroom/types"
 import { buildEntryProject, parseEntryProject } from "@/lib/classroom/entry-project";
 import { practiceMatches } from "@/lib/classroom/progress";
 import { buildProgrammingProject, parseProgrammingProject, type ProgrammingMission } from "@/lib/classroom/programming-entry";
-import { checkNameMission, type NameRun } from "@/lib/prototype/name-entry";
-import type { useWork } from "./use-work";
+import { checkNameMission, type NameRun } from "@/lib/classroom/name-entry";
+import type { WorkController, LessonMode } from "./work-controller";
+import { useWorkspaceExpansion } from "./use-workspace-expansion";
+import { PracticeGuidance } from "./practice-guidance";
 import common from "./student.module.css";
 import styles from "./entry-practice-workspace.module.css";
 
 const CHANNEL = "cs-class-entryjs";
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
-export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, update, runAction, exportRef, mission, saveLabel, saveState, workspaceWide, onWorkspaceWideChange }: {
+export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, actionsBlocked = false, update, runAction, exportRef, mission, saveLabel, saveState, workspaceWide, practiceFocused = false, mode = "student", onWorkspaceWideChange }: {
   lesson: Lesson; work: Work; draft: WorkDraft; locked: boolean; busy: boolean;
+  actionsBlocked?: boolean;
   update: (next: WorkDraft) => void;
   runAction: (action: WorkAction, focusId: string) => Promise<void>;
   exportRef: RefObject<(() => Promise<string | null>) | null>;
   mission?: ProgrammingMission;
   saveLabel: string;
-  saveState: ReturnType<typeof useWork>["saveState"];
+  saveState: WorkController["saveState"];
   workspaceWide: boolean;
+  practiceFocused?: boolean; mode?: LessonMode;
   onWorkspaceWideChange: (wide: boolean) => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
@@ -39,17 +43,27 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
   const [error, setError] = useState("");
   const [result, setResult] = useState("블록을 연결한 뒤 실행해 보세요.");
   const runs = useRef<NameRun[]>([]);
+  const [recordedRuns, setRecordedRuns] = useState<NameRun[]>([]);
+  const [runNotice, setRunNotice] = useState(work.updatedAt ? `${mode === "preview" ? "체험 작품" : "저장된 작품"}은 유지돼요. 이 화면에서 서로 다른 이름으로 두 번 실행해 주세요.` : "서로 다른 이름으로 두 번 실행해 주세요. 질문에 답하고 말하기가 끝날 때까지 기다려요.");
   const currentRun = useRef<{ id: string; key: string } | null>(null);
+  const startOnly = useRef(false);
+  const [localFeedback, setLocalFeedback] = useState("");
+  const [localFocus, setLocalFocus] = useState(0);
+  const localFeedbackRef = useRef<HTMLParagraphElement>(null);
   const viewToggle = useRef<HTMLButtonElement>(null);
+  const workspaceHeading = useRef<HTMLElement>(null);
+  const showViewToggle = useWorkspaceExpansion(workspaceWide, viewToggle, workspaceHeading);
   const manualViewFocus = useRef(false);
   useEffect(() => {
-    if (manualViewFocus.current) { viewToggle.current?.focus({ preventScroll: true }); manualViewFocus.current = false; }
+    if (manualViewFocus.current) { (viewToggle.current ?? workspaceHeading.current)?.focus({ preventScroll: true }); manualViewFocus.current = false; }
   }, [workspaceWide]);
   function setWide(wide: boolean) { manualViewFocus.current = true; onWorkspaceWideChange(wide); }
   const parse = mission ? parseProgrammingProject : parseEntryProject;
   const program = parse(draft.entryProject);
   const validation = practiceMatches(draft, work.validation) ? work.validation : null;
   const submitted = practiceMatches(draft, work.submission);
+  const nameCheck = mission?.id === "name" ? checkNameMission(draft.entryProject ?? "", recordedRuns) : null;
+  useEffect(() => { if (localFocus) localFeedbackRef.current?.focus(); }, [localFocus]);
 
   function send(type: string, details: Record<string, unknown> = {}) {
     frame.current?.contentWindow?.postMessage({ channel: CHANNEL, type, ...details }, "*");
@@ -92,7 +106,10 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
       else if (message.type === "loaded") { window.clearTimeout(bootTimer.current); setPhase("ready"); setError(""); }
       else if (message.type === "changed" && typeof message.project === "string" && !locked) {
         const next = parse(message.project);
-        if (mission && parseProgrammingProject(message.project)?.key !== parseProgrammingProject(draft.entryProject)?.key) runs.current = [];
+        if (mission && parseProgrammingProject(message.project)?.key !== parseProgrammingProject(draft.entryProject)?.key) {
+          runs.current = []; setRecordedRuns([]); setLocalFeedback("");
+          setRunNotice("작품 내용이 바뀌어 실행 확인을 다시 시작해요.");
+        }
         editorProject.current = message.project;
         update({ ...draft, entryProject: message.project, practiceOrder: next?.order ?? draft.practiceOrder });
         setError(next ? "" : "이번 미션의 블록과 입력값을 확인해 주세요. 읽지 못한 입력은 화면에 유지하고 있어요.");
@@ -100,23 +117,40 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
         window.clearTimeout(pending.current.timer); pending.current.resolve(message.project); pending.current = null;
       } else if (message.type === "running" && typeof message.running === "boolean") {
         setRunning(message.running);
-        if (message.running) setResult(mission ? "실행 중이에요. 질문에는 무대 안의 입력칸으로 답해 주세요." : "엔트리봇이 실행 중이에요.");
+        if (message.running) {
+          startOnly.current = program?.order.length === 1 && program.order[0] === "when_run_button_click";
+          setLocalFeedback("");
+          setResult(mission ? "실행 중이에요. 질문에는 무대 안의 입력칸으로 답해 주세요." : "엔트리봇이 실행 중이에요.");
+        }
       } else if (mission && message.type === "name-start") {
         const p = parseProgrammingProject(message.project);
         currentRun.current = p && typeof message.id === "string" ? { id: message.id, key: p.key } : null;
       } else if (mission && message.type === "name-run" && currentRun.current && currentRun.current.id === message.run?.id) {
         const steps = message.run.steps;
-        if (Array.isArray(steps) && steps.length <= 96 && steps.every((s) => s && ["ask", "answer", "say"].includes(s.kind) && typeof s.value === "string" && s.value.length <= 500)) runs.current = [...runs.current.filter((r) => r.key === currentRun.current!.key), { ...currentRun.current!, reason: String(message.run.reason), steps }].slice(-8);
+        if (Array.isArray(steps) && steps.length <= 96 && steps.every((s) => s && ["ask", "answer", "say"].includes(s.kind) && typeof s.value === "string" && s.value.length <= 500)) {
+          const previous = runs.current.filter((r) => r.key === currentRun.current!.key);
+          const next = [...previous, { ...currentRun.current!, reason: String(message.run.reason), steps }];
+          if (mission.id === "name") {
+            // Keep the two completed checks even after duplicate or unsuccessful runs.
+            const project = editorProject.current ?? draft.entryProject ?? "";
+            runs.current = checkNameMission(project, next).validNames > previous.length ? next : previous;
+          } else runs.current = next.slice(-8);
+          setRecordedRuns(runs.current);
+        }
         currentRun.current = null;
-      } else if (message.type === "result" && typeof message.x === "number" && Number.isFinite(message.x) && typeof message.speech === "string") {
+      } else if (message.type === "result" && typeof message.x === "number" && Number.isFinite(message.x) && typeof message.y === "number" && Number.isFinite(message.y) && typeof message.speech === "string") {
         const finish = message.reason === "timeout" ? "15초가 지나 실행을 멈췄어요." : message.reason === "reset" ? "무대를 처음 위치로 돌렸어요." : message.reason === "finished" ? "실행을 마쳤어요." : "실행을 멈췄어요.";
-        setResult(`${finish} 이동 거리 ${Math.round(message.x * 100) / 100}${message.speech ? ` · 마지막 말: ${message.speech.slice(0, 80)}` : ""}`);
+        if (message.reason === "finished" && startOnly.current) {
+          const nextBlock = mission?.id === "name" ? "질문 블록" : mission?.id === "multiply" || mission?.id === "average" ? "두 수를 묻고 변수에 대답을 저장하는 블록" : "이동 블록";
+          setResult(`시작 신호가 준비됐어요. 시작하기 아래에 ${nextBlock}을 연결해 보세요.`);
+        } else if (mission && ["name", "multiply", "average"].includes(mission.id)) setResult(`${finish} 마지막 말: ${message.speech.slice(0, 80) || "아직 없음"}`);
+        else setResult(`${finish} 현재 위치 X ${Math.round(message.x * 100) / 100} · Y ${Math.round(message.y * 100) / 100}${message.speech ? ` · 마지막 말: ${message.speech.slice(0, 80)}` : ""}`);
       } else if (message.type === "error") { window.clearTimeout(bootTimer.current); setPhase("failed"); setError("작업실을 불러오지 못했어요. 입력한 작품은 이 화면에 유지하고 있어요."); }
       else if (message.type === "focus-return") document.getElementById("entry-run")?.focus();
     }
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
-  }, [draft, locked, update, mission, parse]);
+  }, [draft, locked, update, mission, parse, program]);
 
   useEffect(() => {
     if (!bootReady || editorProject.current === (draft.entryProject ?? null)) return;
@@ -138,8 +172,9 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
     if (serialized && next) {
       if (mission?.id === "name" && action.type === "validate-practice") {
         const check = checkNameMission(serialized, runs.current);
-        if (!check.passed) { setError(check.message); setPreparing(false); return; }
+        if (!check.passed) { setLocalFeedback(check.message); setLocalFocus(value => value + 1); setPreparing(false); return; }
       }
+      setLocalFeedback("");
       editorProject.current = serialized;
       update({ ...draft, entryProject: serialized, practiceOrder: next.order });
       await runAction(mission ? { ...action, missionId: mission.id } as WorkAction : action, focusId);
@@ -148,30 +183,26 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
   }
 
   function retry() {
+    runs.current = []; setRecordedRuns([]); currentRun.current = null;
+    setRunNotice(`${mode === "preview" ? "체험 작품" : "저장된 작품"}은 유지돼요. 이 화면에서 서로 다른 이름으로 두 번 실행해 주세요.`);
     editorProject.current = null; setBootReady(false); setPhase("loading"); setError(""); setRunning(false); setAttempt((value) => value + 1);
   }
 
   return <div className={styles.workspace}>
-    {work.submission && <div className={common.submissionNotice}><CheckCircle2 size={20} /><div><strong id="submitted-heading" tabIndex={-1}>제출한 작품이 있어요.</strong><p>{timeLabel(work.submission.submittedAt)} 제출 · 수정하는 동안에도 이전 제출본과 완료 기록은 유지돼요.</p></div></div>}
+    {work.submission && <div className={common.submissionNotice}><CheckCircle2 size={20} /><div><strong id="submitted-heading" tabIndex={-1}>{mode === "preview" ? "체험 제출을 확인했어요." : "제출한 작품이 있어요."}</strong><p>{mode === "preview" ? "수정하는 동안에도 이 창의 이전 체험 제출과 완료 상태는 유지돼요." : `${timeLabel(work.submission.submittedAt)} 제출 · 수정하는 동안에도 이전 제출본과 완료 기록은 유지돼요.`}</p></div></div>}
     <section className={styles.editor} aria-label="엔트리 블록 코딩 작업">
-      <div className={styles.toolbar}><strong>엔트리 작업실</strong><div>
+      <div className={styles.toolbar}><strong ref={workspaceHeading} role="heading" aria-level={3} tabIndex={-1}>엔트리 작업실</strong><div>
         <Button id="entry-run" size="sm" disabled={locked || preparing || phase !== "ready" || !program} onClick={() => send(running ? "stop" : "run")}>
           {running ? <Square size={14} /> : <Play size={14} />}{running ? "실행 정지" : "실행하기"}
         </Button>
         <Button className={styles.auxControl} size="sm" variant="ghost" aria-label="무대 처음 위치로 초기화" title="무대만 초기화 · 블록과 제출 기록 유지" disabled={locked || preparing || phase !== "ready"} onClick={() => send("reset-stage")}><RotateCcw size={14} aria-hidden="true" />초기화</Button>
-        <Button ref={viewToggle} size="sm" variant="outline" aria-pressed={workspaceWide} onClick={() => setWide(!workspaceWide)} onKeyDown={(event) => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); setWide(false); } }}>
-          {workspaceWide ? <Minimize2 size={14} /> : <Maximize2 size={14} />}{workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"}
-        </Button>
+        {showViewToggle && <Button ref={viewToggle} className={styles.auxControl} size="sm" variant="ghost" aria-label={workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"} aria-pressed={workspaceWide} onClick={() => setWide(!workspaceWide)} onKeyDown={(event) => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); setWide(false); } }}>
+          {workspaceWide ? <Minimize2 size={14} aria-hidden="true" /> : <Maximize2 size={14} aria-hidden="true" />}{workspaceWide ? "기본 크기" : "넓게 보기"}
+        </Button>}
       </div></div>
-      <div className={styles.workStates} role="group" aria-label="작품 저장·검증·제출 상태">
-        <span role="status" aria-atomic="true" data-save-state={saveState}><strong>저장</strong>{saveLabel}</span>
-        <span><strong>검증</strong>{validation ? validation.passed ? "검증 통과" : "조건 보완 필요" : work.validation ? "다시 검증 필요" : "검증 전"}</span>
-        <span><strong>제출</strong>{submitted ? "현재 작품 제출 완료" : work.submission ? "이전 제출 유지 · 수정 중" : "아직 제출 전"}</span>
-        {saveState === "failed" && <Button size="sm" variant="ghost" onClick={() => document.getElementById("work-save-error")?.focus()}>저장 오류 확인</Button>}
-      </div>
-      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 실행 버튼으로 돌아와요.</p></details>
-      {(!program || error) && <div role="alert" className={styles.error}><p>{error || "저장된 작품을 읽지 못했어요. 기존 저장본은 유지돼요."}</p>{phase === "failed" && program && <Button variant="outline" onClick={retry}>작업실 다시 불러오기</Button>}
-        {!program && <Button variant="outline" disabled={locked} onClick={() => { if (window.confirm("현재 편집 중인 블록을 시작 블록 하나로 바꿀까요? 이전 제출본은 유지돼요.")) { const starter = mission ? buildProgrammingProject() : buildEntryProject(); update({ ...draft, entryProject: starter, practiceOrder: mission ? [] : ["when_run_button_click"] }); retry(); } }}>시작 블록으로 다시 만들기</Button>}
+      {saveState === "failed" && <div className={styles.saveFailure}><span><strong>{mode === "preview" ? "체험" : "저장"}</strong>{saveLabel}</span><Button size="sm" variant="ghost" onClick={() => document.getElementById("work-save-error")?.focus()}>{mode === "preview" ? "체험 작품 오류 확인" : "저장 오류 확인"}</Button></div>}
+      {(!program || error) && <div role="alert" className={styles.error}><p>{error || (mode === "preview" ? "체험 작품을 읽지 못했어요. 현재 내용은 유지돼요." : "저장된 작품을 읽지 못했어요. 기존 저장본은 유지돼요.")}</p>{phase === "failed" && program && <Button variant="outline" onClick={retry}>작업실 다시 불러오기</Button>}
+        {!program && <Button variant="outline" disabled={locked} onClick={() => { if (window.confirm(mode === "preview" ? "현재 체험 블록을 시작 블록 하나로 바꿀까요? 이 창의 이전 체험 제출은 유지돼요." : "현재 편집 중인 블록을 시작 블록 하나로 바꿀까요? 이전 제출본은 유지돼요.")) { const starter = mission ? buildProgrammingProject() : buildEntryProject(); update({ ...draft, entryProject: starter, practiceOrder: mission ? [] : ["when_run_button_click"] }); retry(); } }}>시작 블록으로 다시 만들기</Button>}
       </div>}
       <div className={styles.frameScroll} tabIndex={0} role="region" aria-label="엔트리 작업실 가로 이동" aria-describedby="entry-help" aria-busy={phase === "loading"}>
         {phase === "loading" && <p className={styles.loading} role="status">엔트리 작업실을 불러오는 중…</p>}
@@ -179,18 +210,29 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, upda
       </div>
       <p className={styles.result} role="status">{result}</p>
       {mission?.id === "keys" && <div className={styles.keyPad} aria-label="방향키 실행">{[["38", "↑ 위"], ["37", "← 왼쪽"], ["40", "↓ 아래"], ["39", "→ 오른쪽"]].map(([key, label]) => <Button key={key} variant="outline" size="sm" disabled={!running || locked} onClick={() => send("key", { key })}>{label}</Button>)}</div>}
+      <div className={styles.workStates} role="group" aria-label={mode === "preview" ? "체험 작품·검증·제출 상태" : "작품 저장·검증·제출 상태"}>
+        <span role="status" aria-atomic="true" data-save-state={saveState}><strong>{mode === "preview" ? "체험" : "저장"}</strong>{saveLabel}</span>
+        <span><strong>검증</strong>{validation ? validation.passed ? "검증 통과" : "조건 보완 필요" : work.validation ? "다시 검증 필요" : "검증 전"}</span>
+        <span><strong>{mode === "preview" ? "체험 제출" : "제출"}</strong>{submitted ? mode === "preview" ? "현재 작품 체험 제출 확인" : "현재 작품 제출 완료" : work.submission ? mode === "preview" ? "이전 체험 제출 유지 · 수정 중" : "이전 제출 유지 · 수정 중" : mode === "preview" ? "체험 제출 전" : "아직 제출 전"}</span>
+      </div>
+      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 실행 버튼으로 돌아와요.</p></details>
     </section>
     <aside className={styles.validation}>
-      <div><h3>검증하고 제출해요</h3><p>실행 결과 확인 → 조건 검증 → 작품 제출 순서로 해보세요. 검증을 통과한 작품을 제출하면 실습이 완료돼요.</p>
+      <PracticeGuidance focused={practiceFocused} label="검증 조건 안내"><div><h3>{mode === "preview" ? "검증하고 체험 제출해요" : "검증하고 제출해요"}</h3><p>{mode === "preview" ? "실행 결과 확인 → 조건 검증 → 체험 제출 순서로 해보세요. 결과는 이 창에서만 유지돼요." : "실행 결과 확인 → 조건 검증 → 작품 제출 순서로 해보세요. 검증을 통과한 작품을 제출하면 실습이 완료돼요."}</p>
         <ul className={styles.criteria}>{lesson.practice.criteria?.map((criterion) => {
           const feedback = validation?.criteriaResults?.find((item) => item.id === criterion.id);
           return <li key={criterion.id}>{feedback?.passed ? <Check size={16} /> : <Square size={16} />}<span>{criterion.label}<span className={common.srOnly}>{feedback ? feedback.passed ? "통과" : "보완 필요" : "확인 전"}</span></span></li>;
         })}</ul>
-      </div>
+      </div></PracticeGuidance>
       <div className={styles.actions}>
-        <Button variant={validation?.passed && !submitted ? "outline" : "default"} disabled={locked || preparing || running || phase !== "ready" || !program} onClick={() => void act({ type: "validate-practice" }, "practice-feedback")}>{busy || preparing ? "확인 중…" : "조건 검증"}</Button>
+        {nameCheck && <div className={styles.nameProgress}>
+          <p role="status" aria-label="서로 다른 이름 확인">서로 다른 이름 확인 {nameCheck.validNames}/2</p>
+          <p>{nameCheck.validNames === 0 ? runNotice : nameCheck.validNames === 1 ? "서로 다른 이름으로 한 번 더 실행해 주세요. 같은 이름은 한 번만 세요." : "현재 작품으로 두 이름을 확인했어요. 조건을 검증하고 작품을 제출해 주세요."}</p>
+        </div>}
+        <Button variant={validation?.passed && !submitted ? "outline" : "default"} disabled={locked || actionsBlocked || preparing || running || phase !== "ready" || !program} onClick={() => void act({ type: "validate-practice" }, "practice-feedback")}>{busy || preparing ? "확인 중…" : "조건 검증"}</Button>
+        {localFeedback && <p id="entry-local-feedback" ref={localFeedbackRef} tabIndex={-1} role="status" className={common.feedbackRetry}>{localFeedback}</p>}
         {validation && <p id="practice-feedback" tabIndex={-1} role="status" className={validation.passed ? common.feedbackGood : common.feedbackRetry}>{validation.message}</p>}
-        <Button variant={validation?.passed && !submitted ? "default" : "outline"} disabled={locked || preparing || running || phase !== "ready" || !validation?.passed || submitted} onClick={() => void act({ type: "submit-practice" }, "submitted-heading")}><Send size={16} />{submitted ? "이 작품 제출 완료" : work.submission ? "수정한 작품 제출" : "작품 제출"}</Button>
+        <Button variant={validation?.passed && !submitted ? "default" : "outline"} disabled={locked || actionsBlocked || preparing || running || phase !== "ready" || !validation?.passed || submitted} onClick={() => void act({ type: "submit-practice" }, "submitted-heading")}><Send size={16} />{submitted ? mode === "preview" ? "체험 제출 확인" : "이 작품 제출 완료" : mode === "preview" ? "체험 제출" : work.submission ? "수정한 작품 제출" : "작품 제출"}</Button>
         {!work.submission && validation?.passed && <p className={common.smallNote}>검증 통과 · 아직 제출 전이에요.</p>}
       </div>
     </aside>

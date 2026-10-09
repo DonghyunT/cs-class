@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import type { LessonMode } from "../work-controller";
 
 import scenes from "./concepts.module.css";
 import { AbstractionConcepts } from "./abstraction-concepts";
@@ -9,14 +10,14 @@ import { FlowchartConcepts } from "./flowchart-concepts";
 const conditions = [
   ["입력", "문제를 해결할 때 필요한 자료예요. 입력은 없을 수도 있어요."], ["출력", "해결 결과가 하나 이상 나와야 해요."], ["명확성", "명령이 모호하지 않고 같은 뜻으로 이해되어야 해요."], ["유한성", "한정된 단계 뒤에 반드시 끝나야 해요."], ["수행 가능성", "각 명령을 실제로 실행할 수 있어야 해요."],
 ];
-type ConceptProps = { type: "sandwich" | "abstraction" | "flowchart"; conceptId: string };
+type ConceptProps = { type: "sandwich" | "abstraction" | "flowchart"; conceptId: string; mode?: LessonMode };
 
 export function ReviewConcepts(props: ConceptProps) {
-  if (props.type === "abstraction") return <AbstractionConcepts conceptId={props.conceptId} />;
-  if (props.type === "flowchart") return <FlowchartConcepts conceptId={props.conceptId} />;
+  if (props.type === "abstraction") return <AbstractionConcepts conceptId={props.conceptId} mode={props.mode} />;
+  if (props.type === "flowchart") return <FlowchartConcepts conceptId={props.conceptId} mode={props.mode} />;
   return <section className={scenes.experience} aria-label="알고리즘 개념 체험">
     {props.conceptId === "clear" ? <ClearExperience /> : props.conceptId === "finite" ? <FiniteExperience /> : <StructureExperience />}
-    <p className={scenes.note}>체험 장면은 다시 들어오면 처음부터 시작해요. 확인한 답안과 완료 기록은 저장돼요.</p>
+    <p className={scenes.note}>{props.mode === "preview" ? "체험 장면은 다시 들어오면 처음부터 시작해요. 답안과 완료 기록은 이 창에서만 체험해요." : "체험 장면은 다시 들어오면 처음부터 시작해요. 확인한 답안과 완료 기록은 저장돼요."}</p>
   </section>;
 }
 

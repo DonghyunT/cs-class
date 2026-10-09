@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import type { LessonMode } from "../work-controller";
 import scenes from "./concepts.module.css";
 import styles from "./flowchart-concepts.module.css";
 
@@ -20,10 +21,10 @@ function SymbolShape({ shape, width, height }: { shape: Shape; width: number; he
   return <rect width={width} height={height} />;
 }
 
-export function FlowchartConcepts({ conceptId }: { conceptId: string }) {
+export function FlowchartConcepts({ conceptId, mode = "student" }: { conceptId: string; mode?: LessonMode }) {
   return <section className={`${scenes.experience} ${styles.experience}`} aria-label="순서도 개념 체험">
     {conceptId === "symbols" ? <SymbolExperience /> : <PathExperience key={conceptId} loop={conceptId === "loop"} />}
-    <p className={scenes.note}>체험 장면은 다시 들어오면 처음부터 시작해요. 확인한 답안과 완료 기록, 실습 작품은 저장돼요.</p>
+    <p className={scenes.note}>{mode === "preview" ? "체험 장면은 다시 들어오면 처음부터 시작해요. 답안과 완료 기록, 실습 작품은 이 창에서만 체험해요." : "체험 장면은 다시 들어오면 처음부터 시작해요. 확인한 답안과 완료 기록, 실습 작품은 저장돼요."}</p>
   </section>;
 }
 

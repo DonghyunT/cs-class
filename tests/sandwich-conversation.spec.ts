@@ -152,6 +152,7 @@ async function execute(page: Page, input: string) {
 }
 
 test("큰 화면의 재료 크기와 주방·대화 배치", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
   const consolePanel = page.getByRole("region", { name: "로봇에게 명령하기" });
   const kitchen = page.getByRole("region", { name: "샌드위치 로봇의 주방" });
@@ -208,6 +209,15 @@ test("명령과 로봇 응답이 시간순으로 이어지고 읽던 위치·초
   await expect.poll(() => feed.evaluate(element => element.scrollHeight - element.scrollTop - element.clientHeight)).toBeLessThan(5);
   await feed.focus();
   await page.keyboard.press("Home");
+  await expect.poll(() => feed.evaluate(element => element.scrollTop)).toBe(0);
+  await page.keyboard.press("ArrowDown");
+  await expect.poll(() => feed.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+  const readingPosition = await feed.evaluate(element => element.scrollTop);
+  await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();
+  expect(await feed.evaluate(element => element.scrollTop)).toBeCloseTo(readingPosition, 0);
+  await page.getByRole("button", { name: "실습 집중 모드 끝내기", exact: true }).click();
+  expect(await feed.evaluate(element => element.scrollTop)).toBeCloseTo(readingPosition, 0);
+  await feed.focus(); await page.keyboard.press("Home");
   await expect.poll(() => feed.evaluate(element => element.scrollTop)).toBe(0);
   await input.fill("다음에 실행할 명령");
   let release!: () => void;

@@ -1,5 +1,5 @@
 import type { Lesson } from "./types";
-import { concepts, questions } from "../prototype/programming";
+import { concepts, questions } from "./programming-data";
 
 export const PROGRAMMING_LESSON: Lesson = {
   id: "programming-13", title: "강아지와 시작하는 프로그래밍", category: "프로그래밍 · 입력과 변수", description: "직접 바꾸고 실행하며, 이름·계산·움직임을 만드는 네 가지 미션에 도전해요.",

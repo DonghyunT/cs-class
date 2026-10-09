@@ -1,0 +1,94 @@
+import { randomUUID } from "node:crypto";
+import { expect, test } from "@playwright/test";
+import { db, localOnly, readyStudent, readyTeacher } from "./emulator";
+import { seoulToday, type ClassEvent } from "../src/lib/classroom/planner";
+
+const schedule = db.collection("csSchedules").doc("2-1"), cache = db.collection("csTimetables").doc("74022"), classroom = db.collection("csClasses").doc("2-1");
+let previousSchedule: FirebaseFirestore.DocumentData | undefined, previousCache: FirebaseFirestore.DocumentData | undefined, previousClass: FirebaseFirestore.DocumentData | undefined;
+const relativeDate = (days: number) => {
+  const date = new Date(`${seoulToday()}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+const event = (title: string, days: number): ClassEvent => ({ id: randomUUID(), title, date: relativeDate(days), lessonId: null });
+test.beforeEach(async ({ request }) => {
+  await localOnly(request);
+  previousSchedule = (await schedule.get()).data(); previousCache = (await cache.get()).data(); previousClass = (await classroom.get()).data();
+  await cache.delete();
+});
+test.afterEach(async () => {
+  if (previousSchedule) await schedule.set(previousSchedule); else await schedule.delete();
+  if (previousCache) await cache.set(previousCache); else await cache.delete();
+  if (previousClass) await classroom.set(previousClass); else await classroom.delete();
+});
+
+test("일정 이력: 오늘 이후 기본·지난 일정 접기·상단 등록·좁은 창·학생 조회", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  const past = event("지난 합성 일정", -1), today = event("오늘 합성 일정", 0), future = event("다음 합성 일정", 1);
+  await readyTeacher(page.request);
+  await schedule.set({ revision: 0, items: [future, ...Array.from({ length: 12 }, (_, index) => event(`오래된 합성 일정 ${index}`, -index - 2)), today, past] });
+  await page.goto("/teacher/schedule?classId=2-1");
+  await expect(page.getByRole("heading", { name: "오늘 이후 일정", exact: true })).toBeVisible();
+  await expect(page.getByText(today.title, { exact: true })).toBeVisible();
+  await expect(page.getByText(future.title, { exact: true })).toBeVisible();
+  await expect(page.getByText(past.title, { exact: true })).not.toBeVisible();
+  const history = page.locator("details").filter({ has: page.locator("summary", { hasText: "지난 일정 13개" }) });
+  const toggle = history.locator("summary");
+  await toggle.focus(); await toggle.press("Enter");
+  await expect(page.getByText(past.title, { exact: true })).toBeVisible();
+  const dates = await history.locator("li > time").evaluateAll(items => items.map(item => item.getAttribute("datetime")));
+  expect(dates[0]).toBe(relativeDate(-13)); expect(dates.at(-1)).toBe(relativeDate(-1));
+  await toggle.press("Enter");
+  await page.getByLabel("일정 제목", { exact: true }).fill("등록 전 합성 입력");
+  await page.setViewportSize({ width: 390, height: 720 });
+  await page.getByRole("button", { name: "일정 등록", exact: true }).click();
+  await expect(page.getByLabel("일정 제목", { exact: true })).toBeFocused();
+  await expect(page.getByLabel("일정 제목", { exact: true })).toHaveValue("등록 전 합성 입력");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByLabel("일정 제목", { exact: true }).press("Escape");
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
+  await expect(page).toHaveURL(/\/login\/teacher$/);
+  await readyStudent(page.request); await page.goto("/student/schedule");
+  await expect(page.getByText(today.title, { exact: true })).toBeVisible();
+  await expect(page.getByText(past.title, { exact: true })).not.toBeVisible();
+  await expect(page.getByRole("button", { name: "일정 등록", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /수정$|삭제$/ })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("일정 이력: 지난 항목 수정·등록 이동의 초안·503/409 의도 보존·날짜 이동 초점", async ({ page }) => {
+  const past = event("수정할 지난 합성 일정", -1);
+  await readyTeacher(page.request); await schedule.set({ revision: 0, items: [past] });
+  await page.goto("/teacher/schedule?classId=2-1");
+  await expect(page.getByText("오늘 이후 일정이 없어요.", { exact: true })).toBeVisible();
+  await page.locator("summary", { hasText: "지난 일정 1개" }).click();
+  await page.getByRole("button", { name: `${past.title} 수정`, exact: true }).click();
+  const title = page.getByLabel("일정 제목", { exact: true });
+  await expect(title).toBeFocused(); await title.fill("오늘로 옮기는 합성 일정");
+  await page.getByRole("button", { name: "일정 등록", exact: true }).click();
+  await expect(title).toHaveValue("오늘로 옮기는 합성 일정");
+  await expect(page.getByRole("heading", { name: "일정 수정", exact: true })).toBeVisible();
+  await page.getByLabel("날짜 · 한국 시간", { exact: true }).fill(seoulToday());
+  let failureStatus = 503;
+  await page.route("**/api/classroom/schedule/2-1", route => route.fulfill({ status: failureStatus, contentType: "application/json", body: JSON.stringify({ code: "SYNTHETIC_FAILURE", message: "합성 저장 실패" }) }));
+  const unavailable = page.waitForResponse(response => response.url().endsWith("/api/classroom/schedule/2-1") && response.status() === 503);
+  await page.getByRole("button", { name: "일정 수정 저장", exact: true }).click();
+  await unavailable;
+  await expect(page.getByRole("alert").filter({ hasText: "합성 저장 실패" })).toContainText("의도를 보관");
+  await expect(title).toBeFocused();
+  await expect(page.getByText("오늘로 옮기는 합성 일정", { exact: true })).toBeVisible();
+  expect((await schedule.get()).data()!.items[0].date).toBe(relativeDate(-1));
+  failureStatus = 409;
+  const conflict = page.waitForResponse(response => response.url().endsWith("/api/classroom/schedule/2-1") && response.status() === 409);
+  await page.getByRole("button", { name: "최신 기록에 내 변경 재시도", exact: true }).click();
+  await conflict;
+  await expect(page.getByRole("alert").filter({ hasText: "합성 저장 실패" })).toContainText("의도를 보관");
+  await page.unroute("**/api/classroom/schedule/2-1");
+  await page.getByRole("button", { name: "최신 기록에 내 변경 재시도", exact: true }).click();
+  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  expect((await schedule.get()).data()!.items[0]).toMatchObject({ id: past.id, title: "오늘로 옮기는 합성 일정", date: seoulToday() });
+  await expect(page.locator("summary", { hasText: "지난 일정" })).toHaveCount(0);
+  await page.reload(); await expect(page.getByText("오늘로 옮기는 합성 일정", { exact: true })).toBeVisible();
+});

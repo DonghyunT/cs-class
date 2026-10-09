@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { api } from "@/lib/classroom/client";
 import type { HelpRequest, HelpSnapshot } from "@/lib/classroom/help";
+import { helpContextLabel } from "@/lib/classroom/help";
 import { resumeLabelFor } from "@/lib/classroom/lesson-navigation";
 import { parseEntryProject, entryInstructionLabel } from "@/lib/classroom/entry-project";
 import { programmingProjectLines } from "@/lib/classroom/programming-entry";
@@ -15,15 +16,18 @@ import styles from "./help.module.css";
 const message = (error: unknown) => error instanceof Error ? error.message : "도움 요청을 확인하지 못했어요.";
 const time = (value: number) => new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit" }).format(value);
 
-export function HelpRequests({ classId, lessonId }: { classId: string; lessonId?: string }) {
+export type HelpRequestsStatus = { classId: string; count: number | null; lastCheckedAt: number | null; loading: boolean; error: string };
+
+export function HelpRequests({ classId, lessonId, onStatusChange }: { classId: string; lessonId?: string; onStatusChange?: (status: HelpRequestsStatus) => void }) {
   const [requests, setRequests] = useState<HelpRequest[]>([]), [error, setError] = useState("");
   const [loading, setLoading] = useState(false), [selected, setSelected] = useState<HelpRequest | null>(null);
+  const [lastCheckedAt, setLastCheckedAt] = useState<number | null>(null);
   const version = useRef(0), inFlight = useRef(false);
   const refreshButton = useRef<HTMLButtonElement>(null), restoreRefreshFocus = useRef(false);
   const refresh = useCallback(async () => {
     if (inFlight.current) return;
     inFlight.current = true; const current = ++version.current; setLoading(true);
-    try { const value = await api<{ requests: HelpRequest[] }>(`classroom/help?classId=${encodeURIComponent(classId)}`); if (current === version.current) { setRequests(value.requests); setError(""); } }
+    try { const value = await api<{ requests: HelpRequest[] }>(`classroom/help?classId=${encodeURIComponent(classId)}`); if (current === version.current) { setRequests(value.requests); setLastCheckedAt(Date.now()); setError(""); } }
     catch (problem) { if (current === version.current) setError(message(problem)); }
     finally { if (current === version.current) { setLoading(false); inFlight.current = false; } }
   }, [classId]);
@@ -38,10 +42,14 @@ export function HelpRequests({ classId, lessonId }: { classId: string; lessonId?
     if (document.activeElement === document.body) refreshButton.current?.focus();
   }, [loading, selected]);
   const visible = requests.filter(item => item.classId === classId && (!lessonId || item.lessonId === lessonId));
+  useEffect(() => {
+    onStatusChange?.({ classId, count: lastCheckedAt === null ? null : visible.length, lastCheckedAt, loading, error });
+  }, [classId, lastCheckedAt, visible.length, loading, error, onStatusChange]);
   return <section className={styles.panel} aria-labelledby={`help-heading-${lessonId ?? "all"}`}>
-    <div className={styles.heading}><h2 id={`help-heading-${lessonId ?? "all"}`}><Hand size={19} aria-hidden="true" />손든 학생 <span>{visible.length}</span></h2><Button ref={refreshButton} variant="ghost" size="icon" aria-label="손들기 새로고침" title="새로고침" disabled={loading} onClick={() => { restoreRefreshFocus.current = true; void refresh(); }}><RefreshCw size={16} aria-hidden="true" /></Button></div>
+    <div className={styles.heading}><h2 id={`help-heading-${lessonId ?? "all"}`} tabIndex={-1}><Hand size={19} aria-hidden="true" />손든 학생 {lastCheckedAt !== null && <span>{visible.length}</span>}</h2><Button ref={refreshButton} variant="ghost" size="icon" aria-label="손들기 새로고침" title="새로고침" disabled={loading} onClick={() => { restoreRefreshFocus.current = true; void refresh(); }}><RefreshCw size={16} aria-hidden="true" /></Button></div>
+    {lastCheckedAt !== null && <p className={styles.checked}>마지막 확인 <time dateTime={new Date(lastCheckedAt).toISOString()}>{time(lastCheckedAt)}</time>{error && " · 최신 조회 실패"}</p>}
     {error && <p role="alert">{error}</p>}
-    {visible.length ? <ul className={styles.requests}>{visible.map(item => <li key={item.id}><button type="button" onClick={() => setSelected(item)}><span><strong>{item.nickname || item.studentId}</strong>{item.nickname && <small>{item.studentId}</small>}<small>{({ concept: "개념", quiz: "퀴즈", practice: "실습" })[item.stage]}</small></span><time>{time(item.requestedAt)}</time></button></li>)}</ul> : <p className={styles.empty}>{loading ? "도움 요청을 확인하고 있어요." : "도움 요청이 들어오면 여기에서 확인해요."}</p>}
+    {visible.length ? <ul className={styles.requests}>{visible.map(item => <li key={item.id}><button type="button" onClick={() => setSelected(item)}><span><strong>{item.nickname || item.studentId}</strong>{item.nickname && <small>{item.studentId}</small>}<small className={styles.context}>{helpContextLabel(item)}</small></span><time>{time(item.requestedAt)}</time></button></li>)}</ul> : <p className={styles.empty}>{loading || lastCheckedAt === null && !error ? "도움 요청을 확인하고 있어요." : lastCheckedAt === null ? "새로고침으로 도움 요청을 다시 확인해 주세요." : "도움 요청이 들어오면 여기에서 확인해요."}</p>}
     <Dialog open={Boolean(selected && selected.classId === classId)} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className={styles.dialog}><DialogHeader><DialogTitle>{selected?.nickname || selected?.studentId} 학생의 도움 요청</DialogTitle><DialogDescription>손들 때 저장한 학습 위치와 작품을 확인해요.</DialogDescription></DialogHeader>{selected && selected.classId === classId && <Snapshot key={selected.id} request={selected} onResolved={() => { restoreRefreshFocus.current = true; setSelected(current => current?.id === selected.id ? null : current); setRequests(items => items.filter(item => item.id !== selected.id)); version.current += 1; inFlight.current = false; void refresh(); }} />}</DialogContent></Dialog>
   </section>;
 }

@@ -3,6 +3,8 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { db, headers, initialPassword, loginStudent, resetStudent, studentPassword } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 import { REVIEW_LESSONS } from "../src/lib/classroom/review/lessons";
+import { LESSONS } from "../src/lib/classroom/catalog";
+import { UNIT_QUIZ_DATA } from "../src/lib/server/review-quiz.mjs";
 
 const studentId = "20102", uid = `student-${studentId}`;
 const lessonIds = ["review-sandwich", "review-abstraction", "review-flowchart", "programming-13", "entry-bot-lab"];
@@ -166,6 +168,11 @@ test("concept-nav: 한 개념·자유 이동·순서 밖 완료와 단계 왕복
   await expect(page.locator("#panel-concept article")).toHaveCount(1);
   await expect(page.locator("#concept-finite")).toBeVisible();
   await page.getByRole("button", { name: /순차·선택·반복/ }).click();
+  await page.getByText("수업 안내 · 이어하기 기준 · 학습 진행", { exact: true }).click();
+  await expect(page.getByText(/다시 접속하면 개념은 아직 확인하지 않은 곳부터/)).toBeVisible();
+  await expect(page.locator("#concept-structure")).toBeVisible();
+  expect((await savedWork(page, endpoint)).conceptSolved.sort()).toEqual(["clear", "structure"]);
+  await page.getByText("수업 안내 · 이어하기 기준 · 학습 진행", { exact: true }).click();
   await expect(page.locator("#concept-structure")).toBeVisible();
   await page.getByRole("tab", { name: /퀴즈/ }).click();
   await page.getByRole("tab", { name: /개념/ }).click();
@@ -269,6 +276,11 @@ test("quiz-nav: 단일 문항·미답변 이동·채점·오답만 재도전·�
   await nav.getByRole("button").last().click();
   await page.getByRole("button", { name: "답하지 않은 문제로 이동", exact: true }).click();
   await expect(page.locator("#quiz-question-title")).toHaveText(questions[0].prompt);
+  await nav.getByRole("button").nth(1).click();
+  await page.getByRole("radio").first().check();
+  await expect.poll(async () => (await savedWork(page, endpoint)).draft.quizAnswers[questions[1].id]).toBeTruthy();
+  await page.reload();
+  await expect(page.locator("#quiz-question-title")).toHaveText(questions[0].prompt);
   for (let i = 0; i < questions.length; i++) {
     await nav.getByRole("button").nth(i).click();
     await page.getByRole("radio").first().check();
@@ -277,8 +289,14 @@ test("quiz-nav: 단일 문항·미답변 이동·채점·오답만 재도전·�
   const before = await savedWork(page, endpoint);
   await page.getByRole("tab", { name: /실습/ }).click();
   await page.getByRole("tab", { name: /퀴즈/ }).click();
+  await page.reload();
+  await expect(page.locator("#quiz-question-title")).toHaveText(questions[0].prompt);
+  expect((await savedWork(page, endpoint)).draft.quizAnswers).toEqual(before.draft.quizAnswers);
+  await nav.getByRole("button").last().click();
+  await page.getByRole("tab", { name: /실습/ }).click();
+  await page.getByRole("tab", { name: /퀴즈/ }).click();
   await expect(page.locator("#quiz-question-title")).toHaveText(questions.at(-1)!.prompt);
-  await page.getByRole("button", { name: "이번 문제 결과 확인", exact: true }).click();
+  await page.getByRole("button", { name: "이번 회차 결과 확인", exact: true }).click();
   await expect(page.locator("#quiz-round-result")).toBeFocused();
   const graded = await savedWork(page, endpoint);
   expect(graded.draft.quizAnswers).toEqual(before.draft.quizAnswers);
@@ -289,6 +307,125 @@ test("quiz-nav: 단일 문항·미답변 이동·채점·오답만 재도전·�
   await page.getByRole("button", { name: "틀린 문제만 다시 풀기", exact: true }).click();
   await expect(page.locator("#quiz-question-title")).toBeFocused();
   expect((await savedWork(page, endpoint)).quizRoundIds).toEqual(wrong);
+  for (let index = 0; index < wrong.length; index++) {
+    await nav.getByRole("button").nth(index).click();
+    const original = UNIT_QUIZ_DATA.algorithm.questions.find(question => String(question.id) === wrong[index])!;
+    await page.getByRole("radio").nth(original.options.findIndex(option => option.correct)).check();
+  }
+  await page.getByRole("button", { name: "이번 회차 결과 확인", exact: true }).click();
+  await expect(page.locator("#quiz-round-result")).toBeFocused();
+  const completed = await savedWork(page, endpoint);
+  expect(completed.quizSolved.sort()).toEqual(questions.map(question => question.id).sort());
+  await nav.getByRole("button").last().click();
+  await page.reload();
+  await expect(page.locator("#quiz-question-title")).toHaveText(questions.find(question => question.id === wrong[0])!.prompt);
+  expect((await savedWork(page, endpoint)).draft.quizAnswers).toEqual(completed.draft.quizAnswers);
+});
+
+for (const lessonId of ["sequence-lab", "programming-13"]) {
+  for (const position of ["first", "last"] as const) {
+    test(`quiz-viewport: ${lessonId} ${position} 문제·선택·주행동을 1280×720 한 화면에서 조작한다`, async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 720 });
+      const endpoint = await prepare(page, lessonId);
+      const questions = LESSONS.find(lesson => lesson.id === lessonId)!.quiz;
+      await page.getByRole("tab", { name: /퀴즈/ }).click();
+      const panel = page.locator("#panel-quiz");
+      const nav = page.getByRole("navigation", { name: "퀴즈 문항 목록" });
+      if (position === "last") {
+        for (let i = 0; i < questions.length; i++) {
+          await nav.getByRole("button").nth(i).click();
+          await panel.getByRole("radio").first().check();
+        }
+        await expect.poll(async () => Object.keys((await savedWork(page, endpoint)).draft.quizAnswers).length).toBe(questions.length);
+      }
+      const title = panel.locator(lessonId === "programming-13" ? "#programming-question" : "#quiz-question-title");
+      await expect(title).toHaveText(questions[position === "first" ? 0 : questions.length - 1].prompt);
+      await expect(panel.getByRole("radio")).toHaveCount(questions[position === "first" ? 0 : questions.length - 1].options.length);
+      const primary = panel.getByRole("button", { name: position === "first" ? "다음 문제" : "이번 회차 결과 확인", exact: true });
+      await expect(primary).toBeEnabled();
+      // Playwright clicks may scroll controls into view; compare their original document position at the top.
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+      const elements = [title, ...await panel.locator("fieldset label, code").all(), primary];
+      for (const element of elements) {
+        const box = await element.boundingBox();
+        expect(box, await element.innerText()).not.toBeNull();
+        expect(box!.y, await element.innerText()).toBeGreaterThanOrEqual(0);
+        expect(box!.y + box!.height, await element.innerText()).toBeLessThanOrEqual(720);
+      }
+      for (const element of [...await panel.locator("fieldset label").all(), primary]) {
+        const box = (await element.boundingBox())!;
+        expect(box.height, await element.innerText()).toBeGreaterThanOrEqual(44);
+        expect(box.width, await element.innerText()).toBeGreaterThanOrEqual(44);
+        expect(await element.evaluate(node => parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(16);
+      }
+      expect((await savedWork(page, endpoint)).quizRoundGraded).toBe(false);
+    });
+  }
+}
+
+test("quiz-responsive: 1000/1001·390/320과 CSS 200% 모의 확대에서 문항과 초점을 보존한다", async ({ page }) => {
+  test.setTimeout(90_000);
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  for (const lessonId of ["sequence-lab", "programming-13"]) {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await prepare(page, lessonId);
+    const question = LESSONS.find(lesson => lesson.id === lessonId)!.quiz[0];
+    await page.getByRole("tab", { name: /퀴즈/ }).click();
+    const panel = page.locator("#panel-quiz"), heading = panel.locator("#stage-heading-quiz");
+    const title = panel.locator(lessonId === "programming-13" ? "#programming-question" : "#quiz-question-title");
+    await heading.focus();
+    await expect(heading).toBeFocused();
+    const headingBox = (await heading.boundingBox())!;
+    expect(headingBox.width).toBeGreaterThan(20);
+    expect(headingBox.height).toBeGreaterThanOrEqual(20);
+    expect(await heading.evaluate(node => parseFloat(getComputedStyle(node).outlineWidth))).toBeGreaterThanOrEqual(3);
+    // 640×360 models the layout space of a 1280×720 window at 200%; it is not actual browser zoom.
+    for (const width of [1000, 1001, 390, 320, 640]) {
+      await page.setViewportSize({ width, height: width === 640 ? 360 : 720 });
+      await expect(title).toHaveText(question.prompt);
+      await expect(panel.getByRole("radio")).toHaveCount(question.options.length);
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      for (const element of await panel.locator("fieldset label, fieldset label span, code, button").all()) {
+        const box = (await element.boundingBox())!;
+        expect(box.x, await element.innerText()).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width, await element.innerText()).toBeLessThanOrEqual(width);
+      }
+      if (lessonId === "programming-13" && (width === 1000 || width === 1001)) {
+        const titleBox = (await title.boundingBox())!, optionBox = (await panel.locator("fieldset label").first().boundingBox())!;
+        if (width === 1001) expect(optionBox.x).toBeGreaterThan(titleBox.x + titleBox.width);
+        else {
+          const lastCode = (await panel.locator("code").last().boundingBox())!;
+          expect(optionBox.x).toBeCloseTo(titleBox.x, 1);
+          expect(optionBox.y).toBeGreaterThanOrEqual(lastCode.y + lastCode.height);
+        }
+      }
+    }
+    await panel.locator("details summary").click();
+    await expect(panel.locator("details p")).toHaveText(question.hint);
+    await page.setViewportSize({ width: 1280, height: 720 });
+    // CSS zoom exercises scaled content and wrapping, but does not reproduce browser zoom's media-query changes.
+    await page.evaluate(() => { document.documentElement.style.zoom = "2"; });
+    try {
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await expect(title).toHaveText(question.prompt);
+      await expect(panel.locator("details p")).toHaveText(question.hint);
+      for (const element of await panel.locator("fieldset label, button").all()) {
+        const box = (await element.boundingBox())!;
+        expect(box.height, await element.innerText()).toBeGreaterThanOrEqual(88);
+        expect(box.x, await element.innerText()).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width, await element.innerText()).toBeLessThanOrEqual(1280);
+      }
+      await title.focus();
+      await expect(title).toBeFocused();
+      await expect.poll(async () => {
+        const focused = (await title.boundingBox())!;
+        return focused.y >= 0 && focused.y + focused.height <= 720;
+      }).toBe(true);
+    } finally { await page.evaluate(() => { document.documentElement.style.zoom = ""; }); }
+  }
+  expect(errors).toEqual([]);
 });
 
 test("quiz-nav: 채점·재도전 실패는 답안과 현재 문항을 보존", async ({ page }) => {
@@ -297,23 +434,46 @@ test("quiz-nav: 채점·재도전 실패는 답안과 현재 문항을 보존", 
   await page.getByRole("tab", { name: /퀴즈/ }).click();
   const nav = page.getByRole("navigation", { name: "퀴즈 문항 목록" });
   for (let i = 0; i < questions.length; i++) { await nav.getByRole("button").nth(i).click(); await page.getByRole("radio").first().check(); }
-  await page.route(`${endpoint}/action`, route => route.fulfill({ status: 503, json: { error: "잠시 저장할 수 없어요. 현재 답을 유지하고 다시 시도해 주세요." } }));
-  await page.getByRole("button", { name: "이번 문제 결과 확인", exact: true }).click();
-  await expect(page.locator("#work-save-error")).toBeVisible();
+  let posts = 0, gradePayload: unknown;
+  page.on("request", request => { if (request.method() === "POST" && request.url().endsWith(`${endpoint}/action`)) posts++; });
+  await page.route(`${endpoint}/action`, route => { gradePayload = route.request().postDataJSON(); return route.fulfill({ status: 503, json: { error: "채점 요청 결과를 확인하지 못했어요." } }); });
+  await page.getByRole("button", { name: "이번 회차 결과 확인", exact: true }).click();
+  await expect(page.locator("#work-action-error")).toBeFocused();
+  await expect(page.locator("#work-save-error")).toHaveCount(0);
+  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await expect(page.locator("#quiz-question-title")).toHaveText(questions.at(-1)!.prompt);
   await expect(page.getByRole("radio").first()).toBeChecked();
   expect((await savedWork(page, endpoint)).quizRoundGraded).toBe(false);
   await page.unroute(`${endpoint}/action`);
-  await page.getByRole("button", { name: "저장 다시 확인", exact: true }).click();
-  await expect(page.locator("#work-save-error")).toHaveCount(0);
-  await page.getByRole("button", { name: "이번 문제 결과 확인", exact: true }).click();
+  await page.getByRole("button", { name: "결과 다시 확인", exact: true }).click();
+  await expect(page.getByRole("button", { name: "저장된 요청 다시 보내기", exact: true })).toBeVisible();
+  expect(posts).toBe(1);
+  const gradeResend = page.waitForRequest(request => request.url().endsWith(`${endpoint}/action`) && request.method() === "POST");
+  await page.getByRole("button", { name: "저장된 요청 다시 보내기", exact: true }).click();
+  expect((await gradeResend).postDataJSON()).toEqual(gradePayload);
+  await expect(page.locator("#work-action-error")).toHaveCount(0);
   await expect(page.locator("#quiz-round-result")).toBeFocused();
   const graded = await savedWork(page, endpoint);
-  await page.route(`${endpoint}/action`, route => route.fulfill({ status: 503, json: { error: "재도전 회차를 저장하지 못했어요." } }));
+  expect(posts).toBe(2);
+  let retryPayload: unknown;
+  await page.route(`${endpoint}/action`, route => { retryPayload = route.request().postDataJSON(); return route.fulfill({ status: 503, json: { error: "재도전 요청 결과를 확인하지 못했어요." } }); });
   await page.getByRole("button", { name: "틀린 문제만 다시 풀기", exact: true }).click();
-  await expect(page.locator("#work-save-error")).toBeVisible();
+  await expect(page.locator("#work-action-error")).toBeFocused();
+  await expect(page.locator("#work-save-error")).toHaveCount(0);
+  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await expect(page.locator("#quiz-question-title")).toHaveText(questions.at(-1)!.prompt);
   expect((await savedWork(page, endpoint)).quizRound).toBe(graded.quizRound);
+  await page.unroute(`${endpoint}/action`);
+  await page.getByRole("button", { name: "결과 다시 확인", exact: true }).click();
+  await expect(page.getByRole("button", { name: "저장된 요청 다시 보내기", exact: true })).toBeVisible();
+  expect(posts).toBe(3);
+  const retryResend = page.waitForRequest(request => request.url().endsWith(`${endpoint}/action`) && request.method() === "POST");
+  await page.getByRole("button", { name: "저장된 요청 다시 보내기", exact: true }).click();
+  expect((await retryResend).postDataJSON()).toEqual(retryPayload);
+  await expect(page.locator("#work-action-error")).toHaveCount(0);
+  await expect(page.locator("#quiz-question-title")).toBeFocused();
+  expect((await savedWork(page, endpoint)).quizRound).toBe(graded.quizRound + 1);
+  expect(posts).toBe(4);
 });
 
 test("reading-layout: 실제 개념·퀴즈 화면 크기와 키보드·가로 넘침", async ({ page }) => {
@@ -347,11 +507,14 @@ test("reading-layout: 실제 개념·퀴즈 화면 크기와 키보드·가로 �
 });
 
 test("workspace-width: 기본 폭·수동 확대·단계 저장 실패·재접속", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
   await prepare(page);
   const layout = page.locator('[data-workspace-wide]').first();
   await page.getByRole("tab", { name: /실습/ }).click();
   await expect(layout).toHaveAttribute("data-workspace-wide", "false");
   await expect(page.getByRole("tab", { name: /실습/ })).toBeFocused();
+  await expect(page.getByRole("button", { name: "작업실 넓게 보기", exact: true })).toBeHidden();
+  await page.setViewportSize({ width: 1920, height: 900 });
   await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
   const restore = page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true });
   await restore.click();
@@ -363,12 +526,24 @@ test("workspace-width: 기본 폭·수동 확대·단계 저장 실패·재접�
   await expect(layout).toHaveAttribute("data-workspace-wide", "false");
   await expect(page.getByLabel("자연어 명령")).toHaveValue("빵 봉지를 열어");
   await expand.click();
-  for (const width of [821, 820, 821]) { await page.setViewportSize({ width, height: 900 }); await expect(page.getByLabel("자연어 명령")).toHaveValue("빵 봉지를 열어"); }
+  const input = page.getByLabel("자연어 명령");
+  await input.focus();
+  for (const width of [1472, 1440, 1280, 821, 820, 821]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(layout).toHaveAttribute("data-workspace-wide", "true");
+    await expect(restore).toBeVisible();
+    await expect(input).toBeFocused();
+    await expect(input).toHaveValue("빵 봉지를 열어");
+  }
   await page.getByLabel("자연어 명령").focus(); await page.keyboard.press("Escape");
   await expect(layout).toHaveAttribute("data-workspace-wide", "true");
   await restore.focus(); await page.keyboard.press("Escape");
   await expect(layout).toHaveAttribute("data-workspace-wide", "false");
-  await expect(expand).toBeFocused();
+  await expect(expand).toBeHidden();
+  await expect(page.locator("#stage-heading-practice")).toBeFocused();
+  await page.setViewportSize({ width: 1920, height: 900 });
+  await expect(expand).toBeVisible();
+  await expect(page.locator("#stage-heading-practice")).toBeFocused();
   await page.reload();
   await expect(layout).toHaveAttribute("data-workspace-wide", "false");
   await expect(page.getByLabel("자연어 명령")).toHaveValue("빵 봉지를 열어");
@@ -386,12 +561,18 @@ test("workspace-width: 기본 폭·수동 확대·단계 저장 실패·재접�
 test("workspace-width: 연결된 네 수업의 기본 폭과 수동 선택", async ({ page }) => {
   test.setTimeout(120_000);
   for (const id of lessonIds.slice(0, 4)) {
+    await page.setViewportSize({ width: 1280, height: 900 });
     await prepare(page, id);
     await page.getByRole("tab", { name: /실습/ }).click();
     await expect(page.locator('[data-workspace-wide]').first()).toHaveAttribute("data-workspace-wide", "false");
     await expect(page.getByRole("tab", { name: /실습/ })).toBeFocused();
+    await expect(page.getByRole("button", { name: "작업실 넓게 보기", exact: true })).toBeHidden();
+    await page.setViewportSize({ width: 1920, height: 900 });
     await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expect(page.locator('[data-workspace-wide]').first()).toHaveAttribute("data-workspace-wide", "true");
     await page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true }).click();
+    await expect(page.getByRole("button", { name: "작업실 넓게 보기", exact: true })).toBeHidden();
     await page.getByRole("tab", { name: /개념/ }).click();
     await page.getByRole("tab", { name: /실습/ }).click();
     await expect(page.locator('[data-workspace-wide]').first()).toHaveAttribute("data-workspace-wide", "false");
@@ -465,6 +646,7 @@ test("sandwich-layout: AI 대기 중 다음 입력·긴 오류·실행 중 폭 �
   await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "실행", exact: true }).click();
   await expect(page.getByRole("button", { name: "명령을 해석하고 있어요…", exact: true })).toBeVisible();
   await input.fill("다음에 실행할 명령");
+  await page.setViewportSize({ width: 1920, height: 720 });
   await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
   await expect(input).toHaveValue("다음에 실행할 명령");
   release();

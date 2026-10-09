@@ -5,7 +5,7 @@ import { ArrowLeft, Check, Lightbulb, MessageCircle, Send, X } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { blockLabels, missions, signalLabels, type Block, type Inputs, type RunResult } from "@/lib/prototype/programming";
 import styles from "./programming.module.css";
-import { nameProjectLines, type NameRun } from "@/lib/prototype/name-entry";
+import { nameProjectLines, type NameRun } from "@/lib/classroom/name-entry";
 
 const snapshotValueLabels: Record<string, string> = { ...signalLabels, name: "이름", a: "A의 값", b: "B의 값", answer: "내 이름은 [대답]", multiply: "A × B", average: "(A + B) ÷ 2" };
 

@@ -2,7 +2,8 @@
 
 import { ArrowLeft, ArrowRight, Check, Lightbulb, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { questions, type PrototypeState } from "@/lib/prototype/programming";
+import { questions } from "@/lib/classroom/programming-data";
+import type { PrototypeState } from "@/lib/prototype/programming";
 import styles from "./programming.module.css";
 
 export function Quiz({ state, update, focus, next }: { state: PrototypeState; update: (next: PrototypeState) => void; focus: (id: string) => void; next: () => void }) {

@@ -55,6 +55,7 @@ test("세 실습의 넓게 보기·복귀 초점·좁은 화면을 유지한다"
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
   page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
   for (const id of ["review-sandwich", "review-abstraction", "review-flowchart"]) {
+    await page.setViewportSize({ width: 1920, height: 1000 });
     await openPractice(page,id);
     const toggle = page.getByRole("button", { name: "작업실 넓게 보기", exact: true });
     const restore = page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true });

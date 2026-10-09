@@ -168,6 +168,122 @@ test("동일 시각 질문도 페이지 사이에 빠짐·중복 없이 읽고 �
   expect((await page.request.get(`${base}?after=${randomUUID()}`)).status()).toBe(400);
 });
 
+test("불러온 50개에 답변 대기가 없어도 51번째로 이어지고 조회 실패·필터·새로고침 뒤 선택과 초안을 보존", async ({ page }) => {
+  const ids = Array.from({ length: 51 }, () => randomUUID());
+  const author = { uid: uids[0], role: "student", studentId: studentIds[0], nickname: "초코" };
+  const batch = db.batch();
+  ids.forEach((id, index) => batch.set(db.doc(`csQuestions/${id}`), {
+    id, classId: "2-1", title: index === 50 ? "51번째 답변 대기 질문" : `해결된 페이지 질문 ${index + 1}`,
+    body: `페이지 본문 ${index + 1}`, lessonId: null,
+    author,
+    createdAt: 1_700_000_000_000 - index, updatedAt: 1_700_000_000_000 - index,
+    resolved: index < 50, resolvedAt: index < 50 ? 1_700_000_000_000 : null, resolvedBy: index < 50 ? author : null, answerCount: 0,
+  }));
+  await batch.commit();
+  await page.goto("/student/community");
+  const list = page.getByRole("region", { name: "우리 반 질문 목록", exact: true });
+  const thread = page.getByRole("region", { name: "질문과 답변", exact: true });
+  const range = page.getByText("불러온 질문 50개 기준", { exact: true });
+  const more = list.getByRole("button", { name: "이전 질문 더 보기", exact: true });
+  await expect(list.locator("article")).toHaveCount(50);
+  await expect(range).toBeVisible();
+  await list.locator("article").filter({ has: page.getByText("해결된 페이지 질문 1", { exact: true }) }).getByRole("button").click();
+  const selectedTitle = thread.getByRole("heading", { name: "해결된 페이지 질문 1", exact: true });
+  await expect(selectedTitle).toBeVisible();
+  const answer = page.getByLabel("답변 내용", { exact: true });
+  await answer.fill("더 보기를 실패해도 보존할 답변 초안");
+  await page.locator("summary").filter({ hasText: "질문 쓰기" }).click();
+  const title = page.getByLabel("질문 제목", { exact: true });
+  const body = page.getByLabel("질문 내용", { exact: true });
+  await title.fill("페이지를 넘겨도 보존할 새 질문");
+  await body.fill("새 질문의 미전송 내용이에요.");
+  await page.getByRole("button", { name: "답변 대기", exact: true }).click();
+  await expect(list.locator("article")).toHaveCount(0);
+  await expect(list).toContainText("불러온 질문 중 조건에 맞는 질문이 없어요.");
+  await expect(more).toBeVisible();
+  await expect(selectedTitle).toBeVisible();
+  await expect(answer).toHaveValue("더 보기를 실패해도 보존할 답변 초안");
+  let failMore = true;
+  const cursors: string[] = [];
+  await page.route("**/api/classroom/community?**", async route => {
+    const cursor = new URL(route.request().url()).searchParams.get("after");
+    if (!cursor) { await route.continue(); return; }
+    cursors.push(cursor);
+    if (failMore) {
+      failMore = false;
+      await route.fulfill({ status: 503, json: { code: "UNAVAILABLE", message: "시험 이전 질문 조회 실패" } });
+    } else await route.continue();
+  });
+  await more.click();
+  const pageError = page.getByRole("alert").filter({ hasText: "시험 이전 질문 조회 실패" });
+  await expect(pageError).toBeVisible();
+  await expect(range).toBeVisible();
+  await expect(more).toHaveAttribute("aria-disabled", "false");
+  await expect(list.locator("article")).toHaveCount(0);
+  await expect(selectedTitle).toBeVisible();
+  await expect(title).toHaveValue("페이지를 넘겨도 보존할 새 질문");
+  await expect(body).toHaveValue("새 질문의 미전송 내용이에요.");
+  await expect(answer).toHaveValue("더 보기를 실패해도 보존할 답변 초안");
+  await more.click();
+  await expect(list.getByRole("button", { name: /51번째 답변 대기 질문/ })).toBeVisible();
+  await expect(list.locator("article")).toHaveCount(1);
+  await expect(pageError).toHaveCount(0);
+  await expect(range).toHaveCount(0);
+  await expect(more).toHaveCount(0);
+  expect(cursors).toEqual([ids[49], ids[49]]);
+  await expect(selectedTitle).toBeVisible();
+  await expect(title).toHaveValue("페이지를 넘겨도 보존할 새 질문");
+  await expect(body).toHaveValue("새 질문의 미전송 내용이에요.");
+  await expect(answer).toHaveValue("더 보기를 실패해도 보존할 답변 초안");
+  await page.getByRole("button", { name: "전체", exact: true }).click();
+  await expect(list.locator("article")).toHaveCount(51);
+  await page.getByRole("button", { name: "질문 새로고침", exact: true }).click();
+  await expect(list.locator("article")).toHaveCount(50);
+  await expect(thread).toHaveAttribute("aria-busy", "false");
+  await expect(range).toBeVisible();
+  await expect(selectedTitle).toBeVisible();
+  await expect(title).toHaveValue("페이지를 넘겨도 보존할 새 질문");
+  await expect(body).toHaveValue("새 질문의 미전송 내용이에요.");
+  await expect(answer).toHaveValue("더 보기를 실패해도 보존할 답변 초안");
+});
+
+test("질문 범위 안내는 필터 결과가 아닌 누적 100개를 표시하고 마지막 페이지에서는 제거", async ({ page }) => {
+  const ids = Array.from({ length: 101 }, () => randomUUID());
+  const author = { uid: uids[0], role: "student", studentId: studentIds[0], nickname: "초코" };
+  const batch = db.batch();
+  ids.forEach((id, index) => batch.set(db.doc(`csQuestions/${id}`), {
+    id, classId: "2-1", title: `누적 범위 질문 ${index + 1}`, body: "누적 개수 검사", lessonId: null,
+    author,
+    createdAt: 1_700_000_000_000 - index, updatedAt: 1_700_000_000_000 - index,
+    resolved: index !== 50 && index !== 1,
+    resolvedAt: index !== 50 && index !== 1 ? 1_700_000_000_000 : null,
+    resolvedBy: index !== 50 && index !== 1 ? author : null, answerCount: index === 1 ? 1 : 0,
+  }));
+  const answerId = randomUUID();
+  batch.set(db.doc(`csQuestions/${ids[1]}/answers/${answerId}`), { id: answerId, body: "미해결이지만 이미 달린 답변", author, createdAt: 1_700_000_000_000 });
+  await batch.commit();
+  await page.goto("/student/community");
+  const list = page.getByRole("region", { name: "우리 반 질문 목록", exact: true });
+  const more = list.getByRole("button", { name: "이전 질문 더 보기", exact: true });
+  await expect(list.locator("article")).toHaveCount(50);
+  await expect(page.getByText("불러온 질문 50개 기준", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "답변 대기", exact: true }).click();
+  // An unresolved question with an answer is not an unanswered question.
+  await expect(list.locator("article")).toHaveCount(0);
+  await expect(list).toContainText("불러온 질문 중 조건에 맞는 질문이 없어요.");
+  await more.click();
+  await expect(page.getByText("불러온 질문 100개 기준", { exact: true })).toBeVisible();
+  await expect(list.locator("article")).toHaveCount(1);
+  await expect(list.getByRole("button", { name: /누적 범위 질문 51/ })).toBeVisible();
+  await expect(more).toBeVisible();
+  await more.click();
+  await expect(more).toHaveCount(0);
+  await expect(page.getByText(/불러온 질문 \d+개 기준/)).toHaveCount(0);
+  await expect(list.locator("article")).toHaveCount(1);
+  await page.getByRole("button", { name: "전체", exact: true }).click();
+  await expect(list.locator("article")).toHaveCount(101);
+});
+
 test("질문·답변 실패의 초안을 보관하고 재시도·키보드·좁은 창·plain text 표시", async ({ page }, testInfo) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
@@ -233,6 +349,127 @@ test("질문·답변 실패의 초안을 보관하고 재시도·키보드·좁�
   }
   await page.screenshot({ path: testInfo.outputPath("community-320.png"), fullPage: true });
   expect(errors).toEqual([]);
+});
+
+test("본인 질문만 삭제하며 모든 답변을 함께 제거하고 동시 답변을 남기지 않음", async ({ page, request }) => {
+  const id = randomUUID();
+  expect((await page.request.post(`${base}/2-1`, { headers, data: { id, title: "삭제 권한 확인", body: "모든 답변도 함께 지워요.", lessonId: null } })).status()).toBe(200);
+  await db.doc(`csAccounts/${uids[1]}`).update({ classId: "2-1" });
+  expect((await request.post(`${base}/${id}/delete`, { headers, data: {} })).status()).toBe(403);
+  await db.doc(`csAccounts/${uids[1]}`).update({ classId: "2-2" });
+  expect((await request.post(`${base}/${id}/delete`, { headers, data: {} })).status()).toBe(403);
+  await readyTeacher(request);
+  teacherUid = (await auth.getUserByEmail(testEnv.CS_TEACHER_EMAILS)).uid;
+  expect((await request.post(`${base}/${id}/delete`, { headers, data: {} })).status()).toBe(403);
+  expect((await page.request.post(`${base}/${id}/delete`, { data: {} })).status()).toBe(403);
+  expect((await page.request.post(`${base}/${id}/delete`, { headers: { ...headers, Origin: "https://outside.invalid" }, data: {} })).status()).toBe(403);
+  expect((await page.request.post(`${base}/${id}/delete`, { headers, data: { author: uids[1] } })).status()).toBe(400);
+  const answerId = randomUUID();
+  expect((await request.post(`${base}/${id}/answers`, { headers, data: { id: answerId, body: "교사의 답변도 함께 삭제돼요." } })).status()).toBe(200);
+  const concurrent = await Promise.all([
+    page.request.post(`${base}/${id}/delete`, { headers, data: {} }),
+    request.post(`${base}/${id}/answers`, { headers, data: { id: randomUUID(), body: "삭제와 동시에 보내는 답변" } }),
+  ]);
+  expect(concurrent[0].status()).toBe(200);
+  expect([200, 404]).toContain(concurrent[1].status());
+  expect((await db.doc(`csQuestions/${id}`).get()).exists).toBe(false);
+  expect((await db.collection(`csQuestions/${id}/answers`).get()).empty).toBe(true);
+  expect((await page.request.get(`${base}/${id}`)).status()).toBe(404);
+  expect((await page.request.post(`${base}/${id}/delete`, { headers, data: {} })).status()).toBe(404);
+  expect((await (await page.request.get(base)).json()).questions.some((item: { id: string }) => item.id === id)).toBe(false);
+  const teacherQuestion = randomUUID();
+  try {
+    expect((await request.post(`${base}/2-1`, { headers, data: { id: teacherQuestion, title: "교사 본인 질문", body: "본인만 삭제해요.", lessonId: null } })).status()).toBe(200);
+    expect((await request.post(`${base}/${teacherQuestion}/delete`, { headers, data: {} })).status()).toBe(200);
+  } finally { await db.doc(`csQuestions/${teacherQuestion}`).delete(); }
+});
+
+test("질문 쓰기 기호·삭제 취소·실패 재시도·초점과 다른 초안을 보존", async ({ page }) => {
+  const id = randomUUID();
+  expect((await page.request.post(`${base}/2-1`, { headers, data: { id, title: "삭제할 본인 질문", body: "질문과 답변을 함께 삭제해요.", lessonId: null } })).status()).toBe(200);
+  expect((await page.request.post(`${base}/${id}/answers`, { headers, data: { id: randomUUID(), body: "저장된 답변" } })).status()).toBe(200);
+  await page.goto("/student/community");
+  const writer = page.locator("summary").filter({ hasText: "질문 쓰기" });
+  await expect(writer.locator("svg.lucide-plus")).toBeVisible();
+  await writer.press("Enter");
+  await expect(writer.locator("svg.lucide-minus")).toBeVisible();
+  await page.getByLabel("질문 제목", { exact: true }).fill("보존할 새 질문 초안");
+  await page.getByLabel("질문 내용", { exact: true }).fill("삭제와 무관한 작성 내용");
+  await writer.press("Enter");
+  await expect(writer.locator("svg.lucide-plus")).toBeVisible();
+  await page.getByRole("region", { name: "우리 반 질문 목록", exact: true }).getByRole("button", { name: /삭제할 본인 질문/ }).click();
+  const thread = page.getByRole("region", { name: "질문과 답변", exact: true });
+  const remove = thread.getByRole("button", { name: "질문 삭제", exact: true });
+  await remove.click();
+  const dialog = page.getByRole("alertdialog", { name: "질문을 삭제할까요?", exact: true });
+  await expect(dialog).toContainText("모든 답변");
+  await expect(dialog.getByRole("button", { name: "취소", exact: true })).toBeFocused();
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    const sizes = await dialog.getByRole("button").evaluateAll(buttons => buttons.map(button => button.getBoundingClientRect().height));
+    expect(sizes).toHaveLength(2);
+    expect(sizes.every(height => height >= 44)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  await expect(remove).toBeFocused();
+  expect((await db.doc(`csQuestions/${id}`).get()).exists).toBe(true);
+  let fail = true;
+  await page.route(`**/api/classroom/community/${id}/delete`, async route => {
+    if (fail) { fail = false; await route.fulfill({ status: 503, json: { code: "UNAVAILABLE", message: "시험 삭제 실패" } }); }
+    else await route.continue();
+  });
+  await remove.click();
+  await dialog.getByRole("button", { name: "삭제하기", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("시험 삭제 실패");
+  await expect(page.locator("#question-thread h2")).toHaveText("삭제할 본인 질문");
+  expect((await db.doc(`csQuestions/${id}`).get()).exists).toBe(true);
+  await dialog.getByRole("button", { name: "삭제하기", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(thread).toContainText("질문을 선택하면 내용과 답변이 보여요.");
+  await expect(page.getByRole("button", { name: "전체", exact: true })).toBeFocused();
+  await writer.press("Enter");
+  await expect(page.getByLabel("질문 제목", { exact: true })).toHaveValue("보존할 새 질문 초안");
+  await expect(page.getByLabel("질문 내용", { exact: true })).toHaveValue("삭제와 무관한 작성 내용");
+  await page.reload();
+  await expect(page.getByLabel("질문 제목", { exact: true })).toHaveValue("보존할 새 질문 초안");
+  await expect(page.getByRole("region", { name: "우리 반 질문 목록", exact: true })).not.toContainText("삭제할 본인 질문");
+});
+
+test("삭제 성공 응답이 유실돼도 재시도404로 정리하고 이전 질문 페이지를 계속 조회", async ({ page }) => {
+  const older = randomUUID(), id = randomUUID();
+  for (const [questionId, title] of [[older, "이전 페이지 질문"], [id, "현재 페이지 마지막 질문"]]) {
+    expect((await page.request.post(`${base}/2-1`, { headers, data: { id: questionId, title, body: title, lessonId: null } })).status()).toBe(200);
+  }
+  let first = true;
+  await page.route("**/api/classroom/community?**", async route => {
+    if (first) {
+      first = false;
+      const response = await route.fetch();
+      const data = await response.json();
+      // After deleting earlier loaded items, only the page's cursor remains.
+      await route.fulfill({ response, json: { ...data, questions: data.questions.filter((item: { id: string }) => item.id === id), nextCursor: id } });
+    } else await route.continue();
+  });
+  await page.goto("/student/community");
+  const list = page.getByRole("region", { name: "우리 반 질문 목록", exact: true });
+  await list.getByRole("button", { name: /현재 페이지 마지막 질문/ }).click();
+  let lose = true;
+  await page.route(`**/api/classroom/community/${id}/delete`, async route => {
+    if (lose) { lose = false; expect((await route.fetch()).status()).toBe(200); await route.abort("failed"); }
+    else await route.continue();
+  });
+  await page.getByRole("button", { name: "질문 삭제", exact: true }).click();
+  const dialog = page.getByRole("alertdialog", { name: "질문을 삭제할까요?", exact: true });
+  await dialog.getByRole("button", { name: "삭제하기", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toBeVisible();
+  expect((await db.doc(`csQuestions/${id}`).get()).exists).toBe(false);
+  await dialog.getByRole("button", { name: "삭제하기", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(list.getByRole("button", { name: /이전 페이지 질문/ })).toBeVisible();
+  await expect(list).not.toContainText("현재 페이지 마지막 질문");
 });
 
 test("첫 질문 조회 대기와 실패만으로 미편집 화면의 대시보드 이동을 막지 않음", async ({ page }) => {

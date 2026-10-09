@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { DocumentSnapshot } from "firebase-admin/firestore";
 import { LESSONS, RELEASED_LESSONS } from "../src/lib/classroom/catalog";
+import type { ClassSettings, TeacherDashboard } from "../src/lib/classroom/types";
 import { db, lessonId, localOnly, readyStudent, readyTeacher } from "./emulator";
 
 const classRef = db.collection("csClasses").doc("2-1");
@@ -94,10 +95,15 @@ test("설정 저장: 실패 시 입력 유지·재시도·초점 복귀·토스�
   const currentPicker = dialog.getByRole("combobox", { name: "이번 수업", exact: true });
   await currentPicker.click();
   await page.getByRole("option", { name: RELEASED_LESSONS[1].title, exact: true }).click();
+  const summary = dialog.getByRole("region", { name: "저장할 수업 설정", exact: true });
+  await expect(summary).toContainText("새로 공개할 수업 1개");
+  await expect(summary).toContainText(`이번 수업 변경: ${RELEASED_LESSONS[1].title}`);
   await dialog.getByRole("button", { name: "설정 저장", exact: true }).click();
   await expect(dialog.getByRole("alert")).toContainText("수업 설정을 저장하지 못했어요");
   await expect(added).toBeChecked();
   await expect(currentPicker).toHaveText(RELEASED_LESSONS[1].title);
+  await expect(summary).toContainText("새로 공개할 수업 1개");
+  await expect(summary).toContainText("저장 후에는 이 화면에서 공개를 취소할 수 없어요.");
   await expect(toast).toHaveCount(0);
   expect((await classRef.get()).data()).toMatchObject({ revision: 0, currentLessonId: lessonId, openedLessonIds: [lessonId] });
 
@@ -165,6 +171,179 @@ test("설정 저장: 실패 시 입력 유지·재시도·초점 복귀·토스�
   await page.clock.fastForward(5000);
   await expect(toast).toBeHidden();
   expect(errors).toEqual([]);
+});
+
+test("[후속3b-요약] 공개 선택·해제·취소와 이번 수업만 변경·미지정은 저장 전 차분으로 안내", async ({ page }, testInfo) => {
+  const [first, alreadyOpened, newlyOpened] = RELEASED_LESSONS;
+  const longTitle = `${newlyOpened.title} · ${"긴 제목도 공개 범위에 포함되는 수업 ".repeat(8)}`.trim();
+  const initial = { id: "2-1", name: "2학년 1반", revision: 0, currentLessonId: first.id, openedLessonIds: [first.id, alreadyOpened.id] };
+  await readyTeacher(page.request);
+  await classRef.set(initial);
+  await page.route("**/api/classroom/teacher?*", async route => {
+    const response = await route.fetch();
+    const data = await response.json() as TeacherDashboard;
+    data.lessons = data.lessons.map(lesson => lesson.id === newlyOpened.id ? { ...lesson, title: longTitle } : lesson);
+    await route.fulfill({ response, json: data });
+  });
+  await page.setViewportSize({ width: 390, height: 712 });
+  await page.goto("/teacher/classes?classId=2-1");
+  const manage = page.getByRole("button", { name: "수업 관리", exact: true });
+  await manage.click();
+  const dialog = page.getByRole("dialog", { name: "2학년 1반 수업 관리", exact: true });
+  const summary = dialog.getByRole("region", { name: "저장할 수업 설정", exact: true });
+  const added = dialog.getByRole("checkbox", { name: new RegExp(newlyOpened.title) });
+  const currentPicker = dialog.getByRole("combobox", { name: "이번 수업", exact: true });
+  const warning = summary.getByText("저장 후에는 이 화면에서 공개를 취소할 수 없어요.", { exact: true });
+  await expect(summary).toContainText("새로 공개할 수업이 없어요.");
+  await expect(summary).toContainText(`이번 수업 유지: ${first.title}`);
+  await expect(warning).toHaveCount(0);
+
+  await added.check();
+  await expect(added.locator("..").getByText("저장하면 학생에게 공개돼요", { exact: true })).toBeVisible();
+  await expect(summary).toContainText("새로 공개할 수업 1개");
+  await expect(summary.getByText(longTitle, { exact: true })).toBeVisible();
+  await expect(warning).toBeVisible();
+  await currentPicker.click();
+  await page.getByRole("option", { name: longTitle, exact: true }).click();
+  await expect(summary).toContainText(`이번 수업 변경: ${longTitle}`);
+  await summary.scrollIntoViewIfNeeded();
+  expect(await summary.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("publish-summary-long-title-390.png"), fullPage: true });
+
+  await added.uncheck();
+  await expect(added).toBeFocused();
+  await expect(summary).toContainText("새로 공개할 수업이 없어요.");
+  await expect(summary).toContainText("이번 수업 미지정");
+  await expect(currentPicker).toHaveText("지정하지 않음");
+  await expect(warning).toHaveCount(0);
+  expect((await classRef.get()).data()).toMatchObject(initial);
+  await dialog.getByRole("button", { name: "취소", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(manage).toBeFocused();
+  expect((await classRef.get()).data()).toMatchObject(initial);
+
+  await manage.press("Enter");
+  await expect(added).not.toBeChecked();
+  await expect(summary).toContainText(`이번 수업 유지: ${first.title}`);
+  await currentPicker.click();
+  await page.getByRole("option", { name: alreadyOpened.title, exact: true }).click();
+  await expect(summary).toContainText("새로 공개할 수업이 없어요.");
+  await expect(summary).toContainText(`이번 수업 변경: ${alreadyOpened.title}`);
+  await expect(warning).toHaveCount(0);
+  await dialog.getByRole("button", { name: "설정 저장", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  expect((await classRef.get()).data()).toMatchObject({ ...initial, revision: 1, currentLessonId: alreadyOpened.id });
+
+  await manage.press("Enter");
+  await expect(summary).toContainText(`이번 수업 유지: ${alreadyOpened.title}`);
+  await currentPicker.click();
+  await page.getByRole("option", { name: "지정하지 않음", exact: true }).click();
+  await expect(summary).toContainText("이번 수업 미지정");
+  await expect(summary).toContainText("새로 공개할 수업이 없어요.");
+  await expect(warning).toHaveCount(0);
+  await dialog.getByRole("button", { name: "설정 저장", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(manage).toBeFocused();
+  expect((await classRef.get()).data()).toMatchObject({ ...initial, revision: 2, currentLessonId: null });
+});
+
+test("[후속3b-충돌] 다른 교사 공개 후 409·최신 조회로 공개 차분을 갱신하고 수동 저장·중복 차단", async ({ page }, testInfo) => {
+  const [first, otherTeacherOpened, ownChoice] = RELEASED_LESSONS;
+  await readyTeacher(page.request);
+  await classRef.set({ id: "2-1", name: "2학년 1반", revision: 0, currentLessonId: first.id, openedLessonIds: [first.id] });
+  await page.clock.install();
+  await page.goto("/teacher/classes?classId=2-1");
+  const manage = page.getByRole("button", { name: "수업 관리", exact: true });
+  await manage.click();
+  const dialog = page.getByRole("dialog", { name: "2학년 1반 수업 관리", exact: true });
+  const summary = dialog.getByRole("region", { name: "저장할 수업 설정", exact: true });
+  const other = dialog.getByRole("checkbox", { name: new RegExp(otherTeacherOpened.title) });
+  const own = dialog.getByRole("checkbox", { name: new RegExp(ownChoice.title) });
+  const currentPicker = dialog.getByRole("combobox", { name: "이번 수업", exact: true });
+  await other.check();
+  await own.check();
+  await currentPicker.click();
+  await page.getByRole("option", { name: ownChoice.title, exact: true }).click();
+  await expect(summary).toContainText("새로 공개할 수업 2개");
+
+  // An external teacher commits while this dialog still owns its original revision.
+  await classRef.update({ revision: 1, currentLessonId: otherTeacherOpened.id, openedLessonIds: [first.id, otherTeacherOpened.id] });
+  const polled = page.waitForResponse(response => new URL(response.url()).pathname === "/api/classroom/teacher" && response.status() === 200);
+  await page.clock.fastForward(30_000);
+  await (await polled).finished();
+  await expect(page.locator("#current-lesson-title")).toHaveText(otherTeacherOpened.title);
+  await expect(summary).toContainText("새로 공개할 수업 2개");
+  await expect(currentPicker).toHaveText(ownChoice.title);
+
+  const posts: Pick<ClassSettings, "revision" | "currentLessonId" | "openedLessonIds">[] = [];
+  let holdSave = false;
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/api/classroom/classes/2-1", async route => {
+    if (route.request().method() === "POST") {
+      posts.push(route.request().postDataJSON());
+      if (holdSave) await gate;
+    }
+    await route.continue();
+  });
+  try {
+    const save = dialog.getByRole("button", { name: "설정 저장", exact: true });
+    const conflict = page.waitForResponse(response => new URL(response.url()).pathname === "/api/classroom/classes/2-1" && response.status() === 409);
+    await save.click();
+    await (await conflict).finished();
+    await expect(dialog.getByRole("alert")).toContainText("수업 설정이 변경됐어요.");
+    await expect(save).toBeDisabled();
+    await expect(own).toBeChecked();
+    await expect(currentPicker).toHaveText(ownChoice.title);
+    await expect(summary).toContainText("새로 공개할 수업 2개");
+    expect(posts).toHaveLength(1);
+    expect(posts[0].revision).toBe(0);
+    await page.setViewportSize({ width: 390, height: 712 });
+    await dialog.getByRole("alert").scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("publish-summary-conflict-390.png"), fullPage: true });
+
+    await dialog.getByRole("button", { name: "최신 설정 확인 후 다시 적용", exact: true }).click();
+    await expect(dialog.getByRole("status")).toContainText("최신 공개 목록을 반영했어요.");
+    await expect(summary).toContainText("새로 공개할 수업 1개");
+    await expect(summary.getByText(ownChoice.title, { exact: true })).toBeVisible();
+    await expect(summary.getByText(otherTeacherOpened.title, { exact: true })).toHaveCount(0);
+    await expect(summary).toContainText(`이번 수업 변경: ${ownChoice.title}`);
+    await expect(other).toBeChecked();
+    await expect(other).toBeDisabled();
+    await expect(own).toBeChecked();
+    await expect(currentPicker).toHaveText(ownChoice.title);
+    await expect(save).toBeEnabled();
+    expect(posts).toHaveLength(1);
+    expect((await classRef.get()).data()).toMatchObject({ revision: 1, currentLessonId: otherTeacherOpened.id, openedLessonIds: [first.id, otherTeacherOpened.id] });
+
+    holdSave = true;
+    await save.scrollIntoViewIfNeeded();
+    const box = await save.boundingBox();
+    expect(box).not.toBeNull();
+    await save.press("Enter");
+    const pending = dialog.getByRole("button", { name: "저장 중…", exact: true });
+    await expect(pending).toBeDisabled();
+    await expect(dialog.getByRole("button", { name: "취소", exact: true })).toBeDisabled();
+    await expect(own).toBeDisabled();
+    await expect(currentPicker).toBeDisabled();
+    await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+    await page.keyboard.press("Enter");
+    await expect.poll(() => posts.length).toBe(2);
+    expect(posts[1]).toMatchObject({ revision: 1, currentLessonId: ownChoice.id });
+    expect(posts[1].openedLessonIds).toEqual(expect.arrayContaining([first.id, otherTeacherOpened.id, ownChoice.id]));
+    const saved = page.waitForResponse(response => new URL(response.url()).pathname === "/api/classroom/classes/2-1" && response.status() === 200);
+    release();
+    await (await saved).finished();
+    await expect(dialog).toBeHidden();
+    await expect(manage).toBeFocused();
+    expect(posts).toHaveLength(2);
+    expect((await classRef.get()).data()).toMatchObject({ revision: 2, currentLessonId: ownChoice.id, openedLessonIds: [first.id, otherTeacherOpened.id, ownChoice.id] });
+  } finally {
+    release();
+    await page.unrouteAll({ behavior: "wait" });
+  }
 });
 
 test("교사·학생 탐색 메뉴: 동일한 아이콘 수·현재 화면 표시·모바일 키보드", async ({ page }, testInfo) => {

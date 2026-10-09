@@ -1,0 +1,12 @@
+[
+  {
+    "preservedAt": "2026-10-10",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/consulting-improvements",
+    "baseCommit": "12c8a3504aea501e49a2512c9d1a8f79c9d7e4cd",
+    "source": "Windows working tree after R0-R8 local verification and before user-approved consulting production release",
+    "original": "docs/HANDOFF.md",
+    "preserved": "HANDOFF.md",
+    "sha256": "a201ff8f500017276d3efbc5be0d15bc652ddaf6f2cf209b2f06e3dadc784df0"
+  }
+]

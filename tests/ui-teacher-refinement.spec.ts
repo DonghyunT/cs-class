@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { writeFile } from "node:fs/promises";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import { buildProgrammingProject, programmingMissions } from "../src/lib/classroom/programming-entry";
 import { emptyWork, progressFor, submissionCountFor } from "../src/lib/classroom/progress";
@@ -44,6 +45,83 @@ async function filter(page: Page, name: string, choice: string) {
   await page.getByRole("option", { name: choice, exact: true }).click();
 }
 
+test("학번·닉네임 검색은 공백·대소문자·동일 닉네임과 q/기존 링크·계정 필터를 보존", async ({ page }, testInfo) => {
+  const students = rows.map((row, index) => ({ ...row, nickname: ["초코", "초코", "CodeCat", "아주 긴 닉네임을 쓰는 학생 이름", undefined, "별"][index], mustChangePassword: index < 2 }));
+  await syntheticRows(page, "normal", students);
+  const search = page.getByRole("searchbox");
+  await search.dispatchEvent("compositionstart", { data: "", bubbles: true });
+  for (const value of ["초", "초코"]) {
+    await search.evaluate((input, value) => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+      input.dispatchEvent(new InputEvent("input", { bubbles: true, data: value, inputType: "insertCompositionText", isComposing: true }));
+      input.dispatchEvent(new CompositionEvent("compositionupdate", { bubbles: true, data: value }));
+    }, value);
+    await expect(search).toHaveValue(value);
+    await expect(page.locator("tbody tr")).toHaveCount(2);
+  }
+  await search.dispatchEvent("compositionend", { data: "초코", bubbles: true });
+  await expect(search).toHaveValue("초코");
+  expect(new URL(page.url()).searchParams.get("q")).toBe("초코");
+  const compositionProof = testInfo.outputPath("search-composition.json");
+  await writeFile(compositionProof, JSON.stringify({ environment: "synthetic composition events", value: await search.inputValue(), rows: await page.locator("tbody tr").count() }));
+  await testInfo.attach("search-composition", { path: compositionProof, contentType: "application/json" });
+  await search.fill("  초코  ");
+  await expect(page.locator("tbody tr")).toHaveCount(2);
+  expect(new URL(page.url()).searchParams.get("q")).toBe("초코");
+  expect(new URL(page.url()).searchParams.has("studentId")).toBe(false);
+  await page.reload(); await expect(search).toHaveValue("초코");
+  await expect(page.locator("tbody tr")).toHaveCount(2);
+  await search.fill("cOdEc");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.locator("tbody tr")).toContainText("20183");
+  await search.fill("20185");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.locator("tbody tr")).toContainText("20185");
+  await search.fill("   ");
+  await expect(page.locator("tbody tr")).toHaveCount(6);
+  await expect(search).not.toHaveAttribute("inputmode", "numeric");
+  await page.goto(`/teacher/students?classId=2-1&lessonId=${lesson.id}&studentId=20182`);
+  await expect(search).toHaveValue("20182");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await search.fill("초코");
+  const account = page.getByRole("checkbox", { name: "비밀번호 변경 필요만", exact: true });
+  await account.check();
+  expect(new URL(page.url()).searchParams.get("password")).toBe("required");
+  expect(new URL(page.url()).searchParams.has("studentId")).toBe(false);
+  await page.reload(); await expect(account).toBeChecked();
+  await expect(page.locator("tbody tr")).toHaveCount(2);
+  await expect(page.locator('[class*="summary"]')).toContainText("등록 학생6명");
+  await search.fill("CodeCat");
+  await expect(page.getByText("조건에 맞는 학생이 없어요.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "검색·필터 초기화", exact: true }).click();
+  for (const key of ["q", "studentId", "password", "review"]) expect(new URL(page.url()).searchParams.has(key)).toBe(false);
+  await expect(account).not.toBeChecked();
+  await page.goto(`/teacher/students?classId=2-1&lessonId=${lesson.id}&q=&studentId=20181&password=invalid`);
+  await expect(search).toHaveValue(""); await expect(account).not.toBeChecked();
+  await expect(page.locator("tbody tr")).toHaveCount(6);
+  await page.goto(`/teacher/students?classId=2-1&lessonId=${lesson.id}&q=초코&q=별`);
+  await expect(search).toHaveValue("초코");
+  await expect(page.locator("tbody tr")).toHaveCount(2);
+  await page.setViewportSize({ width: 390, height: 720 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("열린 수업이 없어도 닉네임 검색과 비밀번호 조건은 AND로 동작", async ({ page }) => {
+  const students = rows.map((row, index) => ({ ...row, nickname: index < 2 ? "초코" : undefined }));
+  await syntheticRows(page, "no-lesson", students);
+  await page.getByRole("searchbox").fill("초코");
+  await expect(page.locator("tbody tr")).toHaveCount(2);
+  await page.getByRole("checkbox", { name: "비밀번호 변경 필요만", exact: true }).check();
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.locator("tbody tr")).toContainText("20181");
+  await expect(page.getByRole("checkbox", { name: "확인 요청만", exact: true })).toBeDisabled();
+  await page.reload(); await expect(page.locator("tbody tr")).toHaveCount(1);
+  await filter(page, "담당 반", "2학년 2반");
+  await expect(page.getByRole("searchbox")).toHaveValue("");
+  await expect(page.getByRole("checkbox", { name: "비밀번호 변경 필요만", exact: true })).not.toBeChecked();
+  for (const key of ["q", "studentId", "password", "review"]) expect(new URL(page.url()).searchParams.has(key)).toBe(false);
+});
+
 test("알려진 최근 작품만 집계하며 선택 도전과 수정 중 제출본은 기본 완료와 분리", () => {
   expect(rows.map((row) => submissionCountFor(lesson, row.work))).toEqual([0, 1, 3, 4, 1, 1]);
   expect(rows.filter((row) => submissionCountFor(lesson, row.work) > 0)).toHaveLength(5);
@@ -76,22 +154,22 @@ test("교사 집계·진행 필터·검색 복구는 부분 제출과 선택 도
   await filter(page, "진행 상태", "시작 전");
   await expect(page.locator("tbody tr")).toHaveCount(1);
   await expect(page.locator("tbody tr")).toContainText("20181");
-  await page.getByRole("searchbox", { name: "학번 검색" }).fill("20183");
+  await page.getByRole("searchbox", { name: "학번·닉네임 검색" }).fill("20183");
   await expect(page.getByText("조건에 맞는 학생이 없어요.", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "검색·필터 초기화" }).click();
   await expect(page.locator("tbody tr")).toHaveCount(6);
-  await page.getByRole("searchbox", { name: "학번 검색" }).fill("20183");
+  await page.getByRole("searchbox", { name: "학번·닉네임 검색" }).fill("20183");
   await expect(page.locator("tbody tr")).toHaveCount(1);
   await expect(page.getByText("1명 표시 · 전체 6명", { exact: true })).toBeVisible();
   await filter(page, "확인할 수업", LESSONS.find((item) => item.id === "sequence-lab")!.title);
   await expect(page.locator("tbody tr")).toHaveCount(6);
-  await expect(page.getByRole("searchbox", { name: "학번 검색" })).toHaveValue("");
+  await expect(page.getByRole("searchbox", { name: "학번·닉네임 검색" })).toHaveValue("");
   await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("모든 진행");
   await filter(page, "진행 상태", "시작 전");
-  await page.getByRole("searchbox", { name: "학번 검색" }).fill("20181");
+  await page.getByRole("searchbox", { name: "학번·닉네임 검색" }).fill("20181");
   await filter(page, "담당 반", "2학년 2반");
   await expect(page.locator("tbody tr")).toHaveCount(6);
-  await expect(page.getByRole("searchbox", { name: "학번 검색" })).toHaveValue("");
+  await expect(page.getByRole("searchbox", { name: "학번·닉네임 검색" })).toHaveValue("");
   await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("모든 진행");
 });
 
@@ -100,7 +178,7 @@ test("열린 수업 없음은 학습 필터만 비활성화하고 계정 조회�
   await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "제출 상태", exact: true })).toHaveCount(0);
   await expect(page.locator("tbody").getByRole("progressbar")).toHaveCount(0);
-  await page.getByRole("searchbox", { name: "학번 검색" }).fill("20181");
+  await page.getByRole("searchbox", { name: "학번·닉네임 검색" }).fill("20181");
   await expect(page.locator("tbody tr")).toHaveCount(1);
   await expect(page.getByRole("button", { name: "20181 비밀번호 초기화", exact: true })).toBeVisible();
 });
@@ -171,7 +249,7 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   await expect(challenge.getByRole("button", { name: "20185 비밀번호 초기화", exact: true })).toBeVisible();
 
   await filter(page, "진행 상태", "진행 중");
-  await page.getByRole("searchbox", { name: "학번 검색" }).fill("20182");
+  await page.getByRole("searchbox", { name: "학번·닉네임 검색" }).fill("20182");
   const row = page.locator("tbody tr");
   await expect(row).toHaveCount(1);
   await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuetext", "필수 활동 1/13개 완료");
@@ -188,7 +266,7 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   await expect(list).toHaveAttribute("aria-pressed", "true");
   await expect(row.getByRole("progressbar", { name: "20182 실습 진도", exact: true })).toHaveAttribute("aria-valuenow", "25");
   await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("진행 중");
-  await expect(page.getByRole("searchbox", { name: "학번 검색" })).toHaveValue("20182");
+  await expect(page.getByRole("searchbox", { name: "학번·닉네임 검색" })).toHaveValue("20182");
   await grid.click();
   await page.route("**/api/classroom/teacher?**", route => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ code: "FETCH_UNAVAILABLE", message: "학습 기록을 불러오지 못했어요. 다시 시도해 주세요." }) }));
   const refresh = page.getByRole("button", { name: "수업 새로고침", exact: true });
@@ -196,7 +274,7 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   await expect(page.getByRole("alert").filter({ hasText: "학습 기록을 불러오지 못했어요" })).toContainText("학습 기록을 불러오지 못했어요");
   await expect(refresh).toBeEnabled();
   await expect(grid).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("searchbox", { name: "학번 검색" })).toHaveValue("20182");
+  await expect(page.getByRole("searchbox", { name: "학번·닉네임 검색" })).toHaveValue("20182");
   await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("진행 중");
   await expect(row).toHaveCount(1);
   await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "8");
@@ -214,7 +292,7 @@ test("선택 복습과 미지정 학생은 목록·격자에서 정규 완료율
   await expect(page.locator("tbody").getByRole("progressbar")).toHaveCount(0);
   await expect(page.getByText("선택 복습은 수업 완료율에 포함하지 않아요.", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "20181 비밀번호 초기화", exact: true })).toBeVisible();
-  await page.getByRole("searchbox", { name: "학번 검색" }).fill("20181");
+  await page.getByRole("searchbox", { name: "학번·닉네임 검색" }).fill("20181");
   await expect(page.locator("tbody tr")).toHaveCount(1);
 
   await page.unroute("**/api/classroom/teacher?**");

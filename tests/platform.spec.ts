@@ -122,7 +122,7 @@ test("교사 실제 기록 · 제출 작품 · 수업 지정 · 초기화 · 작
   await page.getByRole("combobox", { name: "담당 반" }).click();
   await expect(page.getByRole("option")).toHaveCount(11);
   await page.keyboard.press("Escape");
-  await page.getByLabel("학번 검색").fill("20101");
+  await page.getByLabel("학번·닉네임 검색").fill("20101");
   await page.getByRole("button", { name: "20101 제출 작품 보기" }).click();
   await expect(page.getByRole("dialog")).toContainText("20101 학생의 제출 작품");
   await expect(page.getByRole("dialog").getByRole("listitem")).toHaveCount(5);
@@ -135,7 +135,7 @@ test("교사 실제 기록 · 제출 작품 · 수업 지정 · 초기화 · 작
   await expect(page.getByText("2학년 1반 수업 설정을 저장했어요.")).toBeVisible();
   expect((await db.collection("csClasses").doc("2-1").get()).data()!.openedLessonIds).toEqual([lessonId]);
   await page.getByRole("navigation", { name: "교실 메뉴" }).getByRole("link", { name: "학생 현황·계정", exact: true }).click();
-  await page.getByLabel("학번 검색").fill("20101");
+  await page.getByLabel("학번·닉네임 검색").fill("20101");
   await page.getByRole("button", { name: "20101 비밀번호 초기화" }).click();
   await expect(page.getByRole("alertdialog").getByRole("button", { name: "취소", exact: true })).toBeFocused();
   await page.getByRole("button", { name: "취소", exact: true }).click();

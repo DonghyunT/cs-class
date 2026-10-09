@@ -327,7 +327,10 @@ test("중앙 목차·움직임 툴팁·입장 선택창의 키보드와 좁은 �
   for (const width of [1440, 1024, 768]) {
     await page.setViewportSize({ width, height: 900 });
     const bounds = await nav.boundingBox();
-    expect(Math.abs(bounds!.x + bounds!.width / 2 - width / 2)).toBeLessThan(2);
+    const header = await page.locator(".landing-header").boundingBox();
+    expect(
+      Math.abs(bounds!.x + bounds!.width / 2 - (header!.x + header!.width / 2)),
+    ).toBeLessThan(2);
   }
   const motion = page.getByRole("button", {
     name: "움직임 줄이기",

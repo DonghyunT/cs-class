@@ -1,7 +1,7 @@
 import "server-only";
 import type { WorkDraft } from "../classroom/types";
 import { runnableEntryBlocks } from "../classroom/entry-project";
-import { concepts, questions } from "../prototype/programming";
+import { concepts, questions } from "../classroom/programming-data";
 import { UNIT_QUIZ_DATA } from "./review-quiz.mjs";
 import { REVIEW_LESSONS } from "../classroom/review/lessons";
 

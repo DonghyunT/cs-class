@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
+import type { LessonMode } from "../work-controller";
+import { PracticeGuidance } from "../practice-guidance";
 import { Button } from "@/components/ui/button";
 import { classroomApi } from "@/lib/classroom/client";
 import { abstractionPresets } from "@/lib/classroom/review/abstraction-data.mjs";
@@ -49,8 +51,8 @@ function FlowExecution({ graph, onActive }: { graph: Graph; onActive?: (id: stri
     </>}
   </section>;
 }
-export function Flowchart({ controller }: { controller: ReviewController }) {
-  const project = controller.draft.reviewProject, ai = useReviewAi(controller), { clear } = ai;
+export function Flowchart({ controller, practiceFocused = false, mode = "student" }: { controller: ReviewController; practiceFocused?: boolean; mode?: LessonMode }) {
+  const project = controller.draft.reviewProject, ai = useReviewAi(controller, mode), { clear } = ai;
   const [selected, setSelected] = useState(""), [from, setFrom] = useState("start"), [to, setTo] = useState("end"), [branch, setBranch] = useState<"" | "예" | "아니오">(""), [imported, setImported] = useState<AbstractionProject | null>(null), [sourceError, setSourceError] = useState(""), [reading, setReading] = useState(false), [sourceKind, setSourceKind] = useState<"draft" | "submission">("submission");
   const [history, setHistory] = useState<FlowchartProject[]>([]), [paletteBlock,setPaletteBlock] = useState(""), [activeNode,setActiveNode] = useState<string | undefined>();
   const heading = useRef<HTMLHeadingElement>(null), [focus, setFocus] = useState(0), fieldId = useId();
@@ -69,6 +71,7 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
   const field = (label: string, key: "current" | "goal" | "conditions" | "core", multiline = false) => <div className={styles.field}>
     <label htmlFor={`${fieldId}-${key}`}>{label}</label>{multiline ? <textarea id={`${fieldId}-${key}`} disabled={controller.busy} value={(p[key] as string[]).join("\n")} maxLength={1000} onChange={e => edit({ [key]: e.target.value.split("\n") })} /> : <input id={`${fieldId}-${key}`} disabled={controller.busy} value={p[key] as string} maxLength={1000} onChange={e => edit({ [key]: e.target.value })} />}</div>;
   async function readAbstraction() {
+    if (mode === "preview") return;
     setReading(true); setSourceError(""); setImported(null);
     try { const work = await classroomApi.work("review-abstraction"), source = sourceKind === "submission" ? work.submission?.reviewProject : work.draft.reviewProject; if (source?.type !== "abstraction") throw Error("선택한 추상화 기록이 없어요. 예시나 직접 작성으로 시작할 수 있어요."); setImported(source); }
     catch (error) { setSourceError(error instanceof Error ? error.message : "추상화 기록을 읽지 못했어요."); } finally { setReading(false); }
@@ -80,16 +83,16 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
     <nav className={styles.stepNav} aria-label="순서도 실습">{["1", "2", "3", "guide", "free"].map((id, index) => <button key={id} disabled={locked} aria-pressed={p.mission === id} onClick={() => { edit({ mission: id as FlowchartProject["mission"] }, false); setFocus(n => n + 1); }}>{["1. 순차 퍼즐", "2. 선택 퍼즐", "3. 반복 퍼즐", "예시 공방 (선택)", "자유 캔버스"][index]}{controller.work.missions?.[id]?.submission ? " · 제출 기록 있음" : ""}</button>)}</nav>
     {mission ? <>
       <h3 ref={heading} tabIndex={-1}>{mission.title}</h3>
-      <p>{mission.desc}</p>
+      <PracticeGuidance focused={practiceFocused} label="미션 설명"><p>{mission.desc}</p></PracticeGuidance>
       <div className={`${styles.flowColumns} ${readable.puzzleColumns}`}>
-        <section className={styles.panel} aria-label="순서도 기호 보관함"><small className={styles.eyebrow}>Symbol Palette</small><h3>순서도 기호 보관함</h3><p className={styles.muted}>기호를 빈칸으로 끌어 놓아요. 클릭하거나 Enter로 기호를 고른 뒤 빈칸을 눌러도 좋아요.</p><div className={styles.palette}>{mission.palette.map(block => <button key={block.id} className={styles.symbolBlock} data-shape={block.shape} aria-label={block.text} aria-pressed={paletteBlock === block.id} disabled={locked} draggable={!locked} onDragStart={event => { event.dataTransfer.setData("text/plain",block.id); event.dataTransfer.effectAllowed = "copy"; setPaletteBlock(block.id); }} onClick={() => setPaletteBlock(block.id)}><span aria-hidden="true">{block.shape === "io" ? "▱" : block.shape === "decision" ? "◇" : "▭"}</span><strong>{block.text}</strong></button>)}</div><p className={styles.feedback} role="status">{mission.palette.find(block => block.id === paletteBlock)?.text ? `선택: ${mission.palette.find(block => block.id === paletteBlock)?.text} · 놓을 기호를 누르세요.` : "보관함에서 기호를 골라 보세요."}</p><div className={styles.symbolGuide}><strong>💡 표준 기호 가이드</strong><p>⬭ 단말: 시작과 종료<br />▱ 입출력: 데이터 입력·출력<br />▭ 처리: 연산·명령 실행<br />◇ 판단: 조건 검사·분기</p></div>
+        <section className={styles.panel} aria-label="순서도 기호 보관함"><small className={styles.eyebrow}>Symbol Palette</small><h3>순서도 기호 보관함</h3><PracticeGuidance focused={practiceFocused} label="기호 조작 안내"><p className={styles.muted}>기호를 빈칸으로 끌어 놓아요. 클릭하거나 Enter로 기호를 고른 뒤 빈칸을 눌러도 좋아요.</p></PracticeGuidance><div className={styles.palette}>{mission.palette.map(block => <button key={block.id} className={styles.symbolBlock} data-shape={block.shape} aria-label={block.text} aria-pressed={paletteBlock === block.id} disabled={locked} draggable={!locked} onDragStart={event => { event.dataTransfer.setData("text/plain",block.id); event.dataTransfer.effectAllowed = "copy"; setPaletteBlock(block.id); }} onClick={() => setPaletteBlock(block.id)}><span aria-hidden="true">{block.shape === "io" ? "▱" : block.shape === "decision" ? "◇" : "▭"}</span><strong>{block.text}</strong></button>)}</div><p className={styles.feedback} role="status">{mission.palette.find(block => block.id === paletteBlock)?.text ? `선택: ${mission.palette.find(block => block.id === paletteBlock)?.text} · 놓을 기호를 누르세요.` : "보관함에서 기호를 골라 보세요."}</p><PracticeGuidance focused={practiceFocused} label="표준 기호 가이드"><div className={styles.symbolGuide}><strong>💡 표준 기호 가이드</strong><p>⬭ 단말: 시작과 종료<br />▱ 입출력: 데이터 입력·출력<br />▭ 처리: 연산·명령 실행<br />◇ 판단: 조건 검사·분기</p></div></PracticeGuidance>
           <details><summary>목록으로 배치하기</summary><div className={styles.stack}>{mission.slots.filter(slot => !slot.fixed).map(slot => <div key={slot.id} className={styles.field}>
             <label htmlFor={`${fieldId}-${slot.id}`}>{slot.hint}</label>
             <select id={`${fieldId}-${slot.id}`} disabled={locked} value={p.placements[p.mission]?.[slot.id] ?? ""} onChange={event => edit({ placements: { ...p.placements, [p.mission]: { ...p.placements[p.mission], [slot.id]: event.target.value } } })}>
               <option value="">빈 기호</option>{mission.palette.map(block => <option key={block.id} value={block.id}>{block.shape === "decision" ? "◇" : block.shape === "io" ? "▱" : "▭"} {block.text}</option>)}</select>
           </div>)}</div></details></section>
         <section className={styles.panel}><header className={styles.stageHeader}><h3>🧩 순서도 조립 캔버스</h3><Button variant="outline" disabled={locked} onClick={() => edit({ placements: { ...p.placements,[p.mission]: {} } })}>다시 조립</Button></header><FlowDiagram {...graph} active={activeNode} select={slotId => place(slotId,paletteBlock)} drop={place} /></section>
-        <div className={`${styles.stack} ${readable.executionPanels}`}><FlowExecution onActive={setActiveNode} key={JSON.stringify([p.placements,p.mission])} graph={puzzleExecutionGraph(p.mission,p.placements[p.mission] ?? {})} /><section className={styles.panel}><h3>🤖 순서도 진단기</h3><Button variant="outline" disabled={locked} onClick={() => void ai.ask("flow-puzzle", "현재 배치에서 고칠 부분의 이유와 힌트를 알려 주세요.", p.mission)}>AI 오류 설명과 힌트</Button>{ai.error && <p className={styles.error} role="alert">{ai.error}</p>}{ai.result && <p className={styles.feedback} role="status">{ai.result.message}</p>}<ReviewSubmit controller={controller} missionId={p.mission} /></section></div>
+        <div className={`${styles.stack} ${readable.executionPanels}`}><FlowExecution onActive={setActiveNode} key={JSON.stringify([p.placements,p.mission])} graph={puzzleExecutionGraph(p.mission,p.placements[p.mission] ?? {})} /><section className={styles.panel}><h3>🤖 순서도 진단기</h3><Button variant="outline" disabled={mode === "preview" || locked || controller.actionBlocked} onClick={() => void ai.ask("flow-puzzle", "현재 배치에서 고칠 부분의 이유와 힌트를 알려 주세요.", p.mission)}>AI 오류 설명과 힌트</Button>{ai.error && <p className={styles.error} role="alert">{ai.error}</p>}{ai.result && <p className={styles.feedback} role="status">{ai.result.message}</p>}<ReviewSubmit mode={mode} controller={controller} missionId={p.mission} /></section></div>
       </div>
     </> : p.mission === "guide" ? <>
       <h3 ref={heading} tabIndex={-1}>{level2Walkthrough.title.replace(/^[^지]+/, "")}</h3>
@@ -104,14 +107,14 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
     </> : <>
       <h3 ref={heading} tabIndex={-1}>내 생각을 연결하는 자유 캔버스</h3>
       <details className={styles.panel}>
-        <summary>추상화 기록이나 예시에서 시작하기</summary>
+        <summary>추상화 기록이나 예시에서 시작하기</summary>{mode === "preview" && <p>학생 기록은 가져오지 않아요. 아래 예시나 직접 작성으로 체험하세요.</p>}
         <p className={styles.muted}>선택한 정의만 복사해요. 이후 두 작품은 따로 저장돼요. 현재 기획서와 기호는 유지돼요.</p>
         <label className={styles.field}>가져올 추상화 기록<select value={sourceKind} onChange={e => { setSourceKind(e.target.value as typeof sourceKind); setImported(null); }}>
           <option value="submission">최근 제출본</option>
           <option value="draft">현재 작성본</option>
         </select>
         </label>
-        <Button variant="outline" disabled={reading || locked} onClick={() => void readAbstraction()}>{reading ? "기록을 읽는 중…" : "추상화 기록 살펴보기"}</Button>{sourceError && <p role="alert" className={styles.error}>{sourceError}</p>}{imported && <>
+        <Button variant="outline" disabled={mode === "preview" || reading || locked} onClick={() => void readAbstraction()}>{reading ? "기록을 읽는 중…" : "추상화 기록 살펴보기"}</Button>{sourceError && <p role="alert" className={styles.error}>{sourceError}</p>}{imported && <>
           <p>{imported.current} → {imported.goal}</p>
           <p>조건: {imported.conditions.join(" / ")}</p>
           <Button disabled={locked} onClick={() => { edit({ current: imported.current, goal: imported.goal, conditions: [...imported.conditions], core: [...imported.core] }); setImported(null); }}>이 정의를 내 작품에 복사</Button>
@@ -119,7 +122,7 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
       </details>
       <div className={`${styles.freeColumns} ${readable.freeColumns}`}>
         <section className={`${styles.panel} ${styles.planner}`}>
-          <h3>문제 정의와 자연어 기획서</h3>{field("현재 상태", "current")}{field("목표 상태", "goal")}{field("필수 조건", "conditions", true)}{field("핵심 요소", "core", true)}<Button variant="outline" disabled={locked || !p.current.trim() || !p.goal.trim()} onClick={() => void ai.ask("flow-plan", "조건에 맞는 자연어 설계 카드를 제안해 주세요.", "free")}>AI 기획서 제안 받기</Button>{ai.error && <p role="alert" className={styles.error}>{ai.error}</p>}{ai.result && <p role="status" className={styles.feedback}>{ai.result.message}</p>}{!!ai.result?.cards.length && <>
+          <h3>문제 정의와 자연어 기획서</h3>{field("현재 상태", "current")}{field("목표 상태", "goal")}{field("필수 조건", "conditions", true)}{field("핵심 요소", "core", true)}<Button variant="outline" disabled={mode === "preview" || locked || controller.actionBlocked || !p.current.trim() || !p.goal.trim()} onClick={() => void ai.ask("flow-plan", "조건에 맞는 자연어 설계 카드를 제안해 주세요.", "free")}>AI 기획서 제안 받기</Button>{ai.error && <p role="alert" className={styles.error}>{ai.error}</p>}{ai.result && <p role="status" className={styles.feedback}>{ai.result.message}</p>}{!!ai.result?.cards.length && <>
             <ol>{ai.result.cards.map(card => <li key={card.id}>{card.text}</li>)}</ol>
             <Button disabled={locked} onClick={() => { if (ai.result) edit({ cards: ai.result.cards.map(card => ({ ...card, id: crypto.randomUUID() })) }); }}>제안 기획서 채택</Button>
           </>}
@@ -144,7 +147,7 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
         <section className={styles.panel}>
           <small className={styles.eyebrow}>Flowchart Canvas</small><header className={styles.stageHeader}><h3>기호와 연결 편집</h3><Button className={readable.auxControl} variant="ghost" aria-label="캔버스 초기화" title="기호와 연결만 초기화 · 기획서와 제출 기록 유지" disabled={locked} onClick={() => { const { nodes, edges, pan } = initialReviewProject("flowchart") as FlowchartProject; edit({ nodes, edges, pan }); setSelected(""); setFrom("start"); setTo("end"); }}>초기화</Button></header>
 
-          <p className={styles.muted}>기호를 끌어 이동하거나 초점을 놓고 방향키로 이동해요. 선택하면 아래에서 내용을 고칠 수 있어요.</p>
+          <PracticeGuidance focused={practiceFocused} label="캔버스 조작 안내"><p className={styles.muted}>기호를 끌어 이동하거나 초점을 놓고 방향키로 이동해요. 선택하면 아래에서 내용을 고칠 수 있어요.</p></PracticeGuidance>
           <div className={styles.actions}>
             <Button variant="outline" disabled={locked || !history.length} onClick={() => { const previous = history.at(-1); setHistory(history.slice(0, -1)); if (previous) edit(previous, false); }}>편집 되돌리기</Button>
             <Button variant="outline" disabled={locked} onClick={() => edit({ pan: { x: Math.min(10000, p.pan.x + 200), y: p.pan.y } }, false)}>화면 오른쪽</Button>
@@ -178,9 +181,9 @@ export function Flowchart({ controller }: { controller: ReviewController }) {
       </div>
       <FlowExecution onActive={setActiveNode} key={JSON.stringify([p.nodes.map(({ id, shape, text }) => ({ id, shape, text })), p.edges, p.placements, p.mission])} graph={p} />
       <section className={styles.panel}>
-        <h3>설계 리뷰</h3>
+        <h3>설계 리뷰</h3>{mode === "preview" && <p>자유 캔버스는 기본 구조 검사까지 체험해요. AI 설계 리뷰·교사 확인·최종 제출은 실제 수업에서 진행합니다.</p>}
         <p className={styles.muted}>목표·조건·실제 연결을 검토해요. 타당한 단계 묶음이나 배치 차이는 개선 의견으로 안내해요.</p>
-        <Button disabled={locked || !basicReviewCheck(p, "free").passed} onClick={() => void ai.ask("flow-review", "목표·필수 조건·실제 연결을 검토해 주세요.", "free")}>AI 설계 리뷰 받기</Button>{controller.work.aiReview && <p className={styles.feedback}>{sameReviewProject(p, controller.work.aiReview.project, "free") ? "현재 작품 리뷰: " : "이전 작품 리뷰: "}{controller.work.aiReview.message}</p>}{ai.remaining !== null && <p className={styles.muted}>오늘 AI 도움 {ai.remaining}회 남음</p>}<ReviewSubmit controller={controller} missionId="free" />
+        <Button disabled={mode === "preview" || locked || controller.actionBlocked || !basicReviewCheck(p, "free").passed} onClick={() => void ai.ask("flow-review", "목표·필수 조건·실제 연결을 검토해 주세요.", "free")}>AI 설계 리뷰 받기</Button>{controller.work.aiReview && <p className={styles.feedback}>{sameReviewProject(p, controller.work.aiReview.project, "free") ? "현재 작품 리뷰: " : "이전 작품 리뷰: "}{controller.work.aiReview.message}</p>}{ai.remaining !== null && <p className={styles.muted}>오늘 AI 도움 {ai.remaining}회 남음</p>}<ReviewSubmit mode={mode} controller={controller} missionId="free" />
       </section>
     </>}
   </div>;

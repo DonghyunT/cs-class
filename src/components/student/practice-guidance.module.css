@@ -1,0 +1,5 @@
+.guidance{min-width:0}
+.guidance>summary{min-height:44px;align-content:center;cursor:pointer;font-weight:650;color:var(--muted-foreground,#526173);font-size:14px}
+.guidance[data-focused=false]>summary{display:none}
+.guidance>div{min-width:0}
+.guidance>summary:focus-visible{outline:3px solid var(--primary,#376fc8);outline-offset:3px}

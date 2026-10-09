@@ -211,7 +211,7 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
   await expect(page.getByLabel("현재 상태", { exact: true })).toBeFocused();
   const afterResize = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
   expect(afterResize.nodes).toEqual(moved.nodes); expect(afterResize.edges).toEqual(moved.edges); expect(afterResize.pan).toEqual(moved.pan);
-  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.setViewportSize({ width: 1920, height: 1000 });
   await page.getByRole("button", { name: "예시 공방 (선택)" }).click();
   await page.getByRole("button", { name: /4단계: 순차 구조/ }).click();
   await page.getByRole("button", { name: "공방 기호를 자유 캔버스에 복사" }).click();
@@ -236,7 +236,7 @@ test("세 퍼즐은 오류 관찰·실행·각 제출·재접속 기록을 유�
     if (i) await page.getByRole("button", { name: i === 1 ? /2\. 선택 퍼즐/ : /3\. 반복 퍼즐/ }).click();
     if (!(await page.locator('select[id$="-s2"]').isVisible())) await page.getByText("목록으로 배치하기", { exact: true }).click();
     for (const [slot, block] of Object.entries(correct[i])) await page.locator(`select[id$="-${slot}"]`).selectOption(block);
-    await page.getByRole("button", { name: "작품 검증", exact: true }).click(); await page.getByRole("button", { name: "작품 제출", exact: true }).click(); await expect(page.getByText("복습 작품을 저장했어요.")).toBeVisible();
+    await page.getByRole("button", { name: "작품 검증", exact: true }).click(); await page.getByRole("button", { name: "작품 제출", exact: true }).click(); await expect(page.getByText("복습 작품을 제출했어요.")).toBeVisible();
   }
   await page.reload(); await expect(page.getByRole("button", { name: /3\. 반복 퍼즐/ })).toHaveAttribute("aria-pressed", "true");
   const run = page.getByRole("region", { name: "순서도 실행" }); await run.getByRole("button", { name: "실행 준비 / 다시 시작" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click();

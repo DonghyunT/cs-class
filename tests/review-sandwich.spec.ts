@@ -95,7 +95,7 @@ test("AI 준비·응답 대기 중 작성한 다음 입력과 서버 명령을 �
   });
   await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "실행" }).click();
   await expect.poll(() => saving).toBe(true); await input.fill("준비 중 새로 쓴 명령"); releaseSave();
-  await expect(page.getByText("알고리즘 실행 기록")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "알고리즘 실행 기록", exact: true })).toBeVisible();
   await expect(page.locator("ol").filter({ hasText: "빵 봉지를 열어" })).toBeVisible();
   await expect(input).toHaveValue("준비 중 새로 쓴 명령"); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await input.fill("fixture-slow"); await page.getByRole("button", { name: "실행" }).click();

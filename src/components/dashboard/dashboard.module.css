@@ -58,6 +58,7 @@
 .textButton { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; border: 0; color: #526173; background: transparent; cursor: pointer; }
 .sectionHeading > a, .eventList a { display: inline-flex; gap: 6px; align-items: center; color: #2e5fab; font-size: 13px; min-height: 44px; }
 .empty { padding: 18px 0; color: #526173; font-size: 14px; line-height: 1.85; word-break: keep-all; margin: 0; }
+.recentHeading { margin:16px 0 0; font-size:14px; font-weight:650; color:#526173; }
 .todoList, .actionList, .eventList { list-style: none; margin: 0; padding: 0; }
 .todoList > li { display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 6px 4px; border-bottom: 1px solid #edf0f5; border-radius: 10px; }
 .todoList > li:hover { background: #f8f6fd; }
@@ -143,3 +144,7 @@
   .timetableNotice { flex-direction: column; align-items: start; }
   .allLessons { justify-content: start; }
 }
+.helpJump{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;margin:-8px 0 18px;font-size:13px;color:#627087}.helpJump a{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:#966024;font-weight:650;overflow-wrap:anywhere}.helpJump a:focus-visible{outline:3px solid #376fc8;outline-offset:3px;border-radius:4px}.helpJump small{font-size:12px}
+.scheduleHistory { margin: 14px 0 20px; border-top: 1px solid #edf0f5; }
+.scheduleHistory > summary { min-height: 44px; padding: 10px 4px; cursor: pointer; font-weight: 650; color: #526173; }
+.scheduleHistory > summary:focus-visible { outline: 3px solid #376fc8; outline-offset: 3px; border-radius: 4px; }

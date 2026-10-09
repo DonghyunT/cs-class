@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import { emptyWork } from "../src/lib/classroom/progress";
 import { buildProgrammingProject } from "../src/lib/classroom/programming-entry";
-import type { Work, WorkAction } from "../src/lib/classroom/types";
+import type { StudentDashboard, Work, WorkAction } from "../src/lib/classroom/types";
 import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
 import { auth, db, headers, initialPassword, localOnly, loginStudent, resetStudent, studentPassword } from "./emulator";
 
@@ -30,6 +30,27 @@ async function openLessons(ids: string[], current: string | null = ids[0] ?? nul
   await db.doc(`csClasses/${classId}`).update({ openedLessonIds: ids, currentLessonId: current });
 }
 function progressRegion(page: Page) { return page.getByRole("region", { name: "나의 학습 진도", exact: true }); }
+async function showDashboardFixture(page: Page, lessons: StudentDashboard["lessons"], currentLessonId: string | null, work: StudentDashboard["work"] = {}) {
+  await page.unrouteAll({ behavior: "wait" });
+  await openLessons(lessons.map(lesson => lesson.id), currentLessonId);
+  for (const lesson of lessons) {
+    if (work[lesson.id]) await saveWork(work[lesson.id]);
+    else await db.doc(`csWork/${uid}__${lesson.id}`).delete();
+  }
+  const response = await page.request.get("/api/classroom/student");
+  expect(response.status()).toBe(200);
+  const data = await response.json() as StudentDashboard;
+  await page.route(studentEndpoint, route => route.fulfill({ json: { ...data, classroom: { ...data.classroom, currentLessonId, openedLessonIds: lessons.map(lesson => lesson.id) }, lessons, work } }));
+  await page.goto("/student");
+  await expect(progressRegion(page).locator("#current-heading")).toHaveText(lessons.find(lesson => lesson.id === currentLessonId)?.title ?? "다음 수업을 기다리고 있어요.");
+}
+async function expectMobileCurrentFirst(page: Page) {
+  const overview = progressRegion(page);
+  const current = (await overview.locator("#current-heading").locator("..").boundingBox())!;
+  const summary = (await overview.locator("#learning-overview-heading").locator("..").boundingBox())!;
+  expect(current.y + current.height, "이번 수업 전체가 진도 요약보다 위에 표시됨").toBeLessThanOrEqual(summary.y);
+  expect(await overview.evaluate(element => Boolean(element.querySelector("#current-heading")!.compareDocumentPosition(element.querySelector("#learning-overview-heading")!) & Node.DOCUMENT_POSITION_FOLLOWING)), "읽기 순서도 이번 수업 다음에 진도 요약").toBe(true);
+}
 async function expectProgress(page: Page, count: string, percent: number) {
   const region = progressRegion(page);
   const bar = region.getByRole("progressbar", { name: "전체 필수 활동 완료율", exact: true });
@@ -73,6 +94,22 @@ test.afterAll(async () => {
   }
   await auth.deleteUser(uid).catch(error => { if (error.code !== "auth/user-not-found") throw error; });
   if (originalClass) await db.doc(`csClasses/${classId}`).set(originalClass);
+});
+
+test("entry-guidance: 정규 수업 추가로 비율이 내려가도 완료 수와 계산 설명을 유지한다", async ({ page }) => {
+  const regular = [sequence, LESSONS.find(lesson => lesson.id === "flowchart-lab")!, LESSONS.find(lesson => lesson.id === "entry-bot-lab")!];
+  const work = emptyWork(sequence); work.conceptSolved = sequence.concepts.map(concept => concept.id); work.quizSolved = [sequence.quiz[0].id]; work.updatedAt = Date.now();
+  await showDashboardFixture(page, [...regular, review], sequence.id, { [sequence.id]: work });
+  await expectProgress(page, "3/18", 17);
+  const guide = progressRegion(page).locator("details").filter({ has: page.getByText("진도 계산 안내", { exact: true }) });
+  await expect(guide).not.toHaveAttribute("open", "");
+  const toggle = guide.locator("summary"); await toggle.focus(); await toggle.press("Enter");
+  await expect(guide).toHaveAttribute("open", "");
+  await expect(guide).toContainText("완료 기록은 그대로예요.");
+  await expect(guide).toContainText("선택 복습과 도전은 제외해요.");
+  await showDashboardFixture(page, [...regular, programming, review], programming.id, { [sequence.id]: work });
+  await expectProgress(page, "3/31", 10);
+  await expect(progressRegion(page).getByText("진도 계산 안내", { exact: true })).toBeVisible();
 });
 
 test("필수 활동 개수를 합산하며 단계 평균·선택 복습·심화 제출을 제외", async ({ page }, testInfo) => {
@@ -431,7 +468,157 @@ test("빈 반과 선택 복습만 열린 반은 0% 대신 집계를 기다림", 
   }
 });
 
+test("followup45-home: 390×720에서 미지정·시작·이어하기를 먼저 보여주고 열린 수업으로 진입", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 720 });
+  const resumed = emptyWork(programming);
+  resumed.conceptSolved = ["pc0"];
+  resumed.updatedAt = 1_700_000_000_000;
+  const fixtures = [
+    { id: "unassigned", lessons: [programming], current: null, label: "열린 수업 보기", work: {}, regular: true },
+    { id: "start", lessons: [programming], current: programming.id, label: "수업 시작", work: {}, regular: true },
+    { id: "resume", lessons: [programming], current: programming.id, label: "이어하기", work: { [programming.id]: resumed }, regular: true },
+    { id: "empty", lessons: [], current: null, label: "열린 수업 보기", work: {}, regular: false },
+    { id: "review-only", lessons: [review], current: review.id, label: "수업 시작", work: {}, regular: false },
+  ];
+  for (const fixture of fixtures) await test.step(fixture.id, async () => {
+    await showDashboardFixture(page, fixture.lessons, fixture.current, fixture.work);
+    const overview = progressRegion(page);
+    const enter = overview.getByRole("button", { name: fixture.label, exact: true });
+    await expectMobileCurrentFirst(page);
+    const box = (await enter.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height, `${fixture.id} 주 버튼 전체가 첫 화면 안에 표시됨`).toBeLessThanOrEqual(720);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    if (fixture.regular) {
+      await expect(overview.getByRole("progressbar")).toHaveCount(1);
+      await expect(overview.locator("svg").filter({ has: page.locator("[data-stage]") })).toHaveCount(1);
+      for (const stage of ["개념", "퀴즈", "실습"]) {
+        const legend = (await overview.getByRole("button", { name: new RegExp(`^${stage} 진도:`) }).boundingBox())!;
+        expect(legend.width).toBeGreaterThanOrEqual(44);
+        expect(legend.height).toBeGreaterThanOrEqual(44);
+      }
+    } else {
+      await expect(overview.getByText("아직 열린 정규 수업이 없어요.", { exact: true })).toBeVisible();
+      await expect(overview.getByRole("progressbar")).toHaveCount(0);
+      await expect(overview).not.toContainText("0%");
+      await expect(overview).not.toContainText("0/0");
+    }
+    const path = fixture.current ? `/classroom/${fixture.current}?from=dashboard` : "/student/lessons";
+    await expect(enter).toHaveAttribute("href", path);
+    if (["unassigned", "start", "resume"].includes(fixture.id)) await page.screenshot({ path: testInfo.outputPath(`followup45-home-${fixture.id}-390.png`), fullPage: true });
+    await page.unrouteAll({ behavior: "wait" });
+    await enter.focus();
+    await enter.press("Enter");
+    await expect(page).toHaveURL(`http://localhost:3000${path}`);
+    if (fixture.current) {
+      await expect(page.getByRole("heading", { name: fixture.lessons[0].title, level: 1, exact: true })).toBeVisible();
+      await expect(page.getByRole("tab", { name: fixture.id === "resume" ? "개념 25%" : "개념 0%", exact: true })).toHaveAttribute("aria-selected", "true");
+      const content = page.getByRole("tabpanel", { name: /^개념/ });
+      await expect(content).toBeVisible();
+      await expect(content.locator('[id^="concept-title"]').first()).toBeVisible();
+    } else await expect(page.getByRole("heading", { name: "열린 수업을 살펴봐요.", level: 1, exact: true })).toBeVisible();
+  });
+});
+
+test("comments-layout/followup45-home: 반응형 경계에서 카드 높이·원형·진입 요소와 초점을 유지하고 진입 다음 범례로 이동", async ({ page }) => {
+  const work = emptyWork(programming);
+  work.conceptSolved = ["pc0"];
+  work.updatedAt = 1_700_000_000_000;
+  await showDashboardFixture(page, [programming], programming.id, { [programming.id]: work });
+  await expectProgress(page, "1/13", 8);
+  const overview = progressRegion(page);
+  const enter = overview.getByRole("button", { name: "이어하기", exact: true });
+  const ring = overview.locator("svg").filter({ has: page.locator("[data-stage]") });
+  const bar = overview.getByRole("progressbar", { name: "전체 필수 활동 완료율", exact: true });
+  const legends = ["개념", "퀴즈", "실습"].map(stage => overview.getByRole("button", { name: new RegExp(`^${stage} 진도:`) }));
+  for (const width of [320, 390, 600, 601, 820, 821, 1280, 1544]) {
+    await page.setViewportSize({ width, height: 720 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${width}px에서 가로 넘침 없음`).toBe(true);
+    await expect(ring).toHaveCount(1);
+    await expect(bar).toHaveCount(1);
+    if (width === 1544) expect((await overview.boundingBox())!.height, "이번 수업 카드의 높이를 줄이되 진도와 조작 영역 유지").toBeLessThanOrEqual(330);
+    if (width <= 600) await expectMobileCurrentFirst(page);
+    else {
+      const summary = (await overview.locator("#learning-overview-heading").locator("..").boundingBox())!;
+      const current = (await overview.locator("#current-heading").locator("..").boundingBox())!;
+      expect(summary.x + summary.width, `${width}px에서 기존 진도 왼쪽·이번 수업 오른쪽 배치`).toBeLessThanOrEqual(current.x);
+    }
+    for (const legend of legends) {
+      const box = (await legend.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+  }
+  await page.setViewportSize({ width: 600, height: 720 });
+  const handles = await Promise.all([enter, ring, bar, ...legends].map(element => element.elementHandle()));
+  for (const control of [enter, legends[0]]) {
+    await control.focus();
+    const focused = await control.elementHandle();
+    for (const width of [601, 600]) {
+      await page.setViewportSize({ width, height: 720 });
+      await expect(control).toBeFocused();
+      expect(await focused!.evaluate(element => element === document.activeElement)).toBe(true);
+      for (const handle of handles) expect(await handle!.evaluate(element => element.isConnected), "반응형 전환에서 같은 진입·원형·범례 요소 유지").toBe(true);
+      await expect(ring).toHaveCount(1);
+    }
+  }
+  await legends[0].press("Escape");
+  await expect(overview.getByRole("tooltip")).toHaveCount(0);
+  await expect(legends[0]).toBeFocused();
+  for (const width of [600, 601, 1280]) {
+    await page.setViewportSize({ width, height: 720 });
+    await enter.focus();
+    for (const legend of legends) {
+      await page.keyboard.press("Tab");
+      await expect(legend).toBeFocused();
+    }
+  }
+  await page.setViewportSize({ width: 600, height: 720 });
+  const menu = page.getByRole("button", { name: "메뉴 열기", exact: true });
+  await menu.click();
+  await expect(menu).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("button", { name: "메뉴 닫기", exact: true }).first()).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await expect(menu).toBeFocused();
+});
+
+test("followup45-home: 긴 제목과 낮은 창은 글자를 자르지 않고 세로 스크롤로 수업에 진입", async ({ page }) => {
+  const longLesson = { ...programming, title: "우리 반의 아주 긴 프로그래밍 수업 제목과 여러 가지 컴퓨터 활용 활동 ".repeat(5).trim(), description: "친구들과 차근차근 활동을 살펴보고 저장한 학습을 이어가요. ".repeat(4).trim() };
+  await showDashboardFixture(page, [longLesson], longLesson.id);
+  const overview = progressRegion(page);
+  const heading = overview.getByRole("heading", { name: longLesson.title, exact: true });
+  const enter = overview.getByRole("button", { name: "수업 시작", exact: true });
+  for (const viewport of [{ width: 320, height: 720 }, { width: 390, height: 480 }]) {
+    await page.setViewportSize(viewport);
+    await expectMobileCurrentFirst(page);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(heading).toHaveText(longLesson.title);
+    const text = await heading.evaluate(element => ({ height: element.clientHeight, contentHeight: element.scrollHeight, width: element.clientWidth, contentWidth: element.scrollWidth, fontSize: parseFloat(getComputedStyle(element).fontSize) }));
+    expect(text.contentHeight).toBeLessThanOrEqual(text.height + 1);
+    expect(text.contentWidth).toBeLessThanOrEqual(text.width + 1);
+    expect(text.fontSize).toBeGreaterThanOrEqual(22);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight)).toBe(true);
+    await enter.focus();
+    await expect(enter).toBeFocused();
+    const box = (await enter.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+  }
+  await page.unrouteAll({ behavior: "wait" });
+  await enter.press("Enter");
+  await expect(page).toHaveURL(`http://localhost:3000/classroom/${programming.id}?from=dashboard`);
+  await expect(page.getByRole("heading", { name: programming.title, level: 1, exact: true })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "개념 0%", exact: true })).toHaveAttribute("aria-selected", "true");
+  const content = page.getByRole("tabpanel", { name: /^개념/ });
+  await expect(content).toBeVisible();
+  await expect(content.locator('[id^="concept-title"]').first()).toBeVisible();
+});
+
 test("첫 조회는 초점을 유지하며 대기·실패의 가짜 0%와 재조회 실패의 진도 유실을 방지", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 720 });
   await openLessons([programming.id]);
   const work = emptyWork(programming);
   work.missions = { name: { validation: null, submission: submission("saved-name") } };
@@ -449,25 +636,36 @@ test("첫 조회는 초점을 유지하며 대기·실패의 가짜 0%와 재조
     await page.goto("/student");
     await expect(page.getByRole("status").filter({ hasText: "수업 기록을 확인하고 있어요." })).toBeVisible();
     await expect(progressRegion(page).getByRole("progressbar")).toHaveCount(0);
+    await expect(progressRegion(page).locator("#current-heading")).toHaveText("이번 수업을 확인하고 있어요.");
+    await expectMobileCurrentFirst(page);
     const enterLessons = page.getByRole("button", { name: "열린 수업 보기", exact: true });
     await enterLessons.focus();
     await expect(enterLessons).toBeFocused();
     const focusedButton = await enterLessons.elementHandle();
     mode = "live"; release();
     await expectProgress(page, "1/13", 8);
+    await expectMobileCurrentFirst(page);
     expect(await focusedButton!.evaluate(element => element === document.activeElement)).toBe(true);
     mode = "failed";
     await page.reload();
     await expect(page.getByRole("alert").filter({ hasText: "진도 조회 연결 실패" })).toBeVisible();
     await expect(progressRegion(page).getByRole("progressbar")).toHaveCount(0);
+    await expect(progressRegion(page).locator("#current-heading")).toHaveText("이번 수업을 확인하지 못했어요.");
+    await expectMobileCurrentFirst(page);
     mode = "live";
     await page.getByRole("button", { name: "수업 다시 불러오기", exact: true }).click();
     await expectProgress(page, "1/13", 8);
+    const savedEnter = await progressRegion(page).getByRole("button", { name: "이어하기", exact: true }).elementHandle();
+    const savedRing = await progressRegion(page).getByRole("progressbar").elementHandle();
     mode = "failed";
     const refresh = page.getByRole("button", { name: "수업 새로고침", exact: true });
     await refresh.click();
     await expect(page.getByRole("alert").filter({ hasText: "마지막으로 확인한 수업 기록" })).toBeVisible();
     await expectProgress(page, "1/13", 8);
+    await expectMobileCurrentFirst(page);
+    await expect(progressRegion(page).locator("#current-heading")).toHaveText(programming.title);
+    expect(await savedEnter!.evaluate(element => element.isConnected)).toBe(true);
+    expect(await savedRing!.evaluate(element => element.isConnected)).toBe(true);
     await expect(refresh).toBeFocused();
   } finally { release(); }
 });

@@ -1,5 +1,6 @@
-import { buildEntryProject } from "../classroom/entry-project";
-import type { Block } from "./programming";
+import { buildEntryProject } from "./entry-project";
+
+type NameBlock = { id: string; kind: "start" | "ask" | "store" | "say" | "calculate" | "direction" | "move"; value: string };
 
 type Node = { id?: string; type: string; params: unknown[]; x?: number; y?: number };
 export type NameStep = { kind: "ask" | "answer" | "say"; value: string };
@@ -19,7 +20,7 @@ function base() {
   return project;
 }
 
-export function buildNameProject(blocks: Block[] = [{ id: "start", kind: "start", value: "click" }]): string | null {
+export function buildNameProject(blocks: NameBlock[] = [{ id: "start", kind: "start", value: "click" }]): string | null {
   const threads: Node[][] = [];
   const keys: Record<string, string> = { ArrowUp: "38", ArrowRight: "39", ArrowDown: "40", ArrowLeft: "37" };
   for (const [index, b] of blocks.entries()) {
@@ -81,14 +82,19 @@ export function nameProjectLines(raw: string): string[] {
   return parseNameProject(raw)?.threads.flatMap((t) => t.map((n) => n.type === "ask_and_wait" ? `${expression(n.params[0] as Node)} · ${labels[n.type]}` : n.type === "dialog_time" ? `${expression(n.params[0] as Node)} · ${expression(n.params[1] as Node)}초 동안 ${n.params[2] === "think" ? "생각하기" : "말하기"}` : n.type === "when_some_key_pressed" ? `키 ${n.params[1]}를 눌렀을 때` : labels[n.type])) ?? ["읽지 못한 작품 원문을 보존하고 있어요."];
 }
 
-export function checkNameMission(raw: string, runs: NameRun[]): { passed: boolean; message: string } {
+export function checkNameMission(raw: string, runs: NameRun[]): { passed: boolean; message: string; issue: "project" | "structure" | "runs" | null; validNames: 0 | 1 | 2 } {
+  const fail = (issue: "project" | "structure", message: string) => ({ passed: false, message, issue, validNames: 0 as const });
   const p = parseNameProject(raw);
-  if (!p) return { passed: false, message: "작품을 읽지 못했어요. 입력한 작품을 보존하고 다시 확인해 주세요." };
+  if (!p) return fail("project", "작품을 읽지 못했어요. 입력한 작품을 보존하고 다시 확인해 주세요.");
   const threads = p.threads.filter((t) => t[0]?.type === "when_run_button_click");
-  if (threads.length !== 1) return { passed: false, message: "이번 확인은 시작하기 버튼 아래 한 줄로 연결한 작품을 지원해요." };
+  if (threads.length !== 1) return fail("structure", "시작하기 버튼 아래 한 줄로 질문과 말하기를 연결해 주세요.");
   const program = threads[0].slice(1);
   const evaluate = (node: Node, value: string): string => node.type === "get_canvas_input_value" ? value : node.type === "combine_something" ? evaluate(node.params[1] as Node, value) + evaluate(node.params[3] as Node, value) : String(node.params[0]);
   const depends = (node: Node): boolean => node.type === "get_canvas_input_value" || (node.type === "combine_something" && (depends(node.params[1] as Node) || depends(node.params[3] as Node)));
+  const question = program.findIndex(node => node.type === "ask_and_wait");
+  if (program.filter(node => node.type === "ask_and_wait").length !== 1 || !program.some((node, index) => index > question && node.type === "dialog_time" && node.params[2] === "speak" && depends(node.params[0] as Node)) || program.some(node => !["ask_and_wait", "dialog_time"].includes(node.type))) {
+    return fail("structure", "시작하기 아래에 질문 하나와 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 주세요.");
+  }
   // EntryJS dialog_time rounds numeric decimal text to three places.
   const spoken = (value: string): string => value.trim() && !Number.isNaN(Number(value)) && /\d+\.{1}\d+$/.test(value) ? String(Number(`${Math.round(Number(`${value}e3`))}e-3`)) : value;
   const names = new Set<string>();
@@ -110,5 +116,6 @@ export function checkNameMission(raw: string, runs: NameRun[]): { passed: boolea
     }
     if (valid && observedName && cursor === run.steps.length) names.add(observedName);
   }
-  return names.size >= 2 ? { passed: true, message: "서로 다른 이름으로 질문과 대답·말하기를 확인했어요. 완료 표시를 남길 수 있어요." } : { passed: false, message: "말하기에 ‘대답’을 연결하고, 서로 다른 이름으로 두 번 실행을 마쳐 보세요." };
+  const validNames = Math.min(names.size, 2) as 0 | 1 | 2;
+  return validNames === 2 ? { passed: true, message: "서로 다른 이름으로 질문과 대답·말하기를 확인했어요. 완료 표시를 남길 수 있어요.", issue: null, validNames } : { passed: false, message: validNames === 1 ? "서로 다른 이름으로 한 번 더 실행을 마쳐 주세요. 같은 이름은 한 번만 세요." : "서로 다른 이름으로 두 번 실행을 마쳐 주세요. 질문에 답하고 말하기가 끝날 때까지 기다려요.", issue: "runs", validNames };
 }

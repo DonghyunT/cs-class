@@ -1,19 +1,28 @@
-.overview { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 36px; align-items: center; padding: 28px 36px; margin-bottom: 26px; border: 1px solid #d7e3f7; border-radius: 24px; background: linear-gradient(112deg, #eef4ff, #f8faff 70%, #fff7f1); }
-.summary { text-align: center; min-width: 0; }
+.overview { display: grid; grid-template-columns: 250px minmax(0, 1fr); grid-template-areas: "summary current"; gap: 36px; align-items: center; padding: 20px 36px; margin-bottom: 26px; border: 1px solid #d7e3f7; border-radius: 24px; background: linear-gradient(112deg, #eef4ff, #f8faff 70%, #fff7f1); }
+.summary { grid-area: summary; text-align: center; min-width: 0; }
+.summary > [data-size="normal"] { width: 160px; }
 .summary h2 { margin: 0 0 8px; font-size: 20px; font-weight: 700; letter-spacing: -.03em; }
 .count { font-size: 14px; font-weight: 650; margin: 2px 0 4px; font-variant-numeric: tabular-nums; }
+.countRow { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:0 4px; }
+.countRow .count { margin:0; }
+.progressHelp { min-width:0; font-size:14px; color:#526173; }
+.progressHelp summary { display:flex; align-items:center; justify-content:center; min-height:44px; min-width:44px; cursor:pointer; padding-inline:2px; text-decoration:underline; text-underline-offset:3px; list-style:none; }
+.progressHelp summary::-webkit-details-marker { display:none; }
+.progressHelp summary:focus-visible { outline:3px solid #376fc8; outline-offset:2px; border-radius:4px; }
+.progressHelp[open] { width:100%; }
+.progressHelp p { text-align:left; margin:0; padding:12px; border:1px solid #d7e3f7; border-radius:12px; background:#fff; line-height:1.7; word-break:keep-all; overflow-wrap:anywhere; }
 .summaryLoading { display: grid; justify-items: center; gap: 14px; margin-bottom: 12px; }
-.summaryLoading > span:first-child { width: 180px; max-width: 100%; height: 180px; border-radius: 50%; }
+.summaryLoading > span:first-child { width: 160px; max-width: 100%; height: 160px; border-radius: 50%; }
 .summaryLoading > span:last-child { width: 75%; }
-.waiting { display: grid; justify-items: center; gap: 10px; padding: 22px 0; color: #526173; }
+.waiting { display: grid; justify-items: center; gap: 10px; padding: 18px 0; color: #526173; }
 .waiting svg { color: #376fc8; }
 .waiting p { font-size: 14px; margin: 0; }
-.current { min-width: 0; border-left: 1px solid #d7e3f7; padding-left: 36px; }
+.current { grid-area: current; min-width: 0; border-left: 1px solid #d7e3f7; padding-left: 36px; }
 .eyebrow { font-size: 13px; font-weight: 650; color: #376fc8; }
 .current h3 { font-size: clamp(22px, 2.4vw, 29px); font-weight: 720; line-height: 1.45; letter-spacing: -.04em; margin: 10px 0; word-break: keep-all; overflow-wrap: anywhere; }
 .current > p { margin: 0; color: #526173; font-size: 15px; line-height: 1.8; word-break: keep-all; overflow-wrap: anywhere; }
-.resume { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; font-size: 14px; color: #526173; }
-.current > [data-slot="button"] { margin-top: 22px; min-height: 46px; }
+.resume { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; font-size: 14px; color: #526173; }
+.current > [data-slot="button"] { margin-top: 18px; min-height: 46px; }
 .lessons { background: #fff; border: 1px solid #e3e8ef; border-radius: 20px; padding: 18px 22px; min-width: 0; }
 .sectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
 .sectionHeading h2 { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 700; margin: 0; letter-spacing: -.03em; }
@@ -46,10 +55,11 @@
 .loading { display: grid; gap: 16px; padding: 22px 0 10px; }
 .loading > span:first-child { width: 65%; height: 24px; }
 .loading > span:last-child { width: 45%; }
-@media (max-width: 900px) { .overview { grid-template-columns: 200px minmax(0, 1fr); gap: 24px; padding: 26px; } .current { padding-left: 24px; } }
+@media (max-width: 900px) { .overview { grid-template-columns: 200px minmax(0, 1fr); gap: 24px; padding: 20px 26px; } .current { padding-left: 24px; } }
 @media (max-width: 600px) {
-  .overview { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px 20px; }
-  .current { border-left: 0; border-top: 1px solid #d7e3f7; padding: 22px 0 0; }
+  .overview { grid-template-columns: minmax(0, 1fr); grid-template-areas: "current" "summary"; gap: 24px; padding: 20px; }
+  .current { border-left: 0; padding: 0; }
+  .summary { border-top: 1px solid #d7e3f7; padding-top: 22px; }
   .current > [data-slot="button"] { width: 100%; }
   .lessons { padding: 14px 16px; }
   .lessonHeading { flex-wrap: wrap; gap: 3px 8px; }

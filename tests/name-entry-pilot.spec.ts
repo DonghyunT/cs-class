@@ -1,9 +1,25 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { buildNameProject, checkNameMission, parseNameProject, type NameRun } from "../src/lib/prototype/name-entry";
+import { buildNameProject, checkNameMission, parseNameProject, type NameRun } from "../src/lib/classroom/name-entry";
 import { initialState, LEGACY_STORAGE_KEY, restoreState, STORAGE_KEY, type Block } from "../src/lib/prototype/programming";
 
 const code: Block[] = [{ id: "s", kind: "start", value: "click" }, { id: "q", kind: "ask", value: "name" }, { id: "a", kind: "say", value: "answer" }];
 const complete = buildNameProject(code)!;
+
+test("entry-guidance: 이름 연결 오류와 현재 작품의 두 이름 실행 부족을 구분한다", () => {
+  const key = parseNameProject(complete)!.key;
+  const run = (name: string, id = name): NameRun => ({ id, key, reason: "finished", steps: [{ kind: "ask", value: "강아지 이름은?" }, { kind: "answer", value: name }, { kind: "say", value: `내 이름은 ${name}!` }] });
+  expect(checkNameMission("unreadable", [])).toMatchObject({ passed: false, issue: "project", validNames: 0 });
+  expect(checkNameMission(buildNameProject()!, [])).toMatchObject({ passed: false, issue: "structure", validNames: 0 });
+  expect(checkNameMission(complete, [])).toMatchObject({ passed: false, issue: "runs", validNames: 0 });
+  expect(checkNameMission(complete, [run("초코"), run("초코", "duplicate"), ...["stopped", "timeout", "error"].map(reason => ({ ...run("보리", reason), reason })), { ...run("보리", "old"), key: "old" }])).toMatchObject({ passed: false, issue: "runs", validNames: 1 });
+  expect(checkNameMission(complete, [run("초코"), run("보리"), run("두부")])).toMatchObject({ passed: true, issue: null, validNames: 2 });
+  const moved = JSON.parse(complete); moved.objects[0].script[0][0].x = 600; moved.objects[0].script[0][0].id = "moved-start";
+  expect(checkNameMission(JSON.stringify(moved), [run("초코"), run("보리")])).toMatchObject({ passed: true, validNames: 2 });
+  const literal = JSON.parse(complete); literal.objects[0].script[0][2].params[0] = { type: "text", params: ["초코"] };
+  expect(checkNameMission(JSON.stringify(literal), [])).toMatchObject({ passed: false, issue: "structure", validNames: 0 });
+  const changed = JSON.parse(complete); changed.objects[0].script[0][1].params[0] = { type: "text", params: ["새 이름은?"] };
+  expect(checkNameMission(JSON.stringify(changed), [run("초코"), run("보리")])).toMatchObject({ passed: false, issue: "runs", validNames: 0 });
+});
 async function enter(page: Page, project = complete) {
   await page.goto("/prototype/programming");
   await expect.poll(() => page.evaluate((key) => sessionStorage.getItem(key), STORAGE_KEY)).not.toBeNull();
@@ -46,6 +62,32 @@ test("이식과 확인은 오답·원문·실제로 출력한 대답을 보존�
   const extra = buildNameProject([...code, { id: "extra", kind: "ask", value: "name" }])!;
   const extraRun = (last: string): NameRun => ({ ...run("초코", last), key: parseNameProject(extra)!.key, steps: [...run("초코").steps, { kind: "ask", value: "다시 물어요" }, { kind: "answer", value: last }] });
   expect(checkNameMission(extra, [extraRun("보리"), extraRun("두부")]).passed).toBe(false);
+});
+
+test("public entry-assets: 그림 준비 중 내부 작업실을 막고 준비 뒤 질문에 대답한다", async ({ page }) => {
+  test.setTimeout(45000);
+  const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
+  let release = () => {}, waiting = 0;
+  const asset = new Promise<void>((resolve) => { release = resolve; });
+  await page.route("**/entryjs/name-dog.svg", async (route) => { waiting++; await asset; await route.continue(); });
+  await page.goto("/prototype/programming");
+  await expect.poll(() => page.evaluate((key) => sessionStorage.getItem(key), STORAGE_KEY)).not.toBeNull();
+  await page.evaluate(({ key, state }) => sessionStorage.setItem(key, JSON.stringify(state)), { key: STORAGE_KEY, state: { ...initialState(), stage: "practice", nameEntryProject: complete } });
+  await page.reload({ waitUntil: "domcontentloaded" }); await page.locator("iframe").scrollIntoViewIfNeeded();
+  const run = page.getByRole("button", { name: "실행하기", exact: true });
+  await expect.poll(() => waiting, { timeout: 20000 }).toBeGreaterThan(0);
+  const native = page.frames().find((frame) => frame.url().includes("exercise=name"))!;
+  try {
+    await expect.poll(() => native.evaluate(() => (window as unknown as { Entry?: { isLoadProject: boolean } }).Entry?.isLoadProject)).toBe(true);
+    await expect(page.frameLocator("iframe").locator("#entryWorkspaceBoard").getByText("묻고 대답 기다리기", { exact: false }).first()).toBeVisible();
+    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    // The public prototype has native run/edit controls inside its iframe.
+    expect(await native.locator("#workspace").evaluate((element) => (element as HTMLElement).inert)).toBe(true);
+    await expect(run).toBeDisabled();
+  } finally { release(); await expect(run).toBeEnabled({ timeout: 20000 }); }
+  expect(await native.locator("#workspace").evaluate((element) => (element as HTMLElement).inert)).toBe(false);
+  await respond(page, "두부");
+  expect(errors).toEqual([]);
 });
 
 test("실제 질문 두 번·완료·도움 스냅샷·복원과 좁은 화면", async ({ page }, info) => {

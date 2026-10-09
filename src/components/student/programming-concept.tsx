@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Code2, Dog, Keyboard, Play, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { concepts, type PrototypeState } from "@/lib/prototype/programming";
-import styles from "./programming.module.css";
+import { concepts } from "@/lib/classroom/programming-data";
+import styles from "./programming-concept.module.css";
 import conceptStyles from "@/components/ui/concept-layout.module.css";
 
 const observations = [
@@ -14,7 +14,9 @@ const observations = [
   "방향키를 한 번 누르면 강아지의 위치와 x·y 좌표가 어떻게 달라질까요?",
 ];
 
-export function Concept({ state, update, focus, next, onCheck, serverFeedback, locked = false }: { state: PrototypeState; update: (next: PrototypeState) => void; focus: (id: string) => void; next: () => void; onCheck?: () => void; serverFeedback?: string; locked?: boolean }) {
+export type ProgrammingConceptState = { concept: number; conceptDone: number[]; conceptAnswers: Record<number, number> };
+
+export function ProgrammingConcept({ state, update, focus, next, onCheck, serverFeedback, locked = false, actionsBlocked = false }: { state: ProgrammingConceptState; update: (next: ProgrammingConceptState) => void; focus: (id: string) => void; next: () => void; onCheck?: () => void; serverFeedback?: string; locked?: boolean; actionsBlocked?: boolean }) {
   const [language, setLanguage] = useState("block");
   const [name, setName] = useState("초코");
   const [languageGreeting, setLanguageGreeting] = useState("");
@@ -66,10 +68,10 @@ export function Concept({ state, update, focus, next, onCheck, serverFeedback, l
         <div className={styles.experimentActions}><p>새로고침하거나 수업에 다시 들어오면 체험값은 시작 상태로 돌아가요. 답안과 완료 기록은 유지돼요.</p></div>
       </div>
       <fieldset className={styles.conceptCheck} disabled={locked}><legend><span className={styles.eyebrow}>한 번만 확인해 볼까요?</span>{c.question}</legend><div className={styles.compactOptions}>{c.options.map((option, i) => <label key={option} data-selected={answer === i}><input type="radio" name={`concept-${state.concept}`} checked={answer === i} disabled={done} onChange={() => { update({ ...state, conceptAnswers: { ...state.conceptAnswers, [state.concept]: i } }); setFeedback(""); }} /><span>{option}</span></label>)}</div>
-        <Button variant={done ? "outline" : "default"} disabled={done || answer === undefined} onClick={() => { if (onCheck) { onCheck(); return; } const correct = answer === c.correct; if (correct) update({ ...state, conceptDone: [...state.conceptDone, state.concept] }); setFeedback(correct ? c.explanation : "다시 실험해 보고 골라보세요. 위의 변화가 단서예요."); focus("concept-feedback"); }}>{done ? <><Check size={16} />개념 확인 완료</> : "생각 확인하기"}</Button>
+        <Button variant={done ? "outline" : "default"} disabled={actionsBlocked || done || answer === undefined} onClick={() => { if (onCheck) { onCheck(); return; } const correct = answer === c.correct; if (correct) update({ ...state, conceptDone: [...state.conceptDone, state.concept] }); setFeedback(correct ? c.explanation : "다시 실험해 보고 골라보세요. 위의 변화가 단서예요."); focus("concept-feedback"); }}>{done ? <><Check size={16} />개념 확인 완료</> : "생각 확인하기"}</Button>
         {((onCheck ? serverFeedback : feedback) || done) && <p id="concept-feedback" tabIndex={-1} role="status" className={done ? styles.good : styles.feedback}>{(onCheck ? serverFeedback : feedback) || c.explanation}</p>}
       </fieldset>
-      <div className={styles.footer}><Button variant="ghost" disabled={locked || state.concept === 0} onClick={() => move(state.concept - 1)}><ArrowLeft size={16} />이전 개념</Button>{state.concept < concepts.length - 1 ? <Button variant="outline" disabled={locked} onClick={() => move(state.concept + 1)}>다음 개념<ArrowRight size={16} /></Button> : <Button disabled={locked} onClick={next}>퀴즈에 도전하기<ArrowRight size={16} /></Button>}</div>
+      <div className={styles.footer}><Button variant="ghost" disabled={locked || state.concept === 0} onClick={() => move(state.concept - 1)}><ArrowLeft size={16} />이전 개념</Button>{state.concept < concepts.length - 1 ? <Button variant="outline" disabled={locked} onClick={() => move(state.concept + 1)}>다음 개념<ArrowRight size={16} /></Button> : <Button disabled={locked || actionsBlocked} onClick={next}>퀴즈에 도전하기<ArrowRight size={16} /></Button>}</div>
     </div>
   </div>;
 }
