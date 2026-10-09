@@ -348,7 +348,7 @@ npm run test:e2e
 node node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only auth,firestore --project demo-cs-class "node node_modules/@playwright/test/cli.js test tests/auth-security.spec.ts tests/dashboard-performance.spec.ts"
 ```
 
-GitHub Actions는 `main`·`codex/**` push와 PR에서 lint·typecheck·build·E2E를 실행하며 E2E는 빌드된 앱을 `next start`로 실행해 검사합니다. 로컬 E2E는 개발 서버를 사용합니다. UI 확인 기준은 [AGENTS](../AGENTS.md)를 따릅니다. 구체적인 연결·운영상 한계는 [Firebase 연결 안내](FIREBASE_SETUP.md)를 확인합니다.
+GitHub Actions는 `main`·`codex/**` push와 PR에서 lint·typecheck·test:review·build·E2E를 실행하며 E2E는 빌드된 앱을 `next start`로 실행해 검사합니다. 로컬 E2E는 개발 서버를 사용합니다. UI 확인 기준은 [AGENTS](../AGENTS.md)를 따릅니다. 구체적인 연결·운영상 한계는 [Firebase 연결 안내](FIREBASE_SETUP.md)를 확인합니다.
 
 Windows에서 검사 뒤 `next start` 종료가 멈추면 이번 실행의 PID와 명령을 확인해 해당 테스트 서버만 종료합니다. Playwright는 서버 종료 후 최종 결과를 출력하므로 E2E 요약과 종료 코드까지 확인합니다.
 
