@@ -208,9 +208,16 @@ test("명령과 로봇 응답이 시간순으로 이어지고 읽던 위치·초
   expect((await page.getByRole("region", { name: "로봇에게 명령하기" }).boundingBox())!.height).toBeLessThan(900);
   await expect.poll(() => feed.evaluate(element => element.scrollHeight - element.scrollTop - element.clientHeight)).toBeLessThan(5);
   await feed.focus();
-  await page.keyboard.press("Home");
-  await expect.poll(() => feed.evaluate(element => element.scrollTop)).toBe(0);
-  await page.keyboard.press("ArrowDown");
+  // 방향키 애니메이션의 중간 위치를 집중 모드 전환 전 기준으로 저장하지 않는다.
+  for (const key of ["Home", "ArrowDown"]) {
+    await feed.evaluate(element => {
+      element.setAttribute("data-test-scroll-ended", "false");
+      element.addEventListener("scrollend", () => element.setAttribute("data-test-scroll-ended", "true"), { once: true });
+    });
+    await page.keyboard.press(key);
+    await expect(feed).toHaveAttribute("data-test-scroll-ended", "true");
+    if (key === "Home") await expect.poll(() => feed.evaluate(element => element.scrollTop)).toBe(0);
+  }
   await expect.poll(() => feed.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
   const readingPosition = await feed.evaluate(element => element.scrollTop);
   await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();

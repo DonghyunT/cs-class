@@ -603,6 +603,10 @@ test("followup45-home: 긴 제목과 낮은 창은 글자를 자르지 않고 �
     expect(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight)).toBe(true);
     await enter.focus();
     await expect(enter).toBeFocused();
+    await expect.poll(async () => {
+      const currentBox = await enter.boundingBox();
+      return !!currentBox && currentBox.y >= 0 && currentBox.y + currentBox.height <= viewport.height;
+    }).toBe(true);
     const box = (await enter.boundingBox())!;
     expect(box.y).toBeGreaterThanOrEqual(0);
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
