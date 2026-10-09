@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
+import type { LessonMode } from "../work-controller";
+import { PracticeGuidance } from "../practice-guidance";
 import { Button } from "@/components/ui/button";
 import { TUT_SCENARIOS } from "@/lib/classroom/review/abstraction-data.mjs";
 import { abstractionSchema, basicReviewCheck, type AbstractionProject } from "@/lib/classroom/review/project";
@@ -8,10 +10,10 @@ import base from "./review.module.css";
 import studio from "./studio.module.css";
 const styles = { ...base, ...studio };
 
-export function Abstraction({ controller }: { controller: ReviewController }) {
+export function Abstraction({ controller, practiceFocused = false, mode = "student" }: { controller: ReviewController; practiceFocused?: boolean; mode?: LessonMode }) {
   const project = controller.draft.reviewProject;
   const fieldId = useId();
-  const ai = useReviewAi(controller), [chat, setChat] = useState(""), [copied, setCopied] = useState(""), [adoptionError, setAdoptionError] = useState("");
+  const ai = useReviewAi(controller, mode), [chat, setChat] = useState(""), [copied, setCopied] = useState(""), [adoptionError, setAdoptionError] = useState("");
   const { clear } = ai, step = project?.type === "abstraction" ? project.step : null;
   const heading = useRef<HTMLHeadingElement>(null), [focus, setFocus] = useState(0);
   useEffect(() => { if (focus) heading.current?.focus(); }, [focus]);
@@ -73,7 +75,7 @@ export function Abstraction({ controller }: { controller: ReviewController }) {
         <Button variant="outline" disabled={locked || p.tutorialStep === 1} onClick={() => move({ tutorialStep: p.tutorialStep - 1 })}>맛보기 이전</Button>
         <Button disabled={locked || p.tutorialStep === 4} onClick={() => move({ tutorialStep: p.tutorialStep + 1 })}>맛보기 다음</Button>
       </div>
-    </section><aside className={styles.panel} aria-label="맛보기 튜토리얼 코치"><header className={styles.stageHeader}><span className={styles.avatar} aria-hidden="true">🎓</span><div><small className={styles.eyebrow}>Tutorial Coach</small><h3>맛보기 튜토리얼 코치</h3></div></header><p className={styles.feedback}>일상의 고민으로 추상화를 연습해 볼까요? 상황 카드를 골라 왼쪽에서 현재·목표·조건·핵심을 살펴보세요.</p><div className={styles.scenarioCards}>{Object.values(TUT_SCENARIOS).map(item => <button key={item.id} className={styles.scenarioCard} disabled={locked} aria-pressed={p.tutorialScenario === item.id} onClick={() => change({ tutorialScenario: item.id as AbstractionProject["tutorialScenario"], tutorialNoise: [] })}><span aria-hidden="true">{item.icon}</span><strong>{item.name}</strong><small>{item.current}</small></button>)}</div><p className={styles.muted}>맛보기를 마치지 않아도 실전 워크북을 열 수 있어요.</p></aside></div> : <>
+    </section><PracticeGuidance focused={practiceFocused} label="상황 예시와 코치 안내"><aside className={styles.panel} aria-label="맛보기 튜토리얼 코치"><header className={styles.stageHeader}><span className={styles.avatar} aria-hidden="true">🎓</span><div><small className={styles.eyebrow}>Tutorial Coach</small><h3>맛보기 튜토리얼 코치</h3></div></header><p className={styles.feedback}>일상의 고민으로 추상화를 연습해 볼까요? 상황 카드를 골라 왼쪽에서 현재·목표·조건·핵심을 살펴보세요.</p><div className={styles.scenarioCards}>{Object.values(TUT_SCENARIOS).map(item => <button key={item.id} className={styles.scenarioCard} disabled={locked} aria-pressed={p.tutorialScenario === item.id} onClick={() => change({ tutorialScenario: item.id as AbstractionProject["tutorialScenario"], tutorialNoise: [] })}><span aria-hidden="true">{item.icon}</span><strong>{item.name}</strong><small>{item.current}</small></button>)}</div><p className={styles.muted}>맛보기를 마치지 않아도 실전 워크북을 열 수 있어요.</p></aside></PracticeGuidance></div> : <>
       <nav className={styles.stepNav} aria-label="워크북 단계">{["상태", "조건", "생각 다이어트", "처방전"].map((name, index) => <button key={name} disabled={locked} aria-pressed={p.step === index + 1} onClick={() => move({ step: index + 1 })}>{index + 1}. {name}</button>)}</nav>
       <div className={styles.columns}>
         <section className={`${styles.panel} ${styles.workbook}`}>
@@ -88,17 +90,17 @@ export function Abstraction({ controller }: { controller: ReviewController }) {
           {p.step === 4 && <>{field("해결 계획", "plans", true)}<pre className={styles.prescription}>{prescription}</pre>
             <div className={styles.actions}>
               <Button variant="outline" onClick={() => { void navigator.clipboard.writeText(prescription).then(() => setCopied("처방전을 복사했어요."), () => setCopied("복사하지 못했어요. 처방전 내용을 선택해 복사해 주세요.")); }}>처방전 복사</Button>
-              <Button variant="outline" disabled={locked || !basicReviewCheck(p).passed} onClick={() => void ai.ask("abstraction-review", "처방전의 상태·조건·계획을 검토해 주세요.")}>AI 처방전 리뷰</Button>
+              <Button variant="outline" disabled={mode === "preview" || locked || controller.actionBlocked || !basicReviewCheck(p).passed} onClick={() => void ai.ask("abstraction-review", "처방전의 상태·조건·계획을 검토해 주세요.")}>AI 처방전 리뷰</Button>
             </div>
             <p role="status">{copied}</p>
-            <ReviewSubmit controller={controller} />
+            <ReviewSubmit mode={mode} controller={controller} />
           </>}
           <div className={`${styles.actions} ${styles.wizardFooter}`}><Button variant="outline" disabled={locked || p.step === 1} onClick={() => move({ step: p.step - 1 })}>이전 단계</Button><Button disabled={locked || p.step === 4} onClick={() => move({ step: p.step + 1 })}>다음 단계 →</Button></div>
         </section>
         <aside className={styles.panel} aria-label="추상화 닥터">
-          <header className={styles.stageHeader}><span className={styles.doctorIcon} aria-hidden="true">💡</span><div><small className={styles.eyebrow}>{p.step}단계 전용 코치</small><h3>추상화 닥터</h3></div></header>
-          <p className={styles.muted}>추천은 직접 골라 채택해요. 내 말로 수정해도 좋아요.</p>
-          <Button disabled={locked || p.step === 1 && !p.topic.trim()} onClick={() => void ai.ask(p.step === 4 ? "abstraction-plan" : "abstraction-help", p.topic)}>{locked ? "닥터가 생각 중…" : p.step === 1 ? "현재·목표 후보 받기" : p.step === 2 ? "조건 추천 받기" : p.step === 3 ? "생각 다이어트 단어 받기" : "해결 계획 추천 받기"}</Button>
+          <header className={styles.stageHeader}><span className={styles.doctorIcon} aria-hidden="true">💡</span><div><small className={styles.eyebrow}>{p.step}단계 전용 코치</small><h3>추상화 닥터</h3>{mode === "preview" && <p>AI 추천은 실제 수업에서 사용할 수 있어요. 여기서는 직접 입력과 기본 검증을 체험해요.</p>}</div></header>
+          <PracticeGuidance focused={practiceFocused} label="추천 사용 안내"><p className={styles.muted}>추천은 직접 골라 채택해요. 내 말로 수정해도 좋아요.</p></PracticeGuidance>
+          <Button disabled={mode === "preview" || locked || controller.actionBlocked || p.step === 1 && !p.topic.trim()} onClick={() => void ai.ask(p.step === 4 ? "abstraction-plan" : "abstraction-help", p.topic)}>{locked ? "닥터가 생각 중…" : p.step === 1 ? "현재·목표 후보 받기" : p.step === 2 ? "조건 추천 받기" : p.step === 3 ? "생각 다이어트 단어 받기" : "해결 계획 추천 받기"}</Button>
           {!ai.result && !controller.aiBusy && <div className={styles.robotBubble}><strong>💡 닥터의 한마디</strong><p>{["고민 키워드를 적고 현재·목표 후보를 받아 보세요. 마음에 드는 카드를 선택하거나 내 말로 적어도 좋아요.", "시간·예산·관계처럼 해결 과정에서 반드시 지킬 조건을 생각해 보세요.", "목표를 이루는 데 꼭 필요한 정보와 필요 없는 정보를 구분해 보세요.", "정의한 문제에 맞춰 실천 계획을 세워 볼까요? 처방전을 검토하고 상담할 수 있어요."][p.step - 1]}</p></div>}
           {adoptionError && <p role="alert" className={styles.error}>{adoptionError}</p>}{ai.error && <p role="alert" className={styles.error}>{ai.error}</p>}{ai.result && <>
             <p role="status" className={styles.feedback}>{ai.result.message}</p>
@@ -113,7 +115,7 @@ export function Abstraction({ controller }: { controller: ReviewController }) {
           {p.step === 4 && <>
             <label className={styles.field}>처방전 상담 질문<textarea maxLength={1000} value={chat} onChange={event => setChat(event.target.value)} />
             </label>
-            <Button variant="outline" disabled={locked || !chat.trim()} onClick={() => void ai.ask("abstraction-chat", chat)}>처방전 상담하기</Button>
+            <Button variant="outline" disabled={locked || controller.actionBlocked || !chat.trim()} onClick={() => void ai.ask("abstraction-chat", chat)}>처방전 상담하기</Button>
             <p className={styles.muted}>상담 내용은 서버에 보관하지 않아요. 도움받은 내용은 해결 계획에 직접 반영해 주세요.</p>
           </>}
           {ai.remaining !== null && <p className={styles.muted}>오늘 AI 도움 {ai.remaining}회 남음</p>}

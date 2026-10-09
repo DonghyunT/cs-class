@@ -14,6 +14,7 @@ const uuid = z.string().uuid();
 const questionInput = z.object({ id: uuid, title: z.string().trim().min(1).max(80), body: z.string().trim().min(1).max(2000), lessonId: z.string().min(1).max(80).nullable() }).strict();
 const answerInput = z.object({ id: uuid, body: z.string().trim().min(1).max(1500) }).strict();
 const resolveInput = z.object({ resolved: z.boolean() }).strict();
+const deleteInput = z.object({}).strict();
 const questionRef = (id: string) => admin().db.collection("csQuestions").doc(id);
 const authorFor = (account: Account): QuestionAuthor => {
   const nickname = Reflect.get(account, "nickname");
@@ -123,5 +124,19 @@ export async function resolveQuestion(questionId: string, payload: unknown): Pro
     const now = Date.now(), next = { ...question, resolved: input.resolved, resolvedAt: input.resolved ? now : null, resolvedBy: input.resolved ? authorFor(account) : null, updatedAt: now };
     tx.update(questionRef(questionId), { resolved: next.resolved, resolvedAt: next.resolvedAt, resolvedBy: next.resolvedBy, updatedAt: now });
     return summary(next);
+  });
+}
+export async function deleteQuestion(questionId: string, payload: unknown) {
+  uuid.parse(questionId);
+  deleteInput.parse(payload);
+  return authorized(await identity(), async (tx, account) => {
+    const question = await storedQuestion(tx, account, questionId);
+    requireCondition(question.author.uid === account.uid, 403, "FORBIDDEN", "본인이 작성한 질문만 삭제할 수 있어요.");
+    const ref = questionRef(questionId);
+    const answers = await tx.get(ref.collection("answers"));
+    await takeWriteSlot(tx, account);
+    answers.docs.forEach(answer => tx.delete(answer.ref));
+    tx.delete(ref);
+    return { id: questionId };
   });
 }

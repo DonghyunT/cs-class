@@ -111,7 +111,7 @@ export function useTeacherClass(explicitClassId?: string) {
     setOverride({ source, classId: next }); selectTeacherClass(next);
     if (location.pathname.startsWith("/teacher")) {
       const url = new URL(location.href); url.searchParams.set("classId", next);
-      if (classId !== next) { url.searchParams.delete("lessonId"); url.searchParams.delete("studentId"); }
+      if (classId !== next) { url.searchParams.delete("lessonId"); url.searchParams.delete("studentId"); url.searchParams.delete("review"); }
       history.replaceState(history.state, "", url.pathname + url.search + url.hash);
     }
   }, [session, source, classId, selectTeacherClass]);

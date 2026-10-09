@@ -35,14 +35,14 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
       await page.getByRole("radio", { name: answer, exact: false }).check();
       if (i < 4) await page.getByRole("button", { name: "다음 문제", exact: true }).click();
     }
-    await page.getByRole("button", { name: "이번 문제 결과 확인" }).click();
+    await page.getByRole("button", { name: "이번 회차 결과 확인" }).click();
     await expect(page.getByRole("tab", { name: "퀴즈 80%" })).toBeVisible();
     await expect(page.locator("#programming-quiz-result")).toBeFocused();
     await page.getByRole("button", { name: "틀린 문제만 다시 풀기" }).click();
     await expect(page.getByRole("radio")).toHaveCount(3);
     await expect(page.locator("#programming-question")).toBeFocused();
     await page.getByRole("radio", { name: "3", exact: true }).check();
-    await page.getByRole("button", { name: "이번 문제 결과 확인" }).click();
+    await page.getByRole("button", { name: "이번 회차 결과 확인" }).click();
     await expect(page.getByRole("tab", { name: "퀴즈 100%" })).toBeVisible();
     await page.reload(); await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "퀴즈 100%" })).toBeVisible();

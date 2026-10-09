@@ -60,10 +60,11 @@ test("반 전체 진도는 필수 활동 합산이며 선택 도전·최근 활�
   await expect(current.getByText("등록 27명 · 최근 2분 활동 3명", { exact: true })).toBeVisible();
   await expect(current.getByText(/출석/)).toHaveCount(0);
   const actions = page.getByRole("region", { name: "교사가 확인할 일", exact: true });
-  for (const [stage, count, percent] of [["개념", "72/108", "67"], ["퀴즈", "45/135", "33"], ["실습", "72/108", "67"]]) {
-    const bar = actions.getByRole("progressbar", { name: `반 전체 ${stage} 진도`, exact: true });
+  for (const [stage, completed, percent] of [["개념", 18, "67"], ["퀴즈", 9, "33"], ["실습", 18, "67"]] as const) {
+    const bar = actions.getByRole("progressbar", { name: `반 전체 ${stage} 완료 학생`, exact: true });
     await expect(bar).toHaveAttribute("aria-valuenow", percent);
-    await expect(bar).toHaveAttribute("aria-valuetext", `${count}개 완료`);
+    await expect(bar).toHaveAttribute("aria-valuetext", `전체 학생 27명 중 ${completed}명 완료`);
+    await expect(bar.locator("..")).toContainText(`${completed}/27명`);
   }
   const colors = await actions.getByRole("progressbar").locator("i").evaluateAll(elements => elements.map(element => getComputedStyle(element).backgroundColor));
   expect(new Set(colors).size).toBe(3);

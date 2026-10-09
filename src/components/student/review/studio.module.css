@@ -3,6 +3,7 @@
 .studio h3 { font-size:17px; font-weight:800; }
 .studio .columns { display:grid; grid-template-columns:minmax(0,7fr) minmax(280px,5fr); gap:20px; align-items:stretch; }
 .sandwichColumns { display:grid; grid-template-columns:minmax(0,8fr) minmax(290px,4fr); gap:16px; align-items:start; }
+.sandwichColumns > details { grid-column:1/-1; min-width:0; }
 .stack { display:grid; gap:16px; min-width:0; }
 .stageHeader { display:flex; gap:12px; align-items:center; min-width:0; flex-wrap:wrap; }
 .stageHeader > :last-child { margin-left:auto; }

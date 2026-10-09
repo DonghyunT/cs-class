@@ -2,6 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { ServiceError, requireCondition } from "./errors";
+import { failureCategory, logFailureResponse, type FailureCategory, type FailureOperation } from "./failure-log";
 
 export function json(value: unknown, status = 200) { return NextResponse.json(value, { status, headers: { "Cache-Control": "no-store, private", "Vary": "Cookie", "X-Content-Type-Options": "nosniff" } }); }
 export async function body(request: Request, maxBytes = 32768) {
@@ -26,9 +27,14 @@ export async function body(request: Request, maxBytes = 32768) {
   try { return JSON.parse(Buffer.concat(chunks).toString("utf8")); }
   catch { throw new ServiceError(400, "BODY", "요청 내용을 확인해 주세요."); }
 }
-export function failure(error: unknown) {
-  if (error instanceof ServiceError) return json({ code: error.code, message: error.message }, error.status);
-  if (error instanceof ZodError) return json({ code: "INVALID", message: "입력한 내용을 확인하고 다시 시도해 주세요." }, 400);
-  // Do not include database documents, credentials, request bodies or provider errors in logs/responses.
-  return json({ code: "UNAVAILABLE", message: "서버에서 처리하지 못했어요. 잠시 후 다시 시도해 주세요." }, 503);
+export function failureResponse(value: unknown, status: number, context?: { operation: FailureOperation }, category?: FailureCategory) {
+  return logFailureResponse(json(value, status), { ...context, category });
+}
+export function failure(error: unknown, context?: { operation: FailureOperation }) {
+  const service = error instanceof ServiceError, invalid = error instanceof ZodError;
+  const status = service ? error.status : invalid ? 400 : 503;
+  const value = service ? { code: error.code, message: error.message }
+    : invalid ? { code: "INVALID", message: "입력한 내용을 확인하고 다시 시도해 주세요." }
+      : { code: "UNAVAILABLE", message: "서버에서 처리하지 못했어요. 잠시 후 다시 시도해 주세요." };
+  return failureResponse(value, status, context, service ? failureCategory(status) : invalid ? "invalid_input" : "unexpected");
 }

@@ -51,6 +51,15 @@ async function stop(reason) {
 }
 
 try {
+  // Entry's canvas controls omit CORS when loading their images. An opaque
+  // sandbox needs anonymous requests so EaselJS can read pixels for hit tests.
+  window.Image = new Proxy(window.Image, {
+    construct(Image, args, newTarget) {
+      const image = Reflect.construct(Image, args, newTarget);
+      image.crossOrigin = "anonymous";
+      return image;
+    },
+  });
   // EntryJS reads editor preferences from localStorage during initialization.
   // An opaque sandbox cannot access site storage, so preferences stay in memory.
   try { window.localStorage.getItem("entryjs"); }
@@ -65,6 +74,12 @@ try {
       get length() { return preferences.size; },
     } });
   }
+  // CanvasInput's keyup/cursor callbacks can redraw a field after it is hidden.
+  const renderInput = window.CanvasInput.prototype.render;
+  window.CanvasInput.prototype.render = function () {
+    if (this._isHidden) return this;
+    return renderInput.call(this);
+  };
   EntryStatic.fontFamily = "sans-serif";
   if (programming && mission === "keys") Entry.block.when_some_key_pressed.def.params = [null, "38"];
   EntryStatic.getAllBlocks = () => programming && mission !== "name" ? (mission === "move" || mission === "keys" ? [
@@ -111,7 +126,6 @@ try {
           const field = Entry.stage.inputField;
           field._hiddenInput.setAttribute("aria-label", programming && mission !== "name" ? "강아지 질문 대답" : "강아지 이름 대답");
           field._hiddenInput.maxLength = 180;
-          field.focus();
         }
         return result;
       } catch (error) { if (nameRun) nameRun.failed = true; throw error; }
@@ -140,7 +154,7 @@ try {
   document.addEventListener("mouseup", () => queueMicrotask(changed));
   document.addEventListener("touchend", () => queueMicrotask(changed));
   Entry.addEventListener("run", () => {
-    if (locked) { void stop("stopped"); return; }
+    if (locked || loading) { void stop("stopped"); return; }
     if (!traced) changed();
     if (traced) {
       // The run event fires during the engine transition. A full export here
@@ -173,6 +187,7 @@ try {
     try {
       if (message.type === "load") {
         loading = true;
+        document.getElementById("workspace").inert = true;
         await stop("stopped");
         Entry.clearProject();
         if (programming) for (const variable of message.project.variables ?? []) {
@@ -184,12 +199,17 @@ try {
         // before exposing the editor, since selectMenu closes active inputs.
         Entry.getMainWS().dReDraw.flush();
         Entry.playground.blockMenu.reDraw.flush();
+        // loadProject returns before the stage image has finished loading.
+        const stageObject = Entry.container.getObject("entrybot").entity.object;
+        if (stageObject.image instanceof HTMLImageElement) await stageObject.image.decode();
+        if (!stageObject.getTransformedBounds()) throw new Error("Stage picture is not ready");
         original = Entry.exportProject();
         loading = false;
+        document.getElementById("workspace").inert = locked;
         send("loaded");
       } else if (message.type === "lock") {
         locked = message.locked === true;
-        document.getElementById("workspace").inert = locked;
+        document.getElementById("workspace").inert = locked || loading;
       } else if (message.type === "export") {
         document.activeElement?.blur();
         Entry.getMainWS().syncCode();

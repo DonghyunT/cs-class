@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useEffectEvent, useRef, useState, type RefObject } from "react";
 import { Check, Lightbulb, Play, RotateCcw, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { checkNameMission, nameProjectLines, parseNameProject, type NameRun } from "@/lib/prototype/name-entry";
+import { checkNameMission, nameProjectLines, parseNameProject, type NameRun } from "@/lib/classroom/name-entry";
 import { blockLabels, type PrototypeState, type PrototypeUpdate } from "@/lib/prototype/programming";
 import type { HelpContext } from "./support";
 import styles from "./programming.module.css";

@@ -36,7 +36,7 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
   await page.getByRole("button", { name: "퀴즈로 이동" }).click();
   await page.getByRole("radio", { name: "앞으로 3칸 이동한다" }).check();
-  await expect(page.getByRole("button", { name: "이번 문제 결과 확인" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "이번 회차 결과 확인" })).toBeDisabled();
   await page.getByRole("button", { name: "먼저 실습하기" }).click();
   await expect(page.getByRole("tab", { name: "실습 0%" })).toHaveAttribute("aria-selected", "true");
   await page.reload();
@@ -50,7 +50,7 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   await page.getByRole("radio", { name: "숫자 출력 → 숫자 입력", exact: true }).check();
   await page.getByRole("button", { name: "다음 문제", exact: true }).click();
   await page.getByRole("radio", { name: "결과가 달라질 수 있어요" }).check();
-  await page.getByRole("button", { name: "이번 문제 결과 확인" }).click();
+  await page.getByRole("button", { name: "이번 회차 결과 확인" }).click();
   await expect(page.getByRole("tab", { name: "퀴즈 67%" })).toBeVisible();
   await page.getByRole("button", { name: "틀린 문제만 다시 풀기" }).click();
   await expect(page.getByRole("radio")).toHaveCount(3);
@@ -59,7 +59,7 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   await page.getByText("힌트 보기", { exact: true }).click();
   await expect(page.getByText("화면에 보여 줄 값을 먼저 알아야 해요.", { exact: true })).toBeVisible();
   await page.getByRole("radio", { name: "숫자 입력 → 숫자 출력", exact: true }).check();
-  await page.getByRole("button", { name: "이번 문제 결과 확인" }).click();
+  await page.getByRole("button", { name: "이번 회차 결과 확인" }).click();
   await page.getByRole("button", { name: "실습으로 이동" }).click();
   await expect(page.locator("#stage-heading-practice")).toBeFocused();
   // Each next key starts after the previous render and its Effect have moved focus.

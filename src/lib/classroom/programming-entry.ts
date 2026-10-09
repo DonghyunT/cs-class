@@ -1,4 +1,4 @@
-import { buildNameProject } from "../prototype/name-entry";
+import { buildNameProject } from "./name-entry";
 
 export const programmingMissions = [
   { id: "name", title: "강아지 이름 짓기", goal: "이름을 묻고, 입력한 이름을 말하게 해주세요.", hint: "질문 다음에 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 보세요.", experiment: "초코와 보리처럼 서로 다른 이름으로 두 번 실행해 보세요." },

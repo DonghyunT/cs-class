@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { Check, MessageCircle, Plus, RefreshCw, Send } from "lucide-react";
+import { Check, MessageCircle, Minus, Plus, RefreshCw, Send, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { TeacherToolbar } from "@/components/teacher/teacher-toolbar";
 import { useNavigationGuard } from "@/components/navigation-provider";
@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { LoadingState } from "@/components/ui/loading-state";
-import { api } from "@/lib/classroom/client";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { api, ApiError } from "@/lib/classroom/client";
 import { QUESTION_ANSWER_LIMIT, questionAuthorName, type CommunityData, type CommunityQuestion, type QuestionAuthor, type QuestionReplyResult, type QuestionSummary } from "@/lib/classroom/community";
 import styles from "./community.module.css";
 
@@ -56,10 +57,15 @@ function CommunityBoard({ uid, classId, teacher, onClassChange }: { uid: string;
   const [drafts, setDrafts] = useState<Drafts>(() => restoreDrafts(storageKey));
   const [composerOpen, setComposerOpen] = useState(() => Boolean(drafts.question.title || drafts.question.body));
   const [filter, setFilter] = useState<"all" | "unanswered" | "resolved">("all");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleteError, setDeleteError] = useState("");
   const [focus, setFocus] = useState<{ target: "title" | "answer" | null; key: number }>({ target: null, key: 0 });
   const title = useRef<HTMLInputElement>(null);
   const answer = useRef<HTMLTextAreaElement>(null);
   const threadTitle = useRef<HTMLHeadingElement>(null);
+  const deleteButton = useRef<HTMLButtonElement>(null);
+  const deleteCancel = useRef<HTMLButtonElement>(null);
+  const allFilter = useRef<HTMLButtonElement>(null);
   const active = useRef(true);
   const request = useRef(0);
   const pending = useRef<Promise<boolean> | null>(null);
@@ -122,12 +128,12 @@ function CommunityBoard({ uid, classId, teacher, onClassChange }: { uid: string;
     request.current++; setLoading(false);
     setData(previous => previous ? { ...previous, questions: previous.questions.some(item => item.id === next.id) ? previous.questions.map(item => item.id === next.id ? next : item) : [next, ...previous.questions] } : previous);
   }
-  function perform(operation: () => Promise<void>) {
+  function perform(operation: () => Promise<void>, onError = setError) {
     if (pending.current) return pending.current;
     setSaving(true); setError(""); setMessage("");
     const job = (async () => {
       try { await operation(); return true; }
-      catch (problem) { if (active.current) setError(problem instanceof Error ? problem.message : "등록하지 못했어요. 작성 내용은 남아 있어요."); return false; }
+      catch (problem) { if (active.current) onError(problem instanceof Error ? problem.message : "처리하지 못했어요. 작성 내용은 남아 있어요."); return false; }
       finally { pending.current = null; if (active.current) setSaving(false); }
     })();
     pending.current = job;
@@ -166,30 +172,69 @@ function CommunityBoard({ uid, classId, teacher, onClassChange }: { uid: string;
       setMessage(next.resolved ? "해결됨으로 표시했어요." : "질문을 다시 열었어요.");
     });
   }
+  function removeQuestion() {
+    if (!deleteTarget) return;
+    const { id } = deleteTarget;
+    setDeleteError("");
+    void perform(async () => {
+      try {
+        await api<{ id: string }>(`classroom/community/${encodeURIComponent(id)}/delete`, {}, "POST", uid);
+      } catch (problem) {
+        // A lost success response can be retried after the question has gone.
+        if (!(problem instanceof ApiError && problem.code === "QUESTION_NOT_FOUND")) throw problem;
+      }
+      if (!active.current) return;
+      request.current++; threadRequest.current++;
+      setLoading(false); setThreadLoading(false);
+      setData(previous => {
+        if (!previous) return previous;
+        const questions = previous.questions.filter(item => item.id !== id);
+        return { ...previous, questions, nextCursor: previous.nextCursor === id ? questions.at(-1)?.id ?? null : previous.nextCursor };
+      });
+      setQuestion(previous => previous?.id === id ? null : previous);
+      changeDrafts(previous => {
+        const answers = { ...previous.answers };
+        delete answers[id];
+        return { ...previous, answers };
+      });
+      if (data?.nextCursor === id) await refresh();
+      if (!active.current) return;
+      setDeleteTarget(null);
+      setMessage("질문과 답변을 삭제했어요.");
+    }, setDeleteError);
+  }
   const shown = data?.questions.filter(item => filter === "all" || (filter === "resolved" ? item.resolved : item.answerCount === 0 && !item.resolved)) ?? [];
   const draft = drafts.question;
   return <div className={styles.page}>
     <header className={styles.heading}><div><span className={styles.eyebrow}><MessageCircle size={18} aria-hidden="true" />우리 반 질문</span><h1>함께 묻고, 함께 설명해요.</h1><p>같은 반 친구와 선생님이 질문·답변을 볼 수 있어요.</p></div>{!teacher && <div className={styles.tools}><Button variant="ghost" aria-label="질문 새로고침" aria-disabled={loading || saving} onClick={() => { if (!loading && !saving) { void refresh(); if (question) void openQuestion(question.id); } }}><RefreshCw size={16} aria-hidden="true" />새로고침</Button></div>}</header>
     {teacher && <TeacherToolbar classId={classId} classrooms={data?.classrooms ?? []} refreshing={loading || saving || threadLoading} onClassChange={async id => { if (await beforeLeave()) onClassChange(id); }} onRefresh={() => { void refresh(); if (question) void openQuestion(question.id); }} />}
     {error && <div className={styles.error} role="alert"><p>{error} {data && "마지막으로 확인한 질문을 보여드리고 있어요."}</p>{!data && <Button variant="outline" onClick={() => void refresh()}>질문 다시 불러오기</Button>}</div>}
-    <p className={styles.status} role="status" aria-live="polite">{saving ? "등록하고 있어요. 작성 내용은 보관 중이에요." : message}</p>
+    <p className={styles.status} role="status" aria-live="polite">{saving ? deleteTarget ? "질문과 답변을 삭제하고 있어요." : "등록하고 있어요. 작성 내용은 보관 중이에요." : message}</p>
     {!data && loading && <LoadingState>우리 반 질문을 불러오고 있어요.</LoadingState>}
     {data && <>
-      <details className={styles.composer} open={composerOpen} onToggle={event => setComposerOpen(event.currentTarget.open)}><summary><Plus size={17} aria-hidden="true" />질문 쓰기</summary><form onSubmit={event => { event.preventDefault(); create(); }}>
+      <details className={styles.composer} open={composerOpen} onToggle={event => setComposerOpen(event.currentTarget.open)}><summary>{composerOpen ? <Minus size={17} aria-hidden="true" /> : <Plus size={17} aria-hidden="true" />}질문 쓰기</summary><form onSubmit={event => { event.preventDefault(); create(); }}>
         <label>질문 제목<Input ref={title} value={draft.title} required maxLength={80} readOnly={saving} onChange={event => changeDrafts(previous => ({ ...previous, question: { ...previous.question, id: crypto.randomUUID(), title: event.target.value } }))} /></label>
         <div className={styles.field}><label htmlFor={`${formId}-question-body`}>질문 내용</label><textarea id={`${formId}-question-body`} value={draft.body} required maxLength={2000} rows={4} readOnly={saving} onChange={event => changeDrafts(previous => ({ ...previous, question: { ...previous.question, id: crypto.randomUUID(), body: event.target.value } }))} /></div>
         <div className={styles.composerFooter}><label>관련 수업<Select label="질문 수업" value={draft.lessonId ?? ""} options={[{ value: "", label: "수업 선택 안 함" }, ...data.lessons.map(lesson => ({ value: lesson.id, label: lesson.title }))]} disabled={saving} onValueChange={value => changeDrafts(previous => ({ ...previous, question: { ...previous.question, id: crypto.randomUUID(), lessonId: value || null } }))} /></label><Button type="submit" aria-disabled={saving || !draft.title.trim() || !draft.body.trim()}><Send size={15} aria-hidden="true" />질문 등록</Button></div>
         <p className={styles.note}>등록 전 작성 내용은 이 탭에서 이어 쓸 수 있어요.</p>
       </form></details>
-      <div className={styles.filters} role="group" aria-label="질문 필터">{([['all', '전체'], ['unanswered', '답변 대기'], ['resolved', '해결됨']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
+      <div className={styles.filters} role="group" aria-label="질문 필터">{([['all', '전체'], ['unanswered', '답변 대기'], ['resolved', '해결됨']] as const).map(([value, label]) => <button key={value} ref={value === "all" ? allFilter : undefined} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}{data.nextCursor && <span className={styles.filterScope}>불러온 질문 {data.questions.length}개 기준</span>}</div>
       <div className={styles.layout}><section className={styles.list} aria-label="우리 반 질문 목록">
-        {!shown.length && <p className={styles.empty}>{data.questions.length ? "해당하는 질문이 없어요." : "아직 질문이 없어요. 궁금한 점을 먼저 나눠 보세요."}</p>}
+        {!shown.length && <p className={styles.empty}>{data.questions.length ? "불러온 질문 중 조건에 맞는 질문이 없어요." : "아직 질문이 없어요. 궁금한 점을 먼저 나눠 보세요."}</p>}
         {shown.map(item => <article key={item.id}><button type="button" className={styles.questionButton} aria-expanded={question?.id === item.id} aria-controls="question-thread" onClick={() => { if (!saving) void openQuestion(item.id); }}><span className={styles.questionMeta}>{item.resolved ? <span className={styles.resolved}><Check size={13} aria-hidden="true" />해결됨</span> : "질문"}{item.lessonId && <span>{data.lessons.find(lesson => lesson.id === item.lessonId)?.title ?? "수업 질문"}</span>}</span><strong>{item.title}</strong><span className={styles.questionMeta}><Author author={item.author} /><span>답변 {item.answerCount}개</span></span></button></article>)}
         {data.nextCursor && <Button variant="ghost" aria-disabled={loading} onClick={() => { if (!loading) void refresh(data.nextCursor!); }}>이전 질문 더 보기</Button>}
       </section><section id="question-thread" className={styles.thread} aria-label="질문과 답변" aria-busy={threadLoading}>
         {threadLoading && <LoadingState>질문과 답변을 확인하고 있어요.</LoadingState>}
         {!question ? !threadLoading && <p className={styles.empty}>질문을 선택하면 내용과 답변이 보여요.</p> : <>
-          <header className={styles.threadHeading}><h2 ref={threadTitle} tabIndex={-1}>{question.title}</h2>{(teacher || question.author.uid === uid) && <Button variant="ghost" aria-disabled={saving || threadLoading} onClick={resolve}>{question.resolved ? "질문 다시 열기" : "해결됨으로 표시"}</Button>}</header>
+          <header className={styles.threadHeading}>
+            <h2 ref={threadTitle} tabIndex={-1}>{question.title}</h2>
+            <div className={styles.threadActions}>
+              {(teacher || question.author.uid === uid) && <Button variant="ghost" aria-disabled={saving || threadLoading} onClick={resolve}>{question.resolved ? "질문 다시 열기" : "해결됨으로 표시"}</Button>}
+              {question.author.uid === uid && <Button ref={deleteButton} variant="ghost" aria-disabled={saving || threadLoading} onClick={() => {
+                if (!saving && !threadLoading) { setDeleteError(""); setDeleteTarget({ id: question.id, title: question.title }); }
+              }}><Trash2 size={15} aria-hidden="true" />질문 삭제</Button>}
+            </div>
+          </header>
           <div className={styles.questionMeta}><Author author={question.author} /><time dateTime={new Date(question.createdAt).toISOString()}>{dateLabel(question.createdAt)}</time></div>
           <p className={styles.body}>{question.body}</p>
           {question.resolved && <p className={styles.resolved}><Check size={15} aria-hidden="true" />해결됨 · 질문자의 궁금증이 해소되었다는 표시예요.</p>}
@@ -200,5 +245,18 @@ function CommunityBoard({ uid, classId, teacher, onClassChange }: { uid: string;
         </>}
       </section></div>
     </>}
+    <AlertDialog open={deleteTarget !== null} onOpenChange={open => { if (!open && !pending.current) setDeleteTarget(null); }}>
+      <AlertDialogContent className={styles.deleteDialog} initialFocus={deleteCancel} finalFocus={() => deleteButton.current?.isConnected ? deleteButton.current : allFilter.current}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>질문을 삭제할까요?</AlertDialogTitle>
+          <AlertDialogDescription>‘{deleteTarget?.title}’ 질문과 모든 답변이 함께 삭제돼요. 삭제한 내용은 복구할 수 없어요.</AlertDialogDescription>
+        </AlertDialogHeader>
+        {deleteError && <p className={styles.deleteError} role="alert">{deleteError}</p>}
+        <AlertDialogFooter>
+          <AlertDialogCancel ref={deleteCancel} disabled={saving}>취소</AlertDialogCancel>
+          <AlertDialogAction disabled={saving} onClick={removeQuestion}>{saving ? "삭제 중…" : "삭제하기"}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>;
 }

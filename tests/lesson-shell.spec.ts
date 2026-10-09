@@ -125,6 +125,9 @@ test("낮은 창에서도 큰 조리대 · 첫 안내·입력·실행 · 좁은 
   const kitchen = page.getByRole("region", { name: "샌드위치 로봇의 주방" });
   const counter = await kitchen.locator("svg > rect").first().boundingBox();
   expect(counter!.width).toBeGreaterThan(490);
+  const record = await page.getByRole("region", { name: "알고리즘 실행 기록", exact: true }).boundingBox();
+  const studio = await page.locator('[data-practice="sandwich"]').boundingBox();
+  expect(record!.width).toBeGreaterThan(studio!.width - 2);
   await expect(page.getByLabel("자연어 명령")).toBeInViewport({ ratio: 1 });
   await expect(page.getByRole("button", { name: "실행", exact: true })).toBeInViewport({ ratio: 1 });
   const welcome = page.getByRole("region", { name: "로봇과의 대화", exact: true });
@@ -160,5 +163,33 @@ test("처음 학습을 불러온 뒤에도 상단 초점과 열린 학생 메뉴
     await expect(target === "leave" ? leave : logout).toBeFocused();
     if (target === "account") { await page.keyboard.press("Escape"); await expect(page.getByRole("button", { name: "학생 메뉴", exact: true })).toBeFocused(); }
     await page.unroute(`**${endpoint}`);
+  }
+});
+
+test("개념·퀴즈 기록은 실습 시작으로 추정하지 않고 실제 필수 제출 수를 표시", async ({ page }, testInfo) => {
+  await enter(page);
+  const classRef = db.doc("csClasses/2-10"), previous = (await classRef.get()).data()!;
+  const ids = ["sequence-lab", "programming-13"];
+  try {
+    await classRef.update({ openedLessonIds: ids, currentLessonId: ids[0] });
+    for (const id of ids) {
+      await db.doc(`csWork/${uid}__${id}`).delete();
+      await page.goto(`/classroom/${id}`);
+      const practice = page.getByRole("tab", { name: /^실습/ });
+      await expect(practice).toBeVisible();
+      await page.getByRole("tab", { name: /^퀴즈/ }).click();
+      await expect(page.getByRole("tab", { name: /^퀴즈/ })).toHaveAttribute("aria-selected", "true");
+      await expect(practice).not.toContainText("진행 중");
+      await expect(practice).toContainText(id === "programming-13" ? "0/4개 제출" : "0/1개 제출");
+      await page.reload();
+      await expect(practice).toContainText(id === "programming-13" ? "0/4개 제출" : "0/1개 제출");
+    }
+    await page.setViewportSize({ width: 390, height: 720 });
+    await expect(page.getByRole("tab", { name: /^실습/ })).toContainText("0/4개 제출");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("practice-submissions-390.png") });
+  } finally {
+    await classRef.set(previous);
+    for (const id of ids) await db.doc(`csWork/${uid}__${id}`).delete();
   }
 });

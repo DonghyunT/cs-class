@@ -92,12 +92,22 @@ git ls-files --others --exclude-standard
 - 공통 화면·목록·일정·담당 CSS는 `src/components/dashboard/`에 둡니다. `use-saved-list.ts`는 두 목록의 직렬 저장·실패 의도·명시적 충돌 재시도를 공유합니다. `todos.tsx`는 이 큐로 개인 할 일의 즉시 삭제/완료 표시와 실패 시 삭제 행 복원을 처리하고 저장 중인 행만 잠급니다. 반 일정의 삭제 처리는 기존대로 유지합니다. 기존 학습 저장·이동 보호를 재사용하며 개인 체크가 `csWork`를 변경하지 않습니다.
 - 교사 상세 화면은 `src/components/teacher/dashboard.tsx`·`teacher.module.css`에서 서버의 `openedLessonIds`로 전체 열린 수업을 표시하고 `currentLessonId`로 이번 수업을 구분합니다. 수업 설정 성공 알림은 `src/components/ui/toast.tsx`·`toast.module.css`와 설치된 Base UI Toast를 사용합니다. 화면별 manager를 만들고 동일 저장 알림은 갱신하며 반 전환 시 닫습니다. 기존 저장 실패·충돌·비밀번호 초기화 안내는 유지합니다.
 - `tests/teacher-class-management.spec.ts`는 열린 수업 전체·이번 수업 미지정·열린 수업 없음·저장 실패와 재시도·토스트 타이머/초점·학생/교사 메뉴 일관성을 검사합니다. 공용 탐색 변경의 최종 검증에는 기존 `navigation.spec.ts`·`dashboard-pilot.spec.ts`·`platform.spec.ts`·`interface-polish.spec.ts`를 함께 포함합니다.
+- 전체 일정의 오늘 이후/지난 목록은 `seoulToday()`로 나누며 지난 항목은 native details에 접고 삭제하지 않습니다. 상단 일정 등록은 기존 폼에만 초점을 옮겨 작성/수정 중 입력을 유지합니다. `tests/schedule-history.spec.ts`와 기존 `dashboard-pilot.spec.ts`·`timetable.spec.ts`·`loading-states.spec.ts`로 날짜 경계·편집·반/권한·503/409·좁은 창/키보드를 확인합니다. 홈의 다가오는5개·달력과 CRUD/revision은 유지합니다.
 - 서버 저장과 권한은 `src/lib/server/planner.ts`, 계약·한국 날짜는 `src/lib/classroom/planner.ts`에서 관리합니다. 저장 모델은 [Firebase 안내](FIREBASE_SETUP.md#데이터와-남은-한계), 파일럿 가정·한도·미전송 내용의 경계는 [PRD](PRD.md#작은-버전의-경계와-저장-동작)를 따릅니다.
 - 로컬 `dev:emulator`를 계속 실행한 상태에서 목록을 추가한 뒤 새로고침·로그아웃·같은 합성 계정 재로그인으로 복원을 확인합니다. 교사 입장의 강사는 담당 10·11반의 일정을 등록하고 해당 반의 합성 학생은 조회합니다. 운영 계정·자료는 사용하지 않습니다.
 - `progress.ts`의 `submissionCountFor`는 알려진 미션의 최신 작품 수를 세며 교사 제출 인원과 대시보드 작품 수가 공유합니다. `lesson-navigation.ts`는 현재/진행 수업 정렬과 저장된 단계·미션의 이어갈 위치를 안내합니다. 새 `ui-dashboard-refinement.spec.ts`·`ui-teacher-refinement.spec.ts`는 재로그인/UID/담당 범위·집계·필터·모바일 상세·5개 일정과 실제 화면 조작을 검사합니다.
 - 대상 검사는 `tests/dashboard-pilot.spec.ts`·`tests/loading-states.spec.ts`입니다. 변경 중에는 실행 중인 에뮬레이터에서 `npm run test:e2e:running -- tests/<target>.spec.ts`로 확인하며 최종 통합은 [전체 검증](#검증)을 따릅니다.
 
 Next.js 가이드는 설치본 `node_modules/next/dist/docs/`에 있습니다. 패치 버전 차이는 설치본을 기준으로 하고, 라이브러리 문서 확인 규칙은 AGENTS를 따릅니다. 이번 조회 구현의 SDK 근거는 아래 성능 측정 절에 있습니다.
+
+### 교사 수업 준비와 실제 미리보기
+
+- 도움 표시는 [help.ts](../src/lib/classroom/help.ts)의 `helpContextLabel`과 [HelpRequests](../src/components/classroom/help-requests.tsx)를 사용합니다. 기존 `lessonId/stage/mission`으로 수업·단계·미션을 읽고 GET 성공 때만 `lastCheckedAt`을 갱신합니다. 선택적 `onStatusChange({classId,count,lastCheckedAt,loading,error})`가 홈 상단 건수와 이동에 같은 결과를 전달합니다. 첫 성공 전 count는 null이며 반 전환 때 이전 반의 상태를 사용하지 않습니다. 기존30초 갱신·요청 UUID·저장본 조회/resolve API를 유지합니다.
+- [반 준비표](../src/components/teacher/class-preparation-table.tsx)는 기존 `TeacherDashboard.classrooms/lessons`만 소비합니다. 설정 링크는 `/teacher/classes?classId=...&manage=1`이며 단일 값과 준비된 반을 확인한 뒤 [ManageLessons](../src/components/teacher/dialogs.tsx)를 엽니다. 닫을 때 native history로 manage를 지워 대화상자와 초점 복귀를 위해 조회 화면을 재생성하지 않습니다. 권한은 기존 teacher 응답과 설정 API가 확인합니다.
+- `/teacher/preview/[id]?classId=...`의 서버 페이지는 교사/강사 세션·담당 반·실제 카탈로그7수업을 확인합니다. [LessonPreview](../src/components/teacher/lesson-preview.tsx)와 [usePreviewWork](../src/components/teacher/use-preview-work.ts)는 실제 LessonShell/LessonEditor를 `mode="preview"`로 사용합니다. 학생 useWork를 조건부로 호출하거나 학생 계정으로 전환하지 않습니다. 작품은 컴포넌트 메모리에만 두며 초기화·새로고침·수업 변경·나가기 때 비웁니다.
+- `POST /api/teacher-preview/[id]/evaluate`의 본문은 `{classId, work, action}`입니다. [teacher-preview.ts](../src/lib/server/teacher-preview.ts)는 알려진 Work 필드/수업별 ID/기존 draft·action 스키마로 strict 검사한 뒤 `validateDraft`·`applyAction`만 사용합니다. route는 본문 읽기 전 역할, 읽은 뒤 담당 반·수업을 재확인하며 Origin/요청 헤더 경계와 전용1MiB 전송 한도를 사용합니다. 현재 초안과 각 이전 검증/제출 작품의 기존 byte·항목 한도는 그대로 검사하고 학생 API 한도는 늘리지 않습니다. review/aiReview/교사 승인/학생 UID 입력은 채택하지 않습니다.
+- preview는 학생 work/student/ai/help API와 학습·실제 제출·손들기 쓰기를 호출하지 않습니다. `flush`는 실제 Entry 입력을 메모리 초안으로 확정하고 실패에는 입력을 유지합니다. AI 요청과 교사 확인은 제한을 표시하고, 샌드위치는 로컬 규칙 해석, 자유 순서도는 기본 구조 확인까지만 제공합니다. `flowchart.tsx`의 학생 추상화 기록 GET도 mode 경계로 차단합니다. [공개 프로토타입](#프로그래밍-수업-프로토타입)의 미니 실행·탭 저장과 구분합니다.
+- 대상 검사는 `tests/teacher-preparation.spec.ts`·`teacher-lesson-preview.spec.ts`·`teacher-preview-api.spec.ts`와 기존 `help-requests.spec.ts`·`help-races.spec.ts`·`teacher-class-management.spec.ts`입니다. UI/평가 권한·첫/재조회 실패·반 전환·숫자 정렬·URL 재접속/초점·7수업·평가 실패/한도·학생/AI 요청0건 및 학습 컬렉션 불변을 확인합니다. 인증 세션 확인과 학습 쓰기는 구분합니다.
 
 ### 학교 시간표 연동
 
@@ -135,11 +145,14 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 
 - `npm ci`의 `postinstall`과 `npm run dev`·`npm run build`의 준비 단계가 [자산 목록](../scripts/entryjs-assets.json)의 버전·SHA-512로 브라우저 파일을 준비합니다. npm 레지스트리·공식 Entry CDN·고정한 공식 예제 커밋을 사용하며 브라우저는 `/entryjs/vendor/`의 로컬 파일을 읽습니다. 첫 설치에는 인터넷과 `tar`가 필요합니다(Windows 기본 tar 또는 해당 OS의 tar). 자산·다운로드 캐시는 Git 제외 `public/entryjs/vendor/`·`scratch/entryjs/`에 생성됩니다. 필요하면 `npm run prepare:entryjs`로 다시 준비합니다. 무결성이 다른 파일은 빌드에 사용하지 않습니다.
 - [작업실 HTML](../public/entryjs/workspace.html)·[브리지](../public/entryjs/workspace.js)는 `allow-scripts`만 허용한 iframe에서 실행합니다. Next.js 앱의 React 19와 EntryJS 보조 UI의 React 18을 분리합니다. iframe의 설정 저장소는 메모리이며 부모 화면의 쿠키·DOM·저장소에 접근할 수 없습니다. 공개 자산에만 CORS와 OPTIONS를 허용하고 수업 API의 인증·권한·Origin 검사는 유지합니다.
+- Entry4.0.23의 일부 캔버스 조작 그림은 CORS 설정 없이 `new Image()`로 읽습니다. 브리지는 `Entry.init` 전에 해당 iframe의 이미지 생성에 `crossOrigin="anonymous"`를 지정하고 네이티브 이미지·prototype을 유지합니다. 기존 `/entryjs/*` CORS 헤더와 함께 EaselJS의 픽셀 기반 클릭 판정을 허용합니다. 질문 체크가 무반응이고 픽셀 읽기 보안 오류가 반복되면 요청의 CORS 설정을 확인하며, iframe에 `allow-same-origin`을 추가하거나 오류를 숨기지 않습니다. [프로그래밍 검사](../tests/programming-classroom.spec.ts)의 `entry-answer:`는 실제 캔버스 입력칸·체크 클릭, 한글·합성 IME Enter 보호, 자동 저장 대기·정지 뒤 재실행을 확인합니다. 숨은 입력창의 `fill`만으로 체크 버튼을 검증하지 않습니다.
+- 질문칸의 `show()`는 자체적으로 초점을 줍니다. 브리지에서 같은 프레임에 `focus()`를 다시 호출하면 Entry4.0.23의 예약된 커서 타이머가 중복으로 남을 수 있으므로 재호출하지 않습니다. `Entry.init` 전 `CanvasInput.render`에 숨김 검사를 적용하여 종료 후 keyup·커서 callback이 입력칸을 다시 그리지 않도록 합니다. vendor 원문은 수정하지 않습니다. `entry-flicker:` 검사는 실제 응답 완료·수동 정지 뒤 두 커서 주기 동안 숨은 입력칸의 무대 재그리기 횟수를 확인합니다. DOM의 숨김 값이나 한 장의 캡처만으로 깜빡임 해소를 판정하지 않으며, 이 검사로 라이브러리의 모든 타이머 누수가 없다고 단정하지 않습니다.
+- `Entry.loadProject()`는 이미지를 읽는 동안에도 동기 반환합니다. 브리지는 고정 무대 객체의 실제 이미지 `decode()`와 bounds를 확인한 뒤 `loaded`를 보내 실행·검증을 허용합니다. 준비 중에는 공용 `#workspace`를 `inert`로 두어 공개 체험의 내부 실행·편집도 막고, 잠금 메시지가 와도 준비 상태를 유지합니다. 준비 전 run 이벤트도 중지합니다. 실패는 기존 오류/다시 불러오기 경로로 처리하고 저장된 작품을 유지합니다. `entry-assets:`는 이미지 응답 보류 중 실행 비활성, 준비 후 실제 응답, 이미지 실패 때 작품 보존·재시도를 확인하며 [이름 체험 검사](../tests/name-entry-pilot.spec.ts)에도 내부 작업실 준비 경계를 포함합니다. DOM 생성이나 프로젝트 객체 반환만으로 무대 준비를 판정하지 않습니다.
 - 학생 화면은 [EntryPracticeWorkspace](../src/components/student/entry-practice-workspace.tsx), 작품 읽기는 [entry-project.ts](../src/lib/classroom/entry-project.ts), 서버 조건 판정은 [solutions.ts](../src/lib/server/solutions.ts)에서 관리합니다. 네이티브 JSON-string 스크립트와 이전 미리보기 작품을 읽습니다. 시작·이동·시간 동안 말하기 블록과 상수 입력만 허용하고 고정한 엔트리봇·무대로 불러옵니다. 최대 50개 블록·직렬화된 작품 28KB, 이동 ±1000·말 80자·시간 0~10초를 지원합니다.
 - 실행 결과는 중지 **전**에 수집합니다. EntryJS는 중지하면 오브젝트를 실행 전 상태로 되돌리고 `exportProject`도 실행을 중지하므로, 실행 중 자동 저장은 정지 상태의 작품에 현재 코드만 반영합니다. 15초가 지나면 실행을 멈춥니다. 이 과제의 서버 채점은 지원 블록의 연결 구조·상수 값을 검사하며 서버에서 EntryJS를 실행하지 않습니다. 다른 과제의 반복·입력·충돌·난수 검사는 별도 설계합니다.
 - 네이티브 입력의 붙여넣기·IME는 `input`을 `keyup` 처리로 연결합니다. 단계 이동·화면 이동·검증·제출 전에는 편집기의 현재 작품을 읽고 저장하며 실패하면 이동을 멈춥니다. 드래그 중 임시 블록은 저장하지 않습니다. 작품을 불러올 때 작업실 `dReDraw`와 팔레트 `reDraw`의 예약을 순서대로 `flush()`한 뒤 편집을 허용합니다. 늦은 초기 갱신이 입력창을 닫지 않도록 하며, 자동 저장 이후 초점과 연속 입력도 검사합니다. EntryJS 팔레트 좌표 갱신에는 지연이 있으므로 UI 검사는 블록 모델의 좌표 준비 후 시작합니다.
 - [EntryJS 브라우저 검사](../tests/entryjs-ui.spec.ts)는 실제 드래그·숫자 입력·실행·무대 복원·저장·검증·제출·재접속, 저장/파일 로딩 실패 복구, 좁은 창·Esc·키보드 가로 이동을 확인합니다. 라이브러리 번들과 공개된 라이선스·NOTICE·COPYING·패키지 메타데이터는 자산 준비 시 함께 보존합니다.
-- `Classroom`은 사용자·수업별 넓게 보기 선택을 `AppShell`과 `LessonWorkspace`에 전달합니다. CSS로 배치만 바꾸며 iframe key/src와 작품을 유지합니다. 작업실 가까운 저장 표시는 기존 `useWork`를 사용하고 실제 제출·현재 작품의 검증과 구분합니다. [실습 UI 검사](../tests/ui-workspace-refinement.spec.ts)는 기본 높이·같은 iframe/작품·820/821px와 넓게 보기 메뉴 전환 초점·저장 503 실패/409 충돌·이전 제출 보존을 확인합니다. 화면 밖 iframe 촬영·조립 전에는 해당 작업실로 스크롤하고 좌표/그리기 준비를 확인합니다.
+- `Classroom`은 사용자·수업 화면의 단계·넓게 보기·실습 집중 선택을 `LessonWorkspace`와 `LessonShell`에 전달합니다. 폭과 집중은 독립이며 같은 화면의 단계 왕복에 유지하고 새로고침/다른 수업에서는 기본 상태입니다. 집중은 프로그래밍·Entry·세 복습의 실습에서만 적용합니다. `PracticeGuidance`는 같은 children을 접어 편집기/iframe을 재생성하지 않으며 단계 바꾸기·실행·검증/제출·저장 오류·도움은 유지합니다. CSS로 배치만 바꾸며 iframe key/src와 작품을 유지합니다. 작업실 가까운 저장 표시는 기존 `useWork`를 사용하고 실제 제출·현재 작품의 검증과 구분합니다. [실습 UI 검사](../tests/ui-workspace-refinement.spec.ts)는 기본 높이·같은 iframe/작품·820/821px와 넓게 보기 메뉴 전환 초점·저장 503 실패/409 충돌·이전 제출 보존을 확인합니다. 화면 밖 iframe 촬영·조립 전에는 해당 작업실로 스크롤하고 좌표/그리기 준비를 확인합니다.
 
 공식 근거: [설치 예제](https://github.com/entrylabs/example/tree/main/base), [프로젝트 API](https://docs.playentry.org/entryjs/api/2024-02-29-api.html), [실행 이벤트](https://docs.playentry.org/entryjs/api/2024-02-29-event.html). Context7에서 EntryJS를 찾지 못해 고정 버전 패키지의 README·배포 소스와 공식 문서를 확인했습니다.
 
@@ -148,7 +161,7 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 2026-10-01 이름 미션 하나를 실제 EntryJS에 연결했습니다. 기존 `entry-bot-lab`의 팔레트·서버 검사·저장은 유지하며 공개 체험만 이름 전용 설정을 사용합니다.
 
 - [NamePractice](../src/components/prototype/programming/name-practice.tsx)는 `/entryjs/workspace.html?exercise=name`을 사용합니다. 격리·source/opaque origin/channel 검사는 기존 방식입니다. 허용 블록은 `when_run_button_click`, 이전 초안의 키 시작을 보존하는 `when_some_key_pressed`, `ask_and_wait`, `get_canvas_input_value`, `dialog_time`, `combine_something`입니다. 초기 작품에는 시작 블록만 있고 [강아지 자산](../public/entryjs/name-dog.svg)은 기존 lucide 강아지 그림을 재사용했습니다.
-- [name-entry.ts](../src/lib/prototype/name-entry.ts)는 허용 AST·고정 무대를 복원하며 ID·좌표를 제외한 작품 키와 실행 ID로 근거를 연결합니다. 질문 → 실제 대답 → 해당 대답을 사용한 실제 말하기가 서로 다른 두 입력에서 확인되어야 합니다. 인사 문구는 자유입니다. 지금 확인은 시작 버튼 아래 한 줄의 프로그램만 지원하며 복원과 실행 가능성은 구분합니다.
+- [name-entry.ts](../src/lib/classroom/name-entry.ts)는 허용 AST·고정 무대를 복원하며 ID·좌표를 제외한 작품 키와 실행 ID로 근거를 연결합니다. 질문 → 실제 대답 → 해당 대답을 사용한 실제 말하기가 서로 다른 두 입력에서 확인되어야 합니다. 인사 문구는 자유입니다. 지금 확인은 시작 버튼 아래 한 줄의 프로그램만 지원하며 복원과 실행 가능성은 구분합니다.
 - [브리지](../public/entryjs/workspace.js)의 이름 전용 기록은 질문·응답·실제 말풍선을 중지 전에 수집합니다. 네이티브 질문창을 사용하고 검사 목적으로 답을 주입하지 않습니다. 질문 응답 대기를 제외한 실행 시간 15초가 지나면 중지합니다. 질문 필드의 한국어 `input/keyup`과 조합 중 Enter를 처리합니다. 실행 이벤트 안의 전체 export는 엔진을 멈추므로 그 순간에는 코드만 복사합니다.
 - v2 상태는 `cs-class-programming-prototype-v2`에 저장합니다. v1이 있으면 순서·시작 신호·미완성 입력 그대로 옮기며 v1 키를 삭제하지 않습니다. 이름만 변환 실패하면 다른 답안·완료를 보존하고 이전 미니 코드 또는 `nameImportRaw`를 읽기 전용으로 제공합니다. 작품/원문 각각 100,000자, 전체 JSON 500,000자 상한을 저장·복원에 함께 적용합니다.
 - 이동·도움·확인·완료 전에 활성 입력을 확정하고 작품을 내보냅니다. 단계·미션·교사/홈 이동은 탭 저장까지 확인하며 실패 시 작업실을 유지합니다. 초기 로딩/파일 실패만 있고 실제 편집이 없으면 저장된 초안으로 이동할 수 있습니다. 도움은 `mini | entry`의 고정 작품·실행 스냅샷이며 실제 전송은 없습니다. 실행 근거/확인 결과는 화면 메모리로, 단계/미션 이동·새로고침 후에는 다시 실행합니다.
@@ -166,13 +179,14 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 | --- | --- |
 | [page.tsx](../src/app/prototype/programming/page.tsx) | 공개 URL의 페이지·메타데이터 |
 | [programming.tsx](../src/components/prototype/programming/programming.tsx) | 단계/학생·교사 시점·초안 복원/보관·이동 보호·Effect 초점·초기화 |
-| [concept.tsx](../src/components/prototype/programming/concept.tsx) | 조작형 개념 4개와 개념 확인 |
+| [programming-concept.tsx](../src/components/student/programming-concept.tsx) | 조작형 개념 4개와 개념 확인 |
 | [quiz.tsx](../src/components/prototype/programming/quiz.tsx) | 한 문항씩 풀이·회차 채점·오답 재도전 |
 | [practice.tsx](../src/components/prototype/programming/practice.tsx) | 미니 블록 팔레트·조립·입력·실행 타이머·무대·조건 확인·완료·발견 기록 |
-| [name-practice.tsx](../src/components/prototype/programming/name-practice.tsx)·[name-entry.ts](../src/lib/prototype/name-entry.ts) | 이름 미션의 실제 편집기·작품 읽기·실행 근거·조건 확인 |
+| [name-practice.tsx](../src/components/prototype/programming/name-practice.tsx)·[name-entry.ts](../src/lib/classroom/name-entry.ts) | 이름 미션의 실제 편집기·작품 읽기·실행 근거·조건 확인 |
 | [support.tsx](../src/components/prototype/programming/support.tsx) | 도움 요청의 고정 문맥·교사 답변·학생 해결 표시 |
 | [programming.module.css](../src/components/prototype/programming/programming.module.css) | 기능에 인접한 데스크톱/좁은 화면·상태·초점 스타일 |
-| [programming.ts](../src/lib/prototype/programming.ts) | 개념/퀴즈/미션 데이터·타입·초기값·복원 검사·순수 `runProgram/checkMission` |
+| [programming-data.ts](../src/lib/classroom/programming-data.ts) | 운영·체험 공통 개념/퀴즈 데이터 |
+| [programming.ts](../src/lib/prototype/programming.ts) | 체험 미션·타입·초기값·복원 검사·순수 `runProgram/checkMission` |
 | [programming-prototype.spec.ts](../tests/programming-prototype.spec.ts) | 순수 실행/복원·전체 체험·키보드/좁은 창·저장 실패의 4개 검사 |
 
 기존 `Stage`·Brand·Button·NavigationProvider를 재사용합니다. 공개 체험은 운영 Lesson/Work·서버 저장에서 분리되어 있습니다. 공통 루트의 `SessionProvider`는 기존처럼 세션 확인을 수행하므로 이 체험을 ‘HTTP/API 요청이 전혀 없는 앱’으로 설명하지 않습니다. 체험 자체는 로그인을 요구하지 않고 학습 기록을 서버에 보내지 않습니다.
@@ -215,8 +229,18 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 
 - 수업은 `src/lib/classroom/programming-lesson.ts`, 미션·고정 자산·초안 파서·제한된 서버 검증기는 `programming-entry.ts`입니다. 허용 블록만 정규화하며 임의 JavaScript를 실행하지 않습니다. 최대 16줄·160블록·표현식 깊이 8, 작품별 UTF-8 32KiB·전체 초안 120KB를 제한합니다. API의 큰 본문 허용은 이 수업의 저장 요청에만 적용합니다.
 - `src/components/student/programming-lesson.tsx`는 기존 개념 실험, 한 문제씩 퀴즈, 미션 이동을 구성합니다. `use-work.ts`의 직렬 저장과 이동 전 native 입력 확정을 사용합니다. 방향키 작품 복사는 처음 선택할 때만 수행합니다. 미션별 검증·제출은 `Work.missions`, 편집은 `draft.programming.projects`에 저장합니다.
+- 공통 개념 UI는 `src/components/student/programming-concept.tsx`·인접 CSS, 문항 데이터는 `src/lib/classroom/programming-data.ts`, 이름 작품 처리는 `src/lib/classroom/name-entry.ts`에 둡니다. 운영 코드는 체험의 전체 상태나 초기값을 가져오지 않습니다. 체험의 탭 저장·복원은 기존 `lib/prototype/programming.ts`가 소유합니다.
 - `public/entryjs/workspace.js`의 `exercise=programming&mission=...`는 목표별 팔레트와 고정 A/B 변수를 사용합니다. 질문·말하기는 실제 엔진 이벤트로 확인하며 방향키 미션은 실행을 유지해 키 이벤트를 받습니다. 실행 중 전체 export로 엔진을 멈추지 않는 기존 정책을 유지합니다.
+- 이름 실행 확인은 `name-entry.ts`의 `checkNameMission(...).validNames`를 공유해 현재 작품에서 질문·대답·말하기를 끝낸 서로 다른 입력만 최대2개 셉니다. 실제 작품 변경·실행 ID·중지 여부를 확인하며 같은 이름 반복은 늘리지 않습니다. UI는0/2→1/2→2/2와 부족한 조건을 표시하고 재접속 후 작품/완료와 일시적인 실행 근거를 구분합니다. Entry 결과는 현재 X·Y이며 누적 이동 거리로 바꾸지 않습니다.
 - 대상 검사는 `tests/programming-classroom.spec.ts`·`tests/programming-learning.spec.ts`입니다. 실제 Entry 팔레트 조립·질문·변수 계산·네 방향키·중지와 무대 복원·저장 실패·미완성 복원·독립 제출·27명 병렬 API 흐름과 개념·퀴즈 오답 재도전·교사 제출 화면을 포함합니다. 화면 아래 iframe은 Chromium이 그리기를 미룰 수 있으므로 작업실로 스크롤한 뒤 팔레트 좌표 준비를 확인합니다. 브라우저와 API가 같은 작품을 수정하는 검사에서는 화면 이동으로 자동 저장을 마친 뒤 새 버전을 조회합니다. 최종 통합은 아래 전체 검증을 따릅니다.
+
+### 공통 수업 편집기와 집중 모드
+
+[lesson-workspace.tsx](../src/components/student/lesson-workspace.tsx)의 StudentWorkEditor만 학생 `useWork`를 소유하고, [lesson-editor.tsx](../src/components/student/lesson-editor.tsx)는 `WorkController`·`LessonMode`·현재 작품과 화면 props를 받아 실제 표시/조작을 구성합니다. [read-editor-draft.ts](../src/components/student/read-editor-draft.ts)가 기존 Entry 입력 확정을 재사용하며 [work-controller.ts](../src/components/student/work-controller.ts)는 저장 훅의 타입 경계입니다.
+
+일반 개념/퀴즈는 [LessonConceptPanel](../src/components/student/lesson-concept-panel.tsx)·[LessonQuizPanel](../src/components/student/lesson-quiz-panel.tsx)에 기존 JSX를 모았습니다. 선택 위치·체험 초기화 상태·행동/복구·저장/충돌·초점 요청은 LessonEditor에 남기고 표시 계산만 퀴즈 패널에 둡니다. 공통 답안/힌트는 개념 패널의 named export를 재사용합니다. DOM ID/key/disabled·기존 CSS와 학생/preview 컨트롤러의 소유권을 유지합니다.
+
+집중 모드의 핵심 계약은 같은 iframe·편집기·입력·실행/AI 대기·저장 실패의 보존과 단계 왕복 시 선택 유지입니다. `tests/practice-focus.spec.ts` 및 기존 `lesson-shell.spec.ts`·`ui-workspace-refinement.spec.ts`·`review-practice-ui.spec.ts`·`sandwich-conversation.spec.ts`·`review-abstraction.spec.ts`·`review-flowchart.spec.ts`로 폭/집중 독립·Escape/초점·미완성 입력·실패·미션/단계·창 크기를 함께 검사합니다. 단순 JSX 이동을 그대로 복제한 별도 검사는 만들지 않고 실제 학생/preview 소비자의 회귀를 확인합니다.
 
 ## 실학생 명부 준비와 반별 발급
 
@@ -311,6 +335,7 @@ node scripts/review-rollout.mjs --mode restore --plan scratch/review-lessons/san
 ```powershell
 npm run lint
 npm run typecheck
+npm run test:review
 npm run build
 npm run test:e2e
 ```
@@ -323,7 +348,7 @@ npm run test:e2e
 node node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only auth,firestore --project demo-cs-class "node node_modules/@playwright/test/cli.js test tests/auth-security.spec.ts tests/dashboard-performance.spec.ts"
 ```
 
-GitHub Actions는 `main`·`codex/**` push와 PR에서 위 네 검사를 실행하며 E2E는 빌드된 앱을 `next start`로 실행해 검사합니다. 로컬 E2E는 개발 서버를 사용합니다. UI 확인 기준은 [AGENTS](../AGENTS.md)를 따릅니다. 구체적인 연결·운영상 한계는 [Firebase 연결 안내](FIREBASE_SETUP.md)를 확인합니다.
+GitHub Actions는 `main`·`codex/**` push와 PR에서 lint·typecheck·build·E2E를 실행하며 E2E는 빌드된 앱을 `next start`로 실행해 검사합니다. 로컬 E2E는 개발 서버를 사용합니다. UI 확인 기준은 [AGENTS](../AGENTS.md)를 따릅니다. 구체적인 연결·운영상 한계는 [Firebase 연결 안내](FIREBASE_SETUP.md)를 확인합니다.
 
 Windows에서 검사 뒤 `next start` 종료가 멈추면 이번 실행의 PID와 명령을 확인해 해당 테스트 서버만 종료합니다. Playwright는 서버 종료 후 최종 결과를 출력하므로 E2E 요약과 종료 코드까지 확인합니다.
 
@@ -389,5 +414,11 @@ macOS·Linux에서는 Codex를 시작하는 환경에 같은 이름의 환경변
 
 - 정책의 식별자·권한·초안/제출·완료 의미를 위 계약에 반영하고, 서버 인증은 `src/lib/server/auth.ts`, 수업 저장은 `classroom.ts`·`learning.ts`, 목록 저장은 `planner.ts`에서 함께 확인합니다.
 - 변경한 계약을 쓰는 학생·교사 양쪽 호출부를 찾고 만료·권한 부족·통신 실패·버전 충돌·늦은 응답을 대상으로 검사합니다. 환경별 실제 결과는 HANDOFF에 남깁니다.
+
+### 실패 진단과 오류 번호
+
+[http.ts](../src/lib/server/http.ts)의 `failure(error, {operation})`는 [failure-log.ts](../src/lib/server/failure-log.ts)의 안전한 레코드를 응답당 한 번 기록하고 같은 서버 생성 UUID를 `X-Request-ID`에 연결합니다. 레코드는 requestId·고정 작업명 enum·고정 분류 enum·HTTP status·UTC ISO timestamp 다섯 key만 사용합니다. 오류 name/message/stack/cause·Zod issue·요청 본문/동적 URL·학생 식별자·자격 증명은 로그로 복사하지 않으며 로그 출력 실패도 API 응답을 바꾸지 않습니다. 기존 응답 code/message/status와 정상 `session:null`은 유지합니다.
+
+대상은 auth·classroom·시간표 Cron과 teacher-preview.evaluate route입니다. `tests/server-failure-logging.spec.ts`는 합성 sentinel과 허용 key/enum을, `server-failure-api.spec.ts`는 응답 ID·분류·중복 출력·익명 정상 session을 확인합니다. 실제 비밀·학생 자료를 넣어 검사하지 않습니다. 날짜별 빌드·전체 E2E 결과와 배포·현장 검증 상태는 [HANDOFF](HANDOFF.md#현재-작업-상태)에 기록합니다.
 
 이전 구조·정적 시안은 [코드 보관함](../archive/README.md)과 Git 이력에서 확인합니다. 현재 실행·배포 기준은 저장소 루트의 앱과 [서버 설정](FIREBASE_SETUP.md#vercel-서버-설정)입니다.

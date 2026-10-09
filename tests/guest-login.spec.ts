@@ -106,7 +106,7 @@ test("게스트 학생·교사 바로 입장, 로컬 기록 복원, 화면 크�
   await page.keyboard.press("Escape");
   await expect(page.getByRole("combobox", { name: "담당 반" })).toHaveText("2학년 10반");
   await page.goto("/teacher/students");
-  await page.getByLabel("학번 검색").fill("21099");
+  await page.getByLabel("학번·닉네임 검색").fill("21099");
   await expect(page.getByRole("button", { name: "21099 비밀번호 초기화" })).toBeHidden();
   const details = page.getByRole("button", { name: "21099 상세 보기", exact: true });
   await details.focus();

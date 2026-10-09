@@ -25,20 +25,22 @@ export function LearningOverview({ data, loading, error }: { data: StudentDashbo
   const work = current ? data!.work[current.id] : undefined;
   const label = current ? progressFor(current, work).status === "completed" ? "다시 보기" : work?.updatedAt ? "이어하기" : "수업 시작" : "열린 수업 보기";
   return <section className={styles.overview} aria-labelledby="learning-overview-heading" aria-describedby="learning-overview-scope">
-    <div className={styles.summary}>
-      <h2 id="learning-overview-heading">나의 학습 진도</h2>
-      {!data ? loading && !error ? <div className={styles.summaryLoading} aria-hidden="true"><Skeleton /><Skeleton /></div> : <p className={styles.empty}>수업 기록을 확인하면 진도가 보여요.</p> : total > 0 ? <>
-        <ActivityProgressRing parts={stages} />
-        <p className={styles.count}>필수 활동 {completed}/{total}개 완료</p>
-      </> : <div className={styles.waiting}><BookOpen size={32} aria-hidden="true" /><p>아직 열린 정규 수업이 없어요.</p></div>}
-      <p id="learning-overview-scope" className="sr-only">현재 열린 정규 수업 기준</p>
-    </div>
     <div className={styles.current}>
       <span className={styles.eyebrow}>{data?.classroom.name && `${data.classroom.name} · `}이번 수업</span>
       <h3 id="current-heading">{current?.title ?? (!data && loading && !error ? "이번 수업을 확인하고 있어요." : !data && error ? "이번 수업을 확인하지 못했어요." : "다음 수업을 기다리고 있어요.")}</h3>
       <p>{current?.description ?? "열린 수업에서 먼저 학습해도 좋아요."}</p>
       {current && <div className={styles.resume}><LearningStatus lesson={current} work={work} /><span>{resumeLabelFor(current, work)}</span></div>}
       <Button nativeButton={false} aria-label={label} render={<Link href={current ? `/classroom/${current.id}?from=dashboard` : "/student/lessons"} />}>{label === "수업 시작" ? "시작하기" : label}<ArrowRight size={17} aria-hidden="true" /></Button>
+    </div>
+    <div className={styles.summary}>
+      <h2 id="learning-overview-heading">나의 학습 진도</h2>
+      {!data ? loading && !error ? <div className={styles.summaryLoading} aria-hidden="true"><Skeleton /><Skeleton /></div> : <p className={styles.empty}>수업 기록을 확인하면 진도가 보여요.</p> : total > 0 ? <>
+        <ActivityProgressRing parts={stages} />
+        <div className={styles.countRow}><p className={styles.count}>필수 활동 {completed}/{total}개 완료</p>
+          <details className={styles.progressHelp}><summary>진도 계산 안내</summary><p>현재 열린 정규 수업의 필수 활동을 합산해요. 수업이 추가되면 전체 활동이 늘어 비율이 내려갈 수 있어요. 완료 기록은 그대로예요. 선택 복습과 도전은 제외해요.</p></details>
+        </div>
+      </> : <div className={styles.waiting}><BookOpen size={32} aria-hidden="true" /><p>아직 열린 정규 수업이 없어요.</p></div>}
+      <p id="learning-overview-scope" className="sr-only">현재 열린 정규 수업 기준</p>
     </div>
   </section>;
 }

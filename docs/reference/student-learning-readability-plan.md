@@ -1,5 +1,7 @@
 # 학생 학습 화면 가독성·체험 개선 구현 계획
 
+**현재 경로 보완(2026-10-09):** 아래 회차의 소스 경로는 당시 수정 위치입니다. 공통 프로그래밍 개념은 현재 `src/components/student/programming-concept.tsx`·인접 CSS, 공통 문항/이름 작품 처리는 `src/lib/classroom/programming-data.ts`·`name-entry.ts`로 이동했습니다. 체험 상태·복원은 기존 prototype에 유지하며 현재 목차는 [DEVELOPMENT](../DEVELOPMENT.md#코드-위치와-역할)를 따릅니다.
+
 **2026-10-07 구현·검증·배포·인계 완료:** 8~12차를 구현하고 최종 빌드 전체178개·정적/순수 검사·독립 리뷰·PR/브랜치/main CI를 통과했습니다. PR28로 main에 병합하고 Production의 SHA·별칭·API·화면을 확인했습니다. 실제 브라우저200%·물리 OS 입력기는 아래 합의대로 미확인입니다. 최신 브랜치·검증·배포 상태는 [HANDOFF](../HANDOFF.md), 확정 제품·시각 기준은 PRD·DESIGN을 우선합니다. 이 계획서는 완료한 설계와 실행 근거를 보존합니다.
 
 > **For agentic workers:** 구현 시 `superpowers:executing-plans`를 사용하며, 6절의 **실행 회차 1~12** 순서로 수행합니다. 작업1~7은 수정 대상과 인터페이스의 정의이며 한 번에 실행하는 단위가 아닙니다. 체크박스는 실제 구현·검증을 마친 뒤에만 표시합니다.

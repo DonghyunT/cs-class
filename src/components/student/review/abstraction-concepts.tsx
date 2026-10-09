@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { LessonMode } from "../work-controller";
 import scenes from "./concepts.module.css";
 import styles from "./abstraction-concepts.module.css";
 
@@ -56,10 +57,10 @@ function SubwayMap({ simple }: { simple: boolean }) {
   </figure>;
 }
 
-export function AbstractionConcepts({ conceptId }: { conceptId: string }) {
+export function AbstractionConcepts({ conceptId, mode = "student" }: { conceptId: string; mode?: LessonMode }) {
   return <section className={scenes.experience} aria-label="추상화 개념 체험">
     <AbstractionExperience key={conceptId} conceptId={conceptId} />
-    <p className={scenes.note}>체험 장면은 다시 들어오면 처음부터 시작해요. 확인한 답안과 완료 기록은 저장돼요.</p>
+    <p className={scenes.note}>{mode === "preview" ? "체험 장면은 다시 들어오면 처음부터 시작해요. 답안과 완료 기록은 이 창에서만 체험해요." : "체험 장면은 다시 들어오면 처음부터 시작해요. 확인한 답안과 완료 기록은 저장돼요."}</p>
   </section>;
 }
 

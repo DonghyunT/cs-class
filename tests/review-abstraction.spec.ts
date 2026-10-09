@@ -36,7 +36,7 @@ test("맛보기는 추천이며 실전의 불완전 입력과 처방전을 재�
   await page.getByRole("button", { name: "4. 처방전", exact: true }).click(); await page.getByLabel("해결 계획", { exact: true }).fill("남은 과제를 확인한다\n작게 나눠 해결한다");
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload();
   await expect(page.getByLabel("해결 계획", { exact: true })).toHaveValue("남은 과제를 확인한다\n작게 나눠 해결한다", { timeout: 15000 });
-  await page.getByRole("button", { name: "작품 검증", exact: true }).click(); await page.getByRole("button", { name: "작품 제출", exact: true }).click(); await expect(page.getByText("복습 작품을 저장했어요.")).toBeVisible();
+  await page.getByRole("button", { name: "작품 검증", exact: true }).click(); await page.getByRole("button", { name: "작품 제출", exact: true }).click(); await expect(page.getByText("복습 작품을 제출했어요.")).toBeVisible();
   await page.getByRole("button", { name: "1. 상태", exact: true }).click(); await page.getByLabel("현재 상태", { exact: true }).fill(""); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(page.getByLabel("현재 상태", { exact: true })).toHaveValue("");
   const work = await (await page.request.get(`/api/classroom/work/${id}`)).json(); expect(work.submission.reviewProject.current).toBe("과제를 미루고 있어요"); expect(work.draft.reviewProject.plans).toHaveLength(2);
 });

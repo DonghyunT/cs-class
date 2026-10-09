@@ -54,6 +54,7 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 100px;
+  scrollbar-gutter: stable;
 }
 body {
   margin: 0;
@@ -182,7 +183,7 @@ select:focus-visible {
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
-  color: #263652;
+  color: #202637;
   line-height: 1.05;
   font-size: 24px;
   font-weight: 800;
@@ -191,27 +192,24 @@ select:focus-visible {
 .brand-symbol {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 13px;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
   color: white;
   background: linear-gradient(145deg, #729feb, #376fc8 75%);
   box-shadow: inset 0 1px 1px #ffffff66, 0 4px 10px #376fc81a;
   transform: rotate(-5deg);
 }
 .brand-light {
-  font-weight: 500;
+  font-weight: 600;
 }
 .brand small {
   display: block;
-  font-size: 9px;
-  color: #7b8697;
-  letter-spacing: 0.1em;
+  font-size: 10px;
+  color: #667085;
+  letter-spacing: 0.015em;
   font-weight: 500;
   margin-top: 7px;
-}
-.brand-small {
-  font-size: 20px;
 }
 .brand-small .brand-symbol {
   width: 35px;
@@ -228,14 +226,6 @@ select:focus-visible {
   }
   .demo-dot {
     display: none;
-  }
-  .brand {
-    font-size: 22px;
-  }
-  .brand-symbol {
-    width: 36px;
-    height: 36px;
-    border-radius: 11px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -260,24 +250,6 @@ button,
 input,
 select {
   font: inherit;
-}
-.brand {
-  font-size: 24px;
-  letter-spacing: -1px;
-  color: #202637;
-}
-.brand-symbol {
-  border-radius: 11px;
-  width: 38px;
-  height: 38px;
-}
-.brand small {
-  letter-spacing: 0.015em;
-  font-size: 10px;
-  color: #667085;
-}
-.brand-light {
-  font-weight: 600;
 }
 .demo-banner {
   background: #f0f3f9;

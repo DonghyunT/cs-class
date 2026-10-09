@@ -35,7 +35,9 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
   const router = useRouter();
   const { send, flush, isDirty } = list;
   const home = teacher ? "/teacher" : "/student";
-  useEffect(() => { if (focus) title.current?.focus(); }, [focus]);
+  useEffect(() => {
+    if (focus) { title.current?.focus(); title.current?.scrollIntoView({ block: "center" }); }
+  }, [focus]);
   function submit() {
     if (!draft.title.trim() || (!draft.id && list.items.length >= PLANNER_LIMIT) || !form.current?.reportValidity()) return false;
     const item: ClassEvent = { ...draft, id: draft.id ?? crypto.randomUUID(), title: draft.title.trim() };
@@ -64,8 +66,14 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
     ...(timetable?.items ?? []).map((slot) => ({ id: slot.id, title: `정보 · ${slot.period}교시`, date: slot.date, lessonId: null, slot })),
   ].sort((a, b) => a.date.localeCompare(b.date) || (a.slot?.period ?? 99) - (b.slot?.period ?? 99) || a.id.localeCompare(b.id));
   const upcoming = sorted.filter((item) => item.date >= today);
-  const items = summary ? upcoming.slice(0, 5) : sorted;
+  const past = sorted.filter((item) => item.date < today);
+  const items = summary ? upcoming.slice(0, 5) : upcoming;
   const locked = list.saving || !!list.error || !!list.loadError || refreshingTimetable;
+  const renderEvents = (events: typeof sorted) => <ul className={styles.eventList}>{events.map((item) => <li key={item.id}>
+    <time dateTime={item.date}>{eventDate(item.date)}{!summary && item.date < today && <small>지난 일정</small>}</time>
+    <div><strong>{item.title}</strong>{item.slot && <><small>{item.slot.startsAt} 시작 · 학교 시간표</small>{item.slot.changed && <small className={styles.timetableChanged}>변경된 수업</small>}</>}{item.lessonId && <Link href={teacher ? `/teacher/students?classId=${resolvedClassId}&lessonId=${encodeURIComponent(item.lessonId)}` : `/classroom/${encodeURIComponent(item.lessonId)}?from=${summary ? "dashboard" : "lessons"}`}>{list.data!.lessons.find((lesson) => lesson.id === item.lessonId)?.title ?? "연결된 수업"}<ArrowRight size={14} aria-hidden="true" /></Link>}{list.changes.some((change) => change.id === item.id) && <small>{list.error ? "저장 실패 · 변경 보관 중" : "저장 중"}</small>}</div>
+    {!summary && teacher && !item.slot && <div className={styles.rowActions}><button type="button" aria-label={`${item.title} 수정`} disabled={locked} onClick={() => { setDraft({ id: item.id, title: item.title, date: item.date, lessonId: item.lessonId }); setFocus((value) => value + 1); }}><Pencil size={16} aria-hidden="true" /></button><button type="button" aria-label={`${item.title} 삭제`} disabled={locked} onClick={() => { send({ id: item.id, item: null }); setFocus((value) => value + 1); }}><Trash2 size={16} aria-hidden="true" /></button></div>}
+  </li>)}</ul>;
   async function refreshSchool() {
     if (!resolvedClassId || refreshingTimetable || !(await flush())) return;
     setRefreshingTimetable(true); setTimetableError(""); setTimetableMessage("");
@@ -79,7 +87,7 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
   }
   return <section className={summary ? `${styles.panel} ${styles.schedulePanel}` : styles.page} aria-labelledby="schedule-heading">
     {!summary && <header className={styles.heading}><div><span className={styles.eyebrow}>우리 반 일정</span><h1>다가오는 일을 살펴봐요.</h1><p>날짜는 한국 시간 기준이에요. 날짜가 지나도 수업·제출은 계속할 수 있어요.</p></div><CalendarDays aria-hidden="true" /></header>}
-    <div className={styles.sectionHeading}><div className={styles.sectionTitle}>{summary && <span className={`${styles.titleIcon} ${styles.scheduleIcon}`}><CalendarDays size={19} aria-hidden="true" /></span>}<h2 id="schedule-heading">{summary ? "다가오는 일정" : "전체 일정"}</h2></div>{summary ? <Link href={`${home}/schedule${teacher && classId ? `?classId=${encodeURIComponent(classId)}` : ""}`}>전체 보기 <ArrowRight size={15} aria-hidden="true" /></Link> : <div className={styles.sectionTools}>{list.data && <label className={styles.classPicker}>담당 반{teacher ? <Select label="담당 반" value={list.data.classroom.id} onValueChange={async (selected) => { if (await beforeLeave()) router.push(`${home}/schedule?classId=${encodeURIComponent(selected)}`); }} options={list.data.classrooms.map((item) => ({ value: item.id, label: item.name }))} /> : <span>{list.data.classroom.name}</span>}</label>}<Button variant="ghost" className={styles.compactControl} aria-label="일정 새로고침" title="일정 새로고침" disabled={locked} onClick={() => void list.refresh()}><RefreshCw size={15} aria-hidden="true" />새로고침</Button></div>}</div>
+    <div className={styles.sectionHeading}><div className={styles.sectionTitle}>{summary && <span className={`${styles.titleIcon} ${styles.scheduleIcon}`}><CalendarDays size={19} aria-hidden="true" /></span>}<h2 id="schedule-heading">{summary ? "다가오는 일정" : "오늘 이후 일정"}</h2></div>{summary ? <Link href={`${home}/schedule${teacher && classId ? `?classId=${encodeURIComponent(classId)}` : ""}`}>전체 보기 <ArrowRight size={15} aria-hidden="true" /></Link> : <div className={styles.sectionTools}>{list.data && <label className={styles.classPicker}>담당 반{teacher ? <Select label="담당 반" value={list.data.classroom.id} onValueChange={async (selected) => { if (await beforeLeave()) router.push(`${home}/schedule?classId=${encodeURIComponent(selected)}`); }} options={list.data.classrooms.map((item) => ({ value: item.id, label: item.name }))} /> : <span>{list.data.classroom.name}</span>}</label>}{teacher && list.data && <Button variant="outline" onClick={() => setFocus(value => value + 1)}>일정 등록</Button>}<Button variant="ghost" className={styles.compactControl} aria-label="일정 새로고침" title="일정 새로고침" disabled={locked} onClick={() => void list.refresh()}><RefreshCw size={15} aria-hidden="true" />새로고침</Button></div>}</div>
     {summary && <MonthCalendar today={today} events={sorted} pending={!list.data} />}
     {list.loadError && <div className={styles.error} role="alert"><p>{list.loadError} {list.data && "마지막으로 조회한 일정이에요."}</p><Button variant="outline" disabled={list.saving} onClick={() => void list.refresh()}>일정 다시 불러오기</Button></div>}
     {!list.data && !list.loadError && <LoadingList label="일정을 불러오고 있어요." />}
@@ -95,12 +103,9 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
       {timetable?.stale && <p className={styles.muted}>시간표 갱신이 늦어지고 있어요. 마지막 확인 시각을 확인해 주세요.</p>}
       {!summary && timetableError && <p className={styles.error} role="alert">{timetableError}</p>}
       {!summary && <p role="status" className={styles.saveStatus}>{refreshingTimetable ? "학교의 공개 시간표를 가져오고 있어요." : timetableMessage}</p>}
-      {!items.length && <p className={styles.empty}>{summary ? "다가오는 일정이 없어요." : "아직 등록된 일정이 없어요."}{!teacher && " 선생님이 일정을 등록하면 여기에 보여요."}</p>}
-      <ul className={styles.eventList}>{items.map((item) => <li key={item.id}>
-        <time dateTime={item.date}>{eventDate(item.date)}{!summary && item.date < today && <small>지난 일정</small>}</time>
-        <div><strong>{item.title}</strong>{item.slot && <><small>{item.slot.startsAt} 시작 · 학교 시간표</small>{item.slot.changed && <small className={styles.timetableChanged}>변경된 수업</small>}</>}{item.lessonId && <Link href={teacher ? `/teacher/students?classId=${resolvedClassId}&lessonId=${encodeURIComponent(item.lessonId)}` : `/classroom/${encodeURIComponent(item.lessonId)}?from=${summary ? "dashboard" : "lessons"}`}>{list.data!.lessons.find((lesson) => lesson.id === item.lessonId)?.title ?? "연결된 수업"}<ArrowRight size={14} aria-hidden="true" /></Link>}{list.changes.some((change) => change.id === item.id) && <small>{list.error ? "저장 실패 · 변경 보관 중" : "저장 중"}</small>}</div>
-        {!summary && teacher && !item.slot && <div className={styles.rowActions}><button type="button" aria-label={`${item.title} 수정`} disabled={locked} onClick={() => { setDraft({ id: item.id, title: item.title, date: item.date, lessonId: item.lessonId }); setFocus((value) => value + 1); }}><Pencil size={16} aria-hidden="true" /></button><button type="button" aria-label={`${item.title} 삭제`} disabled={locked} onClick={() => { send({ id: item.id, item: null }); setFocus((value) => value + 1); }}><Trash2 size={16} aria-hidden="true" /></button></div>}
-      </li>)}</ul>
+      {!items.length && <p className={styles.empty}>{summary ? "다가오는 일정이 없어요." : sorted.length ? "오늘 이후 일정이 없어요." : "아직 등록된 일정이 없어요."}{!teacher && !sorted.length && " 선생님이 일정을 등록하면 여기에 보여요."}</p>}
+      {renderEvents(items)}
+      {!summary && past.length > 0 && <details className={styles.scheduleHistory}><summary>지난 일정 {past.length}개</summary>{renderEvents(past)}</details>}
       {summary && upcoming.length > items.length && <Link className={styles.scheduleRemainder} href={`${home}/schedule${teacher && resolvedClassId ? `?classId=${encodeURIComponent(resolvedClassId)}` : ""}`}>외 {upcoming.length - items.length}개 · 전체 보기<ArrowRight size={15} aria-hidden="true" /></Link>}
       {!summary && teacher && <ScheduleForm key={resolvedClassId} resolvedClassId={resolvedClassId} draft={draft} setDraft={setDraft} form={form} title={title} locked={locked} lessons={list.data.lessons} submit={submit} cancel={() => { setDraft({ id: null, title: "", date: seoulToday(), lessonId: null }); setFocus((value) => value + 1); }} />}
       {!summary && teacher && list.items.length >= PLANNER_LIMIT && <p className={styles.muted}>파일럿은 반 일정 {PLANNER_LIMIT}개까지 저장해요. 필요 없는 일정을 지워 주세요.</p>}

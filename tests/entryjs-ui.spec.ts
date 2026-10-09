@@ -58,7 +58,7 @@ test("실제 EntryJS 블록 조립·실행·저장·검증·제출·복원", asy
   const input = frame.locator("input:not([disabled]):visible");
   await input.fill("2"); await input.press("Enter");
   await page.getByRole("button", { name: "실행하기", exact: true }).click();
-  await expect(page.getByText("실행을 마쳤어요. 이동 거리 10 · 마지막 말: 안녕!", { exact: true })).toBeVisible();
+  await expect(page.getByText("실행을 마쳤어요. 현재 위치 X 10 · Y 0 · 마지막 말: 안녕!", { exact: true })).toBeVisible();
   const native = page.frames().find((item) => item.url().endsWith("/entryjs/workspace.html"))!;
   expect(await native.evaluate(() => (window as unknown as { Entry: { container: { getObject: (id: string) => { entity: { getX: () => number } } } } }).Entry.container.getObject("entrybot").entity.getX())).toBe(0);
   await page.getByRole("button", { name: "조건 검증", exact: true }).click();

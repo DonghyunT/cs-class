@@ -39,6 +39,7 @@ export const classroomApi = {
   updateClass: (classId: string, revision: number, currentLessonId: string | null, openedLessonIds: string[], expectedUid?: string) => api<ClassSettings>(`classroom/classes/${encodeURIComponent(classId)}`, { revision, currentLessonId, openedLessonIds }, "POST", expectedUid),
   resetPassword: (uid: string, expectedUid?: string) => api<{ password: string; expiresAt: number }>(`classroom/students/${encodeURIComponent(uid)}/reset`, {}, "POST", expectedUid),
   work: (lessonId: string) => api<Work>(`classroom/work/${encodeURIComponent(lessonId)}`),
+  previewEvaluate: (lessonId: string, classId: string, work: Work, action: WorkAction, expectedUid: string) => api<Work>(`teacher-preview/${encodeURIComponent(lessonId)}/evaluate`, { classId, work, action }, "POST", expectedUid),
   saveWork: (lessonId: string, revision: number, draft: WorkDraft, expectedUid?: string) => api<Work>(`classroom/work/${encodeURIComponent(lessonId)}`, { revision, draft }, "POST", expectedUid),
   act: (lessonId: string, revision: number, action: WorkAction, expectedUid?: string) => api<Work>(`classroom/work/${encodeURIComponent(lessonId)}/action`, { revision, action }, "POST", expectedUid),
   ai: (lessonId: string, revision: number, task: AiTask, input: string, requestId: string, missionId?: string, expectedUid?: string) => api<AiReply>("classroom/ai", { lessonId, revision, task, input, requestId, ...(missionId ? { missionId } : {}) }, "POST", expectedUid),

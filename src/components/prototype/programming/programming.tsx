@@ -9,11 +9,11 @@ import { useNavigationGuard } from "@/components/navigation-provider";
 import type { Stage } from "@/lib/classroom/types";
 import { LEGACY_STORAGE_KEY, STORAGE_KEY, MAX_PROTOTYPE_SIZE, initialState, restoreState, type PrototypeState, type PrototypeUpdate } from "@/lib/prototype/programming";
 import { type NameEditor } from "./name-practice";
-import { Concept } from "./concept";
+import styles from "./programming.module.css";
+import { ProgrammingConcept } from "@/components/student/programming-concept";
 import { Quiz } from "./quiz";
 import { Practice } from "./practice";
 import { HelpPanel, TeacherView, type HelpContext, type HelpRequest } from "./support";
-import styles from "./programming.module.css";
 
 const stages = [{ id: "concept", label: "개념", icon: BookOpen }, { id: "quiz", label: "퀴즈", icon: CheckCircle2 }, { id: "practice", label: "실습", icon: Layers3 }] as const;
 
@@ -105,7 +105,7 @@ export function ProgrammingPrototype() {
       {error && <div className={styles.storageError} role="alert"><p>{error}</p><Button variant="outline" onClick={() => void flush()}>탭 보관 재시도</Button></div>}
       <div className={styles.tabs} role="tablist" aria-label="수업 단계">{stages.map((stage, index) => <button key={stage.id} type="button" id={`prototype-tab-${stage.id}`} role="tab" aria-selected={state.stage === stage.id} aria-controls={`prototype-panel-${stage.id}`} tabIndex={state.stage === stage.id ? 0 : -1} disabled={!ready} onKeyDown={(e) => tabKey(e, index)} onClick={() => switchStage(stage.id, true)}><stage.icon size={20} /><span>{stage.label}</span><small>{totals[stage.id]}</small>{totals[stage.id].split("/")[0] === totals[stage.id].split("/")[1] && <Check size={16} />}</button>)}</div>
       {!ready ? <p role="status" className={styles.loading}>이 탭에서 하던 체험을 준비하고 있어요.</p> : teacher ? <section id={`prototype-panel-${state.stage}`} role="tabpanel" aria-labelledby={`prototype-tab-${state.stage}`}><TeacherView key={resetCount} request={request} setRequest={setRequest} currentProgram={request ? state.programs[request.mission] : []} currentProject={state.nameEntryProject} student={viewStudent} focus={focus} /></section> : <section id={`prototype-panel-${state.stage}`} role="tabpanel" aria-labelledby={`prototype-tab-${state.stage}`} className={styles.panel}>
-        {state.stage === "concept" && <Concept key={resetCount} state={state} update={update} focus={focus} next={() => switchStage("quiz")} />}
+        {state.stage === "concept" && <ProgrammingConcept key={resetCount} state={{ concept: state.concept, conceptDone: state.conceptDone, conceptAnswers: state.conceptAnswers }} update={value => update(previous => ({ ...previous, ...value }))} focus={focus} next={() => switchStage("quiz")} />}
         {state.stage === "quiz" && <Quiz state={state} update={update} focus={focus} next={() => switchStage("practice")} />}
         {state.stage === "practice" && <Practice key={`${resetCount}-${state.mission}`} state={state} update={update} focus={focus} moveMission={moveMission} editorRef={editor} help={(next) => { setContext(next); setHelpOpen(true); focus("help-title"); }} />}
       </section>}

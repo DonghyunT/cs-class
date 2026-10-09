@@ -2,16 +2,18 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { initialSandwich, replaySandwich, reviewSandwich } from "@/lib/classroom/review/sandwich-engine.mjs";
+import { initialSandwich, parseSandwichCommand, replaySandwich, reviewSandwich } from "@/lib/classroom/review/sandwich-engine.mjs";
 import { ReviewSubmit, useReviewAi, type ReviewController } from "./shared";
+import type { LessonMode } from "../work-controller";
+import { PracticeGuidance } from "../practice-guidance";
 import { SandwichStage } from "./sandwich-stage";
 import base from "./review.module.css";
 import studio from "./studio.module.css";
 const styles = { ...base, ...studio };
 type LocalReply = { id: string; text: string; source: string; message: string; failed: boolean; after: number };
 
-export function Sandwich({ controller }: { controller: ReviewController }) {
-  const project = controller.draft.reviewProject, ai = useReviewAi(controller);
+export function Sandwich({ controller, practiceFocused = false, mode = "student" }: { controller: ReviewController; practiceFocused?: boolean; mode?: LessonMode }) {
+  const project = controller.draft.reviewProject, ai = useReviewAi(controller, mode);
   const [replay, setReplay] = useState<number | null>(null);
   const commands = project?.type === "sandwich" ? project.commands : [], run = replaySandwich(commands);
   const steps = run.steps as { action: string; success: boolean; name: string; msg: string; state: ReturnType<typeof initialSandwich> }[];
@@ -36,6 +38,15 @@ export function Sandwich({ controller }: { controller: ReviewController }) {
   const review = reviewSandwich(state), locked = controller.busy || controller.aiBusy || replay !== null;
   const change = (input: string) => { const draft = controller.getDraft(); if (draft.reviewProject?.type === "sandwich") controller.update({ ...draft, reviewProject: { ...draft.reviewProject, input } }); };
   const ask = (task: "sandwich-command" | "sandwich-rules") => {
+    if (mode === "preview") {
+      const text = project.input, parsed = parseSandwichCommand(text);
+      ai.clear(); setRequest(null); setFocusCommand(value => value + 1);
+      if (parsed?.type === "ACTION" && parsed.actions?.length) {
+        const current = controller.getDraft();
+        if (current.reviewProject?.type === "sandwich") controller.update({ ...current, reviewProject: { ...current.reviewProject, input: "", commands: [...current.reviewProject.commands, { id: crypto.randomUUID(), text, actions: parsed.actions, source: "rules", proof: "preview-only" }] } });
+      } else setReplies(previous => [...previous, { id: crypto.randomUUID(), text, source: "규칙 체험", message: parsed?.clarify_message ?? "구체적인 동작을 한 문장씩 입력해 주세요.", failed: false, after: commands.length }]);
+      return;
+    }
     // 실행이 없는 확인 질문·연결 실패는 다음 요청이 시작돼도 대화에 남긴다.
     if (request && (ai.error || ai.result && !ai.result.actions.length)) setReplies(previous => [...previous, { ...request, id: crypto.randomUUID(), message: ai.error || ai.result!.message, failed: !!ai.error }]);
     setRequest({ text: project.input, source: task === "sandwich-rules" ? "규칙 해석" : "AI 해석", after: commands.length });
@@ -66,11 +77,11 @@ export function Sandwich({ controller }: { controller: ReviewController }) {
     <section className={styles.panel} aria-label="샌드위치 로봇의 주방">
       <header className={styles.stageHeader}><span className={styles.avatar} aria-hidden="true">🤖</span><div><small className={styles.eyebrow}>Live Visual Stage</small><h3>샌드위치 로봇의 주방</h3></div><span className={styles.badge} data-tone={!step?.success && step ? "rose" : state.completed ? "green" : "amber"}>{controller.aiBusy ? "해석 중" : replay !== null ? "다시 실행 중" : step && !step.success ? "오류 관찰" : state.completed ? "조립 완료" : "지시 대기"}</span></header>
       <div className={styles.kitchen} data-error={!!step && !step.success}><SandwichStage state={state} review={review} error={!!step && !step.success} action={replay !== null ? step?.action : undefined} /><p className={styles.caption} role="status">{message || "조리대 위에 재료들이 준비되어 있어요. 첫 명령을 내려 보세요!"}</p></div>
-      <ul className={styles.statusCards} aria-label="재료와 조리 상태">{status.map(([label,value,ready]) => <li key={label as string} data-ready={ready}><span>{label as string}</span><strong>{value as string}</strong></li>)}</ul>
+      <PracticeGuidance focused={practiceFocused} label="재료와 조리 상태 보기"><ul className={styles.statusCards} aria-label="재료와 조리 상태">{status.map(([label,value,ready]) => <li key={label as string} data-ready={ready}><span>{label as string}</span><strong>{value as string}</strong></li>)}</ul></PracticeGuidance>
       {state.completed && <div className={styles.recipe} role="status"><span aria-hidden="true">🥪</span><div><h3>{review.title}</h3><p>{review.review}</p></div></div>}
     </section>
     <section className={`${styles.panel} ${styles.console}`} aria-label="로봇에게 명령하기" data-empty={!commands.length}>
-      <header className={styles.stageHeader}><span className={styles.chatAvatar} aria-hidden="true">🤖</span><div><h3>로봇과 대화</h3></div><Button variant="ghost" className={styles.auxControl} disabled={locked || !commands.length && !project.input && !request} onClick={reset} title="현재 명령과 대화를 비우고 새 레시피 시작"><RotateCcw size={16} aria-hidden="true" />새 레시피</Button></header>
+      <header className={styles.stageHeader}><span className={styles.chatAvatar} aria-hidden="true">🤖</span><div><h3>로봇과 대화</h3>{mode === "preview" && <p>미리보기에서는 AI 없이 규칙 해석을 체험해요.</p>}</div><Button variant="ghost" className={styles.auxControl} disabled={locked || !commands.length && !project.input && !request} onClick={reset} title="현재 명령과 대화를 비우고 새 레시피 시작"><RotateCcw size={16} aria-hidden="true" />새 레시피</Button></header>
       <div ref={chat} className={styles.chat} role="region" tabIndex={0} aria-label="로봇과의 대화" onScroll={event => { const element = event.currentTarget; followChat.current = element.scrollHeight - element.scrollTop - element.clientHeight < 32; }}>
         <div className={styles.robotBubble}><small>🤖 샌드위치 로봇</small><p>재료 준비가 끝났어요! 첫 명령은 ‘빵 봉지를 열어’로 시작해 보세요. 결과를 보고 다음 명령을 내려 주세요.</p></div>
         {repliesAfter(0)}
@@ -83,12 +94,12 @@ export function Sandwich({ controller }: { controller: ReviewController }) {
           </div>}
         </section>
       </div>
-      <form className={styles.composer} onSubmit={event => { event.preventDefault(); if (!locked && project.input.trim()) ask("sandwich-command"); }}>
+      <form className={styles.composer} onSubmit={event => { event.preventDefault(); if (!locked && !controller.actionBlocked && project.input.trim()) ask("sandwich-command"); }}>
         <label htmlFor="sandwich-command-input" className={styles.srOnly}>자연어 명령</label>
-        <div className={styles.commandRow}><textarea ref={commandInput} id="sandwich-command-input" value={project.input} maxLength={1000} rows={1} disabled={controller.busy} onChange={event => change(event.target.value)} onKeyDown={event => { if (event.key !== "Enter" || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return; if (!event.shiftKey) { event.preventDefault(); if (!locked && project.input.trim()) event.currentTarget.form?.requestSubmit(); } }} placeholder="명령을 지시하세요…" /><Button type="submit" disabled={locked || !project.input.trim()} aria-label={controller.aiBusy ? "명령을 해석하고 있어요…" : "실행"}>{controller.aiBusy ? "해석 중…" : "실행"}</Button></div>
-        <div className={styles.commandTools}>{ai.error && <Button variant="ghost" className={styles.auxControl} disabled={locked || !project.input.trim()} onClick={() => ask("sandwich-rules")} title="제한된 규칙으로 현재 입력을 해석합니다">AI 없이 실행</Button>}<details className={styles.commandHelp}><summary>입력 도움말</summary><p className={styles.muted}>Enter로 보내고 Shift+Enter로 줄을 바꿔요. 구체적인 동작을 한 문장씩 써 보세요. AI 연결 실패 때만 ‘AI 없이 실행’으로 제한된 규칙 해석을 사용할 수 있어요.</p>{ai.remaining !== null && <p className={styles.muted}>오늘 남은 AI 요청: {ai.remaining}회</p>}</details></div>
+        <div className={styles.commandRow}><textarea ref={commandInput} id="sandwich-command-input" value={project.input} maxLength={1000} rows={1} disabled={controller.busy} onChange={event => change(event.target.value)} onKeyDown={event => { if (event.key !== "Enter" || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return; if (!event.shiftKey) { event.preventDefault(); if (!locked && !controller.actionBlocked && project.input.trim()) event.currentTarget.form?.requestSubmit(); } }} placeholder="명령을 지시하세요…" /><Button type="submit" disabled={locked || controller.actionBlocked || !project.input.trim()} aria-label={controller.aiBusy ? "명령을 해석하고 있어요…" : "실행"}>{controller.aiBusy ? "해석 중…" : "실행"}</Button></div>
+        <div className={styles.commandTools}>{ai.error && <Button variant="ghost" className={styles.auxControl} disabled={locked || controller.actionBlocked || !project.input.trim()} onClick={() => ask("sandwich-rules")} title="제한된 규칙으로 현재 입력을 해석합니다">AI 없이 실행</Button>}<details className={styles.commandHelp}><summary>입력 도움말</summary><p className={styles.muted}>Enter로 보내고 Shift+Enter로 줄을 바꿔요. 구체적인 동작을 한 문장씩 써 보세요. {mode === "preview" ? "미리보기에서는 제한된 규칙으로 명령을 해석해요." : "AI 연결 실패 때만 ‘AI 없이 실행’으로 제한된 규칙 해석을 사용할 수 있어요."}</p>{ai.remaining !== null && <p className={styles.muted}>오늘 남은 AI 요청: {ai.remaining}회</p>}</details></div>
       </form>
     </section>
-    <section className={`${styles.panel} ${styles.executionPanel}`} aria-label="알고리즘 실행 기록"><header className={styles.stageHeader}><h3>알고리즘 실행 기록</h3><small>{steps.length}개 단계 실행됨</small></header><ol className={styles.queue} aria-label="누적 알고리즘 파이프라인">{steps.map((item,index) => <li key={index} data-error={!item.success} data-active={replay === index + 1}><span>{index + 1}</span><strong>{item.success ? "✓" : "!"} {item.name}</strong><small>{stepTexts[index]}</small><small>{item.msg}</small></li>)}</ol>{!commands.length ? <p className={styles.muted}>명령을 내리면 실행한 단계가 순서대로 쌓여요.</p> : <details className={styles.recordTools}><summary>기록 도구</summary><div className={styles.actions}><Button variant="ghost" className={styles.auxControl} disabled={!steps.length || controller.aiBusy || controller.busy} onClick={() => setReplay(replay === null ? 0 : null)}>{replay === null ? "명령 다시 실행" : "다시 실행 멈추기"}</Button><Button variant="ghost" className={styles.auxControl} disabled={!commands.length || locked} onClick={() => { ai.clear(); setRequest(null); setReplies(previous => previous.filter(reply => reply.after < commands.length)); controller.update({ ...controller.getDraft(), reviewProject: { ...project, commands: commands.slice(0, -1) } }); setFocusCommand(value => value + 1); }}>마지막 명령 되돌리기</Button></div></details>}</section>
-  </div><ReviewSubmit controller={controller} /></div>;
+    <PracticeGuidance focused={practiceFocused} label="알고리즘 실행 기록 보기"><section className={`${styles.panel} ${styles.executionPanel}`} aria-label="알고리즘 실행 기록"><header className={styles.stageHeader}><h3>알고리즘 실행 기록</h3><small>{steps.length}개 단계 실행됨</small></header><ol className={styles.queue} aria-label="누적 알고리즘 파이프라인">{steps.map((item,index) => <li key={index} data-error={!item.success} data-active={replay === index + 1}><span>{index + 1}</span><strong>{item.success ? "✓" : "!"} {item.name}</strong><small>{stepTexts[index]}</small><small>{item.msg}</small></li>)}</ol>{!commands.length ? <p className={styles.muted}>명령을 내리면 실행한 단계가 순서대로 쌓여요.</p> : <details className={styles.recordTools}><summary>기록 도구</summary><div className={styles.actions}><Button variant="ghost" className={styles.auxControl} disabled={!steps.length || controller.aiBusy || controller.busy} onClick={() => setReplay(replay === null ? 0 : null)}>{replay === null ? "명령 다시 실행" : "다시 실행 멈추기"}</Button><Button variant="ghost" className={styles.auxControl} disabled={!commands.length || locked} onClick={() => { ai.clear(); setRequest(null); setReplies(previous => previous.filter(reply => reply.after < commands.length)); controller.update({ ...controller.getDraft(), reviewProject: { ...project, commands: commands.slice(0, -1) } }); setFocusCommand(value => value + 1); }}>마지막 명령 되돌리기</Button></div></details>}</section></PracticeGuidance>
+  </div><ReviewSubmit mode={mode} controller={controller} /></div>;
 }

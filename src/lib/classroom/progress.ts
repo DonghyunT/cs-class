@@ -7,6 +7,12 @@ export const STATUS_LABELS = { "not-started": "시작 전", "in-progress": "진�
 export function submissionCountFor(lesson: Lesson, work?: Work | WorkSummary | null): number {
   return lesson.practice.type === "flowchart" ? reviewMissionIds.filter(id => work?.missions?.[id]?.submission).length : lesson.practice.type === "programming" ? programmingMissions.filter((mission) => work?.missions?.[mission.id]?.submission).length : work?.submission ? 1 : 0;
 }
+export function latestSubmissionAtFor(lesson: Lesson, work?: Work | WorkSummary | null): number {
+  const ids = lesson.practice.type === "flowchart" ? reviewMissionIds :
+    lesson.practice.type === "programming" ? programmingMissions.map(mission => mission.id) : null;
+  return ids ? Math.max(0, ...ids.map(id => work?.missions?.[id]?.submission?.submittedAt ?? 0)) :
+    work?.submission?.submittedAt ?? 0;
+}
 export function emptyWork(lesson: Lesson): Work {
   return {
     lessonId: lesson.id, revision: 0,

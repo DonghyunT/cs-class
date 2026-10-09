@@ -1,4 +1,4 @@
-import { buildNameProject } from "../src/lib/prototype/name-entry";
+import { buildNameProject } from "../src/lib/classroom/name-entry";
 import { expect, test } from "@playwright/test";
 import { STORAGE_KEY, checkMission, initialState, newBlock, restoreState, runProgram, type Block, type BlockKind, type Signal } from "../src/lib/prototype/programming";
 
