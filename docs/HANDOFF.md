@@ -20,7 +20,7 @@
 ## 통합·배포 상태
 
 - **이번 승인과 대상:** 10/11 사용자의 현재 요청에 따라 이번 변경 전체를 GitHub `DonghyunT/cs-class`의 `main`과 Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`) Production에 반영합니다. 운영 주소는 [cs-class-donghyunt.vercel.app](https://cs-class-donghyunt.vercel.app)입니다. 로컬 기록·반 설정·계정·Firebase 규칙/인덱스·환경변수는 배포 범위에 포함하지 않습니다.
-- **진행:** 커밋·PR·전체 CI·병합·배포 SHA/별칭·익명 API·로그인 화면 확인을 진행 중입니다. 결과가 확정되면 이 절을 갱신합니다.
+- **진행:** 구현 커밋 `171ece1`을 [PR #31](https://github.com/DonghyunT/cs-class/pull/31)에 올렸습니다. 첫 전체 CI(run38145977953)는 lint·typecheck·test:review15·build와 E2E343개가 통과했고 모바일 배치 검사1개가 실패했습니다(Windows 전용1개 제외). 순차 좌표 측정과 smooth 스크롤의 경합을 확인해 두 요소를 한 evaluate에서 측정하도록 수정했습니다. 로컬 진단3회에서 실제 간격24px, 수정 후 대상11/11·typecheck·lint를 확인했습니다. 허용오차/시간 제한·제품 배치는 바꾸지 않았으며 새 HEAD의 전체 CI·병합·운영 확인을 진행합니다.
 - **릴리스 전 복구 후보:** `main@ad1cf9cc35d11d5ed9a93d3ec0607dfec760a005`, `dpl_AuU3g5B5wUrY4FNDkAPpsyXz8CoZ`, `cs-class-amgh8uo5x-donghyunt.vercel.app`, Production READY·icn1과 운영 별칭 일치를 읽기 전용으로 확인했습니다. 복구를 실행한 것은 아닙니다. 설정/복구 절차는 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)를 따릅니다.
 
 ## 다음에 이어갈 작업
