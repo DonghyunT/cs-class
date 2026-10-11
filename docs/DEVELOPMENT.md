@@ -70,6 +70,28 @@ git ls-files --others --exclude-standard
 - 새 PC의 플러그인은 Ponytail 스킬과 Context7 도구가 실제로 있는지 확인합니다. 설치 경로는 PC마다 다르며 대화에서 쓴 에이전트 이름·도구 호출 상태도 자동 복원되지 않습니다. 사용 가능한 스킬·로컬 문서·실제 코드로 이어갑니다.
 - Git에는 앱 소스·검사·담당 문서·합성 화면 근거가 전달됩니다. 개인 스킬·플러그인 설정, `.env.local`·관리자 키, 로컬 Auth/Firestore 기록·export, Java/브라우저/EntryJS 다운로드 캐시는 전달되지 않습니다. 로컬 기록까지 이어가려면 원래 PC에서 별도로 보존한 demo export를 안전하게 옮기고, 대상 PC의 기존 기록을 먼저 보존한 뒤 import합니다. import한 기록 위에 초기 시드를 실행하지 않습니다.
 
+### 기존 demo 기록을 복원해 보기
+
+먼저 `/api/auth/config`가 `demo-cs-class`와 로컬9099/8080을 가리키는지 확인합니다. 실행 중인 기록은 종료 전에 새 Git 제외 폴더로 export합니다. 아래 경로는 예시이며 기존 백업을 덮어쓰지 않도록 바꿉니다.
+
+```powershell
+npx.cmd firebase emulators:export .\scratch\demo-before-switch --project demo-cs-class
+```
+
+확인한 로컬 앱·에뮬레이터를 종료한 뒤, 첫 터미널에서 전달받은 export를 import합니다. Auth와 Firestore가 모두 포함됐는지 확인하며 운영 프로젝트에는 실행하지 않습니다.
+
+```powershell
+npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class --import .\scratch\transferred-demo
+```
+
+두 번째 터미널에서 아래 명령으로 **시드 없이** 앱을 실행합니다. `testEnv`는 로컬 합성 인증·AI 설정이며 일반 `dev:emulator`의 시드 단계를 거치지 않습니다. 준비된 Java·캐시와 demo 전용 환경은 위 안내를 따릅니다.
+
+```powershell
+node --input-type=module -e "import { spawn } from 'node:child_process'; import { testEnv } from './scripts/local-test-env.mjs'; const app = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--hostname', 'localhost', '--port', '3000'], { stdio: 'inherit', env: { ...process.env, ...testEnv } }); app.on('exit', code => process.exit(code ?? 1));"
+```
+
+위 직접 실행은 합성 시간표 서버를 자동 시작하지 않습니다. `CS_TIMETABLE_FIXTURE=1`인 검사 터미널을 재사용한다면 [학교 시간표 안내](#학교-시간표-연동)에 따라4781 fixture도 별도로 준비합니다. 게스트로 재입장해 기존 반 공개 목록·작품·입력·제출 기록을 대조한 뒤 수정합니다. 종료 전에 새 export를 남깁니다. 이 절의 import는 Git 동기화와 별개이며 개인 기록·인증 자료를 공개 저장소에 넣지 않습니다.
+
 ## 로컬 게스트 입장
 
 `npm run dev:emulator`가 [로컬 테스트 설정](../scripts/local-test-env.mjs)을 적용하고 [시드](../scripts/seed-emulator.mjs)에서 별도 게스트 학생 `21099`·교사를 준비합니다. 10반에 순서·순서도·엔트리봇을 공개하고 순서 수업을 이번 수업으로 지정합니다. 버튼 두 개는 학생·교사 로그인 카드에 함께 있으며 계정 입력 없이 각 대시보드로 이동합니다. 정책과 공유 계정의 범위는 [PRD](PRD.md#로컬-게스트-체험)를 따릅니다.
