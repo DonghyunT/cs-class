@@ -23,6 +23,90 @@ async function action(request: APIRequestContext, work: Work, type: string) {
 }
 const recipe = ["빵 봉지를 열어", "식빵 두 장을 꺼내", "잼 뚜껑을 열어", "칼에 잼을 묻혀", "식빵 1의 넓은 면에 잼을 발라", "식빵 2를 식빵 1 위에 덮어"];
 
+test("샌드위치 완성 결과는 자동으로 열리고 실제 명령과 시식평을 복사한다", async ({ page, context }, testInfo) => {
+  const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
+  page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+  let work = await prepare(page.request);
+  // A failed instruction is observable in chat, but is not a successful recipe step.
+  for (const input of ["식빵 꺼내", ...recipe.slice(0, -1)]) {
+    const result = await command(page.request, work, input); expect(result.response.status()).toBe(200); work = result.reply.work;
+  }
+  await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
+  const input = page.getByLabel("자연어 명령");
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let committed = false;
+  await page.route("**/api/classroom/ai", async route => { const response = await route.fetch(); committed = true; await gate; await route.fulfill({ response }); });
+  await input.fill(recipe.at(-1)!); await input.press("Enter");
+  await expect.poll(() => committed).toBe(true); await input.fill("다음 레시피를 위한 입력"); release();
+  const dialog = page.getByRole("dialog", { name: "샌드위치 완성 결과" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: "샌드위치 완성 결과" })).toBeFocused();
+  await expect(dialog).toContainText("달콤한 딸기잼 샌드위치");
+  const written = dialog.getByRole("list", { name: "내가 작성한 알고리즘" });
+  await expect(written.getByRole("listitem")).toHaveCount(6);
+  for (const text of recipe) await expect(written).toContainText(text);
+  await expect(written).not.toContainText("식빵 꺼내");
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await dialog.getByRole("button", { name: "알고리즘과 시식평 복사" }).click();
+  await expect(dialog.getByRole("status")).toContainText("복사했어요");
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toContain("완성 샌드위치: 달콤한 딸기잼 샌드위치");
+  expect(copied).toContain("미슐랭 셰프가 인정합니다");
+  expect(copied).toContain('2단계: "식빵 두 장을 꺼내"');
+  expect(copied).toContain('6단계: "식빵 2를 식빵 1 위에 덮어"');
+  expect(copied).not.toContain("다음 레시피를 위한 입력");
+  expect(copied).not.toContain("식빵 꺼내");
+  expect(copied).not.toContain("OPEN_BAG");
+  await dialog.screenshot({ path: testInfo.outputPath("sandwich-result-desktop.png") });
+  await page.keyboard.press("Escape"); await expect(dialog).not.toBeVisible(); await expect(input).toBeFocused();
+  await expect(input).toHaveValue("다음 레시피를 위한 입력");
+  const reopen = page.getByRole("button", { name: "완성 결과 다시 보기" });
+  await reopen.click(); await expect(dialog).toBeVisible(); await expect(dialog.getByRole("heading", { name: "샌드위치 완성 결과" })).toBeFocused();
+  await page.keyboard.press("Escape"); await expect(reopen).toBeFocused();
+  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload();
+  await expect(dialog).not.toBeVisible(); await expect(input).toHaveValue("다음 레시피를 위한 입력"); await expect(reopen).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("샌드위치 자동 완성은 실습 바깥의 초점을 유지하고 결과를 다시 볼 수 있다", async ({ page }) => {
+  let work = await prepare(page.request);
+  for (const input of recipe.slice(0, -1)) {
+    const result = await command(page.request, work, input); expect(result.response.status()).toBe(200); work = result.reply.work;
+  }
+  await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
+  const input = page.getByLabel("자연어 명령");
+  await input.fill(recipe.at(-1)!); await input.press("Enter");
+  await expect(page.getByText("다시 실행 중", { exact: true })).toBeVisible();
+  const leave = page.getByRole("link", { name: "수업 나가기" }); await leave.focus();
+  await expect(page.getByText("조립 완료", { exact: true })).toBeVisible();
+  await expect(leave).toBeFocused(); await expect(page.getByRole("dialog", { name: "샌드위치 완성 결과" })).not.toBeVisible();
+  await page.getByRole("button", { name: "완성 결과 다시 보기" }).click();
+  await expect(page.getByRole("dialog", { name: "샌드위치 완성 결과" })).toBeVisible();
+});
+
+test("샌드위치 결과 복사 실패는 좁은 창에서도 원문과 닫기 초점을 보존한다", async ({ page }, testInfo) => {
+  let work = await prepare(page.request);
+  for (const input of recipe) {
+    const result = await command(page.request, work, input); expect(result.response.status()).toBe(200); work = result.reply.work;
+  }
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator.clipboard, "writeText", { configurable: true, value: async () => { throw new DOMException("Clipboard denied", "NotAllowedError"); } });
+  });
+  await page.setViewportSize({ width: 390, height: 640 });
+  await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
+  const reopen = page.getByRole("button", { name: "완성 결과 다시 보기" }); await reopen.click();
+  const dialog = page.getByRole("dialog", { name: "샌드위치 완성 결과" });
+  await expect(dialog.getByRole("heading", { name: "샌드위치 완성 결과" })).toBeFocused();
+  await dialog.getByRole("button", { name: "알고리즘과 시식평 복사" }).click();
+  await expect(dialog.getByRole("alert")).toContainText("직접 선택해 복사");
+  await expect(dialog.getByLabel("직접 복사할 결과")).toHaveValue(/6단계: "식빵 2를 식빵 1 위에 덮어"/);
+  expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  const bounds = await dialog.boundingBox(); expect(bounds?.width).toBeLessThanOrEqual(390); expect(bounds?.height).toBeLessThanOrEqual(640);
+  await dialog.screenshot({ path: testInfo.outputPath("sandwich-result-mobile-copy-failure.png") });
+  await page.keyboard.press("Escape"); await expect(reopen).toBeFocused();
+});
+
 test("서버 실행·중복 요청·서명 검증·제출본 보존", async ({ request }) => {
   let work = await prepare(request);
   let response = await command(request, work, "식빵 꺼내"); expect(response.response.status()).toBe(200); work = response.reply.work;

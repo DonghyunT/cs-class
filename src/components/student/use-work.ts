@@ -7,7 +7,7 @@ import { practiceMatches } from "@/lib/classroom/progress";
 import { programmingProjectMatches } from "@/lib/classroom/programming-entry";
 import { reviewProjectSchema, sameReviewProject } from "@/lib/classroom/review/project";
 import type { Submission, ValidationResult, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
-import type { AiReply, AiTask } from "@/lib/classroom/review/ai";
+import type { AiReply, AiTask, FlowPlanning } from "@/lib/classroom/review/ai";
 
 type SaveState = "saved" | "dirty" | "saving" | "failed";
 type Recovery = { revision: number; draft: WorkDraft; at: number };
@@ -245,7 +245,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
     } finally { checkingAction.current = false; if (active.current) setCheckingResult(false); }
   }, [adopt, clearActionFailure, fail, initial.lessonId, isDirty, uid]);
 
-  const requestAi = useCallback(async (task: AiTask, input: string, missionId?: string, requestId = crypto.randomUUID()): Promise<AiReply | null> => {
+  const requestAi = useCallback(async (task: AiTask, input: string, missionId?: string, requestId = crypto.randomUUID(), planning?: FlowPlanning): Promise<AiReply | null> => {
     if (actionPending.current || pendingAi.current || preparingAi.current || !active.current) return null;
     preparingAi.current = true;
     setAiBusy(true);
@@ -263,7 +263,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
       };
       const operation = (async () => {
         try {
-        const reply = await classroomApi.ai(initial.lessonId, server.current.revision, task, input, requestId, missionId, uid);
+        const reply = await classroomApi.ai(initial.lessonId, server.current.revision, task, input, requestId, missionId, uid, planning);
         if (!active.current) return null;
         // AI appends a signed command while the student may already be typing the next one.
         // Merge only that server change; keep edits made both during preparation and the call.

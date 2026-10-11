@@ -6,7 +6,7 @@ Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 학습 플랫폼*
 
 수업 구성은 실제 EntryJS로 만든 [프로그래밍 13차시](docs/PRD.md#프로그래밍-13차시--실제-수업-구성)와 [세 복습 수업](docs/PRD.md#알고리즘-선택-복습--2026-10-05-확정)을 따릅니다. 복습 실습은 원작의 그림·색·조작을 살리고 성적에 반영하지 않습니다. [명부 준비·반별 발급 도구](docs/DEVELOPMENT.md#실학생-명부-준비와-반별-발급)도 마련했습니다. 현재 구현·검증·운영 반영과 남은 한계는 [HANDOFF](docs/HANDOFF.md#현재-작업-상태), 첫 실제 수업 준비는 [다음 작업](docs/HANDOFF.md#다음에-이어갈-작업)을 확인합니다.
 
-후속 수업 개선은 실행·진도 안내, 실습 집중 모드, 교사 반 준비표·실제7수업 미리보기, 지난 일정과 안전한 실패 진단을 로컬에 구현·검증했습니다. 2026-10-10 승인한 기존 미배포 개선과 이번 결과를 main에 병합하고 Vercel Production 반영을 확인했습니다. 학교 환경의 직접 확인은 남아 있습니다. 최신 검증·배포 결과와 남은 확인 범위는 [HANDOFF](docs/HANDOFF.md#현재-작업-상태)를 따릅니다.
+모든 수업은 공통 헤더·개념/퀴즈/실습 탐색·진도 표시를 사용합니다. 세 복습은 V1의 실습 흐름을 복원하고 기존 작품·제출 기록을 보존합니다. 실습 집중 모드, 교사 반 준비표·실제 수업 미리보기와 안전한 실패 진단도 제공합니다. 최신 검증·배포 상태와 학교 환경 등 남은 확인 범위는 [HANDOFF](docs/HANDOFF.md#현재-작업-상태)에서 구분합니다.
 
 학생·교사 공통 대시보드에 개인 할 일·이번 달 달력과 반 일정, 조회 대기 안내를 제공합니다. 금옥중학교 반별 정보 교시의 일일 갱신·교사용 갱신은 [시간표 연동](docs/DEVELOPMENT.md#학교-시간표-연동)을 따릅니다. 수업 목록·교사의 학생 현황과 수업 관리는 별도 메뉴에서 확인합니다. 로컬 확인은 [파일럿 실행 안내](docs/DEVELOPMENT.md#대시보드-파일럿)를 따릅니다.
 
@@ -43,7 +43,8 @@ Firebase 키 없이 사용하는 가상 계정 개발 모드입니다. [로컬 �
 | 원본 PPT 없이 13차시 내용과 체험을 어떻게 파악하나요? | [프로그래밍 13차시 · 수업 자료와 체험 기록](docs/reference/programming-13.md) |
 | 학생 학습 화면 가독성·체험 개선은 어떻게 계획했나요? | [합의한 계획 · 12개 회차·검증 통합·휴먼 리뷰](docs/reference/student-learning-readability-plan.md) |
 | 컨설팅의 개선 제안과 실행 순서는 무엇인가요? | [진단 보고서](docs/reference/project-consulting-2026-10-08.md) · [승인된 후속 개선 계획](docs/reference/consulting-improvement-plan-2026-10-08.md) |
-| 수업에 들어간 뒤 사용하는 별도 공통 UI는 어떻게 구성하나요? | [수업 전용 공통 틀 · 설계와 적용 기록](docs/reference/student-lesson-shell-plan.md) |
+| 수업에 들어간 뒤 사용하는 공통 UI는 어떻게 구성하나요? | [공통 수업 화면 기준](docs/DESIGN.md#수업-전용-공통-틀--2026-10-06-구현) |
+| 순서도 V1 비교에서 무엇을 보완했나요? | [순서도 V1 · 차이 분석과 후속 반영](docs/reference/flowchart-v1-audit-20261011.md) |
 | 완료된 구현 지시와 이전 판단 근거는 어디에 있나요? | [문서 보관함](docs/archive/README.md) |
 | 에이전트는 어떤 규칙을 지켜야 하나요? | [AGENTS · 작업 규칙](AGENTS.md) |
 
@@ -117,7 +118,7 @@ cs-class/
 - 홈의 시작점은 [public-home.tsx](src/components/home/public-home.tsx)입니다. 수업 시연·예제·역할 미리보기·포인터 효과를 같은 폴더에서 찾을 수 있습니다.
 - `app/globals.css`는 글꼴·색상·기본 요소·공통 UI·브랜드를 담당합니다. 홈 스타일은 `components/home/public-home.css`, 셸·로그인·세션 안내·학생·교사·수업 미리보기 스타일은 담당 컴포넌트 옆의 CSS Module에 둡니다.
 - 학생·교사 첫 화면은 `components/dashboard/dashboard.tsx`를 사용하며 목록·일정·스타일을 같은 폴더에 둡니다. 학생 수업 목록은 `app/student/lessons/page.tsx`로 연결합니다.
-- 학생 수업은 `components/student/lesson-workspace.tsx`의 학생 저장 래퍼와 `lesson-editor.tsx`의 공용 화면을 사용합니다. 일반 개념/퀴즈는 `lesson-concept-panel.tsx`·`lesson-quiz-panel.tsx`, 집중 모드의 접힌 안내는 `practice-guidance.tsx`에 둡니다. 실제 교사 체험의 저장 경계는 [개발 안내](docs/DEVELOPMENT.md#교사-수업-준비와-실제-미리보기)를 따릅니다.
+- 학생 수업은 `components/student/lesson-shell.tsx`의 공통 상단·단계 탐색, `lesson-workspace.tsx`의 학생 저장 래퍼와 `lesson-editor.tsx`의 공용 화면을 사용합니다. 일반 개념/퀴즈는 `lesson-concept-panel.tsx`·`lesson-quiz-panel.tsx`, 집중 모드의 접힌 안내는 `practice-guidance.tsx`에 둡니다. 복습 화면은 `student/review/`, 순수 실행·검사는 `lib/classroom/review/`에 모읍니다. 실제 교사 체험의 저장 경계는 [개발 안내](docs/DEVELOPMENT.md#교사-수업-준비와-실제-미리보기)를 따릅니다.
 - 교사 상세 페이지는 `app/teacher/classes/page.tsx`·`app/teacher/students/page.tsx`입니다. `components/teacher/dashboard.tsx`가 조회·반 선택·학생 목록을, `dialogs.tsx`가 수업 설정·제출 작품 조회·비밀번호 초기화를 담당합니다. 준비표는 `class-preparation-table.tsx`, 교사 실제 수업 체험은 `app/teacher/preview/[id]/page.tsx`·`components/teacher/lesson-preview.tsx`·`use-preview-work.ts`와 전용 평가 API를 사용합니다. 함께 쓰는 날짜·오류 표현만 `presentation.ts`에 둡니다.
 - `app/student/community`·`app/teacher/community`는 `components/community`의 반 질문으로, 각 `settings` 페이지는 `components/settings`의 개인 설정으로 연결합니다. 손들기 UI는 `components/classroom`, 권한과 저장은 `lib/server/community.ts`·`help.ts`·기존 인증 서비스가 담당합니다. 교사 공통 반 선택은 `components/teacher/teacher-toolbar.tsx`를 사용합니다.
 - 프로그래밍 체험의 진입점은 [page.tsx](src/app/prototype/programming/page.tsx), 전용 UI와 CSS는 `components/prototype/programming/`, 체험 상태·순수 실행/조건 확인·복원은 [programming.ts](src/lib/prototype/programming.ts)에 둡니다. 운영·체험 공통 문항은 [programming-data.ts](src/lib/classroom/programming-data.ts), 공통 개념 UI·인접 CSS는 [programming-concept.tsx](src/components/student/programming-concept.tsx), 이름 작품 처리는 [name-entry.ts](src/lib/classroom/name-entry.ts)입니다. 대상 검사는 [programming-prototype.spec.ts](tests/programming-prototype.spec.ts)·[name-entry-pilot.spec.ts](tests/name-entry-pilot.spec.ts)이며 호환 경계는 개발 안내를 먼저 읽습니다.

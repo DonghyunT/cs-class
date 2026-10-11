@@ -84,7 +84,7 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   expect(Math.abs(guideBox.y - editorBox.y)).toBeLessThanOrEqual(1);
   expect(missionBox.y + missionBox.height).toBeLessThanOrEqual(Math.min(guideBox.y, editorBox.y));
   expect(tabBox.y + tabBox.height).toBeLessThanOrEqual(missionBox.y);
-  expect(tabBox.width).toBeLessThanOrEqual(780);
+  expect(tabBox.width).toBe(1440);
   const iframeBox = (await iframe.boundingBox())!, toolbarBox = (await toolbar.boundingBox())!;
   expect(iframeBox.width).toBeGreaterThanOrEqual(1000);
   expect(toolbarBox.height).toBeLessThanOrEqual(80);
@@ -143,9 +143,9 @@ test("실습 기본 배치를 줄이고 넓게 보기에서도 같은 작업실�
   await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
   await page.screenshot({ path: testInfo.outputPath("workspace-default-1280.png") });
   await expect(page.getByRole("tab", { name: "개념 0%" })).toBeVisible();
-  await page.getByText("수업 안내 · 이어하기 기준 · 학습 진행", { exact: true }).click();
-  await expect(page.getByRole("definition").filter({ hasText: "기본 4개 미션" })).toBeVisible();
-  await page.getByText("수업 안내 · 이어하기 기준 · 학습 진행", { exact: true }).click();
+  await expect(page.getByText("수업 안내 · 이어하기 기준 · 학습 진행", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: "실습 0%" })).toContainText("0/4개 제출");
+  await expect(page.locator('[data-stage-progress="practice"]')).toHaveAttribute("data-percent", "0");
   const identity = await iframe.elementHandle();
   const native = page.frames().find((frame) => frame.url().includes("exercise=programming"))!;
   const before = await native.evaluate(() => (window as unknown as { Entry: { exportProject: () => unknown } }).Entry.exportProject());

@@ -1,4 +1,5 @@
 .workspace { display: grid; gap: 24px; padding: 24px 0; color: var(--foreground); }
+.workspace[hidden] { display: none; }
 .workspace h2, .workspace h3 { font-weight: 700; }
 .workspace [hidden] { display: none; }
 .practiceHeader { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }

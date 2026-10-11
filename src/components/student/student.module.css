@@ -80,9 +80,11 @@
 .notice p{margin:3px 0 0}.notice strong{font-weight:650}
 .workspace .errorPanel:focus{outline:3px solid #376fc8;outline-offset:4px}
 .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border-bottom:1px solid #dce3ed;margin-bottom:12px}
-.tabs>button{display:flex;align-items:center;justify-content:center;gap:9px;border:0;border-bottom:3px solid transparent;background:transparent;color:#526173;padding:9px 10px;font-size:16px;font-weight:650;cursor:pointer;min-height:44px}
-.tabs>button[aria-selected="true"]{border-bottom-color:#376fc8;color:#2e5fab;background:#eaf2ff;border-radius:12px 12px 0 0}
-.tabs>button:disabled{cursor:wait}.tabPercent{font-size:12px;margin-left:4px;font-weight:500}
+.tabs>button{position:relative;display:flex;align-items:center;justify-content:center;gap:9px;border:0;background:transparent;color:#526173;padding:9px 10px 13px;font-size:16px;font-weight:650;cursor:pointer;min-height:44px}
+.tabs>button[aria-selected="true"]{color:#2e5fab;background:#eaf2ff;border-radius:12px 12px 0 0}
+.tabProgress{position:absolute;bottom:0;inset-inline:0;height:4px;background:#e1e7f0;border-radius:2px}
+.tabProgress>span{display:block;height:100%;background:#376fc8;border-radius:2px}
+.tabs>button:disabled{cursor:wait}.tabs .tabPercent{font-size:14px;margin-left:4px;font-weight:500}
 .stagePanel:focus{outline:none}.stagePanel:focus-visible{outline:3px solid #376fc8;outline-offset:5px;border-radius:12px}
 .stageHeading{display:flex;justify-content:space-between;align-items:start;gap:22px;margin-bottom:25px}
 .stageHeading h2{font-size:23px;font-weight:720;letter-spacing:-.6px;line-height:1.4;margin:0 0 7px}

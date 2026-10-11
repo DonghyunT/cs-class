@@ -1,7 +1,8 @@
 "use client";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { ClipboardCopy, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { initialSandwich, parseSandwichCommand, replaySandwich, reviewSandwich } from "@/lib/classroom/review/sandwich-engine.mjs";
 import { ReviewSubmit, useReviewAi, type ReviewController } from "./shared";
 import type { LessonMode } from "../work-controller";
@@ -9,6 +10,7 @@ import { PracticeGuidance } from "../practice-guidance";
 import { SandwichStage } from "./sandwich-stage";
 import base from "./review.module.css";
 import studio from "./studio.module.css";
+import resultStyles from "./sandwich.module.css";
 const styles = { ...base, ...studio };
 type LocalReply = { id: string; text: string; source: string; message: string; failed: boolean; after: number };
 
@@ -25,12 +27,28 @@ export function Sandwich({ controller, practiceFocused = false, mode = "student"
   const followChat = useRef(true);
   const [request, setRequest] = useState<{ text: string; source: string; after: number } | null>(null);
   const [replies, setReplies] = useState<LocalReply[]>([]);
+  const activity = useRef<HTMLDivElement>(null);
+  const completionShown = useRef(run.state.completed);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const summaryTitle = useRef<HTMLHeadingElement>(null);
+  const summaryReturn = useRef<HTMLElement | null>(null);
+  const [copyStatus, setCopyStatus] = useState<{ message: string; failed: boolean } | null>(null);
   const commandInput = useRef<HTMLTextAreaElement>(null);
   const [focusCommand, setFocusCommand] = useState(0);
   useEffect(() => { if (focusCommand) commandInput.current?.focus(); }, [focusCommand]);
   // 이전 대화를 읽는 동안에는 새 응답이 와도 읽던 위치를 유지한다.
   useEffect(() => { if (followChat.current) chat.current?.scrollTo({ top: chat.current.scrollHeight }); }, [commands.length, controller.aiBusy, ai.error, ai.result]);
   useEffect(() => { if (replay === null) return; const timer = setTimeout(() => setReplay(replay >= steps.length ? null : replay + 1), 650); return () => clearTimeout(timer); }, [replay, steps.length]);
+  useEffect(() => {
+    if (!run.state.completed) { completionShown.current = false; return; }
+    if (replay !== null || completionShown.current) return;
+    completionShown.current = true;
+    const active = document.activeElement;
+    // Restored recipes and completion outside the kitchen never interrupt another task.
+    if (active instanceof HTMLElement && activity.current?.contains(active)) {
+      summaryReturn.current = active; setCopyStatus(null); setSummaryOpen(true);
+    }
+  }, [run.state.completed, replay]);
   if (project?.type !== "sandwich") return null;
   const state = replay === null ? run.state : replay === 0 ? initialSandwich() : steps[replay - 1]?.state ?? run.state;
   const step = replay === null ? steps.at(-1) : replay === 0 ? undefined : steps[replay - 1];
@@ -53,13 +71,19 @@ export function Sandwich({ controller, practiceFocused = false, mode = "student"
     setFocusCommand(value => value + 1);
     void ai.ask(task, project.input);
   };
-  function reset() { setReplay(null); ai.clear(); setReplies([]); setRequest(null); followChat.current = true; controller.update({ ...controller.getDraft(), reviewProject: { type: "sandwich", runId: crypto.randomUUID(), input: "", commands: [] } }); setFocusCommand(value => value + 1); }
+  function reset() { setReplay(null); setSummaryOpen(false); setCopyStatus(null); ai.clear(); setReplies([]); setRequest(null); followChat.current = true; controller.update({ ...controller.getDraft(), reviewProject: { type: "sandwich", runId: crypto.randomUUID(), input: "", commands: [] } }); setFocusCommand(value => value + 1); }
   const repliesAfter = (after: number) => replies.filter(reply => reply.after === after).map(reply => <div key={reply.id} className={styles.chatTurn}>
     <div className={styles.studentBubble}><small>나의 명령</small><p>{reply.text}</p></div>
     <div className={styles.robotBubble} data-error={reply.failed}><small>🤖 샌드위치 로봇 · {reply.source}</small><p>{reply.message}</p></div>
   </div>);
   const actionOffsets = [0];
   for (const command of commands) actionOffsets.push(actionOffsets.at(-1)! + command.actions.length);
+  const writtenCommands = commands.filter((_, index) => steps.slice(actionOffsets[index], actionOffsets[index + 1]).some(item => item.success));
+  const copyText = `[🥪 로봇 샌드위치 알고리즘]\n▪ 완성 샌드위치: ${run.review.title}\n▪ 셰프 평가: ${run.review.review}\n----------------------------------------\n[내가 작성한 알고리즘]\n${writtenCommands.map((command, index) => `${index + 1}단계: "${command.text}"`).join("\n")}`;
+  async function copyResult() {
+    try { await navigator.clipboard.writeText(copyText); setCopyStatus({ message: "알고리즘과 시식평을 복사했어요. 원하는 곳에 붙여넣어 보세요.", failed: false }); }
+    catch { setCopyStatus({ message: "복사하지 못했어요. 결과 원문을 직접 선택해 복사해 주세요.", failed: true }); }
+  }
   const turns = commands.map((command, index) => {
     const commandSteps = steps.slice(actionOffsets[index], actionOffsets[index + 1]);
     return <Fragment key={command.id}><div data-command-id={command.id} className={styles.chatTurn}>
@@ -73,12 +97,12 @@ export function Sandwich({ controller, practiceFocused = false, mode = "student"
     ["치즈 비닐", state.cheeseUnwrapped ? "제거됨" : "밀봉상태", state.cheeseUnwrapped], ["칼 상태", state.knifeHolding === "none" ? "깨끗함" : state.knifeHolding === "jam" ? "딸기잼" : "땅콩버터", state.knifeHolding !== "none"],
     ["도포 상태", state.bread1Spread !== "none" || state.bread2Spread !== "none" ? "도포됨" : "아직 없음", state.bread1Spread !== "none" || state.bread2Spread !== "none"], ["완성 상태", state.completed ? "🥪 완성" : "조립 대기", state.completed],
   ];
-  return <div className={styles.studio} data-practice="sandwich"><div className={styles.sandwichColumns}>
+  return <div className={styles.studio} data-practice="sandwich"><div ref={activity} className={styles.sandwichColumns}>
     <section className={styles.panel} aria-label="샌드위치 로봇의 주방">
       <header className={styles.stageHeader}><span className={styles.avatar} aria-hidden="true">🤖</span><div><small className={styles.eyebrow}>Live Visual Stage</small><h3>샌드위치 로봇의 주방</h3></div><span className={styles.badge} data-tone={!step?.success && step ? "rose" : state.completed ? "green" : "amber"}>{controller.aiBusy ? "해석 중" : replay !== null ? "다시 실행 중" : step && !step.success ? "오류 관찰" : state.completed ? "조립 완료" : "지시 대기"}</span></header>
       <div className={styles.kitchen} data-error={!!step && !step.success}><SandwichStage state={state} review={review} error={!!step && !step.success} action={replay !== null ? step?.action : undefined} /><p className={styles.caption} role="status">{message || "조리대 위에 재료들이 준비되어 있어요. 첫 명령을 내려 보세요!"}</p></div>
       <PracticeGuidance focused={practiceFocused} label="재료와 조리 상태 보기"><ul className={styles.statusCards} aria-label="재료와 조리 상태">{status.map(([label,value,ready]) => <li key={label as string} data-ready={ready}><span>{label as string}</span><strong>{value as string}</strong></li>)}</ul></PracticeGuidance>
-      {state.completed && <div className={styles.recipe} role="status"><span aria-hidden="true">🥪</span><div><h3>{review.title}</h3><p>{review.review}</p></div></div>}
+      {state.completed && <div className={styles.recipe}><span aria-hidden="true">🥪</span><div><div role="status"><h3>{review.title}</h3><p>{review.review}</p></div><Button className={resultStyles.reopen} variant="outline" disabled={locked} onClick={event => { summaryReturn.current = event.currentTarget; setCopyStatus(null); setSummaryOpen(true); }}>완성 결과 다시 보기</Button></div></div>}
     </section>
     <section className={`${styles.panel} ${styles.console}`} aria-label="로봇에게 명령하기" data-empty={!commands.length}>
       <header className={styles.stageHeader}><span className={styles.chatAvatar} aria-hidden="true">🤖</span><div><h3>로봇과 대화</h3>{mode === "preview" && <p>미리보기에서는 AI 없이 규칙 해석을 체험해요.</p>}</div><Button variant="ghost" className={styles.auxControl} disabled={locked || !commands.length && !project.input && !request} onClick={reset} title="현재 명령과 대화를 비우고 새 레시피 시작"><RotateCcw size={16} aria-hidden="true" />새 레시피</Button></header>
@@ -101,5 +125,18 @@ export function Sandwich({ controller, practiceFocused = false, mode = "student"
       </form>
     </section>
     <PracticeGuidance focused={practiceFocused} label="알고리즘 실행 기록 보기"><section className={`${styles.panel} ${styles.executionPanel}`} aria-label="알고리즘 실행 기록"><header className={styles.stageHeader}><h3>알고리즘 실행 기록</h3><small>{steps.length}개 단계 실행됨</small></header><ol className={styles.queue} aria-label="누적 알고리즘 파이프라인">{steps.map((item,index) => <li key={index} data-error={!item.success} data-active={replay === index + 1}><span>{index + 1}</span><strong>{item.success ? "✓" : "!"} {item.name}</strong><small>{stepTexts[index]}</small><small>{item.msg}</small></li>)}</ol>{!commands.length ? <p className={styles.muted}>명령을 내리면 실행한 단계가 순서대로 쌓여요.</p> : <details className={styles.recordTools}><summary>기록 도구</summary><div className={styles.actions}><Button variant="ghost" className={styles.auxControl} disabled={!steps.length || controller.aiBusy || controller.busy} onClick={() => setReplay(replay === null ? 0 : null)}>{replay === null ? "명령 다시 실행" : "다시 실행 멈추기"}</Button><Button variant="ghost" className={styles.auxControl} disabled={!commands.length || locked} onClick={() => { ai.clear(); setRequest(null); setReplies(previous => previous.filter(reply => reply.after < commands.length)); controller.update({ ...controller.getDraft(), reviewProject: { ...project, commands: commands.slice(0, -1) } }); setFocusCommand(value => value + 1); }}>마지막 명령 되돌리기</Button></div></details>}</section></PracticeGuidance>
-  </div><ReviewSubmit mode={mode} controller={controller} /></div>;
+  </div><ReviewSubmit mode={mode} controller={controller} />
+    <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
+      <DialogContent className={resultStyles.summary} initialFocus={summaryTitle} finalFocus={() => summaryReturn.current?.isConnected ? summaryReturn.current : commandInput.current ?? false}>
+        <DialogHeader className={resultStyles.header}><DialogTitle ref={summaryTitle} tabIndex={-1}>샌드위치 완성 결과</DialogTitle><DialogDescription>로봇 셰프의 시식평과 직접 작성한 명령을 함께 확인해 보세요.</DialogDescription></DialogHeader>
+        <div className={resultStyles.body}>
+          <section className={resultStyles.tasting} data-perfect={run.review.isFlawless} aria-label="로봇 셰프의 시식평"><span aria-hidden="true">🥪</span><div><small>{run.review.isFlawless ? "✨ 완벽한 성공" : "⚠️ 어설픈 완성"}</small><h3>{run.review.title}</h3><p>{run.review.review}</p></div></section>
+          <div className={resultStyles.recipeHeading}><h3>내가 작성한 알고리즘</h3><span>{writtenCommands.length}개 명령</span></div>
+          <ol className={resultStyles.written} aria-label="내가 작성한 알고리즘">{writtenCommands.map((command, index) => <li key={command.id}><span aria-hidden="true">{index + 1}</span><p>{command.text}</p></li>)}</ol>
+          {copyStatus?.failed && <label className={resultStyles.manualCopy}>직접 복사할 결과<textarea readOnly rows={5} value={copyText} onFocus={event => event.currentTarget.select()} /></label>}
+        </div>
+        <DialogFooter className={resultStyles.footer}>{copyStatus && <p role={copyStatus.failed ? "alert" : "status"} className={resultStyles.copyStatus} data-error={copyStatus.failed}>{copyStatus.message}</p>}<div className={resultStyles.resultActions}><DialogClose render={<Button variant="outline" />}>결과 닫기</DialogClose><Button onClick={() => void copyResult()}><ClipboardCopy size={18} aria-hidden="true" />알고리즘과 시식평 복사</Button></div></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </div>;
 }

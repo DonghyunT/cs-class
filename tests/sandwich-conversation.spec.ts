@@ -16,9 +16,52 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/classroom/review-sandwich");
   await page.getByRole("tab", { name: /실습/ }).click();
 });
-test.afterEach(async () => {
+test.afterEach(async ({ page }) => {
+  await page.goto("about:blank");
   if (originalClass) await db.collection("csClasses").doc(classId).set(originalClass);
   await workRef.delete();
+});
+
+test("단계 왕복에도 명령 대화·실패·확인 질문과 읽던 위치를 유지한다", async ({ page }) => {
+  const input = page.getByLabel("자연어 명령"), feed = page.getByRole("region", { name: "로봇과의 대화", exact: true });
+  let count = 0;
+  for (const command of ["빵 봉지를 열어", "식빵 두 장을 꺼내", "잼 뚜껑을 열어", "칼에 잼을 묻혀"]) {
+    await input.fill(command);
+    await expect(page.getByRole("button", { name: "실행", exact: true })).toBeEnabled();
+    await input.press("Enter");
+    await expect(feed.locator("[data-command-id]")).toHaveCount(++count);
+    await expect(feed.getByText("명령을 해석하고 있어요. 다음 입력을 작성해도 유지돼요.")).toHaveCount(0);
+  }
+  await input.fill("알아서 샌드위치를 만들어");
+  await expect(page.getByRole("button", { name: "실행", exact: true })).toBeEnabled();
+  await input.press("Enter");
+  await expect(feed).toContainText("합성 AI 피드백");
+  await page.route("**/api/classroom/ai", route => route.fulfill({ status: 503, json: { message: "왕복 검사 AI 실패", code: "UNAVAILABLE" } }));
+  await input.fill("식빵에 잼을 발라");
+  await expect(page.getByRole("button", { name: "실행", exact: true })).toBeEnabled();
+  await input.press("Enter");
+  await expect(feed.getByRole("alert")).toContainText("왕복 검사 AI 실패");
+  await input.fill("다음에 보낼 작성 중 명령");
+  await feed.focus(); await page.keyboard.press("Home");
+  await expect.poll(() => feed.evaluate(element => element.scrollTop)).toBe(0);
+  await feed.evaluate(element => {
+    element.setAttribute("data-test-scroll-ended", "false");
+    element.addEventListener("scrollend", () => element.setAttribute("data-test-scroll-ended", "true"), { once: true });
+  });
+  await page.keyboard.press("ArrowDown");
+  await expect(feed).toHaveAttribute("data-test-scroll-ended", "true");
+  const readingPosition = await feed.evaluate(element => element.scrollTop);
+  expect(readingPosition).toBeGreaterThan(0);
+  const records = await feed.locator("[data-command-id]").count();
+  await page.getByRole("tab", { name: /^개념/ }).click();
+  await expect(feed).toBeHidden();
+  await page.getByRole("tab", { name: /^실습/ }).click();
+  await expect(feed).toContainText("왕복 검사 AI 실패");
+  await expect(feed).toContainText("알아서 샌드위치를 만들어");
+  await expect(feed).toContainText("합성 AI 피드백");
+  await expect(feed.locator("[data-command-id]")).toHaveCount(records);
+  await expect(input).toHaveValue("다음에 보낼 작성 중 명령");
+  expect(await feed.evaluate(element => element.scrollTop)).toBeCloseTo(readingPosition, 0);
 });
 
 test("Enter 전송은 한글 조합·줄바꿈·응답 대기를 구분하고 실패 때만 대체 실행을 제공", async ({ page }) => {

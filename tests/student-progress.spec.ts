@@ -46,10 +46,22 @@ async function showDashboardFixture(page: Page, lessons: StudentDashboard["lesso
 }
 async function expectMobileCurrentFirst(page: Page) {
   const overview = progressRegion(page);
-  const current = (await overview.locator("#current-heading").locator("..").boundingBox())!;
-  const summary = (await overview.locator("#learning-overview-heading").locator("..").boundingBox())!;
-  expect(current.y + current.height, "이번 수업 전체가 진도 요약보다 위에 표시됨").toBeLessThanOrEqual(summary.y);
-  expect(await overview.evaluate(element => Boolean(element.querySelector("#current-heading")!.compareDocumentPosition(element.querySelector("#learning-overview-heading")!) & Node.DOCUMENT_POSITION_FOLLOWING)), "읽기 순서도 이번 수업 다음에 진도 요약").toBe(true);
+  // Read both positions in one frame so smooth scrolling cannot mix viewport coordinates.
+  const layout = await overview.evaluate(element => {
+    const currentHeading = element.querySelector("#current-heading")!;
+    const summaryHeading = element.querySelector("#learning-overview-heading")!;
+    const current = currentHeading.parentElement!.getBoundingClientRect();
+    const summary = summaryHeading.parentElement!.getBoundingClientRect();
+    return {
+      currentBottom: current.bottom + scrollY,
+      summaryTop: summary.top + scrollY,
+      hasSize: current.width > 0 && current.height > 0 && summary.width > 0 && summary.height > 0,
+      currentFirst: Boolean(currentHeading.compareDocumentPosition(summaryHeading) & Node.DOCUMENT_POSITION_FOLLOWING),
+    };
+  });
+  expect(layout.hasSize, "이번 수업과 진도 요약이 실제 크기로 표시됨").toBe(true);
+  expect(layout.currentBottom, "이번 수업 전체가 진도 요약보다 위에 표시됨").toBeLessThanOrEqual(layout.summaryTop);
+  expect(layout.currentFirst, "읽기 순서도 이번 수업 다음에 진도 요약").toBe(true);
 }
 async function expectProgress(page: Page, count: string, percent: number) {
   const region = progressRegion(page);

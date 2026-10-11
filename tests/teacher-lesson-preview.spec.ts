@@ -31,6 +31,10 @@ test("teacher-preview: 7수업 실제 화면·메모리 답안·초기화·학�
     await expect(page.getByRole("button", { name: "학생 메뉴", exact: true })).toHaveCount(0);
     await page.getByRole("tab", { name: /^실습/ }).click();
     await expect(page.getByRole("tabpanel")).toBeVisible();
+    if (lesson.practice.type === "entryjs" || lesson.practice.type === "programming") {
+      await page.locator("iframe").scrollIntoViewIfNeeded();
+      await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
+    }
     await page.locator("[data-lesson-shell] > header").getByRole("button", { name: "체험 초기화", exact: true }).click();
     await expect(page.getByRole("tab", { name: /^개념/ })).toHaveAttribute("aria-selected", "true");
     await expect(page.locator("[data-lesson-shell] > header").getByRole("button", { name: "체험 초기화", exact: true })).toBeFocused();
@@ -49,6 +53,57 @@ test("teacher-preview: 7수업 실제 화면·메모리 답안·초기화·학�
   expect(errors).toEqual([]);
 });
 
+test("teacher-preview-entry: 그림을 불러오는 중 초기화해도 분리된 작업실의 늦은 오류를 보내지 않는다", async ({ page }) => {
+  await readyTeacher(page.request);
+  const before = await learningRecords(), errors: string[] = [], studentRequests: string[] = [], cancelled: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+  page.on("request", request => { if (/\/api\/classroom\/(work\/|student(?:[/?]|$)|ai(?:[/?]|$)|help(?:[/?]|$))/.test(request.url())) studentRequests.push(request.url()); });
+  page.on("requestfailed", request => { if (request.url().endsWith("/entryjs/name-dog.svg")) cancelled.push(request.failure()?.errorText ?? "request failed"); });
+  let release = () => {}, waiting = 0, hold = true;
+  const asset = new Promise<void>(resolve => { release = resolve; });
+  const pendingRoutes: Promise<void>[] = [];
+  await page.route("**/entryjs/name-dog.svg", route => {
+    if (!hold) return route.continue();
+    waiting++;
+    const pending = (async () => { await asset; await route.continue(); })();
+    pendingRoutes.push(pending);
+    return pending;
+  });
+  try {
+    await page.goto(previewUrl("programming-13"));
+    await page.evaluate(() => {
+      const state = window as unknown as { previewEntryErrors: string[] };
+      state.previewEntryErrors = [];
+      window.addEventListener("message", event => {
+        if (event.data?.channel === "cs-class-entryjs" && event.data.type === "error") state.previewEntryErrors.push(event.data.type);
+      });
+    });
+    await page.getByRole("tab", { name: /^실습/ }).click();
+    await page.locator("iframe").scrollIntoViewIfNeeded();
+    await expect.poll(() => waiting, { timeout: 20000 }).toBeGreaterThan(0);
+    const oldFrame = page.frames().find(frame => frame.url().includes("mission=name"));
+    if (!oldFrame) throw Error("name workspace frame missing");
+    await expect.poll(() => oldFrame.evaluate(() => (window as unknown as { Entry?: { isLoadProject: boolean } }).Entry?.isLoadProject)).toBe(true);
+    await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeDisabled();
+    const reset = page.locator("[data-lesson-shell] > header").getByRole("button", { name: "체험 초기화", exact: true });
+    await expect(reset).toBeEnabled(); await reset.click();
+    await expect(page.getByRole("tab", { name: /^개념/ })).toHaveAttribute("aria-selected", "true");
+    await expect(reset).toBeFocused(); await expect(page.locator("iframe")).toHaveCount(0);
+    await expect.poll(() => oldFrame.isDetached()).toBe(true);
+    hold = false; release(); await Promise.all(pendingRoutes);
+    await expect.poll(() => cancelled.length).toBeGreaterThan(0);
+    await page.getByRole("tab", { name: /^실습/ }).click();
+    await page.locator("iframe").scrollIntoViewIfNeeded();
+    await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
+    const newFrame = page.frames().find(frame => frame.url().includes("mission=name"));
+    expect(newFrame).toBeDefined(); expect(newFrame).not.toBe(oldFrame);
+    await expect(page.getByRole("button", { name: "작업실 다시 불러오기", exact: true })).toHaveCount(0);
+    expect(await page.evaluate(() => (window as unknown as { previewEntryErrors: string[] }).previewEntryErrors)).toEqual([]);
+    expect(studentRequests).toEqual([]); expect(await learningRecords()).toEqual(before); expect(errors).toEqual([]);
+  } finally { hold = false; release(); await page.unrouteAll({ behavior: "wait" }); await Promise.allSettled(pendingRoutes); }
+});
+
 test("teacher-preview: 평가 실패 입력 보존·로컬 샌드위치·AI와 학생 기록 가져오기 차단", async ({ page }) => {
   await readyTeacher(page.request);
   await page.goto(previewUrl("sequence-lab"));
@@ -65,9 +120,11 @@ test("teacher-preview: 평가 실패 입력 보존·로컬 샌드위치·AI와 �
   await expect(page.getByRole("list", { name: "재료와 조리 상태" }).locator("li").first()).toContainText("열림");
   await page.goto(previewUrl("review-flowchart"));
   await page.getByRole("tab", { name: /^실습/ }).click();
-  await page.getByRole("button", { name: "자유 캔버스", exact: true }).click();
-  await page.getByText("추상화 기록이나 예시에서 시작하기", { exact: true }).click();
+  await page.getByRole("button", { name: "🚀 5. 나만의 백지", exact: true }).click();
+  await page.getByRole("button", { name: /처방전 채우기/ }).click();
+  await page.getByText("추상화 기록에서 가져오기", { exact: true }).click();
   await expect(page.getByRole("button", { name: "추상화 기록 살펴보기", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /AI 기획서 제안 받기/ })).toBeDisabled();
 });
 
 test("teacher-preview: 익명·학생·담당 외 반·승인 필드·잘못된 문항 거부", async ({ request, page }) => {

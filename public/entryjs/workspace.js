@@ -7,7 +7,8 @@ const namePilot = params.get("exercise") === "name";
 const programming = params.get("exercise") === "programming";
 const traced = namePilot || programming;
 const mission = params.get("mission");
-const send = (type, details = {}) => parent.postMessage({ channel: CHANNEL, type, ...details }, location.origin);
+let disposed = false;
+const send = (type, details = {}) => { if (!disposed) parent.postMessage({ channel: CHANNEL, type, ...details }, location.origin); };
 let loading = false;
 let locked = false;
 let original = null;
@@ -182,13 +183,14 @@ try {
   });
   Entry.addEventListener("stop", () => { send("running", { running: false }); });
   window.addEventListener("message", async (event) => {
-    if (event.source !== parent || event.origin !== location.origin || event.data?.channel !== CHANNEL) return;
+    if (disposed || event.source !== parent || event.origin !== location.origin || event.data?.channel !== CHANNEL) return;
     const message = event.data;
     try {
       if (message.type === "load") {
         loading = true;
         document.getElementById("workspace").inert = true;
         await stop("stopped");
+        if (disposed) return;
         Entry.clearProject();
         if (programming) for (const variable of message.project.variables ?? []) {
           if (["cs-A", "cs-B"].includes(variable.id)) variable.visible = ["multiply", "average"].includes(mission);
@@ -202,6 +204,7 @@ try {
         // loadProject returns before the stage image has finished loading.
         const stageObject = Entry.container.getObject("entrybot").entity.object;
         if (stageObject.image instanceof HTMLImageElement) await stageObject.image.decode();
+        if (disposed) return;
         if (!stageObject.getTransformedBounds()) throw new Error("Stage picture is not ready");
         original = Entry.exportProject();
         loading = false;
@@ -227,9 +230,16 @@ try {
           send("result", { x: 0, y: 0, speech: "", reason: "reset" });
         }
       }
-    } catch (error) { console.error("EntryJS workspace operation failed:", error.message); loading = false; send("error", { message: "작업실에서 작품을 읽지 못했어요. 저장된 작품을 유지하고 있어요." }); }
+    } catch (error) {
+      // Image decode can reject during iframe removal, before pagehide runs.
+      // Report in the next task so teardown can finish before checking lifetime.
+      await new Promise(resolve => setTimeout(resolve, 0));
+      if (disposed || window.closed) return;
+      console.error("EntryJS workspace operation failed:", error.message); loading = false; send("error", { message: "작업실에서 작품을 읽지 못했어요. 저장된 작품을 유지하고 있어요." });
+    }
   });
-  window.addEventListener("pagehide", () => { clearInterval(monitor); Entry.stop(); });
+  // Resetting the preview can remove this frame while its stage image decodes.
+  window.addEventListener("pagehide", (event) => { disposed = !event.persisted; clearInterval(monitor); Entry.stop(); });
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape") send("focus-return");
   });

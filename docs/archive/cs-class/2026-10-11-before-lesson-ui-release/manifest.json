@@ -1,0 +1,12 @@
+[
+  {
+    "preservedAt": "2026-10-11",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/lesson-ui-v1-ux",
+    "baseCommit": "ad1cf9cc35d11d5ed9a93d3ec0607dfec760a005",
+    "source": "Windows working tree after V1 follow-up verification and before user-approved lesson UI production release",
+    "original": "docs/HANDOFF.md",
+    "preserved": "HANDOFF.md",
+    "sha256": "2d2e4742809c0afc7de0b6ad68a537a7530553432a0bf4fd76c724bc7bafa6b9"
+  }
+]

@@ -33,7 +33,7 @@ async function action(page: Page, endpoint: string, value: object) {
   return response.json() as Promise<Work>;
 }
 
-test("abstraction: 남기는 이유와 두 지도에서 같은 역·연결을 보존한다", async ({ page }, testInfo) => {
+test("abstraction: 남기는 이유와 지도 전환에서 같은 역·연결을 보존한다", async ({ page }, testInfo) => {
   await prepare(page, "review-abstraction");
   const experience = page.getByRole("region", { name: "추상화 개념 체험" });
   for (const name of ["노트 표지 색", "필기구 브랜드", "책상 장식"]) await experience.getByRole("button", { name, exact: true }).click();
@@ -43,14 +43,18 @@ test("abstraction: 남기는 이유와 두 지도에서 같은 역·연결을 �
   await expect(reasons).toContainText("남은 과제");
   await expect(reasons).toContainText("현재 시각");
   const maps = experience.getByRole("img");
-  await expect(maps).toHaveCount(2);
+  await expect(maps).toHaveCount(1);
   const network = await maps.evaluateAll(elements => elements.map(svg => ({
     stations: [...svg.querySelectorAll("[data-station]")].map(node => node.getAttribute("data-station")),
     edges: [...svg.querySelectorAll("[data-edge]")].map(node => node.getAttribute("data-edge")),
   })));
   expect(network[0].stations.length).toBeGreaterThanOrEqual(3);
   expect(network[0].edges.length).toBeGreaterThanOrEqual(2);
-  expect(network[0]).toEqual(network[1]);
+  await experience.getByRole("button", { name: "지하철 노선도", exact: true }).click();
+  expect(await maps.evaluateAll(elements => elements.map(svg => ({
+    stations: [...svg.querySelectorAll("[data-station]")].map(node => node.getAttribute("data-station")),
+    edges: [...svg.querySelectorAll("[data-edge]")].map(node => node.getAttribute("data-edge")),
+  })))).toEqual(network);
   for (const width of [1440, 821, 390, 320]) {
     await page.setViewportSize({ width, height: 720 });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -168,11 +172,10 @@ test("concept-nav: 한 개념·자유 이동·순서 밖 완료와 단계 왕복
   await expect(page.locator("#panel-concept article")).toHaveCount(1);
   await expect(page.locator("#concept-finite")).toBeVisible();
   await page.getByRole("button", { name: /순차·선택·반복/ }).click();
-  await page.getByText("수업 안내 · 이어하기 기준 · 학습 진행", { exact: true }).click();
-  await expect(page.getByText(/다시 접속하면 개념은 아직 확인하지 않은 곳부터/)).toBeVisible();
+  await expect(page.getByText("수업 안내 · 이어하기 기준 · 학습 진행", { exact: true })).toHaveCount(0);
+  await expect(page.locator('[data-stage-progress="concept"]')).toHaveAttribute("data-percent", "67");
   await expect(page.locator("#concept-structure")).toBeVisible();
   expect((await savedWork(page, endpoint)).conceptSolved.sort()).toEqual(["clear", "structure"]);
-  await page.getByText("수업 안내 · 이어하기 기준 · 학습 진행", { exact: true }).click();
   await expect(page.locator("#concept-structure")).toBeVisible();
   await page.getByRole("tab", { name: /퀴즈/ }).click();
   await page.getByRole("tab", { name: /개념/ }).click();

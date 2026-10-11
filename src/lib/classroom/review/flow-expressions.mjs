@@ -8,6 +8,18 @@ function tokenizeFlowchartExpr(s) {
   while (i < s.length) {
     const c = s[i];
     if (/\s/.test(c)) { i++; continue; }
+    if (c === '"' || c === "'") {
+      const quote = c; let value = ''; i++;
+      while (i < s.length && s[i] !== quote) {
+        if (s[i] === '\\') {
+          i++;
+          if (i >= s.length) throw new Error('문자열의 닫는 따옴표가 빠졌습니다.');
+          value += s[i] === 'n' ? '\n' : s[i] === 't' ? '\t' : s[i]; i++;
+        } else value += s[i++];
+      }
+      if (s[i] !== quote) throw new Error('문자열의 닫는 따옴표가 빠졌습니다.');
+      i++; t.push({ k: 'str', v: value }); continue;
+    }
     if (isD(c) || (c === '.' && isD(s[i + 1] || ''))) {
       let j = i;
       while (j < s.length && (isD(s[j]) || s[j] === '.')) j++;
@@ -70,6 +82,7 @@ function makeFlowchartParser(tk) {
     const t = peek();
     if (!t) throw new Error('수식이 완성되지 않았습니다.');
     if (t.k === 'num') { p++; return { k: 'num', v: t.v }; }
+    if (t.k === 'str') { p++; return { k: 'str', v: t.v }; }
     if (t.k === 'id') { p++; return { k: 'var', v: t.v }; }
     if (t.v === '(') {
       p++;
@@ -89,7 +102,7 @@ function makeFlowchartParser(tk) {
 }
 
 function evalFlowchartAST(ast, vars) {
-  if (ast.k === 'num') return ast.v;
+  if (ast.k === 'num' || ast.k === 'str') return ast.v;
   if (ast.k === 'var') {
     if (!Object.prototype.hasOwnProperty.call(vars, ast.v)) {
       throw new Error(`아직 값이 지정되지 않은 변수 '${ast.v}'입니다.`);
