@@ -1,27 +1,267 @@
-.practice[data-practice=flowchart] { min-width:0; font-size:16px; line-height:1.7; }
-.practice[data-practice=flowchart] .puzzleColumns { grid-template-columns:minmax(220px,2fr) minmax(0,5fr); align-items:start; }
-.practice[data-practice=flowchart] .puzzleColumns > .executionPanels { grid-column:1/-1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
-.practice[data-practice=flowchart] .freeColumns { grid-template-columns:minmax(240px,3fr) minmax(0,7fr); }
-.practice[data-practice=flowchart] .freeColumns > :first-child { grid-column:1; grid-row:1 / span 2; }
-.practice[data-practice=flowchart] .freeColumns > :nth-child(2) { grid-column:2; grid-row:1; display:flex; flex-wrap:wrap; flex-direction:row; align-items:center; }
-.practice[data-practice=flowchart] .freeColumns > :nth-child(2) > h3 { flex-basis:100%; text-align:left; font-size:18px; }
-.practice[data-practice=flowchart] .freeColumns > :nth-child(2) > button { flex:1; min-width:110px; }
-.practice[data-practice=flowchart] .freeColumns > :nth-child(2) > small { flex-basis:100%; }
-.practice[data-practice=flowchart] .freeColumns > :nth-child(3) { grid-column:2; grid-row:2; }
-.practice[data-practice=flowchart] h3 { font-size:20px; line-height:1.5; }
-.practice[data-practice=flowchart] :is(button,input,textarea,select) { font-size:16px; }
-.practice[data-practice=flowchart] .auxControl:global([data-slot="button"]) { min-height:44px; min-width:44px; padding:8px 10px; font-size:14px; color:#526173; border-radius:10px; }
-.practice[data-practice=flowchart] small { font-size:14px; }
-.practice[data-practice=flowchart] [aria-label="순서도 기호 보관함"] p { font-size:16px; }
-.practice[data-practice=flowchart] [aria-label="순서도 기호 보관함"] button { overflow-wrap:anywhere; }
-.practice[data-practice=flowchart] [aria-label="실시간 데이터 흐름"] { font-size:16px; line-height:1.7; }
-.practice[data-practice=flowchart] [aria-label="실제 순서도 연결"] { height:560px; overscroll-behavior:contain; }
-.practice[data-practice=flowchart] [aria-label="실제 순서도 연결"] svg { max-width:none; }
-.practice[data-practice=flowchart] [aria-label="실제 순서도 연결"] text { font-size:14px; }
-@media(max-width:1000px) { .practice[data-practice=flowchart] .puzzleColumns { grid-template-columns:minmax(200px,2fr) minmax(0,5fr); } }
+.practice { min-width:0; color:#1e293b; font-size:14px; line-height:1.6; }
+.practice :is(h3,h4,p) { margin:0; }
+.practice h3 { font-size:17px; font-weight:800; line-height:1.45; }
+.practice h4 { font-size:13px; font-weight:800; }
+.practice :is(button,input,textarea,select) { font:inherit; }
+.practice :global([data-slot=button]) { min-height:36px; border-radius:9px; padding:7px 12px; font-size:13px; font-weight:700; }
+.practice :is(button,input,textarea,select):focus-visible { outline:3px solid #6366f1; outline-offset:3px; }
+.stepNav { display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:center; min-height:56px; padding:8px 12px; margin-bottom:20px; border:1px solid #e2e8f0; border-radius:18px; background:#fff; box-shadow:0 3px 12px rgb(15 23 42 / .04); }
+.stepNav button { min-height:38px; padding:8px 15px; border:1px solid transparent; border-radius:12px; background:transparent; color:#64748b; font-size:13px; font-weight:800; white-space:nowrap; cursor:pointer; }
+.stepNav button:hover { color:#4338ca; background:#f5f3ff; }
+.stepNav button[aria-pressed=true] { color:#fff; background:#4f46e5; box-shadow:0 4px 12px rgb(79 70 229 / .25); }
+.stepNav button:disabled { cursor:wait; opacity:.6; }
+.tools { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.muted { color:#64748b; font-size:12px; }
+.error { padding:10px 12px; border:1px solid #fecdd3; border-radius:10px; color:#be123c; background:#fff1f2; overflow-wrap:anywhere; }
+.empty { padding:22px 12px; text-align:center; color:#94a3b8; font-size:13px; }
+.srOnly { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.field { display:grid; gap:6px; min-width:0; font-size:12px; font-weight:700; color:#475569; }
+.field :is(input,textarea,select) { width:100%; min-width:0; min-height:36px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; background:#fff; color:#1e293b; font-size:13px; font-weight:500; line-height:1.5; }
+.field textarea { resize:vertical; min-height:56px; }
+.field input[type=checkbox] { width:16px; min-height:16px; }
+.puzzleColumns { display:grid; grid-template-columns:minmax(200px,3fr) minmax(0,6fr) minmax(230px,3fr); gap:20px; align-items:start; }
+.puzzlePalette,.puzzleCanvas,.puzzleExecution,.diagnosis { min-width:0; border:1px solid #e2e8f0; border-radius:18px; background:#fff; }
+.puzzlePalette { display:grid; gap:16px; padding:20px; }
+.puzzlePalette > small,.puzzleExecution > small { color:#94a3b8; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+.puzzlePalette > p { color:#64748b; font-size:12px; }
+.palette { display:grid; gap:14px; padding:8px 0; }
+.symbolBlock { position:relative; display:block; min-height:70px; padding:15px 18px; border:2.5px solid #3b82f6; border-radius:8px; background:#eff6ff; color:#1e3a8a; font-size:13px; font-weight:800; text-align:center; overflow-wrap:anywhere; cursor:grab; box-shadow:0 4px 12px rgb(59 130 246 / .1); }
+.symbolBlock:active { cursor:grabbing; }
+.symbolBlock[data-shape=terminal] { border-radius:999px; border-color:#a855f7; background:#faf5ff; color:#581c87; }
+.symbolBlock[data-shape=io] { border-color:#10b981; background:#ecfdf5; color:#064e3b; }
+.symbolBlock[data-shape=decision] { border-color:#f59e0b; background:#fffbeb; color:#78350f; }
+.symbolBlock[aria-pressed=true] { outline:3px solid #6366f1; outline-offset:4px; }
+.symbolGuide { padding:12px; border:1px solid #fde68a; border-radius:12px; background:#fffbeb; color:#92400e; font-size:12px; }
+.symbolGuide p { margin-top:8px; line-height:1.9; }
+.puzzlePalette details { font-size:12px; }
+.puzzlePalette details summary { cursor:pointer; color:#64748b; }
+.puzzlePalette details[open] { display:grid; gap:12px; }
+.puzzleCanvas { padding:16px; }
+.puzzleCanvas > header,.guideCanvas > header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
+.puzzleCanvas > header small { font-size:11px; font-weight:800; color:#818cf8; }
+.missionDescription { padding:12px 14px; margin-bottom:12px !important; border-left:3px solid #818cf8; border-radius:8px; background:#f5f3ff; color:#4338ca; font-size:13px; }
+.puzzleCanvas [data-flow-toolbar] { padding:0 0 8px; }
+.puzzleCanvas [aria-label="실제 순서도 연결"] { height:clamp(360px,calc(100dvh - 430px),660px); }
+.puzzleMonitor { display:grid; gap:16px; min-width:0; }
+.puzzleExecution,.diagnosis { display:grid; gap:12px; padding:18px; }
+.diagnosis > p { color:#64748b; font-size:12px; }
+.diagnosis > :global(section) { padding:14px 0 0; border:0; border-top:1px solid #e2e8f0; border-radius:0; box-shadow:none; }
+.diagnosis :global(section h3) { font-size:14px; }
+.diagnosis :global(section p) { font-size:12px; }
+.diagnosis :global(section button) { font-size:12px; padding:6px 8px; }
+.runStatus { color:#64748b; font-size:12px; overflow-wrap:anywhere; }
+.runControls { display:flex; flex-wrap:wrap; align-items:center; gap:5px; }
+.runControls > span { font-size:11px; font-weight:700; color:#64748b; white-space:nowrap; }
+.runControls :global([data-slot=button]) { min-height:34px; padding:5px 8px; font-size:12px; border-radius:8px; white-space:nowrap; }
+.runButton:global([data-slot=button]) { padding:7px 12px; color:#fff; background:#10b981; box-shadow:0 3px 10px rgb(16 185 129 / .2); }
+.runButton:global([data-slot=button]):hover { background:#059669; }
+.speed { display:flex; align-items:center; min-width:0; }
+.speed select { max-width:135px; min-height:34px; padding:4px 6px; border:1px solid #e2e8f0; border-radius:8px; color:#64748b; background:#f8fafc; font-size:11px; }
+.monitor { display:grid; gap:10px; min-width:0; color:#475569; font-size:12px; }
+.monitor > h3 { font-size:15px; }
+.monitor h4 { padding-top:8px; border-top:1px solid #e2e8f0; }
+.monitor form { display:grid; gap:8px; }
+.choices { display:flex; flex-wrap:wrap; gap:8px; padding:10px; border:1px solid #fde68a; border-radius:10px; background:#fffbeb; }
+.choices > p { flex-basis:100%; font-weight:700; }
+.variables { width:100%; table-layout:fixed; border-collapse:collapse; font-size:11px; overflow-wrap:anywhere; }
+.variables :is(th,td) { padding:6px 4px; border-bottom:1px solid #e2e8f0; text-align:left; }
+.variables thead th { color:#64748b; font-weight:700; }
+.variables tbody td:last-child { color:#4f46e5; font-weight:800; }
+.output { min-height:52px; padding:12px; border-radius:10px; color:#047857; background:#ecfdf5; font-weight:700; overflow-wrap:anywhere; }
+.tracer { max-height:260px; margin:0; padding:12px 12px 12px 32px; border-radius:10px; background:#f8fafc; font-family:ui-monospace,monospace; font-size:11px; overflow:auto; overflow-wrap:anywhere; }
+.tracer li { padding:3px 0; }
+.guideWorkspace { display:grid; grid-template-columns:320px minmax(0,1fr); min-width:0; border:1px solid #cbd5e1; border-radius:20px; background:#fff; box-shadow:0 8px 28px rgb(15 23 42 / .06); }
+.guideWorkspace[data-planner-collapsed=true] { grid-template-columns:48px minmax(0,1fr); }
+.guideCanvas { min-width:0; padding:16px; }
+.guideCanvas > .runStatus { margin-bottom:8px; }
+.guideCanvas > .runControls { justify-content:center; margin:12px 0; padding:10px; border:1px solid #e2e8f0; border-radius:12px; background:#fff; }
+.guideCanvas > details { padding:12px; border-top:1px solid #e2e8f0; font-size:13px; }
+.guideCanvas > details > summary { cursor:pointer; font-weight:700; }
+.guideCanvas > details[open] > .monitor { margin-top:16px; }
+.guideCard { width:100%; padding:14px; border:1px solid #bfdbfe; border-left:4px solid #3b82f6; border-radius:12px; text-align:left; color:#1e3a8a; background:#eff6ff; cursor:pointer; }
+.guideCard > p { margin-top:6px; font-size:13px; }
+.guideCard > small { display:block; margin-top:8px; color:#64748b; font-size:11px; }
+.guideCard:nth-of-type(3) { border-color:#fde68a; border-left-color:#f59e0b; color:#78350f; background:#fffbeb; }
+.guideCard[data-revealed=true] { box-shadow:inset 0 0 0 1px #818cf8; }
+.freeWorkspace { position:relative; display:grid; grid-template-columns:300px 100px minmax(0,1fr) 44px; height:max(400px,calc(100dvh - 355px)); min-width:0; border:1px solid #cbd5e1; border-radius:22px; background:#fff; box-shadow:0 8px 30px rgb(15 23 42 / .07); }
+.freeWorkspace[data-planner-collapsed=true] { grid-template-columns:48px 100px minmax(0,1fr) 44px; }
+.freeWorkspace[data-debugger-collapsed=false] { grid-template-columns:300px 100px minmax(0,1fr) 240px; }
+.freeWorkspace[data-planner-collapsed=true][data-debugger-collapsed=false] { grid-template-columns:48px 100px minmax(0,1fr) 240px; }
+@media(min-width:821px) {
+  .practice[data-focused=true] .freeWorkspace { height:max(400px,calc(100dvh - 245px)); }
+  .practice[data-focused=true] :is(.puzzleCanvas,.guideCanvas) [aria-label="실제 순서도 연결"] { height:clamp(360px,calc(100dvh - 310px),760px); }
+}
+.planner { min-width:0; min-height:0; display:flex; flex-direction:column; border-right:1px solid #e2e8f0; background:#f8fafc; border-radius:22px 0 0 22px; }
+.planner > header { display:flex; align-items:center; justify-content:space-between; gap:6px; min-height:56px; padding:10px 14px; border-bottom:1px solid #e2e8f0; background:#fff; border-radius:22px 0 0 0; }
+.planner > header h3 { font-size:15px; }
+.planner > header :global([data-slot=button]) { min-width:32px; min-height:32px; padding:4px; font-size:18px; }
+.plannerContent { display:flex; flex-direction:column; min-width:0; min-height:0; flex:1; }
+.plannerContent[hidden],.cardList[hidden] { display:none; }
+.cardList { display:grid; align-content:start; gap:12px; min-height:0; padding:14px; overflow:auto; flex:1; }
+.cardList > p { color:#64748b; font-size:12px; }
+.plannerActions { display:flex; flex-wrap:wrap; gap:6px; padding:12px 14px; border-bottom:1px solid #e2e8f0; background:#fff; }
+.plannerActions :global([data-slot=button]) { min-height:32px; padding:5px 8px; font-size:11px; }
+.plannerFooter { display:grid; gap:8px; padding:12px 14px; border-top:1px solid #e2e8f0; background:#fff; border-radius:0 0 0 22px; }
+.plannerFooter > .field { font-size:11px; }
+.plannerFooter :is(input,textarea) { font-size:12px; min-height:32px; padding:6px 8px; }
+.planCard { display:grid; gap:8px; min-width:0; padding:12px; border:1px solid #dbeafe; border-left:5px solid #3b82f6; border-radius:12px; background:#fff; box-shadow:0 2px 6px rgb(15 23 42 / .03); }
+.planCard[data-structure=selection] { border-color:#fde68a; border-left-color:#f59e0b; }
+.planCard[data-structure=loop] { border-color:#a7f3d0; border-left-color:#10b981; }
+.cardHeader { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px; font-weight:800; color:#1d4ed8; }
+.cardHeader select { min-width:0; padding:3px 5px; border:0; border-radius:6px; background:transparent; color:inherit; font-size:12px; font-weight:800; }
+.planCard[data-structure=selection] .cardHeader { color:#b45309; }
+.planCard[data-structure=loop] .cardHeader { color:#047857; }
+.cardHeader :global([data-slot=button]) { min-height:28px; padding:3px 6px; font-size:11px; color:#94a3b8; }
+.planCard .field { color:#64748b; font-size:11px; }
+.planCard .field textarea { min-height:38px; padding:6px 8px; font-size:13px; }
+.freeWorkspace[data-planner-collapsed=true] .planner > header { min-height:56px; padding:10px 7px; }
+.freeWorkspace[data-planner-collapsed=true] .planner > header h3,.guideWorkspace[data-planner-collapsed=true] .planner > header h3 { display:none; }
+.guideWorkspace[data-planner-collapsed=true] .planner > header { padding:10px 7px; }
+.paletteRail { display:flex; flex-direction:column; align-items:stretch; gap:16px; padding:16px 10px; border-right:1px solid #e2e8f0; background:#fff; min-width:0; min-height:0; overflow:auto; }
+.paletteRail > h3 { text-align:center; font-size:12px; color:#64748b; }
+.paletteRail > p,.paletteRail > small { color:#94a3b8; font-size:10px; line-height:1.6; text-align:center; }
+.paletteRail > button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:78px; padding:8px 0; border:0; border-radius:10px; background:transparent; color:#475569; font-size:11px; font-weight:700; cursor:grab; }
+.paletteRail > button:active { cursor:grabbing; }
+.paletteRail > button:hover { background:#f1f5f9; }
+.paletteRail > button > span { display:flex; flex-direction:column; align-items:center; justify-content:center; width:76px; min-height:48px; border-radius:999px; background:linear-gradient(135deg,#a855f7,#7c3aed); color:#fff; box-shadow:0 3px 8px rgb(168 85 247 / .3); }
+.paletteRail > button > span > strong { font-size:13px; }
+.paletteRail > button > span > small { font-size:10px; font-weight:500; }
+.paletteRail > button[data-shape=process] > span { border-radius:8px; background:linear-gradient(135deg,#3b82f6,#2563eb); box-shadow:0 3px 8px rgb(59 130 246 / .3); }
+.paletteRail > button[data-shape=io] > span { transform:skewX(-12deg); border-radius:6px; background:linear-gradient(135deg,#10b981,#059669); box-shadow:0 3px 8px rgb(16 185 129 / .3); }
+.paletteRail > button[data-shape=io] > span > * { transform:skewX(12deg); }
+.paletteRail > button[data-shape=decision] > span { min-height:64px; border-radius:0; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); background:linear-gradient(135deg,#f59e0b,#d97706); }
+.paletteRail .symbolBlock { min-height:58px; padding:10px 4px; font-size:11px; border-width:2px; }
+.paletteRail .symbolBlock[data-shape=decision] { min-height:70px; border-radius:12px; }
+.freeCanvas { display:flex; flex-direction:column; min-width:0; min-height:0; background:#f8fafc; }
+.canvasHeader { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 10px; min-height:56px; padding:10px 12px; border-bottom:1px solid #e2e8f0; background:#fff; }
+.canvasHeader h3 { font-size:14px; }
+.canvasHeader .tools :global([data-slot=button]) { min-height:32px; padding:4px 8px; font-size:11px; color:#64748b; }
+.canvasHint { padding:7px 12px; border-bottom:1px solid #e2e8f0; background:#fff; color:#94a3b8; font-size:11px; }
+.freeCanvas > .runStatus { padding:6px 12px; border-bottom:1px solid #e2e8f0; background:#fff; }
+.canvasBody { position:relative; min-width:0; min-height:0; flex:1; }
+.canvasBody [data-flow-canvas] { height:100%; gap:0; }
+.canvasBody [data-flow-toolbar] { display:none; }
+.canvasBody [data-flow-canvas] > [role=status] { padding:4px 12px; min-height:30px; border-bottom:1px solid #e2e8f0; background:#f8fafc; font-size:11px; }
+.canvasBody [data-flow-canvas] > [role=status] :global([data-slot=button]) { min-height:28px; padding:3px 6px; font-size:11px; }
+.canvasBody [aria-label="실제 순서도 연결"] { flex:1; min-height:0; height:auto; border:0; border-radius:0; scroll-padding-bottom:120px; }
+.floatingBar { position:absolute; z-index:15; bottom:18px; left:calc(50% - 32px); transform:translateX(-50%); display:flex; align-items:center; justify-content:center; gap:6px; width:max-content; max-width:calc(100% - 96px); padding:7px 10px; border:1px solid #cbd5e1; border-radius:18px; background:rgb(255 255 255 / .97); box-shadow:0 12px 30px rgb(15 23 42 / .16); }
+.floatingBar > .runControls { justify-content:center; min-width:0; flex:1; }
+.floatingBar .speed select { width:54px; }
+.barGrip { flex-shrink:0; min-width:26px; min-height:32px; padding:4px; border:0; border-radius:7px; background:transparent; color:#94a3b8; cursor:grab; touch-action:none; }
+.barGrip:active { cursor:grabbing; }
+.floatingBar .runControls :global([data-slot=button]) { min-height:32px; }
+.canvasTrash:global([data-slot=button]) { position:absolute; z-index:16; right:12px; bottom:14px; width:68px; min-height:68px; padding:6px; border:2px dashed #f87171; border-radius:18px; background:#fef2f2; color:#ef4444; box-shadow:0 4px 12px rgb(239 68 68 / .12); }
+.monitorHeading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.nodeInteraction { display:grid; gap:10px; min-width:0; padding:12px; border:2px solid #6366f1; border-radius:12px; background:#fff; box-shadow:0 8px 24px rgb(15 23 42 / .15); }
+.nodeInteraction form { display:grid; gap:8px; }
+.completion { display:grid; gap:12px; padding:14px; border:1px solid #86efac; border-radius:12px; color:#166534; background:#f0fdf4; }
+.canvasTrash[data-active=true]:global([data-slot=button]) { color:#e11d48; background:#fff1f2; border-color:#fb7185; outline:3px solid #fb7185; }
+.debugger { position:relative; display:flex; flex-direction:column; min-width:0; min-height:0; border-left:1px solid #e2e8f0; border-radius:0 22px 22px 0; background:#fff; }
+.debuggerToggle:global([data-slot=button]) { align-self:stretch; justify-content:flex-start; min-height:56px; padding:10px 12px; border:0; border-bottom:1px solid #e2e8f0; border-radius:0 22px 0 0; background:#fff; color:#64748b; font-size:13px; }
+.debugger .monitor { min-height:0; padding:16px; overflow:auto; flex:1; }
+.debugger .monitor[hidden] { display:none; }
+.freeWorkspace[data-debugger-collapsed=true] .debuggerToggle:global([data-slot=button]) { writing-mode:vertical-rl; align-items:center; justify-content:flex-start; min-height:180px; padding:16px 8px; border-bottom:0; font-size:12px; white-space:normal; }
+.inspector { margin-top:14px; padding:14px; border:1px solid #e2e8f0; border-radius:14px; background:#f8fafc; font-size:13px; }
+.inspector > summary { cursor:pointer; color:#64748b; font-weight:700; }
+.inspector[open] { display:grid; gap:14px; }
+.inspector[open] > div { display:grid; gap:12px; min-width:0; }
+.inspector :is(fieldset,legend) { min-width:0; }
+.inspector fieldset { display:flex; flex-wrap:wrap; gap:8px; padding:12px; border:1px solid #e2e8f0; border-radius:10px; }
+.inspector fieldset label { flex:1; min-width:120px; }
+.inspector fieldset legend { color:#64748b; font-size:12px; }
+.inspector ol { padding-left:22px; }
+.inspector li { padding:5px 0; overflow-wrap:anywhere; }
+.modal.modal:global([data-slot=dialog-content]) { display:grid; gap:16px; width:min(760px,calc(100vw - 32px)); max-width:760px; max-height:calc(100dvh - 32px); padding:24px; border:1px solid #e2e8f0; border-radius:22px; background:#fff; color:#1e293b; overflow:auto; font-size:14px; line-height:1.6; }
+.modalWide.modalWide:global([data-slot=dialog-content]) { width:min(1000px,calc(100vw - 32px)); max-width:1000px; }
+.modal :is(h2,h3,p) { margin:0; }
+.modal h3 { font-size:16px; font-weight:800; }
+.modal :global([data-slot=button]) { min-height:36px; padding:7px 12px; border-radius:9px; font-size:13px; }
+.presets { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+.presets :global([data-slot=button]) { border-radius:999px; }
+.recipeFields { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; }
+.recipeFields > :nth-child(n + 3) { grid-column:1/-1; }
+.recipeCards { display:grid; gap:12px; margin-top:16px; }
+.recipeCards > p { color:#64748b; font-size:12px; }
+.recipeCards .planCard { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+.recipeCards .cardHeader,.recipeCards .planCard > .field:first-of-type { grid-column:1/-1; }
+.check { display:flex; align-items:flex-start; gap:8px; padding:10px; border-radius:8px; background:#fffbeb; color:#92400e; font-size:12px; }
+.check input { margin-top:3px; width:16px; height:16px; accent-color:#4f46e5; }
+.dialogActions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; padding-top:16px; border-top:1px solid #e2e8f0; }
+.reviewMessage { display:grid; gap:14px; padding:16px; border:1px solid #c7d2fe; border-radius:14px; background:#eef2ff; overflow-wrap:anywhere; }
+.reviewMessage h3 { color:#4338ca; }
+.reviewMessage :is(ol,ul) { margin:0; padding-left:22px; }
+.exportPreview { display:block; width:100%; max-height:60dvh; overflow:auto; border:1px solid #e2e8f0; border-radius:12px; background:#f8fafc; }
+.exportPreview img { display:block; width:100%; height:auto; }
+@media(max-width:1100px) {
+  .puzzleColumns { grid-template-columns:minmax(160px,2fr) minmax(0,5fr) minmax(190px,2fr); gap:12px; }
+  .puzzlePalette,.puzzleExecution,.diagnosis { padding:14px; }
+  .freeWorkspace { grid-template-columns:240px 92px minmax(0,1fr) 44px; }
+  .freeWorkspace[data-planner-collapsed=true] { grid-template-columns:48px 92px minmax(0,1fr) 44px; }
+  .freeWorkspace[data-debugger-collapsed=false] { grid-template-columns:240px 92px minmax(0,1fr) 44px; }
+  .freeWorkspace[data-planner-collapsed=true][data-debugger-collapsed=false] { grid-template-columns:48px 92px minmax(0,1fr) 44px; }
+  .freeWorkspace[data-debugger-collapsed=false] .debugger { position:absolute; z-index:25; top:0; right:0; bottom:0; width:240px; box-shadow:-6px 0 24px rgb(15 23 42 / .12); }
+  .canvasHeader .tools { gap:4px; }
+}
 @media(max-width:820px) {
-  .practice[data-practice=flowchart] .puzzleColumns,.practice[data-practice=flowchart] .freeColumns { grid-template-columns:minmax(0,1fr); }
-  .practice[data-practice=flowchart] .puzzleColumns > .executionPanels { grid-template-columns:minmax(0,1fr); }
-  .practice[data-practice=flowchart] .freeColumns > :nth-child(n) { grid-column:auto; grid-row:auto; }
-  .practice[data-practice=flowchart] [aria-label="실제 순서도 연결"] { height:420px; }
+  .practice { font-size:14px; }
+  .stepNav { justify-content:flex-start; gap:4px; padding:8px; margin-bottom:14px; }
+  .stepNav button { padding:8px 11px; min-height:40px; font-size:12px; }
+  .puzzleColumns { grid-template-columns:minmax(0,1fr); gap:14px; }
+  .puzzlePalette { padding:16px; }
+  .palette { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .symbolBlock { min-height:70px; font-size:12px; }
+  .puzzleCanvas [aria-label="실제 순서도 연결"] { height:420px; }
+  .guideWorkspace,.guideWorkspace[data-planner-collapsed=true] { grid-template-columns:minmax(0,1fr); }
+  .guideWorkspace .planner { border-right:0; border-bottom:1px solid #e2e8f0; border-radius:20px 20px 0 0; }
+  .guideWorkspace[data-planner-collapsed=true] .planner > header h3 { display:block; }
+  .freeWorkspace,.freeWorkspace[data-planner-collapsed=true],.freeWorkspace[data-debugger-collapsed=false],.freeWorkspace[data-planner-collapsed=true][data-debugger-collapsed=false] { display:flex; flex-direction:column; height:auto; min-height:0; border-radius:18px; }
+  .planner { border-right:0; border-bottom:1px solid #e2e8f0; border-radius:18px 18px 0 0; }
+  .planner > header,.freeWorkspace[data-planner-collapsed=true] .planner > header { border-radius:18px 18px 0 0; padding:10px 14px; }
+  .freeWorkspace[data-planner-collapsed=true] .planner > header h3 { display:block; }
+  .cardList { max-height:420px; }
+  .paletteRail { flex-direction:row; flex-wrap:wrap; align-items:center; gap:10px; padding:12px; overflow:visible; border-right:0; border-bottom:1px solid #e2e8f0; }
+  .paletteRail > h3,.paletteRail > p,.paletteRail > small { flex-basis:100%; }
+  .paletteRail .symbolBlock { flex:1; min-width:65px; min-height:54px; padding:8px 4px; font-size:10px; }
+  .paletteRail .symbolBlock[data-shape=decision] { min-height:54px; }
+  .paletteRail > button { flex:1; min-width:60px; min-height:72px; font-size:10px; }
+  .paletteRail > button > span { width:62px; min-height:48px; }
+  .paletteRail > button[data-shape=decision] > span { min-height:60px; }
+  .freeCanvas { order:-1; min-height:550px; }
+  .canvasHeader { padding:10px; }
+  .canvasHeader h3 { flex-basis:100%; }
+  .canvasBody { height:420px; flex:none; }
+  .canvasHint { font-size:11px; }
+  .floatingBar { bottom:12px; padding:6px; gap:4px; border-radius:14px; max-width:calc(100% - 84px); }
+  .floatingBar .runControls { gap:4px; }
+  .floatingBar .runControls :global([data-slot=button]) { padding:5px 7px; font-size:11px; }
+  .floatingBar .speed select { font-size:11px; width:50px; }
+  .canvasTrash:global([data-slot=button]) { right:8px; bottom:8px; width:52px; min-height:52px; border-radius:14px; }
+  .debugger,.freeWorkspace[data-debugger-collapsed=false] .debugger { position:relative; top:auto; right:auto; bottom:auto; width:auto; border-left:0; border-top:1px solid #e2e8f0; border-radius:0 0 18px 18px; box-shadow:none; }
+  .debuggerToggle:global([data-slot=button]),.freeWorkspace[data-debugger-collapsed=true] .debuggerToggle:global([data-slot=button]) { writing-mode:horizontal-tb; min-height:44px; padding:10px 14px; border-radius:0; justify-content:flex-start; }
+  .debugger .monitor { max-height:480px; padding:16px; }
+  .recipeFields,.recipeCards .planCard { grid-template-columns:minmax(0,1fr); }
+  .recipeFields > :nth-child(n),.recipeCards .cardHeader,.recipeCards .planCard > .field:first-of-type { grid-column:auto; }
+  .modal.modal:global([data-slot=dialog-content]) { padding:20px 16px; border-radius:18px; }
+  .dialogActions { justify-content:stretch; }
+  .dialogActions :global([data-slot=button]) { flex:1; }
+}
+@media(pointer:coarse) { .practice :global([data-slot=button]),.practice .runControls :global([data-slot=button]),.practice .speed select,.modal :global([data-slot=button]) { min-height:44px; } }
+
+@media(max-width:820px) { .practice :global([data-slot=button]),.practice .runControls :global([data-slot=button]),.practice .speed select,.modal :global([data-slot=button]) { min-height:44px; } }
+.guideCard[data-active=true] { outline:3px solid #f59e0b; outline-offset:2px; background:#fffbeb; }
+.plannerFooter > :global([data-slot=button]) { color:#fff; background:linear-gradient(110deg,#6366f1,#4f46e5); }
+
+
+.symbolBlock > span { display:block; }
+.symbolBlock > small { display:block; margin-top:5px; font-size:11px; font-weight:600; }
+.symbolBlock[data-used=true] { opacity:.42; box-shadow:none; cursor:default; }
+.symbolBlock[data-shape=io] { margin-inline:12px; border-radius:0; transform:skewX(-10deg); }
+.symbolBlock[data-shape=io] > :is(span,small) { transform:skewX(10deg); }
+.puzzleCanvas [aria-label="실제 순서도 연결"] { height:clamp(360px,calc(100dvh - 430px),660px); }
+.guideCanvas > header { position:sticky; top:0; z-index:2; padding-bottom:10px; background:#fff; border-bottom:1px solid #e2e8f0; }
+.guideCanvas > header > .runControls { flex-basis:100%; justify-content:flex-start; }
+.guideCanvas [aria-label="실제 순서도 연결"] { height:clamp(360px,calc(100dvh - 430px),700px); }
+@media (max-width:820px) {
+  .puzzleCanvas [aria-label="실제 순서도 연결"],.guideCanvas [aria-label="실제 순서도 연결"] { height:430px; }
+  .guideCanvas > header { position:static; }
 }

@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { memo, useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { ArrowRight, ArrowDown, ArrowUp, BookOpen, Check, CheckCircle2, Layers3, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { WorkController, LessonMode } from "./work-controller";
 import { practiceMatches, progressFor } from "@/lib/classroom/progress";
 import type { Lesson, Question, Stage, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
-import { LearningStatus, ProgressSummary } from "./progress-summary";
+import { LearningStatus } from "./progress-summary";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
 import { useWorkspaceExpansion } from "./use-workspace-expansion";
 import { ProgrammingLearningStage } from "./programming-lesson";
@@ -26,7 +25,7 @@ import { LessonQuizPanel } from "./lesson-quiz-panel";
 const stages = [{ id: "concept", label: "개념", icon: BookOpen }, { id: "quiz", label: "퀴즈", icon: CheckCircle2 }, { id: "practice", label: "실습", icon: Layers3 }] as const;
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
-export type LessonFrame = { stage: Stage; saveLabel: string; learningStatus: ReactNode; navigation: ReactNode; information: ReactNode; focusRequest: { id: string; preventScroll?: boolean } | null };
+export type LessonFrame = { stage: Stage; saveLabel: string; learningStatus: ReactNode; navigation: ReactNode; focusRequest: { id: string; preventScroll?: boolean } | null };
 
 export type WorkspaceView = { returnOrigin: LessonOrigin; workspaceWide: boolean; practiceFocused: boolean; onPracticeFocusedChange: (focused: boolean) => void; onWorkspaceWideChange: (wide: boolean) => void; onWorkspaceStageChange: (stage: Stage) => void };
 
@@ -43,10 +42,14 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
 }
 
 // Keep the editor independent of its presentation snapshots: header updates never recreate its controller or iframe.
-export const LessonEditor = memo(function LessonEditor({ lesson, initial, controller, entryExport, mode = "student", otherCurrent, returnOrigin, workspaceWide, practiceFocused, onWorkspaceWideChange, onWorkspaceStageChange, onFrameChange }: { lesson: Lesson; initial: Work; controller: WorkController; entryExport: RefObject<(() => Promise<string | null>) | null>; mode?: LessonMode; otherCurrent?: Lesson; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
+export const LessonEditor = memo(function LessonEditor({ lesson, initial, controller, entryExport, mode = "student", workspaceWide, practiceFocused, onWorkspaceWideChange, onWorkspaceStageChange, onFrameChange }: { lesson: Lesson; initial: Work; controller: WorkController; entryExport: RefObject<(() => Promise<string | null>) | null>; mode?: LessonMode; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
   const { work, draft, busy, update, perform, saveState, error, switchStage: changeStage, actionBlocked } = controller;
   const progress = progressFor(lesson, work);
   const reviewType = lesson.practice.type === "sandwich" || lesson.practice.type === "abstraction" || lesson.practice.type === "flowchart" ? lesson.practice.type : null;
+  const [practiceVisited, setPracticeVisited] = useState(initial.draft.stage === "practice");
+  if (draft.stage === "practice" && !practiceVisited) setPracticeVisited(true);
+  // Keep local consultation and reading position for this lesson without adding server storage.
+  const keepPractice = practiceVisited && (reviewType === "sandwich" || reviewType === "abstraction");
   const [moveMessage, setMoveMessage] = useState("");
   const [switchingTo, setSwitchingTo] = useState<Stage | null>(null);
   const [focusRequest, setFocusRequest] = useState<{ id: string; preventScroll?: boolean } | null>(null);
@@ -121,13 +124,10 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   useEffect(() => {
     const progress = progressFor(lesson, work);
     const stageSummary = (stage: Stage) => stage === "concept" ? `${progress.concept.completed}/${progress.concept.total}개 확인` : stage === "quiz" ? `${progress.quiz.completed}/${progress.quiz.total}문제 해결` : progress.practice.percent === 100 ? "완료" : `${progress.practice.completed}/${progress.practice.total}개 제출`;
-    const navigation = <div className={styles.tabs} role="tablist" aria-label="수업 단계">{stages.map((stage, index) => <button key={stage.id} id={`tab-${stage.id}`} type="button" role="tab" aria-label={`${stage.label} ${progress[stage.id].percent}%`} aria-describedby={`tab-${stage.id}-progress`} aria-selected={draft.stage === stage.id} aria-controls={`panel-${stage.id}`} tabIndex={draft.stage === stage.id ? 0 : -1} disabled={actionLocked} onKeyDown={(event) => tabKey(event, index)} onClick={() => void switchStage(stage.id, true)}><stage.icon size={18} aria-hidden="true" /><span>{stage.label}</span><span id={`tab-${stage.id}-progress`} className={styles.tabPercent}>{stageSummary(stage.id)}</span></button>)}</div>;
+    const navigation = <div className={styles.tabs} role="tablist" aria-label="수업 단계">{stages.map((stage, index) => <button key={stage.id} id={`tab-${stage.id}`} type="button" role="tab" aria-label={`${stage.label} ${progress[stage.id].percent}%`} aria-describedby={`tab-${stage.id}-progress`} aria-selected={draft.stage === stage.id} aria-controls={`panel-${stage.id}`} tabIndex={draft.stage === stage.id ? 0 : -1} disabled={actionLocked} onKeyDown={(event) => tabKey(event, index)} onClick={() => void switchStage(stage.id, true)}><stage.icon size={18} aria-hidden="true" /><span>{stage.label}</span><span id={`tab-${stage.id}-progress`} className={styles.tabPercent}>{stageSummary(stage.id)}</span><span className={styles.tabProgress} aria-hidden="true" data-stage-progress={stage.id} data-percent={progress[stage.id].percent}><span style={{ width: `${progress[stage.id].percent}%` }} /></span></button>)}</div>;
     // Only presentation goes to the persistent frame; useWork remains the sole owner of learning and saves.
-    onFrameChange({ stage: draft.stage, saveLabel, learningStatus: <LearningStatus lesson={lesson} work={work} />, navigation, information: <>
-      {mode === "preview" ? <p>답안과 체험 결과는 이 창에서만 유지해요. 새로고침하거나 수업을 바꾸면 처음부터 체험합니다.</p> : <p>다시 접속하면 개념은 아직 확인하지 않은 곳부터, 퀴즈는 채점 전에는 답하지 않은 문제부터, 채점 후에는 틀린 문제부터 열려요. 남은 곳이 없으면 처음부터 다시 볼 수 있어요. 이 수업에서 단계만 바꾸면 보던 개념·문제를 유지해요.</p>}
-      <ProgressSummary lesson={lesson} work={{ ...work, validation: draftMatchesValidation ? work.validation : null }} />
-    </>, focusRequest });
-  }, [onFrameChange, saveLabel, lesson, work, locked, actionLocked, draft.stage, tabKey, switchStage, draftMatchesValidation, focusRequest, mode]);
+    onFrameChange({ stage: draft.stage, saveLabel, learningStatus: <LearningStatus lesson={lesson} work={work} />, navigation, focusRequest });
+  }, [onFrameChange, saveLabel, lesson, work, actionLocked, draft.stage, tabKey, switchStage, focusRequest]);
   const content = <>
     {error && <section id="work-save-error" tabIndex={-1} className={styles.errorPanel} role="alert"><strong>{controller.conflict ? "저장 기록이 서로 달라요." : "요청을 완료하지 못했어요."}</strong><p>{error}</p><p>현재 입력은 이 화면에 유지하고 있어요. 확인 전에는 창을 닫지 마세요.</p><Button variant="outline" disabled={busy} onClick={() => void (controller.conflict ? controller.compare() : controller.retry())}>{controller.conflict ? "서버 기록과 비교" : "저장 다시 확인"}</Button></section>}
     {controller.actionFailure && <section id="work-action-error" tabIndex={-1} className={styles.errorPanel} role="alert">
@@ -152,7 +152,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
 
     {lesson.practice.type !== "programming" && draft.stage === "quiz" && <LessonQuizPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} quizQuestionId={quizQuestionId} moveQuestion={moveQuestion} />}
 
-    {isReviewType(lesson.practice.type) && draft.stage === "practice" && <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><header className={reviewStyles.practiceHeader}><h2 ref={reviewHeading} id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2>{showReviewViewToggle && <Button ref={reviewViewToggle} variant="outline" aria-pressed={workspaceWide} onClick={() => setReviewWide(!workspaceWide)} onKeyDown={event => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); setReviewWide(false); } }}>{workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"}</Button>}</header>{lesson.practice.type === "sandwich" ? <Sandwich mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "abstraction" ? <Abstraction mode={mode} controller={controller} practiceFocused={practiceFocused} /> : <Flowchart mode={mode} controller={controller} practiceFocused={practiceFocused} />}</section>}
+    {isReviewType(lesson.practice.type) && (draft.stage === "practice" || keepPractice) && <section id="panel-practice" hidden={draft.stage !== "practice"} role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><header className={reviewStyles.practiceHeader}><h2 ref={reviewHeading} id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2>{showReviewViewToggle && <Button ref={reviewViewToggle} variant="outline" aria-pressed={workspaceWide} onClick={() => setReviewWide(!workspaceWide)} onKeyDown={event => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); setReviewWide(false); } }}>{workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"}</Button>}</header>{lesson.practice.type === "sandwich" ? <Sandwich mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "abstraction" ? <Abstraction mode={mode} controller={controller} practiceFocused={practiceFocused} /> : <Flowchart mode={mode} controller={controller} practiceFocused={practiceFocused} />}</section>}
     {lesson.practice.type !== "programming" && !isReviewType(lesson.practice.type) && draft.stage === "practice" && (
       <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" tabIndex={0} className={styles.stagePanel}>
         <div className={styles.stageHeading}>
@@ -284,5 +284,5 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
       </section>
     )}
   </>;
-  return <div className={styles.workspace}>{otherCurrent && <div className={styles.notice} role="status"><div><strong>선생님이 지정한 이번 수업은 ‘{otherCurrent.title}’이에요.</strong><p>하던 학습을 계속하거나 저장한 뒤 이동할 수 있어요.</p></div><Button variant="outline" nativeButton={false} render={<Link href={`/classroom/${otherCurrent.id}?from=${returnOrigin}`} />}>이번 수업으로<ArrowRight size={16} /></Button></div>}{content}</div>;
+  return <div className={styles.workspace}>{content}</div>;
 });

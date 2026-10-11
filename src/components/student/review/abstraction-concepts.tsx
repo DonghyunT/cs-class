@@ -30,30 +30,60 @@ const scenarios = [
   ] },
 ];
 const stations = [
-  { id: "start", name: "출발역", x: 60, y: 120 }, { id: "transfer", name: "환승역", x: 290, y: 120 },
-  { id: "goal", name: "도착역", x: 560, y: 60 }, { id: "park", name: "공원역", x: 60, y: 45 },
-  { id: "school", name: "학교역", x: 560, y: 185 },
+  { id: "start", name: "출발역" }, { id: "transfer", name: "환승역" },
+  { id: "goal", name: "도착역" }, { id: "park", name: "공원역" }, { id: "school", name: "학교역" },
 ];
 const links = [
-  { id: "start-transfer", simple: "M60 120H290", geographic: "M60 120C130 10 200 210 290 120", color: "#376fc8" },
-  { id: "transfer-goal", simple: "M290 120L350 60H560", geographic: "M290 120C380 200 410 10 560 60", color: "#376fc8" },
-  { id: "park-transfer", simple: "M60 45H215L290 120", geographic: "M60 45C170 0 190 180 290 120", color: "#278364" },
-  { id: "transfer-school", simple: "M290 120L355 185H560", geographic: "M290 120C380 20 430 240 560 185", color: "#278364" },
+  { id: "start-transfer", from: "start", to: "transfer", color: "#376fc8" },
+  { id: "transfer-goal", from: "transfer", to: "goal", color: "#376fc8" },
+  { id: "park-transfer", from: "park", to: "transfer", color: "#278364" },
+  { id: "transfer-school", from: "transfer", to: "school", color: "#278364" },
 ];
-
-function SubwayMap({ simple }: { simple: boolean }) {
-  return <figure className={styles.map}>
-    <figcaption>{simple ? "연결을 정리한 노선도" : "지형을 표현한 지도"}</figcaption>
-    <p className={styles.mapHint}>좁은 화면에서는 지도를 옆으로 스크롤해 모든 역을 보세요.</p>
-    <div className={styles.mapScroll} tabIndex={0} aria-label={`${simple ? "노선도" : "지형 지도"} 가로 스크롤`}>
-      <svg viewBox="0 0 640 240" role="img" aria-label={simple ? "연결을 정리한 노선도" : "지형을 표현한 지도"}>
-        {links.map(link => <path key={link.id} data-edge={link.id} d={simple ? link.simple : link.geographic} fill="none" stroke={link.color} strokeWidth={7} />)}
-        {stations.map(station => <g key={station.id} data-station={station.id}>
-          <circle cx={station.x} cy={station.y} r={station.id === "transfer" ? 11 : 8} fill="white" stroke="#334861" strokeWidth={2} />
-          <text x={station.x} y={station.y + 32} textAnchor="middle">{station.name}</text>
-        </g>)}
+const widePositions: Record<string, [number, number]> = { start: [60, 175], transfer: [310, 175], goal: [580, 65], park: [60, 65], school: [580, 255] };
+const compactPositions: Record<string, [number, number]> = { start: [28, 170], transfer: [150, 170], goal: [286, 65], park: [28, 55], school: [286, 275] };
+function SubwayMap() {
+  const [simple, setSimple] = useState(false), [compact, setCompact] = useState(false);
+  const map = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => setCompact(entry.contentRect.width < 540));
+    if (map.current) observer.observe(map.current);
+    return () => observer.disconnect();
+  }, []);
+  const width = compact ? 320 : 640, height = compact ? 340 : 320;
+  const positions = compact ? compactPositions : widePositions;
+  return <figure className={styles.map} aria-label="일반 지도와 지하철 노선도 비교">
+    <figcaption>같은 도시, 필요한 정보만 남기기</figcaption>
+    <div className={scenes.controls} role="group" aria-label="지도 표현 선택">
+      <button type="button" aria-pressed={!simple} onClick={() => setSimple(false)}>일반 지도</button>
+      <button type="button" aria-pressed={simple} onClick={() => setSimple(true)}>지하철 노선도</button>
+    </div>
+    <p className={styles.mapHint} aria-live="polite">{simple ? "도로·건물·하천을 덜어냈어요. 역 이름·순서·환승 연결은 그대로예요." : "도로·건물·하천과 지하철이 함께 보여요. 환승역을 찾는 데 필요한 정보를 골라 보세요."}</p>
+    <div ref={map} className={styles.mapCanvas}>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={simple ? "핵심 연결을 남긴 지하철 노선도" : "도로·건물·하천을 표현한 일반 지도"}>
+        {!simple && <g data-geographic-details aria-hidden="true">
+          <rect width={width} height={height} rx={12} fill="#f1f0e7" />
+          <path d={`M${width * .48} 0C${width * .35} 80 ${width * .7} 140 ${width * .51} ${height} `} fill="none" stroke="#bedee9" strokeWidth={compact ? 30 : 48} />
+          {[35, 115, 225, 300].map(y => <path key={y} d={`M0 ${y}H${width}`} stroke="#fff" strokeWidth={13} />)}
+          {[width * .2, width * .7, width * .9].map(x => <path key={x} d={`M${x} 0V${height}`} stroke="#fff" strokeWidth={13} />)}
+          {[ [width * .1, 115], [width * .24, 215], [width * .68, 105], [width * .74, 220], [width * .18, 20] ].map(([x, y], i) => <g key={i}><rect x={x} y={y} width={compact ? 28 : 45} height={28} rx={3} fill="#d1cbc3" stroke="#aaa39a" /><path d={`M${x + 7} ${y + 7}h8m8 0h8M${x + 7} ${y + 19}h8`} stroke="#fff" strokeWidth={3} /></g>)}
+          <ellipse cx={width * .34} cy={height * .13} rx={compact ? 23 : 40} ry={24} fill="#cbe0bf" />
+          <ellipse cx={width * .85} cy={height * .58} rx={compact ? 22 : 40} ry={23} fill="#cbe0bf" />
+        </g>}
+        {links.map(link => {
+          const [x, y] = positions[link.from], [tx, ty] = positions[link.to];
+          const path = simple ? `M${x} ${y}L${tx - (y === ty ? 0 : 40)} ${ty}H${tx}` : `M${x} ${y}C${x + (tx - x) * .4} ${y - 60} ${x + (tx - x) * .65} ${ty + 45} ${tx} ${ty}`;
+          return <path key={link.id} data-edge={link.id} d={path} fill="none" stroke={link.color} strokeWidth={6} strokeLinecap="round" />;
+        })}
+        {stations.map(station => {
+          const [x, y] = positions[station.id];
+          return <g key={station.id} data-station={station.id}>
+            <circle cx={x} cy={y} r={station.id === "transfer" ? 10 : 7} fill="white" stroke="#334861" strokeWidth={2} />
+            <text x={x} y={y + 31} textAnchor={station.id === "transfer" ? "middle" : x < width / 2 ? "start" : "end"}>{station.name}</text>
+          </g>;
+        })}
       </svg>
     </div>
+    <p className={styles.mapLegend}>파랑: 출발역 → 환승역 → 도착역<br />초록: 공원역 → 환승역 → 학교역</p>
   </figure>;
 }
 
@@ -78,10 +108,10 @@ function AbstractionExperience({ conceptId }: { conceptId: string }) {
     }}>{item.name}</button>)}</div>
     <p ref={result} tabIndex={-1} role="status" className={scenes.result}>{message || "버릴 정보와 남길 정보를 골라 보세요."}</p>
     <ul className={styles.reasons} aria-label="남기는 정보와 이유">{information.filter(item => item.core).map(item => <li key={item.name}><strong>{item.name}</strong><span>{item.reason}</span></li>)}</ul>
-    <h4>모양이 달라도 환승 연결은 같을까요?</h4>
-    <p>두 지도에는 같은 다섯 역과 네 연결이 있어요. 파랑 노선에서 초록 노선으로 갈 때 만나는 역을 찾아보세요.</p>
-    <div className={styles.maps}><SubwayMap simple={false} /><SubwayMap simple /></div>
-    <p className={scenes.question}>핵심은 역 이름과 연결이에요. 노선도는 실제 거리와 굽은 모양을 덜어내 환승역을 찾기 쉽게 해요.</p>
+    <h4>환승역을 찾는 데 필요한 정보는 무엇일까요?</h4>
+    <p>일반 지도와 노선도를 바꿔 보세요. 파랑에서 초록 노선으로 갈 때 만나는 역을 찾아보세요.</p>
+    <SubwayMap />
+    <p className={scenes.question}>핵심은 역 이름·순서와 연결이에요. 노선도는 도로·건물·하천과 실제 거리를 덜어내 환승역을 찾기 쉽게 해요.</p>
   </>;
   if (conceptId === "state") return <>
     <h4>지금 어디에 있고, 어떤 상태에 도달하려고 하나요?</h4>

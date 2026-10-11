@@ -70,7 +70,7 @@ cs-class Vercel 프로젝트(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Production �
 
 공개 전 실제 제공자 확인에는 이 PC의 Git 제외 `.env.local` 또는 사용자가 지정한 비공개 로컬 설정 경로도 필요합니다. Vercel에 Sensitive로 등록한 키는 다시 읽어 로컬 검사에 가져올 수 있다고 가정하지 않습니다. 합성 제공자 검사와 실제 Solar12회 품질 검사의 준비·범위는 [개발 안내](DEVELOPMENT.md#알고리즘-복습-수업)를 따릅니다.
 
-서버는 [Upstage 공식 Chat API](https://console.upstage.ai/api/chat)의 `solar-pro4`·구조화 JSON 출력·800토큰 한도를 사용합니다. 제공자25초·전체45초·브라우저50초이며 응답 잘림·형식 오류를 성공으로 처리하지 않습니다. AI 제한·비보관·월 예산 정책은 [PRD](PRD.md#알고리즘-선택-복습--2026-10-05-확정), 실행/복구는 [DEVELOPMENT](DEVELOPMENT.md#알고리즘-복습-수업)를 따릅니다. `CS_AI_PAUSED=1`로 새 AI 요청을 중지할 수 있습니다.
+서버는 [Upstage 공식 Chat API](https://console.upstage.ai/api/chat)의 `solar-pro4`와 구조화 JSON 출력을 사용합니다. 출력 한도는 순서도 기획 제안1,600토큰, 나머지800토큰입니다. 제공자25초·전체45초·브라우저50초이며 응답 잘림·형식 오류를 성공으로 처리하지 않습니다. AI 제한·비보관·월 예산 정책은 [PRD](PRD.md#알고리즘-선택-복습--2026-10-05-확정), 실행/복구는 [DEVELOPMENT](DEVELOPMENT.md#알고리즘-복습-수업)를 따릅니다. `CS_AI_PAUSED=1`로 새 AI 요청을 중지할 수 있습니다.
 
 공개 전 AI 캐시/요청 장부에만 `expiresAt` TTL을 활성화합니다. 기존 인덱스 설정을 읽어 보존하고 `firestore.indexes.json`의 두 컬렉션을 확인한 뒤 승인된 프로젝트에 `npx firebase deploy --only firestore:indexes --project cs-class-f74c4`로 적용합니다. [공식 TTL/인덱스 정의](https://firebase.google.com/docs/reference/firestore/indexes)를 따르며 Firestore 비용·활성 상태를 확인합니다. 학생 작품/제출 컬렉션에는 적용하지 않습니다. 현재 적용 여부·실제 Solar 품질·배포 SHA/로그인·반 공개는 HANDOFF에서 확인합니다.
 

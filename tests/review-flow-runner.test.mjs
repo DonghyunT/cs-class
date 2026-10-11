@@ -1,6 +1,29 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createFlowRun, stepFlowRun } from '../src/lib/classroom/review/flow-runner.mjs';
+
+test('자유 작품은 문자열 입력·대입·비교·출력을 실행하고 숫자 퍼즐 계약을 보존한다', () => {
+  const p = { inputPolicy: 'auto', nodes: [{id:'start',shape:'terminal',text:'시작'}, {id:'in',shape:'io',text:'이름 입력'}, {id:'set',shape:'process',text:'인사 = "안녕 " + 이름'}, {id:'check',shape:'decision',text:'이름 == "테스트"'}, {id:'out',shape:'io',text:'인사 출력'}, {id:'end',shape:'terminal',text:'종료'}], edges: [{from:'start',to:'in',label:''},{from:'in',to:'set',label:''},{from:'set',to:'check',label:''},{from:'check',to:'out',label:'예'},{from:'check',to:'end',label:'아니오'},{from:'out',to:'end',label:''}] };
+  let r=stepFlowRun(p,createFlowRun(p)); r=stepFlowRun(p,r);
+  assert.equal(r.waiting.inputMode,'text');
+  r=stepFlowRun(p,r,'테스트'); for(let i=0;i<4;i++) r=stepFlowRun(p,r);
+  assert.equal(r.error,''); assert.equal(r.done,true); assert.ok(r.log.includes('출력: 안녕 테스트'));
+  const numeric={...p,inputPolicy:undefined}; let n=stepFlowRun(numeric,createFlowRun(numeric)); n=stepFlowRun(numeric,n); n=stepFlowRun(numeric,n,'테스트'); assert.match(n.error,/숫자/);
+});
+
+test('직전값은 변수에 다시 대입할 때만 바뀌며 실행 경로와 출력 노드를 남긴다', () => {
+  const p={nodes:[{id:'start',shape:'terminal',text:'시작'},{id:'one',shape:'process',text:'x = 1'},{id:'two',shape:'process',text:'x = 2'},{id:'out',shape:'io',text:'x 출력'},{id:'end',shape:'terminal',text:'종료'}],edges:[{from:'start',to:'one',label:''},{from:'one',to:'two',label:''},{from:'two',to:'out',label:''},{from:'out',to:'end',label:''}]};
+  let r=createFlowRun(p); for(let i=0;i<3;i++) r=stepFlowRun(p,r);
+  assert.equal(r.previousVars.x,1); r=stepFlowRun(p,r); assert.equal(r.previousVars.x,1);
+  assert.deepEqual(r.activeEdge,{from:'out',to:'end',label:''}); assert.deepEqual(r.output,{nodeId:'out',text:'2'});
+});
+
+test('입력 오류는 같은 기호에서 입력을 고쳐 재시도하며 수식 비정상 수는 거부한다', () => {
+  const p={nodes:[{id:'start',shape:'terminal',text:'시작'},{id:'in',shape:'io',text:'수 입력'},{id:'end',shape:'terminal',text:'종료'}],edges:[{from:'start',to:'in',label:''},{from:'in',to:'end',label:''}]};
+  let r=stepFlowRun(p,createFlowRun(p)); r=stepFlowRun(p,r); r=stepFlowRun(p,r,'문자');
+  assert.equal(r.waiting.kind,'input'); assert.match(r.error,/숫자/);
+  r=stepFlowRun(p,r,'7'); assert.equal(r.error,''); assert.equal(r.vars['수'],7);
+});
 test('실제 연결을 따라 수식·입력·분기·출력을 실행한다', () => {
   const project = { nodes: [
     {id:'start',shape:'terminal',text:'시작'}, {id:'in',shape:'io',text:'키 입력'},

@@ -1,6 +1,6 @@
 "use client";
 import type { ClassSettings, Session, StudentDashboard, TeacherDashboard, Work, WorkAction, WorkDraft } from "./types";
-import type { AiReply, AiTask } from "./review/ai";
+import type { AiReply, AiTask, FlowPlanning } from "./review/ai";
 
 export class ApiError extends Error {
   constructor(public code: string, message: string, public status: number) { super(message); }
@@ -42,7 +42,7 @@ export const classroomApi = {
   previewEvaluate: (lessonId: string, classId: string, work: Work, action: WorkAction, expectedUid: string) => api<Work>(`teacher-preview/${encodeURIComponent(lessonId)}/evaluate`, { classId, work, action }, "POST", expectedUid),
   saveWork: (lessonId: string, revision: number, draft: WorkDraft, expectedUid?: string) => api<Work>(`classroom/work/${encodeURIComponent(lessonId)}`, { revision, draft }, "POST", expectedUid),
   act: (lessonId: string, revision: number, action: WorkAction, expectedUid?: string) => api<Work>(`classroom/work/${encodeURIComponent(lessonId)}/action`, { revision, action }, "POST", expectedUid),
-  ai: (lessonId: string, revision: number, task: AiTask, input: string, requestId: string, missionId?: string, expectedUid?: string) => api<AiReply>("classroom/ai", { lessonId, revision, task, input, requestId, ...(missionId ? { missionId } : {}) }, "POST", expectedUid),
+  ai: (lessonId: string, revision: number, task: AiTask, input: string, requestId: string, missionId?: string, expectedUid?: string, planning?: FlowPlanning) => api<AiReply>("classroom/ai", { lessonId, revision, task, input, requestId, ...(missionId ? { missionId } : {}), ...(planning ? { planning } : {}) }, "POST", expectedUid),
   detail: (uid: string, lessonId: string) => api<Work>(`classroom/students/${encodeURIComponent(uid)}/work/${encodeURIComponent(lessonId)}`),
   decideReview: (uid: string, lessonId: string, requestId: string, decision: "approve" | "changes", message: string, expectedUid?: string) => api<Work>(`classroom/students/${encodeURIComponent(uid)}/review/${encodeURIComponent(lessonId)}`, { requestId, decision, message }, "POST", expectedUid),
 };
