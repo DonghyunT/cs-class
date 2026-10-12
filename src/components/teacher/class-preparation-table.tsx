@@ -11,8 +11,8 @@ export function ClassPreparationTable({ classrooms, lessons }: { classrooms: rea
       <thead><tr><th scope="col">반</th><th scope="col">이번 수업</th><th scope="col">열린 수업</th><th scope="col">설정</th></tr></thead>
       <tbody>{[...classrooms].sort((a, b) => a.id.localeCompare(b.id, "ko", { numeric: true })).map(classroom => <tr key={classroom.id}>
         <th scope="row">{classroom.name}</th>
-        <td>{classroom.currentLessonId ? lessons.find(lesson => lesson.id === classroom.currentLessonId)?.title ?? "수업 정보 확인 필요" : "미지정"}</td>
-        <td>{classroom.openedLessonIds.length}개</td>
+        <td>{lessons.find(lesson => lesson.id === classroom.currentLessonId)?.title ?? "미지정"}</td>
+        <td>{lessons.filter(lesson => classroom.openedLessonIds.includes(lesson.id)).length}개</td>
         <td><Link className={styles.settings} href={`/teacher/classes?${new URLSearchParams({ classId: classroom.id, manage: "1" })}`} aria-label={`${classroom.name} 설정 열기`}>설정 열기</Link></td>
       </tr>)}</tbody>
     </table>

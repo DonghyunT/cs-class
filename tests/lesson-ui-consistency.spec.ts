@@ -94,7 +94,7 @@ test("추상화 처방전 인쇄는 현재 결과만 한 열로 읽고 입력은
   await page.goto("about:blank");
   const work = emptyWork(REVIEW_LESSONS.find(lesson => lesson.id === "review-abstraction")!);
   if (work.draft.reviewProject?.type !== "abstraction") throw Error("wrong lesson");
-  Object.assign(work.draft.reviewProject, { view: "workbook", step: 4, current: "과제가 남음", goal: "제시간에 제출", conditions: ["밤 10시까지"], core: ["남은 과제"], noise: ["표지 색"], plans: ["할 일을 나눠 적는다", "남은 시간을 확인한다", ""] });
+  Object.assign(work.draft.reviewProject, { tutorialDone: true, view: "workbook", step: 4, current: "과제가 남음", goal: "제시간에 제출", conditions: ["밤 10시까지"], core: ["남은 과제"], noise: ["표지 색"], plans: ["할 일을 나눠 적는다", "남은 시간을 확인한다", ""] });
   work.draft.stage = "practice";
   await db.doc("csWork/student-20101__review-abstraction").set(work);
   await page.goto("/classroom/review-abstraction");

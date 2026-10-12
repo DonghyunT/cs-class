@@ -1,0 +1,12 @@
+[
+  {
+    "source": "Windows working tree before feedback implementation, retaining previous AI local changes and earlier release evidence",
+    "baseCommit": "fe93533d729de4a5017ace66cca46079afbe6bf0",
+    "branch": "codex/student-ui-quiz-concept-flowchart",
+    "preserved": "HANDOFF.md",
+    "preservedAt": "2026-10-12",
+    "timezone": "Asia/Seoul",
+    "sha256": "e491d24a9f6f0672b4c1998dbfb6871ad8903a7f0fe1772b7c3d21e1839b1386",
+    "original": "docs/HANDOFF.md"
+  }
+]

@@ -7,8 +7,9 @@
 ## 원본과 이식 경계
 
 - 사용자 지정 운영 기준은 `bc8d51f`입니다. 10/5 읽기 전용으로 확인한 `D:\workspace\algorithm-studio`의 로컬 HEAD `df0bd75`와 세 수업 데이터·실습 엔진은 같았습니다(퀴즈 버튼 스타일·속성 차이 제외). 보관된 V1 순서도 엔진과는 차이가 있어 지정 원본을 대조했습니다.
+- 10/12 GitHub 기본 브랜치 `main`의 최신 커밋도 `bc8d51f659d9cb0bcb131ee04a467545f8fc96af`로 확인했습니다. 다른 PC에서도 코드 대조가 가능하도록 [최신 V1 소스 참고본](../../archive/algorithm-studio/2026-10-12-bc8d51f/README.md)을 별도로 보관했습니다. 원문·해시·제외 범위는 해당 manifest를 따르며, 위 10/5·10/11 이식/검사의 기준과 결과를 새로 실행한 것으로 바꾸지 않습니다.
 - 주요 개념 체험·퀴즈·실습과 추상화 도움/상담·샌드위치 명령 해석·순서도 설명/기획/리뷰를 옮겼습니다. 실습 표현은 공개 후 사용자 피드백으로 원작의 배치·그림·색·조작을 재사용하도록 변경했습니다. 원작 음성 입출력·픽셀 단위 동일성은 이번 범위에 포함하지 않았습니다.
-- 원본 DOM/전역 상태를 React 화면과 순수 엔진으로 분리했습니다. `src/lib/classroom/review/`는 원본 데이터·실행·검사, `src/components/student/review/`는 실습 UI, `src/lib/server/review-ai.ts`는 서버 AI 연결을 담당합니다. 기존 단일 저장 writer·revision·AppShell을 사용하며 새 AI SDK·상태 관리 의존성은 추가하지 않았습니다.
+- 원본 DOM/전역 상태를 React 화면과 순수 엔진으로 분리했습니다. `src/lib/classroom/review/`는 원본 데이터·실행·검사, `src/components/student/review/`는 실습 UI, `src/lib/server/review-ai.ts`는 서버 AI 연결을 담당합니다. 기존 단일 저장 writer·revision·LessonShell을 사용하며 새 AI SDK·상태 관리 의존성은 추가하지 않았습니다.
 - 새 ID `review-abstraction`·`review-sandwich`·`review-flowchart`를 사용하고 초기 테스트 기록을 변환/삭제하지 않습니다. 원본 인증·학생 자료·평가·띵커보드·범용 튜터는 옮기지 않았으며 원본 운영 AI/제출/학생 자료를 조회·변경하지 않았습니다.
 
 ## 실행 장부
@@ -29,6 +30,8 @@
 
 ## 검사와 다음 관찰
 
-엔진·AI 프로토콜·반 계획은 `npm run test:review`, 작품 저장·권한·경합은 `tests/review-*.spec.ts`, 원작 표현·캔버스 조작은 `tests/review-practice-ui.spec.ts`로 검사합니다. 세 복습 공개 시 Linux 전체130개, 원작 UI/서울 함수 변경 시 전체135개 성공이며 Windows 전용1개 제외와 날짜별 로컬 대상 검사는 [릴리스 근거](../HANDOFF.md#통합배포-상태)에서 구분합니다.
+10/12 [주석 11개 후속 계획](student-lesson-feedback-plan-20261012.md)은 같은 최신 V1 참고본을 기준으로 맛보기 최초 1회·단계별 닥터 대화·상황 기반 요소 7개·선택한 요소만 버리기·처방전과 순서도 작업실 배치를 보완합니다. 프롬프트 버전14와 응답 내용 검증을 사용하며 새 제공자 API나 그래프 의존성을 추가하지 않습니다. 이 회차의 로컬 합성 검사·독립 리뷰·CI·배포 결과는 [현재 인계](../HANDOFF.md#현재-작업-상태)에 기록합니다. 아래 과거 Solar 결과를 이번 프롬프트의 실제 제공자 검증으로 확대하지 않습니다.
+
+엔진·AI 프로토콜·반 계획은 `npm run test:review`, 작품 저장·권한·경합은 `tests/review-*.spec.ts`, 원작 표현·캔버스 조작은 `tests/review-practice-ui.spec.ts`로 검사합니다. 세 복습 공개 시 Linux 전체130개, 원작 UI/서울 함수 변경 시 전체135개 성공이며 Windows 전용1개 제외와 날짜별 로컬 대상 검사는 [당시 릴리스 근거](../archive/cs-class/2026-10-06-student-learning-close/HANDOFF.md#통합배포-상태)에서 구분합니다.
 
 다음 실제 수업에서는 AI의 불확실/보완·교사 확인 사례와 호출/실패 집계를 관찰합니다. 추가 유료 합성 검사는 필요한 변경·진단 범위를 먼저 정하고 [기존 품질 절차](../DEVELOPMENT.md#알고리즘-복습-수업)를 따릅니다. 기대 판정이 나올 때까지 반복하거나 운영 DB에 합성 계정/작품을 넣지 않습니다.

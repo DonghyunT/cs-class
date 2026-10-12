@@ -4,7 +4,7 @@ import { z } from "zod";
 import { aiResultSchema, aiTaskSchema, flowPlanningSchema, flowDefinitionSchema, type AiResult } from "../classroom/review/ai";
 import { basicReviewCheck, projectSnapshot, sameReviewProject, type ReviewProject } from "../classroom/review/project";
 import { parseSandwichCommand, sandwichActions } from "../classroom/review/sandwich-engine.mjs";
-import { quotaWindow, parseSolarEnvelope, hasExplicitPreparation, groundFlowReview } from "../classroom/review/ai-protocol.mjs";
+import { quotaWindow, parseSolarEnvelope, hasExplicitPreparation, groundFlowReview, hasDistinctOptions } from "../classroom/review/ai-protocol.mjs";
 import { STEP_PROMPTS } from "../classroom/review/abstraction-data.mjs";
 import { REVIEW_SYSTEM_PROMPT, reviewMinimumPolicy } from "../classroom/review/review-prompt.mjs";
 import { sandwichPrompt } from "./sandwich-prompt.mjs";
@@ -18,7 +18,7 @@ import { findLesson } from "../classroom/catalog";
 import { draftSchema, validateDraft } from "./learning";
 
 const inputSchema = z.object({ lessonId: z.string().max(80), task: aiTaskSchema, requestId: z.string().uuid(), revision: z.number().int().min(0), input: z.string().max(1000), missionId: z.enum(["1", "2", "3", "free"]).optional(), planning: flowPlanningSchema.optional() }).strict().refine(value => !value.planning || value.task === "flow-plan" && value.missionId === "free", "처방전 후보는 자유 기획서 제안에서만 사용할 수 있어요.");
-const promptVersion = "bc8d51f-cs-review-13";
+const promptVersion = "bc8d51f-cs-review-14";
 const nodeEvidenceSchema = z.object({ nodeId: z.string().max(80), evidence: z.string().max(1000) }).strict();
 const conditionCheckSchema = z.object({ conditionIndex: z.number().int().min(0), status: z.enum(["met", "missing", "uncertain"]), appliesTo: z.enum(["every-path", "conditional-path"]).describe("조건 문장 자체가 무조건 요구하면 every-path, 비가 오면 우산처럼 조건부로만 요구하면 conditional-path입니다. 기호가 한 갈래에만 있다는 이유로 conditional-path를 선택하지 마세요."), ...nodeEvidenceSchema.shape, additionalEvidence: z.array(nodeEvidenceSchema).max(10) }).strict();
 const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -27,7 +27,7 @@ function rolePrompt(task: string, project: ReviewProject) {
   if (project.type === "sandwich") return `${sandwichPrompt}\n[cs-class 응답 변환] 명확한 ACTION만 verdict:pass와 actions에 담으세요. CLARIFY는 verdict:uncertain, actions:[]와 message에 담습니다. 재료가 없는 '이거 발라 줘'는 CLARIFY입니다. 모호하다는 설명과 실행 actions를 함께 반환하지 마세요. options와 cards는 []입니다.`;
   if (project.type === "abstraction") {
     if (task === "abstraction-review") return "추상화 닥터로서 학생의 처방전이 현재·목표·조건·핵심·계획을 일관되게 연결하는지 검토하세요. 타당하면 pass, 명확한 누락이나 모순은 needs-changes, 맥락이 부족하면 uncertain입니다. 실천 계획의 표현이나 단계 수 차이는 개선 의견으로 안내하세요. options는 []입니다.";
-    if (task === "abstraction-plan") return "추상화 닥터로서 현재 상태·목표·조건·핵심 요소를 반영한 해결 계획 3~5개를 options에 제안하세요. 학생의 선택을 대신하지 마세요.";
+    if (task === "abstraction-plan") return "추상화 닥터로서 현재 상태에서 목표 상태에 도달하는 실행 순서 3~5단계를 options에 제안하세요. 각 단계는 학생이 남긴 핵심 정보를 구체적으로 관측·사용하고 지킬 조건을 실제 행동에 반영해야 합니다. 버린 노이즈를 해결 기준으로 되살리지 마세요. 단순한 '조건을 지키기' 같은 요약 대신 이 문제에서 실제로 할 일을 적으세요. 편집 가능한 초안이며 학생이 수정하고 선택합니다.";
     const prompt = STEP_PROMPTS[task === "abstraction-chat" ? 4 : project.step as 1 | 2 | 3 | 4];
     if (task === "abstraction-help") return `${prompt}\n[cs-class 후보 채택 형식] options는 정확히 ${project.step === 3 ? 7 : 3}개입니다.${project.step === 1 ? ' 각 항목은 반드시 "현재: 상태 / 목표: 상태" 한 줄로 작성하세요. 무관한 질문에도 대표 고민을 이 현재·목표 쌍으로 제안하세요.' : ''} message는 짧은 조언 한 문장, actions와 cards는 []입니다.`;
     return prompt;
@@ -70,9 +70,13 @@ function checkResult(result: AiResult, task: string, input: string, project: Rev
   if (task === "flow-plan") requireCondition(result.cards.length >= 3 && new Set(result.cards.map(c => c.id)).size === result.cards.length, 502, "AI_FORMAT", "AI 기획서가 완전하지 않아요. 다시 요청해 주세요.");
   if (task === "abstraction-help" && project.type === "abstraction") {
     requireCondition(result.options.length === (project.step === 3 ? 7 : 3), 502, "AI_FORMAT", "AI 후보 목록이 완전하지 않아요. 입력은 보존됩니다.");
+    if (project.step === 3) requireCondition(hasDistinctOptions(result.options, 7), 502, "AI_FORMAT", "AI 요소에 빈 값이나 중복이 있어요. 현재 요소와 입력은 보존했어요. 다시 요청해 주세요.");
     if (project.step === 1) requireCondition(result.options.every(value => /^현재:\s*.+\s*\/\s*목표:\s*.+$/.test(value)), 502, "AI_FORMAT", "현재·목표 후보 형식을 확인하지 못했어요.");
   }
-  if (task === "abstraction-plan") requireCondition(result.options.length >= 3 && result.options.length <= 5, 502, "AI_FORMAT", "해결 계획이 완전하지 않아요.");
+  if (task === "abstraction-plan") {
+    requireCondition(result.options.length >= 3 && result.options.length <= 5, 502, "AI_FORMAT", "해결 계획이 완전하지 않아요.");
+    requireCondition(result.options.every(value => value.trim()), 502, "AI_FORMAT", "해결 계획에 빈 단계가 있어요. 기존 계획과 입력은 보존했어요. 다시 요청해 주세요.");
+  }
   return result;
 }
 async function solar(task: string, project: ReviewProject, input: string, missionId: string | undefined, recordUsage: (outputTokens: number, inputTokens: number) => void): Promise<AiResult> {
@@ -163,11 +167,14 @@ async function executeAi(payload: unknown, deadline: number) {
       if (process.env.CS_AI_FIXTURE === "1" && !process.env.VERCEL && process.env.FIREBASE_PROJECT_ID === "demo-cs-class" && process.env.FIRESTORE_EMULATOR_HOST) {
         if (input.input === "fixture-slow") await new Promise(resolve => setTimeout(resolve, 1800));
         if (input.input === "fixture-malformed") throw new ServiceError(502, "AI_FORMAT", "합성 형식 오류");
+        if (input.input === "fixture-unavailable") throw new ServiceError(503, "AI_NOT_CONFIGURED", "합성 AI 연결 준비 중");
         if (input.input === "fixture-timeout") throw new DOMException("합성 시간 초과", "TimeoutError");
         if (input.input === "fixture-network") throw new TypeError("합성 연결 오류");
         if (input.input === "fixture-json") throw new SyntaxError("합성 응답 JSON 오류");
         const parsed = parseSandwichCommand(input.input);
         const options = prepared.project.type === "abstraction" && input.task === "abstraction-help" && prepared.project.step === 1 ? ["현재: 지각함 / 목표: 정시 등교함", "현재: 과제가 밀림 / 목표: 제출 완료함", "현재: 공부를 미룸 / 목표: 목표 분량을 끝냄"] : prepared.project.type === "abstraction" && input.task === "abstraction-help" && prepared.project.step === 3 ? ["현재 시각", "알람", "준비 시간", "옷 색", "꿈", "급식", "이동 거리"] : ["abstraction-help", "abstraction-plan"].includes(input.task) ? ["조건을 지키기", "핵심을 확인하기", "목표에 도달하기"] : [];
+        if (input.task === "abstraction-help" && prepared.project.type === "abstraction" && prepared.project.step === 3 && ["fixture-empty-options", "fixture-duplicate-options"].includes(input.input)) options[6] = input.input === "fixture-empty-options" ? " \n " : " 현재시각 ";
+        if (input.task === "abstraction-plan" && ["fixture-empty-plan", "fixture-whitespace-plan"].includes(input.input)) options[1] = input.input === "fixture-empty-plan" ? "" : " \n \t ";
         result = { ...emptyResult("합성 AI 피드백"), actions: input.task === "sandwich-command" ? parsed?.actions ?? [] : [], options, cards: input.task === "flow-plan" ? ["상태 확인", "조건 확인", "목표 실행"].map((text, i) => ({ id: `card-${i}`, type: "sequence" as const, text, yes: "", no: "" })) : [], verdict: input.input === "fixture-pass" || input.task === "sandwich-command" && parsed?.type === "ACTION" ? "pass" : "uncertain" };
         if (input.task === "flow-plan" && input.planning && !input.planning.goal.trim()) {
           const conditions = input.planning.conditions.filter(value => value.trim()), core = input.planning.core.filter(value => value.trim());

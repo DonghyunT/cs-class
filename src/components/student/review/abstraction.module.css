@@ -1,5 +1,6 @@
 .root { min-width:0; }
 .columns { min-width:0; }
+.root[data-practice=abstraction] .stepBadge { font-size:16px; font-weight:800; color:#4c1d95; background:#ede9fe; border-color:#c4b5fd; }
 .itemList { display:grid; gap:12px; margin:0; padding:2px; list-style:none; max-height:440px; overflow-y:auto; }
 .itemList li { display:grid; grid-template-columns:32px minmax(0,1fr) auto; gap:10px; align-items:start; padding:14px; background:#f7f8fa; border:1px solid #dfe4eb; border-radius:14px; min-width:0; }
 .number { display:grid; place-items:center; min-height:32px; background:#376fc8; color:white; border-radius:10px; font-size:14px; font-weight:800; }
@@ -16,6 +17,7 @@
 .prescription { display:grid; gap:18px; min-width:0; }
 .prescription h4 { font-size:18px; font-weight:800; }
 .prescription h5 { font-size:16px; font-weight:700; }
+.shareHeading { font-size:18px; font-weight:800; }
 .stateSummary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
 .stateSummary > div { padding:16px; border:1px solid #dfe4eb; border-radius:14px; background:#f7f8fa; }
 .stateSummary strong { display:block; font-size:14px; }
@@ -23,14 +25,18 @@
 .stateSummary [data-tone=rose] strong { color:#be123c; }
 .stateSummary [data-tone=amber] strong { color:#b45309; }
 .stateSummary [data-tone=violet] strong { color:#376fc8; }
-.root .doctor { min-width:0; }
-.conversation { display:grid; align-content:start; gap:14px; max-height:520px; overflow-y:auto; overscroll-behavior:contain; padding:4px; min-width:0; }
+.root[data-practice=abstraction] .doctor { min-width:0; height:clamp(620px,calc(100dvh - 100px),760px); gap:12px; }
+.doctor > * { flex-shrink:0; }
+.root .doctor .conversation { display:grid; align-content:start; gap:14px; flex:1 1 auto; min-height:180px; overflow-y:auto; overscroll-behavior:contain; padding:4px; min-width:0; border-block:1px solid #e2e8f0; }
 .turn { display:grid; gap:12px; min-width:0; }
 .turn ul { list-style:none; padding:0; margin:0; }
+.doctorReply { display:grid; gap:12px; padding:14px; margin-right:16px; border:1px solid #e2e8f0; border-radius:14px 14px 14px 3px; background:#f8fafc; overflow-wrap:anywhere; }
+.doctorReply > p { white-space:pre-wrap; }
 .chatForm { display:grid; gap:10px; border-top:1px solid #dfe4eb; padding-top:14px; }
+.root .chatForm textarea { resize:none; min-height:72px; }
 .printText { display:none; white-space:pre-wrap; overflow-wrap:anywhere; }
 .root :is(button,summary,[tabindex]):focus-visible { outline:3px solid #376fc8; outline-offset:3px; }
-@media(max-width:600px) { .stateSummary { grid-template-columns:minmax(0,1fr); } .itemList li { grid-template-columns:28px minmax(0,1fr); padding:10px; } .remove { grid-column:2; justify-self:end; } .conversation { max-height:440px; } }
+@media(max-width:600px) { .stateSummary { grid-template-columns:minmax(0,1fr); } .itemList li { grid-template-columns:28px minmax(0,1fr); padding:10px; } .remove { grid-column:2; justify-self:end; } }
 @media print {
   .root .columns { display:block; }
   .root nav,.root .doctor,.root .bulkEditor,.root .tools,.root [aria-label="작품 검증과 제출"],.root button,.root label,.root textarea { display:none!important; }

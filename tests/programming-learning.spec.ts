@@ -13,6 +13,19 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     await readyStudent(page.request); await workRef.delete();
     await classRef.update({ currentLessonId: id, openedLessonIds: [id] });
     await page.goto(`/classroom/${id}?from=dashboard`);
+    await expect(page.getByRole("heading", { name: "프로그래밍의 기초", level: 1, exact: true })).toBeVisible();
+    const conceptList = page.getByRole("navigation", { name: "개념 목록", exact: true });
+    await expect(conceptList.getByRole("button")).toHaveCount(4);
+    const terms = [
+      ["프로그래밍", "컴퓨터가 할 일을 생각하고, 명령을 만들어 실행해 보며 고치는 과정이에요."],
+      ["프로그래밍 언어", "컴퓨터가 할 일을 표현할 때 사용하는 약속된 언어예요. 엔트리의 블록이나 파이썬의 글자로 명령을 나타낼 수 있어요."],
+      ["프로그램", "컴퓨터가 할 일을 순서와 규칙에 맞게 적어 놓은 명령의 모음이에요."],
+    ];
+    for (const [term, explanation] of terms) {
+      await expect(page.getByText(term, { exact: true })).toBeVisible();
+      await expect(page.getByText(explanation, { exact: true })).toBeVisible();
+    }
+    await expect(page.getByText("프로그래밍 언어로 명령을 표현해 프로그램을 만드는 과정이 프로그래밍이에요.", { exact: true })).toBeVisible();
     const answers = ["컴퓨터가 할 일을 명령으로 표현해요", "출력", "3", "오른쪽 화살표 키를 누를 때"];
     for (let i = 0; i < answers.length; i++) {
       await page.getByRole("radio", { name: answers[i], exact: true }).check();
@@ -46,6 +59,10 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     await expect(page.getByRole("tab", { name: "퀴즈 100%" })).toBeVisible();
     await page.reload(); await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "퀴즈 100%" })).toBeVisible();
+    await page.getByRole("tab", { name: "개념 100%", exact: true }).click();
+    await conceptList.getByRole("button", { name: /컴퓨터에게 전하는 말/ }).click();
+    for (const [, explanation] of terms) await expect(page.getByText(explanation, { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "개념 확인 완료", exact: true })).toBeDisabled();
     await page.getByRole("link", { name: "수업 나가기", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
     const current: Work = await (await page.request.get(endpoint)).json();
     const project = buildProgrammingProject([[{ type: "when_run_button_click", params: [null] }, { type: "move_direction", params: [{ type: "number", params: [10] }, null] }]]);

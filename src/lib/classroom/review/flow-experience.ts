@@ -25,12 +25,93 @@ export function placePuzzleBlock(id: string, placed: Record<string, string>, slo
   return next;
 }
 
+function calcNodeSize(node: { shape: FlowNode["shape"]; text: string }) {
+  const advance = (char: string) => /[\u0000-\u007f]/.test(char) ? /[MW@%]/.test(char) ? 12 : 8.5 : 14.5;
+  const paragraphs = (node.text ?? "").replace(/\r/g, "").split("\n");
+  const longest = Math.max(...paragraphs.map(line => [...line].reduce((sum, char) => sum + advance(char), 0)));
+  const minimum = node.shape === "terminal" ? 200 : node.shape === "process" ? 210 : 220;
+  const width = Math.min(280, Math.max(minimum, Math.ceil(node.shape === "decision" ? longest * 2 + 16 : longest + (node.shape === "io" ? 64 : 48))));
+  const height = node.shape === "decision" ? Math.max(120, 2 * (paragraphs.length * 20 + 24) + 16) : Math.max(80, paragraphs.length * 20 + 50);
+  return { width, height };
+}
+
+function slotPlaceholder(id: string, slotId: string, hint?: string): string {
+  if (id === "1") {
+    return hint || "빈 기호";
+  }
+  if (id === "2") {
+    if (slotId === "s2") return "입출력 ▱ (키 입력받기)";
+    if (slotId === "s3") return "판단 ◇ (조건 검사)";
+    if (slotId === "s4_yes") return "출력 ▱ [예] (결과 안내)";
+    if (slotId === "s4_no") return "출력 ▱ [아니오] (결과 안내)";
+  } else if (id === "3") {
+    if (slotId === "s2") return "입출력 ▱ (비밀번호 입력받기)";
+    if (slotId === "s3") return "판단 ◇ (조건 검사)";
+    if (slotId === "s4_yes") return "출력 ▱ [예] (성공 안내)";
+    if (slotId === "s4_no") return "처리 ▭ [아니오] (불일치 처리)";
+  }
+  return hint || "빈 기호";
+}
+
 export function puzzleGraph(id: string, placed: Record<string, string>) {
   const mission = missions.find(item => String(item.id) === id)!;
-  const center = id === "1" ? 30 : 180;
-  const positions: Record<string, [number, number]> = { s1: [center, 24], s2: [center, 150], s3: [center, 290], s4: [center, 445], s4_yes: [30, 485], s4_no: [330, 485], s5: [center, id === "1" ? 590 : 645] };
-  const nodes: FlowNode[] = mission.slots.map(slot => { const block = mission.palette.find(item => item.id === placed[slot.id]); return { id: slot.id, shape: (block?.shape || slot.shape) as FlowNode["shape"], text: slot.fixed ? slot.label! : block?.text || slot.hint || "빈 기호", x: positions[slot.id][0], y: positions[slot.id][1] }; });
-  const edges: FlowchartProject["edges"] = id === "1" ? ["s1", "s2", "s3", "s4"].map((from, i) => ({ from, to: ["s2", "s3", "s4", "s5"][i], label: "" })) : [{ from: "s1", to: "s2", label: "" }, { from: "s2", to: "s3", label: "" }, { from: "s3", to: "s4_yes", label: "예" }, { from: "s3", to: "s4_no", label: "아니오" }, { from: "s4_yes", to: "s5", label: "" }, { from: "s4_no", to: id === "3" ? "s2" : "s5", label: "" }];
+  const rawNodes = mission.slots.map(slot => {
+    const block = mission.palette.find(item => item.id === placed[slot.id]);
+    const shape = (block?.shape || slot.shape) as FlowNode["shape"];
+    const text = slot.fixed ? slot.label! : block?.text || slotPlaceholder(id, slot.id, slot.hint);
+    const size = calcNodeSize({ shape, text });
+    return { id: slot.id, shape, text, size };
+  });
+
+  let centerXs: Record<string, number> = {};
+  let positionsY: Record<string, number> = {};
+
+  if (id === "1") {
+    const cx = 240;
+    centerXs = { s1: cx, s2: cx, s3: cx, s4: cx, s5: cx };
+    positionsY = { s1: 24, s2: 144, s3: 264, s4: 384, s5: 504 };
+  } else if (id === "2") {
+    const cx = 360;
+    centerXs = { s1: cx, s2: cx, s3: cx, s4_yes: 150, s4_no: 570, s5: cx };
+    positionsY = { s1: 24, s2: 140, s3: 260, s4_yes: 430, s4_no: 430, s5: 600 };
+  } else {
+    const cx = 260;
+    centerXs = { s1: cx, s2: cx, s3: cx, s4_yes: cx, s4_no: 540, s5: cx };
+    positionsY = { s1: 24, s2: 140, s3: 260, s4_yes: 420, s4_no: 260, s5: 560 };
+  }
+
+  const nodes: FlowNode[] = rawNodes.map(node => {
+    const cx = centerXs[node.id] ?? 200;
+    const y = positionsY[node.id] ?? 0;
+    return {
+      id: node.id,
+      shape: node.shape,
+      text: node.text,
+      x: Math.round(cx - node.size.width / 2),
+      y
+    };
+  });
+
+  const edges: FlowchartProject["edges"] = id === "1"
+    ? ["s1", "s2", "s3", "s4"].map((from, i) => ({ from, to: ["s2", "s3", "s4", "s5"][i], label: "" }))
+    : id === "2"
+    ? [
+        { from: "s1", to: "s2", label: "" },
+        { from: "s2", to: "s3", label: "" },
+        { from: "s3", to: "s4_yes", label: "예", fromPort: "left", toPort: "top" },
+        { from: "s3", to: "s4_no", label: "아니오", fromPort: "right", toPort: "top" },
+        { from: "s4_yes", to: "s5", label: "", fromPort: "bottom", toPort: "top" },
+        { from: "s4_no", to: "s5", label: "", fromPort: "bottom", toPort: "top" }
+      ]
+    : [
+        { from: "s1", to: "s2", label: "" },
+        { from: "s2", to: "s3", label: "" },
+        { from: "s3", to: "s4_yes", label: "예", fromPort: "bottom", toPort: "top" },
+        { from: "s3", to: "s4_no", label: "아니오", fromPort: "right", toPort: "left" },
+        { from: "s4_yes", to: "s5", label: "" },
+        { from: "s4_no", to: "s2", label: "", fromPort: "top", toPort: "right" }
+      ];
+
   return { nodes, edges };
 }
 export function puzzleExecutionGraph(id: string, placed: Record<string, string>) {

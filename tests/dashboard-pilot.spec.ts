@@ -1,28 +1,78 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
-import { db, headers, initialPassword, loginStudent, readyStudent, readyTeacher, resetStudent, studentPassword, localOnly, lessonId } from "./emulator";
+import { db, headers, initialPassword, loginStudent, readyStudent as readyLegacyStudent, readyTeacher, resetStudent, studentPassword, localOnly, lessonId as legacyLessonId } from "./emulator";
 import { testEnv } from "../scripts/local-test-env.mjs";
+import { RELEASED_LESSONS } from "../src/lib/classroom/catalog";
 import { seoulToday } from "../src/lib/classroom/planner";
 import type { SavedList, Todo, ClassEvent } from "../src/lib/classroom/planner";
 
 const todosPath = "/api/classroom/todos";
 const schedulePath = "/api/classroom/schedule/2-1";
+const lessonId = "programming-13";
+const openedLessonIds = [legacyLessonId, ...RELEASED_LESSONS.map(lesson => lesson.id)];
 const todo = (text: string): Todo => ({ id: randomUUID(), text, completed: false });
 const event = (title: string, date = seoulToday()): ClassEvent => ({ id: randomUUID(), title, date, lessonId });
 const todos = (page: Page) => page.getByRole("region", { name: "내 할 일", exact: true });
 async function readTodos(request: APIRequestContext): Promise<SavedList<Todo>> { return (await request.get(todosPath)).json(); }
 async function add(page: Page, text: string) { await page.getByLabel("할 일 추가", { exact: true }).fill(text); await page.getByLabel("할 일 추가", { exact: true }).press("Enter"); }
 async function saved(page: Page) { await expect(todos(page).getByText("저장 완료", { exact: true })).toBeVisible(); }
+async function readyStudent(request: APIRequestContext) {
+  await readyLegacyStudent(request);
+  await db.collection("csClasses").doc("2-1").update({ currentLessonId: lessonId, openedLessonIds });
+}
 async function student(request: APIRequestContext, id: string) {
   await resetStudent(request, id);
+  await db.collection("csClasses").doc("2-1").update({ currentLessonId: lessonId, openedLessonIds });
   expect((await loginStudent(request, initialPassword, id)).status()).toBe(200);
   expect((await request.post("/api/auth/password", { headers, data: { password: studentPassword } })).status()).toBe(200);
 }
 test.beforeEach(async ({ request }) => {
   await localOnly(request);
+  await db.collection("csWork").doc(`student-20101__${lessonId}`).delete();
   await db.collection("csTodos").doc("student-20101").delete();
   await db.collection("csSchedules").doc("2-1").delete();
   await db.collection("csSchedules").doc("2-10").delete();
+});
+
+test("반 일정 API: 숨긴 수업의 기존 연결 보존·정식 선택 목록·신규 연결 거부", async ({ request }) => {
+  await readyTeacher(request);
+  const classroom = db.collection("csClasses").doc("2-1"), schedule = db.collection("csSchedules").doc("2-1");
+  const previousClass = (await classroom.get()).data();
+  const legacy = { ...event("기존 시험 수업 일정"), lessonId: legacyLessonId };
+  const current = { ...event("정식 수업 일정"), lessonId: RELEASED_LESSONS[0].id };
+  try {
+    await classroom.set({ id: "2-1", name: "2학년 1반", revision: 0, currentLessonId: current.lessonId, openedLessonIds: [legacyLessonId, "flowchart-lab", ...RELEASED_LESSONS.map(lesson => lesson.id)] });
+    await schedule.set({ revision: 7, items: [legacy, current] });
+    const listed = await (await request.get("/api/classroom/schedule?classId=2-1")).json();
+    expect(listed.lessons).toHaveLength(4);
+    expect(listed.lessons).toEqual(RELEASED_LESSONS.map(({ id, title }) => ({ id, title })));
+    expect(listed.items).toEqual([legacy, current]);
+
+    const changed = { ...current, title: "정식 수업 일정 수정" };
+    const unrelatedEdit = await request.post(schedulePath, { headers, data: { revision: 7, items: [legacy, changed] } });
+    expect(unrelatedEdit.status()).toBe(200);
+    expect(await unrelatedEdit.json()).toMatchObject({ revision: 8, items: [legacy, changed] });
+    expect((await schedule.get()).data()).toEqual({ revision: 8, items: [legacy, changed] });
+
+    const changedLegacy = { ...legacy, title: "기존 시험 수업 일정 수정", date: "2026-10-13" };
+    const legacyEdit = await request.post(schedulePath, { headers, data: { revision: 8, items: [changedLegacy, changed] } });
+    expect(legacyEdit.status()).toBe(200);
+    expect(await legacyEdit.json()).toMatchObject({ revision: 9, items: [changedLegacy, changed] });
+
+    for (const items of [
+      [changedLegacy, changed, { ...event("새 시험 수업 연결"), lessonId: legacyLessonId }],
+      [changedLegacy, { ...changed, lessonId: legacyLessonId }],
+      [{ ...changedLegacy, lessonId: "flowchart-lab" }, changed],
+    ]) {
+      const rejected = await request.post(schedulePath, { headers, data: { revision: 9, items } });
+      expect(rejected.status()).toBe(400);
+      expect(await rejected.json()).toMatchObject({ code: "INVALID_LESSON" });
+    }
+    expect((await schedule.get()).data()).toEqual({ revision: 9, items: [changedLegacy, changed] });
+  } finally {
+    if (previousClass) await classroom.set(previousClass); else await classroom.delete();
+    await schedule.delete();
+  }
 });
 
 test("파일럿 API: 본인 목록·반 권한·직접 DB 차단·검증·동시 수정·재시도", async ({ request, playwright }) => {
@@ -56,7 +106,7 @@ test("파일럿 API: 본인 목록·반 권한·직접 DB 차단·검증·동시
     expect((await request.get("/api/classroom/schedule?classId=2-1")).status()).toBe(200);
     expect((await request.get("/api/classroom/schedule?classId=2-10")).status()).toBe(403);
     expect((await request.post(schedulePath, { headers, data: { revision: 1, items: [] } })).status()).toBe(403);
-    expect((await request.get(`/api/classroom/work/${lessonId}`)).status()).toBe(200);
+    expect((await request.get(`/api/classroom/work/${legacyLessonId}`)).status()).toBe(200);
     expect((await separate.post(schedulePath, { headers, data: { revision: 1, items: [{ ...appointment, date: "2026-02-30" }] } })).status()).toBe(400);
     expect((await separate.post(schedulePath, { headers, data: { revision: 1, items: [{ ...appointment, lessonId: "entry-bot-lab" }] } })).status()).toBe(400);
     expect((await separate.post("/api/auth/login", { headers, data: { role: "instructor", studentId: "", password: testEnv.CS_TEST_INSTRUCTOR_PASSWORD } })).status()).toBe(200);
@@ -318,7 +368,7 @@ test("반 일정: 교사 CRUD·실패 복구·반 전환 보호·학생 조회·
   await expect(page.getByText("아직 등록된 일정이 없어요.", { exact: true })).toBeVisible();
   await page.getByLabel("일정 제목", { exact: true }).fill("정보 수업 준비");
   await page.getByRole("combobox", { name: "연결할 수업 · 선택", exact: true }).click();
-  await page.getByRole("option", { name: "순서가 만드는 알고리즘", exact: true }).click();
+  await page.getByRole("option", { name: "프로그래밍의 기초", exact: true }).click();
   await page.getByRole("button", { name: "일정 저장", exact: true }).click();
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await expect(page.getByLabel("일정 제목", { exact: true })).toBeFocused();
   await page.getByRole("button", { name: "정보 수업 준비 수정", exact: true }).click();
@@ -359,7 +409,7 @@ test("학생·교사 실제 배치: 7개 너비·키보드·모바일·빈 상�
     else { await page.getByRole("button", { name: "학생 메뉴", exact: true }).click(); await page.getByRole("button", { name: "로그아웃", exact: true }).click(); await expect(page).toHaveURL(/\/login\/student$/); await readyTeacher(page.request); }
     await page.goto(`/${role}`); await expect(todos(page).getByText(/아직 내 할 일이 없어요/)).toBeVisible();
     await add(page, role === "student" ? "궁금한 점 정리하기" : "학생 작품 살펴보기"); await saved(page);
-    await expect(page.locator("#current-heading")).toHaveText("순서가 만드는 알고리즘");
+    await expect(page.locator("#current-heading")).toHaveText("프로그래밍의 기초");
     const calendar = page.getByRole("table", { name: /일정 달력/ });
     const [year, month] = seoulToday().split("-").map(Number);
     await expect(calendar.locator("time")).toHaveCount(new Date(Date.UTC(year, month, 0)).getUTCDate());
@@ -387,21 +437,21 @@ test("학생·교사 실제 배치: 7개 너비·키보드·모바일·빈 상�
     await page.setViewportSize({ width: 390, height: 844 }); await todos(page).getByRole("checkbox").check(); await saved(page);
     if (role === "student") {
       await page.getByRole("button", { name: "수업 시작", exact: true }).click();
-      await page.getByRole("radio", { name: "컵에 물을 200mL 따른다", exact: true }).check();
+      await page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true }).check();
       await page.getByRole("link", { name: "수업 나가기", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
-      await page.getByRole("button", { name: "이어하기", exact: true }).click(); await expect(page.getByRole("radio", { name: "컵에 물을 200mL 따른다", exact: true })).toBeChecked();
+      await page.getByRole("button", { name: "이어하기", exact: true }).click(); await expect(page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true })).toBeChecked();
       await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.getByRole("navigation", { name: "교실 메뉴" }).getByRole("link", { name: "열린 수업", exact: true }).click();
       await expect(page.getByRole("heading", { name: "열린 수업을 살펴봐요.", exact: true })).toBeVisible();
       const filters = page.getByRole("group", { name: "열린 수업 필터", exact: true });
-      await filters.getByRole("button", { name: "완료", exact: true }).click(); await expect(page.getByRole("heading", { name: "순서가 만드는 알고리즘", exact: true })).toHaveCount(0);
-      await filters.getByRole("button", { name: "미완료", exact: true }).click(); await expect(page.getByRole("heading", { name: "순서가 만드는 알고리즘", exact: true })).toBeVisible();
-      await page.getByRole("button", { name: "이어하기", exact: true }).click(); await expect(page.getByRole("radio", { name: "컵에 물을 200mL 따른다", exact: true })).toBeChecked();
+      await filters.getByRole("button", { name: "완료", exact: true }).click(); await expect(page.getByRole("heading", { name: "프로그래밍의 기초", exact: true })).toHaveCount(0);
+      await filters.getByRole("button", { name: "미완료", exact: true }).click(); await expect(page.getByRole("heading", { name: "프로그래밍의 기초", exact: true })).toBeVisible();
+      await page.getByRole("button", { name: "이어하기", exact: true }).click(); await expect(page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true })).toBeChecked();
     } else {
       await page.getByRole("link", { name: /학습 현황.*등록 학생/ }).click();
       await expect(page.getByRole("heading", { name: "학생별 학습 현황", exact: true })).toBeVisible();
-      await expect(page.getByRole("combobox", { name: "확인할 수업", exact: true })).toHaveText("순서가 만드는 알고리즘");
+      await expect(page.getByRole("combobox", { name: "확인할 수업", exact: true })).toHaveText("프로그래밍의 기초");
     }
   }
   expect(errors).toEqual([]);

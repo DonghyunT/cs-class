@@ -155,11 +155,13 @@ test("개념 기준선과 체험 초기화 위치·선택 표현을 맞추고 �
   await expect(reset).toBeVisible();
   const [resetBounds, titleBounds] = await Promise.all([reset, experience.locator("h4").first()].map(item => item.boundingBox()));
   expect(Math.abs(resetBounds!.y - titleBounds!.y)).toBeLessThan(90);
-  const choice = page.getByRole("button", { name: "넓은 면에 골고루 발라", exact: true });
+  const choice = experience.getByRole("group", { name: "바르는 면 비교", exact: true }).getByRole("button", { name: /^넓은 면에 골고루 발라/ });
   await choice.click(); await expect(choice).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("radio").first().check();
   await page.getByRole("button", { name: "정답 확인", exact: true }).click();
   await expect(article).toContainText("완료");
+  // 완료 표시 이후 정답 확인의 Effect가 피드백으로 초점을 옮긴 뒤 다음 조작을 시작한다.
+  await expect(article.locator("#concept-feedback-clear")).toBeFocused();
   await reset.click();
   await expect(reset).toBeFocused();
   await expect(experience.locator('[data-jam]')).toHaveCount(0);
@@ -173,15 +175,17 @@ test("체험 중지·마지막 단계 뒤 초점을 실행 버튼으로 복구",
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.getByRole("tab", { name: /개념/ }).click();
   await page.getByRole("navigation", { name: "개념 목록" }).getByRole("button", { name: /알고리즘의 다섯 조건/ }).click();
-  const infinite = page.getByRole("button", { name: "끝없이 반복", exact: true });
+  const repeatControls = page.getByRole("group", { name: "반복 실행", exact: true });
+  const infinite = repeatControls.getByRole("button", { name: /^끝없이 반복/ });
   await infinite.click();
-  const stop = page.getByRole("button", { name: "실행 중지", exact: true });
+  const stop = repeatControls.getByRole("button", { name: "실행 중지", exact: true });
   await stop.focus(); await stop.press("Enter");
   await expect(infinite).toBeFocused();
   await page.getByRole("navigation", { name: "개념 목록" }).getByRole("button", { name: /순차·선택·반복/ }).click();
-  const step = page.getByRole("button", { name: "한 단계 실행", exact: true });
+  const flowControls = page.getByRole("group", { name: "흐름 실행 조작", exact: true });
+  const step = flowControls.getByRole("button", { name: "한 단계 실행", exact: true });
   for (let index = 0; index < 5; index++) { await step.focus(); await step.press("Enter"); }
-  await expect(page.getByRole("button", { name: "흐름 실행", exact: true })).toBeFocused();
+  await expect(flowControls.getByRole("button", { name: "▶ 흐름 실행", exact: true })).toBeFocused();
 });
 
 async function execute(page: Page, input: string) {

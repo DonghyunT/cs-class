@@ -92,7 +92,7 @@ test.describe("순서도 실행 정확성과 입력 복구", () => {
     await input.fill("150"); await input.press("Enter");
     await expect(canvas(page).getByRole("alert")).toHaveCount(0);
     await expect(toolbar(page).getByRole("button", { name: "한 단계 실행", exact: true })).toBeFocused();
-    await toolbar(page).getByLabel("실행 속도", { exact: true }).selectOption("2");
+    await toolbar(page).getByRole("button", { name: /실행 속도/ }).click();
     await toolbar(page).getByRole("button", { name: "자동 실행", exact: true }).click();
     await expect(page.getByRole("region", { name: "순서도 실행", exact: true }).getByRole("status")).toHaveText("종료에 도달했어요!");
     await expect(canvas(page).locator('[data-flow-interaction]')).toContainText("탑승 가능");

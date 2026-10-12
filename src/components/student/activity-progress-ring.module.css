@@ -4,9 +4,10 @@
 .concept { --stage-color: #376fc8; --stage-track: #dce6f5; }
 .quiz { --stage-color: #8860ba; --stage-track: #e8def4; }
 .practice { --stage-color: #268673; --stage-track: #d9ebe5; }
-.track, .fill { fill: none; stroke-width: 14; }
+.track, .fill, .startMarker { fill: none; stroke-width: 14; }
 .track { stroke: var(--stage-track); stroke-linecap: butt; }
 .fill { stroke: var(--stage-color); stroke-linecap: round; pointer-events: none; }
+.startMarker { stroke: var(--stage-color); stroke-linecap: butt; pointer-events: none; }
 .value { position: absolute; inset: 34px; display: flex; align-items: center; justify-content: center; flex-direction: column; pointer-events: none; }
 .value strong { font-size: 34px; font-weight: 720; line-height: 1.2; font-variant-numeric: tabular-nums; color: #28548e; }
 .value small { font-size: 18px; margin-left: 2px; }

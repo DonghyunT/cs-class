@@ -1,10 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
-import { db, headers, initialPassword, lessonId, loginStudent, readyStudent, resetStudent, studentPassword } from "./emulator";
+import { db, headers, initialPassword, loginStudent, readyStudent, resetStudent, studentPassword } from "./emulator";
 
 const studentId = "20102";
+const lessonId = "programming-13";
 const workPath = `/api/classroom/work/${lessonId}`;
 const classPath = `/classroom/${lessonId}`;
-const answerName = "컵에 물을 200mL 따른다";
+const answerName = "컴퓨터가 할 일을 명령으로 표현해요";
 
 test("태블릿 메뉴와 양방향 화면 전환의 초점 복귀", async ({ page }) => {
   await readyStudent(page.request);
@@ -51,6 +52,8 @@ test("태블릿 메뉴와 양방향 화면 전환의 초점 복귀", async ({ pa
 
 async function openLesson(page: Page) {
   await resetStudent(page.request, studentId);
+  await db.doc(`csWork/student-${studentId}__${lessonId}`).delete();
+  await db.doc("csClasses/2-1").update({ currentLessonId: lessonId, openedLessonIds: [lessonId] });
   expect((await loginStudent(page.request, initialPassword, studentId)).status()).toBe(200);
   expect((await page.request.post("/api/auth/password", { headers, data: { password: studentPassword } })).status()).toBe(200);
   await page.goto("/student");
@@ -61,7 +64,7 @@ async function openLesson(page: Page) {
 async function back(page: Page) { await page.evaluate(() => history.back()); }
 async function forward(page: Page) { await page.evaluate(() => history.forward()); }
 async function savedAnswer() {
-  return (await db.collection("csWork").doc(`student-${studentId}__${lessonId}`).get()).data()?.draft.conceptAnswers.algorithm;
+  return (await db.collection("csWork").doc(`student-${studentId}__${lessonId}`).get()).data()?.draft.conceptAnswers.pc0;
 }
 
 test("뒤로가기 저장 실패는 원래 수업 유지 · 재시도 후 이동과 로그아웃 기록 보존", async ({ page }) => {
@@ -80,12 +83,12 @@ test("뒤로가기 저장 실패는 원래 수업 유지 · 재시도 후 이동
   expect(await savedAnswer()).toBeUndefined();
   fail = false;
   await page.getByRole("button", { name: "저장 다시 확인" }).click();
-  await expect.poll(savedAnswer).toBe("clear");
+  await expect.poll(savedAnswer).toBe("0");
   await back(page);
   await expect(page).toHaveURL(/\/student$/);
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login\/student$/);
-  expect(await savedAnswer()).toBe("clear");
+  expect(await savedAnswer()).toBe("0");
   expect((await loginStudent(page.request, studentPassword, studentId)).status()).toBe(200);
   await page.goto(classPath);
   await expect(page.getByRole("radio", { name: answerName })).toBeChecked();
@@ -119,7 +122,7 @@ test("저장 응답 대기 중 뒤로가기 · 한 번 저장 후 원래 목적�
   release();
   await expect(page).toHaveURL(/\/student$/);
   expect(postCount).toBe(1);
-  expect(await savedAnswer()).toBe("clear");
+  expect(await savedAnswer()).toBe("0");
   expect(await page.evaluate(() => history.length)).toBe(historyLength);
   for (let index = 0; index < 3; index += 1) {
     await forward(page);
@@ -146,7 +149,7 @@ test("앞으로가기의 새 답안도 저장 · Next 이력 상태와 추가 st
   await page.getByRole("radio", { name: answerName }).check();
   await forward(page);
   await expect(page).toHaveURL(/\/student$/);
-  expect(await savedAnswer()).toBe("clear");
+  expect(await savedAnswer()).toBe("0");
   await back(page);
   await expect(page.getByRole("radio", { name: answerName })).toBeChecked();
   expect(await page.evaluate(() => ({ next: Boolean(history.state?.__NA && history.state?.__PRIVATE_NEXTJS_INTERNALS_TREE), other: history.state?.otherToolState }))).toEqual({ next: true, other: "retained" });
@@ -164,7 +167,7 @@ test("여러 항목을 건너뛰는 이력 이동도 저장하고 기존 앞뒤 
   await page.getByRole("radio", { name: answerName }).check();
   await page.evaluate(() => history.go(-3));
   await expect(page).toHaveURL(/\/student$/);
-  await expect.poll(savedAnswer).toBe("clear");
+  await expect.poll(savedAnswer).toBe("0");
   await forward(page);
   await expect(page.getByRole("radio", { name: answerName })).toBeChecked();
   await forward(page);

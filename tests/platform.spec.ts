@@ -118,7 +118,7 @@ test("교사 실제 기록 · 제출 작품 · 수업 지정 · 초기화 · 작
   work = await (await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } })).json();
   for (const type of ["validate-practice", "submit-practice"]) work = await (await page.request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type } } })).json();
   await readyTeacher(page.request);
-  await page.goto("/teacher/students");
+  await page.goto(`/teacher/students?classId=2-1&lessonId=${lessonId}`);
   await page.getByRole("combobox", { name: "담당 반" }).click();
   await expect(page.getByRole("option")).toHaveCount(11);
   await page.keyboard.press("Escape");

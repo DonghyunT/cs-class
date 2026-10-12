@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import type { Transaction } from "firebase-admin/firestore";
-import { LESSONS, RELEASED_LESSONS, findLesson } from "../classroom/catalog";
+import { RELEASED_LESSONS, findLesson } from "../classroom/catalog";
 import { emptyWork, practiceMatches } from "../classroom/progress";
 import { programmingProjectMatches } from "../classroom/programming-entry";
 import type { ClassSettings, StudentDashboard, TeacherDashboard, Work, WorkSummary } from "../classroom/types";
@@ -30,7 +30,7 @@ export async function studentClass(tx: Transaction, account: Account) {
 export async function studentDashboard(): Promise<StudentDashboard> {
   return authorized(await identity(), async (tx, account) => {
     const classroom = await studentClass(tx, account);
-    const lessons = LESSONS.filter((lesson) => classroom.openedLessonIds.includes(lesson.id));
+    const lessons = RELEASED_LESSONS.filter((lesson) => classroom.openedLessonIds.includes(lesson.id));
     const work: Record<string, Work> = {};
     const snapshots = lessons.length ? await tx.getAll(...lessons.map((lesson) => workRef(account.uid, lesson.id))) : [];
     lessons.forEach((lesson, index) => { work[lesson.id] = toWork(snapshots[index].data() as StoredWork | undefined, lesson.id); });
@@ -96,14 +96,15 @@ export async function teacherDashboard(classId?: string, lessonId?: string): Pro
     const classrooms = classSnapshots.map((snap) => snap.data() as ClassSettings | undefined).filter((value): value is ClassSettings => !!value);
     const classroom = classrooms.find((c) => c.id === selectedClassId);
     requireCondition(classroom, 404, "CLASS_NOT_FOUND", "아직 준비되지 않은 반이에요.");
-    const selectedLessonId = lessonId ?? classroom.currentLessonId ?? classroom.openedLessonIds[0] ?? null;
+    const openedReleased = classroom.openedLessonIds.filter((id) => RELEASED_LESSONS.some((lesson) => lesson.id === id));
+    const selectedLessonId = lessonId ?? (classroom.currentLessonId && openedReleased.includes(classroom.currentLessonId) ? classroom.currentLessonId : openedReleased[0] ?? null);
     requireCondition(selectedLessonId === null || classroom.openedLessonIds.includes(selectedLessonId), 400, "INVALID_LESSON", "이 반에 열린 수업을 선택해 주세요.");
     const roster = await tx.get(admin().db.collection("csAccounts").where("classId", "==", selectedClassId));
     const students = roster.docs.map((doc) => doc.data() as Account).filter((student): student is Account & { studentId: string } => student.role === "student" && !student.disabled && !!student.studentId);
     const workSnapshots = selectedLessonId && students.length ? await tx.getAll(...students.map((student) => workRef(student.uid, selectedLessonId))) : [];
     const records = students.map((student, index) => ({ uid: student.uid, studentId: student.studentId, ...(student.nickname ? { nickname: student.nickname } : {}), lastActiveAt: student.session?.lastActivityAt ?? null, mustChangePassword: student.mustChangePassword, work: selectedLessonId ? workSummary(toWork(workSnapshots[index].data() as StoredWork | undefined, selectedLessonId)) : null }));
     records.sort((a, b) => a.studentId.localeCompare(b.studentId));
-    return { classrooms, lessons: LESSONS.filter(lesson => RELEASED_LESSONS.includes(lesson) || classrooms.some(classroom => classroom.openedLessonIds.includes(lesson.id))), classroom, selectedLessonId, students: records };
+    return { classrooms, lessons: RELEASED_LESSONS, classroom, selectedLessonId, students: records };
   });
 }
 function workSummary(work: Work): WorkSummary {

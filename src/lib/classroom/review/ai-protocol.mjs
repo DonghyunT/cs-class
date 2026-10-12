@@ -10,6 +10,10 @@ export function parseSolarEnvelope(envelope) {
   if (envelope?.choices?.length !== 1 || envelope.choices[0].finish_reason !== 'stop' || typeof envelope.choices[0].message?.content !== 'string') throw new Error('AI_INCOMPLETE');
   return JSON.parse(envelope.choices[0].message.content);
 }
+export function hasDistinctOptions(options, count) {
+  const words = options.map(value => value.replace(/\s/g, ''));
+  return words.length === count && words.every(Boolean) && new Set(words).size === count;
+}
 export function groundFlowReview(result, checks, project) {
   if (result.verdict !== 'pass') return result;
   const uncertain = () => ({ ...result, verdict: 'uncertain', message: 'AI가 필수 조건과 실제 기호의 근거를 일치시키지 못했어요. 내용을 확인하거나 선생님 확인을 요청해 주세요.' });

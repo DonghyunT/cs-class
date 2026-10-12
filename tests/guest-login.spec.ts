@@ -2,8 +2,10 @@ import { createHash } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { guestLoginEnabled } from "../src/lib/server/guest-mode";
 import { testEnv } from "../scripts/local-test-env.mjs";
-import { db, headers, lessonId, localOnly } from "./emulator";
+import { db, headers, localOnly } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
+
+const lessonId = "programming-13";
 
 test.beforeEach(async ({ request }) => {
   await localOnly(request);
@@ -84,8 +86,10 @@ test("게스트 학생·교사 바로 입장, 로컬 기록 복원, 화면 크�
   if (process.env.CI) expect(cookie!.secure).toBe(true);
   expect(await page.evaluate(() => document.cookie.includes("cs_session"))).toBe(false);
   const endpoint = `/api/classroom/work/${lessonId}`;
-  const work: Work = await (await page.request.get(endpoint)).json();
-  work.draft.conceptAnswers.algorithm = "clear";
+  const initialWork = await page.request.get(endpoint);
+  expect(initialWork.status()).toBe(200);
+  const work: Work = await initialWork.json();
+  work.draft.conceptAnswers.pc0 = "0";
   expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } })).status()).toBe(200);
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login\/student$/);
@@ -95,7 +99,7 @@ test("게스트 학생·교사 바로 입장, 로컬 기록 복원, 화면 크�
   await expect(page).toHaveURL(/\/student$/);
   const restored = await page.request.get(endpoint);
   expect(restored.status()).toBe(200);
-  expect((await restored.json()).draft.conceptAnswers.algorithm).toBe("clear");
+  expect((await restored.json()).draft.conceptAnswers.pc0).toBe("0");
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login\/student$/);
   await page.goto("/login/teacher");

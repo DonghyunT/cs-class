@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import { buildProgrammingProject } from "../src/lib/classroom/programming-entry";
-import { emptyWork } from "../src/lib/classroom/progress";
+import { emptyWork, latestSubmissionAtFor, submissionCountFor } from "../src/lib/classroom/progress";
 import type { AbstractionProject } from "../src/lib/classroom/review/project";
 import type { Lesson, TeacherDashboard, Work } from "../src/lib/classroom/types";
 import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
@@ -154,7 +154,15 @@ test.afterAll(async () => {
 });
 
 test("[4차-6] 최근 제출은 알려진 submittedAt 최댓값·학번 동률순이며 초안 편집과 무관", async ({ page }) => {
-  for (const lesson of [ordinary, programming, flowchart]) {
+  // Historical single-submission work remains readable through its direct API.
+  const legacyDetail = await page.request.get(`/api/classroom/students/${uids[0]}/work/${ordinary.id}`);
+  expect(legacyDetail.status()).toBe(200);
+  const legacyWork = await legacyDetail.json() as Work;
+  expect(latestSubmissionAtFor(ordinary, legacyWork)).toBe(2000);
+  expect(submissionCountFor(ordinary, legacyWork)).toBe(1);
+  expect(latestSubmissionAtFor(ordinary, recentWork(ordinary, 4))).toBe(0);
+  expect(submissionCountFor(ordinary, recentWork(ordinary, 4))).toBe(0);
+  for (const lesson of [programming, flowchart]) {
     await setCurrent(lesson);
     await page.goto("/teacher?classId=2-1");
     const actions = page.getByRole("region", { name: "교사가 확인할 일", exact: true });
@@ -234,7 +242,7 @@ test("[4차-5] 요청 checkbox는 진행 조건과 AND이며 수업·반 전환 
   await expect(row(page, 1)).toBeVisible();
   await page.getByRole("searchbox", { name: "학번·닉네임 검색" }).fill(studentIds[0]);
   await expect(page.getByText("조건에 맞는 학생이 없어요.", { exact: true })).toBeVisible();
-  await choose(page, "확인할 수업", ordinary.title);
+  await choose(page, "확인할 수업", review.title);
   await expect(pendingOnly(page)).not.toBeChecked();
   await expect(page.getByRole("checkbox", { name: "비밀번호 변경 필요만", exact: true })).not.toBeChecked();
   await expect(page.getByRole("searchbox", { name: "학번·닉네임 검색" })).toHaveValue("");

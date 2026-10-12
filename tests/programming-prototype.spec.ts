@@ -32,7 +32,18 @@ test("programming-readability: 관찰하며 체험을 초기화해도 답안과 
   const reset = page.getByRole("button", { name: "체험 초기화", exact: true });
   await expect(experiment).toHaveAccessibleDescription(/블록.*텍스트.*결과/);
   await expect(observation).toBeVisible();
+  const terms = [
+    ["프로그래밍", "컴퓨터가 할 일을 생각하고, 명령을 만들어 실행해 보며 고치는 과정이에요."],
+    ["프로그래밍 언어", "컴퓨터가 할 일을 표현할 때 사용하는 약속된 언어예요. 엔트리의 블록이나 파이썬의 글자로 명령을 나타낼 수 있어요."],
+    ["프로그램", "컴퓨터가 할 일을 순서와 규칙에 맞게 적어 놓은 명령의 모음이에요."],
+  ];
+  for (const [term, explanation] of terms) {
+    await expect(experiment.getByText(term, { exact: true })).toBeVisible();
+    await expect(experiment.getByText(explanation, { exact: true })).toBeVisible();
+  }
+  await expect(experiment.getByText("프로그래밍 언어로 명령을 표현해 프로그램을 만드는 과정이 프로그래밍이에요.", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "텍스트", exact: true }).click();
+  for (const [, explanation] of terms) await expect(experiment.getByText(explanation, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "이 명령 실행하기" }).click();
   await expect(experiment.getByText("안녕!", { exact: true })).toBeVisible();
   await page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true }).check();
@@ -184,7 +195,11 @@ test("개념→퀴즈 오답 재도전→실습·도움·교사 피드백과 재
   const block = page.locator(`#${id}`);
   await block.getByRole("combobox").click();
   await page.getByRole("option", { name: "A", exact: true }).click();
-  for (let i = 0; i < 3; i++) await block.getByRole("button", { name: /위로 이동/ }).click();
+  for (const position of [5, 4, 3]) {
+    await block.getByRole("button", { name: /위로 이동/ }).press("Enter");
+    await expect(page.getByRole("region", { name: "블록 조립 작업실", exact: true }).getByRole("listitem").nth(position - 1)).toHaveAttribute("id", id!);
+    await expect(block).toBeFocused();
+  }
   await page.getByRole("button", { name: "실행하기", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "A × B = 24" })).toBeVisible();
   await page.getByRole("button", { name: "미션 조건 확인" }).click();

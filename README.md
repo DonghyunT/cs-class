@@ -2,7 +2,7 @@
 
 중학교 정보 수업을 위한 온라인 교실입니다. 학생은 이번 수업을 시작하고 지난 활동을 이어가며, 교사는 반별 수업을 준비합니다.
 
-Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 학습 플랫폼**입니다. 학생·교사 로그인, 반별 수업 관리, 학습 기록 저장·복원과 제출을 구현했습니다. 「강아지와 시작하는 프로그래밍」은 실제 EntryJS 편집기·무대를 사용하며, 문제 추상화·알고리즘 설계·순서도 연구소는 수업별 AI를 연결한 선택 복습 공간입니다. 실제 학생 계정 등록은 별도입니다.
+Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 학습 플랫폼**입니다. 학생·교사 로그인, 반별 수업 관리, 학습 기록 저장·복원과 제출을 구현했습니다. 「프로그래밍의 기초」은 실제 EntryJS 편집기·무대를 사용하며, 문제 추상화·알고리즘 설계·순서도 연구소는 수업별 AI를 연결한 선택 복습 공간입니다. 실제 학생 계정 등록은 별도입니다.
 
 수업 구성은 실제 EntryJS로 만든 [프로그래밍 13차시](docs/PRD.md#프로그래밍-13차시--실제-수업-구성)와 [세 복습 수업](docs/PRD.md#알고리즘-선택-복습--2026-10-05-확정)을 따릅니다. 복습 실습은 원작의 그림·색·조작을 살리고 성적에 반영하지 않습니다. [명부 준비·반별 발급 도구](docs/DEVELOPMENT.md#실학생-명부-준비와-반별-발급)도 마련했습니다. 현재 구현·검증·운영 반영과 남은 한계는 [HANDOFF](docs/HANDOFF.md#현재-작업-상태), 첫 실제 수업 준비는 [다음 작업](docs/HANDOFF.md#다음에-이어갈-작업)을 확인합니다.
 
@@ -42,13 +42,14 @@ Firebase 키 없이 사용하는 가상 계정 개발 모드입니다. [로컬 �
 | 알고리즘 세 수업의 원본과 AI 품질 근거는 어디에 있나요? | [알고리즘 복습 · 원본 이식과 품질 검증](docs/reference/algorithm-review-integration.md) |
 | 원본 PPT 없이 13차시 내용과 체험을 어떻게 파악하나요? | [프로그래밍 13차시 · 수업 자료와 체험 기록](docs/reference/programming-13.md) |
 | 학생 학습 화면 가독성·체험 개선은 어떻게 계획했나요? | [합의한 계획 · 12개 회차·검증 통합·휴먼 리뷰](docs/reference/student-learning-readability-plan.md) |
+| 10/12 브라우저 주석 11개는 어떻게 반영하나요? | [학생 수업 UX · 주석 반영 계획](docs/reference/student-lesson-feedback-plan-20261012.md) |
 | 컨설팅의 개선 제안과 실행 순서는 무엇인가요? | [진단 보고서](docs/reference/project-consulting-2026-10-08.md) · [승인된 후속 개선 계획](docs/reference/consulting-improvement-plan-2026-10-08.md) |
 | 수업에 들어간 뒤 사용하는 공통 UI는 어떻게 구성하나요? | [공통 수업 화면 기준](docs/DESIGN.md#수업-전용-공통-틀--2026-10-06-구현) |
 | 순서도 V1 비교에서 무엇을 보완했나요? | [순서도 V1 · 차이 분석과 후속 반영](docs/reference/flowchart-v1-audit-20261011.md) |
 | 완료된 구현 지시와 이전 판단 근거는 어디에 있나요? | [문서 보관함](docs/archive/README.md) |
 | 에이전트는 어떤 규칙을 지켜야 하나요? | [AGENTS · 작업 규칙](AGENTS.md) |
 
-문서별 담당 내용은 아래 기준을 따릅니다. 과거 프롬프트·검토 원문은 [문서 보관함](docs/archive/README.md), 이전 V1 코드는 [코드 보관함](archive/README.md)에 있으며 현재 작업 지침으로 적용하지 않습니다.
+문서별 담당 내용은 아래 기준을 따릅니다. 과거 프롬프트·검토 원문은 [문서 보관함](docs/archive/README.md), V1 초기 보관본과 GitHub 최신 소스 참고본은 [코드 보관함](archive/README.md)에 있으며 현재 작업 지침으로 적용하지 않습니다.
 
 ## 문서의 위치와 내용 기준
 

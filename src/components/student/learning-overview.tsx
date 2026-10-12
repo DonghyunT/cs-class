@@ -36,9 +36,7 @@ export function LearningOverview({ data, loading, error }: { data: StudentDashbo
       <h2 id="learning-overview-heading">나의 학습 진도</h2>
       {!data ? loading && !error ? <div className={styles.summaryLoading} aria-hidden="true"><Skeleton /><Skeleton /></div> : <p className={styles.empty}>수업 기록을 확인하면 진도가 보여요.</p> : total > 0 ? <>
         <ActivityProgressRing parts={stages} />
-        <div className={styles.countRow}><p className={styles.count}>필수 활동 {completed}/{total}개 완료</p>
-          <details className={styles.progressHelp}><summary>진도 계산 안내</summary><p>현재 열린 정규 수업의 필수 활동을 합산해요. 수업이 추가되면 전체 활동이 늘어 비율이 내려갈 수 있어요. 완료 기록은 그대로예요. 선택 복습과 도전은 제외해요.</p></details>
-        </div>
+        <p className={styles.count}>필수 활동 {completed}/{total}개 완료</p>
       </> : <div className={styles.waiting}><BookOpen size={32} aria-hidden="true" /><p>아직 열린 정규 수업이 없어요.</p></div>}
       <p id="learning-overview-scope" className="sr-only">현재 열린 정규 수업 기준</p>
     </div>
