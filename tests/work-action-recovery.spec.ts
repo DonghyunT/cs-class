@@ -251,8 +251,8 @@ for (const programming of [false, true]) {
   test(`복구 조회 중 개념 이동은 현재 개념 화면에 초점을 복구 (${programming ? "프로그래밍" : "일반"})`, async ({ page }) => {
     const id = programming ? "programming-13" : lessonId;
     const workEndpoint = `/api/classroom/work/${id}`;
-    const first = programming ? "pc0" : "algorithm", second = programming ? "pc1" : "sequence";
-    const answers = programming ? { pc0: "0", pc1: "2" } : { algorithm: "clear", sequence: "save" };
+    const first = programming ? "pc4" : "algorithm", second = programming ? "pc1" : "sequence";
+    const answers = programming ? { pc4: "0", pc1: "2" } : { algorithm: "clear", sequence: "save" };
     const secondTitle = programming ? "이름이 인사말이 되기까지" : "순서에 따라 결과가 달라져요";
     const secondAnswer = programming ? "출력" : "내용을 저장해요";
     if (programming) {
@@ -285,7 +285,7 @@ for (const programming of [false, true]) {
     try {
       await page.getByRole("button", { name: "결과 다시 확인", exact: true }).click();
       await getStarted;
-      await page.getByRole("navigation", { name: "개념 목록", exact: true }).getByRole("button").nth(1).click();
+      await page.getByRole("navigation", { name: "개념 목록", exact: true }).getByRole("button", { name: new RegExp(secondTitle) }).click();
       await expect(secondHeading).toHaveText(secondTitle);
       await expect(page.locator(programming ? "#concept-feedback" : "#concept-feedback-sequence")).toBeVisible();
     } finally { release(); }

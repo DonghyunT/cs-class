@@ -248,7 +248,7 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   await expect(page.locator("tbody").getByRole("progressbar")).toHaveCount(6);
   await expect(page.locator("tbody tr").filter({ hasText: "20184" }).getByRole("progressbar", { name: "20184 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "100");
   await expect(challenge.getByRole("progressbar", { name: "20185 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "0");
-  await expect(challenge.getByRole("progressbar", { name: "20185 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuetext", "필수 활동 0/13개 완료");
+  await expect(challenge.getByRole("progressbar", { name: "20185 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuetext", "필수 활동 0/14개 완료");
   await expect(challenge.locator("svg [data-start-marker]")).toHaveCount(1);
   await expect(page.locator("tbody tr").filter({ hasText: "20184" }).locator("svg [data-start-marker]")).toHaveCount(0);
   await expect(challenge.locator("svg [data-stage]")).toHaveCount(3);
@@ -259,7 +259,7 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   await page.getByRole("searchbox", { name: "학번·닉네임 검색" }).fill("20182");
   const row = page.locator("tbody tr");
   await expect(row).toHaveCount(1);
-  await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuetext", "필수 활동 1/13개 완료");
+  await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuetext", "필수 활동 1/14개 완료");
   await expect(row.locator("svg [data-start-marker]")).toHaveCount(0);
   const viewer = row.getByRole("button", { name: "20182 제출 작품 보기", exact: true });
   await viewer.click();
@@ -285,7 +285,7 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   await expect(page.getByRole("searchbox", { name: "학번·닉네임 검색" })).toHaveValue("20182");
   await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("진행 중");
   await expect(row).toHaveCount(1);
-  await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "8");
+  await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "7");
 });
 
 test("선택 복습과 미지정 학생은 목록·격자에서 정규 완료율을 만들지 않음", async ({ page }) => {

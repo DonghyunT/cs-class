@@ -7,6 +7,7 @@ import { Brand } from "@/components/visuals";
 import { Button } from "@/components/ui/button";
 import { useNavigationGuard } from "@/components/navigation-provider";
 import type { Stage } from "@/lib/classroom/types";
+import { concepts } from "@/lib/classroom/programming-data";
 import { LEGACY_STORAGE_KEY, STORAGE_KEY, MAX_PROTOTYPE_SIZE, initialState, restoreState, type PrototypeState, type PrototypeUpdate } from "@/lib/prototype/programming";
 import { type NameEditor } from "./name-practice";
 import styles from "./programming.module.css";
@@ -95,7 +96,7 @@ export function ProgrammingPrototype() {
     return raw && editor.current ? { ...context, project: raw, runs: editor.current.runs() } : null;
   }
   function viewStudent() { setTeacher(false); setHelpOpen(!!request); focus(request ? "help-title" : `${state.stage}-title`); }
-  const totals = { concept: `${state.conceptDone.length}/4`, quiz: `${state.quiz.solved.length}/5`, practice: `${state.completed.filter((i) => i < 3).length}/3` };
+  const totals = { concept: `${state.conceptDone.length}/${concepts.length}`, quiz: `${state.quiz.solved.length}/5`, practice: `${state.completed.filter((i) => i < 3).length}/3` };
   return <div className={styles.prototype}>
     <div className={styles.banner}><FlaskConical size={15} /><span>수업 프로토타입 · 기록은 이 탭에만 보관돼요. 도움·교사 피드백은 체험이에요.</span></div>
     <header className={styles.topbar}><Brand small /><div className={styles.topbarActions}><span className={styles.localStatus} role="status">{!ready ? "체험 기록 불러오는 중" : error ? "탭 보관 확인 필요" : "이 탭에 보관"}</span><Button variant="outline" onClick={() => teacher ? viewStudent() : viewTeacher()}><Monitor size={16} />{teacher ? "학생 시점으로" : "교사 시점 체험"}</Button></div></header>

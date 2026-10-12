@@ -1,14 +1,14 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { LessonMode } from "../work-controller";
 import { Button } from "@/components/ui/button";
 import { missions, level2Walkthrough } from "@/lib/classroom/review/flowchart-data.mjs";
-import type { FlowchartProject } from "@/lib/classroom/review/project";
+import { sameReviewProject, type FlowchartProject } from "@/lib/classroom/review/project";
 import { guideGraph, placePuzzleBlock, puzzleGraph, puzzleExecutionGraph, puzzlePalette } from "@/lib/classroom/review/flow-experience";
 import { FlowDiagram } from "./flow-diagram";
 import { FlowExecution } from "./flow-execution";
 import { FlowchartStudio } from "./flowchart-studio";
-import { ReviewSubmit, useReviewAi, type ReviewController } from "./shared";
+import type { ReviewController } from "./shared";
 import styles from "./flowchart.module.css";
 
 const steps: FlowchartProject["mission"][] = ["1", "2", "3", "guide", "free"];
@@ -19,14 +19,70 @@ const missionFeedback: Record<string, { summary: string; completion: string; nex
   "3": { summary: "입력 자료: 비밀번호 · 정답 7777을 입력할 때까지 반복해요.", completion: "🔒 로그인에 성공했어요! 비밀번호가 틀리면 입력으로 돌아가고 맞으면 끝나는 반복 구조예요.", next: "다음 단계: 예시 공방" },
 };
 
+// One run owns one validation/submission chain. Inspect committed work after each
+// request (and recovery), since perform() reports HTTP success, not correctness.
+function usePuzzleCompletion(controller: ReviewController, mode: LessonMode) {
+  type Attempt = { project: FlowchartProject; mission: string; phase: "running" | "validate" | "validating" | "validation" | "submitting" | "submission" | "failed"; revision: number; succeeded?: boolean };
+  const attempt = useRef<Attempt | null>(null);
+  const [notice, setNotice] = useState("");
+  const [version, refresh] = useState(0);
+  const project = controller.draft.reviewProject;
+  const mission = project?.type === "flowchart" ? project.mission : "";
+  const submitted = sameReviewProject(project, controller.work.missions?.[mission]?.submission?.reviewProject, mission);
+  useEffect(() => () => { attempt.current = null; }, []);
+  useEffect(() => {
+    const run = attempt.current;
+    if (!run) return;
+    const notify = (message: string) => queueMicrotask(() => { if (attempt.current === run) setNotice(message); });
+    if (controller.draft.stage !== "practice" || mission !== run.mission || !sameReviewProject(project, run.project, run.mission)) {
+      attempt.current = null; queueMicrotask(() => { if (!attempt.current) setNotice(""); }); return;
+    }
+    if (run.phase === "running" || run.phase === "failed" || run.phase === "validating" || run.phase === "submitting") return;
+    if (controller.busy || controller.aiBusy) return;
+    // A new run may retry a previous definite rejection. perform() clears it;
+    // uncertain requests still require recovery before any new request.
+    if (controller.actionBlocked || controller.error || controller.actionFailure && run.phase !== "validate") {
+      if (!controller.actionFailure?.uncertain) run.phase = "failed";
+      notify(controller.actionFailure?.uncertain ? "완료 기록 확인이 필요해요. 위의 ‘결과 다시 확인’을 눌러 주세요." : "기록을 저장하지 못했어요. 입력은 보존되어 있어요. 저장을 확인하고 다시 실행해 주세요.");
+      return;
+    }
+    if (submitted) { attempt.current = null; return; }
+    const request = (type: "validate-practice" | "submit-practice") => {
+      run.phase = type === "validate-practice" ? "validating" : "submitting";
+      run.revision = controller.work.revision;
+      notify(type === "validate-practice" ? "실행 성공 · 복습 기록 확인 중…" : "실행 성공 · 복습 기록 저장 중…");
+      void controller.perform({ type, missionId: run.mission }).then(succeeded => {
+        if (attempt.current !== run) return;
+        run.phase = type === "validate-practice" ? "validation" : "submission";
+        run.succeeded = succeeded; refresh(value => value + 1);
+      });
+    };
+    if (run.phase === "validate") { request("validate-practice"); return; }
+    const saved = controller.work.missions?.[run.mission];
+    if (run.phase === "validation" && controller.work.revision > run.revision && saved?.validation) {
+      if (saved.validation.passed && sameReviewProject(run.project, saved.validation.reviewProject, run.mission)) request("submit-practice");
+      else { run.phase = "failed"; notify("검증을 통과하지 못했어요. 배치를 확인하고 다시 실행해 주세요."); }
+    } else if (run.succeeded === false) {
+      run.phase = "failed"; notify("기록을 저장하지 못했어요. 입력은 보존되어 있어요. 저장을 확인하고 다시 실행해 주세요.");
+    }
+  }, [controller, mission, project, submitted, version]);
+  function prepare() {
+    const current = controller.getDraft().reviewProject;
+    if (current?.type !== "flowchart" || !["1", "2", "3"].includes(current.mission) || controller.busy || controller.actionBlocked) { attempt.current = null; return; }
+    attempt.current = { project: structuredClone(current), mission: current.mission, phase: "running", revision: controller.work.revision };
+    setNotice("");
+  }
+  function complete() { if (attempt.current?.phase === "running") { attempt.current.phase = "validate"; refresh(value => value + 1); } }
+  function cancel() { attempt.current = null; setNotice(""); }
+  return { prepare, complete, cancel, submitted, notice: controller.actionBlocked ? notice : submitted ? mode === "preview" ? "체험 완료 · 학생 기록에는 반영되지 않아요." : "복습 기록 완료 · 다음 미션으로 이동할 수 있어요." : notice || "종료에 도달하면 복습 기록을 자동으로 남겨요." };
+}
+
 export function Flowchart({ controller, practiceFocused = false, mode = "student" }: { controller: ReviewController; practiceFocused?: boolean; mode?: LessonMode }) {
-  const project = controller.draft.reviewProject, ai = useReviewAi(controller, mode), { clear } = ai;
-  const [paletteBlock, setPaletteBlock] = useState(""), [active, setActive] = useState<string | undefined>(), [collapsed, setCollapsed] = useState(false), [focus, setFocus] = useState(0), [monitorOpen, setMonitorOpen] = useState(false);
+  const project = controller.draft.reviewProject, completion = usePuzzleCompletion(controller, mode);
+  const [paletteBlock, setPaletteBlock] = useState(""), [active, setActive] = useState<string | undefined>(), [collapsed, setCollapsed] = useState(false), [focus, setFocus] = useState(0);
   const [attempts, setAttempts] = useState<Record<string, number>>({});
-  const openMonitor = useCallback(() => setMonitorOpen(true), []);
   const practice = useRef<HTMLDivElement>(null), heading = useRef<HTMLHeadingElement>(null), plannerToggle = useRef<HTMLButtonElement>(null), restorePlanner = useRef(false);
   const missionId = project?.type === "flowchart" ? project.mission : null;
-  useEffect(() => { clear(); }, [clear, missionId]);
   useEffect(() => { if (focus) heading.current?.focus(); }, [focus]);
   useEffect(() => { if (restorePlanner.current) { plannerToggle.current?.focus(); restorePlanner.current = false; } }, [collapsed]);
   useEffect(() => {
@@ -67,14 +123,14 @@ export function Flowchart({ controller, practiceFocused = false, mode = "student
   return <div ref={practice} className={styles.practice} data-practice="flowchart" data-focused={practiceFocused}>
     <nav className={styles.stepNav} aria-label="순서도 실습">{steps.map((id, index) => <button key={id} disabled={locked} aria-pressed={p.mission === id} onClick={() => navigate(id)}>{stepNames[index]}{controller.work.missions?.[id]?.submission ? " ✓" : ""}</button>)}</nav>
     <h3 ref={heading} tabIndex={-1} className={styles.srOnly}>{mission?.title ?? (p.mission === "guide" ? "선생님과 함께하는 예시 공방" : "내 생각을 연결하는 자유 캔버스")}</h3>
-    {mission ? <FlowExecution key={p.mission} onActive={setActive} graph={puzzleExecutionGraph(p.mission, placements)} missionSummary={feedback.summary} completionText={feedback.completion} completionAction={<Button disabled={locked} onClick={() => navigate(steps[Number(p.mission)])}>{feedback.next}</Button>}>
+    {mission ? <FlowExecution key={p.mission} onActive={setActive} onPrepare={completion.prepare} onComplete={completion.complete} onCancel={completion.cancel} startDisabled={locked || controller.actionBlocked} graph={puzzleExecutionGraph(p.mission, placements)} missionSummary={feedback.summary} completionText={feedback.completion} completionAction={<Button disabled={locked || controller.actionBlocked || !completion.submitted} onClick={() => navigate(steps[Number(p.mission)])}>{feedback.next}</Button>}>
       {(controls, monitor, status, runtime) => <div className={styles.puzzleColumns}>
         <section className={styles.puzzlePalette} aria-label="순서도 기호 보관함">
-          <small>Symbol Palette</small><h3>순서도 기호 보관함</h3>
+          <h3>순서도 기호 보관함</h3>
           <p>기호를 빈칸으로 끌어 놓아요. 클릭하거나 Enter로 고른 뒤 빈칸을 눌러도 좋아요. 각 기호는 한 칸에만 놓을 수 있어요.</p>
           <div className={styles.palette}>{puzzlePalette(p.mission, attempts[p.mission] ?? 0).map(block => <button key={block.id} className={styles.symbolBlock} data-shape={block.shape} data-used={used.has(block.id)} aria-label={block.text} aria-pressed={paletteBlock === block.id} disabled={locked || used.has(block.id)} draggable={!locked && !used.has(block.id)} onDragStart={event => { event.dataTransfer.setData("text/plain", block.id); event.dataTransfer.effectAllowed = "move"; setPaletteBlock(block.id); }} onClick={() => setPaletteBlock(block.id)}><span>{block.text}</span>{used.has(block.id) && <small>배치됨</small>}</button>)}</div>
           <p role="status">{paletteBlock ? `선택: ${mission.palette.find(block => block.id === paletteBlock)?.text} · 놓을 기호를 누르세요.` : "배치한 기호의 ×를 누르면 보관함으로 돌아와요."}</p>
-          <div className={styles.symbolGuide}><strong>💡 표준 기호 가이드</strong><p>⬭ 단말: 시작과 종료<br />▱ 입출력: 데이터 입력·출력<br />▭ 처리: 연산·명령 실행<br />◇ 판단: 조건 검사·분기</p></div>
+          <details className={styles.symbolGuide}><summary>💡 표준 기호 가이드</summary><p>⬭ 단말: 시작과 종료<br />▱ 입출력: 데이터 입력·출력<br />▭ 처리: 연산·명령 실행<br />◇ 판단: 조건 검사·분기</p></details>
           <details><summary>목록으로 배치하기</summary>{mission.slots.filter(slot => !slot.fixed).map(slot => <label key={slot.id} className={styles.field}>{slot.hint}<select aria-label={slot.hint} disabled={locked} value={placements[slot.id] ?? ""} onChange={event => place(slot.id, event.target.value)}><option value="">빈 기호</option>{mission.palette.map(block => <option key={block.id} value={block.id}>{block.text}{used.has(block.id) && placements[slot.id] !== block.id ? " (이 칸으로 이동)" : ""}</option>)}</select></label>)}</details>
         </section>
         <section className={styles.puzzleCanvas}>
@@ -83,8 +139,7 @@ export function Flowchart({ controller, practiceFocused = false, mode = "student
           <FlowDiagram {...graph} {...runtime} fit active={active} emptyNodes={empty} clearableNodes={clearable} clearNode={slotId => place(slotId, "")} select={slotId => { if (paletteBlock) place(slotId, paletteBlock); }} drop={place} />
         </section>
         <div className={styles.puzzleMonitor}>
-          <section className={styles.puzzleExecution} aria-label="순서도 실행"><small>I/O &amp; Simulation</small><h3>실행 검증 &amp; 입출력</h3>{status}{controls}{monitor}</section>
-          <section className={styles.diagnosis}><h3>🤖 Solar AI 순서도 진단기</h3><p>순서도를 실행해 보고, 필요한 경우 오류 설명과 힌트를 받아 보세요.</p><Button variant="outline" disabled={mode === "preview" || locked || controller.actionBlocked} onClick={() => void ai.ask("flow-puzzle", "현재 배치에서 고칠 부분의 이유와 힌트를 알려 주세요.", p.mission)}>AI 오류 설명과 힌트</Button>{ai.error && <p className={styles.error} role="alert">{ai.error}</p>}{ai.result && <p role="status">{ai.result.message}</p>}<ReviewSubmit mode={mode} controller={controller} missionId={p.mission} /></section>
+          <section className={styles.puzzleExecution} aria-label="순서도 실행"><small>I/O &amp; Simulation</small><h3>실행 검증 &amp; 입출력</h3>{status}{controls}<p id="review-action-feedback" tabIndex={-1} aria-live="polite">{completion.notice}</p>{monitor}</section>
         </div>
       </div>}
     </FlowExecution> : p.mission === "guide" ? <div className={styles.guideWorkspace} data-planner-collapsed={collapsed}>
@@ -93,11 +148,10 @@ export function Flowchart({ controller, practiceFocused = false, mode = "student
         <div hidden={collapsed} className={styles.cardList}><p>카드를 클릭하면 오른쪽 순서도에 기호가 연결돼요. 앞 카드를 다시 읽어도 완성한 기호는 남아요.</p>{level2Walkthrough.steps.map(step => <button className={styles.guideCard} key={step.stepIdx} disabled={locked} data-revealed={p.guideStep >= step.stepIdx} data-active={step.stepIdx === (active === "time" ? 1 : active === "wash" ? 2 : ["check", "yes", "no"].includes(active ?? "") ? 3 : ["bus", "end"].includes(active ?? "") ? 4 : 0)} onClick={() => { if (step.stepIdx > p.guideStep) edit({ guideStep: step.stepIdx }); }}><strong>{step.cardTitle}</strong><p>{step.naturalText || `${step.condition} · 예: ${step.yesAction} / 아니오: ${step.noAction}`}</p><small>{p.guideStep >= step.stepIdx ? `${step.symbolShapeName} · ${step.explanation}` : "클릭해 순서도로 바꾸기"}</small></button>)}<span>진행: {p.guideStep} / 4</span></div>
       </section>
       <section className={styles.guideCanvas}>
-        <FlowExecution onActive={setActive} onWaiting={openMonitor} monitorVisible={monitorOpen} onPrepare={() => { if (p.guideStep < 4) edit({ guideStep: 4 }); }} graph={guideGraph(4)} missionSummary="현재 시각을 07:30과 비교해 보세요. 07:30도 예 갈래에 포함돼요." choiceLabels={{ "예": "07:20 · 예로 진행", "아니오": "07:45 · 아니오로 진행" }}>
-          {(controls, monitor, status, runtime) => <>
-            <header><h3>📐 표준 순서도 다이어그램</h3><div className={styles.tools}><Button variant="ghost" disabled={locked} onClick={() => edit({ guideStep: 0 })}>↶ 공방 다시 보기</Button><Button variant="ghost" disabled={locked} onClick={() => edit({ guideStep: 4 })}>⚡ 전체 완성</Button><Button disabled={locked} onClick={() => navigate("free")}>나만의 백지로 이동</Button></div>{controls}</header>
+        <FlowExecution onActive={setActive} startDisabled={locked} onReset={() => edit({ guideStep: 0 })} resetLabel="공방 다시 보기" onPrepare={() => { if (p.guideStep < 4) edit({ guideStep: 4 }); }} graph={guideGraph(4)} choiceLabels={{ "예": "07:20 · 예로 진행", "아니오": "07:45 · 아니오로 진행" }}>
+          {(controls, _monitor, status, runtime) => <>
+            <header><h3>📐 표준 순서도 다이어그램</h3><div className={styles.guideTools}>{controls}<div className={styles.tools} role="group" aria-label="공방 조립"><Button variant="ghost" disabled={locked} onClick={() => edit({ guideStep: 4 })}>⚡ 전체 완성</Button><Button disabled={locked} onClick={() => navigate("free")}>나만의 백지로 이동</Button></div></div></header>
             {status}<FlowDiagram {...graph} {...runtime} fit active={active} />
-            <details open={monitorOpen} onToggle={event => setMonitorOpen(event.currentTarget.open)}><summary>실행 과정</summary>{monitor}</details>
           </>}
         </FlowExecution>
       </section>

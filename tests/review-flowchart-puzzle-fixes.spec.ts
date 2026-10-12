@@ -91,7 +91,7 @@ test.describe("순서도 퍼즐·예시 공방 V1 누락 회귀", () => {
     expect((await project(page)).nodes).toEqual(original.nodes);
   });
 
-  test("라면 실행은 완성 결과와 순차 구조를 설명하고 다음 단계 이동은 제출을 대신하지 않는다", async ({ page }) => {
+  test("라면 실행은 완성 결과와 순차 구조를 설명하고 기록 완료 후 다음 단계로 이동한다", async ({ page }) => {
     await prepare(page, { placements: { "1": correct } });
     const execution = page.getByRole("region", { name: "순서도 실행", exact: true });
     await expect(execution).toContainText("물 500ml");
@@ -100,10 +100,10 @@ test.describe("순서도 퍼즐·예시 공방 V1 누락 회귀", () => {
     await expect(execution).toContainText("라면이 완성됐어요");
     await expect(execution).toContainText("순차 구조");
     await expect(execution.getByRole("button", { name: "다시 실행", exact: true })).toBeEnabled();
-    expect((await read(page.request)).missions?.["1"]?.submission).toBeFalsy();
+    await expect.poll(async () => !!(await read(page.request)).missions?.["1"]?.submission).toBe(true);
     await execution.getByRole("button", { name: "다음 미션: 선택 구조", exact: true }).click();
     await expect(navigation(page).getByRole("button", { name: "🎡 2. 선택 (놀이기구)", exact: true })).toHaveAttribute("aria-pressed", "true");
-    expect((await read(page.request)).missions?.["1"]?.submission).toBeFalsy();
+    expect((await read(page.request)).missions?.["1"]?.submission).toBeTruthy();
   });
 
   test("고정 예시의 실행바는 캔버스 위에 있고 시간 선택은 실제 분기를 강조한다", async ({ page }) => {

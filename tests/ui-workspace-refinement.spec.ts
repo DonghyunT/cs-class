@@ -84,7 +84,13 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   expect(Math.abs(guideBox.y - editorBox.y)).toBeLessThanOrEqual(1);
   expect(missionBox.y + missionBox.height).toBeLessThanOrEqual(Math.min(guideBox.y, editorBox.y));
   expect(tabBox.y + tabBox.height).toBeLessThanOrEqual(missionBox.y);
-  expect(tabBox.width).toBe(1440);
+  const stageRow = await tabs.evaluate(element => {
+    const row = element.closest("details")!.parentElement!;
+    const toggle = row.querySelector<HTMLButtonElement>("button[aria-pressed]")!;
+    return { width: row.getBoundingClientRect().width, button: toggle.getBoundingClientRect().width, gap: parseFloat(getComputedStyle(row).columnGap) };
+  });
+  expect(stageRow.width).toBe(1440);
+  expect(tabBox.width + stageRow.button + stageRow.gap).toBeCloseTo(stageRow.width, 1);
   const iframeBox = (await iframe.boundingBox())!, toolbarBox = (await toolbar.boundingBox())!;
   expect(iframeBox.width).toBeGreaterThanOrEqual(1000);
   expect(toolbarBox.height).toBeLessThanOrEqual(80);
@@ -121,7 +127,12 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   await expect.poll(() => iframe.evaluate(element => document.activeElement === element)).toBe(true);
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 712 });
-    const narrowGuide = (await guidance.boundingBox())!, narrowEditor = (await editor.boundingBox())!;
+    // Resizing a focused iframe can scroll the page between separate geometry reads.
+    const { guide: narrowGuide, editor: narrowEditor } = await guidance.evaluate(element => {
+      const editor = document.querySelector<HTMLElement>('[aria-label="엔트리 블록 코딩 작업"]')!;
+      return { guide: element.getBoundingClientRect().toJSON(), editor: editor.getBoundingClientRect().toJSON() };
+    });
+    await testInfo.attach(`comments-layout-${width}-geometry`, { body: JSON.stringify({ guidance: narrowGuide, editor: narrowEditor }), contentType: "application/json" });
     expect(narrowGuide.y + narrowGuide.height).toBeLessThanOrEqual(narrowEditor.y);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     await expect(experiment).toBeVisible();
@@ -233,7 +244,11 @@ test("workspace-availability: 실제 셸 경계·로딩 중 초점·입력·실�
   const editor = page.getByRole("region", { name: "엔트리 블록 코딩 작업", exact: true });
   for (const width of [1339, 1340, 1339]) {
     await page.setViewportSize({ width, height: 720 });
-    const guideBox = (await guidance.boundingBox())!, editorBox = (await editor.boundingBox())!;
+    // Compare both boxes before the focused iframe's scroll position can change.
+    const { guide: guideBox, editor: editorBox } = await guidance.evaluate(element => {
+      const editor = document.querySelector<HTMLElement>('[aria-label="엔트리 블록 코딩 작업"]')!;
+      return { guide: element.getBoundingClientRect().toJSON(), editor: editor.getBoundingClientRect().toJSON() };
+    });
     if (width < 1340) expect(guideBox.y + guideBox.height).toBeLessThanOrEqual(editorBox.y);
     else expect(guideBox.x + guideBox.width).toBeLessThanOrEqual(editorBox.x);
     expect(await identity!.evaluate(element => element === document.querySelector("iframe"))).toBe(true);

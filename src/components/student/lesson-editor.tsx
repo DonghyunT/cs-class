@@ -8,7 +8,6 @@ import { practiceMatches, progressFor } from "@/lib/classroom/progress";
 import type { Lesson, Question, Stage, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { LearningStatus } from "./progress-summary";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
-import { useWorkspaceExpansion } from "./use-workspace-expansion";
 import { ProgrammingLearningStage } from "./programming-lesson";
 import { parseProgrammingProject, programmingMissions } from "@/lib/classroom/programming-entry";
 import { isReviewType } from "@/lib/classroom/review/project";
@@ -58,14 +57,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   useEffect(() => { displayedConcept.current = conceptId; }, [conceptId]);
   const [quizQuestionId, setQuizQuestionId] = useState(() => initial.quizRoundIds.find((id) => initial.quizRoundGraded ? !initial.quizFeedback[id]?.correct : !initial.draft.quizAnswers[id]) ?? initial.quizRoundIds[0] ?? lesson.quiz[0]?.id);
   const [experienceVersion, setExperienceVersion] = useState(0);
-  const reviewViewToggle = useRef<HTMLButtonElement>(null), manualReviewFocus = useRef(false);
-  const reviewHeading = useRef<HTMLHeadingElement>(null);
-  const showReviewViewToggle = useWorkspaceExpansion(workspaceWide, reviewViewToggle, reviewHeading, !!reviewType && draft.stage === "practice");
-  useEffect(() => {
-    if (manualReviewFocus.current) { (reviewViewToggle.current ?? reviewHeading.current)?.focus({ preventScroll: true }); manualReviewFocus.current = false; }
-  }, [workspaceWide]);
   useEffect(() => { onWorkspaceStageChange(draft.stage); }, [draft.stage, onWorkspaceStageChange]);
-  function setReviewWide(wide: boolean) { manualReviewFocus.current = true; onWorkspaceWideChange(wide); }
   const locked = busy || switchingTo !== null;
   const actionLocked = locked || controller.actionBlocked;
   const draftMatchesValidation = work.validation?.passed && practiceMatches(draft, work.validation);
@@ -95,7 +87,10 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   async function runAction(action: WorkAction, focusId: string) {
     if (await perform(action)) {
       if (action.type === "retry-quiz") setQuizQuestionId(lesson.quiz.find((question) => !work.quizSolved.includes(question.id))?.id ?? lesson.quiz[0]?.id);
-      setFocusRequest({ id: focusId });
+      const current = controller.getDraft();
+      const movedMission = lesson.practice.type === "programming" && action.type === "submit-practice" &&
+        (current.stage !== "practice" || current.programming?.mission !== action.missionId);
+      setFocusRequest({ id: movedMission ? `stage-heading-${current.stage}` : focusId });
     } else setFocusRequest({ id: "work-action-error" });
   }
   async function recoverAction(resend = false) {
@@ -105,7 +100,9 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     const id = action.type === "check-concept" ? programming ? "concept-feedback" : `concept-feedback-${action.conceptId}` :
       action.type === "grade-quiz" ? programming ? "programming-quiz-result" : "quiz-round-result" :
       action.type === "retry-quiz" ? programming ? "programming-question" : "quiz-question-title" :
-      reviewType ? "review-action-feedback" : action.type === "submit-practice" ? "submitted-heading" : "practice-feedback";
+      reviewType ? "review-action-feedback" : action.type === "submit-practice" ? programming ?
+        programmingMissions.at(-1)?.id === controller.getDraft().programming?.mission ? "programming-mission-complete" : "programming-next-mission"
+        : "submitted-heading" : "practice-feedback";
     // A later edit may make the old validation invisible; the stage heading remains a safe focus target.
     const changed = JSON.stringify(controller.getDraft()) !== JSON.stringify(controller.actionFailure?.before.draft);
     const differentConcept = action.type === "check-concept" && action.conceptId !== displayedConcept.current;
@@ -152,7 +149,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
 
     {lesson.practice.type !== "programming" && draft.stage === "quiz" && <LessonQuizPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} quizQuestionId={quizQuestionId} moveQuestion={moveQuestion} />}
 
-    {isReviewType(lesson.practice.type) && (draft.stage === "practice" || keepPractice) && <section id="panel-practice" hidden={draft.stage !== "practice"} role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><header className={reviewStyles.practiceHeader}><h2 ref={reviewHeading} id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2>{showReviewViewToggle && <Button ref={reviewViewToggle} variant="outline" aria-pressed={workspaceWide} onClick={() => setReviewWide(!workspaceWide)} onKeyDown={event => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); setReviewWide(false); } }}>{workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"}</Button>}</header>{lesson.practice.type === "sandwich" ? <Sandwich mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "abstraction" ? <Abstraction mode={mode} controller={controller} practiceFocused={practiceFocused} /> : <Flowchart mode={mode} controller={controller} practiceFocused={practiceFocused} />}</section>}
+    {isReviewType(lesson.practice.type) && (draft.stage === "practice" || keepPractice) && <section id="panel-practice" hidden={draft.stage !== "practice"} role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 className={reviewStyles.srOnly} id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2>{lesson.practice.type === "sandwich" ? <Sandwich mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "abstraction" ? <Abstraction mode={mode} controller={controller} practiceFocused={practiceFocused} /> : <Flowchart mode={mode} controller={controller} practiceFocused={practiceFocused} />}</section>}
     {lesson.practice.type !== "programming" && !isReviewType(lesson.practice.type) && draft.stage === "practice" && (
       <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" tabIndex={0} className={styles.stagePanel}>
         <div className={styles.stageHeading}>

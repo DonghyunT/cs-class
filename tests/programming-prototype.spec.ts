@@ -5,8 +5,35 @@ import { STORAGE_KEY, checkMission, initialState, newBlock, restoreState, runPro
 const make = (...items: [BlockKind, string][]): Block[] => items.map(([kind, value], i) => ({ ...newBlock(kind, String(i)), value }));
 const calculator = make(["start", "click"], ["ask", "a"], ["store", "A"], ["ask", "b"], ["store", "B"], ["calculate", "multiply"]);
 
+test("programming-intro: 옛 프로토타입 숫자 답안은 같은 개념으로 복원하고 새 첫 개념을 별도로 확인한다", async ({ page }) => {
+  const old = { ...initialState(), concept: 1, conceptDone: [0, 1, 2, 3], conceptAnswers: { 0: 0, 1: 2, 2: 1, 3: 1 }, reflection: "이전 체험 발견" };
+  await page.addInitScript(({ key, state }) => { if (!sessionStorage.getItem(key)) sessionStorage.setItem(key, JSON.stringify(state)); }, { key: STORAGE_KEY, state: old });
+  await page.goto("/prototype/programming");
+  await expect(page.locator("#concept-title")).toHaveText("이름이 인사말이 되기까지");
+  await expect(page.getByRole("radio", { name: "출력", exact: true })).toBeChecked();
+  const list = page.getByRole("navigation", { name: "개념 목록", exact: true });
+  await expect(list.getByRole("button")).toHaveCount(5);
+  await expect(list.getByRole("button").first()).toContainText("프로그래밍이란?");
+  await expect(page.getByRole("tab", { name: "개념 4/5", exact: true })).toBeVisible();
+  await list.getByRole("button").first().click();
+  await page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true }).check();
+  await page.getByRole("button", { name: "생각 확인하기", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "개념 5/5", exact: true })).toBeVisible();
+  const saved = restoreState(await page.evaluate(key => sessionStorage.getItem(key), STORAGE_KEY));
+  expect(saved?.conceptDone).toEqual([0, 1, 2, 3, 4]);
+  expect(saved?.conceptAnswers).toEqual({ ...old.conceptAnswers, 4: 0 });
+  expect(saved?.reflection).toBe(old.reflection);
+  await page.reload();
+  await expect(page.locator("#concept-title")).toHaveText("프로그래밍이란?");
+  await page.getByRole("button", { name: "다음 개념", exact: true }).click();
+  await expect(page.locator("#concept-title")).toHaveText("컴퓨터에게 전하는 말");
+  await expect(page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true })).toBeChecked();
+  await expect(page.getByText("프로그래밍 언어로 명령을 표현해 프로그램을 만드는 과정이 프로그래밍이에요.", { exact: true })).toHaveCount(0);
+});
+
 test("programming-readability: 서로 다른 체험의 실행 결과가 개념 왕복에서 섞이지 않는다", async ({ page }) => {
   await page.goto("/prototype/programming");
+  await page.getByRole("navigation", { name: "개념 목록", exact: true }).getByRole("button", { name: /컴퓨터에게 전하는 말/ }).click();
   await page.getByRole("button", { name: "이 명령 실행하기" }).click();
   await expect(page.getByRole("status").filter({ hasText: /^안녕!$/ })).toBeVisible();
   await page.getByRole("button", { name: "다음 개념", exact: true }).click();
@@ -30,7 +57,7 @@ test("programming-readability: 관찰하며 체험을 초기화해도 답안과 
   const experiment = page.getByRole("group", { name: /개념 체험$/ });
   const observation = page.locator("#programming-observation");
   const reset = page.getByRole("button", { name: "체험 초기화", exact: true });
-  await expect(experiment).toHaveAccessibleDescription(/블록.*텍스트.*결과/);
+  await expect(page.locator("#concept-title")).toHaveText("프로그래밍이란?");
   await expect(observation).toBeVisible();
   const terms = [
     ["프로그래밍", "컴퓨터가 할 일을 생각하고, 명령을 만들어 실행해 보며 고치는 과정이에요."],
@@ -42,8 +69,10 @@ test("programming-readability: 관찰하며 체험을 초기화해도 답안과 
     await expect(experiment.getByText(explanation, { exact: true })).toBeVisible();
   }
   await expect(experiment.getByText("프로그래밍 언어로 명령을 표현해 프로그램을 만드는 과정이 프로그래밍이에요.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "다음 개념", exact: true }).click();
+  await expect(experiment).toHaveAccessibleDescription(/블록.*텍스트.*결과/);
+  for (const [, explanation] of terms) await expect(experiment.getByText(explanation, { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "텍스트", exact: true }).click();
-  for (const [, explanation] of terms) await expect(experiment.getByText(explanation, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "이 명령 실행하기" }).click();
   await expect(experiment.getByText("안녕!", { exact: true })).toBeVisible();
   await page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true }).check();
@@ -125,8 +154,11 @@ test("개념→퀴즈 오답 재도전→실습·도움·교사 피드백과 재
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   await page.goto("/prototype/programming");
-  await expect(page.getByRole("tab", { name: "개념 0/4" })).toBeEnabled();
+  await expect(page.getByRole("tab", { name: "개념 0/5" })).toBeEnabled();
   await page.screenshot({ path: info.outputPath("concept-desktop.png"), fullPage: true });
+  await page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true }).check();
+  await page.getByRole("button", { name: "생각 확인하기", exact: true }).click();
+  await page.getByRole("button", { name: "다음 개념", exact: true }).click();
   await page.getByRole("button", { name: "텍스트", exact: true }).click();
   await expect(page.getByText("print(", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "이 명령 실행하기" }).click();
@@ -240,8 +272,8 @@ test("방향키는 무대에서만 동작하고 중지·좁은 창·탭 이동�
   await page.getByRole("button", { name: "미션 조건 확인" }).click();
   await page.getByRole("button", { name: "내 작업에 완료 표시" }).click();
   await page.getByRole("tab", { name: "실습 1/3" }).press("Home");
-  await expect(page.getByRole("tab", { name: "개념 0/4" })).toBeFocused();
-  for (const stageName of ["개념 0/4", "퀴즈 0/5", "실습 1/3"]) {
+  await expect(page.getByRole("tab", { name: "개념 0/5" })).toBeFocused();
+  for (const stageName of ["개념 0/5", "퀴즈 0/5", "실습 1/3"]) {
     await page.getByRole("tab", { name: stageName }).click();
     for (const width of [320, 390, 768]) { await page.setViewportSize({ width, height: 844 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }
   }
@@ -263,13 +295,14 @@ test("방향키는 무대에서만 동작하고 중지·좁은 창·탭 이동�
   await expect(page.getByRole("heading", { name: "같이 다음 한 걸음을 찾자" })).not.toBeVisible();
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "체험 처음부터" }).click();
-  await expect(page.getByRole("tab", { name: "개념 0/4" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "개념 0/5" })).toHaveAttribute("aria-selected", "true");
   await expect(page.locator("#concept-title")).toBeFocused();
 });
 
 test("탭 보관 실패는 답안을 유지하고 이동을 막고 재시도 뒤 복원한다", async ({ page }) => {
   await page.goto("/prototype/programming");
-  await expect(page.getByRole("tab", { name: "개념 0/4" })).toBeEnabled();
+  await expect(page.getByRole("tab", { name: "개념 0/5" })).toBeEnabled();
+  await page.getByRole("navigation", { name: "개념 목록", exact: true }).getByRole("button", { name: /컴퓨터에게 전하는 말/ }).click();
   await page.evaluate(() => {
     Reflect.set(window, "originalPrototypeSetItem", Storage.prototype.setItem);
     Storage.prototype.setItem = function (key, value) { if (key === "cs-class-programming-prototype-v2") throw new DOMException("quota", "QuotaExceededError"); Reflect.get(window, "originalPrototypeSetItem").call(this, key, value); };
@@ -277,7 +310,7 @@ test("탭 보관 실패는 답안을 유지하고 이동을 막고 재시도 뒤
   await page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true }).check();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("보관하지 못했어요");
   await page.getByRole("tab", { name: "퀴즈 0/5" }).click();
-  await expect(page.getByRole("tab", { name: "개념 0/4" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "개념 0/5" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true })).toBeChecked();
   await page.evaluate(() => { Storage.prototype.setItem = Reflect.get(window, "originalPrototypeSetItem"); });
   await page.getByRole("button", { name: "탭 보관 재시도" }).click();

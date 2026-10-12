@@ -4,8 +4,9 @@ import { useState, type RefObject } from "react";
 import { ArrowLeft, ArrowRight, Check, Lightbulb, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProgrammingConcept as ProgrammingConceptView } from "./programming-concept";
-import { questions } from "@/lib/classroom/programming-data";
+import { concepts, questions } from "@/lib/classroom/programming-data";
 import { buildProgrammingProject, missionById, programmingMissions } from "@/lib/classroom/programming-entry";
+import { practiceMatches } from "@/lib/classroom/progress";
 import type { Lesson, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
 import { PracticeGuidance } from "./practice-guidance";
@@ -26,16 +27,16 @@ export function ProgrammingLearningStage(props: Props) {
 
 function ProgrammingConcept({ lesson, controller, locked, focus, runAction, next, conceptId, onConceptChange }: Props) {
   const { work, draft, update } = controller;
-  const index = Math.max(0, lesson.concepts.findIndex((concept) => concept.id === conceptId));
-  const id = lesson.concepts[index].id;
+  const id = lesson.concepts.find((concept) => concept.id === conceptId)?.id ?? lesson.concepts[0].id;
+  const index = Number(id.slice(2));
   const state = {
     concept: index,
-    conceptDone: [0, 1, 2, 3].filter((i) => work.conceptSolved.includes(`pc${i}`)),
+    conceptDone: concepts.map((_, i) => i).filter((i) => work.conceptSolved.includes(`pc${i}`)),
     conceptAnswers: Object.fromEntries(Object.entries(draft.conceptAnswers).map(([key, answer]) => [Number(key.slice(2)), Number(answer)])),
   };
   return <ProgrammingConceptView state={state} locked={locked} actionsBlocked={controller.actionBlocked} focus={focus} next={() => next("quiz")} update={(value) => {
     if (locked) return;
-    onConceptChange(lesson.concepts[value.concept].id);
+    onConceptChange(`pc${value.concept}`);
     if (JSON.stringify(value.conceptAnswers) !== JSON.stringify(state.conceptAnswers)) update({ ...controller.getDraft(), conceptAnswers: Object.fromEntries(Object.entries(value.conceptAnswers).map(([key, answer]) => [`pc${key}`, String(answer)])) });
   }} onCheck={() => void runAction({ type: "check-concept", conceptId: id }, "concept-feedback")} serverFeedback={draft.conceptAnswers[id] === work.draft.conceptAnswers[id] ? work.conceptFeedback[id]?.message : undefined} />;
 }
@@ -83,6 +84,16 @@ function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exp
   const mission = missionById(draft.programming?.mission ?? "name")!;
   const current = work.missions?.[mission.id] ?? { validation: null, submission: null };
   const raw = draft.programming?.projects[mission.id] ?? buildProgrammingProject();
+  const position = programmingMissions.findIndex((item) => item.id === mission.id);
+  const previousMission = programmingMissions[position - 1], nextMission = programmingMissions[position + 1];
+  const submitted = practiceMatches({ ...draft, entryProject: raw, practiceOrder: [] }, current.submission);
+  const moveMessage = submitted
+    ? nextMission ? `${mode === "preview" ? "체험 제출 확인" : "제출 완료"}! 다음 미션에도 도전해 보세요.`
+      : `${mode === "preview" ? "이 미션의 체험 제출을 확인했어요" : "이 미션의 작품을 제출했어요"}. 이전 미션을 돌아보거나 아래에 발견한 점을 남겨 보세요.`
+    : mode === "preview" ? "이동하기 전에 현재 체험 작품의 입력을 확인해요." : "이동하기 전에 현재 작품의 저장을 확인해요.";
+  function runPracticeAction(action: WorkAction, focusId: string) {
+    return runAction(action, action.type === "submit-practice" ? nextMission ? "programming-next-mission" : "programming-mission-complete" : focusId);
+  }
   async function select(id: string) {
     if (locked || switching || id === mission.id) return;
     setSwitching(true);
@@ -106,11 +117,15 @@ function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exp
         <details key={mission.id} className={styles.hint}><summary>블록 연결 힌트</summary><p>{mission.hint}</p></details></PracticeGuidance>
       </aside>
       <div className={styles.workArea}>
-        <EntryPracticeWorkspace mode={mode} key={mission.id} mission={mission} lesson={lesson} work={{ ...work, validation: current.validation, submission: current.submission }} draft={{ ...draft, entryProject: raw, practiceOrder: [] }} locked={locked || switching} busy={controller.busy} exportRef={exportRef} runAction={runAction} workspaceWide={workspaceWide} practiceFocused={practiceFocused} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} saveState={controller.saveState} actionsBlocked={controller.actionBlocked} update={(next) => {
+        <EntryPracticeWorkspace mode={mode} key={mission.id} mission={mission} lesson={lesson} work={{ ...work, validation: current.validation, submission: current.submission }} draft={{ ...draft, entryProject: raw, practiceOrder: [] }} locked={locked || switching} busy={controller.busy} exportRef={exportRef} runAction={runPracticeAction} workspaceWide={workspaceWide} practiceFocused={practiceFocused} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} saveState={controller.saveState} actionsBlocked={controller.actionBlocked} update={(next) => {
           const current = controller.getDraft();
           if (current.programming && next.entryProject) update({ ...current, programming: { ...current.programming, projects: { ...current.programming.projects, [mission.id]: next.entryProject } } });
         }} />
-        <div className={styles.footer}><p>{mode === "preview" ? "다른 미션으로 이동하기 전에 현재 체험 작품의 입력을 확인해요." : "다른 미션으로 이동하기 전에 현재 작품의 저장을 확인해요."}</p>{mission.id !== "average" && <Button variant="outline" disabled={locked || switching || controller.actionBlocked} onClick={() => void select(programmingMissions[programmingMissions.findIndex((m) => m.id === mission.id) + 1].id)}>다음 미션<ArrowRight size={16} /></Button>}</div>
+        <nav className={styles.footer} aria-label="미션 앞뒤 이동" data-submitted={submitted}>
+          <Button variant="outline" disabled={locked || switching || controller.actionBlocked || !previousMission} onClick={() => previousMission && void select(previousMission.id)}><ArrowLeft size={18} aria-hidden="true" />이전 미션</Button>
+          <p id="programming-mission-complete" tabIndex={-1} role="status">{moveMessage}</p>
+          {nextMission && <Button id="programming-next-mission" className={styles.nextMission} aria-describedby="programming-mission-complete" disabled={locked || switching || controller.actionBlocked} onClick={() => void select(nextMission.id)}>다음 미션<ArrowRight size={18} aria-hidden="true" /></Button>}
+        </nav>
       </div>
     </div>
   </div>;

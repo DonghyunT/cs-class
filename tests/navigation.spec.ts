@@ -5,7 +5,7 @@ const studentId = "20102";
 const lessonId = "programming-13";
 const workPath = `/api/classroom/work/${lessonId}`;
 const classPath = `/classroom/${lessonId}`;
-const answerName = "컴퓨터가 할 일을 명령으로 표현해요";
+const answerName = "프로그램을 만들고 실행해 보며 고치는 과정";
 
 test("태블릿 메뉴와 양방향 화면 전환의 초점 복귀", async ({ page }) => {
   await readyStudent(page.request);
@@ -64,7 +64,7 @@ async function openLesson(page: Page) {
 async function back(page: Page) { await page.evaluate(() => history.back()); }
 async function forward(page: Page) { await page.evaluate(() => history.forward()); }
 async function savedAnswer() {
-  return (await db.collection("csWork").doc(`student-${studentId}__${lessonId}`).get()).data()?.draft.conceptAnswers.pc0;
+  return (await db.collection("csWork").doc(`student-${studentId}__${lessonId}`).get()).data()?.draft.conceptAnswers.pc4;
 }
 
 test("뒤로가기 저장 실패는 원래 수업 유지 · 재시도 후 이동과 로그아웃 기록 보존", async ({ page }) => {

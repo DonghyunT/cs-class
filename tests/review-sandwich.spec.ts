@@ -221,7 +221,8 @@ test("복습 카드·키보드·44px·명령 실패·재접속·교사 상세", 
   await page.goto("/student/lessons");
   const card = page.locator("article").filter({ has: page.getByRole("heading", { name: "알고리즘 설계", exact: true }) });
   await expect(card).toContainText("복습 수업"); await expect(card).not.toContainText("0%"); await card.getByRole("button", { name: "다시 둘러보기" }).click();
-  await expect(page.getByText("성적에 반영하지 않아요", { exact: true })).toBeVisible();
+  await expect(page.getByText("복습 수업", { exact: true })).toBeVisible();
+  await expect(page.getByText("성적에 반영하지 않아요", { exact: true })).toHaveCount(0);
   await page.getByRole("tab", { name: /실습/ }).click();
   const input = page.getByLabel("자연어 명령"); await input.fill("식빵 꺼내"); await page.getByRole("button", { name: "실행" }).click();
   await expect(page.getByText("오류: 빵 봉지가 닫혀 있습니다!", { exact: false }).first()).toBeVisible();

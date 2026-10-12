@@ -1,6 +1,6 @@
 import type { Stage } from "@/lib/classroom/types";
 import { buildNameProject, parseNameProject } from "../classroom/name-entry";
-import { concepts, questions } from "../classroom/programming-data";
+import { concepts, conceptOrder, questions } from "../classroom/programming-data";
 
 export const LEGACY_STORAGE_KEY = "cs-class-programming-prototype-v1";
 export const STORAGE_KEY = "cs-class-programming-prototype-v2";
@@ -32,7 +32,7 @@ export function newBlock(kind: BlockKind, id: string): Block {
 }
 export function initialState(): PrototypeState {
   return {
-    version: 2, nameEntryProject: buildNameProject()!, nameImportFailed: false, stage: "concept", concept: 0, conceptDone: [], conceptAnswers: {},
+    version: 2, nameEntryProject: buildNameProject()!, nameImportFailed: false, stage: "concept", concept: conceptOrder[0], conceptDone: [], conceptAnswers: {},
     quiz: { round: 1, ids: questions.map((q) => q.id), index: 0, answers: {}, solved: [], graded: false },
     mission: 0, programs: [0, 1, 2, 3].map((i) => [newBlock("start", `start-${i}`)]),
     inputs: { name: "초코", a: "6", b: "4" }, completed: [], reflection: "",

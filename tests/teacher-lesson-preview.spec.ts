@@ -121,7 +121,7 @@ test("teacher-preview: 평가 실패 입력 보존·로컬 샌드위치·AI와 �
   await page.goto(previewUrl("review-flowchart"));
   await page.getByRole("tab", { name: /^실습/ }).click();
   await page.getByRole("button", { name: "🚀 5. 나만의 백지", exact: true }).click();
-  await page.getByRole("button", { name: /처방전 채우기/ }).click();
+  await page.getByRole("button", { name: "자연어 기획서 채우기", exact: true }).click();
   await page.getByText("추상화 기록에서 가져오기", { exact: true }).click();
   await expect(page.getByRole("button", { name: "추상화 기록 살펴보기", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: /AI 기획서 제안 받기/ })).toBeDisabled();

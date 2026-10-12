@@ -27,7 +27,7 @@
 .dogDemo { position: relative; display: flex; flex-direction: column; gap: 22px; align-items: center; justify-content: center; color: #8b633e; border-radius: 50%; background: #f9eade; width: 210px; height: 210px; }
 .speech { background: white; border: 1px solid #dde4ed; padding: 9px 16px; border-radius: 14px 14px 14px 3px; font-size: 18px; font-weight: 600; color: var(--ink); max-width: 210px; text-align: center; overflow-wrap: anywhere; }
 .takeaway { font-size: 18px; color: var(--quiet); line-height: 1.8; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
-.terms { display: grid; gap: 14px; margin: 0; padding-top: 18px; border-top: 1px solid var(--line); }
+.terms { display: grid; gap: 14px; margin: 0; }
 .terms > div { display: grid; grid-template-columns: 155px minmax(0, 1fr); gap: 8px 18px; }
 .terms dt { font-weight: 700; color: #28548e; }
 .terms dd { margin: 0; color: var(--quiet); overflow-wrap: anywhere; }

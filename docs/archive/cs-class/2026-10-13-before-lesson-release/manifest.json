@@ -1,0 +1,32 @@
+[
+  {
+    "original": "docs/HANDOFF.md",
+    "preserved": "HANDOFF.md",
+    "baseCommit": "a73c967",
+    "branch": "codex/lesson-layout-round3",
+    "preservedAt": "2026-10-13",
+    "timezone": "Asia/Seoul",
+    "source": "working tree before release documentation cleanup",
+    "sha256": "e7c746bc14fd7f3487536394243b0d24f571e852477a39fc97892b73056184eb"
+  },
+  {
+    "original": "docs/reference/student-lesson-feedback-plan-20261012.md",
+    "preserved": "student-lesson-feedback-plan-20261012.md",
+    "baseCommit": "a73c967",
+    "branch": "codex/lesson-layout-round3",
+    "preservedAt": "2026-10-13",
+    "timezone": "Asia/Seoul",
+    "source": "working tree before release documentation cleanup",
+    "sha256": "6ed2197eca96562d6c81009acd9ccb00550e6e28ec6ee2b14b947ad347705417"
+  },
+  {
+    "original": "docs/reference/flowchart-v1-audit-20261011.md",
+    "preserved": "flowchart-v1-audit-20261011.md",
+    "baseCommit": "a73c967",
+    "branch": "codex/lesson-layout-round3",
+    "preservedAt": "2026-10-13",
+    "timezone": "Asia/Seoul",
+    "source": "working tree before release documentation cleanup",
+    "sha256": "041b1eb76ed41aaec05c0ac3343f7854656542e547504c6427596e8c93c08c6f"
+  }
+]

@@ -1,5 +1,5 @@
 {
-  "archived_at": "2026-10-12",
+  "archived_at": "2026-10-13",
   "baseline": "98781bd6e506e3ab5b1be08c39677e658215dba9",
   "records": [
     {
@@ -223,6 +223,27 @@
       "archive": "docs/archive/cs-class/2026-10-12-before-feedback-release/HANDOFF.md",
       "origin": "working-tree-before-feedback-release @ fe93533",
       "sha256": "e491d24a9f6f0672b4c1998dbfb6871ad8903a7f0fe1772b7c3d21e1839b1386"
+    },
+    {
+      "source": "docs/HANDOFF.md",
+      "archive": "docs/archive/cs-class/2026-10-13-before-lesson-release/HANDOFF.md",
+      "origin": "working-tree-before-lesson-release-20261013",
+      "baseCommit": "a73c967",
+      "sha256": "e7c746bc14fd7f3487536394243b0d24f571e852477a39fc97892b73056184eb"
+    },
+    {
+      "source": "docs/reference/student-lesson-feedback-plan-20261012.md",
+      "archive": "docs/archive/cs-class/2026-10-13-before-lesson-release/student-lesson-feedback-plan-20261012.md",
+      "origin": "working-tree-before-lesson-release-20261013",
+      "baseCommit": "a73c967",
+      "sha256": "6ed2197eca96562d6c81009acd9ccb00550e6e28ec6ee2b14b947ad347705417"
+    },
+    {
+      "source": "docs/reference/flowchart-v1-audit-20261011.md",
+      "archive": "docs/archive/cs-class/2026-10-13-before-lesson-release/flowchart-v1-audit-20261011.md",
+      "origin": "working-tree-before-lesson-release-20261013",
+      "baseCommit": "a73c967",
+      "sha256": "041b1eb76ed41aaec05c0ac3343f7854656542e547504c6427596e8c93c08c6f"
     }
   ]
 }

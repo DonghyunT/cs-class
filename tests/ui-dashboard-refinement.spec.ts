@@ -156,7 +156,7 @@ test('교사 단계 막대는 전체 학생 중 필수 활동을 모두 완료�
     await expect(stage.locator('..')).toContainText('1/3명');
   }
   const current = page.locator('section[aria-labelledby="current-heading"]');
-  await expect(current).toContainText('필수 활동 16/39개 완료');
+  await expect(current).toContainText('필수 활동 17/42개 완료');
 });
 
 test('교사 이번 수업 카드의 미지정·빈 수업·선택 복습·조회 실패 경계', async ({ page }) => {
