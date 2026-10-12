@@ -244,6 +244,20 @@
       "origin": "working-tree-before-lesson-release-20261013",
       "baseCommit": "a73c967",
       "sha256": "041b1eb76ed41aaec05c0ac3343f7854656542e547504c6427596e8c93c08c6f"
+    },
+    {
+      "source": "docs/reference/student-lesson-shell-plan.md",
+      "archive": "docs/archive/cs-class/2026-10-13-before-lesson-release/student-lesson-shell-plan.md",
+      "origin": "completed-plan-release-cleanup-20261013",
+      "baseCommit": "8e052c81683e909c9922ec48ad89bc07e5c30cdb",
+      "sha256": "9e49700891948c507d61faae6fb889eba64f74f6db5fb0260edf3962963212b6"
+    },
+    {
+      "source": "docs/reference/student-learning-readability-plan.md",
+      "archive": "docs/archive/cs-class/2026-10-13-before-lesson-release/student-learning-readability-plan.md",
+      "origin": "completed-plan-release-cleanup-20261013",
+      "baseCommit": "8e052c81683e909c9922ec48ad89bc07e5c30cdb",
+      "sha256": "4388d89fb5c7d5e6bd9c0d227de06548abefa4fc47366c22092328ec28fe283c"
     }
   ]
 }

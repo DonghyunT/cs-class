@@ -28,5 +28,25 @@
     "timezone": "Asia/Seoul",
     "source": "working tree before release documentation cleanup",
     "sha256": "041b1eb76ed41aaec05c0ac3343f7854656542e547504c6427596e8c93c08c6f"
+  },
+  {
+    "original": "docs/reference/student-lesson-shell-plan.md",
+    "preserved": "student-lesson-shell-plan.md",
+    "baseCommit": "8e052c81683e909c9922ec48ad89bc07e5c30cdb",
+    "branch": "codex/lesson-layout-round3",
+    "preservedAt": "2026-10-13",
+    "timezone": "Asia/Seoul",
+    "source": "completed implementation plan before final release handoff",
+    "sha256": "9e49700891948c507d61faae6fb889eba64f74f6db5fb0260edf3962963212b6"
+  },
+  {
+    "original": "docs/reference/student-learning-readability-plan.md",
+    "preserved": "student-learning-readability-plan.md",
+    "baseCommit": "8e052c81683e909c9922ec48ad89bc07e5c30cdb",
+    "branch": "codex/lesson-layout-round3",
+    "preservedAt": "2026-10-13",
+    "timezone": "Asia/Seoul",
+    "source": "completed implementation plan before final release handoff",
+    "sha256": "4388d89fb5c7d5e6bd9c0d227de06548abefa4fc47366c22092328ec28fe283c"
   }
 ]
