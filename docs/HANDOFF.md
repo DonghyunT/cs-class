@@ -2,7 +2,7 @@
 
 ## 현재 작업 상태
 
-2026-10-13(Asia/Seoul). `codex/lesson-layout-round3`의 구현·검증을 마치고 사용자 요청에 따라 문서 정리와 운영 릴리스를 진행 중입니다. 기준 HEAD는 `a73c967`이고 후속 화면 개선·드래그 수정·문서 정리가 미커밋 상태입니다. 운영은 아직 `main@5bb859c`입니다. 다음 행동은 PR의 CI 확인 → main 병합 → 운영 SHA·별칭·읽기 전용 접속 확인입니다. 완료 후 이 첫 절을 최종 Git/배포 상태로 갱신합니다.
+2026-10-13(Asia/Seoul). 사용자 요청의 수업 화면·순서도 수정과 운영 공개를 마쳤습니다. 앱·검사 `9576cd9`를 [PR #34](https://github.com/DonghyunT/cs-class/pull/34)로 병합했고 앱 릴리스 기준은 `main@8e32f7c`입니다. 재개 기준 브랜치는 원격과 동기화한 `main`이며 미커밋 없이 인계합니다. 문서 마감 브랜치 `codex/lesson-release-handoff`의 변경은 문서만 포함합니다. 이 문서에 적힌 검증은 아래 날짜·범위의 결과이며 문서 마감 뒤 새로 실행한 전체 검사로 표현하지 않습니다. 다음 행동은 운영에서 선생님이 실제 흐름을 확인하고 새 요구사항을 이어가는 것입니다.
 
 ## 이번 릴리스의 변경
 
@@ -21,12 +21,19 @@
 | 10/12–10/13 Windows·Node24·Java21·Chromium·demo Auth9099/Firestore8080·빌드된 next start | 화면 개선 전체 E2E384개 통과, skip/flaky/실행 오류0. FHD·낮은 창·모바일·모의200%·키보드·저장/제출 복구 확인 | 드래그 후속 수정 전 결과 |
 | 10/13 같은 로컬 환경 | 드래그 후 순서도6파일 E2E46개 통과(2.5분), skip/flaky/실행 오류0. 타입·린트·빌드·기본 테두리 없는 실제 캡처 확인 | 전체384 이후 변경은 FlowDiagram TSX/CSS와 해당 회귀 검사3파일뿐임을 840파일 해시로 대조 |
 | 10/13 릴리스 준비 | 순수 복습 엔진/AI 검사16개 통과. main부터 미추적 신규 검사까지 독립 리뷰에서 중요 결함 없음 | 운영 실제 로그인·AI·저장 성공을 뜻하지 않음 |
+| 10/13 첫 Linux CI | 383개 통과·Windows 전용1개 skip·모바일 배치 계측1개 실패 | 초점이 iframe에 있는 화면 크기 변경 뒤 두 요소의 위치를 서로 다른 시점에 읽은 검사. 같은 evaluate에서 함께 읽도록 수정했으며 기준·허용오차는 유지 |
+| 10/13 Windows·기존 빌드·demo | 수정한 작업실 검사5개 통과(26초), skip/flaky/오류0·타입 검사 통과. 390/320px의 실제 안내–작업실 간격16px 확인 | 앱 소스 변경 없이 테스트 계측만 수정한 9576cd9의 전체 CI 결과는 아래에 별도 기록 |
+| 10/13 Linux GitHub CI·9576cd9·demo 에뮬레이터·빌드된 앱 | 타입·린트·빌드·순수 검사와 전체 E2E384개 통과(28.1분), 실패0 | Windows .NET 도구 전용1개만 의도적으로 skip. [최종 CI](https://github.com/DonghyunT/cs-class/actions/runs/38275942490)는 이전 로컬 결과와 구분 |
 
 로컬 보고서는 Git 제외 `scratch/lesson-layout-round3-20261012/`와 `scratch/flowchart-drag-20261013/`에 있습니다. 최신 릴리스의 GitHub CI는 아래 통합·배포 절에서 별도로 기록합니다.
 
 ## 통합·배포 상태
 
-대상은 GitHub `DonghyunT/cs-class`와 Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`) Production, [운영 주소](https://cs-class-donghyunt.vercel.app)입니다. 배포 준비 시점의 복구 기준은 `main@5bb859c`·`dpl_FLZduiMH4ULDN9j9t6vkv9YGKwJF` READY·icn1입니다. 실제 병합 SHA·CI·새 배포 ID/별칭·익명 API·로그인 화면은 릴리스 완료 후 기록합니다. 서버 설정·복구 절차는 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)를 따릅니다.
+대상은 GitHub `DonghyunT/cs-class`와 Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`) Production, [운영 주소](https://cs-class-donghyunt.vercel.app)입니다. [최종 CI](https://github.com/DonghyunT/cs-class/actions/runs/38275942490) 성공 뒤 PR34를 `8e32f7c890b21125e48f4155ad70c87c60d1aa23`에 병합했습니다. 자동 Git 배포 `dpl_91NMBykiTbhEjrRnRB2ZuTjPEJXy`의 READY·동일 SHA·icn1·운영 별칭을 확인했습니다. 문서 마감은 실행 소스와 설정을 바꾸지 않으므로 이후 main SHA와 이 앱 릴리스 SHA를 구분합니다.
+
+10/13 07:48 KST 운영 읽기 전용 확인: `/api/auth/config`의 운영 Firebase 프로젝트·configured=true·emulatorHost=null·게스트 비활성, `/api/auth/session` 200·익명 session=null, 익명 학생/교사 조회와 인증 없는 Cron 각각401, 이전 sigma 주소의 경로·쿼리를 보존한307 이동을 확인했습니다. Chromium 학생/교사1280px·교사390px 로그인 화면에서 버튼 준비·가로 넘침 없음·page/console 오류0을 확인했습니다. 실제 Google OAuth 로그인·AI 호출·작품 저장은 시도하지 않았습니다. 근거는 Git 제외 `scratch/release-20261013/after-deploy/`에 있습니다.
+
+앞선 9576cd9 Preview는 `git_info_fail`로 실패했고 운영 빌드는 정상 완료했습니다. 로그 API의403으로 Preview의 상세 원인은 확정하지 않았습니다. 운영 성공과 별개로 추후 Preview 배포가 반복 실패하면 Git 연결 상태와 해당 로그 접근을 점검합니다. 복구 기준은 이전 `main@5bb859c`·`dpl_FLZduiMH4ULDN9j9t6vkv9YGKwJF` READY·icn1이며 서버 설정·복구 절차는 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)를 따릅니다.
 
 ## 다음에 이어갈 작업
 
@@ -42,7 +49,7 @@ Node24·Java21+·Chromium과 PC별 준비는 [개발 안내](DEVELOPMENT.md#다�
 
 ### 로컬 기록과 전달 경계
 
-이 PC의 최신 복원 기준은 Git 제외 `scratch/flowchart-drag-20261013/demo-before/`입니다. 반11개·작품4개가 새 정렬 해시와 복원 직후·미리보기 시작 뒤 일치했습니다. 앞선 `scratch/lesson-layout-round3-20261012/demo-before/`와 `scratch/feedback-20261012/demo-before-tests/`는 이전 시점의 보관본입니다. 이후 체험한 기록은 새 export로 남깁니다.
+이 PC의 최신 복원 기준은 Git 제외 `scratch/release-20261013/demo-before-ci-debug/`입니다. 추가 CI 계측 검증 전에 사용자가 수정한 최신 기록을 export하고 시드 없이 복원했습니다. 복원 직후 반11개·작품4개와 정렬 해시를 기록했고 미리보기 재연결 뒤에도 두 해시의 일치를 확인했습니다. `scratch/flowchart-drag-20261013/demo-before/`와 앞선 `scratch/lesson-layout-round3-20261012/demo-before/`·`scratch/feedback-20261012/demo-before-tests/`는 이전 시점의 보관본입니다. 이후 체험한 기록은 새 export로 남깁니다.
 
 미리보기는 demo Auth9099/Firestore8080과 `node scratch/lesson-layout-round3-20261012/preview.mjs`의 빌드된 localhost3000을 사용하며 시드를 실행하지 않습니다. 학생 로그인·세션 API200과 demo 프로젝트/로컬 호스트를 확인했습니다. 기존 브라우저 쿠키의 실제 이어가기 성공까지 자동 검증한 결과는 아닙니다.
 
