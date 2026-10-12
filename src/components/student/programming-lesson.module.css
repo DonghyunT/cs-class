@@ -6,15 +6,24 @@
 .quizTop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
 .quizPosition{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px;min-width:0}.quizPosition h2{font-size:16px;line-height:1.65;color:#376fc8;margin:0}.quizPosition>span{font-size:14px;color:#526173}.quizPosition h2:focus{outline:3px solid #376fc8;outline-offset:4px;border-radius:4px}
 .quizCard{background:white;border:1px solid #e3e8ef;border-radius:18px;padding:24px 28px}
-.quizQuestionLayout{display:grid;gap:18px}.quizQuestionLayout>div{min-width:0}.quizCard h3{font-size:26px;line-height:1.4;margin:0;font-weight:720;letter-spacing:-.5px}.quizCard h3:focus{outline:3px solid #376fc8;outline-offset:5px}
+.quizQuestionLayout{display:grid;gap:18px}.quizQuestionLayout>div{min-width:0}.quizCard h3{font-size:26px;line-height:1.4;margin:0;scroll-margin-block:8px;font-weight:720;letter-spacing:-.5px}.quizCard h3:focus{outline:3px solid #376fc8;outline-offset:5px}
 .scene{display:grid;gap:6px;border-radius:14px;background:#f1f3fa;padding:16px 18px;margin:18px 0 0}.scene code{font-size:18px;font-weight:500;line-height:1.7;color:#3c537a;white-space:pre-wrap;overflow-wrap:anywhere}
 .choices{border:0;margin:0;padding:0;min-width:0;display:grid;gap:8px;align-content:start}.quiz .choices label{display:flex;align-items:center;gap:12px;min-height:48px;border:1px solid #8091aa;border-radius:11px;padding:10px 14px;cursor:pointer;font-size:16px;line-height:1.6}.choices label[data-selected=true]{border-color:#3971cb;background:#edf4ff}.choices input{width:18px;height:18px;flex-shrink:0;margin:0;accent-color:#3971cb}.choices:disabled label{cursor:default}.choices:disabled label:not([data-selected=true]){color:#68758a;background:#f8fafc}
 .quizActions{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-top:12px}.quizActions>.hint{flex:1;max-width:42em;min-width:0;margin:0;padding:0;border:0;background:transparent}.quizActions .hint summary{width:fit-content;min-height:44px;color:#4c6281}.quizActions .hint p{padding:12px 15px;border-radius:10px;margin:4px 0 0}.quizActions>div{display:flex;align-items:center;flex-wrap:wrap;justify-content:end;gap:8px;flex-shrink:0}
 .roundNote{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;margin-top:8px}.roundNote p{font-size:14px;color:#526173;margin:0;line-height:1.7}.roundNote>div{display:flex;align-items:center;flex-wrap:wrap;justify-content:end;gap:8px}
-.footer{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:24px}
+.footer{display:grid;grid-template-columns:148px minmax(0,1fr) 148px;align-items:center;gap:16px;margin-top:24px;padding:16px;border:1px solid #dce3ed;border-radius:16px;background:#fff}
+.practice .footer p{font-size:16px;line-height:1.7;text-align:center;margin:0;word-break:keep-all;overflow-wrap:anywhere}
+.practice .footer [data-slot="button"]{width:100%;height:auto;min-height:48px;padding:10px 14px;font-size:16px;font-weight:650;gap:8px}
+.footer .nextMission{background:#3971cb;color:#fff;border-color:#3971cb}
+.footer .nextMission:hover{background:#2b5fae}
+.footer[data-submitted=true]{border-color:#a4d8c2;background:#f1fbf6}
+.footer[data-submitted=true] p{color:#176d50}
+.footer[data-submitted=true] .nextMission{box-shadow:0 0 0 4px #b8e8d2}
+.footer [data-slot="button"]:focus,.footer p:focus{outline:3px solid #3971cb;outline-offset:4px}
+@media(max-width:600px){.footer{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px}.footer p{grid-column:1 / -1;grid-row:1}.footer [data-slot="button"]{grid-row:2}}
 .feedback,.result{border-radius:14px;background:#edf5ff;color:#365b91;font-size:16px;line-height:1.7}.feedback{display:flex;gap:8px;padding:10px 14px;margin:16px 0 0}.feedback svg{flex-shrink:0;margin-top:5px}.result{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px 16px;border:1px solid #dce7f8;padding:12px 16px;margin-top:12px}.resultSummary{display:grid;gap:8px;min-width:0}.resultActions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 .reflection{margin-top:24px;border-top:1px solid #e3e8ef;padding-top:24px;display:grid;gap:12px}.reflection label{font-size:16px;font-weight:600}.reflection textarea{width:100%;min-height:90px;padding:16px;border:1px solid #dce3ef;border-radius:14px;background:#fff;font:inherit;resize:vertical}.reflection textarea:focus-visible{outline:3px solid #3971cb}.reflection p{font-size:13px;color:#66758a;margin:0}
-@media(max-width:1000px){.missions{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:600px){.missions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.missions button{padding:12px}.heading{flex-direction:column;gap:8px}.footer{align-items:start;flex-wrap:wrap}.choices label{padding:14px}.quiz{border-radius:16px}}
+@media(max-width:1000px){.missions{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:600px){.missions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.missions button{padding:12px}.heading{flex-direction:column;gap:8px}.choices label{padding:14px}.quiz{border-radius:16px}}
 .practice .missions{gap:8px}.practice .missions button{padding:8px 10px;gap:2px 6px;min-height:66px;grid-template-columns:22px 1fr}
 .questionNav{display:flex;flex-wrap:wrap;gap:6px;margin:0}
 .questionNav button{display:flex;align-items:center;gap:5px;min-height:44px;min-width:44px;border:1px solid #dce3ed;border-radius:10px;padding:5px 9px;background:white;font-size:16px;color:#465b78}
@@ -26,7 +35,7 @@
 @media(max-width:420px){.quizActions>.hint{flex-basis:100%;max-width:none}.quizActions>div{width:100%;justify-content:space-between;flex-shrink:1}.resultActions{width:100%}}
 .practice .heading{margin:12px 0}.practice .heading h3{font-size:24px;margin:2px 0}.practice .heading p{margin:4px 0 0}
 .practice .hint{padding:0 14px;margin-bottom:12px}.practice .hint summary{min-height:44px}.practice .hint[open]{padding-bottom:12px}.practice .carry{padding:10px 14px;margin-block:8px}
-.practice .heading p,.practice .footer p{font-size:18px}.practice .heading span,.practice .missions small{font-size:14px}.practice .hint p,.practice .carry{font-size:16px}.reflection label{font-size:18px}.reflection p{font-size:14px}
+.practice .heading p{font-size:18px}.practice .heading span,.practice .missions small{font-size:14px}.practice .hint p,.practice .carry{font-size:16px}.reflection label{font-size:18px}.reflection p{font-size:14px}
 .practiceLayout{display:grid;gap:16px;margin-top:16px;align-items:start}
 .missionBrief,.workArea{min-width:0}
 .missionBrief{display:grid;gap:16px;padding:18px;border:1px solid #dce3ed;border-radius:18px;background:#fff;word-break:keep-all;overflow-wrap:anywhere}

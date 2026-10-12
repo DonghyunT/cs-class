@@ -84,7 +84,13 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   expect(Math.abs(guideBox.y - editorBox.y)).toBeLessThanOrEqual(1);
   expect(missionBox.y + missionBox.height).toBeLessThanOrEqual(Math.min(guideBox.y, editorBox.y));
   expect(tabBox.y + tabBox.height).toBeLessThanOrEqual(missionBox.y);
-  expect(tabBox.width).toBe(1440);
+  const stageRow = await tabs.evaluate(element => {
+    const row = element.closest("details")!.parentElement!;
+    const toggle = row.querySelector<HTMLButtonElement>("button[aria-pressed]")!;
+    return { width: row.getBoundingClientRect().width, button: toggle.getBoundingClientRect().width, gap: parseFloat(getComputedStyle(row).columnGap) };
+  });
+  expect(stageRow.width).toBe(1440);
+  expect(tabBox.width + stageRow.button + stageRow.gap).toBeCloseTo(stageRow.width, 1);
   const iframeBox = (await iframe.boundingBox())!, toolbarBox = (await toolbar.boundingBox())!;
   expect(iframeBox.width).toBeGreaterThanOrEqual(1000);
   expect(toolbarBox.height).toBeLessThanOrEqual(80);

@@ -134,7 +134,10 @@ test.describe("V1 순서도 직접 조작", () => {
     const saved = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject; expect(saved.nodes).toEqual(initial.nodes); expect(saved.edges).toEqual(initial.edges); expect(saved.cards).toEqual(initial.cards);
   });
   test("200개 기호를 정렬해도 허용 좌표 안에서 저장하고 모든 문구를 보존한다", async ({ page }) => {
-    await free(page); await page.goto("about:blank"); let work = await (await page.request.get(`/api/classroom/work/${id}`)).json() as Work;
+    await free(page);
+    await expect(page.getByRole("tab", { name: /실습/ })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+    await page.goto("about:blank"); let work = await (await page.request.get(`/api/classroom/work/${id}`)).json() as Work;
     if (work.draft.reviewProject?.type !== "flowchart") throw Error("wrong lesson");
     const nodes = Array.from({ length: 200 }, (_, i) => ({ id: `layout-${i}`, shape: i === 0 || i === 199 ? "terminal" as const : "process" as const, text: i === 0 ? "시작" : i === 199 ? "종료" : `처리 ${i}`, x: 80 + i % 10 * 180, y: 60 + Math.floor(i / 10) * 140 }));
     work.draft.reviewProject.nodes = nodes;
@@ -348,8 +351,10 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
   await expect.poll(() => viewport.evaluate(element => element.scrollWidth - element.clientWidth)).toBeGreaterThan(0);
   await viewport.scrollIntoViewIfNeeded(); await alarm.focus();
   const viewportBox = await viewport.boundingBox(); if (!viewportBox) throw Error("No visible canvas viewport");
+  await viewport.evaluate(element => { element.setAttribute("data-test-scroll-ended", "false"); element.addEventListener("scrollend", () => element.setAttribute("data-test-scroll-ended", "true"), { once: true }); });
   await page.mouse.move(viewportBox.x + viewportBox.width / 2, viewportBox.y + 80); await page.mouse.wheel(180, 0);
   await expect.poll(() => viewport.evaluate(element => element.scrollLeft)).toBeGreaterThan(0);
+  await expect(viewport).toHaveAttribute("data-test-scroll-ended", "true");
   for (const width of [821, 820, 390, 320, 821, 1440]) {
     const previousCenter = await viewport.evaluate(element => element.scrollLeft + element.clientWidth / 2);
     await page.setViewportSize({ width, height: 1000 });

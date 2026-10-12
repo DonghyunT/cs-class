@@ -74,6 +74,59 @@ test("수업 전용 틀 · 한 제목 · 자유로운 단계와 메뉴 키보드
   await expect(page.getByRole("link", { name: "수업 나가기", exact: true })).toHaveAttribute("href", "/student");
 });
 
+test("넓은 창의 수업 헤더 · 제목 옆 상태 · 단계 줄 우측 집중 모드", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 900 });
+  await enter(page);
+  await db.doc("csClasses/2-10").update({ currentLessonId: "programming-13", openedLessonIds: [lesson, "programming-13"] });
+  await page.reload();
+  const shell = page.locator("[data-lesson-shell]");
+  const header = shell.locator(":scope > header");
+  const leave = page.getByRole("link", { name: "수업 나가기", exact: true });
+  const menu = page.getByRole("button", { name: "학생 메뉴", exact: true });
+  const title = header.getByRole("heading", { level: 1 });
+  const current = header.getByRole("link", { name: /^이번 수업:/ });
+  await expect(current).toBeVisible();
+  await expect(header.getByText("성적에 반영하지 않아요", { exact: true })).toHaveCount(0);
+  const geometry = await header.evaluate(element => {
+    const title = element.querySelector("h1")!, badge = title.parentElement!.querySelector("span")!;
+    const bounds = (target: Element) => { const rect = target.getBoundingClientRect(); return { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom }; };
+    return { title: bounds(title), badge: bounds(badge), font: parseFloat(getComputedStyle(title).fontSize) };
+  });
+  expect(geometry.font).toBeGreaterThanOrEqual(28);
+  expect(geometry.badge.x).toBeGreaterThan(geometry.title.right);
+  expect(geometry.badge.y).toBeGreaterThanOrEqual(geometry.title.y);
+  expect(geometry.badge.bottom).toBeLessThanOrEqual(geometry.title.bottom);
+  expect((await leave.boundingBox())!.x).toBeLessThanOrEqual(24);
+  const contentWidth = await header.evaluate(element => element.getBoundingClientRect().right);
+  const menuBox = (await menu.boundingBox())!;
+  expect(menuBox.x + menuBox.width).toBeGreaterThanOrEqual(contentWidth - 24);
+
+  await page.getByRole("tab", { name: /^실습/ }).click();
+  const toggle = page.getByRole("button", { name: "실습 집중 모드", exact: true });
+  await expect(header.getByRole("button", { name: "실습 집중 모드", exact: true })).toHaveCount(0);
+  const row = await toggle.locator("..").evaluate(element => {
+    const tabs = element.querySelector('[role="tablist"]')!.getBoundingClientRect(), button = element.querySelector('[aria-pressed]')!.getBoundingClientRect();
+    return { tabRight: tabs.right, tabTop: tabs.top, tabBottom: tabs.bottom, buttonX: button.x, buttonTop: button.top };
+  });
+  expect(row.buttonX).toBeGreaterThan(row.tabRight);
+  expect(row.buttonTop).toBeGreaterThanOrEqual(row.tabTop);
+  expect(row.buttonTop).toBeLessThan(row.tabBottom);
+  await toggle.click();
+  const focusedToggle = page.getByRole("button", { name: "실습 집중 모드 끝내기", exact: true });
+  await expect(focusedToggle).toBeFocused();
+  await expect(title).toHaveCSS("font-size", "28px");
+  const focusedBox = (await focusedToggle.boundingBox())!;
+  expect(focusedBox.x + focusedBox.width).toBeGreaterThanOrEqual(contentWidth - 24);
+  for (const width of [821, 820, 390, 320]) {
+    await page.setViewportSize({ width, height: 720 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+    await expect(focusedToggle).toBeVisible();
+    await expect(leave).toBeVisible();
+  }
+  await focusedToggle.press("Escape");
+  await expect(toggle).toBeFocused();
+});
+
 for (const origin of ["lessons", "", "https://example.com", "dashboard&from=lessons"]) {
   test(`복귀 경로 제한: ${origin || "직접 입장"}`, async ({ page }) => {
     await enter(page, origin);

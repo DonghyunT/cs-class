@@ -95,7 +95,7 @@ test.describe("순서도 연구소 V1 작업실", () => {
     const boxes = await Promise.all([planner.boundingBox(), palette.boundingBox(), canvas.boundingBox(), rail.boundingBox()]);
     if (boxes.some(box => !box)) throw Error("free workshop panels missing");
     for (let i = 0; i < 3; i++) expect(boxes[i]!.x + boxes[i]!.width).toBeLessThanOrEqual(boxes[i + 1]!.x);
-    expect(boxes[0]!.width).toBe(240); expect(boxes[1]!.width).toBe(100);
+    expect(boxes[0]!.width).toBe(300); expect(boxes[1]!.width).toBe(100);
     expect(await rail.evaluate(element => element.parentElement!.getBoundingClientRect().width)).toBe(40);
     await expect(page.getByText("키보드 편집 · 기호와 연결 설정", { exact: true })).toHaveCount(0);
     await expect(canvas.getByRole("button", { name: "편집 되돌리기", exact: true })).toBeVisible();
@@ -343,23 +343,22 @@ test.describe("순서도 연구소 V1 작업실", () => {
     await page.reload(); await expect(page.getByRole("button", { name: "처리 기호: Check supplies 준비물 확인", exact: true })).toBeVisible();
   });
 
-  test("예시 공방 실행은 전체를 완성하고 질문을 자동으로 펼쳐 초점을 옮긴 뒤 예 갈래로 종료한다", async ({ page }) => {
+  test("예시 공방 실행은 전체를 완성하고 기호 옆 질문으로 초점을 옮긴 뒤 예 갈래로 종료한다", async ({ page }) => {
     await prepare(page.request, { mission: "guide", guideStep: 0 }); await openPractice(page);
     await expect(page.getByRole("button", { name: "🛠️ 4. 예시 공방", exact: true })).toHaveAttribute("aria-pressed", "true");
     const details = page.locator('[data-practice="flowchart"] details').filter({ has: page.locator("summary").filter({ hasText: "실행 과정" }) });
-    await expect(details).not.toHaveAttribute("open", "");
+    await expect(details).toHaveCount(0);
     const toolbar = page.getByRole("toolbar", { name: "순서도 실행 제어", exact: true });
     await toolbar.getByLabel("실행 속도", { exact: true }).selectOption("2");
     await toolbar.getByRole("button", { name: "자동 실행", exact: true }).click();
     await expect.poll(async () => ((await readWork(page.request)).draft.reviewProject as FlowchartProject).guideStep).toBe(4);
     const yes = page.getByLabel("실제 순서도 연결", { exact: true }).getByRole("button", { name: "07:20 · 예로 진행", exact: true });
-    await expect(details).toHaveAttribute("open", ""); await expect(yes).toBeFocused();
+    await expect(yes).toBeFocused();
     await expect(toolbar.getByRole("button", { name: "한 단계 실행", exact: true })).toBeDisabled();
     await expect(page.getByLabel("실제 순서도 연결", { exact: true }).locator('[data-shape="decision"][data-active="true"]')).toHaveCount(1);
     await yes.click();
-    await expect(details.getByRole("list", { name: "실시간 데이터 흐름", exact: true })).toContainText("→ 예");
-    await expect(details.getByRole("list", { name: "실시간 데이터 흐름", exact: true })).toContainText("종료에 도달했어요.");
     await expect(page.getByRole("status").filter({ hasText: "종료에 도달했어요!" })).toBeVisible();
+    await expect(page.getByLabel("실제 순서도 연결", { exact: true }).locator('[data-flow-node="end"]')).toHaveAttribute("data-active", "true");
     expect(((await readWork(page.request)).draft.reviewProject as FlowchartProject).guideStep).toBe(4);
   });
 });

@@ -53,9 +53,8 @@ export function LessonShell({ lesson, returnOrigin, workspaceWide, practiceFocus
     <header className={styles.header}>
       <div className={styles.headerInner}>
         <Link className={styles.leave} href={preview ? `/teacher/classes?classId=${encodeURIComponent(preview.classId)}` : returnOrigin === "dashboard" ? "/student" : "/student/lessons"}><ArrowLeft size={18} aria-hidden="true" />{preview ? "수업 관리로 돌아가기" : "수업 나가기"}</Link>
-        <div className={styles.title}><h1>{lesson.title}</h1><div className={styles.lessonState}>{learningStatus}{lesson.mode === "review" && <span>성적에 반영하지 않아요</span>}{otherCurrent && <Link className={styles.currentLesson} href={`/classroom/${otherCurrent.id}?from=${returnOrigin}`}>이번 수업: {otherCurrent.title} · 이동</Link>}</div></div>
+        <div className={styles.title}><div className={styles.titleLine}><h1>{lesson.title}</h1>{learningStatus}</div>{otherCurrent && <Link className={styles.currentLesson} href={`/classroom/${otherCurrent.id}?from=${returnOrigin}`}>이번 수업: {otherCurrent.title} · 이동</Link>}</div>
         <span className={styles.save} role="status">{saveLabel === "저장 완료" ? <CloudCheck size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}{saveLabel}</span>
-        {canFocus && <Button ref={focusToggle} className={styles.focusToggle} variant="outline" aria-pressed={practiceFocused} onClick={() => changeFocus(!practiceFocused)}>{practiceFocused ? "실습 집중 모드 끝내기" : "실습 집중 모드"}</Button>}
         {!preview && <HelpButton lessonId={lesson.id} />}
         {!preview && <details ref={menu} className={styles.account} onToggle={event => setOpen(event.currentTarget.open)} onKeyDown={event => {
           if (event.key === "Escape" && menu.current?.open) { event.preventDefault(); event.stopPropagation(); menu.current.open = false; menuToggle.current?.focus({ preventScroll: true }); }
@@ -67,7 +66,7 @@ export function LessonShell({ lesson, returnOrigin, workspaceWide, practiceFocus
       {preview && <div className={styles.previewToolbar}><strong>교사 미리보기 · 이 창에서만 체험</strong><p>체험 내용은 새로고침·수업 변경·나가기 때 사라집니다. 학생 기록에는 반영되지 않아요.</p>{preview.controls}</div>}
     </header>
     <main id="main-content" tabIndex={-1} className={styles.main}>
-      <div className={styles.navigation}><details className={styles.stagePicker} data-focused={practiceFocused} open={!practiceFocused}><summary>단계 바꾸기</summary>{navigation}</details></div>
+      <div className={styles.navigation} data-focused={practiceFocused}><details className={styles.stagePicker} data-focused={practiceFocused} open={!practiceFocused}><summary>단계 바꾸기</summary>{navigation}</details>{canFocus && <Button ref={focusToggle} className={styles.focusToggle} variant="outline" aria-pressed={practiceFocused} onClick={() => changeFocus(!practiceFocused)}>{practiceFocused ? "실습 집중 모드 끝내기" : "실습 집중 모드"}</Button>}</div>
       {logoutError && <p role="alert" className={styles.error}>{logoutError}</p>}
       {children}
     </main>

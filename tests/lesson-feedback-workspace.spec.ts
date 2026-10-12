@@ -8,9 +8,10 @@ async function readWork(request: APIRequestContext) {
   const response = await request.get(workUrl); expect(response.status()).toBe(200);
   return await response.json() as Work;
 }
-async function prepare(page: Page) {
+async function prepare(page: Page, patch: Partial<FlowchartProject> = {}) {
+  await page.goto("about:blank");
   await readyStudent(page.request);
-  await db.collection("csClasses").doc("2-1").update({ currentLessonId: null, openedLessonIds: ["review-flowchart"] });
+  await db.collection("csClasses").doc("2-1").update({ currentLessonId: "programming-13", openedLessonIds: ["programming-13", "review-flowchart"] });
   await db.collection("csWork").doc(workId).delete();
   const work = await readWork(page.request);
   if (work.draft.reviewProject?.type !== "flowchart") throw Error("wrong project");
@@ -19,7 +20,7 @@ async function prepare(page: Page) {
     cards: [{ id: "plan", type: "sequence", text: "준비하기", yes: "", no: "" }], pan: { x: 0, y: 0 },
     nodes: [{ id: "start", shape: "terminal", text: "시작", x: 120, y: 40 }, { id: "step", shape: "process", text: "준비하기", x: 120, y: 190 }, { id: "end", shape: "terminal", text: "종료", x: 120, y: 340 }],
     edges: [{ from: "start", to: "step", label: "" }, { from: "step", to: "end", label: "" }],
-  } satisfies Partial<FlowchartProject>);
+  } satisfies Partial<FlowchartProject>, patch);
   expect((await page.request.post(workUrl, { headers, data: { revision: work.revision, draft: work.draft } })).status()).toBe(200);
   await page.goto("/classroom/review-flowchart?from=lessons");
   await page.getByRole("tab", { name: /실습/ }).click();
@@ -30,6 +31,57 @@ test.describe("수업 피드백 자유 공방", () => {
   let originalClass: FirebaseFirestore.DocumentData | undefined;
   test.beforeEach(async ({ page }) => { await page.goto("about:blank"); originalClass = (await db.collection("csClasses").doc("2-1").get()).data(); });
   test.afterEach(async ({ page }) => { await page.goto("about:blank"); if (originalClass) await db.collection("csClasses").doc("2-1").set(originalClass); await db.collection("csWork").doc(workId).delete(); });
+
+  test("FHD 기획서는 넓은 입력과 가운데 추가 버튼을 제공하고 안내 줄은 공간을 겹치지 않는다", async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 900 }); await prepare(page);
+    await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();
+    const planner = page.getByRole("region", { name: "자연어 기획서", exact: true });
+    expect((await planner.boundingBox())!.width).toBeGreaterThanOrEqual(288);
+    const add = planner.getByRole("button", { name: "선택 카드 추가", exact: true });
+    await expect(add).toContainText("+");
+    expect(await add.evaluate(element => getComputedStyle(element).justifyContent)).toBe("center");
+    const hint = page.getByRole("status").filter({ hasText: "기호를 클릭해 내용을 수정" });
+    expect(await hint.evaluate(element => getComputedStyle(element).borderBottomWidth)).toBe("0px");
+    expect(await planner.getByLabel("실행 계획", { exact: true }).evaluate(element => element.clientWidth)).toBeGreaterThanOrEqual(235);
+  });
+
+  test("예시 공방은 한 상단 도구줄과 넓은 순서도에서 조건 선택과 실행 결과를 보여준다", async ({ page }, info) => {
+    await page.setViewportSize({ width: 1920, height: 900 }); await prepare(page, { mission: "guide", guideStep: 4 });
+    await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "실행 과정", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "출력 콘솔", exact: true })).toHaveCount(0);
+    const toolbar = page.getByRole("toolbar", { name: "순서도 실행 제어", exact: true });
+    const reset = page.getByRole("button", { name: /공방 다시 보기/ });
+    const geometry = await toolbar.evaluate(element => ({ top: element.getBoundingClientRect().top, resetTop: [...element.closest("header")!.querySelectorAll("button")].find(button => button.textContent?.includes("공방 다시 보기"))!.getBoundingClientRect().top }));
+    expect(Math.abs(geometry.top - geometry.resetTop)).toBeLessThanOrEqual(3);
+    const viewport = page.getByLabel("실제 순서도 연결", { exact: true });
+    expect((await viewport.boundingBox())!.height).toBeGreaterThan(450);
+    await toolbar.getByLabel("실행 속도", { exact: true }).selectOption("2");
+    await toolbar.getByRole("button", { name: "자동 실행", exact: true }).click();
+    await page.getByRole("button", { name: "07:20 · 예로 진행", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "종료에 도달했어요!" })).toBeVisible();
+    await expect(viewport.locator('[data-flow-node="end"]')).toHaveAttribute("data-active", "true");
+    await page.screenshot({ path: info.outputPath("guide-fhd.png") });
+    await reset.click();
+    await expect(viewport.locator('[data-flow-node]')).toHaveCount(1);
+  });
+
+  test("FHD 퍼즐은 기호 보관함과 입력·변수·출력 콘솔을 스크롤 없이 함께 보여준다", async ({ page }, info) => {
+    await page.setViewportSize({ width: 1920, height: 900 }); await prepare(page, { mission: "2", placements: { "2": { s2: "b-m2-1", s3: "b-m2-2", s4_yes: "b-m2-yes", s4_no: "b-m2-no" } } });
+    await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();
+    const palette = page.getByRole("region", { name: "순서도 기호 보관함", exact: true });
+    expect(await palette.evaluate(element => element.scrollHeight <= element.clientHeight)).toBe(true);
+    const execution = page.getByRole("region", { name: "순서도 실행", exact: true });
+    await execution.getByLabel("실행 속도", { exact: true }).selectOption("2");
+    await execution.getByRole("button", { name: "자동 실행", exact: true }).click();
+    await page.getByLabel("키 입력값", { exact: true }).fill("123");
+    await page.getByRole("button", { name: "입력값 적용", exact: true }).click();
+    await expect(execution.getByRole("region", { name: "출력 콘솔", exact: true })).toContainText("탑승 불가");
+    await expect(execution.getByRole("button", { name: "다음 미션: 반복 구조", exact: true })).toBeEnabled();
+    expect(await execution.evaluate(element => { const frame = element.getBoundingClientRect(), console = element.querySelector('[aria-label="출력 콘솔"]')!.getBoundingClientRect(), button = [...element.querySelectorAll("button")].find(button => button.textContent?.includes("다음 미션:"))!.getBoundingClientRect(); return console.top >= frame.top && console.bottom <= frame.bottom && button.bottom <= frame.bottom && frame.bottom <= innerHeight; })).toBe(true);
+    expect(await execution.evaluate(element => element.scrollHeight <= element.clientHeight)).toBe(true);
+    await page.screenshot({ path: info.outputPath("puzzle-fhd.png") });
+  });
 
   test("통합 도구에서 기획·점검을 열고 취소하면 초점과 작품을 보존한다", async ({ page }) => {
     await page.setViewportSize({ width: 1544, height: 712 }); await prepare(page);

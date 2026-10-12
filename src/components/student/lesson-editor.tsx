@@ -87,7 +87,10 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   async function runAction(action: WorkAction, focusId: string) {
     if (await perform(action)) {
       if (action.type === "retry-quiz") setQuizQuestionId(lesson.quiz.find((question) => !work.quizSolved.includes(question.id))?.id ?? lesson.quiz[0]?.id);
-      setFocusRequest({ id: focusId });
+      const current = controller.getDraft();
+      const movedMission = lesson.practice.type === "programming" && action.type === "submit-practice" &&
+        (current.stage !== "practice" || current.programming?.mission !== action.missionId);
+      setFocusRequest({ id: movedMission ? `stage-heading-${current.stage}` : focusId });
     } else setFocusRequest({ id: "work-action-error" });
   }
   async function recoverAction(resend = false) {
@@ -97,7 +100,9 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     const id = action.type === "check-concept" ? programming ? "concept-feedback" : `concept-feedback-${action.conceptId}` :
       action.type === "grade-quiz" ? programming ? "programming-quiz-result" : "quiz-round-result" :
       action.type === "retry-quiz" ? programming ? "programming-question" : "quiz-question-title" :
-      reviewType ? "review-action-feedback" : action.type === "submit-practice" ? "submitted-heading" : "practice-feedback";
+      reviewType ? "review-action-feedback" : action.type === "submit-practice" ? programming ?
+        programmingMissions.at(-1)?.id === controller.getDraft().programming?.mission ? "programming-mission-complete" : "programming-next-mission"
+        : "submitted-heading" : "practice-feedback";
     // A later edit may make the old validation invisible; the stage heading remains a safe focus target.
     const changed = JSON.stringify(controller.getDraft()) !== JSON.stringify(controller.actionFailure?.before.draft);
     const differentConcept = action.type === "check-concept" && action.conceptId !== displayedConcept.current;

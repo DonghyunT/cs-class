@@ -127,8 +127,9 @@ export function FlowDiagram({ nodes, edges, selected, active, fit = false, activ
   const [connection, setConnection] = useState<{ from: string; label: Branch; side: Port; x: number; y: number; target?: string; targetSide?: Port } | null>(null);
   const effectivePan = viewPan ?? pan, displayedNodes = moving ? nodes.map(node => node.id === moving.id ? { ...node, x: moving.x, y: moving.y } : node) : nodes;
   const viewOrigin = fit ? { x: (displayedNodes.length ? Math.min(...displayedNodes.map(n => n.x)) : 0) - 24, y: (displayedNodes.length ? Math.min(...displayedNodes.map(n => n.y)) : 0) - 24 } : effectivePan;
-  const width = fit ? Math.max(280, ...displayedNodes.map(n => n.x + flowNodeSize(n).width + 24 - viewOrigin.x)) : Math.max(1000, ...displayedNodes.map(n => n.x + flowNodeSize(n).width + 150));
-  const height = fit ? Math.max(160, ...displayedNodes.map(n => n.y + flowNodeSize(n).height + 40 - viewOrigin.y)) : Math.max(800, ...displayedNodes.map(n => n.y + flowNodeSize(n).height + 120));
+  // Measure the far edge from the viewBox origin so negative panning cannot clip visible nodes.
+  const width = Math.max(fit ? 280 : 1000, ...displayedNodes.map(n => n.x + flowNodeSize(n).width + (fit ? 24 : 150) - viewOrigin.x));
+  const height = Math.max(fit ? 160 : 800, ...displayedNodes.map(n => n.y + flowNodeSize(n).height + (fit ? 40 : 120) - viewOrigin.y));
   function showStart() {
     const start = nodes.find(n => n.shape === "terminal" && /^(시작|출발)/.test(n.text)), element = resolvedViewportRef.current; if (!start || !element) return;
     manuallyViewed.current = false; const size = flowNodeSize(start);
@@ -221,13 +222,16 @@ export function FlowDiagram({ nodes, edges, selected, active, fit = false, activ
         }} onPointerCancel={event => { gesture.current = null; setMoving(null); setViewPan(null); setConnection(null); setTrashActive(false); if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}>
       <div className={canvas.surface} style={{ width, height }}>
       <svg ref={svgRef} style={{ width, height }} viewBox={`${viewOrigin.x} ${viewOrigin.y} ${width} ${height}`} role={select ? "group" : "img"} aria-label="기호와 화살표로 연결한 순서도">
-        <defs>{(["", "예", "아니오"] as const).map((label, index) => <marker key={label} id={`${marker}-${index}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill={label === "예" ? "#10b981" : label === "아니오" ? "#f59e0b" : "#475569"} /></marker>)}</defs>
+        <defs>{(["", "예", "아니오"] as const).map((label, index) => <marker key={label} id={`${marker}-${index}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill={label === "예" ? "#10b981" : label === "아니오" ? "#f59e0b" : "#475569"} /></marker>)}</defs>
         {edges.map((saved, i) => {
           const edge = saved as RoutedEdge, from = displayedNodes.find(n => n.id === edge.from), to = displayedNodes.find(n => n.id === edge.to); if (!from || !to) return null;
-          const fromPort = edge.fromPort ?? (edge.label === "아니오" ? "right" : "bottom"), toPort = edge.toPort ?? "top", source = portPoint(from, fromPort), target = portPoint(to, toPort), path = pathBetween(source, fromPort, target, toPort);
+          const fromSize = flowNodeSize(from), toSize = flowNodeSize(to), fromCenter = from.x + fromSize.width / 2, toCenter = to.x + toSize.width / 2;
+          const branchSide = from.shape === "decision" && !!edge.label && to.y >= from.y + fromSize.height && Math.abs(toCenter - fromCenter) > 32;
+          const fromPort = edge.fromPort ?? (branchSide ? toCenter < fromCenter ? "left" : "right" : edge.label === "아니오" ? "right" : "bottom"), toPort = edge.toPort ?? "top", source = portPoint(from, fromPort), target = portPoint(to, toPort), path = pathBetween(source, fromPort, target, toPort);
+          const sideLabel = fromPort === "left" || fromPort === "right", labelX = sideLabel ? source.x + (fromPort === "left" ? -1 : 1) * Math.min(60, Math.max(24, Math.abs(target.x - source.x) / 2)) : source.x + 12;
           const deleteEdge = () => { if (!disconnect) return; restoreFocus.current = "canvas"; disconnect(edge.from, edge.to, edge.label); setNotice("화살표를 지웠어요."); };
           return <g key={`${edge.from}-${edge.to}-${edge.label}-${i}`} className={canvas.edge} data-flow-edge data-branch={edge.label} data-active={activeEdge?.from === edge.from && activeEdge.to === edge.to && activeEdge.label === edge.label} role={disconnect ? "button" : undefined} tabIndex={disconnect ? 0 : undefined} aria-label={disconnect ? `${from.text}에서 ${to.text} ${edge.label || "다음"} 연결선 삭제` : undefined} onPointerDown={event => event.stopPropagation()} onDoubleClick={event => { event.stopPropagation(); deleteEdge(); }} onKeyDown={event => { if (["Delete", "Backspace", "Enter", " "].includes(event.key)) { event.preventDefault(); event.stopPropagation(); deleteEdge(); } }}>
-            <title>{disconnect ? "두 번 눌러 연결선 삭제" : `${from.text} → ${to.text}`}</title><path className={canvas.edgeHit} data-flow-controls d={path} /><path className={canvas.edgeLine} d={path} markerEnd={`url(#${marker}-${edge.label === "예" ? 1 : edge.label === "아니오" ? 2 : 0})`} /><text className={canvas.edgeLabel} x={source.x + (fromPort === "left" ? -24 : 12)} y={source.y + (fromPort === "top" ? -12 : 22)}>{edge.label}</text>
+            <title>{disconnect ? "두 번 눌러 연결선 삭제" : `${from.text} → ${to.text}`}</title><path className={canvas.edgeHit} data-flow-controls d={path} /><path className={canvas.edgeLine} d={path} markerEnd={`url(#${marker}-${edge.label === "예" ? 1 : edge.label === "아니오" ? 2 : 0})`} /><text className={canvas.edgeLabel} x={labelX} y={source.y + (sideLabel || fromPort === "top" ? -10 : 22)} textAnchor={sideLabel ? "middle" : undefined}>{edge.label}</text>
           </g>;
         })}
         {connection && (() => { const source = displayedNodes.find(n => n.id === connection.from); return source ? <path className={canvas.pendingEdge} data-flow-controls data-pending-edge d={pathBetween(portPoint(source, connection.side), connection.side, connection, connection.targetSide ?? "top")} markerEnd={`url(#${marker}-0)`} /> : null; })()}
@@ -241,7 +245,7 @@ export function FlowDiagram({ nodes, edges, selected, active, fit = false, activ
               if (changeText && event.key === "F2") { event.preventDefault(); editNode(node); }
               if (remove && (event.key === "Delete" || event.key === "Backspace")) { event.preventDefault(); deleteNode(node.id); }
               if (move && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) { event.preventDefault(); select?.(node.id); move(node.id, node.x + (event.key === "ArrowRight" ? 20 : event.key === "ArrowLeft" ? -20 : 0), node.y + (event.key === "ArrowDown" ? 20 : event.key === "ArrowUp" ? -20 : 0)); }
-            }} onPointerDown={event => { if (!move || event.button !== 0 || (event.target as Element).closest('[contenteditable],[data-flow-edit],[data-flow-delete]')) return; event.stopPropagation(); select?.(node.id); const location = point(event.clientX, event.clientY); gesture.current = { kind: "move", id: node.id, ...location, originX: node.x, originY: node.y }; event.currentTarget.setPointerCapture(event.pointerId); }}>
+            }} onPointerDown={event => { if (!move || event.button !== 0 || (event.target as Element).closest('[contenteditable],[data-flow-edit],[data-flow-delete]')) return; event.preventDefault(); event.stopPropagation(); event.currentTarget.focus({ preventScroll: true }); select?.(node.id); const location = point(event.clientX, event.clientY); gesture.current = { kind: "move", id: node.id, ...location, originX: node.x, originY: node.y }; event.currentTarget.setPointerCapture(event.pointerId); }}>
             {renderShape(node)}<title>{node.text}</title>
             {changeText && <>
               <text className={canvas.shapeLabel} x={inset} y={headerY}>{shapeBadge(node.shape)}</text>

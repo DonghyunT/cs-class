@@ -357,7 +357,7 @@ test("실제 팔레트 이름 조립 · 서로 다른 두 입력 · 검증/제�
   await page.getByRole("button", { name: "작품 제출", exact: true }).click();
   await expect(page.getByRole("tab", { name: "실습 25%" })).toBeVisible();
   await expect(page.getByRole("tab", { name: "실습 25%" })).toContainText("1/4개 제출");
-  await expect(page.locator("#submitted-heading")).toBeFocused();
+  await expect(page.locator("#programming-next-mission")).toBeFocused();
   await page.getByLabel("오늘 발견한 것을 한 줄로 남겨볼까요?").fill("대답을 말하기에 넣었어요.");
   await expect.poll(async () => (await stored(page)).draft.programming!.reflection).toBe("대답을 말하기에 넣었어요.");
   await page.reload(); await expect(page.getByRole("button", { name: "이 작품 제출 완료" })).toBeDisabled();

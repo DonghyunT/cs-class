@@ -15,7 +15,7 @@
 .surface > svg { display:block; max-width:none; touch-action:none; }
 .canvas[data-fit=true] .surface { margin-inline:auto; }
 .canvas[data-fit=true] .diagram { background-color:#fff; }
-.diagram [data-flow-node] { cursor:grab; touch-action:none; }
+.diagram [data-flow-node] { cursor:grab; touch-action:none; user-select:none; outline:none; }
 .diagram [data-flow-node]:active { cursor:grabbing; }
 .diagram .nodeBody { stroke-width:2.5; filter:drop-shadow(0 4px 6px rgb(15 23 42 / .07)); }
 .diagram [data-shape=terminal] > .nodeBody { fill:#faf5ff; stroke:#a855f7; }
@@ -58,7 +58,7 @@
 .diagram .port[data-direction=input][data-target=true] .portDot { fill:#059669; stroke:#a7f3d0; }
 .diagram .edge { cursor:pointer; }
 .diagram .edgeHit { fill:none; stroke:transparent; stroke-width:22; pointer-events:stroke; }
-.diagram .edgeLine { fill:none; stroke:#475569; stroke-width:2.5; pointer-events:none; }
+.diagram .edgeLine { fill:none; stroke:#475569; stroke-width:2.5; stroke-linejoin:round; pointer-events:none; }
 .diagram .edge[data-branch=예] .edgeLine { stroke:#10b981; }
 .diagram .edge[data-branch=아니오] .edgeLine { stroke:#f59e0b; }
 .diagram .edge:hover .edgeLine,.diagram .edge:focus-visible .edgeLine { stroke:#4f46e5; stroke-width:3.5; }

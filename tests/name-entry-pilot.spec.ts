@@ -261,6 +261,7 @@ test("Entry 도움은 요청 버튼의 작품을 고정하고 이후 수정을 �
   const question = frame.locator("#entryWorkspaceBoard").getByText("강아지 이름은?", { exact: true }).locator("..");
   await question.click(); await frame.locator("input.entry-widget-input-field:visible").fill("요청 직전 질문");
   await page.getByRole("button", { name: "도움 요청 체험하기" }).click();
+  await page.locator("iframe[title='강아지 이름 짓기 엔트리 작업실']").scrollIntoViewIfNeeded();
   await frame.locator("#entryWorkspaceBoard").getByText("요청 직전 질문", { exact: true }).locator("..").click();
   await frame.locator("input.entry-widget-input-field:visible").fill("요청 뒤 질문");
   await page.getByRole("button", { name: "요청받은 선생님 화면 보기" }).click();
