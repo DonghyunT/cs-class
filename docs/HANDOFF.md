@@ -2,9 +2,9 @@
 
 ## 현재 작업 상태
 
-2026-10-12(Asia/Seoul). 브랜치 `codex/student-ui-quiz-concept-flowchart`, 기준 `fe93533`. **주석 11개 구현·통합 검증 중이며 아직 미커밋·미배포입니다.** 사용자는 [계획](reference/student-lesson-feedback-plan-20261012.md)의 구현·필요한 간결한 그래프 활용·문맥 보존·문서 정리와 판단에 따른 배포를 승인했습니다.
+2026-10-12(Asia/Seoul). **주석 11개 구현·전체 검증·운영 배포를 완료했습니다.** 문서 마감 병합 후 기준 브랜치는 `main`이며 미커밋은 없습니다. 앱 릴리스는 [PR #32](https://github.com/DonghyunT/cs-class/pull/32)의 `main@6f8f76078b682962e673ca4a95599cebd2c55328`이고, 후속 문서 커밋은 앱 소스를 바꾸지 않습니다. 완료 조건은 [10/12 계획](reference/student-lesson-feedback-plan-20261012.md)을 따릅니다.
 
-다른 AI의 기존 17개 추적 변경과 미추적 V1 참고본·계획을 보존해 이어갔습니다. 코드 보존본과 해시는 Git 제외 `scratch/feedback-20261012/baseline/`·`baseline-manifest.json`에 있습니다. 진행·소유권·판단 근거는 같은 폴더의 `progress.md`로 관리합니다. 다음 행동은 관련 E2E → 최종 lint/typecheck/순수 검사/build·전체 E2E → 독립 리뷰 조치 → 로컬 기록 복원 → PR·CI·병합·운영 확인입니다.
+다른 AI의 기존 17개 추적 변경과 미추적 V1 참고본·계획을 보존해 통합했습니다. 초기화·기존 변경 되돌리기를 하지 않았습니다. 수정 전 147개 파일의 코드 보존본과 해시는 Git 제외 `scratch/feedback-20261012/baseline/`·`baseline-manifest.json`, 진행·판단 근거는 같은 폴더의 `progress.md`에 있습니다. GitHub 최신 V1 `main@bc8d51f`의 [참고본 126개](../archive/algorithm-studio/2026-10-12-bc8d51f/README.md)는 원문·파일 해시를 고정했고 기존 V1 보관본도 유지합니다.
 
 ## 이번 변경과 검증
 
@@ -14,19 +14,23 @@
 - 이전 작업의 퀴즈 폭·개념 카드/실험·순서도 중심 정렬·Drop 표시와 정식 네 수업 목록 필터를 유지합니다. 숨긴 과거 수업의 직접 조회와 기존 기록 호환을 검사하고 교사 개수와 일정 저장을 보완합니다.
 - 학생 저장은 useWork가 계속 소유합니다. 현재 수정본·검증·이전 제출·완료와 교사 체험 메모리 경계를 유지합니다. AI는 명시적으로 요청하고 늦은 응답·실패·작성 중 입력을 보존합니다.
 
-최종 단일 실행의 환경·개수·화면·실패 조치와 한계는 실행을 마친 뒤 이곳에 기록합니다. 직전 AI와 이전 릴리스의 성공 기록은 이번 변경을 검증한 결과가 아닙니다.
+10/12 검증: Windows·Node24·Java21·Chromium, 로컬 `demo-cs-class` Auth9099/Firestore8080·합성 AI/시간표·빌드된 `next start`에서 단일 worker로 **E2E 357개 통과**(21.9분, skip/flaky 0). lint·typecheck·순수 엔진/AI 검사·프로덕션 빌드와 독립 리뷰를 마쳤습니다. [GitHub CI](https://github.com/DonghyunT/cs-class/actions/runs/38210542085)는 최종 작업 HEAD `58d503fb`에서 같은 검사와 **Linux E2E 356개 통과·Windows .NET 변환 검사 1개 제외**를 확인했습니다(26.1분).
+
+통합 중 발견한 검사 조건은 실제 공개 네 수업·필수 맛보기·새 접근성 이름/속도 선택에 맞췄습니다. Home의 늦은 scrollend 경합은 각 키의 이동 완료를 기다리고, 순서도 휠은 실제 넘침이 있는 1280px 창에서 양·음 방향을 검사합니다. 기존 시간 제한·중심 오차·초점·저장·권한 기준은 유지했습니다. 앱·검사·스크립트/설정 275개 해시 `362872a3713ac3b849d79de14adc018016994cff701604f4bf5be96479e2e27b`가 전체 실행과 병합 뒤 일치했습니다.
+
+최종 합성 화면: [0% 시작 표시](reference/lesson-feedback-20261012/progress-zero.png), [순서도 1689px](reference/lesson-feedback-20261012/flowchart-1689.png)·[390px](reference/lesson-feedback-20261012/flowchart-390.png), [추상화 처방전](reference/lesson-feedback-20261012/abstraction-prescription-1920.png)·[인쇄](reference/lesson-feedback-20261012/abstraction-prescription-print.png). 로컬 합성 계정/입력이며 운영 학생 자료가 아닙니다. 처방전 캡처에는 빈 계획 편집값 보존 검사도 포함됩니다.
 
 ## 통합·배포 상태
 
-- 대상은 GitHub `DonghyunT/cs-class`와 Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`) Production, 운영 주소는 [cs-class-donghyunt.vercel.app](https://cs-class-donghyunt.vercel.app)입니다. 배포 전 원격 main과 실제 별칭/프로젝트를 다시 확인했습니다. 새 릴리스 SHA·CI·배포·운영 검사는 아직 기록할 결과가 없습니다.
-- 수정 전 운영 배포는 `dpl_7Rrd5E1p5qv1fAcauKqMr5Qry5Mp` READY이며 현재 운영 별칭과 일치했습니다. 실제 복구 절차와 대상 확인은 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)를 따릅니다.
+- 대상은 GitHub `DonghyunT/cs-class`와 Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`) Production, 운영 주소는 [cs-class-donghyunt.vercel.app](https://cs-class-donghyunt.vercel.app)입니다. 10/12 15:32 KST PR #32를 병합했습니다. 앱 배포 `dpl_6wNWZWaBPPQm9NUv4XQ2AgDe2tLP`·`cs-class-qkzt6i60y-donghyunt.vercel.app`은 READY·`icn1`이며 `main@6f8f760`과 운영 별칭의 배포 ID/프로젝트가 일치했습니다. 후속 문서 배포의 최종 SHA·운영 별칭 대조 결과도 [PR #32 릴리스 기록](https://github.com/DonghyunT/cs-class/pull/32)에 함께 기록합니다.
+- 15:35 KST 운영 읽기 전용 검사: auth config의 configured=true·guest=false·emulator=null, 익명 session200/null·학생 API401, 이전 sigma 주소307/정확한 운영 주소 이동을 확인했습니다. 실제 학생/교사 로그인 화면을 1280×720·390×790에서 열어 버튼 활성화·가로 넘침 없음·브라우저 오류0을 확인했고 보호된 추상화 수업은 로그인으로 이동했습니다. 운영 로그인·AI·저장/제출 성공을 검사한 결과는 아닙니다.
+- 수정 전 운영 배포는 `dpl_7Rrd5E1p5qv1fAcauKqMr5Qry5Mp` READY이며 시작 당시 운영 별칭과 일치했습니다. 실제 복구 절차와 대상 확인은 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)를 따릅니다.
 - 배포는 앱·검사·문서만 다룹니다. 운영 학생 자료·계정·반 설정·Firebase 규칙/인덱스·환경변수 변경은 이번 범위에 포함하지 않습니다.
 
 ## 다음에 이어갈 작업
 
-1. 현재 검증과 독립 리뷰의 실패/지적을 같은 조건에서 해결하고 전체 검사·복원을 마감합니다.
-2. 승인된 배포를 끝낸 뒤 SHA·별칭·인증 응답·공개 로그인 화면을 확인합니다. READY나 HTTP200을 실제 학생/Google 로그인 성공으로 표현하지 않습니다.
-3. [첫 실제 수업 확인 순서](DEVELOPMENT.md#첫-실제-수업-확인-순서)에 따라 학교 PC·학교망·물리 IME·실학생 사용을 확인합니다.
+1. [첫 실제 수업 확인 순서](DEVELOPMENT.md#첫-실제-수업-확인-순서)에 따라 학교 PC·학교망·물리 IME·승인 계정의 실제 로그인/저장·실학생 사용을 확인합니다.
+2. 최신 프롬프트의 실제 Solar 응답 품질과 호출/실패 집계를 수업에서 관찰합니다. 로컬 합성 AI 성공을 실제 제공자 품질 검증으로 확대하지 않습니다.
 
 ## 다른 PC에서 이어가기
 
@@ -36,7 +40,7 @@ Node24·Java21+·Chromium·Windows 캐시와 설치 명령은 [다른 PC 개발 
 
 ### 로컬 기록과 전달 경계
 
-- 이 회차의 보존 기준은 Git 제외 `scratch/feedback-20261012/demo-before-tests/`의 Auth·Firestore 전체 export입니다. 검사가 끝나면 기본 시드 없이 import하고 객체 키를 재귀 정렬한 해시로 작품·반 설정을 비교합니다. 현재는 검사 중이며 복원 완료로 표현하지 않습니다.
+- 이 회차의 보존 기준은 Git 제외 `scratch/feedback-20261012/demo-before-tests/`의 Auth 설정/계정·Firestore 전체 export입니다. 최종 검사 뒤 기본 시드 없이 모두 import했습니다. 반11개·기존 작품6개의 객체 키를 재귀 정렬한 해시 `caf2002c5c982912e4d37b00858dab6afc93622a098d65f3854109972cdf745e`가 검사 전과 일치했습니다. 기존 서버 세션도 복원했고, 새 게스트 로그인으로 원래 접속을 교체하지 않았습니다. 기존 브라우저 쿠키의 실제 이어가기까지 검사한 것은 아닙니다.
 - Git은 앱·검사·문서·합성 화면만 전달합니다. 비밀 설정·관리자 키·개인 도구·로컬 기록·scratch/outputs·node_modules·빌드/브라우저/Java 캐시는 별도입니다. 기록이 필요한 다른 PC에는 비공개 경로로 전달하고 대상의 기존 기록과 대조합니다.
 - 운영 체험 계정/명부 원문은 Git에 넣지 않습니다. [계정 안내](FIREBASE_SETUP.md#승인된-운영-테스트-계정)와 [명부 절차](DEVELOPMENT.md#실학생-명부-준비와-반별-발급)를 따릅니다.
 

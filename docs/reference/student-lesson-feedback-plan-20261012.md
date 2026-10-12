@@ -10,13 +10,13 @@
 
 **Spec:** 이 문서의 요구사항 표와 1~3절이 2026-10-12 사용자 요청의 설계안입니다. 확정된 제품·시각·개발 기준은 [PRD](../PRD.md), [DESIGN](../DESIGN.md), [DEVELOPMENT](../DEVELOPMENT.md)를 함께 읽습니다. 구현 때 변경된 정책만 담당 문서에 반영합니다.
 
-작성: 2026-10-12(Asia/Seoul). **상태: 사용자 승인 후 구현·검증 중.** 맛보기는 한 번 완료하면 재접속 뒤 워크북을 이어가며 기존 기록을 보존합니다. 사용자는 필요한 범위의 간결한 그래프 활용·문맥 보존·문서 정리와 판단에 따른 배포까지 승인했습니다. 최종 구현·검사·배포 결과는 [현재 인계](../HANDOFF.md)에 기록합니다.
+작성: 2026-10-12(Asia/Seoul). **상태: 구현·전체 검증·기록 복원·운영 배포 완료.** 맛보기는 한 번 완료하면 재접속 뒤 워크북을 이어가며 기존 기록을 보존합니다. 사용자는 필요한 범위의 간결한 그래프 활용·문맥 보존·문서 정리와 판단에 따른 배포까지 승인했습니다. 최종 구현·검사·배포 결과는 [현재 인계](../HANDOFF.md)에 기록합니다.
 
 ## 기준과 기존 작업 보존
 
-- 현재 브랜치 `codex/student-ui-quiz-concept-flowchart`, HEAD `fe93533`. 이번 조사 시작 시 추적 파일 17개 미커밋과 V1 참고본의 미추적 파일이 있었습니다. 브랜치 변경·초기화·stash·기존 변경 되돌리기는 하지 않았습니다.
+- 조사 시작 당시 브랜치 `codex/student-ui-quiz-concept-flowchart`, HEAD `fe93533`. 이번 조사 시작 시 추적 파일 17개 미커밋과 V1 참고본의 미추적 파일이 있었습니다. 브랜치 변경·초기화·stash·기존 변경 되돌리기는 하지 않았습니다.
 - 보존 대상: 프로그래밍/일반 퀴즈 폭·여백, 복습 개념 카드/실험, 퍼즐 기호 중앙 정렬·선택/반복 연결선·빈 슬롯/Drop 표시, 테스트 수업 숨김과 정식 네 수업 필터, 로컬 시드·서버 조회 변경, V1 보관본·안내 문서입니다. 특히 `flow-experience.ts`·`flow-diagram.tsx`의 현재 수정에 새 UX를 덧붙입니다.
-- 다른 AI의 typecheck·test:review·lint·build 성공 기록은 [HANDOFF](../HANDOFF.md)의 인계 근거입니다. 이번 계획 단계에서 다시 실행한 결과가 아니며, 영향 E2E 완료로 확대하지 않습니다.
+- 다른 AI의 typecheck·test:review·lint·build 성공 기록은 [구현 전 인계 원문](../archive/cs-class/2026-10-12-before-feedback-release/HANDOFF.md)의 근거입니다. 이번 계획 단계에서 다시 실행한 결과가 아니며, 영향 E2E 완료로 확대하지 않습니다.
 - V1 대조 기준: [최신 참고본](../../archive/algorithm-studio/2026-10-12-bc8d51f/README.md), `main@bc8d51f659d9cb0bcb131ee04a467545f8fc96af`. 원문을 수정하지 않고 index.html·최종 CSS override·실습 JS의 실제 동작을 참고합니다.
 - 기존 [가독성 개선 계획](student-learning-readability-plan.md)은 10/7 완료한 설계/검증 기록입니다. 이번 문서는 이후 주석 11개의 별도 후속 계획으로 관리하고 과거 기록을 다시 쓰지 않습니다.
 
@@ -142,59 +142,59 @@
 
 **Files:** 기존 미커밋·미추적 전체 목록, Git 제외 scratch의 코드 스냅샷/해시, 필요 시 demo export. **Interfaces:** 현재 브랜치·HEAD·파일 해시·사용자 작품을 이후 회차의 비교 기준으로 제공합니다.
 
-- [ ] 수정 전 상태/변경 파일·새 파일을 다시 읽고 소스+필요한 미추적 자료를 비밀 설정 없이 보존합니다. HANDOFF의 현재 AI 인계와 이번 계획을 구분합니다.
-- [ ] 실행 중 앱의 auth config·PID·9099/8080·fixture를 확인합니다. 서버 교체/시드 전에 사용자 demo 기록을 export하고 기존 기록 위에 시드를 덮지 않습니다.
-- [ ] 기본 대표 흐름을 캡처하고, 현재 UI 변경의 기준 검사와 이번 요구의 실패를 구분합니다. 테스트 수업 숨김 때문에 기존 합성 검사 조건이 어긋나는지도 먼저 확인합니다.
+- [x] 수정 전 상태/변경 파일·새 파일을 다시 읽고 소스+필요한 미추적 자료를 비밀 설정 없이 보존합니다. HANDOFF의 현재 AI 인계와 이번 계획을 구분합니다.
+- [x] 실행 중 앱의 auth config·PID·9099/8080·fixture를 확인합니다. 서버 교체/시드 전에 사용자 demo 기록을 export하고 기존 기록 위에 시드를 덮지 않습니다.
+- [x] 기본 대표 흐름을 캡처하고, 현재 UI 변경의 기준 검사와 이번 요구의 실패를 구분합니다. 테스트 수업 숨김 때문에 기존 합성 검사 조건이 어긋나는지도 먼저 확인합니다.
 
 ### 회차 1 — 제목·진도·프로그래밍 용어
 
 **Files:** `programming-lesson.ts`, `programming-data.ts`, `programming-concept.tsx`/인접 CSS, `learning-overview.tsx`/인접 CSS, `activity-progress-ring.tsx`/인접 CSS. **Interfaces:** 기존 Lesson/pc0~pc3·ActivityPart와 정확한 실제 진도를 그대로 소비/제공합니다.
 
-- [ ] student-progress의 계산 안내·0% 무채움 검사를 새 요구로 갱신해 실패를 확인합니다. 표시 0·완료0·작은 시작 표시·100%·빈 반·조회 실패를 함께 고정합니다.
-- [ ] 제목 단일 정의·details 삭제·독립 장식 구간·첫 개념의 세 설명을 적용합니다. 프로그래밍 데이터의 번호/정답/활동 수는 유지합니다.
-- [ ] `student-progress.spec.ts`, `programming-learning.spec.ts`, `programming-prototype.spec.ts`, 공통 원형을 쓰는 교사 진도 검사의 관련 사례와 typecheck를 실행합니다. 개념/완료 재접속과 키보드 범례/Escape를 확인합니다.
+- [x] student-progress의 계산 안내·0% 무채움 검사를 새 요구로 갱신해 실패를 확인합니다. 표시 0·완료0·작은 시작 표시·100%·빈 반·조회 실패를 함께 고정합니다.
+- [x] 제목 단일 정의·details 삭제·독립 장식 구간·첫 개념의 세 설명을 적용합니다. 프로그래밍 데이터의 번호/정답/활동 수는 유지합니다.
+- [x] `student-progress.spec.ts`, `programming-learning.spec.ts`, `programming-prototype.spec.ts`, 공통 원형을 쓰는 교사 진도 검사의 관련 사례와 typecheck를 실행합니다. 개념/완료 재접속과 키보드 범례/Escape를 확인합니다.
 
 ### 회차 2 — 추상화의 필수 맛보기·단계 탐색
 
 **Files:** `review/abstraction.tsx`, `abstraction.module.css`, `studio.module.css`의 추상화 전용 규칙. **Interfaces:** existing tutorialDone/tutorialStep/view/step과 작성 내용을 보존한 채 회차 3에 같은 AbstractionProject를 제공합니다.
 
-- [ ] 기존 ‘맛보기 추천/워크북 직접 진입’ 검사를 필수 최초1회·기존 완료 즉시 이어가기·미완료 옛 작품 보존/복귀 검사로 바꿔 실패를 확인합니다.
-- [ ] 선택 막대 2개를 제거하고 완료 증거와 실제 표시를 연결합니다. Step 강조·이전/다음·Effect 초점 복귀를 적용합니다.
-- [ ] `review-abstraction.spec.ts`와 `review-abstraction-v1-ux.spec.ts`의 단계 왕복·빈/불완전 입력·재접속·기존 제출 보존을 검증합니다.
+- [x] 기존 ‘맛보기 추천/워크북 직접 진입’ 검사를 필수 최초1회·기존 완료 즉시 이어가기·미완료 옛 작품 보존/복귀 검사로 바꿔 실패를 확인합니다.
+- [x] 선택 막대 2개를 제거하고 완료 증거와 실제 표시를 연결합니다. Step 강조·이전/다음·Effect 초점 복귀를 적용합니다.
+- [x] `review-abstraction.spec.ts`와 `review-abstraction-v1-ux.spec.ts`의 단계 왕복·빈/불완전 입력·재접속·기존 제출 보존을 검증합니다.
 
 ### 회차 3 — 닥터 대화·요소·처방전
 
 **Files:** `review/abstraction.tsx`/전용 CSS, `lib/server/review-ai.ts`, 필요 시 기존 `abstraction-data.mjs` 프롬프트와 합성 AI fixture. **Interfaces:** existing requestAi(task,input), AiResult.options(요소7개/계획3~5개), core/noise/plans/adopted를 사용합니다. 새로운 태스크/응답 규격을 만들지 않습니다.
 
-- [ ] 네 단계의 대화 높이/스크롤·IME·중복 요청, 후보 생성 순서/개별 버리기/복원, 단계 변경+요청의 대화 귀속, 기존 계획/늦은 응답/503·시간초과 보존 검사를 먼저 고정합니다.
-- [ ] 명시 AI 생성 버튼→최신 초안 저장→요청 단계 고정→현재 요청의 성공 결과 반영 흐름을 구현합니다. 후보/계획의 첫 초안 작성과 기존 내용의 재추천/선택 채택을 구분합니다.
-- [ ] adopted에서 순서를 복원하고, V1 처방전의 4개 내용 영역·계획 편집·상담·복사/인쇄를 맞춥니다. 메시지/빈 계획 실패 때 기존 결과를 유지합니다.
-- [ ] `review-abstraction*.spec.ts`, `npm.cmd run test:review`, `teacher-preview-api.spec.ts`의 AI/메모리 경계와 typecheck를 검증합니다. 합성 검증과 실제 Solar 품질 확인은 구분합니다.
+- [x] 네 단계의 대화 높이/스크롤·IME·중복 요청, 후보 생성 순서/개별 버리기/복원, 단계 변경+요청의 대화 귀속, 기존 계획/늦은 응답/503·시간초과 보존 검사를 먼저 고정합니다.
+- [x] 명시 AI 생성 버튼→최신 초안 저장→요청 단계 고정→현재 요청의 성공 결과 반영 흐름을 구현합니다. 후보/계획의 첫 초안 작성과 기존 내용의 재추천/선택 채택을 구분합니다.
+- [x] adopted에서 순서를 복원하고, V1 처방전의 4개 내용 영역·계획 편집·상담·복사/인쇄를 맞춥니다. 메시지/빈 계획 실패 때 기존 결과를 유지합니다.
+- [x] `review-abstraction*.spec.ts`, `npm.cmd run test:review`, `teacher-preview-api.spec.ts`의 AI/메모리 경계와 typecheck를 검증합니다. 합성 검증과 실제 Solar 품질 확인은 구분합니다.
 
 ### 회차 4 — 순서도 작업실·실행 과정
 
 **Files:** `review/flowchart-studio.tsx`, `flowchart.module.css`, `flow-execution.tsx`와 담당 스타일. **Interfaces:** existing FlowchartProject·FlowExecution/실행 상태를 재사용하며 회차 5의 직접 조작 경로를 유지합니다.
 
-- [ ] 1689×790과 1280×720의 캔버스 실제 높이·패널 읽기 순서·헤더/하단 조작 표시, 변수표/콘솔 내부 스크롤, 속도 순환/실행 재시작 검사를 고정합니다.
-- [ ] 최종 V1 폭/밀도·가용 높이·변수표+콘솔·부동 실행바를 적용합니다. 모니터의 새 표현을 퍼즐/예시/자유 소비 화면에서 함께 확인합니다.
-- [ ] `review-flowchart-v1-ui.spec.ts`, `review-flowchart-execution-fixes.spec.ts`, `review-flowchart.spec.ts`와 typecheck를 검증합니다. 기존 퍼즐 배치·분기·직전값·기호 옆 입력은 유지합니다.
+- [x] 1689×790과 1280×720의 캔버스 실제 높이·패널 읽기 순서·헤더/하단 조작 표시, 변수표/콘솔 내부 스크롤, 속도 순환/실행 재시작 검사를 고정합니다.
+- [x] 최종 V1 폭/밀도·가용 높이·변수표+콘솔·부동 실행바를 적용합니다. 모니터의 새 표현을 퍼즐/예시/자유 소비 화면에서 함께 확인합니다.
+- [x] `review-flowchart-v1-ui.spec.ts`, `review-flowchart-execution-fixes.spec.ts`, `review-flowchart.spec.ts`와 typecheck를 검증합니다. 기존 퍼즐 배치·분기·직전값·기호 옆 입력은 유지합니다.
 
 ### 회차 5 — 편집 패널 제거·캔버스 UX
 
 **Files:** `flowchart-studio.tsx`, `flowchart.module.css`, 필요 시 `flow-diagram.tsx`/인접 CSS와 기존 구조 검사 연결. **Interfaces:** existing 포트/문구 편집·기호/연결 삭제·실행/검증·useWork 저장을 유지합니다.
 
-- [ ] inspector를 직접 조작하던 검사를 실제 F2/연필·Tab/Enter 포트·선 Delete·방향키·드래그 조작으로 변경해 실패를 확인합니다. 구조 오류 이동·편집 되돌리기·팬 이동도 고정합니다.
-- [ ] details와 연결 ref/state를 제거하고 필요한 도구/초점만 기존 캔버스에 통합합니다. 독립 큰 대체 패널은 추가하지 않습니다.
-- [ ] `review-flowchart-studio-fixes.spec.ts`, `review-flowchart-canvas-fixes.spec.ts`, `review-flowchart-puzzle-fixes.spec.ts`, V1 UI 검사와 `test:review`를 검증합니다. SVG 밖 빈 영역 팬·첫 포트 연결 중 배치 안정·기존 출구 보호·예/아니오·재접속을 확인합니다.
+- [x] inspector를 직접 조작하던 검사를 실제 F2/연필·Tab/Enter 포트·선 Delete·방향키·드래그 조작으로 변경해 실패를 확인합니다. 구조 오류 이동·편집 되돌리기·팬 이동도 고정합니다.
+- [x] details와 연결 ref/state를 제거하고 필요한 도구/초점만 기존 캔버스에 통합합니다. 독립 큰 대체 패널은 추가하지 않습니다.
+- [x] `review-flowchart-studio-fixes.spec.ts`, `review-flowchart-canvas-fixes.spec.ts`, `review-flowchart-puzzle-fixes.spec.ts`, V1 UI 검사와 `test:review`를 검증합니다. SVG 밖 빈 영역 팬·첫 포트 연결 중 배치 안정·기존 출구 보호·예/아니오·재접속을 확인합니다.
 
 ### 회차 6 — 통합·문서·리뷰
 
 **Files:** 영향 E2E·담당 PRD/DESIGN/DEVELOPMENT·HANDOFF·README, 필요 시 합성 시드/fixture의 현재 공개 수업 정합화. **Interfaces:** 앞선 회차와 기존 미커밋 전체를 통합하되 검증/커밋/배포 상태를 따로 제공합니다.
 
-- [ ] 독립 리뷰로 주석1~11의 구현·접근성·보존 조건을 대조합니다. 담당 문서의 기존 제목·진도 안내·선택 맛보기·후보 채택 정책을 최종 구현과 정합화합니다.
-- [ ] typecheck·test:review·lint·build와 영향 E2E를 실행합니다. 기존 미커밋의 공통 서버 조회/수업 필터도 함께 통합하면 영향 범위가 전체이므로 최종 전체 E2E를 한 번 실행합니다. 이 경우 같은 빌드로 영향 E2E와 전체 E2E를 불필요하게 중복하지 않습니다.
-- [ ] 1689×790/1920×1080/1440×900·1280×720·820/821px·390/320px에서 주요 조작·초점·콘솔을 확인합니다. 원작과 다른 화면 확대율/콘텐츠 높이를 섞지 말고 같은 유효 화면에서 비교합니다.
-- [ ] demo 작품·반 설정·게스트 접속을 복구하고 정렬된 데이터 해시로 보존을 확인합니다. 변경 파일/검증 환경/결과/한계를 HANDOFF 첫머리에 남깁니다. 커밋·PR·운영 배포는 이후 사용자 요청 범위에 맞춰 처리합니다.
+- [x] 독립 리뷰로 주석1~11의 구현·접근성·보존 조건을 대조합니다. 담당 문서의 기존 제목·진도 안내·선택 맛보기·후보 채택 정책을 최종 구현과 정합화합니다.
+- [x] typecheck·test:review·lint·build와 영향 E2E를 실행합니다. 기존 미커밋의 공통 서버 조회/수업 필터도 함께 통합하면 영향 범위가 전체이므로 최종 전체 E2E를 한 번 실행합니다. 이 경우 같은 빌드로 영향 E2E와 전체 E2E를 불필요하게 중복하지 않습니다.
+- [x] 1689×790/1920×1080/1440×900·1280×720·820/821px·390/320px에서 주요 조작·초점·콘솔을 확인합니다. 원작과 다른 화면 확대율/콘텐츠 높이를 섞지 말고 같은 유효 화면에서 비교합니다.
+- [x] demo 작품·반 설정·게스트 접속을 복구하고 정렬된 데이터 해시로 보존을 확인합니다. 변경 파일/검증 환경/결과/한계를 HANDOFF 첫머리에 남깁니다. 커밋·PR·운영 배포는 이번 승인 범위에서 마감하고 각각의 근거를 구분합니다.
 
 ## 검사 실행 기준
 
