@@ -2,11 +2,21 @@
 
 ## 현재 작업 상태
 
+2026-10-12(Asia/Seoul). 최신 원격 `main@5bb859ce`에서 `codex/lesson-feedback-round2`를 만들고 승인된 후속 주석 8개를 구현했습니다. 소스·검사·문서·합성 화면을 이 브랜치의 로컬 커밋으로 정리했고 미커밋은 없습니다. 원격 반영·병합·배포는 하지 않았습니다. 다음 행동은 아래 변경과 화면을 확인하고 원격 반영·배포 범위를 정하는 것입니다.
+
+새 첫 개념 pc4를 추가하되 기존 pc0~3와 프로토타입 숫자 0~3을 유지합니다. 세 복습의 중복 제목/넓게 보기는 상단 집중 모드로 통합하고, 순서도 1~3은 AI 없이 실행 종료→기존 서버 검증→확인된 제출로 자동 기록합니다. 자유 공방 도구를 묶고 스크롤바·보관함 간격·추가 카드 색·실행바 두께를 다듬었습니다. 저장은 useWork 단일 소유와 기존 스키마/복구 경로를 유지합니다.
+
+10/12 후속 검증: Windows·Node24·Java21·Chromium, 빌드된 `next start`·단일 worker에서 **전체 E2E 371개 통과**(21.0분, skip/flaky/실행 오류 0). lint·typecheck·순수 엔진/AI 검사 16개·프로덕션 빌드와 독립 리뷰를 통과했습니다. 신규 E2E 14개는 새 첫 개념/옛 기록 호환·자유 공방·자동 기록과 검증/제출 응답 분실·확정 거절 뒤 재시도·중지 후 초점·교사 체험 메모리 경계를 검사합니다. 독립 리뷰의 확정 요청 거절 뒤 재실행 문제와 기록 대기 중 중지 후 초점 문제는 실패 재현→수정→같은 조건 통과로 확인했습니다. 로컬 demo Auth9099/Firestore8080·합성 AI/시간표만 사용했으며 실제 운영 로그인·AI·학생 저장을 검사하거나 변경하지 않았습니다. 아래 357개·운영 배포 증거는 직전 릴리스의 기록이며 이번 변경의 검증으로 간주하지 않습니다.
+
+빌드 화면: [순서도 자유 공방 1544×712](reference/lesson-feedback-round2-20261012/flowchart-free-1544.png)·[새 첫 개념과 옛 기록 보존](reference/lesson-feedback-round2-20261012/programming-intro.png). 합성 계정/작품의 화면이며 운영 학생 자료가 아닙니다.
+
+## 직전 배포 기준
+
 2026-10-12(Asia/Seoul). **주석 11개 구현·전체 검증·운영 배포를 완료했습니다.** 문서 마감 병합 후 기준 브랜치는 `main`이며 미커밋은 없습니다. 앱 릴리스는 [PR #32](https://github.com/DonghyunT/cs-class/pull/32)의 `main@6f8f76078b682962e673ca4a95599cebd2c55328`이고, 후속 문서 커밋은 앱 소스를 바꾸지 않습니다. 완료 조건은 [10/12 계획](reference/student-lesson-feedback-plan-20261012.md)을 따릅니다.
 
 다른 AI의 기존 17개 추적 변경과 미추적 V1 참고본·계획을 보존해 통합했습니다. 초기화·기존 변경 되돌리기를 하지 않았습니다. 수정 전 147개 파일의 코드 보존본과 해시는 Git 제외 `scratch/feedback-20261012/baseline/`·`baseline-manifest.json`, 진행·판단 근거는 같은 폴더의 `progress.md`에 있습니다. GitHub 최신 V1 `main@bc8d51f`의 [참고본 126개](../archive/algorithm-studio/2026-10-12-bc8d51f/README.md)는 원문·파일 해시를 고정했고 기존 V1 보관본도 유지합니다.
 
-## 이번 변경과 검증
+## 직전 릴리스 변경과 검증
 
 - 제목은 **프로그래밍의 기초**로 통일하고 프로그래밍·프로그래밍 언어·프로그램을 첫 개념에서 설명합니다. 계산 안내를 제거하고 실제 0%에만 짧은 시작 장식을 표시합니다. 수업/문항 ID·정답·진도 분모는 유지합니다.
 - 추상화 맛보기는 최초 한 번 필수이며 옛 워크북의 단계·초안·이전 제출은 보존합니다. 두 탐색 막대를 제거하고 Step·이전/다음으로 진행합니다. 단계별 닥터 대화·읽던 위치·상황 기반 요소 7개와 개별 버리기/복구·3~5개 계획·처방전 편집/복사/인쇄를 제공합니다.
@@ -20,7 +30,7 @@
 
 최종 합성 화면: [0% 시작 표시](reference/lesson-feedback-20261012/progress-zero.png), [순서도 1689px](reference/lesson-feedback-20261012/flowchart-1689.png)·[390px](reference/lesson-feedback-20261012/flowchart-390.png), [추상화 처방전](reference/lesson-feedback-20261012/abstraction-prescription-1920.png)·[인쇄](reference/lesson-feedback-20261012/abstraction-prescription-print.png). 로컬 합성 계정/입력이며 운영 학생 자료가 아닙니다. 처방전 캡처에는 빈 계획 편집값 보존 검사도 포함됩니다.
 
-## 통합·배포 상태
+## 직전 릴리스 통합·배포 상태
 
 - 대상은 GitHub `DonghyunT/cs-class`와 Vercel `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`) Production, 운영 주소는 [cs-class-donghyunt.vercel.app](https://cs-class-donghyunt.vercel.app)입니다. 10/12 15:32 KST PR #32를 병합했습니다. 앱 배포 `dpl_6wNWZWaBPPQm9NUv4XQ2AgDe2tLP`·`cs-class-qkzt6i60y-donghyunt.vercel.app`은 READY·`icn1`이며 `main@6f8f760`과 운영 별칭의 배포 ID/프로젝트가 일치했습니다. 후속 문서 배포의 최종 SHA·운영 별칭 대조 결과도 [PR #32 릴리스 기록](https://github.com/DonghyunT/cs-class/pull/32)에 함께 기록합니다.
 - 15:35 KST 운영 읽기 전용 검사: auth config의 configured=true·guest=false·emulator=null, 익명 session200/null·학생 API401, 이전 sigma 주소307/정확한 운영 주소 이동을 확인했습니다. 실제 학생/교사 로그인 화면을 1280×720·390×790에서 열어 버튼 활성화·가로 넘침 없음·브라우저 오류0을 확인했고 보호된 추상화 수업은 로그인으로 이동했습니다. 운영 로그인·AI·저장/제출 성공을 검사한 결과는 아닙니다.

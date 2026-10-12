@@ -4,7 +4,7 @@ import { useState, type RefObject } from "react";
 import { ArrowLeft, ArrowRight, Check, Lightbulb, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProgrammingConcept as ProgrammingConceptView } from "./programming-concept";
-import { questions } from "@/lib/classroom/programming-data";
+import { concepts, questions } from "@/lib/classroom/programming-data";
 import { buildProgrammingProject, missionById, programmingMissions } from "@/lib/classroom/programming-entry";
 import type { Lesson, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
@@ -26,16 +26,16 @@ export function ProgrammingLearningStage(props: Props) {
 
 function ProgrammingConcept({ lesson, controller, locked, focus, runAction, next, conceptId, onConceptChange }: Props) {
   const { work, draft, update } = controller;
-  const index = Math.max(0, lesson.concepts.findIndex((concept) => concept.id === conceptId));
-  const id = lesson.concepts[index].id;
+  const id = lesson.concepts.find((concept) => concept.id === conceptId)?.id ?? lesson.concepts[0].id;
+  const index = Number(id.slice(2));
   const state = {
     concept: index,
-    conceptDone: [0, 1, 2, 3].filter((i) => work.conceptSolved.includes(`pc${i}`)),
+    conceptDone: concepts.map((_, i) => i).filter((i) => work.conceptSolved.includes(`pc${i}`)),
     conceptAnswers: Object.fromEntries(Object.entries(draft.conceptAnswers).map(([key, answer]) => [Number(key.slice(2)), Number(answer)])),
   };
   return <ProgrammingConceptView state={state} locked={locked} actionsBlocked={controller.actionBlocked} focus={focus} next={() => next("quiz")} update={(value) => {
     if (locked) return;
-    onConceptChange(lesson.concepts[value.concept].id);
+    onConceptChange(`pc${value.concept}`);
     if (JSON.stringify(value.conceptAnswers) !== JSON.stringify(state.conceptAnswers)) update({ ...controller.getDraft(), conceptAnswers: Object.fromEntries(Object.entries(value.conceptAnswers).map(([key, answer]) => [`pc${key}`, String(answer)])) });
   }} onCheck={() => void runAction({ type: "check-concept", conceptId: id }, "concept-feedback")} serverFeedback={draft.conceptAnswers[id] === work.draft.conceptAnswers[id] ? work.conceptFeedback[id]?.message : undefined} />;
 }

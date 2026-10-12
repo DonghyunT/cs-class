@@ -22,6 +22,7 @@ export function LessonShell({ lesson, returnOrigin, workspaceWide, practiceFocus
   const menu = useRef<HTMLDetailsElement>(null), menuToggle = useRef<HTMLElement>(null), logoutButton = useRef<HTMLButtonElement>(null);
   const focusToggle = useRef<HTMLButtonElement>(null), manualFocus = useRef(false);
   const canFocus = practiceActive && lesson.practice.type !== "ordering" && !!lesson.practice.type;
+  const reviewFocused = practiceFocused && ["sandwich", "abstraction", "flowchart"].includes(lesson.practice.type ?? "");
   const [open, setOpen] = useState(false), [leaving, setLeaving] = useState(false), [logoutError, setLogoutError] = useState("");
   useEffect(() => { if (manualFocus.current) { focusToggle.current?.focus({ preventScroll: true }); manualFocus.current = false; } }, [practiceFocused]);
   function changeFocus(focused: boolean) { manualFocus.current = true; onPracticeFocusedChange?.(focused); }
@@ -43,7 +44,7 @@ export function LessonShell({ lesson, returnOrigin, workspaceWide, practiceFocus
     catch (error) { setLogoutError(error instanceof Error ? error.message : "로그아웃하지 못했어요. 다시 시도해 주세요."); }
     finally { setLeaving(false); }
   }
-  return <div className={styles.shell} data-practice-type={lesson.practice.type} data-workspace-wide={workspaceWide} data-practice-focused={practiceFocused} data-lesson-shell onKeyDown={event => {
+  return <div className={styles.shell} data-practice-type={lesson.practice.type} data-workspace-wide={workspaceWide || reviewFocused} data-practice-focused={practiceFocused} data-lesson-shell onKeyDown={event => {
     if (event.key !== "Escape" || event.defaultPrevented || !practiceFocused) return;
     const details = event.target instanceof Element ? event.target.closest("details[open]") : null;
     if (details instanceof HTMLDetailsElement) { event.preventDefault(); details.open = false; details.querySelector("summary")?.focus(); return; }

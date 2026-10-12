@@ -16,6 +16,7 @@ test.afterEach(async () => {
 });
 
 async function prepare(page: Page, id = "review-sandwich") {
+  await page.goto("about:blank");
   await resetStudent(page.request, studentId);
   expect((await loginStudent(page.request, initialPassword, studentId)).status()).toBe(200);
   expect((await page.request.post("/api/auth/password", { headers, data: { password: studentPassword } })).status()).toBe(200);
@@ -510,7 +511,7 @@ test("reading-layout: 실제 개념·퀴즈 화면 크기와 키보드·가로 �
   expect(errors).toEqual([]);
 });
 
-test("workspace-width: 기본 폭·수동 확대·단계 저장 실패·재접속", async ({ page }) => {
+test("workspace-width: 복습의 기본 폭·집중 확대·단계 저장 실패·재접속", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await prepare(page);
   const layout = page.locator('[data-workspace-wide]').first();
@@ -519,10 +520,10 @@ test("workspace-width: 기본 폭·수동 확대·단계 저장 실패·재접�
   await expect(page.getByRole("tab", { name: /실습/ })).toBeFocused();
   await expect(page.getByRole("button", { name: "작업실 넓게 보기", exact: true })).toBeHidden();
   await page.setViewportSize({ width: 1920, height: 900 });
-  await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
-  const restore = page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true });
+  await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();
+  const restore = page.getByRole("button", { name: "실습 집중 모드 끝내기", exact: true });
   await restore.click();
-  const expand = page.getByRole("button", { name: "작업실 넓게 보기", exact: true });
+  const expand = page.getByRole("button", { name: "실습 집중 모드", exact: true });
   await expect(expand).toBeFocused();
   await page.getByLabel("자연어 명령").fill("빵 봉지를 열어");
   await page.getByRole("tab", { name: /개념/ }).click();
@@ -540,14 +541,12 @@ test("workspace-width: 기본 폭·수동 확대·단계 저장 실패·재접�
     await expect(input).toHaveValue("빵 봉지를 열어");
   }
   await page.getByLabel("자연어 명령").focus(); await page.keyboard.press("Escape");
-  await expect(layout).toHaveAttribute("data-workspace-wide", "true");
-  await restore.focus(); await page.keyboard.press("Escape");
   await expect(layout).toHaveAttribute("data-workspace-wide", "false");
-  await expect(expand).toBeHidden();
-  await expect(page.locator("#stage-heading-practice")).toBeFocused();
+  await expect(expand).toBeFocused();
+  await expect(input).toHaveValue("빵 봉지를 열어");
   await page.setViewportSize({ width: 1920, height: 900 });
   await expect(expand).toBeVisible();
-  await expect(page.locator("#stage-heading-practice")).toBeFocused();
+  await expect(expand).toBeFocused();
   await page.reload();
   await expect(layout).toHaveAttribute("data-workspace-wide", "false");
   await expect(page.getByLabel("자연어 명령")).toHaveValue("빵 봉지를 열어");
@@ -562,7 +561,7 @@ test("workspace-width: 기본 폭·수동 확대·단계 저장 실패·재접�
   await expect(layout).toHaveAttribute("data-workspace-wide", "false");
 });
 
-test("workspace-width: 연결된 네 수업의 기본 폭과 수동 선택", async ({ page }) => {
+test("workspace-width: 연결된 네 수업의 기본 폭과 활동별 확대 선택", async ({ page }) => {
   test.setTimeout(120_000);
   for (const id of lessonIds.slice(0, 4)) {
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -572,10 +571,11 @@ test("workspace-width: 연결된 네 수업의 기본 폭과 수동 선택", asy
     await expect(page.getByRole("tab", { name: /실습/ })).toBeFocused();
     await expect(page.getByRole("button", { name: "작업실 넓게 보기", exact: true })).toBeHidden();
     await page.setViewportSize({ width: 1920, height: 900 });
-    await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
+    const review = id.startsWith("review-");
+    await page.getByRole("button", { name: review ? "실습 집중 모드" : "작업실 넓게 보기", exact: true }).click();
     await page.setViewportSize({ width: 1280, height: 900 });
     await expect(page.locator('[data-workspace-wide]').first()).toHaveAttribute("data-workspace-wide", "true");
-    await page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true }).click();
+    await page.getByRole("button", { name: review ? "실습 집중 모드 끝내기" : "기본 크기로 돌아가기", exact: true }).click();
     await expect(page.getByRole("button", { name: "작업실 넓게 보기", exact: true })).toBeHidden();
     await page.getByRole("tab", { name: /개념/ }).click();
     await page.getByRole("tab", { name: /실습/ }).click();
@@ -651,7 +651,7 @@ test("sandwich-layout: AI 대기 중 다음 입력·긴 오류·실행 중 폭 �
   await expect(page.getByRole("button", { name: "명령을 해석하고 있어요…", exact: true })).toBeVisible();
   await input.fill("다음에 실행할 명령");
   await page.setViewportSize({ width: 1920, height: 720 });
-  await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
+  await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();
   await expect(input).toHaveValue("다음에 실행할 명령");
   release();
   await expect(page.getByRole("region", { name: "최신 명령 결과" }).getByRole("alert")).toHaveText(message);
@@ -659,15 +659,19 @@ test("sandwich-layout: AI 대기 중 다음 입력·긴 오류·실행 중 폭 �
   for (const width of [1280, 901, 900, 480, 390, 320]) {
     await page.setViewportSize({ width, height: 720 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await input.scrollIntoViewIfNeeded(); await input.focus(); await page.keyboard.press("Escape");
-    await expect(input).toBeFocused();
+    await input.scrollIntoViewIfNeeded(); await input.focus();
+    const focused = await page.locator("[data-lesson-shell]").getAttribute("data-practice-focused") === "true";
+    await page.keyboard.press("Escape");
+    if (focused) await expect(page.getByRole("button", { name: "실습 집중 모드", exact: true })).toBeFocused();
+    else await expect(input).toBeFocused();
   }
   await page.unroute("**/api/classroom/ai");
   await input.fill("빵 봉지를 열어, 식빵 두 장을 꺼내, 잼 뚜껑을 열어");
   await page.getByRole("button", { name: "AI 없이 실행", exact: true }).click();
   await page.getByRole("region", { name: "알고리즘 실행 기록", exact: true }).getByText("기록 도구", { exact: true }).click();
   await expect(page.getByRole("button", { name: "다시 실행 멈추기", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true }).click();
+  await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();
+  await page.getByRole("button", { name: "실습 집중 모드 끝내기", exact: true }).click();
   await expect(page.getByRole("button", { name: "명령 다시 실행", exact: true })).toBeVisible();
   await expect(page.getByRole("list", { name: "재료와 조리 상태" })).toContainText("2 장");
 });

@@ -437,9 +437,9 @@ test("학생·교사 실제 배치: 7개 너비·키보드·모바일·빈 상�
     await page.setViewportSize({ width: 390, height: 844 }); await todos(page).getByRole("checkbox").check(); await saved(page);
     if (role === "student") {
       await page.getByRole("button", { name: "수업 시작", exact: true }).click();
-      await page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true }).check();
+      await page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true }).check();
       await page.getByRole("link", { name: "수업 나가기", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
-      await page.getByRole("button", { name: "이어하기", exact: true }).click(); await expect(page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true })).toBeChecked();
+      await page.getByRole("button", { name: "이어하기", exact: true }).click(); await expect(page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true })).toBeChecked();
       await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.getByRole("navigation", { name: "교실 메뉴" }).getByRole("link", { name: "열린 수업", exact: true }).click();
@@ -447,7 +447,7 @@ test("학생·교사 실제 배치: 7개 너비·키보드·모바일·빈 상�
       const filters = page.getByRole("group", { name: "열린 수업 필터", exact: true });
       await filters.getByRole("button", { name: "완료", exact: true }).click(); await expect(page.getByRole("heading", { name: "프로그래밍의 기초", exact: true })).toHaveCount(0);
       await filters.getByRole("button", { name: "미완료", exact: true }).click(); await expect(page.getByRole("heading", { name: "프로그래밍의 기초", exact: true })).toBeVisible();
-      await page.getByRole("button", { name: "이어하기", exact: true }).click(); await expect(page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true })).toBeChecked();
+      await page.getByRole("button", { name: "이어하기", exact: true }).click(); await expect(page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true })).toBeChecked();
     } else {
       await page.getByRole("link", { name: /학습 현황.*등록 학생/ }).click();
       await expect(page.getByRole("heading", { name: "학생별 학습 현황", exact: true })).toBeVisible();

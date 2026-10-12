@@ -52,7 +52,7 @@ test.describe("순서도 자유 공방 복원 보강", () => {
     await page.setViewportSize({ width: 1544, height: 712 });
     await prepare(page);
     const before = (await readWork(page.request)).draft.reviewProject;
-    await page.getByRole("button", { name: "🩺 처방전 채우기", exact: true }).click();
+    await page.getByRole("button", { name: "자연어 기획서 채우기", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: /추상화 처방전/ });
     await expect(dialog.getByRole("tab", { name: "추천 문제", exact: true })).toHaveAttribute("aria-selected", "true");
     await dialog.getByRole("button", { name: /비밀번호 5회 검증/ }).click();
@@ -63,7 +63,7 @@ test.describe("순서도 자유 공방 복원 보강", () => {
     await dialog.getByLabel("현재 상태", { exact: true }).fill("내가 직접 정의한 문제");
     await dialog.getByRole("button", { name: "처방전 닫기", exact: true }).click();
     expect((await readWork(page.request)).draft.reviewProject).toEqual(before);
-    await page.getByRole("button", { name: "🩺 처방전 채우기", exact: true }).click();
+    await page.getByRole("button", { name: "자연어 기획서 채우기", exact: true }).click();
     await expect(dialog.getByLabel("현재 상태", { exact: true })).toHaveValue("내가 직접 정의한 문제");
     await expect(dialog.getByRole("region", { name: "처방전 결과 검토", exact: true })).toBeVisible();
     await dialog.getByRole("button", { name: "처방전으로 초안 채우기", exact: true }).click();
@@ -76,7 +76,7 @@ test.describe("순서도 자유 공방 복원 보강", () => {
     await node.focus(); await page.keyboard.press("F2");
     await page.getByRole("textbox", { name: "처리 기호 문구 직접 편집", exact: true }).fill(""); await page.keyboard.press("Enter");
     let aiCalls = 0; page.on("request", request => { if (request.url().includes("/ai")) aiCalls++; });
-    await page.getByRole("button", { name: /AI 검사 후 제출/ }).click();
+    await page.getByRole("button", { name: "AI 설계 점검 열기", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: /Solar AI 설계 점검/ });
     await expect(dialog.getByRole("region", { name: "기본 구조 점검", exact: true })).toBeVisible();
     await dialog.getByRole("button", { name: /이 기호의 내용이 비어 있습니다/ }).click();
@@ -91,7 +91,7 @@ test.describe("순서도 자유 공방 복원 보강", () => {
     const before = (await readWork(page.request)).draft.reviewProject as FlowchartProject;
     let aiCalls = 0;
     page.on("request", request => { if (request.url().endsWith("/api/classroom/ai")) aiCalls++; });
-    await page.getByRole("button", { name: "🩺 처방전 채우기", exact: true }).click();
+    await page.getByRole("button", { name: "자연어 기획서 채우기", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: /추상화 처방전/ });
     await dialog.getByRole("tab", { name: "나만의 문제", exact: true }).click();
     await dialog.getByLabel("현재 상태", { exact: true }).fill("아침 준비물을 빠뜨리는 문제");
@@ -112,7 +112,7 @@ test.describe("순서도 자유 공방 복원 보강", () => {
     await expect.poll(async () => (await readWork(page.request)).draft.reviewProject).toMatchObject({ current: "아침 준비물을 빠뜨리는 문제", goal: "합성 목표: 문제 해결", conditions: ["조건을 확인한다"], core: ["필요한 정보"], nodes: before.nodes, edges: before.edges, cards: [{ text: "상태 확인" }, { text: "조건 확인" }, { text: "목표 실행" }] });
     await page.reload();
     await expect(page.getByLabel("실행 계획", { exact: true }).first()).toHaveValue("상태 확인");
-    await page.getByRole("button", { name: "🩺 처방전 채우기", exact: true }).click();
+    await page.getByRole("button", { name: "자연어 기획서 채우기", exact: true }).click();
     await expect(dialog.getByLabel("목표 상태", { exact: true })).toHaveValue("합성 목표: 문제 해결");
     expect(aiCalls).toBe(1);
   });
@@ -127,7 +127,7 @@ test.describe("순서도 자유 공방 복원 보강", () => {
       reply.result.definition = { goal: "페트병을 올바르게 분리수거하기", conditions: ["라벨을 떼고 세척하기"], core: ["페트병", "라벨"] };
       await route.fulfill({ response, json: reply });
     });
-    await page.getByRole("button", { name: "🩺 처방전 채우기", exact: true }).click();
+    await page.getByRole("button", { name: "자연어 기획서 채우기", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: /추상화 처방전/ });
     await dialog.getByRole("button", { name: /비밀번호 5회 검증/ }).click();
     await dialog.getByRole("tab", { name: "나만의 문제", exact: true }).click();

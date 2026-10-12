@@ -20,7 +20,7 @@ function puzzleSlot(page: Page, missionId: number, slotId: string) {
   return page.getByLabel(slot.hint, { exact: true });
 }
 async function recipe(page: Page) {
-  await page.getByRole("button", { name: /처방전 채우기/ }).click();
+  await page.getByRole("button", { name: "자연어 기획서 채우기", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: /추상화 처방전/ });
   await expect(dialog).toBeVisible(); return dialog;
 }
@@ -81,7 +81,7 @@ test.describe("V1 순서도 직접 조작", () => {
       const p = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
       return new Set(p.nodes.map((n: { x: number; shape: string }) => n.x + (n.shape === "terminal" ? 200 : n.shape === "process" ? 210 : 220) / 2)).size;
     }).toBe(1);
-    await page.getByRole("button", { name: /화면 중앙/ }).click();
+    await page.getByRole("button", { name: "순서도 가운데 보기", exact: true }).click();
     const node = page.getByRole("button", { name: "입출력 기호: 내용 입력", exact: true }); await node.scrollIntoViewIfNeeded(); await node.focus(); await page.keyboard.press("Enter");
     const trash = page.getByRole("button", { name: "기호를 끌어 삭제", exact: true });
     const nodeBox = await node.locator("[data-flow-shape]").boundingBox(), trashBox = await trash.boundingBox(); if (!nodeBox || !trashBox) throw Error("trash missing");
@@ -116,12 +116,12 @@ test.describe("V1 순서도 직접 조작", () => {
     await expect(run.getByLabel("실시간 데이터 흐름")).toContainText("면과 분말스프 넣고 4분 끓이기");
     await run.getByRole("button", { name: "실행 중지", exact: true }).click(); await expect(run.getByRole("button", { name: "실행 준비 / 다시 시작" })).toBeFocused();
   });
-  test("빈 캔버스를 이동한 뒤 시작으로 보기는 실제 시작 기호를 다시 보여 준다", async ({ page }) => {
+  test("빈 캔버스를 이동한 뒤 가운데 보기는 실제 시작 기호를 다시 보여 준다", async ({ page }) => {
     const initial = await free(page), viewport = page.getByLabel("실제 순서도 연결", { exact: true }); await viewport.scrollIntoViewIfNeeded();
     const box = await viewport.boundingBox(); if (!box) throw Error("canvas missing");
     await page.mouse.move(box.x + box.width - 35, box.y + 200); await page.mouse.down(); await page.mouse.move(box.x + 35, box.y + 200, { steps: 8 }); await page.mouse.up();
     await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan.x).toBeGreaterThan(460);
-    await page.getByRole("button", { name: "시작으로 보기", exact: true }).click();
+    await page.getByRole("button", { name: "순서도 가운데 보기", exact: true }).click();
     const start = page.getByRole("button", { name: "시작·종료 기호: 시작", exact: true }).locator("[data-flow-shape]");
     await expect.poll(async () => {
       const symbol = await start.boundingBox(), frame = await viewport.boundingBox();
@@ -360,7 +360,7 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
     await expect(alarm).toBeFocused();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
-  const recipeTrigger = page.getByRole("button", { name: /처방전 채우기/ });
+  const recipeTrigger = page.getByRole("button", { name: "자연어 기획서 채우기", exact: true });
   await page.setViewportSize({ width: 1280, height: 1000 });
   await expect.poll(() => viewport.evaluate(element => element.scrollWidth - element.clientWidth)).toBeGreaterThan(0);
   await viewport.scrollIntoViewIfNeeded(); await recipeTrigger.focus(); await viewport.scrollIntoViewIfNeeded();
@@ -382,12 +382,15 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
   await page.getByRole("button", { name: "🛠️ 4. 예시 공방", exact: true }).click();
   await page.getByRole("button", { name: /4단계: 순차 구조/ }).click();
   await page.getByRole("button", { name: "나만의 백지로 이동" }).click();
-  await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
-  await page.getByRole("button", { name: "화면 원점", exact: true }).click();
+  await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();
+  const centeredSave = page.waitForResponse(response => response.url().endsWith(`/api/classroom/work/${id}`) && response.request().method() === "POST");
+  await page.getByRole("button", { name: "순서도 가운데 보기", exact: true }).click();
+  expect((await centeredSave).status()).toBe(200);
+  const centeredPan = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan;
   await viewport.scrollIntoViewIfNeeded(); const panBox = await viewport.boundingBox(); if (!panBox) throw Error("No visible canvas");
   await page.mouse.move(panBox.x + panBox.width - 50, panBox.y + 100); await page.mouse.down(); await page.mouse.move(panBox.x + panBox.width - 250, panBox.y + 100, { steps: 6 }); await page.mouse.up();
   await viewport.focus();
-  await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan).toEqual({ x: 200, y: 0 });
+  await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan).toEqual({ x: centeredPan.x + 200, y: centeredPan.y });
   const panCenter = await viewport.evaluate(element => element.scrollLeft + element.clientWidth / 2);
   await page.setViewportSize({ width: 390, height: 1000 });
   await expect.poll(() => viewport.evaluate((element, center) => {
@@ -396,17 +399,25 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
   }, panCenter)).toBeLessThanOrEqual(1);
   await expect(viewport).toBeFocused();
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
-  expect((await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan).toEqual({ x: 200, y: 0 });
+  expect((await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan).toEqual({ x: centeredPan.x + 200, y: centeredPan.y });
 });
 test("세 퍼즐은 오류 관찰·실행·각 제출·재접속 기록을 유지한다", async ({ page }) => {
   await prepare(page.request); await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
-  await page.getByRole("button", { name: "작품 검증", exact: true }).click(); await expect(page.getByText("기호의 역할과 예·아니오, 돌아가는 연결을 확인해 주세요.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "자동 실행", exact: true }).click(); await expect(page.getByText("빈 기호를 먼저 채워 주세요.", { exact: true }).first()).toBeVisible();
   for (let i = 0; i < 3; i++) {
     if (i) await page.getByRole("button", { name: i === 1 ? /2\. 선택 \(놀이기구\)/ : /3\. 반복 \(비밀번호\)/ }).click();
     if (!(await puzzleSlot(page, i + 1, "s2").isVisible())) await page.getByText("목록으로 배치하기", { exact: true }).click();
     for (const [slot, block] of Object.entries(correct[i])) await puzzleSlot(page, i + 1, slot).selectOption(block);
-    await page.getByRole("button", { name: "작품 검증", exact: true }).click(); await page.getByRole("button", { name: "작품 제출", exact: true }).click(); await expect(page.getByText("복습 작품을 제출했어요.")).toBeVisible();
+    const execution = page.getByRole("region", { name: "순서도 실행", exact: true });
+    await execution.getByLabel("실행 속도", { exact: true }).selectOption("2");
+    await execution.getByRole("button", { name: "자동 실행", exact: true }).click();
+    if (i) {
+      const input = page.getByLabel(i === 1 ? "키 입력값" : "비밀번호 입력값", { exact: true });
+      await expect(input).toBeFocused(); await input.fill(i === 1 ? "150" : "7777");
+      await page.getByRole("button", { name: "입력값 적용", exact: true }).click();
+    }
+    await expect(page.locator("#review-action-feedback")).toContainText("복습 기록 완료");
   }
   await page.reload(); await expect(page.getByRole("button", { name: /3\. 반복 \(비밀번호\)/ })).toHaveAttribute("aria-pressed", "true");
   const run = page.getByRole("region", { name: "순서도 실행" }); await run.getByRole("button", { name: "실행 준비 / 다시 시작" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click();
@@ -431,7 +442,7 @@ test("자유 캔버스·공방·키보드·추상화 복사·교사 승인은 �
   const importedRecipe = await recipe(page); await importedRecipe.getByText("추상화 기록에서 가져오기", { exact: true }).click(); await importedRecipe.getByLabel("가져올 추상화 기록").selectOption("draft"); await importedRecipe.getByRole("button", { name: "추상화 기록 살펴보기" }).click(); await importedRecipe.getByRole("button", { name: "이 정의를 내 작품에 복사" }).click();
   await expect(importedRecipe.getByLabel("현재 상태", { exact: true })).toHaveValue("지각함"); await importedRecipe.getByRole("button", { name: "처방전으로 초안 채우기", exact: true }).click(); await page.getByRole("button", { name: "계획 카드 추가" }).click(); await page.getByLabel("실행 계획", { exact: true }).fill("시각을 확인하고 조건에 맞춰 등교 준비와 버스 탑승을 한다");
   const node = page.getByRole("button", { name: "처리 기호: 기상 및 세수하기", exact: true }); await node.focus(); await page.keyboard.press("ArrowRight"); await expect(node).toBeFocused();
-  await page.getByRole("button", { name: /AI 검사 후 제출/ }).click(); await page.getByRole("button", { name: "AI 설계 리뷰 받기" }).click(); await page.getByRole("button", { name: "선생님 확인 요청" }).click(); await expect(page.getByText(/선생님 확인 대기 중이에요/)).toBeVisible();
+  await page.getByRole("button", { name: "AI 설계 점검 열기", exact: true }).click(); await page.getByRole("button", { name: "AI 설계 리뷰 받기" }).click(); await page.getByRole("button", { name: "선생님 확인 요청" }).click(); await expect(page.getByText(/선생님 확인 대기 중이에요/)).toBeVisible();
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); const work = await (await page.request.get(`/api/classroom/work/${id}`)).json();
   await page.getByRole("dialog", { name: /Solar AI 설계 점검/ }).press("Escape"); const changedRecipe = await recipe(page); await changedRecipe.getByLabel("목표 상태", { exact: true }).fill("수정 중인 별도 목표"); await changedRecipe.getByRole("button", { name: "처방전으로 초안 채우기", exact: true }).click();
   await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.goal).toBe("수정 중인 별도 목표");

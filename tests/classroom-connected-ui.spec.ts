@@ -53,10 +53,10 @@ test("반 전체 진도는 필수 활동 합산이며 선택 도전·최근 활�
   const current = page.locator('section[aria-labelledby="current-heading"]');
   const overall = current.getByRole("progressbar", { name: "반 전체 필수 활동 완료율", exact: true });
   await expect(page.getByRole("progressbar", { name: "반 전체 필수 활동 완료율", exact: true })).toHaveCount(1);
-  await expect(overall).toHaveAttribute("aria-valuenow", "54");
-  await expect(overall).toHaveAttribute("aria-valuetext", "필수 활동 189/351개 완료");
+  await expect(overall).toHaveAttribute("aria-valuenow", "55");
+  await expect(overall).toHaveAttribute("aria-valuetext", "필수 활동 207/378개 완료");
   await expect(current.locator("svg [data-start-marker]")).toHaveCount(0);
-  await expect(current.getByText("필수 활동 189/351개 완료", { exact: true })).toBeVisible();
+  await expect(current.getByText("필수 활동 207/378개 완료", { exact: true })).toBeVisible();
   for (const state of ["not-started", "in-progress", "completed"]) await expect(current.locator(`[data-state="${state}"] b`)).toHaveText("9명");
   await expect(current.getByText("등록 27명 · 최근 2분 활동 3명", { exact: true })).toBeVisible();
   await expect(current.getByText(/출석/)).toHaveCount(0);
@@ -81,7 +81,7 @@ test("반 전체 진도는 필수 활동 합산이며 선택 도전·최근 활�
     await expect(current.getByText("등록 27명 · 최근 2분 활동 3명", { exact: true })).toBeVisible();
     release();
     await expect(current.getByText("등록 27명 · 최근 2분 활동 0명", { exact: true })).toBeVisible();
-    await expect(overall).toHaveAttribute("aria-valuenow", "54");
+    await expect(overall).toHaveAttribute("aria-valuenow", "55");
   } finally { release(); }
 
   for (const completed of [0, 1]) {
@@ -95,7 +95,7 @@ test("반 전체 진도는 필수 활동 합산이며 선택 도전·최근 활�
     });
     await page.getByRole("button", { name: "수업 새로고침", exact: true }).click();
     await expect(overall).toHaveAttribute("aria-valuenow", "0");
-    await expect(overall).toHaveAttribute("aria-valuetext", `필수 활동 ${completed}/351개 완료`);
+    await expect(overall).toHaveAttribute("aria-valuetext", `필수 활동 ${completed}/378개 완료`);
     await expect(current.locator("svg [data-start-marker]")).toHaveCount(completed === 0 ? 1 : 0);
   }
 

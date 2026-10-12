@@ -3,6 +3,52 @@ import { buildProgrammingProject } from "../src/lib/classroom/programming-entry"
 import type { Work } from "../src/lib/classroom/types";
 import { db, headers, readyStudent, readyTeacher } from "./emulator";
 
+test("programming-intro: 새 첫 개념은 옛 pc0~3 답안·제출을 보존하고 별도로 확인한다", async ({ page }, info) => {
+  const id = "programming-13", endpoint = `/api/classroom/work/${id}`;
+  const classRef = db.doc("csClasses/2-1"), workRef = db.doc(`csWork/student-20101__${id}`);
+  const original = (await classRef.get()).data()!;
+  const oldAnswers = { pc0: "0", pc1: "2", pc2: "1", pc3: "1" };
+  try {
+    await readyStudent(page.request); await workRef.delete();
+    await classRef.update({ currentLessonId: id, openedLessonIds: [id] });
+    const old: Work = await (await page.request.get(endpoint)).json();
+    old.conceptSolved = ["pc0", "pc1", "pc2", "pc3"];
+    old.draft.conceptAnswers = oldAnswers;
+    const project = buildProgrammingProject([[{ type: "when_run_button_click", params: [null] }, { type: "move_direction", params: [{ type: "number", params: [10] }, null] }]]);
+    old.draft.programming!.projects.move = project;
+    old.draft.programming!.reflection = "이전 발견 기록";
+    old.missions = { move: { validation: null, submission: { id: "legacy-move", order: [], entryProject: project, submittedAt: 1000 } } };
+    await workRef.set({ ...old, uid: "student-20101", classId: "2-1" });
+    await page.goto(`/classroom/${id}`);
+    await expect(page.locator("#concept-title")).toHaveText("프로그래밍이란?");
+    await page.screenshot({ path: info.outputPath("programming-intro.png"), fullPage: true });
+    const list = page.getByRole("navigation", { name: "개념 목록", exact: true });
+    await expect(list.getByRole("button")).toHaveCount(5);
+    await expect(page.getByRole("tab", { name: "개념 80%", exact: true })).toBeVisible();
+    await page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true }).check();
+    await page.getByRole("button", { name: "생각 확인하기", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "개념 100%", exact: true })).toBeVisible();
+    const saved: Work = await (await page.request.get(endpoint)).json();
+    expect(saved.conceptSolved).toEqual(["pc0", "pc1", "pc2", "pc3", "pc4"]);
+    expect(saved.draft.conceptAnswers).toEqual({ ...oldAnswers, pc4: "0" });
+    expect(saved.missions?.move?.submission).toEqual(old.missions.move.submission);
+    expect(saved.draft.programming?.reflection).toBe("이전 발견 기록");
+    await list.getByRole("button", { name: /컴퓨터에게 전하는 말/ }).click();
+    await expect(page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true })).toBeChecked();
+    await expect(page.getByText("프로그래밍 언어로 명령을 표현해 프로그램을 만드는 과정이 프로그래밍이에요.", { exact: true })).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole("tab", { name: "개념 100%", exact: true })).toBeVisible();
+    await readyTeacher(page.request);
+    const before = (await workRef.get()).data();
+    await page.goto(`/teacher/preview/${id}?classId=2-1`);
+    await expect(page.locator("#concept-title")).toHaveText("프로그래밍이란?");
+    await page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true }).check();
+    await page.getByRole("button", { name: "생각 확인하기", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "개념 20%", exact: true })).toBeVisible();
+    expect((await workRef.get()).data()).toEqual(before);
+  } finally { await workRef.delete(); await classRef.set(original); }
+});
+
 test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의 미션 제출 화면", async ({ page }) => {
   test.setTimeout(60000);
   const id = "programming-13", endpoint = `/api/classroom/work/${id}`, classRef = db.collection("csClasses").doc("2-1"), workRef = db.collection("csWork").doc(`student-20101__${id}`);
@@ -15,7 +61,7 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     await page.goto(`/classroom/${id}?from=dashboard`);
     await expect(page.getByRole("heading", { name: "프로그래밍의 기초", level: 1, exact: true })).toBeVisible();
     const conceptList = page.getByRole("navigation", { name: "개념 목록", exact: true });
-    await expect(conceptList.getByRole("button")).toHaveCount(4);
+    await expect(conceptList.getByRole("button")).toHaveCount(5);
     const terms = [
       ["프로그래밍", "컴퓨터가 할 일을 생각하고, 명령을 만들어 실행해 보며 고치는 과정이에요."],
       ["프로그래밍 언어", "컴퓨터가 할 일을 표현할 때 사용하는 약속된 언어예요. 엔트리의 블록이나 파이썬의 글자로 명령을 나타낼 수 있어요."],
@@ -26,7 +72,7 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
       await expect(page.getByText(explanation, { exact: true })).toBeVisible();
     }
     await expect(page.getByText("프로그래밍 언어로 명령을 표현해 프로그램을 만드는 과정이 프로그래밍이에요.", { exact: true })).toBeVisible();
-    const answers = ["컴퓨터가 할 일을 명령으로 표현해요", "출력", "3", "오른쪽 화살표 키를 누를 때"];
+    const answers = ["프로그램을 만들고 실행해 보며 고치는 과정", "컴퓨터가 할 일을 명령으로 표현해요", "출력", "3", "오른쪽 화살표 키를 누를 때"];
     for (let i = 0; i < answers.length; i++) {
       await page.getByRole("radio", { name: answers[i], exact: true }).check();
       if (i === 0) {
@@ -40,7 +86,7 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
       } else await page.getByRole("button", { name: "생각 확인하기" }).click();
       await expect(page.locator("#concept-feedback")).toBeFocused();
       await expect(page.getByRole("button", { name: "개념 확인 완료" })).toBeDisabled();
-      if (i < 3) await page.getByRole("button", { name: "다음 개념", exact: true }).click();
+      if (i < answers.length - 1) await page.getByRole("button", { name: "다음 개념", exact: true }).click();
     }
     await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
     await page.getByRole("button", { name: "퀴즈에 도전하기" }).click();
@@ -60,7 +106,7 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     await page.reload(); await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "퀴즈 100%" })).toBeVisible();
     await page.getByRole("tab", { name: "개념 100%", exact: true }).click();
-    await conceptList.getByRole("button", { name: /컴퓨터에게 전하는 말/ }).click();
+    await conceptList.getByRole("button", { name: /프로그래밍이란/ }).click();
     for (const [, explanation] of terms) await expect(page.getByText(explanation, { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "개념 확인 완료", exact: true })).toBeDisabled();
     await page.getByRole("link", { name: "수업 나가기", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);

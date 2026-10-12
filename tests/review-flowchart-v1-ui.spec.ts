@@ -228,7 +228,7 @@ test.describe("순서도 연구소 V1 작업실", () => {
     work = await perform(page.request, work, "validate-practice"); work = await perform(page.request, work, "submit-practice");
     const submission = work.missions!.free.submission, original = work.draft.reviewProject as FlowchartProject;
     await openPractice(page);
-    await page.getByRole("button", { name: /AI 검사 후 제출/ }).click();
+    await page.getByRole("button", { name: "AI 설계 점검 열기", exact: true }).click();
     await expect(page.getByRole("button", { name: "이 작품 제출 완료", exact: true })).toBeDisabled();
     await page.getByRole("dialog", { name: /Solar AI 설계 점검/ }).press("Escape");
     await page.getByRole("button", { name: "처리 기호: 준비물을 챙긴다", exact: true }).focus(); await page.keyboard.press("ArrowRight");
@@ -266,7 +266,7 @@ test.describe("순서도 연구소 V1 작업실", () => {
 
   test("처방전 초안과 AI 후보는 닫았다 열어도 유지되고 채택 전에는 기존 작품을 바꾸지 않는다", async ({ page }) => {
     const seeded = await prepare(page.request, savedFree()); await openPractice(page);
-    const trigger = page.getByRole("button", { name: /처방전 채우기/ }); await trigger.click();
+    const trigger = page.getByRole("button", { name: "자연어 기획서 채우기", exact: true }); await trigger.click();
     const dialog = page.getByRole("dialog", { name: /추상화 처방전/ });
     await dialog.getByLabel("현재 상태", { exact: true }).fill("아직 채택하지 않은 등교 준비");
     await dialog.getByLabel("목표 상태", { exact: true }).fill("준비물을 챙겨 등교하기");
@@ -301,7 +301,7 @@ test.describe("순서도 연구소 V1 작업실", () => {
       await gate; await route.fulfill({ response });
     });
     try {
-      const trigger = page.getByRole("button", { name: /처방전 채우기/ }); await trigger.click();
+      const trigger = page.getByRole("button", { name: "자연어 기획서 채우기", exact: true }); await trigger.click();
       const dialog = page.getByRole("dialog", { name: /추상화 처방전/ });
       await dialog.getByLabel("현재 상태", { exact: true }).fill("첫 추천 요청의 상태");
       await dialog.getByRole("button", { name: /AI 기획서 제안 받기/ }).click(); await expect.poll(() => gates.length).toBe(1);

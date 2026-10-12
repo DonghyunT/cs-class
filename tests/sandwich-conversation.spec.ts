@@ -106,13 +106,14 @@ test("기본 폭에서 시작하고 실행 기록·보조 도구·새 레시피�
   await page.setViewportSize({ width: 1920, height: 1080 });
   const layout = page.locator('[data-workspace-wide]').first();
   await expect(layout).toHaveAttribute("data-workspace-wide", "false");
-  await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
+  await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();
   await expect(layout).toHaveAttribute("data-workspace-wide", "true");
   const consolePanel = page.getByRole("region", { name: "로봇에게 명령하기" });
   await expect(consolePanel.getByRole("button", { name: "새 레시피", exact: true })).toBeVisible();
   await page.getByLabel("자연어 명령").fill("빵 봉지를 열어");
   await page.getByLabel("자연어 명령").press("Enter");
   await expect(page.getByRole("region", { name: "로봇과의 대화", exact: true }).locator('[data-command-id]')).toHaveCount(1);
+  await page.getByText("알고리즘 실행 기록 보기", { exact: true }).click();
   const record = page.getByRole("region", { name: "알고리즘 실행 기록", exact: true });
   const [left, right, bottom] = await Promise.all([page.getByRole("region", { name: "샌드위치 로봇의 주방" }), consolePanel, record].map(item => item.boundingBox()));
   expect(Math.abs(bottom!.x - left!.x)).toBeLessThan(2);
@@ -134,6 +135,7 @@ test("기본 폭에서 시작하고 실행 기록·보조 도구·새 레시피�
   await page.screenshot({ path: testInfo.outputPath("practice-wide-controls.png"), fullPage: true });
   await consolePanel.getByRole("button", { name: "새 레시피", exact: true }).click();
   await expect(page.getByLabel("자연어 명령")).toBeFocused();
+  await page.getByText("단계 바꾸기", { exact: true }).click();
   await page.getByRole("tab", { name: /개념/ }).click();
   await page.getByRole("tab", { name: /실습/ }).click();
   await expect(layout).toHaveAttribute("data-workspace-wide", "true");
@@ -205,7 +207,7 @@ async function execute(page: Page, input: string) {
 
 test("큰 화면의 재료 크기와 주방·대화 배치", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
+  await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();
   const consolePanel = page.getByRole("region", { name: "로봇에게 명령하기" });
   const kitchen = page.getByRole("region", { name: "샌드위치 로봇의 주방" });
   for (const viewport of [{ width: 1920, height: 1080 }, { width: 1854, height: 717 }]) {

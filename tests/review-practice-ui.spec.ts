@@ -61,27 +61,33 @@ test("추상화는 색으로 구분한 핵심·노이즈 작업 영역을 제공
   await expect(page.getByLabel("핵심 요소")).toHaveValue("현재 시각\n");
 });
 
-test("세 실습의 넓게 보기·복귀 초점·좁은 화면을 유지한다", async ({ page }, testInfo) => {
+test("세 복습은 중복 제목·넓게 보기 없이 집중 모드의 폭·복귀 초점·좁은 화면을 유지한다", async ({ page }, testInfo) => {
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
   page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
   for (const id of ["review-sandwich", "review-abstraction", "review-flowchart"]) {
     await page.setViewportSize({ width: 1920, height: 1000 });
     await openPractice(page,id);
-    const toggle = page.getByRole("button", { name: "작업실 넓게 보기", exact: true });
-    const restore = page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true });
+    await expect(page.getByRole("button", { name: "작업실 넓게 보기", exact: true })).toHaveCount(0);
+    const headingBox = await page.locator("#stage-heading-practice").boundingBox();
+    expect(headingBox!.width).toBeLessThanOrEqual(1);
+    expect(headingBox!.height).toBeLessThanOrEqual(1);
+    const toggle = page.getByRole("button", { name: "실습 집중 모드", exact: true });
+    const restore = page.getByRole("button", { name: "실습 집중 모드 끝내기", exact: true });
     await expect(toggle).toHaveAttribute("aria-pressed","false");
     await toggle.click();
+    await expect(page.locator("[data-lesson-shell]")).toHaveAttribute("data-workspace-wide", "true");
     await expect(restore).toBeFocused();
     await expect(restore).toHaveAttribute("aria-pressed","true");
     await restore.press("Escape"); await expect(toggle).toBeFocused();
+    await expect(page.locator("[data-lesson-shell]")).toHaveAttribute("data-workspace-wide", "false");
     await expect(toggle).toHaveAttribute("aria-pressed","false");
     await page.setViewportSize({ width:1440,height:1300 });
-    await expect(page.locator("#stage-heading-practice")).toBeFocused();
+    await expect(toggle).toBeFocused();
     await page.locator('[data-practice]').screenshot({ path:`scratch/review-lessons/${id}-original-ui-desktop.png` });
     for (const [width, height] of [[1920,1080],[1544,712],[1280,720],[821,712],[820,712],[390,712],[320,844]]) {
       await page.setViewportSize({ width,height });
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      await expect(page.locator("#stage-heading-practice")).toBeFocused();
+      await expect(toggle).toBeFocused();
       if (id === "review-flowchart") {
         let geometry: unknown;
         try {
