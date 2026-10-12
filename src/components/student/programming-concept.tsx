@@ -47,7 +47,8 @@ export function ProgrammingConcept({ state, update, focus, next, onCheck, server
         {state.concept === 0 && <>
           <div className={styles.experimentTop}><span><Code2 size={17} />같은 명령, 두 가지 표현</span><div className={styles.experimentTools}><div className={styles.segment}><button type="button" aria-pressed={language === "block"} onClick={() => setLanguage("block")}>블록</button><button type="button" aria-pressed={language === "text"} onClick={() => setLanguage("text")}>텍스트</button></div>{resetExperience}</div></div>
           <div className={styles.languageDemo}><div>{language === "block" ? <div className={styles.demoBlocks}><div data-kind="start">시작하기 버튼을 클릭했을 때</div><div data-kind="say">‘안녕!’ 말하기</div></div> : <pre className={styles.code}><span>Python</span><code>print(<em>&apos;안녕!&apos;</em>)</code></pre>}<p>엔트리·스크래치는 블록, 파이썬·자바스크립트는 텍스트로 명령을 표현해요.</p><Button variant="outline" onClick={() => setLanguageGreeting("안녕!")}><Play size={16} />이 명령 실행하기</Button></div><div className={styles.dogDemo}><div className={styles.speech} role="status">{languageGreeting || "어떤 명령을 줄까?"}</div><Dog size={104} strokeWidth={1.5} aria-hidden="true" /></div></div>
-          <p className={styles.takeaway}>코드는 명령을 표현하고, 프로그램은 그 명령들을 담아요. 기계어는 컴퓨터가 직접 읽는 0과 1의 명령이에요.</p>
+          <dl className={styles.terms}>{concepts[0].terms.map(({ term, explanation }) => <div key={term}><dt>{term}</dt><dd>{explanation}</dd></div>)}</dl>
+          <p className={styles.takeaway}><strong>{concepts[0].relationship}</strong><span>위의 ‘안녕!’을 말하는 명령 묶음이 프로그램이에요. 그 명령을 만들고 실행하며 고쳐 보는 활동이 프로그래밍이에요. 기계어는 컴퓨터가 직접 읽는 0과 1의 명령이에요.</span></p>
         </>}
         {state.concept === 1 && <>
           <div className={styles.experimentTop}><span>이름을 바꾸고 실행해 보세요</span>{resetExperience}</div>

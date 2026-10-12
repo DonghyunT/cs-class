@@ -34,14 +34,12 @@ test.describe("순서도 자유 공방 복원 보강", () => {
 
   test("기존 출구를 덮어쓰지 않고 빠진 시작 기호를 다시 추가한다", async ({ page }) => {
     await prepare(page);
-    await page.getByText("키보드 편집 · 기호와 연결 설정", { exact: true }).click();
-    await page.getByLabel("출발 기호", { exact: true }).selectOption("start");
-    await page.getByLabel("도착 기호", { exact: true }).selectOption("end");
-    await page.getByRole("button", { name: "이 화살표 연결", exact: true }).click();
+    await expect(page.getByText("키보드 편집 · 기호와 연결 설정", { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "시작 다음 연결점", exact: true }).focus(); await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "종료 연결 받기", exact: true }).focus(); await page.keyboard.press("Enter");
     await expect(page.getByRole("status").filter({ hasText: "기존 화살표를 먼저 삭제" })).toBeVisible();
     expect((await readWork(page.request)).draft.reviewProject).toMatchObject({ edges: [{ from: "start", to: "step", label: "" }, { from: "step", to: "end", label: "" }] });
-    await page.getByLabel("편집할 기호", { exact: true }).selectOption("start");
-    await page.getByRole("button", { name: "선택 기호와 연결 삭제", exact: true }).click();
+    await page.getByRole("button", { name: "시작·종료 기호: 시작", exact: true }).focus(); await page.keyboard.press("Delete");
     await page.getByRole("button", { name: "시작·종료 기호 추가", exact: true }).click();
     await expect.poll(async () => { const p = (await readWork(page.request)).draft.reviewProject as FlowchartProject; return p.nodes.filter(n => n.shape === "terminal").map(n => n.text).sort(); }).toEqual(["시작", "종료"]);
     await page.getByRole("button", { name: "시작·종료 기호 추가", exact: true }).click();
@@ -74,16 +72,17 @@ test.describe("순서도 자유 공방 복원 보강", () => {
 
   test("구조 점검은 AI 요청 없이 결손 기호로 이동한다", async ({ page }) => {
     await prepare(page);
-    await page.getByText("키보드 편집 · 기호와 연결 설정", { exact: true }).click();
-    await page.getByLabel("편집할 기호", { exact: true }).selectOption("step");
-    await page.getByLabel("기호 내용", { exact: true }).fill("");
+    const node = page.getByRole("button", { name: "처리 기호: 준비하기", exact: true });
+    await node.focus(); await page.keyboard.press("F2");
+    await page.getByRole("textbox", { name: "처리 기호 문구 직접 편집", exact: true }).fill(""); await page.keyboard.press("Enter");
     let aiCalls = 0; page.on("request", request => { if (request.url().includes("/ai")) aiCalls++; });
-    await page.getByRole("button", { name: "✨ AI 설계 점검", exact: true }).click();
+    await page.getByRole("button", { name: /AI 검사 후 제출/ }).click();
     const dialog = page.getByRole("dialog", { name: /Solar AI 설계 점검/ });
     await expect(dialog.getByRole("region", { name: "기본 구조 점검", exact: true })).toBeVisible();
     await dialog.getByRole("button", { name: /이 기호의 내용이 비어 있습니다/ }).click();
     await expect(dialog).toBeHidden();
-    await expect(page.getByLabel("기호 내용", { exact: true })).toBeFocused();
+    await expect(page.locator('[data-flow-node="step"]')).toBeFocused();
+    await page.keyboard.press("F2"); await expect(page.getByRole("textbox", { name: "처리 기호 문구 직접 편집", exact: true })).toBeFocused();
     expect(aiCalls).toBe(0);
   });
 

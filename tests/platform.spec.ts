@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { resetStudent, loginStudent, initialPassword, studentPassword, readyStudent, readyTeacher, localOnly, headers, lessonId, correctOrder, db } from "./emulator";
 import { testEnv } from "../scripts/local-test-env.mjs";
 import type { Work } from "../src/lib/classroom/types";
+import { buildProgrammingProject } from "../src/lib/classroom/programming-entry";
 
 test("공개 홈 · 모바일 · 키보드 · 콘솔", async ({ page }) => {
   const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
@@ -117,8 +118,26 @@ test("교사 실제 기록 · 제출 작품 · 수업 지정 · 초기화 · 작
   work.draft.practiceOrder = correctOrder;
   work = await (await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } })).json();
   for (const type of ["validate-practice", "submit-practice"]) work = await (await page.request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type } } })).json();
+  const publishedId = "programming-13", publishedEndpoint = `/api/classroom/work/${publishedId}`;
+  await db.collection("csClasses").doc("2-1").update({ currentLessonId: publishedId, openedLessonIds: [lessonId, publishedId] });
+  await db.doc(`csWork/student-20101__${publishedId}`).delete();
+  let published: Work = await (await page.request.get(publishedEndpoint)).json();
+  published.draft.programming!.mission = "move";
+  published.draft.programming!.projects.move = buildProgrammingProject([[{ type: "when_run_button_click", params: [null] }, ...[1, 2, 3, 4].map(value => ({ type: "move_direction", params: [{ type: "number", params: [value] }, null] }))]]);
+  let response = await page.request.post(publishedEndpoint, { headers, data: { revision: published.revision, draft: published.draft } });
+  expect(response.status()).toBe(200);
+  for (const type of ["validate-practice", "submit-practice"]) {
+    published = await response.json();
+    response = await page.request.post(`${publishedEndpoint}/action`, { headers, data: { revision: published.revision, action: { type, missionId: "move" } } });
+    expect(response.status()).toBe(200);
+  }
+  published = await response.json();
   await readyTeacher(page.request);
-  await page.goto("/teacher/students");
+  // 숨긴 과거 제출본은 직접 조회로 보존을 확인하고, 공개 목록의 실제 화면은 정식 수업으로 검사한다.
+  const legacy = await page.request.get(`/api/classroom/students/student-20101/work/${lessonId}`);
+  expect(legacy.status()).toBe(200);
+  expect((await legacy.json()).submission.order).toEqual(correctOrder);
+  await page.goto(`/teacher/students?classId=2-1&lessonId=${publishedId}`);
   await page.getByRole("combobox", { name: "담당 반" }).click();
   await expect(page.getByRole("option")).toHaveCount(11);
   await page.keyboard.press("Escape");
@@ -126,6 +145,7 @@ test("교사 실제 기록 · 제출 작품 · 수업 지정 · 초기화 · 작
   await page.getByRole("button", { name: "20101 제출 작품 보기" }).click();
   await expect(page.getByRole("dialog")).toContainText("20101 학생의 제출 작품");
   await expect(page.getByRole("dialog").getByRole("listitem")).toHaveCount(5);
+  await expect(page.getByRole("dialog")).toContainText("이동 방향으로 4만큼 움직이기");
   await page.keyboard.press("Escape");
   await page.getByRole("navigation", { name: "교실 메뉴" }).getByRole("link", { name: "수업 관리", exact: true }).click();
   await page.getByRole("button", { name: "수업 관리", exact: true }).click();
@@ -133,7 +153,7 @@ test("교사 실제 기록 · 제출 작품 · 수업 지정 · 초기화 · 작
   await page.getByRole("option", { name: "지정하지 않음", exact: true }).click();
   await page.getByRole("button", { name: "설정 저장", exact: true }).click();
   await expect(page.getByText("2학년 1반 수업 설정을 저장했어요.")).toBeVisible();
-  expect((await db.collection("csClasses").doc("2-1").get()).data()!.openedLessonIds).toEqual([lessonId]);
+  expect((await db.collection("csClasses").doc("2-1").get()).data()!.openedLessonIds).toEqual([lessonId, publishedId]);
   await page.getByRole("navigation", { name: "교실 메뉴" }).getByRole("link", { name: "학생 현황·계정", exact: true }).click();
   await page.getByLabel("학번·닉네임 검색").fill("20101");
   await page.getByRole("button", { name: "20101 비밀번호 초기화" }).click();
@@ -157,6 +177,7 @@ test("교사 실제 기록 · 제출 작품 · 수업 지정 · 초기화 · 작
   await page.getByRole("button", { name: "전달 완료", exact: true }).click();
   await expect(page.getByText("20101 학생의 비밀번호를 초기화했어요. 다음 입장 시 변경이 필요해요.")).toBeVisible();
   expect((await db.collection("csWork").doc(`student-20101__${lessonId}`).get()).data()!.submission.id).toBe(work.submission!.id);
+  expect((await db.doc(`csWork/student-20101__${publishedId}`).get()).data()!.missions.move.submission.id).toBe(published.missions!.move.submission!.id);
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();

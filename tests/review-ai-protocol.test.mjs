@@ -1,6 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { quotaWindow, parseSolarEnvelope, hasExplicitPreparation, groundFlowReview } from '../src/lib/classroom/review/ai-protocol.mjs';
+import * as protocol from '../src/lib/classroom/review/ai-protocol.mjs';
+
+test('요소 7개는 공백을 제외한 서로 다른 관측값이어야 하며 빈 값과 중복을 거절한다', () => {
+  assert.equal(typeof protocol.hasDistinctOptions, 'function');
+  const options = ['현재 시각', '남은 과제', '제출 기한', '문제 수', '노트 색', '배경 음악', '펜 모양'];
+  assert.equal(protocol.hasDistinctOptions(options, 7), true);
+  assert.equal(protocol.hasDistinctOptions(options.slice(1), 7), false);
+  assert.equal(protocol.hasDistinctOptions([...options.slice(0, 6), ' \n '], 7), false);
+  assert.equal(protocol.hasDistinctOptions([...options.slice(0, 6), ' 현재시각 '], 7), false);
+  assert.deepEqual(options, ['현재 시각', '남은 과제', '제출 기한', '문제 수', '노트 색', '배경 음악', '펜 모양']);
+});
 
 test('한국 날짜 경계와 최근 60초 15회·하루 70회 경계를 구분한다', () => {
   const now = Date.parse('2026-10-05T15:00:00Z');

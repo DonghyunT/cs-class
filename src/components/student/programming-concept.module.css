@@ -27,6 +27,12 @@
 .dogDemo { position: relative; display: flex; flex-direction: column; gap: 22px; align-items: center; justify-content: center; color: #8b633e; border-radius: 50%; background: #f9eade; width: 210px; height: 210px; }
 .speech { background: white; border: 1px solid #dde4ed; padding: 9px 16px; border-radius: 14px 14px 14px 3px; font-size: 18px; font-weight: 600; color: var(--ink); max-width: 210px; text-align: center; overflow-wrap: anywhere; }
 .takeaway { font-size: 18px; color: var(--quiet); line-height: 1.8; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+.terms { display: grid; gap: 14px; margin: 0; padding-top: 18px; border-top: 1px solid var(--line); }
+.terms > div { display: grid; grid-template-columns: 155px minmax(0, 1fr); gap: 8px 18px; }
+.terms dt { font-weight: 700; color: #28548e; }
+.terms dd { margin: 0; color: var(--quiet); overflow-wrap: anywhere; }
+.takeaway > strong, .takeaway > span { display: block; }
+.takeaway > span { margin-top: 10px; }
 .experimentActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 18px; }
 .experimentActions p { flex: 1 1 260px; margin: 0; color: #526173; font-size: 14px; line-height: 1.7; }
 .flowDemo { display: grid; grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr) 20px minmax(0, 1fr); gap: 12px; margin: 30px 0 22px; align-items: center; }
@@ -82,6 +88,7 @@
 @media (max-width: 600px) {
   .concept, .observation, .languageDemo p, .demoBlocks > div, .speech, .takeaway, .flowDemo label, .flowDemo strong, .compactOptions label, .concept .good, .concept .feedback, .conceptStage > span { font-size: 16px; }
   .languageDemo { grid-template-columns: 1fr; }
+  .terms > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .dogDemo { justify-self: center; }
   .signalDemo { grid-template-columns: 1fr; gap: 16px; }
   .directionPad { grid-template-columns: repeat(2, minmax(0, 1fr)); }

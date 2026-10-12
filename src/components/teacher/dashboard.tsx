@@ -169,7 +169,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
     {active && <>
       {view === "classes" && <ClassPreparationTable classrooms={active.classrooms} lessons={active.lessons} />}
       {view === "classes" && <section className={styles.currentLesson} aria-labelledby="current-lesson-title">
-        <div className={styles.currentCopy}><p className={styles.kicker}><span className={styles.dot} />{active.classroom.name} · 이번 수업</p><h2 id="current-lesson-title">{current?.title ?? "이번 수업을 지정해 주세요."}</h2><p>{current?.description ?? "수업을 열고 지정하면 학생 대시보드에 먼저 보여요."}</p><span className={styles.currentMeta}>열린 수업 {active.classroom.openedLessonIds.length}개 · 기존 수업은 계속 복습할 수 있어요.</span></div>
+        <div className={styles.currentCopy}><p className={styles.kicker}><span className={styles.dot} />{active.classroom.name} · 이번 수업</p><h2 id="current-lesson-title">{current?.title ?? "이번 수업을 지정해 주세요."}</h2><p>{current?.description ?? "수업을 열고 지정하면 학생 대시보드에 먼저 보여요."}</p><span className={styles.currentMeta}>열린 수업 {openedLessons.length}개 · 기존 수업은 계속 복습할 수 있어요.</span></div>
         <DashboardArt variant="teacher" className={styles.heroArt} />
       </section>}
       {view === "classes" && <section className={styles.openedLessons} aria-labelledby="opened-lessons-title">
@@ -184,7 +184,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
       </section>}
       {view === "students" && <HelpRequests classId={active.classroom.id} lessonId={active.selectedLessonId ?? undefined} />}
       {view === "students" && <section className={styles.students} aria-labelledby="students-title">
-        <div className={styles.sectionHeading}><div><h2 id="students-title">학생별 학습 현황</h2><p>개념·퀴즈·실습의 진행과 제출된 작품을 확인해요.</p></div><label className={styles.lessonPicker}>확인할 수업<Select label="확인할 수업" value={active.selectedLessonId ?? ""} disabled={!active.classroom.openedLessonIds.length} onValueChange={(value) => { selectedContext.current = ""; request.current += 1; setFetching(true); setSelectedLessonId(value); resetFilters(); setUrlConditions({ lessonId: value }); setError(""); }} options={[...(!active.selectedLessonId ? [{ value: "", label: "열린 수업이 없어요" }] : []), ...active.lessons.filter((item) => active.classroom.openedLessonIds.includes(item.id)).map((item) => ({ value: item.id, label: item.title }))]} /></label></div>
+        <div className={styles.sectionHeading}><div><h2 id="students-title">학생별 학습 현황</h2><p>개념·퀴즈·실습의 진행과 제출된 작품을 확인해요.</p></div><label className={styles.lessonPicker}>확인할 수업<Select label="확인할 수업" value={active.selectedLessonId ?? ""} disabled={!openedLessons.length} onValueChange={(value) => { selectedContext.current = ""; request.current += 1; setFetching(true); setSelectedLessonId(value); resetFilters(); setUrlConditions({ lessonId: value }); setError(""); }} options={[...(!active.selectedLessonId ? [{ value: "", label: "열린 수업이 없어요" }] : []), ...openedLessons.map((item) => ({ value: item.id, label: item.title }))]} /></label></div>
         <div className={styles.summary}>
           <div><Users size={19} aria-hidden="true" /><span>등록 학생</span><strong>{active.students.length}<small>명</small></strong></div>
           <div><CheckCircle2 size={19} aria-hidden="true" /><span>수업 완료</span><strong>{regularLesson ? completed : "—"}<small>{regularLesson ? "명" : ""}</small></strong></div>

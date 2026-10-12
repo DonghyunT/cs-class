@@ -95,8 +95,10 @@ test.describe("순서도 연구소 V1 작업실", () => {
     const boxes = await Promise.all([planner.boundingBox(), palette.boundingBox(), canvas.boundingBox(), rail.boundingBox()]);
     if (boxes.some(box => !box)) throw Error("free workshop panels missing");
     for (let i = 0; i < 3; i++) expect(boxes[i]!.x + boxes[i]!.width).toBeLessThanOrEqual(boxes[i + 1]!.x);
-    expect(boxes[0]!.width).toBe(300); expect(boxes[1]!.width).toBe(100);
-    expect(await rail.evaluate(element => element.parentElement!.getBoundingClientRect().width)).toBe(44);
+    expect(boxes[0]!.width).toBe(240); expect(boxes[1]!.width).toBe(100);
+    expect(await rail.evaluate(element => element.parentElement!.getBoundingClientRect().width)).toBe(40);
+    await expect(page.getByText("키보드 편집 · 기호와 연결 설정", { exact: true })).toHaveCount(0);
+    await expect(canvas.getByRole("button", { name: "편집 되돌리기", exact: true })).toBeVisible();
     const toolbar = page.getByRole("toolbar", { name: "순서도 실행 제어", exact: true });
     await expect(toolbar).toBeVisible();
     expect(await toolbar.evaluate(element => element.closest('[aria-label="순서도 자유 캔버스"]') !== null)).toBe(true);
@@ -109,25 +111,48 @@ test.describe("순서도 연구소 V1 작업실", () => {
     await expect(page.getByLabel("반복 지속 조건", { exact: true })).toHaveValue("준비가 끝나지 않은 동안");
     await rail.focus(); await page.keyboard.press("Enter");
     await expect(page.getByRole("button", { name: "실행 과정 접기", exact: true })).toBeFocused();
-    expect(await page.getByRole("button", { name: "실행 과정 접기", exact: true }).evaluate(element => element.parentElement!.getBoundingClientRect().width)).toBe(240);
+    expect(await page.getByRole("button", { name: "실행 과정 접기", exact: true }).evaluate(element => element.parentElement!.getBoundingClientRect().width)).toBe(220);
     await expect(page.getByRole("table", { name: "변수 살펴보기", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "실행 과정 접기", exact: true }).press("Enter"); await expect(rail).toBeFocused();
-    for (const [width, height] of [[1544, 712], [1280, 720], [821, 712], [820, 712], [390, 712]]) {
+    for (const [width, height] of [[1689, 790], [1280, 720], [821, 712], [820, 712], [390, 712]]) {
       await page.setViewportSize({ width, height });
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await expect(page.getByRole("button", { name: "기획서 접기", exact: true })).toBeVisible();
       await expect(toolbar.getByRole("button", { name: "한 단계 실행", exact: true })).toBeVisible();
+      if (width >= 1280) {
+        await expect.poll(() => canvas.evaluate(element => {
+          const workspace = element.parentElement!.getBoundingClientRect();
+          return workspace.bottom <= innerHeight - 12 && workspace.bottom >= innerHeight - 28;
+        })).toBe(true);
+        expect(await page.getByLabel("실제 순서도 연결", { exact: true }).evaluate(element => element.clientHeight)).toBeGreaterThanOrEqual(300);
+      }
       if (width === 390) {
         const mobilePanels = await Promise.all([canvas.boundingBox(), planner.boundingBox()]);
         if (mobilePanels.some(box => !box)) throw Error("mobile workshop panels missing");
         expect(mobilePanels[0]!.y + mobilePanels[0]!.height).toBeLessThanOrEqual(mobilePanels[1]!.y);
         expect(await toolbar.evaluate(element => element.parentElement!.getBoundingClientRect().height)).toBeLessThanOrEqual(108);
       }
-      if (width === 1544 || width === 390) await page.screenshot({ path: testInfo.outputPath(`v1-flowchart-free-${width}.png`), fullPage: true });
+      if (width === 1689 || width === 390) await page.screenshot({ path: testInfo.outputPath(`v1-flowchart-free-${width}.png`), fullPage: true });
     }
     const saved = await readWork(page.request); expect(saved.draft.reviewProject).toEqual(seeded.draft.reviewProject);
     await page.reload(); await expect(page.getByLabel("반복할 행동", { exact: true })).toHaveValue("준비물을 챙긴다");
     expect((await readWork(page.request)).draft.reviewProject).toEqual(seeded.draft.reviewProject);
+  });
+
+  test("낮은 창에서도 다섯 단계의 작업실 높이와 실행 조작을 확보한다", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await prepare(page.request, { placements: { "1": sequencePlacement }, guideStep: 4 }); await openPractice(page);
+    const nav = page.getByRole("navigation", { name: "순서도 실습", exact: true });
+    for (const name of lessonSteps) {
+      await nav.getByRole("button", { name, exact: true }).click();
+      const diagram = page.getByLabel("실제 순서도 연결", { exact: true });
+      await expect.poll(() => diagram.evaluate(element => {
+        const workspace = element.closest("[data-flow-canvas]")?.parentElement?.closest("section")?.parentElement?.getBoundingClientRect();
+        return !!workspace && workspace.bottom <= innerHeight - 12 && workspace.bottom >= innerHeight - 28;
+      })).toBe(true);
+      expect(await diagram.evaluate(element => element.clientHeight)).toBeGreaterThanOrEqual(220);
+      await expect(page.getByRole("toolbar", { name: "순서도 실행 제어", exact: true }).getByRole("button", { name: "자동 실행", exact: true })).toBeInViewport();
+    }
   });
 
   test("부동 실행바로 실제 계산·자연어 분기를 실행하며 현재값·직전값·콘솔을 살펴본다", async ({ page }) => {
@@ -150,7 +175,13 @@ test.describe("순서도 연구소 V1 작업실", () => {
     await step.click(); const yes = page.getByLabel("실제 순서도 연결", { exact: true }).getByRole("button", { name: "예로 진행", exact: true });
     await expect(yes).toBeFocused(); await expect(step).toBeDisabled();
     await yes.click(); await expect(log).toContainText("다음으로 넘어갈까요? → 예");
-    await toolbar.getByLabel("실행 속도", { exact: true }).selectOption("2");
+    const speed = toolbar.getByRole("button", { name: /실행 속도/ });
+    await expect(speed).toHaveText("1×"); await speed.click(); await expect(speed).toHaveText("2×");
+    await speed.click(); await expect(speed).toHaveText("0.5×"); await speed.click(); await expect(speed).toHaveText("1×");
+    await speed.click(); await expect(speed).toHaveText("2×");
+    const consolePanel = page.getByRole("region", { name: "출력 콘솔", exact: true });
+    await expect(consolePanel).toHaveCSS("background-color", "rgb(15, 23, 42)");
+    await expect(variables).toHaveCSS("background-color", "rgb(255, 255, 255)");
     await toolbar.getByRole("button", { name: "자동 실행", exact: true }).click();
     await expect(log).toContainText("출력: 완료"); await expect(log).toContainText("종료에 도달했어요.");
     const completedVariables = await variables.getByRole("row").allTextContents();
@@ -164,6 +195,29 @@ test.describe("순서도 연구소 V1 작업실", () => {
     await expect(variables.getByRole("row").filter({ hasText: "값" }).last()).toHaveText(/값\s*2\s*1/);
     await toolbar.getByRole("button", { name: "실행 중지", exact: true }).click();
     await expect(toolbar.getByRole("button", { name: "실행 준비 / 다시 시작", exact: true })).toBeFocused();
+    expect((await readWork(page.request)).draft.reviewProject).toEqual(seeded.draft.reviewProject);
+  });
+
+  test("긴 변수표와 콘솔은 각 영역 안에서 읽고 실행바와 작품을 유지한다", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    const nodes: FlowchartProject["nodes"] = [
+      { id: "start", shape: "terminal", text: "시작", x: 300, y: 40 },
+      ...Array.from({ length: 16 }, (_, index) => ({ id: `value-${index}`, shape: "process" as const, text: `값${index + 1} = ${index + 1}`, x: 300, y: 160 + index * 110 })),
+      { id: "end", shape: "terminal", text: "종료", x: 300, y: 1940 },
+    ];
+    const seeded = await prepare(page.request, { ...savedFree(), nodes, edges: nodes.slice(1).map((node, index) => ({ from: nodes[index].id, to: node.id, label: "" })) });
+    await openPractice(page); await page.getByRole("button", { name: "실행 과정 펼치기", exact: true }).click();
+    const toolbar = page.getByRole("toolbar", { name: "순서도 실행 제어", exact: true });
+    await toolbar.getByRole("button", { name: "실행 준비 / 다시 시작", exact: true }).click();
+    for (let index = 0; index < nodes.length; index++) await toolbar.getByRole("button", { name: "한 단계 실행", exact: true }).click();
+    const values = page.getByRole("region", { name: "변수표 값", exact: true });
+    const log = page.getByRole("list", { name: "실시간 데이터 흐름", exact: true });
+    for (const area of [values, log]) {
+      expect(await area.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
+      await area.evaluate(element => { element.scrollTop = element.scrollHeight; });
+      expect(await area.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+    }
+    await expect(toolbar.getByRole("button", { name: "다시 실행", exact: true })).toBeInViewport();
     expect((await readWork(page.request)).draft.reviewProject).toEqual(seeded.draft.reviewProject);
   });
 
@@ -189,8 +243,12 @@ test.describe("순서도 연구소 V1 작업실", () => {
     await expect(page.getByRole("button", { name: "처리 기호: 준비물을 다시 확인한다", exact: true })).toBeFocused();
     const oldConnection = page.getByRole("button", { name: "시작에서 준비물을 다시 확인한다 다음 연결선 삭제", exact: true });
     await oldConnection.focus(); await page.keyboard.press("Delete");
-    await page.getByRole("button", { name: "시작 다음 연결점", exact: true }).focus(); await page.keyboard.press("Enter");
-    await page.getByRole("button", { name: "준비물을 다시 확인한다 연결 받기", exact: true }).focus(); await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "시작·종료 기호: 시작", exact: true }).focus();
+    for (let index = 0; index < 3; index++) await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "시작 다음 연결점", exact: true })).toBeFocused(); await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "처리 기호: 준비물을 다시 확인한다", exact: true }).focus();
+    for (let index = 0; index < 3; index++) await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "준비물을 다시 확인한다 연결 받기", exact: true })).toBeFocused(); await page.keyboard.press("Enter");
     await expect.poll(async () => (await readWork(page.request)).missions!.free.validation).toBeNull();
     await expect.poll(async () => ((await readWork(page.request)).draft.reviewProject as FlowchartProject).edges.find(edge => edge.from === "start")).toMatchObject({ from: "start", to: "step", label: "", fromPort: "bottom", toPort: "top" });
     work = await readWork(page.request); expect(work.missions!.free.submission).toEqual(submission);

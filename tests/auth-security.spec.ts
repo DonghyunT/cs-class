@@ -49,11 +49,17 @@ test("만료·이전 임시값·검증값 없는 기존 공통 계정은 재발�
 
 test("타인의 오답 제한은 정상 임시 입장·강사 입장을 잠그지 않음", async ({ request }) => {
   await resetStudent(request);
-  for (let i = 0; i < 12; i++) expect((await loginStudent(request, "wrong-security-password")).status()).toBe(401);
-  expect((await loginStudent(request, "wrong-security-password")).status()).toBe(429);
-  expect((await loginStudent(request)).status()).toBe(200);
-  for (let i = 0; i < 12; i++) expect((await request.post("/api/auth/login", { headers, data: { role: "instructor", studentId: "", password: "wrong-instructor-security" } })).status()).toBe(401);
-  expect((await request.post("/api/auth/login", { headers, data: { role: "instructor", studentId: "", password: testEnv.CS_TEST_INSTRUCTOR_PASSWORD } })).status()).toBe(200);
+  // 동일한 에뮬레이터에서 재검사해도 이 검사가 만든 오답 예산을 다음 실행에 남기지 않는다.
+  const limits = [["student-20101", "wrong-security-password"], ["instructor", "wrong-instructor-security"]]
+    .map(([uid, password]) => db.collection("csRateLimits").doc(createHash("sha256").update(`credential:${uid}:${passwordDigest(password)}`).digest("hex")));
+  await Promise.all(limits.map(ref => ref.delete()));
+  try {
+    for (let i = 0; i < 12; i++) expect((await loginStudent(request, "wrong-security-password")).status()).toBe(401);
+    expect((await loginStudent(request, "wrong-security-password")).status()).toBe(429);
+    expect((await loginStudent(request)).status()).toBe(200);
+    for (let i = 0; i < 12; i++) expect((await request.post("/api/auth/login", { headers, data: { role: "instructor", studentId: "", password: "wrong-instructor-security" } })).status()).toBe(401);
+    expect((await request.post("/api/auth/login", { headers, data: { role: "instructor", studentId: "", password: testEnv.CS_TEST_INSTRUCTOR_PASSWORD } })).status()).toBe(200);
+  } finally { await Promise.all(limits.map(ref => ref.delete())); }
 });
 
 test("출처 예산은 학번·전달 헤더를 바꿔도 적용되고 기존 세션은 유지", async ({ request }) => {

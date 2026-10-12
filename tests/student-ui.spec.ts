@@ -15,7 +15,8 @@ async function enter(page: Page) {
   await page.getByLabel("새 비밀번호 확인", { exact: true }).fill(studentPassword);
   await page.getByRole("button", { name: "비밀번호 저장하고 입장" }).click();
   await expect(page).toHaveURL(/\/student$/);
-  await page.getByRole("button", { name: "수업 시작", exact: true }).first().click();
+  await expect(page.getByRole("heading", { name: "오늘은 무엇을 해볼까요?", exact: true })).toBeVisible();
+  await page.goto(`/classroom/${lessonId}?from=dashboard`);
   await expect(page.getByRole("heading", { name: "설명을 읽고 바로 확인해요" })).toBeVisible();
 }
 async function saved(page: Page) { await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); }
@@ -89,7 +90,8 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login\/student$/);
   await login(page, studentPassword);
-  await page.getByRole("button", { name: "다시 보기", exact: true }).first().click();
+  await expect(page.getByRole("heading", { name: "오늘은 무엇을 해볼까요?", exact: true })).toBeVisible();
+  await page.goto(`/classroom/${lessonId}?from=dashboard`);
   await expect(page.getByText("제출한 작품이 있어요.", { exact: true })).toBeVisible();
   await expect(page.getByRole("tab", { name: "실습 100%" })).toHaveAttribute("aria-selected", "true");
   await page.screenshot({ path: testInfo.outputPath("practice-desktop.png"), fullPage: true });
@@ -148,7 +150,8 @@ test("느린 저장 중 새 입력을 보존하고 이동 전에 최신 답안�
   await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}(\\?from=dashboard)?$`));
   release();
   await expect(page).toHaveURL(/\/student$/);
-  await page.getByRole("button", { name: "이어하기", exact: true }).first().click();
+  await expect(page.getByRole("heading", { name: "오늘은 무엇을 해볼까요?", exact: true })).toBeVisible();
+  await page.goto(`/classroom/${lessonId}?from=dashboard`);
   await expect(page.getByRole("radio", { name: "물을 적당히 준비한다" })).toBeChecked();
   await page.reload();
   await expect(page.getByRole("radio", { name: "물을 적당히 준비한다" })).toBeChecked();

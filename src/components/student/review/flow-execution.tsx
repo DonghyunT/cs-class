@@ -8,7 +8,7 @@ import styles from "./flowchart.module.css";
 type Run = ReturnType<typeof createFlowRun>;
 type Graph = Pick<FlowchartProject, "nodes" | "edges"> & { unavailable?: string; inputPolicy?: "auto"; textInputs?: string[]; textComparisons?: Record<string, { variable: string; expected: string }> };
 type RuntimeView = { activeEdge: Run["activeEdge"]; interaction: ReactNode; output: Run["output"] };
-export function FlowExecution({ graph, onActive, onWaiting, onPrepare, monitorVisible = true, consoleOnly = false, missionSummary, completionText, completionAction, choiceLabels, children }: { graph: Graph; onActive?: (id: string | undefined) => void; onWaiting?: () => void; onPrepare?: () => void; monitorVisible?: boolean; consoleOnly?: boolean; missionSummary?: string; completionText?: string; completionAction?: ReactNode; choiceLabels?: { 예: string; 아니오: string }; children?: (controls: ReactNode, monitor: ReactNode, status: ReactNode, runtime: RuntimeView) => ReactNode }) {
+export function FlowExecution({ graph, onActive, onWaiting, onPrepare, monitorVisible = true, consoleOnly = false, variant = "standard", missionSummary, completionText, completionAction, choiceLabels, children }: { graph: Graph; onActive?: (id: string | undefined) => void; onWaiting?: () => void; onPrepare?: () => void; monitorVisible?: boolean; consoleOnly?: boolean; variant?: "standard" | "floating"; missionSummary?: string; completionText?: string; completionAction?: ReactNode; choiceLabels?: { 예: string; 아니오: string }; children?: (controls: ReactNode, monitor: ReactNode, status: ReactNode, runtime: RuntimeView) => ReactNode }) {
   const [run, setRun] = useState<Run | null>(null), [automatic, setAutomatic] = useState(false), [answer, setAnswer] = useState(""), [speed, setSpeed] = useState("1");
   const input = useRef<HTMLInputElement>(null), choice = useRef<HTMLButtonElement>(null), reset = useRef<HTMLButtonElement>(null), next = useRef<HTMLButtonElement>(null), play = useRef<HTMLButtonElement>(null), restore = useRef(false), answered = useRef(false);
   const speedId = useId();
@@ -25,12 +25,12 @@ export function FlowExecution({ graph, onActive, onWaiting, onPrepare, monitorVi
   const step = (value?: string) => { const current = run ?? initial(); if (value !== undefined) answered.current = true; const result = stepFlowRun(graph, current, value); setRun(result); if (!result.error) setAnswer(""); };
   const finished = !!run?.done || !!run?.error && !run.waiting;
   const running = automatic && !finished && !run?.error;
-  const status = <p role="status" className={styles.runStatus}>{run ? run.done ? "종료에 도달했어요!" : run.error || `현재 기호: ${graph.nodes.find(node => node.id === run.current)?.text} · ${run.steps}단계` : "실행 결과가 여기에 표시됩니다. 자세한 내용은 오른쪽 ‘실행 과정’을 펼쳐 확인하세요."}</p>;
+  const status = <p role="status" className={styles.runStatus}>{run ? run.done ? "종료에 도달했어요!" : run.error || `현재 기호: ${graph.nodes.find(node => node.id === run.current)?.text} · ${run.steps}단계` : variant === "floating" ? "실행을 눌러 실제 화살표를 따라가 보세요." : "실행 결과가 여기에 표시됩니다. 자세한 내용은 오른쪽 ‘실행 과정’을 펼쳐 확인하세요."}</p>;
   const controls = <div className={styles.runControls} role="toolbar" aria-label="순서도 실행 제어">
     <Button ref={play} className={styles.runButton} aria-label={finished ? "다시 실행" : running ? "자동 실행 일시정지" : "자동 실행"} onClick={() => { if (!run || finished) { setRun(initial()); setAnswer(""); setClearedThrough(0); setAutomatic(true); } else setAutomatic(value => !value); }}>{finished ? "↻ 다시 실행" : running ? "Ⅱ 일시정지" : "▶ 실행 검증"}</Button>
     <Button ref={next} variant="ghost" aria-label="한 단계 실행" disabled={!!run?.done || !!run?.error || !!run?.waiting} onClick={() => { setAutomatic(false); step(); }}>⏭ 한 단계</Button>
     <Button ref={reset} variant="ghost" aria-label="실행 준비 / 다시 시작" title="시뮬레이션 초기화" onClick={() => { setRun(initial()); setAutomatic(false); setAnswer(""); setClearedThrough(0); }}>↶</Button>
-    <label htmlFor={speedId} className={styles.speed}><span className={styles.srOnly}>실행 속도</span><select aria-label="실행 속도" id={speedId} value={speed} onChange={event => setSpeed(event.target.value)}><option value="0.5">0.5×</option><option value="1">1×</option><option value="2">2×</option></select></label>
+    {variant === "floating" ? <Button variant="ghost" className={styles.speedChip} aria-label={`실행 속도 ${speed}배, 눌러 변경`} title="실행 속도: 1× → 2× → 0.5×" onClick={() => setSpeed(value => value === "1" ? "2" : value === "2" ? "0.5" : "1")}>{speed}×</Button> : <label htmlFor={speedId} className={styles.speed}><span className={styles.srOnly}>실행 속도</span><select aria-label="실행 속도" id={speedId} value={speed} onChange={event => setSpeed(event.target.value)}><option value="0.5">0.5×</option><option value="1">1×</option><option value="2">2×</option></select></label>}
     <span>{run?.error ? "확인 필요" : run?.waiting ? "입력 대기" : run?.done ? "완료" : running ? "실행 중" : "대기 중"}</span>
     {run && <Button variant="ghost" aria-label="실행 중지" onClick={() => { restore.current = true; setRun(null); setAutomatic(false); setClearedThrough(0); }}>■</Button>}
   </div>;
@@ -40,13 +40,13 @@ export function FlowExecution({ graph, onActive, onWaiting, onPrepare, monitorVi
     {run.error && <p role="alert" className={styles.error}>{run.error}</p>}
   </div> : null;
   const monitor = <div className={styles.monitor}>
-    <h3>실행 과정</h3><p className={styles.muted}>실제 화살표를 따라가요. 자연어 조건은 예·아니오를 직접 선택하고, 변수와 비교식은 계산해요.</p>
+    {!consoleOnly && <><h3>실행 과정</h3><p className={styles.muted}>실제 화살표를 따라가요. 자연어 조건은 예·아니오를 직접 선택하고, 변수와 비교식은 계산해요.</p></>}
     {missionSummary && <p className={styles.missionDescription}>{missionSummary}</p>}
     {!children && interaction}
-    <h4>변수 살펴보기</h4><table className={styles.variables} aria-label="변수 살펴보기"><thead><tr><th>변수</th><th>현재값</th><th>직전값</th></tr></thead><tbody>{Object.entries(run?.vars ?? {}).map(([key, value]) => <tr key={key}><th>{key}</th><td>{String(value)}</td><td>{run?.previousVars[key] === undefined ? "—" : String(run.previousVars[key])}</td></tr>)}</tbody></table>
-    {consoleOnly ? <h4 className={styles.monitorHeading}><span>출력 콘솔 (Console)</span><Button variant="ghost" aria-label="출력 콘솔 지우기" onClick={() => setClearedThrough(run?.log.length ?? 0)}>지우기</Button></h4> : <h4>실시간 출력 (Output)</h4>}<div className={styles.output}>{visibleLog.filter(line => line.startsWith("출력:")).at(-1)?.replace(/^출력:\s*/, "") ?? (run?.done ? "실행이 완료됐어요." : "대기 중…")}</div>
+    <section className={styles.variablePanel}><h4>변수 살펴보기</h4><div className={styles.variableValues} role="region" aria-label="변수표 값" tabIndex={0}><table className={styles.variables} aria-label="변수 살펴보기"><thead><tr><th>변수</th><th>현재값</th><th>직전값</th></tr></thead><tbody>{Object.entries(run?.vars ?? {}).map(([key, value]) => <tr key={key}><th>{key}</th><td>{String(value)}</td><td>{run?.previousVars[key] === undefined ? "—" : String(run.previousVars[key])}</td></tr>)}</tbody></table>{!Object.keys(run?.vars ?? {}).length && <p className={styles.variableEmpty}>기호를 실행하면 변수가 나타나요.</p>}</div></section>
+    <section className={styles.consolePanel} aria-label="출력 콘솔"><h4 className={styles.monitorHeading}><span>출력 콘솔 (Console)</span><Button variant="ghost" aria-label="출력 콘솔 지우기" onClick={() => setClearedThrough(run?.log.length ?? 0)}>지우기</Button></h4><div className={styles.output}>{visibleLog.filter(line => line.startsWith("출력:")).at(-1)?.replace(/^출력:\s*/, "") ?? (run?.done ? "실행이 완료됐어요." : "대기 중…")}</div>
+    {!consoleOnly && <h4>실시간 데이터 흐름 (Tracer)</h4>}<ol className={styles.tracer} aria-label="실시간 데이터 흐름" tabIndex={0}>{visibleLog.map((line, index) => <li key={index}>{line}</li>)}</ol></section>
     {run?.done && completionText && <div className={styles.completion}><p>{completionText}</p>{completionAction}</div>}
-    {!consoleOnly && <h4>실시간 데이터 흐름 (Tracer)</h4>}<ol className={styles.tracer} aria-label="실시간 데이터 흐름">{visibleLog.map((line, index) => <li key={index}>{line}</li>)}</ol>
     {run?.error && !run.waiting && <p role="alert" className={styles.error}>{run.error}</p>}
   </div>;
   return children ? children(controls, monitor, status, { activeEdge: run?.activeEdge, interaction, output: run?.output }) : <section className={styles.puzzleExecution} aria-label="순서도 실행"><small>I/O &amp; Simulation</small><h3>실행 검증 &amp; 입출력</h3>{status}{controls}{monitor}</section>;

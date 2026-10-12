@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { localOnly, readyStudent, readyTeacher } from "./emulator";
+import { RELEASED_LESSONS } from "../src/lib/classroom/catalog";
+import { db, localOnly, readyStudent, readyTeacher } from "./emulator";
+
+const releasedLesson = RELEASED_LESSONS.find((lesson) => lesson.id === "programming-13")!;
 
 test("최초 세션 대기: 접속 안내·홈 이동·로그인 입력 유지", async ({ page }, testInfo) => {
   await localOnly(page.request);
@@ -75,6 +78,7 @@ for (const role of ["student", "teacher"] as const) {
 
 test("열린 수업 첫 조회: 스켈레톤·탐색 초점·좁은 화면 유지", async ({ page }, testInfo) => {
   await readyStudent(page.request);
+  await db.doc("csClasses/2-1").update({ currentLessonId: releasedLesson.id, openedLessonIds: RELEASED_LESSONS.map((lesson) => lesson.id) });
   let release!: () => void;
   const waiting = new Promise<void>((resolve) => { release = resolve; });
   await page.route("**/api/classroom/student", async (route) => { await waiting; await route.continue(); });
@@ -97,7 +101,7 @@ test("열린 수업 첫 조회: 스켈레톤·탐색 초점·좁은 화면 유�
     const menu = page.getByRole("navigation", { name: "교실 메뉴", exact: true }).getByRole("link", { name: "우리 반 질문", exact: true });
     await menu.focus();
     release();
-    await expect(page.getByRole("heading", { name: "순서가 만드는 알고리즘", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: releasedLesson.title, exact: true })).toBeVisible();
     await expect(skeletons).toHaveCount(0);
     await expect(menu).toBeFocused();
   } finally { release(); }
@@ -105,6 +109,7 @@ test("열린 수업 첫 조회: 스켈레톤·탐색 초점·좁은 화면 유�
 
 test("열린 수업 새로고침: 진행 표시·기존 기록·실패 후 재시도", async ({ page }) => {
   await readyStudent(page.request);
+  await db.doc("csClasses/2-1").update({ currentLessonId: releasedLesson.id, openedLessonIds: RELEASED_LESSONS.map((lesson) => lesson.id) });
   let fail = false;
   let release!: () => void;
   const waiting = new Promise<void>((resolve) => { release = resolve; });
@@ -114,7 +119,7 @@ test("열린 수업 새로고침: 진행 표시·기존 기록·실패 후 재�
   });
   try {
     await page.goto("/student/lessons");
-    const lesson = page.getByRole("heading", { name: "순서가 만드는 알고리즘", exact: true });
+    const lesson = page.getByRole("heading", { name: releasedLesson.title, exact: true });
     await expect(lesson).toBeVisible();
     fail = true;
     const refresh = page.getByRole("button", { name: "수업 새로고침", exact: true });

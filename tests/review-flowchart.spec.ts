@@ -24,11 +24,6 @@ async function recipe(page: Page) {
   const dialog = page.getByRole("dialog", { name: /추상화 처방전/ });
   await expect(dialog).toBeVisible(); return dialog;
 }
-async function inspector(page: Page) {
-  const summary = page.getByText("키보드 편집 · 기호와 연결 설정", { exact: true });
-  if (!(await summary.evaluate(element => (element.parentElement as HTMLDetailsElement).open))) await summary.click();
-}
-
 test.describe("V1 순서도 직접 조작", () => {
   let classBefore: FirebaseFirestore.DocumentData | undefined;
   test.beforeEach(async () => { classBefore = (await db.collection("csClasses").doc("2-1").get()).data(); });
@@ -126,7 +121,7 @@ test.describe("V1 순서도 직접 조작", () => {
     const box = await viewport.boundingBox(); if (!box) throw Error("canvas missing");
     await page.mouse.move(box.x + box.width - 35, box.y + 200); await page.mouse.down(); await page.mouse.move(box.x + 35, box.y + 200, { steps: 8 }); await page.mouse.up();
     await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan.x).toBeGreaterThan(460);
-    await inspector(page); await page.getByRole("button", { name: "시작으로 보기", exact: true }).click();
+    await page.getByRole("button", { name: "시작으로 보기", exact: true }).click();
     const start = page.getByRole("button", { name: "시작·종료 기호: 시작", exact: true }).locator("[data-flow-shape]");
     await expect.poll(async () => {
       const symbol = await start.boundingBox(), frame = await viewport.boundingBox();
@@ -198,9 +193,10 @@ test.describe("flowchart 개념과 읽기 배치", () => {
   });
   test("140·160·150cm는 실제 조건과 같은 갈래로만 진행하고 중지·초기화한다", async ({ page }, testInfo) => {
     const scene = await concept(page, 1), errors: string[] = []; page.on("pageerror", e => errors.push(e.message));
+    const run = scene.getByRole("group", { name: "개념 흐름 실행 조작", exact: true }).getByRole("button", { name: "흐름 실행", exact: true });
     for (const [height, branch, output] of [[140, "no", "대기 안내"], [160, "yes", "탑승 가능 안내"], [150, "yes", "탑승 가능 안내"]] as const) {
       await scene.getByRole("button", { name: `${height}cm`, exact: true }).click();
-      await scene.getByRole("button", { name: "흐름 실행", exact: true }).click();
+      await run.click();
       await expect(scene.getByRole("status")).toContainText("종료에 도달");
       await expect(scene.locator(`[data-edge="${branch}"]`)).toHaveAttribute("data-visited", "true");
       await expect(scene.locator(`[data-edge="${branch === "yes" ? "no" : "yes"}"]`)).toHaveAttribute("data-visited", "false");
@@ -209,16 +205,16 @@ test.describe("flowchart 개념과 읽기 배치", () => {
     await scene.getByRole("button", { name: "예시 흐름 초기화", exact: true }).click();
     await scene.getByRole("button", { name: "한 단계 실행", exact: true }).click();
     await expect(scene.getByRole("list", { name: "이번 실행 경로" }).getByRole("listitem")).toHaveCount(1);
-    await scene.getByRole("button", { name: "흐름 실행", exact: true }).click();
+    await run.click();
     await scene.getByRole("button", { name: "실행 중지", exact: true }).click();
-    await expect(scene.getByRole("button", { name: "흐름 실행", exact: true })).toBeFocused();
+    await expect(run).toBeFocused();
     const stopped = await scene.getByRole("list", { name: "이번 실행 경로" }).textContent();
     await page.waitForTimeout(850);
     expect(await scene.getByRole("list", { name: "이번 실행 경로" }).textContent()).toBe(stopped);
     await scene.getByRole("button", { name: "예시 흐름 초기화", exact: true }).click();
     await page.emulateMedia({ reducedMotion: "reduce" });
     await scene.getByRole("button", { name: "150cm", exact: true }).click();
-    await scene.getByRole("button", { name: "흐름 실행", exact: true }).click();
+    await run.click();
     await expect(scene.getByRole("status")).toContainText("종료에 도달");
     await page.setViewportSize({ width: 390, height: 620 });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -227,6 +223,7 @@ test.describe("flowchart 개념과 읽기 배치", () => {
   });
   test("틀림은 입력으로 돌아가고 맞음은 종료하며 저장한 답안을 보존한다", async ({ page }) => {
     const scene = await concept(page, 2);
+    const run = scene.getByRole("group", { name: "개념 흐름 실행 조작", exact: true }).getByRole("button", { name: "흐름 실행", exact: true });
     await expect(scene.locator('[data-node="fail"]')).toHaveAttribute("data-shape", "io");
     await expect(scene.locator('[data-node="fail"] polygon')).toHaveCount(1);
     await page.getByRole("radio", { name: "비밀번호 입력 단계", exact: true }).check();
@@ -243,13 +240,13 @@ test.describe("flowchart 개념과 읽기 배치", () => {
     for (let i = 0; i < 3; i++) await scene.getByRole("button", { name: "한 단계 실행", exact: true }).click();
     await expect(scene.getByRole("status")).toContainText("종료에 도달");
     await expect(scene.locator('[data-edge="yes"]')).toHaveAttribute("data-visited", "true");
-    await expect(scene.getByRole("button", { name: "흐름 실행", exact: true })).toBeFocused();
+    await expect(run).toBeFocused();
     await scene.getByRole("button", { name: "예시 흐름 초기화", exact: true }).click();
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await scene.getByRole("button", { name: "흐름 실행", exact: true }).click();
+    await run.click();
     await expect(scene.getByRole("status")).toContainText("입력 단계로 돌아왔어요");
     await scene.getByRole("button", { name: "예시 입력: 맞음", exact: true }).click();
-    await scene.getByRole("button", { name: "흐름 실행", exact: true }).click();
+    await run.click();
     await expect(scene.getByRole("status")).toContainText("종료에 도달");
     await page.getByRole("button", { name: "체험 초기화", exact: true }).click();
     const after = await (await page.request.get(`/api/classroom/work/${id}`)).json();
@@ -327,12 +324,16 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
   await expect(page.getByRole("region", { name: "자연어 기획서", exact: true }).getByLabel("실행 계획", { exact: true })).toHaveValue("계획 보존"); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   const fresh = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
   expect(fresh).toMatchObject({ placements: p.placements, guideStep: 4, current: p.current, goal: p.goal, conditions: p.conditions, core: p.core, cards: p.cards, edges: [], pan: { x: 0, y: 0 } }); expect(fresh.nodes).toHaveLength(2);
-  await inspector(page); await page.getByRole("button", { name: "편집 되돌리기", exact: true }).click(); await expect(page.getByRole("button", { name: "처리 기호: 추가 처리", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "편집 되돌리기", exact: true }).click(); await expect(page.getByRole("button", { name: "처리 기호: 추가 처리", exact: true })).toBeVisible();
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); const restoredDefinition = await recipe(page); await expect(restoredDefinition.getByLabel("현재 상태", { exact: true })).toHaveValue("현재 기록"); await restoredDefinition.getByRole("button", { name: "처방전 닫기", exact: true }).click();
-  await inspector(page); await page.getByRole("button", { name: "처리 기호: 추가 처리", exact: true }).focus(); await page.keyboard.press("Enter"); await page.getByRole("button", { name: "선택 기호와 연결 삭제", exact: true }).click();
-  await page.getByRole("button", { name: "처리 기호 추가", exact: true }).click(); await page.getByLabel("기호 내용", { exact: true }).fill("알람 켜기");
-  await page.getByRole("combobox", { name: "출발 기호", exact: true }).selectOption({ label: "시작" }); await page.getByRole("combobox", { name: "도착 기호", exact: true }).selectOption({ label: "알람 켜기" }); await page.getByRole("button", { name: "이 화살표 연결", exact: true }).click();
-  await page.getByRole("combobox", { name: "출발 기호", exact: true }).selectOption({ label: "알람 켜기" }); await page.getByRole("combobox", { name: "도착 기호", exact: true }).selectOption({ label: "종료" }); await page.getByRole("button", { name: "이 화살표 연결", exact: true }).click();
+  await page.getByRole("button", { name: "처리 기호: 추가 처리", exact: true }).focus(); await page.keyboard.press("Delete");
+  await page.getByRole("button", { name: "처리 기호 추가", exact: true }).click();
+  await page.getByRole("button", { name: "처리 기호: 내용 입력", exact: true }).focus(); await page.keyboard.press("F2");
+  await page.getByRole("textbox", { name: "처리 기호 문구 직접 편집", exact: true }).fill("알람 켜기"); await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "시작 다음 연결점", exact: true }).focus(); await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "알람 켜기 연결 받기", exact: true }).focus(); await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "알람 켜기 다음 연결점", exact: true }).focus(); await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "종료 연결 받기", exact: true }).focus(); await page.keyboard.press("Enter");
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   const beforeMove = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.nodes.find((n: { text: string }) => n.text === "알람 켜기");
   const alarm = page.getByRole("button", { name: "처리 기호: 알람 켜기", exact: true }); await alarm.scrollIntoViewIfNeeded(); const box = await alarm.locator("[data-flow-shape]").boundingBox(); if (!box) throw new Error("No visible node");
@@ -342,6 +343,9 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
   await page.reload(); await expect(page.getByRole("button", { name: "처리 기호: 알람 켜기", exact: true })).toBeVisible();
   expect((await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.nodes).toEqual(moved.nodes);
   const viewport = page.getByLabel("실제 순서도 연결", { exact: true });
+  // V1 배치의 넓은 창에서는 SVG 전체가 들어간다. 넘침이 있는 실제 창에서 휠을 검사한다.
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await expect.poll(() => viewport.evaluate(element => element.scrollWidth - element.clientWidth)).toBeGreaterThan(0);
   await viewport.scrollIntoViewIfNeeded(); await alarm.focus();
   const viewportBox = await viewport.boundingBox(); if (!viewportBox) throw Error("No visible canvas viewport");
   await page.mouse.move(viewportBox.x + viewportBox.width / 2, viewportBox.y + 80); await page.mouse.wheel(180, 0);
@@ -357,9 +361,13 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
   const recipeTrigger = page.getByRole("button", { name: /처방전 채우기/ });
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await expect.poll(() => viewport.evaluate(element => element.scrollWidth - element.clientWidth)).toBeGreaterThan(0);
   await viewport.scrollIntoViewIfNeeded(); await recipeTrigger.focus(); await viewport.scrollIntoViewIfNeeded();
   const wideViewport = await viewport.boundingBox(); if (!wideViewport) throw Error("No visible wide canvas");
-  await page.mouse.move(wideViewport.x + wideViewport.width / 2, wideViewport.y + 80); await page.mouse.wheel(-1000, 0);
+  await page.mouse.move(wideViewport.x + wideViewport.width / 2, wideViewport.y + 80); await page.mouse.wheel(180, 0);
+  await expect.poll(() => viewport.evaluate(element => element.scrollLeft)).toBeGreaterThan(0);
+  await page.mouse.wheel(-1000, 0);
   await expect.poll(() => viewport.evaluate(element => element.scrollLeft)).toBe(0);
   const chosenCenter = await viewport.evaluate(element => element.scrollLeft + element.clientWidth / 2);
   await page.setViewportSize({ width: 390, height: 1000 });
@@ -375,7 +383,7 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
   await page.getByRole("button", { name: /4단계: 순차 구조/ }).click();
   await page.getByRole("button", { name: "나만의 백지로 이동" }).click();
   await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
-  await inspector(page); await page.getByRole("button", { name: "화면 원점", exact: true }).click();
+  await page.getByRole("button", { name: "화면 원점", exact: true }).click();
   await viewport.scrollIntoViewIfNeeded(); const panBox = await viewport.boundingBox(); if (!panBox) throw Error("No visible canvas");
   await page.mouse.move(panBox.x + panBox.width - 50, panBox.y + 100); await page.mouse.down(); await page.mouse.move(panBox.x + panBox.width - 250, panBox.y + 100, { steps: 6 }); await page.mouse.up();
   await viewport.focus();

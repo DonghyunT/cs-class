@@ -1,0 +1,1776 @@
+{
+  "recorded_at": "2026-10-12",
+  "timezone": "Asia/Seoul",
+  "purpose": "GitHub 기본 브랜치의 V1 소스·설계 참고본. 앱 실행·배포와 운영 자료 복구 대상이 아님",
+  "repository": "https://github.com/DonghyunT/algorithm-studio",
+  "branch": "main",
+  "source_commit": "bc8d51f659d9cb0bcb131ee04a467545f8fc96af",
+  "source_tree": "39e4701107d12d1973f2e676133fd9835c218c1d",
+  "source_commit_date": "2026-10-02T13:01:16+09:00",
+  "source_file_count": 343,
+  "archived_file_count": 126,
+  "archived_bytes": 2065999,
+  "excluded_file_count": 217,
+  "not_collected": [
+    "Git 전체 이력·다른 브랜치",
+    "Git 제외 로컬 원본·비밀 설정",
+    "Firebase DB·학생 명부·답안·성적"
+  ],
+  "path_mapping": {
+    "AGENTS.md": "source/AGENTS-historical.md"
+  },
+  "records": [
+    {
+      "source": ".firebaserc",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/.firebaserc",
+      "sha256": "2337e951d1e5b7b98e37c55e49908185b751f2483477218ceb983bdbf0c142dc",
+      "git_blob": "0f9cb30b4005189fac82780821d5459c0a0f09be",
+      "bytes": 55
+    },
+    {
+      "source": ".github/pull_request_template.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/.github/pull_request_template.md",
+      "sha256": "5bcfff627e9498e10d57cb30a5989b2fdebdfb0ee370a73933653b4b54a627df",
+      "git_blob": "cc4aa72ef6257f988a37895f7bf84a1392989aef",
+      "bytes": 472
+    },
+    {
+      "source": ".github/workflows/verify.yml",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/.github/workflows/verify.yml",
+      "sha256": "c982c26d4a9ef70afc930e9cb8c16b12a157ef077230173f447b30a3e9ec6e4c",
+      "git_blob": "3df1f32db74cec5aa54a98303c11b8c351483f1d",
+      "bytes": 354
+    },
+    {
+      "source": ".gitignore",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/.gitignore",
+      "sha256": "37ac20de8c0c24bdd224a7414f9080a725488f69c4523c253335d0d2bc28f7e4",
+      "git_blob": "7e2c3eec5b90dfa6f93b3dc72d418c2913282da1",
+      "bytes": 620
+    },
+    {
+      "source": ".vercelignore",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/.vercelignore",
+      "sha256": "c49e309368a781108d05c91858df90755ae2ea70212d80d8564c0de4e76324bc",
+      "git_blob": "4c65682919b625097d3d60a2b35d1865c117ef33",
+      "bytes": 175
+    },
+    {
+      "source": "AGENTS.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/AGENTS-historical.md",
+      "sha256": "840ac26432517994e16bb6b03c222a459adddcb7ef3f00324d57ef004b2c3430",
+      "git_blob": "8b10844b16d15489d46ee37e1e36abc64493e585",
+      "bytes": 19822
+    },
+    {
+      "source": "CONTEXT.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/CONTEXT.md",
+      "sha256": "92b74a021ea826ce55ce529e48a783a6e23f7a919643ea95036d4f07edbdadf2",
+      "git_blob": "ffd8ad3ddbd34399d1a7c66ca489afb47e609253",
+      "bytes": 1128
+    },
+    {
+      "source": "INTENT.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/INTENT.md",
+      "sha256": "093b3c9b198d4e1246de4bb70d098e56d90100d9ebda99e14d07862135b51c4c",
+      "git_blob": "28f83fb79337fa7a8a3be0f5b08d5b94558c6b8b",
+      "bytes": 15154
+    },
+    {
+      "source": "README.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/README.md",
+      "sha256": "619e9f0b15e0846424e793cfb367247df6c6e69e8142eeac9df5e2c848fc4780",
+      "git_blob": "71f070d52b82cfc346fb23394e4767330073613f",
+      "bytes": 8995
+    },
+    {
+      "source": "api/assessment.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/api/assessment.js",
+      "sha256": "9f0018982b23782c9dd60e70453fbf6b5c5948318292f34c2b3fb240bc9b8481",
+      "git_blob": "7a8845ba38b29b399705f71aca18b1112a54148b",
+      "bytes": 12740
+    },
+    {
+      "source": "api/chat.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/api/chat.js",
+      "sha256": "de27ac747021a2394acd70c7c5d92760e8389aa519a23962cc9995742e061992",
+      "git_blob": "fe50cd4a4173bfeb600311982df5af2313771dbf",
+      "bytes": 2898
+    },
+    {
+      "source": "api/evaluation.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/api/evaluation.js",
+      "sha256": "573fd81322b0cc7246aa7018ea728351efb2f03de26285a84da36b0bc8fafbb1",
+      "git_blob": "5e1168f182798c6479d2aaf59fedd7ce7bccdf63",
+      "bytes": 13939
+    },
+    {
+      "source": "css/classroom-layout.css",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/css/classroom-layout.css",
+      "sha256": "674cbaeb8557052a13a71286f0baaff04a13ab3fbcb21edf5528033e99c380c4",
+      "git_blob": "bdb2eea0ec0253d86c642e94401ff2e41c102a78",
+      "bytes": 8096
+    },
+    {
+      "source": "css/common.css",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/css/common.css",
+      "sha256": "25399d74391bb07958fd16d0e02d09b6159c44622496eecc6dfd5bda7275f128",
+      "git_blob": "b4c6b4dced504cd0f6ce09497a3574051a492465",
+      "bytes": 23238
+    },
+    {
+      "source": "css/flowchart.css",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/css/flowchart.css",
+      "sha256": "33b5bbee5c339862d14b861122f5a0b53c379cc6da11fc0d7ff607e7d59436ad",
+      "git_blob": "ed448912c80e1af628798b5b41b28f43412f77a1",
+      "bytes": 39553
+    },
+    {
+      "source": "css/studio-ui.css",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/css/studio-ui.css",
+      "sha256": "391ed558635348204a29f5b92ca8045951b877bc3b0bc95a6e37da44127b3674",
+      "git_blob": "50ce93d7f3f1dd7904d881b5259d1f14806223dc",
+      "bytes": 26563
+    },
+    {
+      "source": "docs/ASSESSMENT_OPEN_DESIGN_REVIEW.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/ASSESSMENT_OPEN_DESIGN_REVIEW.md",
+      "sha256": "3107a93dd565277e2941d91f37f8c97e074201c44799a951d33d1cd2cb3d12f8",
+      "git_blob": "b3361c97c7301d41cbf8a22fb72e6007f120532b",
+      "bytes": 7139
+    },
+    {
+      "source": "docs/ASSESSMENT_UI_REVIEW.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/ASSESSMENT_UI_REVIEW.md",
+      "sha256": "3ae0373e11ed28e725ae6d6f118224a7e6e633d1ef1f353cfd73696100f9b31f",
+      "git_blob": "e035cd3bcc3ce59b2e87cb54d6e45f02160d2344",
+      "bytes": 6185
+    },
+    {
+      "source": "docs/DATABASE.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/DATABASE.md",
+      "sha256": "1092bca363f246d2a5095084f88ef10a7a2d02a209a613a8f8d64362217b2968",
+      "git_blob": "9635903a6c5ec0efd6ae44ff062d9ebe76eeebd2",
+      "bytes": 13193
+    },
+    {
+      "source": "docs/DEVELOPMENT.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/DEVELOPMENT.md",
+      "sha256": "4046a06f4088d591253c9a145a36e23d767b67c1c6eeeeeb216dd73ae4468c2d",
+      "git_blob": "bdd31667efbe33e7f0a59361da4f5cdd530a07da",
+      "bytes": 4500
+    },
+    {
+      "source": "docs/EVALUATION_V4_PLAN.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/EVALUATION_V4_PLAN.md",
+      "sha256": "802add32b0737b0636dfdce52ce60ec955fbdb799a41c5da0479172debd802c9",
+      "git_blob": "d889ca403671dbd09fe49ab26df48c74e37c1b57",
+      "bytes": 35716
+    },
+    {
+      "source": "docs/EVALUATION_V4_SETUP.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/EVALUATION_V4_SETUP.md",
+      "sha256": "34e812ac2229312b56b0f1b10608b4ebd9f393f9c4b760f940e9159cb4fcf4dc",
+      "git_blob": "d73a711c344d52fbf2ed994f7c63cfce2f800752",
+      "bytes": 4870
+    },
+    {
+      "source": "docs/IMPLEMENTATION_REVIEW.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/IMPLEMENTATION_REVIEW.md",
+      "sha256": "ca21c9586569b743c75ed76701ceea8c44554f0740fba10bc198a568c39f95e6",
+      "git_blob": "6f31e8d297ae140cd2b2199cdf014705c86b9abb",
+      "bytes": 9430
+    },
+    {
+      "source": "docs/INSTRUCTOR_ACCESS_REVIEW.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/INSTRUCTOR_ACCESS_REVIEW.md",
+      "sha256": "92f8686801ba194cf9e3e4098a25007406aba97aac1a15ebc0ae5fd1f492b5ed",
+      "git_blob": "6f503e95604b9ff266dd1f36b5ab7e1c04f2ef51",
+      "bytes": 6305
+    },
+    {
+      "source": "docs/OPERATIONS.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/OPERATIONS.md",
+      "sha256": "650a153e04143202df482442794ab1e7dde2613fe1c9dfd49adfd0c22adcacae",
+      "git_blob": "3aeeadb8991625a447be3de13f133b69ac27b628",
+      "bytes": 7396
+    },
+    {
+      "source": "docs/PART3_GRADING_PROMPT_DRAFT.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/PART3_GRADING_PROMPT_DRAFT.md",
+      "sha256": "8eaa3f1c869f7f5590278b6248d16a1f3ce1dadb05e21c0599b76c11cac28f28",
+      "git_blob": "6f66a1bfb432a556995bb59026f2b78cda851de5",
+      "bytes": 9095
+    },
+    {
+      "source": "docs/PART3_RUBRIC_CALIBRATION.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/PART3_RUBRIC_CALIBRATION.md",
+      "sha256": "dfd3b87311c8f5a0022bb10f8674c487f437db4344e575a852cd999d50f6ad4b",
+      "git_blob": "707f02a8981944371d41a71010fdee17f08ad6bb",
+      "bytes": 7806
+    },
+    {
+      "source": "docs/PRD_HISTORY_2026-09-12.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/PRD_HISTORY_2026-09-12.md",
+      "sha256": "0bb3ceb1ed99d2d26ae3fd2a18f4391256a37ea7144eadd06fee1ec8201f8b1b",
+      "git_blob": "a4d4e6b9753e1abbd10086043177af239e01f70d",
+      "bytes": 52245
+    },
+    {
+      "source": "docs/QUESTION_BANK.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/QUESTION_BANK.md",
+      "sha256": "59d28e281af45b8a6fd77e4d1b5882e717a9c7b65a17b943cc64f957cc4cb5a1",
+      "git_blob": "744db7fd930548a9b7c2178e6e95fa52b2f4646e",
+      "bytes": 32063
+    },
+    {
+      "source": "docs/SEMANTIC_REVIEW_LOCAL_PREVIEW.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/SEMANTIC_REVIEW_LOCAL_PREVIEW.md",
+      "sha256": "2e07dd2fd6512d6d084d2a0758d6a901d8f81ce8eed7cde6b112ea4cbd4cbad0",
+      "git_blob": "9950d68088018f831e1f3aa28cfe9d2310542546",
+      "bytes": 6535
+    },
+    {
+      "source": "docs/TEACHER_CONTROLS_REVIEW.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/TEACHER_CONTROLS_REVIEW.md",
+      "sha256": "2bf7d8a83812b1c7183e727f03784cccb5c15794ebd8a0cfe4abbcffc8dab5e7",
+      "git_blob": "ec76e917b2ef848d4b0eec402e0228ca55949bfd",
+      "bytes": 3123
+    },
+    {
+      "source": "docs/TUTOR_TEACHER_ENTRY_REVIEW.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/TUTOR_TEACHER_ENTRY_REVIEW.md",
+      "sha256": "8432f447cac0cda9f2e22bf6b3846407854ceebc3bbbb6b7bc6249c5b0f992ac",
+      "git_blob": "2684ca6c1afda507238369c4466389f721a74cd0",
+      "bytes": 6431
+    },
+    {
+      "source": "docs/UI_REVIEW.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/UI_REVIEW.md",
+      "sha256": "d50f2b3ea9b3ac84299b9d2a50d14d32df85f09f1243958a6dbfd116add4f992",
+      "git_blob": "2baa4e6cf42ad76ab5929c4b2775d18ae816ee3b",
+      "bytes": 4701
+    },
+    {
+      "source": "docs/V4_OBJECTIVE_CORRECTION.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/V4_OBJECTIVE_CORRECTION.md",
+      "sha256": "cf1897aed24c07f49390bee86ce868558cecaabdcf39d2c3c133b3533623b70d",
+      "git_blob": "97cb546c62884b9ef030636ec830808571fc16f6",
+      "bytes": 10370
+    },
+    {
+      "source": "docs/WORKSPACE_UI_REVIEW.md",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/docs/WORKSPACE_UI_REVIEW.md",
+      "sha256": "0dbfe4cd8e87c131307c1102977a3c613cb29b81231276a2d920789b886487f0",
+      "git_blob": "e41a7a8a228729240e7641a063cec79b69cd991e",
+      "bytes": 4421
+    },
+    {
+      "source": "firestore.rules",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/firestore.rules",
+      "sha256": "184a619b9ef8ac95570ced192a7ff5b3d0e36ab2b79668d2e18d249b185b1f31",
+      "git_blob": "50a1c121e40c0e0a9dd93360df5c9a763a115ba3",
+      "bytes": 6837
+    },
+    {
+      "source": "index.html",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/index.html",
+      "sha256": "d5923df2fa0e4c4b02b16d340751d5df3912f90b2ebcae75610e995088e1229b",
+      "git_blob": "1ca223590e080bc6eff3bcf982d44014a154d0c2",
+      "bytes": 254539
+    },
+    {
+      "source": "js/app.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/app.js",
+      "sha256": "10b19303e55e11a516274f3f329cc6b052610e0cbf74823bdba1e4bfceea0897",
+      "git_blob": "cdd7b9b088dcbdcdf2e8fbe19089b257e9fefbbc",
+      "bytes": 8336
+    },
+    {
+      "source": "js/core/ai-service.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/ai-service.js",
+      "sha256": "926dfa9a423038e48c14383fafee77d3812898163a142aed01943ef7b5c29f09",
+      "git_blob": "0520914c241ca4d11df6738d3ba61afda060b6f8",
+      "bytes": 7031
+    },
+    {
+      "source": "js/core/ai-tutor.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/ai-tutor.js",
+      "sha256": "0d86711da2672aa43eb086b0698e02a622c8e1786d12e5d93f2c0e701d1cc6b3",
+      "git_blob": "261111c037927d963e8e430607584eb34c7d99ca",
+      "bytes": 5314
+    },
+    {
+      "source": "js/core/assessment-auto-review.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/assessment-auto-review.js",
+      "sha256": "12fc6e2a863eaa267df4bbc6bad023524fa511e233547374e808edb8b688f4fb",
+      "git_blob": "4ddc53d77b19be60733637969853adcf4debacea",
+      "bytes": 9272
+    },
+    {
+      "source": "js/core/assessment-policy.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/assessment-policy.js",
+      "sha256": "af553299645dfb6f8ddf22473b441d9445d77c41a7e03c313a58f4ed8e3d32fe",
+      "git_blob": "eb74852bb4d16c6f862e229c90f5bca969cef048",
+      "bytes": 6121
+    },
+    {
+      "source": "js/core/assessment-review-ui.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/assessment-review-ui.js",
+      "sha256": "764a9cae0fef2b936fe41d13ea0eec99f3b4b1417934cc22caf6f64a3e785ab2",
+      "git_blob": "a9faf8285a55f0ab031ce554da371c3e92609c2f",
+      "bytes": 6160
+    },
+    {
+      "source": "js/core/assessment-workspace.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/assessment-workspace.js",
+      "sha256": "5fee21db676ff95929af0013448f225215bb6d9aba29a3813f565da1d2fabb99",
+      "git_blob": "0608fadc17e6d0f94c77970dec52c81c2fc87b93",
+      "bytes": 10359
+    },
+    {
+      "source": "js/core/audio.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/audio.js",
+      "sha256": "d62c6dc460045037ce208ebd38df983cfda5c1e7238de6bfbba95d56940a4f92",
+      "git_blob": "2e0f105aa0a142fc7b5227d935a909ae5b795bed",
+      "bytes": 2240
+    },
+    {
+      "source": "js/core/auth-service.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/auth-service.js",
+      "sha256": "97cd5b215a3a19755c3b924e812b5e7e05ebf8855ebaf164f5d13c2fa85f2ac6",
+      "git_blob": "e1f505382bcde0a28f03f71448953b3f84327d03",
+      "bytes": 7263
+    },
+    {
+      "source": "js/core/classroom.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/classroom.js",
+      "sha256": "68c7c4c36e4798c50b24110c04d786eff85c9a57b70d1f098f96a89c557dc631",
+      "git_blob": "b3869493c2d9b95febd05c0b4c9d8b416379cd00",
+      "bytes": 137365
+    },
+    {
+      "source": "js/core/concept.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/concept.js",
+      "sha256": "7ab059e624fe88c5ec685f6a357bb4a7cbfccdf4ffabd984b682237d8ff7b89a",
+      "git_blob": "1abf06313d1003efe4491e427c93d2ddfee8a99a",
+      "bytes": 33017
+    },
+    {
+      "source": "js/core/eval-service.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/eval-service.js",
+      "sha256": "ad20f83e28ee4e1b690e90ce718e39b502fcc8a84979330098a7b9b693879bdb",
+      "git_blob": "d51e4acca20809863558d1c1a8ed0292db61adf8",
+      "bytes": 51165
+    },
+    {
+      "source": "js/core/excel-export.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/excel-export.js",
+      "sha256": "71a2e761c2182ed7abcc5d6f1261b545c12582b172eca4fb2b43dc74518496ab",
+      "git_blob": "f5342545d442f27440ef1736e40f9f20d2914ec7",
+      "bytes": 56726
+    },
+    {
+      "source": "js/core/flow-expressions.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/flow-expressions.js",
+      "sha256": "65768e76a38adad323cffc4a33193b2a1f9106c7008990b3017474d13ed91ea0",
+      "git_blob": "e8b2207d2b8a98e63c1dd61ca306a110e9588292",
+      "bytes": 4690
+    },
+    {
+      "source": "js/core/flow-validation.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/flow-validation.js",
+      "sha256": "0bff85587f43537596e39639233d0bce9bc0aca823f407fde7bbbd37d7541102",
+      "git_blob": "08cd52d94a3c237125fc20f9b5033eca7d83d0bc",
+      "bytes": 10362
+    },
+    {
+      "source": "js/core/flowchart-review.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/flowchart-review.js",
+      "sha256": "5ac0574e2df52b9836691ce9dbfc5bab44c2e8e3026fb99277562ed29c083126",
+      "git_blob": "6e3ce3865665cfa14c03d0c006984a5c32f08590",
+      "bytes": 14222
+    },
+    {
+      "source": "js/core/local-preview.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/local-preview.js",
+      "sha256": "d8ef30632010f384c0d59d86468988cee6ebd33cedfb7f5312dd050067e20af9",
+      "git_blob": "35ecf5a03e6c18b154f00ae93d27f8b7572b9d37",
+      "bytes": 2642
+    },
+    {
+      "source": "js/core/navigation.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/navigation.js",
+      "sha256": "e2e28dddddf1038508d0bdad73a005e94d0bb7fa0a9b624f730c73fd074d8bb1",
+      "git_blob": "2d93f1523cd8557b226b041921e97e0d0d024115",
+      "bytes": 18752
+    },
+    {
+      "source": "js/core/objective-correction.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/objective-correction.js",
+      "sha256": "7ad9b408fe272a84ae7a00ab553a312262cfa6a822adfe007aa116e0ec02431d",
+      "git_blob": "eef26485a009a05e1f6c02d9bf6150e77a6a4c0a",
+      "bytes": 1483
+    },
+    {
+      "source": "js/core/session-drafts.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/core/session-drafts.js",
+      "sha256": "c6ec2b61af031b75718923b9b7d3cfedb2bc96be8c9ee7fb1c508870d2a70603",
+      "git_blob": "21274c24b5bfbee035adb1d573a5c18f5f5505bb",
+      "bytes": 2320
+    },
+    {
+      "source": "js/data/abstraction-data.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/data/abstraction-data.js",
+      "sha256": "414256a10f865bdc10526ed0f4edc8b2ee2d5460130d2c4d54df7ac93d015945",
+      "git_blob": "6b0125e2deaebd14e0359d92fd2edc193e596f40",
+      "bytes": 6557
+    },
+    {
+      "source": "js/data/config.example.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/data/config.example.js",
+      "sha256": "f9a9e19ee55b5a060ceb2d0858446beb362a6e22f722e836d00dcc0e8e6e3482",
+      "git_blob": "7af846726542d9f4544ca9c7a368d1469d4cdeed",
+      "bytes": 951
+    },
+    {
+      "source": "js/data/eval-question-bank.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/data/eval-question-bank.js",
+      "sha256": "e5bbaca84b0471272d246daebf7c141d504d952c1d92c1bec3103f9361ba0db6",
+      "git_blob": "e56a29b8d56b90b89027840457d7192db83a3127",
+      "bytes": 29575
+    },
+    {
+      "source": "js/data/eval-questions.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/data/eval-questions.js",
+      "sha256": "ac8ccdf10106e983b36ac0db10bcb9977d8bffc45d43e4bc73964cda9dcc5e64",
+      "git_blob": "e965b31aacba07bdea1f727e0bf409bb1b8d1626",
+      "bytes": 15282
+    },
+    {
+      "source": "js/data/firebase-config.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/data/firebase-config.js",
+      "sha256": "086475e2aacfb3ebd7d73853516d9d2b894592612e726c74d14a46917aad074c",
+      "git_blob": "e9527184b2273d023f0eb7a85a41a452e9365691",
+      "bytes": 2327
+    },
+    {
+      "source": "js/data/flowchart-missions.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/data/flowchart-missions.js",
+      "sha256": "3da1be830d162f5d2974041fc0592743ba7cc544f8e6305f821dd54d6403ab0c",
+      "git_blob": "9375d18cd12b8366562b6c61f18d0f835bec2bc0",
+      "bytes": 7916
+    },
+    {
+      "source": "js/labs/lab-abstraction.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/labs/lab-abstraction.js",
+      "sha256": "2cf49ab2a6b9343b133e67a02b62266b5e7786f3f7f2473982fb9ce362e946b2",
+      "git_blob": "980b91560f738c87de957d6b93897138b74c66fb",
+      "bytes": 48407
+    },
+    {
+      "source": "js/labs/lab-eval.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/labs/lab-eval.js",
+      "sha256": "07f6fa6492f008dd59489dacb5a7088d4127f5cae434b188e7c62df1ed1b6f0b",
+      "git_blob": "33a0d3ee04f8b4dacee8006f73a3a31a7e98e015",
+      "bytes": 122882
+    },
+    {
+      "source": "js/labs/lab-flowchart.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/labs/lab-flowchart.js",
+      "sha256": "ae8d9f3f2dbcd580dd0723b12c6fc5fcc5dc20c808785735e9093e2f53f5f3a2",
+      "git_blob": "65b304e846b10ac1be017ce77039d8c118b56117",
+      "bytes": 245136
+    },
+    {
+      "source": "js/labs/lab-quiz.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/labs/lab-quiz.js",
+      "sha256": "2577852b30ce008488bd1990b70e054f6a559602ffa82231f9cd41de7d5baa4a",
+      "git_blob": "01b6c11e85f90ff59f72ab611cf226ac3ded8f3d",
+      "bytes": 17539
+    },
+    {
+      "source": "js/labs/lab-sandwich.js",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/js/labs/lab-sandwich.js",
+      "sha256": "25079671f30c3e1a531fc09aac76cd9d2142d998595b7e735ac7fdac88dcd956",
+      "git_blob": "032c110a522314a9a64f17673588595b23978032",
+      "bytes": 55662
+    },
+    {
+      "source": "server/ai-quota.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/server/ai-quota.cjs",
+      "sha256": "388dbb56fdfaf449d7211ea34bb18cba9c2731caa06c58ef1ed31f4e3ea994b7",
+      "git_blob": "ea00680bf69a9a1f38f5406a3e9ec117b091639a",
+      "bytes": 1454
+    },
+    {
+      "source": "server/assessment-graph.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/server/assessment-graph.cjs",
+      "sha256": "9fe023d9620076db8aee6b3d9211bb02f7dac248060cda24d91d86060b0d4e9e",
+      "git_blob": "2615e88c11941234fe0e5e51432c0a28c060d7e0",
+      "bytes": 1810
+    },
+    {
+      "source": "server/assessment-guidance.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/server/assessment-guidance.cjs",
+      "sha256": "63aebd556c6c4cac62f25f9529ed4c82265b3159810ded7ffac500376721dc07",
+      "git_blob": "534cccab0c9f42c1391a8c1bb20aaaa3c1b3ed01",
+      "bytes": 4721
+    },
+    {
+      "source": "server/assessment-prompt.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/server/assessment-prompt.cjs",
+      "sha256": "5801522e1cce522a12482d62031171030f13c5c02a6dd84f02b1e7b9235a8d42",
+      "git_blob": "7b461e2534636ef2c3bdc81ba9d77786cc22be75",
+      "bytes": 6807
+    },
+    {
+      "source": "server/evaluation-bank.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/server/evaluation-bank.cjs",
+      "sha256": "6a90834050cf7abbdfba4b666be74ad7437c17994e50077f2416498975813619",
+      "git_blob": "11cd46e18c021408bb38c33b756ec12acde6a5ef",
+      "bytes": 11224
+    },
+    {
+      "source": "server/firebase-token.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/server/firebase-token.cjs",
+      "sha256": "173ec464a82b0752da00d6d48128f967edadba4de63ea5bf4af06ee5d1691772",
+      "git_blob": "cea3a35f7221da1601036c981b519677307aa281",
+      "bytes": 1618
+    },
+    {
+      "source": "server/objective-regrade.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/server/objective-regrade.cjs",
+      "sha256": "e8ea6a988f583599f0b766e4ecb5cea62221506cac2854d4db52152b9f4f2c08",
+      "git_blob": "b27d98f8c581d8f30fef0b8e53dd8ad9c4c69fd4",
+      "bytes": 7781
+    },
+    {
+      "source": "tests/api.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/api.test.cjs",
+      "sha256": "3d66226f0ef31c71ccddd503600ff94e2662b9e9307d9ca8488369815cc69740",
+      "git_blob": "abb6b76887b9dc9dfb13f4b3ed741f576ab07c5d",
+      "bytes": 3734
+    },
+    {
+      "source": "tests/archive-history-ui.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/archive-history-ui.cjs",
+      "sha256": "c9f70fe0ca38440151e98e76c3250b7638ed1e53b2e61ad0a6857cd8bc86acdb",
+      "git_blob": "bd1537b2550dfdee289fe57f8f3af4a09775546a",
+      "bytes": 8697
+    },
+    {
+      "source": "tests/assessment-api.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/assessment-api.test.cjs",
+      "sha256": "e152ab7ee466488f4ec6f0fdaf4a4407c51b0a56541dd5e529f15df3d7877b03",
+      "git_blob": "ff8b7d03cf4a91e58d0d56e4bc99708c0c10afa8",
+      "bytes": 6411
+    },
+    {
+      "source": "tests/assessment-auto-review.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/assessment-auto-review.test.cjs",
+      "sha256": "209c7495e6a88205598384e776988ddf134477f1e7fe934f08b136af0d0ca19f",
+      "git_blob": "1a8a66216438e612203ab0fb0a8d3b13ede64eb6",
+      "bytes": 5878
+    },
+    {
+      "source": "tests/assessment-ui.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/assessment-ui.cjs",
+      "sha256": "bf03bacd4fffc559ce3fee5b0427dcdaf5083ed5598d36b7d84b98688a84e68a",
+      "git_blob": "42a15b2f1a8cb4e02969ef8fd53359bbe8a15482",
+      "bytes": 20863
+    },
+    {
+      "source": "tests/assessment-v2.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/assessment-v2.test.cjs",
+      "sha256": "f56f1db71d720f0241f89e61572112294dfebb6c8f8124a3cb0e4c62466156a5",
+      "git_blob": "1dae3ea72081bf8482cd3a2882fe99e6e4d6f919",
+      "bytes": 5508
+    },
+    {
+      "source": "tests/auth.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/auth.test.cjs",
+      "sha256": "65f50307add90c8d1b954fd8b5cb1a33daaae5ef096e94cbaa27aa061819d028",
+      "git_blob": "75b19d765a015c06831931e3cccd53b41ee039ae",
+      "bytes": 4092
+    },
+    {
+      "source": "tests/browser.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/browser.cjs",
+      "sha256": "a34e19dc153da6ea9379aa98b679b8e8a1566d216f51a85a8213a7c8c568bf81",
+      "git_blob": "e63d02351131b6c5412e6cd482c28cf95585425c",
+      "bytes": 26358
+    },
+    {
+      "source": "tests/cbt-assessment-ui.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/cbt-assessment-ui.test.cjs",
+      "sha256": "9596a33702914a89aa258ecfc42992fa4cad4052c51fb9afbdb4b26cd2ac595e",
+      "git_blob": "2047ce0c751457de16e3ddd60ef4a3b28fe85402",
+      "bytes": 41482
+    },
+    {
+      "source": "tests/class-scope.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/class-scope.test.cjs",
+      "sha256": "773e4f387635c4242e4e5289e16b62ab6aa9721751b30a5167e959989304adc8",
+      "git_blob": "a8595c0152b5cdbb242f988e95649d6743958231",
+      "bytes": 4397
+    },
+    {
+      "source": "tests/core.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/core.test.cjs",
+      "sha256": "997747a06bd23709cc29580a0ad9061260483982e1b38be88e963a6e4e693757",
+      "git_blob": "84aad9d5a1d6939379bbd73536a8582a9f31da0a",
+      "bytes": 7285
+    },
+    {
+      "source": "tests/eval-csv.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/eval-csv.test.cjs",
+      "sha256": "12cc5157a278bf9eaebe0618d798b5e444a3f9a189815e343b1e72397392f987",
+      "git_blob": "3b66570c8c2ff4fd57afd48f8a9bcc6957b053c5",
+      "bytes": 3146
+    },
+    {
+      "source": "tests/eval-entry-guard.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/eval-entry-guard.test.cjs",
+      "sha256": "6a49f6f22a24a6f8d434a8052d8b62c53df0720777b1dd97eabfb57a5d46c482",
+      "git_blob": "43ab6f5e91e5bca3c164109929e01cd52401cd21",
+      "bytes": 9580
+    },
+    {
+      "source": "tests/eval-time-extension.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/eval-time-extension.test.cjs",
+      "sha256": "092913ef2df13c6ab7c02c17f0b13a5c828d5b727ed9c562ea398ece19ee774d",
+      "git_blob": "25f34ee9bfb23ffcb034bb435bbd687305428dff",
+      "bytes": 10596
+    },
+    {
+      "source": "tests/evaluation-api.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/evaluation-api.test.cjs",
+      "sha256": "e3256c5a5bbce98979d7c4d92a3cbf5b39a164ae0e0dc331780d5969017eb855",
+      "git_blob": "31561afa3bf5a7d70bf20afbdae3e29870c3ffe2",
+      "bytes": 14527
+    },
+    {
+      "source": "tests/evaluation-bank.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/evaluation-bank.test.cjs",
+      "sha256": "0b26a46d7099cdf4251712791cb1bffa51386cf517902e2152ebdc7142c163df",
+      "git_blob": "4effafec6b145f44edba8d58420ac52510f4288e",
+      "bytes": 10129
+    },
+    {
+      "source": "tests/evaluation-read-efficiency-ui.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/evaluation-read-efficiency-ui.cjs",
+      "sha256": "fd036483a12ec302e6ba829cedab217a9cc69233230da14db1e2d1736514547f",
+      "git_blob": "431bab1fa7cd7ee518eb48ede93426cf5060e128",
+      "bytes": 6869
+    },
+    {
+      "source": "tests/evaluation-read-efficiency.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/evaluation-read-efficiency.test.cjs",
+      "sha256": "5c785a0744a9e7addd6b4c6361ab3f262c0cae895e354a85d082bc0c4e130f15",
+      "git_blob": "9c6358c4887482abf9fa5c44f33d5af3dcae3586",
+      "bytes": 10899
+    },
+    {
+      "source": "tests/excel-export.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/excel-export.test.cjs",
+      "sha256": "ae5257538661c0f93033741738bc6eedd362b86667a5afd2ed8e95eb4bbee907",
+      "git_blob": "28f5f4c158b0b23dbec963399ca820a9e7686d5b",
+      "bytes": 20288
+    },
+    {
+      "source": "tests/firestore-live.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/firestore-live.cjs",
+      "sha256": "158e76afb9eac95be0efc52a8ce497de290fb676ffefe839fa9758a01ce7e1a9",
+      "git_blob": "db92a5215adeb544fb084d5e8fdd02383995dcfd",
+      "bytes": 4728
+    },
+    {
+      "source": "tests/fixtures/part3-calibration.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/fixtures/part3-calibration.cjs",
+      "sha256": "957211d0eabcbfd81a3fb3eed3f1c9ba5a1f7acb60cc96f11f50e26067bef98d",
+      "git_blob": "57e55458cf2a4b580ea6c7b46be93a246f29fc69",
+      "bytes": 1907
+    },
+    {
+      "source": "tests/fixtures/part3-sanity.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/fixtures/part3-sanity.cjs",
+      "sha256": "1c9356e8ee2d0cc1eb59b622bfc91d25f5cefbf329aac88e725a5ba15e75e240",
+      "git_blob": "b617bc5e06ea433a23da954a0460622b9bc19587",
+      "bytes": 1748
+    },
+    {
+      "source": "tests/flowchart-decision-touch.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/flowchart-decision-touch.test.cjs",
+      "sha256": "0054a7f3ccc7842e3aae31d572b5db3deabf7a83fb0fae5f0694d5b66415ac28",
+      "git_blob": "8d0982cca3072ccebde6bb2a82da31f9acf98680",
+      "bytes": 7106
+    },
+    {
+      "source": "tests/flowchart-review.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/flowchart-review.test.cjs",
+      "sha256": "ad7ee64cced075e2f52d38810f75257758a64dbd45a36ff8833d5fca31324303",
+      "git_blob": "c4e3ee1f79b176a903cac3926cd0f7e58dc5a5a4",
+      "bytes": 8182
+    },
+    {
+      "source": "tests/instructor-live.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/instructor-live.cjs",
+      "sha256": "40c4611cb1759ca42957e2adc4b2819563819faa564d74902e74d1bf587cbd83",
+      "git_blob": "3b216dac3108a581c0ec1093a889374a7fe4219b",
+      "bytes": 7154
+    },
+    {
+      "source": "tests/instructor-ui.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/instructor-ui.cjs",
+      "sha256": "556ba3d5a2c32644bb8081e7aceb0bb7cd722b6fc717314734f236fe4525b39e",
+      "git_blob": "90affabf36a07be131faa0ce0372032d675b3209",
+      "bytes": 4866
+    },
+    {
+      "source": "tests/local-preview.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/local-preview.test.cjs",
+      "sha256": "9d4540a3e5b4edd96961c9d1892a548f8adfc1473d8d0512e6fa3a15085d62a2",
+      "git_blob": "038414a39b15d82a3ab81d2355a2902dc05fabd7",
+      "bytes": 4547
+    },
+    {
+      "source": "tests/objective-regrade.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/objective-regrade.test.cjs",
+      "sha256": "abd8baec26d1dd346150fb49d019f083e74e6e6948c3375d09d37398c20cfe81",
+      "git_blob": "13f48501f41a84489df0f25b4b3e502556518c3b",
+      "bytes": 7676
+    },
+    {
+      "source": "tests/part1-multiple-choice-regrade.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/part1-multiple-choice-regrade.test.cjs",
+      "sha256": "0f61c435a3c716dfd04337d4b32279f00401e19631734c30992b9dfc90699ccc",
+      "git_blob": "ca77ce3b8fd1d224b0ef99c050884cf54223b445",
+      "bytes": 7332
+    },
+    {
+      "source": "tests/part3-regrade.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/part3-regrade.test.cjs",
+      "sha256": "a8ae4e4765176559311b3a79e411510396482fe96339b6dfd3435a5900431f17",
+      "git_blob": "030d3454e5ec6121a3374dbe6fb46852cd274a8e",
+      "bytes": 6045
+    },
+    {
+      "source": "tests/part3-v2-ui.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/part3-v2-ui.cjs",
+      "sha256": "a396cdf896c01794a347a8f0e5ca826f29cc796f8cbcd4379421c6148eec1cf5",
+      "git_blob": "d8c3d290d17e8a16b393a347b5cb43b351d4ad82",
+      "bytes": 5477
+    },
+    {
+      "source": "tests/rounds.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/rounds.test.cjs",
+      "sha256": "c8cc14a6cf4c58b98fb321c9da45d50354a3dfa3b40607ceaf25fc695069530f",
+      "git_blob": "cfbd7868154c8226e4ae10f92b6428fc41e226a9",
+      "bytes": 31904
+    },
+    {
+      "source": "tests/semantic-live-cases.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/semantic-live-cases.cjs",
+      "sha256": "abc864566b7c488ad69885adb5a76d1e88e822698a1fdadbcc4fb580c2371c7f",
+      "git_blob": "d0224dace13c7a466e7c4afd4141c2f24b6b038f",
+      "bytes": 3034
+    },
+    {
+      "source": "tests/semantic-review-ui.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/semantic-review-ui.cjs",
+      "sha256": "50eb1959d2990100140d28744a93eb48af343ff2b78952264098f8a6fe581fd2",
+      "git_blob": "7042c335413e7937463fe1fcbb7117b3f29515c3",
+      "bytes": 6894
+    },
+    {
+      "source": "tests/student-review-modal.test.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/student-review-modal.test.cjs",
+      "sha256": "b2a4f9251d4a8cce93a2cd7afabc75947f21c1ceaaaebc20ddfcd844b8584c77",
+      "git_blob": "0c4050be5a9fda0731b81b57c6bf207ba51456ed",
+      "bytes": 13889
+    },
+    {
+      "source": "tests/teacher-controls.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/teacher-controls.cjs",
+      "sha256": "b065b63979c125de2b43c3deb86210bfd5ade5eff0ea2128f135dd36e5373356",
+      "git_blob": "81f312ed38244fc0811a45ae1f9d9fc25167bb2b",
+      "bytes": 9589
+    },
+    {
+      "source": "tests/tutor-login-ui.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/tutor-login-ui.cjs",
+      "sha256": "b35f3524a3b7e456b0a20d3f86f2bdc667300e85bcb4836db52faaa42d675fa5",
+      "git_blob": "ee8907aa5a9d3d425fe9c140da9bcff36a9dabb6",
+      "bytes": 8920
+    },
+    {
+      "source": "tests/workspace-ui.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tests/workspace-ui.cjs",
+      "sha256": "3de4bddb798f148374f67c439c31f858a153f9a71b7b7ba88e08422b23ec8e02",
+      "git_blob": "cc34d843112357381b949098a61d861a1e12ceb3",
+      "bytes": 11399
+    },
+    {
+      "source": "tools/apply-objective-regrade.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/apply-objective-regrade.cjs",
+      "sha256": "63c2a31289cdfe36c654313f85010437235750740f4b6832ac29d070f3a0c51a",
+      "git_blob": "29df0a71662b90cee936ff1dbae3c00ebbb509b2",
+      "bytes": 9346
+    },
+    {
+      "source": "tools/apply-part3-regrade.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/apply-part3-regrade.cjs",
+      "sha256": "0e942e0b62a09b4b3ddf4a06a70cefa45cfdd14d05fd314c6e4294a5eeb3fda5",
+      "git_blob": "1b014a2a17c3c539d24eb4fbc9c70081ba659130",
+      "bytes": 6368
+    },
+    {
+      "source": "tools/assessment-calibration-handler.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/assessment-calibration-handler.cjs",
+      "sha256": "85527b8d34cee5b0f4fbe37280f650987e55827f7a4e23a40854900605438bd0",
+      "git_blob": "bf0582870966f3645c756f84721c8f8da2ebcd7a",
+      "bytes": 2812
+    },
+    {
+      "source": "tools/audit-firestore-structure.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/audit-firestore-structure.cjs",
+      "sha256": "d76ceecaf554bd6603eeb9428a99aa9b3a239f15871e32ef574a3c3b3ffb814f",
+      "git_blob": "930448a494916a48a5aca5e2167a5ac2a4d2e391",
+      "bytes": 3231
+    },
+    {
+      "source": "tools/check.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/check.cjs",
+      "sha256": "7c63a51b766b7a4a4a6accaec8def6cb4c466ddbaf4239adf30b9b3ba74b1bbf",
+      "git_blob": "b30b8f92fd82e55032763961a757769a750f78fb",
+      "bytes": 944
+    },
+    {
+      "source": "tools/close-idle-classrooms.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/close-idle-classrooms.cjs",
+      "sha256": "d40853e84678a54d9094b774e604b2d40dcab48b4b2c874fb6b2f10516ca96e1",
+      "git_blob": "d3d330ff42bdea47c27ba646ae754a406b9cdfe3",
+      "bytes": 1412
+    },
+    {
+      "source": "tools/firebase-admin.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/firebase-admin.cjs",
+      "sha256": "bbd0a9e0139d08299a50209d716aa861dfafb8cdcba3c46ef023f55e1cc4ba30",
+      "git_blob": "68344b8db2f3a06c1f8389c06af65960a20df2e9",
+      "bytes": 2014
+    },
+    {
+      "source": "tools/local-preview-service.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/local-preview-service.cjs",
+      "sha256": "c251e09c81f14fefabd53e38840be6c0eefe5f7c9b51b57f2c5faad70219833f",
+      "git_blob": "77926d404dde93c1cc74448caf2b08d491804f33",
+      "bytes": 4913
+    },
+    {
+      "source": "tools/part3-calibrate.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/part3-calibrate.cjs",
+      "sha256": "257adc585a800708b6ebbf4e315eba33479973ab860b277c33a4ea77f9b32737",
+      "git_blob": "4a93d63cc7639120bdb471c4e90d166b9ca0cb0a",
+      "bytes": 2427
+    },
+    {
+      "source": "tools/part3-grade-plan.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/part3-grade-plan.cjs",
+      "sha256": "61fb8e3c4a1dba646001243a72455f09fb0afc05d22f86a8ee6446009b4a6c3d",
+      "git_blob": "387b894738fe727af7b374b3f29e455fececc851",
+      "bytes": 3124
+    },
+    {
+      "source": "tools/part3-snapshot.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/part3-snapshot.cjs",
+      "sha256": "8e9195f4168aa0dc0ea9188ab02f80a688df58f4f4b43550210ad0154aa94d94",
+      "git_blob": "e6c7b62eb6fa1b5b489c0f3735f2ac538a7bad57",
+      "bytes": 3118
+    },
+    {
+      "source": "tools/preview.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/preview.cjs",
+      "sha256": "b9534a31b2de738e9e3cd254522db369de79fe3e4d2c16fb70cb148c0f195ccc",
+      "git_blob": "391f7422bd55f95e8da8c994e966f41de7efb62b",
+      "bytes": 2892
+    },
+    {
+      "source": "tools/provision-firestore.cjs",
+      "archive": "archive/algorithm-studio/2026-10-12-bc8d51f/source/tools/provision-firestore.cjs",
+      "sha256": "ec720ae2a4c0fa5d668d8fad7d57539a406b501b0f86da5047c4b114cb75c5fa",
+      "git_blob": "342958033249ec03a05fc89b0fcf65b85dac184a",
+      "bytes": 1071
+    }
+  ],
+  "excluded_records": [
+    {
+      "source": "PRD.md",
+      "reason": "실제 학생을 특정하는 운영 복구 기록 포함"
+    },
+    {
+      "source": "audit/AUDIT_REPORT.md",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/ENVIRONMENT_STATUS.md",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/abstraction-concept.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/abstraction-lab.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/abstraction-quiz.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/algorithm-concept.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/algorithm-lab.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/algorithm-quiz.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/classroom.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/coverage-results.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/coverage.cjs",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/deep-results.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/deep.cjs",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/eval-part3.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/eval-shapes.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/eval.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/final-checks.cjs",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/final-results.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/findings.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/flowchart-1.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/flowchart-2.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/flowchart-3.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/flowchart-4.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/flowchart-5.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/flowchart-concept.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/flowchart-quiz.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/fresh-studio-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/fresh-studio-1366.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/fresh-studio-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/fresh-studio-1920.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/fresh-studio-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/interaction-results.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/interactions.cjs",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/portfolio.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/results.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/roadmap.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/run.cjs",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/static-results.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/studio-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/studio-1366.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/studio-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/studio-1920.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "audit/studio-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "docs/DEPLOYMENT.md",
+      "reason": "특정 운영 학생의 반·번호와 평가 정정 기록 포함"
+    },
+    {
+      "source": "docs/HANDOFF.md",
+      "reason": "실제 학생을 특정하는 운영 복구 기록 포함"
+    },
+    {
+      "source": "docs/HANDOFF_HISTORY_2026-09-15.md",
+      "reason": "특정 운영 학생의 반·번호와 평가 정정 기록 포함"
+    },
+    {
+      "source": "firebase.json",
+      "reason": "운영 OAuth 설정의 개인 메일 주소 포함"
+    },
+    {
+      "source": "tests/classroom-score-grid.test.cjs",
+      "reason": "운영 복구 대상 학생과 같은 개인 이름 문자열 포함"
+    },
+    {
+      "source": "tests/results/assessment-production-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/assessment-production-home.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/assessment-production.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/assessment-shared-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/assessment-shared-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/assessment-teacher-review.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/assessment-ui.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/assessment.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/browser.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/drag-shape-0.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/drag-shape-1.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/drag-shape-2.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/drag-shape-3.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/firestore-live.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/firestore-structure.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/home-320.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-live.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-production/classroom-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-production/classroom-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-production/classroom-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-production/classroom-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-production/login-320.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-production/results.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/assessment.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/browser.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/home-320.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/studio-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/studio-1366.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/studio-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/studio-1920.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/studio-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-classroom-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-classroom-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-classroom-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-classroom-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-eval-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-eval-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-eval-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-eval-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit1-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit1-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit1-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit1-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit2-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit2-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit2-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/ui-unit2-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/view-concept.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/view-quiz.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-regression/view-roadmap.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-ui/classroom-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-ui/classroom-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-ui/classroom-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-ui/classroom-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-ui/login-320.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/instructor-ui/results.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/production.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/production.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/assessment.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/browser.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/home-320.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/studio-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/studio-1366.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/studio-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/studio-1920.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/studio-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-classroom-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-classroom-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-classroom-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-classroom-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-eval-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-eval-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-eval-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-eval-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit1-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit1-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit1-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit1-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit2-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit2-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit2-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/ui-unit2-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/view-concept.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/view-quiz.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-regression/view-roadmap.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-review-live/extended.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-review-live/io-review.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-review-live/io-review.txt",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-review-live/results.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-review-live/reversed-review.txt",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-review/io-review.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-review/io-review.txt",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-review/results.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-review/reversed-review.txt",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-review/variables-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/semantic-review/variables-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/studio-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/studio-1366.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/studio-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/studio-1920.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/studio-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/teacher-controls-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/teacher-controls-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/teacher-controls.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/teacher-login-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/teacher-production-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/teacher-production-home.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/teacher-production.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/assessment.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/browser.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/home-320.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/studio-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/studio-1366.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/studio-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/studio-1920.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/studio-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-classroom-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-classroom-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-classroom-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-classroom-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-eval-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-eval-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-eval-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-eval-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit1-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit1-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit1-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit1-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit2-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit2-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit2-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/ui-unit2-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/view-concept.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/view-quiz.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-entry-regression/view-roadmap.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-login-ui.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-workspace-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/tutor-workspace-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-classroom-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-classroom-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-classroom-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-classroom-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-eval-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-eval-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-eval-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-eval-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-production-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-production-home.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-production.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-unit1-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-unit1-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-unit1-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-unit1-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-unit2-1024.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-unit2-1440.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-unit2-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/ui-unit2-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/view-concept.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/view-quiz.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/view-roadmap.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/workspace-polish-collapsed.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/workspace-polish-dragged.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/workspace-polish-expanded.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/workspace-polish-result-390.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/workspace-polish-result-768.png",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tests/results/workspace-ui.json",
+      "reason": "검사·운영 결과 또는 학생 자료 포함 가능성이 있는 기록"
+    },
+    {
+      "source": "tools/provision-instructor.cjs",
+      "reason": "운영 소유자 UID·개인 메일·역할 계정 식별정보 포함"
+    },
+    {
+      "source": "tools/resolve-makeup-records.cjs",
+      "reason": "실제 학생 식별정보·운영 보관 회차 경로가 고정된 복구 도구"
+    }
+  ]
+}

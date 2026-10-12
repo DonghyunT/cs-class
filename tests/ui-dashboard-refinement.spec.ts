@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { LESSONS } from '../src/lib/classroom/catalog';
+import { RELEASED_LESSONS } from '../src/lib/classroom/catalog';
 import { emptyWork } from '../src/lib/classroom/progress';
 import { buildProgrammingProject } from '../src/lib/classroom/programming-entry';
 import { seoulToday } from '../src/lib/classroom/planner';
@@ -68,17 +68,18 @@ test('새 로그인은 같은 교사도 기본 반으로 초기화하고 담당 
 
 test('학생 이번 수업 우선·구체적 이어갈 곳과 다음 일정 5개·나머지 수', async ({ page }, testInfo) => {
   await readyStudent(page.request);
-  const programming = LESSONS.find((item) => item.id === 'programming-13')!;
-  const work = Object.fromEntries(LESSONS.map((lesson) => [lesson.id, emptyWork(lesson)]));
+  const programming = RELEASED_LESSONS.find((item) => item.id === 'programming-13')!;
+  const recentReview = RELEASED_LESSONS.find((item) => item.id === 'review-abstraction')!;
+  const work = Object.fromEntries(RELEASED_LESSONS.map((lesson) => [lesson.id, emptyWork(lesson)]));
   work[programming.id].updatedAt = 1000;
   work[programming.id].draft.stage = 'practice';
   work[programming.id].draft.programming!.mission = 'multiply';
-  work['sequence-lab'].updatedAt = 2000;
-  work['sequence-lab'].draft.stage = 'quiz';
+  work[recentReview.id].updatedAt = 2000;
+  work[recentReview.id].draft.stage = 'quiz';
   await page.route('**/api/classroom/student', async (route) => {
     const response = await route.fetch();
     const data = await response.json() as StudentDashboard;
-    await route.fulfill({ response, json: { ...data, classroom: { ...data.classroom, currentLessonId: programming.id, openedLessonIds: LESSONS.map((lesson) => lesson.id) }, lessons: LESSONS, work } });
+    await route.fulfill({ response, json: { ...data, classroom: { ...data.classroom, currentLessonId: programming.id, openedLessonIds: RELEASED_LESSONS.map((lesson) => lesson.id) }, lessons: RELEASED_LESSONS, work } });
   });
   await page.route('**/api/classroom/schedule?**', async (route) => {
     const response = await route.fetch(); const data = await response.json();
@@ -96,7 +97,7 @@ test('학생 이번 수업 우선·구체적 이어갈 곳과 다음 일정 5개
   const cards = page.locator('article');
   await expect(cards.first()).toContainText(programming.title);
   await expect(cards.first()).toContainText('이어갈 곳: 실습 · 곱셈 계산기');
-  await expect(cards.nth(1)).toContainText(LESSONS.find((item) => item.id === 'sequence-lab')!.title);
+  await expect(cards.nth(1)).toContainText(recentReview.title);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('student-current-first-390.png'), fullPage: true });
@@ -104,12 +105,12 @@ test('학생 이번 수업 우선·구체적 이어갈 곳과 다음 일정 5개
 
 test('교사 현재 반 업무가 개인 할 일보다 먼저이고 사람과 작품 개수를 구분', async ({ page }, testInfo) => {
   await readyTeacher(page.request);
-  const lesson = LESSONS.find((item) => item.id === 'programming-13')!;
+  const lesson = RELEASED_LESSONS.find((item) => item.id === 'programming-13')!;
   const work = emptyWork(lesson); work.updatedAt = 1000;
   work.missions = Object.fromEntries(['name','multiply','average'].map((id) => [id, { validation: null, submission: { id, order: [], entryProject: buildProgrammingProject(), submittedAt: 1000 } }]));
   await page.route('**/api/classroom/teacher?**', async (route) => {
     const response = await route.fetch(); const data = await response.json() as TeacherDashboard;
-    await route.fulfill({ response, json: { ...data, lessons: LESSONS, selectedLessonId: lesson.id, classroom: { ...data.classroom, currentLessonId: lesson.id }, students: [{ uid: 'ui-dashboard', studentId: '20188', mustChangePassword: false, work }] } });
+    await route.fulfill({ response, json: { ...data, lessons: RELEASED_LESSONS, selectedLessonId: lesson.id, classroom: { ...data.classroom, currentLessonId: lesson.id }, students: [{ uid: 'ui-dashboard', studentId: '20188', mustChangePassword: false, work }] } });
   });
   await page.goto('/teacher');
   const actions = page.getByRole('region', { name: '교사가 확인할 일', exact: true });
@@ -122,7 +123,7 @@ test('교사 현재 반 업무가 개인 할 일보다 먼저이고 사람과 �
 
 test('교사 단계 막대는 전체 학생 중 필수 활동을 모두 완료한 학생 수를 표시', async ({ page }) => {
   await readyTeacher(page.request);
-  const lesson = LESSONS.find((item) => item.id === 'programming-13')!;
+  const lesson = RELEASED_LESSONS.find((item) => item.id === 'programming-13')!;
   const completed = emptyWork(lesson);
   completed.conceptSolved = lesson.concepts.map((item) => item.id);
   completed.quizSolved = lesson.quiz.map((item) => item.id);
@@ -139,7 +140,7 @@ test('교사 단계 막대는 전체 학생 중 필수 활동을 모두 완료�
     const response = await route.fetch();
     const data = await response.json() as TeacherDashboard;
     await route.fulfill({ response, json: {
-      ...data, lessons: LESSONS, selectedLessonId: lesson.id,
+      ...data, lessons: RELEASED_LESSONS, selectedLessonId: lesson.id,
       classroom: { ...data.classroom, currentLessonId: lesson.id },
       students: [completed, partial, null].map((work, index) => ({
         uid: `stage-count-${index}`, studentId: `2108${index}`, mustChangePassword: false, work,
@@ -160,8 +161,8 @@ test('교사 단계 막대는 전체 학생 중 필수 활동을 모두 완료�
 
 test('교사 이번 수업 카드의 미지정·빈 수업·선택 복습·조회 실패 경계', async ({ page }) => {
   await readyTeacher(page.request);
-  const lesson = LESSONS.find((item) => item.id === 'programming-13')!;
-  const review = LESSONS.find((item) => item.mode === 'review')!;
+  const lesson = RELEASED_LESSONS.find((item) => item.id === 'programming-13')!;
+  const review = RELEASED_LESSONS.find((item) => item.mode === 'review')!;
   const work = emptyWork(lesson);
   work.updatedAt = 1000;
   work.missions = { name: { validation: null, submission: { id: 'first-submission', order: [], entryProject: buildProgrammingProject(), submittedAt: 1000 } } };

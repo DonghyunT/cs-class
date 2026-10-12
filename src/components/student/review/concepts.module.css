@@ -1,24 +1,78 @@
-.experience{display:grid;gap:18px;margin:24px 0;font-size:18px;line-height:1.7;min-width:0}
-.experience h4{font-size:24px;line-height:1.4;margin:0}
-.question{background:var(--warm-surface);border:1px solid var(--warm-border);border-radius:14px;padding:16px 20px;color:var(--warm-foreground)}
+.experience{display:grid;gap:20px;margin:20px 0;font-size:17px;line-height:1.7;min-width:0}
+.experience h4{font-size:22px;line-height:1.4;margin:0;font-weight:720;color:#1e293b}
+.question{background:var(--warm-surface);border:1px solid var(--warm-border);border-radius:14px;padding:16px 20px;color:var(--warm-foreground);font-size:16px;margin:0}
 .scene{background:#f6f8fc;border:1px solid #dde5f0;border-radius:18px;padding:16px;min-width:0}
 .scene svg{display:block;width:100%;max-height:300px}
 .scene text{font-size:20px;fill:#334861;font-family:inherit}
+
+/* 단계별 카드 컨테이너 */
+.stepCard{background:#ffffff;border:1px solid #dde5f0;border-radius:16px;padding:18px 20px;display:grid;gap:14px;box-shadow:0 2px 8px rgba(32,54,85,0.04)}
+.stepHeader{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.stepBadge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#2e5fab;background:#edf4ff;padding:4px 10px;border-radius:8px;letter-spacing:0.02em}
+.stepHint{font-size:14px;color:#64748b;margin:0}
+
+/* 1단계: 구조 선택 카드 그리드 */
+.structureGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.cardButton{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:14px 16px;border:1.5px solid #cbd5e1;border-radius:12px;background:#ffffff;cursor:pointer;text-align:left;transition:all 0.15s ease;min-height:64px}
+.cardButton:hover{border-color:#3b82f6;background:#f8fafc}
+.cardButton[aria-pressed=true]{border-color:#376fc8;background:#edf5ff;box-shadow:0 0 0 1px #376fc8}
+.cardTitle{font-size:16px;font-weight:700;color:#1e293b}
+.cardButton[aria-pressed=true] .cardTitle{color:#1d4ed8}
+.cardDesc{font-size:13px;color:#64748b;line-height:1.4}
+.cardButton[aria-pressed=true] .cardDesc{color:#2563eb}
+
+/* 서브 칩 영역 */
+.subChipsArea{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f1f5f9;border-radius:10px;font-size:14px;flex-wrap:wrap}
+.subChipsArea strong{color:#334155;font-size:13px;font-weight:600}
+.chipsGroup{display:flex;gap:6px}
+.chipButton{padding:6px 14px;border:1px solid #cbd5e1;border-radius:20px;background:#ffffff;font-size:14px;font-weight:600;color:#475569;cursor:pointer;min-height:36px}
+.chipButton:hover{border-color:#3b82f6}
+.chipButton[aria-pressed=true]{background:#376fc8;border-color:#376fc8;color:#ffffff}
+
+/* 2단계: 표현 방식 세그먼트 탭 */
+.segmentedTabs{display:inline-flex;padding:4px;background:#e2e8f0;border-radius:12px;gap:4px;width:fit-content}
+.segmentedTab{padding:8px 18px;border:none;border-radius:8px;background:transparent;font-size:15px;font-weight:600;color:#475569;cursor:pointer;transition:all 0.15s ease;min-height:40px}
+.segmentedTab[aria-pressed=true]{background:#ffffff;color:#1e293b;box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+
+/* 3단계: 실행 조작 바 */
+.runActions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.runPrimary{min-height:44px;padding:10px 22px;font-size:16px;font-weight:700;border-radius:10px;background:#2563eb;color:#ffffff;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.runPrimary:hover{background:#1d4ed8}
+.runSecondary{min-height:44px;padding:8px 16px;font-size:15px;border-radius:10px;border:1px solid #cbd5e1;background:#ffffff;color:#334155;cursor:pointer}
+.runSecondary:hover{background:#f8fafc;border-color:#94a3b8}
+.runSecondary:disabled{opacity:0.5;cursor:not-allowed}
+.runStop{min-height:44px;padding:8px 16px;font-size:15px;border-radius:10px;border:1px solid #fca5a5;background:#fef2f2;color:#b91c1c;cursor:pointer}
+.runStop:hover{background:#fee2e2}
+
+/* 5대 조건 카드 그리드 */
+.conditionGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.conditionCard{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 8px;border:1.5px solid #cbd5e1;border-radius:12px;background:#ffffff;cursor:pointer;text-align:center;min-height:64px}
+.conditionCard:hover{border-color:#3b82f6;background:#f8fafc}
+.conditionCard[aria-pressed=true]{border-color:#376fc8;background:#edf5ff;box-shadow:0 0 0 1px #376fc8}
+.conditionCard strong{font-size:16px;color:#1e293b}
+.conditionCard[aria-pressed=true] strong{color:#1d4ed8}
+
+/* 기존 공통 레거시 및 결과 스타일 유지 */
 .controls{display:flex;flex-wrap:wrap;gap:10px}
 .controls button{min-height:44px;min-width:44px;font-size:16px;padding:10px 16px;border:1px solid #8091aa;border-radius:10px;background:white;color:#334861;white-space:normal}
 .controls button[aria-pressed=true]{color:#fff;background:#376fc8;border-color:#376fc8}
 .controls button.primaryAction{color:#fff;background:#376fc8;border-color:#376fc8}
 .controls button.secondaryAction{font-size:14px;border-color:transparent;background:transparent;color:#526173}
 .controls button:disabled{opacity:.5;cursor:default}
-.result{border-left:4px solid #376fc8;background:#eef4ff;border-radius:8px;padding:14px 18px;font-size:18px;line-height:1.7}
-.note{font-size:14px;color:#526173}
+.result{border-left:4px solid #376fc8;background:#eef4ff;border-radius:8px;padding:14px 18px;font-size:16px;line-height:1.7;margin:0}
+.note{font-size:14px;color:#526173;margin:0}
 .flow{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:0}
-.flow li{border:1px solid #cbd8eb;background:white;padding:10px 14px;border-radius:10px;font-size:16px}
-.flow li:not(:last-child)::after{content:" →";color:#376fc8}
+.flow li{border:1px solid #cbd8eb;background:white;padding:8px 12px;border-radius:8px;font-size:15px}
+.flow li:not(:last-child)::after{content:" →";color:#376fc8;margin-left:8px}
 .representation{overflow:auto;max-width:100%;border:1px solid #dde5f0;border-radius:14px;background:#f6f8fc;padding:16px}
 .representation pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:16px;margin:0}
 .representation svg{display:block;min-width:650px;width:100%;height:150px}
 .representation .selectionDiagram{min-width:900px;height:auto}
 .representation text{font-size:18px;fill:#334861;font-family:inherit}
 .experience :is(button,[tabindex]):focus-visible{outline:3px solid #376fc8;outline-offset:4px}
-@media(max-width:600px){.experience,.result{font-size:16px}.experience h4{font-size:24px}.question{padding:14px}.scene{padding:10px}}
+@media(max-width:768px){
+  .structureGrid{grid-template-columns:1fr}
+  .conditionGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .conditionGrid > :last-child:nth-child(odd){grid-column:span 2}
+}
+@media(max-width:600px){.experience,.result{font-size:16px}.experience h4{font-size:22px}.question{padding:14px}.scene{padding:10px}}

@@ -94,7 +94,8 @@ test("abstraction: 상태·조건과 목표를 연결하고 하위 단계를 펼
 test("abstraction-workbook: AI 대기·실패와 저장503·충돌409 뒤에도 입력을 복원한다", async ({ page }, testInfo) => {
   const endpoint = await prepare(page, "review-abstraction");
   await page.getByRole("tab", { name: /실습/ }).click();
-  await page.getByRole("button", { name: "실전 워크북", exact: true }).click();
+  for (let step = 1; step < 4; step++) await page.getByRole("button", { name: "맛보기 다음", exact: true }).click();
+  await page.getByRole("button", { name: "나의 실전 워크북 시작", exact: true }).click();
   await page.getByLabel("고민 키워드", { exact: true }).fill("과제 계획");
   const current = page.getByLabel("현재 상태", { exact: true });
   await current.fill("과제 하나가 남았어요");
@@ -207,10 +208,10 @@ test("concept-nav: 연결된 수업과 공개 프로토타입의 개념 진입",
 test("algorithm-scene: 그림의 도포 면과 로봇 해석 예시", async ({ page }) => {
   await prepare(page);
   const scene = page.getByRole("img", { name: "잼을 바르는 면 비교" });
-  await page.getByRole("button", { name: "잼을 발라", exact: true }).click();
+  await page.getByRole("group", { name: "바르는 면 비교", exact: true }).getByRole("button", { name: /^잼을 발라/ }).click();
   await expect(scene.locator('[data-jam="edge"]')).toBeVisible();
   await expect(page.getByText(/이 체험 로봇의 해석 예시/)).toBeVisible();
-  await page.getByRole("button", { name: "넓은 면에 골고루 발라", exact: true }).focus();
+  await page.getByRole("group", { name: "바르는 면 비교", exact: true }).getByRole("button", { name: /^넓은 면에 골고루 발라/ }).focus();
   await page.keyboard.press("Enter");
   await expect(scene.locator('[data-jam="flat"]')).toBeVisible();
   await expect(scene.locator('[data-jam="edge"]')).toHaveCount(0);
@@ -221,14 +222,14 @@ test("algorithm-scene: 그림의 도포 면과 로봇 해석 예시", async ({ p
 test("algorithm-scene: 3회 자동 종료·외부 중지·움직임 줄이기", async ({ page }) => {
   await prepare(page);
   await page.getByRole("button", { name: /알고리즘의 다섯 조건/ }).click();
-  await page.getByRole("button", { name: "3번만 반복", exact: true }).click();
+  await page.getByRole("group", { name: "반복 실행", exact: true }).getByRole("button", { name: /^3번만 반복/ }).click();
   await expect(page.getByRole("status", { name: "반복 결과" })).toContainText("3회 · 자동 종료");
-  await page.getByRole("button", { name: "끝없이 반복", exact: true }).click();
+  await page.getByRole("group", { name: "반복 실행", exact: true }).getByRole("button", { name: /^끝없이 반복/ }).click();
   await expect(page.getByRole("status", { name: "반복 결과" })).toContainText("실행 중");
   await page.getByRole("button", { name: "실행 중지", exact: true }).click();
   await expect(page.getByRole("status", { name: "반복 결과" })).toContainText("외부에서 중지");
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.getByRole("button", { name: "3번만 반복", exact: true }).click();
+  await page.getByRole("group", { name: "반복 실행", exact: true }).getByRole("button", { name: /^3번만 반복/ }).click();
   await expect(page.getByRole("status", { name: "반복 결과" })).toContainText("3회 · 자동 종료");
   await page.getByRole("button", { name: "입력", exact: true }).click();
   await expect(page.getByRole("region", { name: "알고리즘 개념 체험" }).getByText(/입력은 없을 수도/)).toBeVisible();
@@ -238,9 +239,9 @@ test("algorithm-scene: 조건·횟수와 표현 전환의 실제 경로", async 
   await prepare(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.getByRole("button", { name: /순차·선택·반복/ }).click();
-  await page.getByRole("button", { name: "선택", exact: true }).click();
+  await page.getByRole("group", { name: "알고리즘 구조 선택", exact: true }).getByRole("button", { name: /^선택 구조/ }).click();
   await page.getByRole("button", { name: "우유 없음", exact: true }).click();
-  await page.getByRole("button", { name: "흐름 실행", exact: true }).click();
+  await page.getByRole("group", { name: "흐름 실행 조작", exact: true }).getByRole("button", { name: /흐름 실행/ }).click();
   const path = page.getByRole("list", { name: "이번 실행 경로" });
   await expect(path).toContainText("물 넣기");
   await expect(path).not.toContainText("우유 넣기");
@@ -257,16 +258,16 @@ test("algorithm-scene: 조건·횟수와 표현 전환의 실제 경로", async 
       await page.getByRole("button", { name: "우유 있음", exact: true }).click();
       await expect(diagram.locator('[data-branch="milk"]')).toHaveAttribute("data-selected", "true");
       await expect(diagram.locator('[data-branch="water"]')).toHaveAttribute("data-selected", "false");
-      await page.getByRole("button", { name: "흐름 실행", exact: true }).click();
+      await page.getByRole("group", { name: "흐름 실행 조작", exact: true }).getByRole("button", { name: /흐름 실행/ }).click();
       await expect(path).toContainText("우유 넣기");
       await expect(path).not.toContainText("물 넣기");
       await page.getByRole("button", { name: "우유 없음", exact: true }).click();
-      await page.getByRole("button", { name: "흐름 실행", exact: true }).click();
+      await page.getByRole("group", { name: "흐름 실행 조작", exact: true }).getByRole("button", { name: /흐름 실행/ }).click();
     }
   }
-  await page.getByRole("button", { name: "반복", exact: true }).click();
+  await page.getByRole("group", { name: "알고리즘 구조 선택", exact: true }).getByRole("button", { name: /^반복 구조/ }).click();
   await page.getByRole("button", { name: "3회", exact: true }).click();
-  await page.getByRole("button", { name: "흐름 실행", exact: true }).click();
+  await page.getByRole("group", { name: "흐름 실행 조작", exact: true }).getByRole("button", { name: /흐름 실행/ }).click();
   await expect(path.getByText("젓기", { exact: true })).toHaveCount(3);
 });
 

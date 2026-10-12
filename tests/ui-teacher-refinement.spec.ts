@@ -1,12 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
-import { LESSONS } from "../src/lib/classroom/catalog";
+import { LESSONS, RELEASED_LESSONS } from "../src/lib/classroom/catalog";
 import { buildProgrammingProject, programmingMissions } from "../src/lib/classroom/programming-entry";
 import { emptyWork, progressFor, submissionCountFor } from "../src/lib/classroom/progress";
 import type { StudentRow, TeacherDashboard, Work } from "../src/lib/classroom/types";
 import { localOnly, readyTeacher } from "./emulator";
 
 const lesson = LESSONS.find((item) => item.id === "programming-13")!;
+const reviewLesson = RELEASED_LESSONS.find((item) => item.mode === "review")!;
 const project = buildProgrammingProject();
 function workWith(missions: string[], edited = false): Work {
   const work = emptyWork(lesson);
@@ -20,7 +21,7 @@ function workWith(missions: string[], edited = false): Work {
 const rows: StudentRow[] = [[], ["name"], ["name", "multiply", "move"], ["name", "multiply", "move", "keys"], ["average"], ["name"]].map((missions, index) => ({ uid: `ui-teacher-${index}`, studentId: `2018${index + 1}`, mustChangePassword: index === 0, work: { ...workWith(missions, index === 5), edited: index === 5, validated: false } }));
 
 async function syntheticRows(page: Page, state: "normal" | "no-lesson" | "no-students" | "review" = "normal", students = rows) {
-  const initialLessonId = state === "review" ? LESSONS.find(item => item.mode === "review")!.id : lesson.id;
+  const initialLessonId = state === "review" ? reviewLesson.id : lesson.id;
   await localOnly(page.request);
   await readyTeacher(page.request);
   await page.route("**/api/classroom/students/ui-teacher-*/work/**", async route => {
@@ -30,12 +31,12 @@ async function syntheticRows(page: Page, state: "normal" | "no-lesson" | "no-stu
   });
   await page.route("**/api/classroom/teacher?**", async (route) => {
     const url = new URL(route.request().url());
-    const selectedLessonId = state === "no-lesson" ? null : state === "review" ? LESSONS.find(item => item.mode === "review")!.id : url.searchParams.get("lessonId") ?? lesson.id;
+    const selectedLessonId = state === "no-lesson" ? null : state === "review" ? reviewLesson.id : url.searchParams.get("lessonId") ?? lesson.id;
     url.searchParams.delete("lessonId");
     const response = await route.fetch({ url: url.toString() });
     expect(response.status()).toBe(200);
     const data = await response.json() as TeacherDashboard;
-    await route.fulfill({ response, json: { ...data, selectedLessonId, lessons: LESSONS, classroom: { ...data.classroom, currentLessonId: selectedLessonId, openedLessonIds: state === "no-lesson" ? [] : [...new Set([lesson.id, "sequence-lab", ...(state === "review" ? [selectedLessonId!] : [])])] }, students: state === "no-students" ? [] : students.map((row) => state === "no-lesson" ? { ...row, work: null } : row) } });
+    await route.fulfill({ response, json: { ...data, selectedLessonId, lessons: RELEASED_LESSONS, classroom: { ...data.classroom, currentLessonId: selectedLessonId, openedLessonIds: state === "no-lesson" ? [] : RELEASED_LESSONS.map((item) => item.id) }, students: state === "no-students" ? [] : students.map((row) => state === "no-lesson" ? { ...row, work: null } : row) } });
   });
   await page.goto(`/teacher/students?classId=2-1${state === "no-lesson" ? "" : `&lessonId=${initialLessonId}`}`);
   if (state !== "no-students") await expect(page.locator("tbody tr")).toHaveCount(students.length);
@@ -161,10 +162,13 @@ test("교사 집계·진행 필터·검색 복구는 부분 제출과 선택 도
   await page.getByRole("searchbox", { name: "학번·닉네임 검색" }).fill("20183");
   await expect(page.locator("tbody tr")).toHaveCount(1);
   await expect(page.getByText("1명 표시 · 전체 6명", { exact: true })).toBeVisible();
-  await filter(page, "확인할 수업", LESSONS.find((item) => item.id === "sequence-lab")!.title);
+  await filter(page, "확인할 수업", reviewLesson.title);
   await expect(page.locator("tbody tr")).toHaveCount(6);
   await expect(page.getByRole("searchbox", { name: "학번·닉네임 검색" })).toHaveValue("");
   await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("모든 진행");
+  await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toBeDisabled();
+  await filter(page, "확인할 수업", lesson.title);
+  await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toBeEnabled();
   await filter(page, "진행 상태", "시작 전");
   await page.getByRole("searchbox", { name: "학번·닉네임 검색" }).fill("20181");
   await filter(page, "담당 반", "2학년 2반");
@@ -244,6 +248,9 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   await expect(page.locator("tbody").getByRole("progressbar")).toHaveCount(6);
   await expect(page.locator("tbody tr").filter({ hasText: "20184" }).getByRole("progressbar", { name: "20184 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "100");
   await expect(challenge.getByRole("progressbar", { name: "20185 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "0");
+  await expect(challenge.getByRole("progressbar", { name: "20185 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuetext", "필수 활동 0/13개 완료");
+  await expect(challenge.locator("svg [data-start-marker]")).toHaveCount(1);
+  await expect(page.locator("tbody tr").filter({ hasText: "20184" }).locator("svg [data-start-marker]")).toHaveCount(0);
   await expect(challenge.locator("svg [data-stage]")).toHaveCount(3);
   await expect(challenge.getByRole("button", { name: "20185 제출 작품 보기", exact: true })).toBeEnabled();
   await expect(challenge.getByRole("button", { name: "20185 비밀번호 초기화", exact: true })).toBeVisible();
@@ -253,6 +260,7 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   const row = page.locator("tbody tr");
   await expect(row).toHaveCount(1);
   await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuetext", "필수 활동 1/13개 완료");
+  await expect(row.locator("svg [data-start-marker]")).toHaveCount(0);
   const viewer = row.getByRole("button", { name: "20182 제출 작품 보기", exact: true });
   await viewer.click();
   await expect(page.getByRole("dialog", { name: "20182 학생의 제출 작품", exact: true })).toBeVisible();

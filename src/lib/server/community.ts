@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { FieldPath, type Transaction } from "firebase-admin/firestore";
-import { LESSONS } from "../classroom/catalog";
+import { LESSONS, RELEASED_LESSONS } from "../classroom/catalog";
 import { QUESTION_ANSWER_LIMIT, type CommunityData, type CommunityQuestion, type QuestionAuthor, type QuestionAnswer, type QuestionReplyResult, type QuestionSummary } from "../classroom/community";
 import type { ClassSettings } from "../classroom/types";
 import { authorized, identity, type Account } from "./auth";
@@ -66,7 +66,7 @@ export async function readCommunity(classId?: string, after?: string): Promise<C
       query = query.startAfter(cursor);
     }
     const questions = (await tx.get(query)).docs.map(doc => summary(doc.data() as StoredQuestion));
-    return { classroom: { id: selected.classroom.id, name: selected.classroom.name }, classrooms: selected.classrooms, lessons: LESSONS.filter(lesson => selected.classroom.openedLessonIds.includes(lesson.id)).map(({ id, title }) => ({ id, title })), questions: questions.slice(0, 50), nextCursor: questions.length > 50 ? questions[49].id : null };
+    return { classroom: { id: selected.classroom.id, name: selected.classroom.name }, classrooms: selected.classrooms, lessons: RELEASED_LESSONS.filter(lesson => selected.classroom.openedLessonIds.includes(lesson.id)).map(({ id, title }) => ({ id, title })), questions: questions.slice(0, 50), nextCursor: questions.length > 50 ? questions[49].id : null };
   });
 }
 export async function readQuestion(questionId: string): Promise<CommunityQuestion> {

@@ -1,9 +1,11 @@
 import { createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
-import { db, localOnly, readyStudent, readyTeacher, lessonId } from "./emulator";
-import { LESSONS } from "../src/lib/classroom/catalog";
+import { db, localOnly, readyStudent, readyTeacher } from "./emulator";
+import { LESSONS, RELEASED_LESSONS } from "../src/lib/classroom/catalog";
 import { emptyWork } from "../src/lib/classroom/progress";
+
+const lessonId = "programming-13";
 
 async function fixture(request: APIRequestContext) {
   await localOnly(request);
@@ -72,9 +74,9 @@ test("대시보드 성능: 동일 빌드·11개 반·30명·첫 관찰과 반복
     const studentValue = await (await page.request.get("/api/classroom/student")).json();
     const teacherValue = await (await teacher.request.get("/api/classroom/teacher?classId=2-1")).json();
     expect(teacherValue.students.map((item: { studentId: string }) => item.studentId)).toEqual(data.ids);
-    expect(Object.keys(studentValue.work)).toEqual(LESSONS.map((lesson) => lesson.id));
+    expect(Object.keys(studentValue.work)).toEqual(RELEASED_LESSONS.map((lesson) => lesson.id));
     expect(studentValue.work[lessonId]).toMatchObject({ revision: 2, draft: { stage: "quiz" } });
-    for (const lesson of LESSONS.filter((item) => item.id !== lessonId)) expect(studentValue.work[lesson.id]).toEqual(emptyWork(lesson));
+    for (const lesson of RELEASED_LESSONS.filter((item) => item.id !== lessonId)) expect(studentValue.work[lesson.id]).toEqual(emptyWork(lesson));
     const report = {
       environment: process.env.CI ? "local-production-build" : "local-development",
       label: process.env.CS_PERF_LABEL ?? "verification",

@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { Transaction } from "firebase-admin/firestore";
 import type { ClassSettings } from "../classroom/types";
 import { PLANNER_LIMIT, type ClassEvent, type SavedList, type ScheduleData, type Todo } from "../classroom/planner";
-import { LESSONS } from "../classroom/catalog";
+import { RELEASED_LESSONS } from "../classroom/catalog";
 import { authorized, identity, type Account } from "./auth";
 import { admin } from "./firebase";
 import { requireCondition } from "./errors";
@@ -50,7 +50,7 @@ async function scheduleScope(tx: Transaction, account: Account, requested?: stri
   const classrooms = snapshots.map((snap) => snap.data() as ClassSettings | undefined).filter((value): value is ClassSettings => !!value);
   const classroom = classrooms.find((value) => value.id === selected);
   requireCondition(classroom, 404, "CLASS_NOT_FOUND", "아직 준비되지 않은 반이에요.");
-  return { classroom: { id: classroom.id, name: classroom.name }, classrooms: classrooms.map(({ id, name }) => ({ id, name })), lessons: LESSONS.filter((value) => classroom.openedLessonIds.includes(value.id)).map(({ id, title }) => ({ id, title })) };
+  return { classroom: { id: classroom.id, name: classroom.name }, classrooms: classrooms.map(({ id, name }) => ({ id, name })), lessons: RELEASED_LESSONS.filter((value) => classroom.openedLessonIds.includes(value.id)).map(({ id, title }) => ({ id, title })) };
 }
 export async function readSchedule(classId?: string): Promise<ScheduleData> {
   return authorized(await identity(), async (tx, account) => {
@@ -64,9 +64,10 @@ export async function saveSchedule(classId: string, payload: unknown) {
   return authorized(await identity(), async (tx, account) => {
     requireCondition(account.role !== "student", 403, "FORBIDDEN", "일정은 담당 선생님이 관리해요.");
     const scope = await scheduleScope(tx, account, classId);
-    requireCondition(next.items.every((item) => !item.lessonId || scope.lessons.some((lesson) => lesson.id === item.lessonId)), 400, "INVALID_LESSON", "담당 반에 열린 수업만 연결할 수 있어요.");
     const ref = admin().db.collection("csSchedules").doc(scope.classroom.id);
     const previous = (await tx.get(ref)).data() as SavedList<ClassEvent> | undefined ?? { revision: 0, items: [] };
+    // Keep stored links when editing an old event; new links use the visible catalog.
+    requireCondition(next.items.every((item) => !item.lessonId || scope.lessons.some((lesson) => lesson.id === item.lessonId) || previous.items.some((stored) => stored.id === item.id && stored.lessonId === item.lessonId)), 400, "INVALID_LESSON", "담당 반에 열린 수업만 연결할 수 있어요.");
     const timetable = await readClassTimetable(tx, scope.classroom.id);
     return { ...scope, ...saveList(tx, ref, previous, next), timetable };
   });

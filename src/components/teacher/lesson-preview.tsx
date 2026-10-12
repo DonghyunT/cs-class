@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { SessionAccess } from "@/components/session-access";
 import { useSession } from "@/components/session-provider";
 import { Button } from "@/components/ui/button";
-import { LESSONS } from "@/lib/classroom/catalog";
+import { RELEASED_LESSONS } from "@/lib/classroom/catalog";
 import type { Lesson, Stage, WorkDraft } from "@/lib/classroom/types";
 import { LessonEditor, type LessonFrame } from "../student/lesson-editor";
 import { LessonShell } from "../student/lesson-shell";
@@ -31,7 +31,7 @@ function PreviewWorkspace({ lesson, classId, uid, reset, restoreResetFocus }: { 
   const canExpand = lesson.practice.type !== "ordering";
   const workspaceWide = canExpand && view.stage === "practice" && view.wide;
   const practiceFocused = canExpand && view.stage === "practice" && view.focused;
-  const controls = <><label>체험 수업<select aria-label="체험 수업" value={lesson.id} disabled={controller.busy} onChange={event => router.push(`/teacher/preview/${encodeURIComponent(event.target.value)}?classId=${encodeURIComponent(classId)}`)}>{LESSONS.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label><Button ref={resetButton} variant="outline" disabled={controller.busy} onClick={reset}>체험 초기화</Button></>;
+  const controls = <><label>체험 수업<select aria-label="체험 수업" value={lesson.id} disabled={controller.busy} onChange={event => router.push(`/teacher/preview/${encodeURIComponent(event.target.value)}?classId=${encodeURIComponent(classId)}`)}>{RELEASED_LESSONS.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label><Button ref={resetButton} variant="outline" disabled={controller.busy} onClick={reset}>체험 초기화</Button></>;
   return <LessonShell lesson={lesson} returnOrigin="lessons" workspaceWide={workspaceWide} practiceFocused={practiceFocused} practiceActive={view.stage === "practice"} onPracticeFocusedChange={focused => setView(current => ({ ...current, focused }))} preview={{ classId, controls }} saveLabel={frame?.saveLabel ?? "이 창에서 체험 중"} learningStatus={frame?.learningStatus} navigation={frame?.navigation} focusRequest={frame?.focusRequest}>
     <LessonEditor lesson={lesson} initial={initial} controller={controller} entryExport={exportRef} mode="preview" returnOrigin="lessons" workspaceWide={workspaceWide} practiceFocused={practiceFocused} onPracticeFocusedChange={focused => setView(current => ({ ...current, focused }))} onWorkspaceWideChange={wide => setView(current => ({ ...current, wide }))} onWorkspaceStageChange={reportStage} onFrameChange={setFrame} />
   </LessonShell>;

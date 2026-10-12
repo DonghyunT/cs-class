@@ -96,7 +96,9 @@ test("[R3-class-preparation] 숫자 반순·미지정·알 수 없는 수업과 
   await expect(table).toBeVisible();
   await expect(table.locator("tbody th")).toHaveText(["2학년 1반", "2학년 2반", "2학년 10반", "2학년 11반"]);
   await expect(table.getByRole("row", { name: /2학년 2반/ })).toContainText("미지정");
-  await expect(table.getByRole("row", { name: /2학년 11반/ })).toContainText("수업 정보 확인 필요");
+  const unpublished = table.getByRole("row", { name: /2학년 11반/ });
+  await expect(unpublished.getByRole("cell").nth(0)).toHaveText("미지정");
+  await expect(unpublished.getByRole("cell").nth(1)).toHaveText("0개");
   const row = table.getByRole("row", { name: /2학년 10반/ });
   await row.getByRole("link", { name: /설정 열기/ }).click();
   const dialog = page.getByRole("dialog", { name: "2학년 10반 수업 관리", exact: true });

@@ -2,10 +2,11 @@ import { expect, test } from "@playwright/test";
 import type { DocumentSnapshot } from "firebase-admin/firestore";
 import { LESSONS, RELEASED_LESSONS } from "../src/lib/classroom/catalog";
 import type { ClassSettings, TeacherDashboard } from "../src/lib/classroom/types";
-import { db, lessonId, localOnly, readyStudent, readyTeacher } from "./emulator";
+import { db, lessonId as legacyLessonId, localOnly, readyStudent, readyTeacher } from "./emulator";
 
 const classRef = db.collection("csClasses").doc("2-1");
 const emptyClassRef = db.collection("csClasses").doc("2-2");
+const lessonId = RELEASED_LESSONS[0].id;
 let originalClasses: DocumentSnapshot[] = [];
 
 test.beforeEach(async ({ request }) => {
@@ -34,15 +35,22 @@ test("수업 관리: 이번 수업과 열린 수업 전체·미지정·빈 반·
   const manage = page.getByRole("button", { name: "수업 관리", exact: true });
   await expect(manage).toBeVisible();
   await expect(manage.locator("..").getByRole("button", { name: "수업 새로고침", exact: true })).toBeVisible();
-  await expect(current.getByRole("heading", { level: 2 })).toHaveText(LESSONS[0].title);
-  await expect(opened.getByRole("listitem")).toHaveCount(LESSONS.length);
-  for (const lesson of LESSONS) {
+  await expect(current.getByRole("heading", { level: 2 })).toHaveText(RELEASED_LESSONS[0].title);
+  await expect(current.getByText("열린 수업 4개 · 기존 수업은 계속 복습할 수 있어요.", { exact: true })).toBeVisible();
+  const preparation = page.getByRole("table", { name: "담당 반 수업 준비", exact: true });
+  const classRow = preparation.getByRole("rowheader", { name: "2학년 1반", exact: true }).locator("..");
+  await expect(classRow.getByRole("cell").nth(0)).toHaveText(RELEASED_LESSONS[0].title);
+  await expect(classRow.getByRole("cell").nth(1)).toHaveText("4개");
+  await expect(opened.getByRole("listitem")).toHaveCount(RELEASED_LESSONS.length);
+  for (const lesson of RELEASED_LESSONS) {
     const item = opened.getByRole("listitem").filter({ has: page.getByRole("heading", { level: 3, name: lesson.title, exact: true }) });
     await expect(item).toContainText(lesson.description);
     await expect(item.getByText(lesson.id === lessonId ? "이번 수업" : "복습 가능", { exact: true })).toBeVisible();
   }
   await expect(opened.getByText("이번 수업", { exact: true })).toHaveCount(1);
-  await expect(opened.getByText("복습 가능", { exact: true })).toHaveCount(LESSONS.length - 1);
+  await expect(opened.getByText("복습 가능", { exact: true })).toHaveCount(RELEASED_LESSONS.length - 1);
+  for (const id of ["sequence-lab", "flowchart-lab", "entry-bot-lab"]) await expect(opened.getByRole("heading", { name: LESSONS.find(lesson => lesson.id === id)!.title, exact: true })).toHaveCount(0);
+  expect((await classRef.get()).data()!.openedLessonIds).toEqual(LESSONS.map(lesson => lesson.id));
   await expect(page.getByRole("link", { name: "학생 진행·제출 작품·계정 관리로 이동", exact: true })).toHaveCount(0);
   for (const width of [1440, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
@@ -50,16 +58,17 @@ test("수업 관리: 이번 수업과 열린 수업 전체·미지정·빈 반·
     const refreshBox = await page.getByRole("button", { name: "수업 새로고침", exact: true }).boundingBox();
     expect(refreshBox?.width).toBe(44); expect(refreshBox?.height).toBe(44);
     await expect(manage).toBeVisible();
-    await expect(opened.getByRole("heading", { level: 3 })).toHaveCount(LESSONS.length);
+    await expect(opened.getByRole("heading", { level: 3 })).toHaveCount(RELEASED_LESSONS.length);
     if (width === 1440 || width === 390) await page.screenshot({ path: testInfo.outputPath(`opened-lessons-${width}.png`), fullPage: true });
   }
 
   await classRef.update({ currentLessonId: null });
   await page.reload();
   await expect(current.getByRole("heading", { level: 2 })).toHaveText("이번 수업을 지정해 주세요.");
-  await expect(opened.getByRole("listitem")).toHaveCount(LESSONS.length);
+  await expect(opened.getByRole("listitem")).toHaveCount(RELEASED_LESSONS.length);
   await expect(opened.getByText("이번 수업", { exact: true })).toHaveCount(0);
-  await expect(opened.getByText("복습 가능", { exact: true })).toHaveCount(LESSONS.length);
+  await expect(opened.getByText("복습 가능", { exact: true })).toHaveCount(RELEASED_LESSONS.length);
+  expect((await classRef.get()).data()!.openedLessonIds).toEqual(LESSONS.map(lesson => lesson.id));
 
   await page.getByRole("combobox", { name: "담당 반", exact: true }).click();
   await page.getByRole("option", { name: "2학년 2반", exact: true }).click();
@@ -70,12 +79,32 @@ test("수업 관리: 이번 수업과 열린 수업 전체·미지정·빈 반·
   expect(errors).toEqual([]);
 });
 
+test("숨긴 과거 수업만 열린 반은 공개 수업 0개·미지정·비활성 선택을 표시하고 DB 원본을 유지", async ({ page }) => {
+  await readyTeacher(page.request);
+  const original = { id: "2-1", name: "2학년 1반", revision: 0, currentLessonId: legacyLessonId, openedLessonIds: [legacyLessonId] };
+  await classRef.set(original);
+  await page.goto("/teacher/classes?classId=2-1");
+  const current = page.locator('section[aria-labelledby="current-lesson-title"]');
+  await expect(current.getByRole("heading", { level: 2 })).toHaveText("이번 수업을 지정해 주세요.");
+  await expect(current.getByText("열린 수업 0개 · 기존 수업은 계속 복습할 수 있어요.", { exact: true })).toBeVisible();
+  const classRow = page.getByRole("table", { name: "담당 반 수업 준비", exact: true }).getByRole("rowheader", { name: "2학년 1반", exact: true }).locator("..");
+  await expect(classRow.getByRole("cell").nth(0)).toHaveText("미지정");
+  await expect(classRow.getByRole("cell").nth(1)).toHaveText("0개");
+  await expect(page.getByRole("region", { name: "열린 수업", exact: true }).getByRole("listitem")).toHaveCount(0);
+  await page.goto("/teacher/students?classId=2-1");
+  const lessonPicker = page.getByRole("combobox", { name: "확인할 수업", exact: true });
+  await expect(lessonPicker).toBeDisabled();
+  await expect(lessonPicker).toHaveText("열린 수업이 없어요");
+  await expect(page.getByRole("progressbar")).toHaveCount(0);
+  expect((await classRef.get()).data()).toEqual(original);
+});
+
 test("설정 저장: 실패 시 입력 유지·재시도·초점 복귀·토스트 자동 닫힘과 조작", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => { if (message.type() === "error" && !message.text().includes("503")) errors.push(message.text()); });
   await readyTeacher(page.request);
-  await classRef.set({ id: "2-1", name: "2학년 1반", revision: 0, currentLessonId: lessonId, openedLessonIds: [lessonId] });
+  await classRef.set({ id: "2-1", name: "2학년 1반", revision: 0, currentLessonId: lessonId, openedLessonIds: [lessonId, legacyLessonId] });
   await page.clock.install();
   let failNext = true;
   await page.route("**/api/classroom/classes/2-1", async (route) => {
@@ -90,6 +119,7 @@ test("설정 저장: 실패 시 입력 유지·재시도·초점 복귀·토스�
   await manage.focus();
   await manage.press("Enter");
   const dialog = page.getByRole("dialog", { name: "2학년 1반 수업 관리", exact: true });
+  await expect(dialog.getByRole("checkbox", { name: new RegExp(LESSONS.find(lesson => lesson.id === legacyLessonId)!.title) })).toHaveCount(0);
   const added = dialog.getByRole("checkbox", { name: new RegExp(RELEASED_LESSONS[1].title) });
   await added.check();
   const currentPicker = dialog.getByRole("combobox", { name: "이번 수업", exact: true });
@@ -105,14 +135,14 @@ test("설정 저장: 실패 시 입력 유지·재시도·초점 복귀·토스�
   await expect(summary).toContainText("새로 공개할 수업 1개");
   await expect(summary).toContainText("저장 후에는 이 화면에서 공개를 취소할 수 없어요.");
   await expect(toast).toHaveCount(0);
-  expect((await classRef.get()).data()).toMatchObject({ revision: 0, currentLessonId: lessonId, openedLessonIds: [lessonId] });
+  expect((await classRef.get()).data()).toMatchObject({ revision: 0, currentLessonId: lessonId, openedLessonIds: [lessonId, legacyLessonId] });
 
   await dialog.getByRole("button", { name: "설정 저장", exact: true }).press("Enter");
   await expect(dialog).toBeHidden();
   await expect(manage).toBeFocused();
   await expect(page.locator("#current-lesson-title")).toHaveText(RELEASED_LESSONS[1].title);
   await expect(toast).toBeVisible();
-  expect((await classRef.get()).data()).toMatchObject({ revision: 1, currentLessonId: RELEASED_LESSONS[1].id, openedLessonIds: [lessonId, RELEASED_LESSONS[1].id] });
+  expect((await classRef.get()).data()).toMatchObject({ revision: 1, currentLessonId: RELEASED_LESSONS[1].id, openedLessonIds: [lessonId, legacyLessonId, RELEASED_LESSONS[1].id] });
   await toast.hover();
   await page.clock.fastForward(6000);
   await expect(toast).toBeVisible();

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { db, readyStudent } from "./emulator";
+import { db, headers, readyStudent } from "./emulator";
+import type { Work } from "../src/lib/classroom/types";
 
 let originalClass: FirebaseFirestore.DocumentData | undefined;
 test.beforeEach(async () => { originalClass = (await db.collection("csClasses").doc("2-1").get()).data(); });
@@ -11,11 +12,18 @@ test.afterEach(async ({ page }) => {
   }
 });
 
-async function openPractice(page: import("@playwright/test").Page, id: string) {
+async function openPractice(page: import("@playwright/test").Page, id: string, workbookStep?: number) {
   await page.goto("about:blank");
   await readyStudent(page.request);
   await db.collection("csClasses").doc("2-1").update({ openedLessonIds: [id], currentLessonId: null });
   await db.collection("csWork").doc(`student-20101__${id}`).delete();
+  if (workbookStep) {
+    const work = await (await page.request.get(`/api/classroom/work/${id}`)).json() as Work;
+    if (work.draft.reviewProject?.type !== "abstraction") throw Error("wrong lesson");
+    Object.assign(work.draft.reviewProject, { tutorialDone: true, view: "workbook", step: workbookStep });
+    work.draft.stage = "practice";
+    expect((await page.request.post(`/api/classroom/work/${id}`, { headers, data: { revision: work.revision, draft: work.draft } })).ok()).toBe(true);
+  }
   await page.goto(`/classroom/${id}`);
   await page.getByRole("tab", { name: /실습/ }).click();
 }
@@ -41,9 +49,7 @@ test("원작 조리대의 실제 도구·8개 상태와 명령 오류를 보여 
 });
 
 test("추상화는 색으로 구분한 핵심·노이즈 작업 영역을 제공한다", async ({ page }) => {
-  await openPractice(page, "review-abstraction");
-  await page.getByRole("button", { name: "실전 워크북", exact: true }).click();
-  await page.getByRole("button", { name: "3. 생각 다이어트", exact: true }).click();
+  await openPractice(page, "review-abstraction", 3);
   await expect(page.getByRole("region", { name: "남길 핵심" })).toBeVisible();
   await expect(page.getByRole("region", { name: "버릴 노이즈" })).toBeVisible();
   await page.getByText("후보 단어 직접 편집", { exact: true }).click();

@@ -24,11 +24,23 @@ export function Flowchart({ controller, practiceFocused = false, mode = "student
   const [paletteBlock, setPaletteBlock] = useState(""), [active, setActive] = useState<string | undefined>(), [collapsed, setCollapsed] = useState(false), [focus, setFocus] = useState(0), [monitorOpen, setMonitorOpen] = useState(false);
   const [attempts, setAttempts] = useState<Record<string, number>>({});
   const openMonitor = useCallback(() => setMonitorOpen(true), []);
-  const heading = useRef<HTMLHeadingElement>(null), plannerToggle = useRef<HTMLButtonElement>(null), restorePlanner = useRef(false);
+  const practice = useRef<HTMLDivElement>(null), heading = useRef<HTMLHeadingElement>(null), plannerToggle = useRef<HTMLButtonElement>(null), restorePlanner = useRef(false);
   const missionId = project?.type === "flowchart" ? project.mission : null;
   useEffect(() => { clear(); }, [clear, missionId]);
   useEffect(() => { if (focus) heading.current?.focus(); }, [focus]);
   useEffect(() => { if (restorePlanner.current) { plannerToggle.current?.focus(); restorePlanner.current = false; } }, [collapsed]);
+  useEffect(() => {
+    const element = practice.current; if (!element) return;
+    const measure = () => {
+      const stage = element.querySelector("[data-flow-canvas]")?.parentElement?.closest("section")?.parentElement;
+      if (stage) element.style.setProperty("--workspace-height", `${Math.max(300, window.innerHeight - Math.max(12, stage.getBoundingClientRect().top) - 20)}px`);
+    };
+    measure(); window.addEventListener("resize", measure);
+    const observer = new ResizeObserver(measure), shell = element.closest("[data-lesson-shell]");
+    for (const header of shell?.querySelectorAll("header, [role='tablist'], [data-focused] > summary") ?? []) if (!element.contains(header)) observer.observe(header);
+    const nav = element.querySelector("nav"); if (nav) observer.observe(nav);
+    return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
+  }, [missionId, practiceFocused]);
   if (project?.type !== "flowchart") return null;
   const p = project, locked = controller.busy || controller.aiBusy;
   function edit(fields: Partial<FlowchartProject>) {
@@ -52,7 +64,7 @@ export function Flowchart({ controller, practiceFocused = false, mode = "student
   const clearable = mission?.slots.filter(slot => !slot.fixed && mission.palette.some(block => block.id === placements[slot.id])).map(slot => slot.id) ?? [];
   const empty = mission?.slots.filter(slot => !slot.fixed && !clearable.includes(slot.id)).map(slot => slot.id) ?? [];
   const feedback = missionFeedback[p.mission];
-  return <div className={styles.practice} data-practice="flowchart" data-focused={practiceFocused}>
+  return <div ref={practice} className={styles.practice} data-practice="flowchart" data-focused={practiceFocused}>
     <nav className={styles.stepNav} aria-label="순서도 실습">{steps.map((id, index) => <button key={id} disabled={locked} aria-pressed={p.mission === id} onClick={() => navigate(id)}>{stepNames[index]}{controller.work.missions?.[id]?.submission ? " ✓" : ""}</button>)}</nav>
     <h3 ref={heading} tabIndex={-1} className={styles.srOnly}>{mission?.title ?? (p.mission === "guide" ? "선생님과 함께하는 예시 공방" : "내 생각을 연결하는 자유 캔버스")}</h3>
     {mission ? <FlowExecution key={p.mission} onActive={setActive} graph={puzzleExecutionGraph(p.mission, placements)} missionSummary={feedback.summary} completionText={feedback.completion} completionAction={<Button disabled={locked} onClick={() => navigate(steps[Number(p.mission)])}>{feedback.next}</Button>}>

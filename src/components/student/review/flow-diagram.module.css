@@ -22,7 +22,10 @@
 .diagram [data-shape=process] > .nodeBody { fill:#eff6ff; stroke:#3b82f6; }
 .diagram [data-shape=io] > .nodeBody { fill:#ecfdf5; stroke:#10b981; }
 .diagram [data-shape=decision] > .nodeBody { fill:#fffbeb; stroke:#f59e0b; }
-.diagram [data-empty=true] > .nodeBody { stroke-dasharray:6 4; }
+.diagram [data-empty=true] > .nodeBody { stroke-dasharray:6 4; fill:#f8fafc; stroke:#94a3b8; }
+.diagram [data-empty=true] .nodeText { fill:#64748b; font-weight:600; }
+.dropBadge { pointer-events:none; }
+.dropBadge text { font-family:inherit; }
 .diagram :is([data-selected=true],[data-flow-node]:focus-visible) > .nodeBody { stroke:#4f46e5; stroke-width:4; filter:drop-shadow(0 0 5px rgb(99 102 241 / .4)); }
 .diagram [data-active=true] > .nodeBody { fill:#fef3c7; stroke:#f97316; stroke-width:4; }
 .diagram .shapeLabel { font-size:11px; font-weight:800; fill:#64748b; pointer-events:none; stroke:none; }

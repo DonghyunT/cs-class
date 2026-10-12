@@ -94,13 +94,13 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 
 ## 로컬 게스트 입장
 
-`npm run dev:emulator`가 [로컬 테스트 설정](../scripts/local-test-env.mjs)을 적용하고 [시드](../scripts/seed-emulator.mjs)에서 별도 게스트 학생 `21099`·교사를 준비합니다. 10반에 순서·순서도·엔트리봇을 공개하고 순서 수업을 이번 수업으로 지정합니다. 버튼 두 개는 학생·교사 로그인 카드에 함께 있으며 계정 입력 없이 각 대시보드로 이동합니다. 정책과 공유 계정의 범위는 [PRD](PRD.md#로컬-게스트-체험)를 따릅니다.
+`npm run dev:emulator`가 [로컬 테스트 설정](../scripts/local-test-env.mjs)을 적용하고 [시드](../scripts/seed-emulator.mjs)에서 별도 게스트 학생 `21099`·교사를 준비합니다. 초기 시드는 로컬2-1·2-10반에 `programming-13`·`review-abstraction`·`review-sandwich`·`review-flowchart`를 공개하고 `review-sandwich`를 이번 수업으로 지정합니다. 학생·교사 로그인 카드의 게스트 버튼은 계정 입력 없이 각 대시보드로 이동합니다. 정책과 공유 계정의 범위는 [PRD](PRD.md#로컬-게스트-체험)를 따릅니다.
 
-이 초기 시드는 기존 테스트 수업을 사용하는 공통 검사 기준이며 운영 반의 공개 목록을 복제하지 않습니다. 강아지 수업과 세 복습을 수동으로 확인하려면 로컬 게스트 교사의 수업 관리에서 `programming-13`·`review-abstraction`·`review-sandwich`·`review-flowchart`를 공개하고 이번 수업을 지정합니다. 다른 PC에서는 이전 로컬 반 설정·작품도 자동으로 나타나지 않으며, 복원한 demo export가 있으면 그 설정을 사용합니다. 이 로컬 준비로 운영 반 설정이나 학생 기록은 변경되지 않습니다.
+이번 수업은 로컬 게스트 교사의 수업 관리에서 바꿉니다. 초기 테스트 수업의 저장/API 호환 검사는 전용 합성 자료와 직접 경로를 사용하고 학생·교사 목록에는 노출하지 않습니다. 운영 반의 공개 목록을 복제하지 않으며 운영 반 설정이나 학생 기록을 변경하지 않습니다. 다른 PC의 이전 로컬 반 설정·작품은 자동으로 나타나지 않으며, 복원한 demo export가 있으면 그 설정을 사용합니다.
 
 표시와 POST `/api/auth/guest`는 [서버 조건](../src/lib/server/guest-mode.ts)을 같이 확인합니다. `VERCEL`이 없고, `FIREBASE_PROJECT_ID=demo-cs-class`·`FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099`·`FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`·서버 전용 `CS_TEST_GUEST_PASSWORD`가 모두 준비되어야 합니다. 파일을 배포에서 제외하는 방식이 아니라 동일한 코드가 실행 환경으로 표시와 요청을 판정합니다. 테스트 비밀번호를 브라우저에 전달하지 않으며 기존 Firebase 인증과 서버 세션을 사용합니다. `npm run dev`의 실제 Firebase 연결에는 게스트가 없습니다. 교사로 비밀번호 초기화를 시험하면 게스트 학생도 기존 정책에 따라 버튼 입장이 실패하므로 로컬 에뮬레이터를 종료·재실행해 계정을 복구합니다. 재실행하면 기존 로컬 기록도 사라집니다.
 
-실행 중인 로컬 에뮬레이터의 대상 검사는 `npm run test:e2e:running -- tests/guest-login.spec.ts`입니다. 환경 조건·요청 출처·역할/담당 반·계정 잠금·기록 복원·실패 입력 보존·모바일/키보드를 확인합니다. 이 검사를 실행하면 게스트 학생의 순서 수업 기록을 초기화하므로 수동 체험 중인 기록을 보존해야 할 때는 검사를 함께 실행하지 않습니다.
+실행 중인 로컬 에뮬레이터의 대상 검사는 `npm run test:e2e:running -- tests/guest-login.spec.ts`입니다. 환경 조건·요청 출처·역할/담당 반·계정 잠금·기록 복원·실패 입력 보존·모바일/키보드를 확인합니다. 이 검사는 게스트 접속과 합성 수업 기록을 변경하므로 수동 체험 중인 기록을 보존해야 할 때는 함께 실행하지 않습니다.
 
 ## 공통 선택 메뉴와 로그인 화면
 
@@ -115,8 +115,8 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 학생 `/student`·교사 `/teacher`는 공통 할 일·일정·수업 바로가기를 사용합니다. 학생의 전체 수업은 `/student/lessons`, 교사의 수업 설정은 `/teacher/classes`, 학생 진행·제출·계정은 `/teacher/students`, 전체 일정은 각각 `/student/schedule`·`/teacher/schedule`입니다. 교사 상세 링크의 `classId`·`lessonId`·`studentId`는 서버 권한 안에서 조회 조건으로 사용합니다. `SessionProvider`의 `useTeacherClass`는 UID·현재 담당 반을 검증한 탭 단위 `sessionStorage` 선택을 메뉴에 연결하며 실제 로그인/로그아웃·세션 종료 시 초기화합니다. 새 반 선택은 현재 URL만 갱신하고 다른 메뉴에는 `classId`만 전달합니다. 스토리지가 차단되면 메모리 선택을 사용합니다.
 
 - 공통 화면·목록·일정·담당 CSS는 `src/components/dashboard/`에 둡니다. `use-saved-list.ts`는 두 목록의 직렬 저장·실패 의도·명시적 충돌 재시도를 공유합니다. `todos.tsx`는 이 큐로 개인 할 일의 즉시 삭제/완료 표시와 실패 시 삭제 행 복원을 처리하고 저장 중인 행만 잠급니다. 반 일정의 삭제 처리는 기존대로 유지합니다. 기존 학습 저장·이동 보호를 재사용하며 개인 체크가 `csWork`를 변경하지 않습니다.
-- 교사 상세 화면은 `src/components/teacher/dashboard.tsx`·`teacher.module.css`에서 서버의 `openedLessonIds`로 전체 열린 수업을 표시하고 `currentLessonId`로 이번 수업을 구분합니다. 수업 설정 성공 알림은 `src/components/ui/toast.tsx`·`toast.module.css`와 설치된 Base UI Toast를 사용합니다. 화면별 manager를 만들고 동일 저장 알림은 갱신하며 반 전환 시 닫습니다. 기존 저장 실패·충돌·비밀번호 초기화 안내는 유지합니다.
-- `tests/teacher-class-management.spec.ts`는 열린 수업 전체·이번 수업 미지정·열린 수업 없음·저장 실패와 재시도·토스트 타이머/초점·학생/교사 메뉴 일관성을 검사합니다. 공용 탐색 변경의 최종 검증에는 기존 `navigation.spec.ts`·`dashboard-pilot.spec.ts`·`platform.spec.ts`·`interface-polish.spec.ts`를 함께 포함합니다.
+- 교사 상세 화면은 `src/components/teacher/dashboard.tsx`·`teacher.module.css`에서 서버의 정식 수업 목록과 `openedLessonIds`에 함께 있는 수업만 표시·집계하고 `currentLessonId`로 이번 수업을 구분합니다. 정식 목록 밖의 이번 수업은 미지정으로 표시하며 과거 수업 ID는 DB에 보존합니다. 수업 설정 성공 알림은 `src/components/ui/toast.tsx`·`toast.module.css`와 설치된 Base UI Toast를 사용합니다. 화면별 manager를 만들고 동일 저장 알림은 갱신하며 반 전환 시 닫습니다. 기존 저장 실패·충돌·비밀번호 초기화 안내는 유지합니다.
+- `tests/teacher-class-management.spec.ts`는 정식 열린 수업 표시·과거 ID 보존·이번 수업 미지정·열린 수업 없음·저장 실패와 재시도·토스트 타이머/초점·학생/교사 메뉴 일관성을 검사합니다. 공용 탐색 변경의 최종 검증에는 기존 `navigation.spec.ts`·`dashboard-pilot.spec.ts`·`platform.spec.ts`·`interface-polish.spec.ts`를 함께 포함합니다.
 - 전체 일정의 오늘 이후/지난 목록은 `seoulToday()`로 나누며 지난 항목은 native details에 접고 삭제하지 않습니다. 상단 일정 등록은 기존 폼에만 초점을 옮겨 작성/수정 중 입력을 유지합니다. `tests/schedule-history.spec.ts`와 기존 `dashboard-pilot.spec.ts`·`timetable.spec.ts`·`loading-states.spec.ts`로 날짜 경계·편집·반/권한·503/409·좁은 창/키보드를 확인합니다. 홈의 다가오는5개·달력과 CRUD/revision은 유지합니다.
 - 서버 저장과 권한은 `src/lib/server/planner.ts`, 계약·한국 날짜는 `src/lib/classroom/planner.ts`에서 관리합니다. 저장 모델은 [Firebase 안내](FIREBASE_SETUP.md#데이터와-남은-한계), 파일럿 가정·한도·미전송 내용의 경계는 [PRD](PRD.md#작은-버전의-경계와-저장-동작)를 따릅니다.
 - 로컬 `dev:emulator`를 계속 실행한 상태에서 목록을 추가한 뒤 새로고침·로그아웃·같은 합성 계정 재로그인으로 복원을 확인합니다. 교사 입장의 강사는 담당 10·11반의 일정을 등록하고 해당 반의 합성 학생은 조회합니다. 운영 계정·자료는 사용하지 않습니다.
@@ -129,10 +129,10 @@ Next.js 가이드는 설치본 `node_modules/next/dist/docs/`에 있습니다. �
 
 - 도움 표시는 [help.ts](../src/lib/classroom/help.ts)의 `helpContextLabel`과 [HelpRequests](../src/components/classroom/help-requests.tsx)를 사용합니다. 기존 `lessonId/stage/mission`으로 수업·단계·미션을 읽고 GET 성공 때만 `lastCheckedAt`을 갱신합니다. 선택적 `onStatusChange({classId,count,lastCheckedAt,loading,error})`가 홈 상단 건수와 이동에 같은 결과를 전달합니다. 첫 성공 전 count는 null이며 반 전환 때 이전 반의 상태를 사용하지 않습니다. 기존30초 갱신·요청 UUID·저장본 조회/resolve API를 유지합니다.
 - [반 준비표](../src/components/teacher/class-preparation-table.tsx)는 기존 `TeacherDashboard.classrooms/lessons`만 소비합니다. 설정 링크는 `/teacher/classes?classId=...&manage=1`이며 단일 값과 준비된 반을 확인한 뒤 [ManageLessons](../src/components/teacher/dialogs.tsx)를 엽니다. 닫을 때 native history로 manage를 지워 대화상자와 초점 복귀를 위해 조회 화면을 재생성하지 않습니다. 권한은 기존 teacher 응답과 설정 API가 확인합니다.
-- `/teacher/preview/[id]?classId=...`의 서버 페이지는 교사/강사 세션·담당 반·실제 카탈로그7수업을 확인합니다. [LessonPreview](../src/components/teacher/lesson-preview.tsx)와 [usePreviewWork](../src/components/teacher/use-preview-work.ts)는 실제 LessonShell/LessonEditor를 `mode="preview"`로 사용합니다. 학생 useWork를 조건부로 호출하거나 학생 계정으로 전환하지 않습니다. 작품은 컴포넌트 메모리에만 두며 초기화·새로고침·수업 변경·나가기 때 비웁니다.
+- `/teacher/preview/[id]?classId=...`의 서버 페이지와 평가 API는 교사/강사 세션·담당 반·기존 카탈로그의 일곱 수업을 확인합니다. 선택 화면에는 정식 네 수업만 표시하며 과거 세 수업의 직접 URL·API 호환은 유지합니다. [LessonPreview](../src/components/teacher/lesson-preview.tsx)와 [usePreviewWork](../src/components/teacher/use-preview-work.ts)는 실제 LessonShell/LessonEditor를 `mode="preview"`로 사용합니다. 학생 useWork를 조건부로 호출하거나 학생 계정으로 전환하지 않습니다. 작품은 컴포넌트 메모리에만 두며 초기화·새로고침·수업 변경·나가기 때 비웁니다.
 - `POST /api/teacher-preview/[id]/evaluate`의 본문은 `{classId, work, action}`입니다. [teacher-preview.ts](../src/lib/server/teacher-preview.ts)는 알려진 Work 필드/수업별 ID/기존 draft·action 스키마로 strict 검사한 뒤 `validateDraft`·`applyAction`만 사용합니다. route는 본문 읽기 전 역할, 읽은 뒤 담당 반·수업을 재확인하며 Origin/요청 헤더 경계와 전용1MiB 전송 한도를 사용합니다. 현재 초안과 각 이전 검증/제출 작품의 기존 byte·항목 한도는 그대로 검사하고 학생 API 한도는 늘리지 않습니다. review/aiReview/교사 승인/학생 UID 입력은 채택하지 않습니다.
 - preview는 학생 work/student/ai/help API와 학습·실제 제출·손들기 쓰기를 호출하지 않습니다. `flush`는 실제 Entry 입력을 메모리 초안으로 확정하고 실패에는 입력을 유지합니다. AI 요청과 교사 확인은 제한을 표시하고, 샌드위치는 로컬 규칙 해석, 자유 순서도는 기본 구조 확인까지만 제공합니다. `flowchart.tsx`의 학생 추상화 기록 GET도 mode 경계로 차단합니다. [공개 프로토타입](#프로그래밍-수업-프로토타입)의 미니 실행·탭 저장과 구분합니다.
-- 대상 검사는 `tests/teacher-preparation.spec.ts`·`teacher-lesson-preview.spec.ts`·`teacher-preview-api.spec.ts`와 기존 `help-requests.spec.ts`·`help-races.spec.ts`·`teacher-class-management.spec.ts`입니다. UI/평가 권한·첫/재조회 실패·반 전환·숫자 정렬·URL 재접속/초점·7수업·평가 실패/한도·학생/AI 요청0건 및 학습 컬렉션 불변을 확인합니다. 인증 세션 확인과 학습 쓰기는 구분합니다.
+- 대상 검사는 `tests/teacher-preparation.spec.ts`·`teacher-lesson-preview.spec.ts`·`teacher-preview-api.spec.ts`와 기존 `help-requests.spec.ts`·`help-races.spec.ts`·`teacher-class-management.spec.ts`입니다. UI/평가 권한·첫/재조회 실패·반 전환·숫자 정렬·URL 재접속/초점·정식 네 수업 선택·카탈로그 일곱 수업의 직접 URL/API 호환·평가 실패/한도·학생/AI 요청0건 및 학습 컬렉션 불변을 확인합니다. 인증 세션 확인과 학습 쓰기는 구분합니다.
 
 ### 학교 시간표 연동
 
@@ -166,7 +166,7 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 
 ## EntryJS 실습
 
-`entry-bot-lab`은 실제 `@entrylabs/entry` **4.0.23** 작업실을 사용합니다. 교사가 해당 수업을 반에 공개하면 학생의 열린 수업에 나타납니다. 에뮬레이터 시드는 10반에 엔트리봇을 공개합니다. 교사 수업 관리에서 공개 상태를 확인하고 합성 학생 `21001` 또는 게스트 학생으로 실습 탭을 선택합니다. 강사·학생 비밀번호는 위 로컬 테스트 설정을 따릅니다.
+`programming-13`의 실습과 호환용 `entry-bot-lab` 엔진은 실제 `@entrylabs/entry` **4.0.23** 작업실을 사용합니다. 로컬 프로그래밍 실습은 [게스트 시드](#로컬-게스트-입장)를 준비한 뒤 열린 수업에서 시작하거나 교사 수업 관리에서 이번 수업으로 지정합니다. `entry-bot-lab`은 신규 공개·목록 노출 없이 전용 합성 반 설정과 직접 URL/API로 호환 검사를 유지합니다. 강사·학생 비밀번호는 위 로컬 테스트 설정을 따릅니다.
 
 - `npm ci`의 `postinstall`과 `npm run dev`·`npm run build`의 준비 단계가 [자산 목록](../scripts/entryjs-assets.json)의 버전·SHA-512로 브라우저 파일을 준비합니다. npm 레지스트리·공식 Entry CDN·고정한 공식 예제 커밋을 사용하며 브라우저는 `/entryjs/vendor/`의 로컬 파일을 읽습니다. 첫 설치에는 인터넷과 `tar`가 필요합니다(Windows 기본 tar 또는 해당 OS의 tar). 자산·다운로드 캐시는 Git 제외 `public/entryjs/vendor/`·`scratch/entryjs/`에 생성됩니다. 필요하면 `npm run prepare:entryjs`로 다시 준비합니다. 무결성이 다른 파일은 빌드에 사용하지 않습니다.
 - [작업실 HTML](../public/entryjs/workspace.html)·[브리지](../public/entryjs/workspace.js)는 `allow-scripts`만 허용한 iframe에서 실행합니다. Next.js 앱의 React 19와 EntryJS 보조 UI의 React 18을 분리합니다. iframe의 설정 저장소는 메모리이며 부모 화면의 쿠키·DOM·저장소에 접근할 수 없습니다. 공개 자산에만 CORS와 OPTIONS를 허용하고 수업 API의 인증·권한·Origin 검사는 유지합니다.
@@ -310,6 +310,8 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 제품 정책은 [PRD](PRD.md#알고리즘-선택-복습--2026-10-05-확정), 원본 이식·AI 품질 근거는 [참고 자료](reference/algorithm-review-integration.md), 현재 공개 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 세 복습은 이미 11반에 공개했으며 아래 공개 명령은 후속 변경·복구의 절차입니다. 문서 재개만으로 운영 계획을 다시 적용하지 않습니다.
 
 - `src/lib/classroom/review/`에 원본 기준 순수 샌드위치/순서도 실행·검사·미션·추상화 데이터를 둡니다. React 화면은 `src/components/student/review/`에 모으고 기존 단일 저장 writer·revision·메모리 복구를 사용합니다. 학습 내용의 스냅샷과 화면 위치·탭을 구분합니다. 작품 수정 시 이전 제출본과 고정 교사 요청본은 유지합니다.
+- 추상화는 저장된 `tutorialDone`으로 최초 맛보기 완료를 확인하고 기존 단계·초안·제출을 유지합니다. AI 요청 단계와 최신 초안을 고정해 늦은 응답이 다른 단계나 학생 입력을 덮지 않게 합니다. 3단계 후보는 처음 모두 핵심에 두고 선택한 항목만 버리며, 첫 계획 초안은 기존 작성 내용이 없을 때만 채택합니다. 대화 읽던 위치는 단계별 ref로 보관하고 DOM 갱신 뒤 Effect에서 복원합니다. 전송은 Enter, 줄바꿈은 Shift+Enter이며 조합 중 Enter를 전송하지 않습니다. `review-abstraction-v1-ux.spec.ts`에서 기존 기록·실패·재접속·클립보드·단계 왕복을 확인합니다.
+- 순서도 연결 의미와 경로 검사는 기존 `FlowchartProject`·Map/Set·순수 실행기를 재사용합니다. 별도 그래프 라이브러리나 저장 스키마를 추가하지 않습니다. 다섯 실습의 작업실 높이는 공통 부모가 현재 캔버스 위치와 창 높이에서 계산하며, SVG 자체의 키보드 편집·포트 연결과 실행바는 검사합니다. `review-flowchart-v1-ui.spec.ts`는 V1 배치·다섯 단계 낮은 창·실제 계산/분기·긴 변수표/콘솔을 확인합니다.
 - 실습 표현은 원작 SVG·색상·배치를 재사용합니다. `sandwich-stage.tsx`는 실행 상태만 받아 그림을 표시하고 `studio.module.css`는 복습 작업실의 공통 표현만 맡습니다. 추상화·샌드위치·순서도의 화면별 CSS는 담당 컴포넌트 옆에 둡니다. 원본의 전역 DOM 조작·인증·외부 호출은 옮기지 않습니다. `tests/review-practice-ui.spec.ts`에서 실제 기호 놓기·실행 강조·넓게 보기·320/390/820/821px·줄인 모션을 확인하고, 저장·AI·교사 경계는 기존 세 복습 검사와 함께 실행합니다. Chromium의 HTML 끌어놓기 검사는 목표 위에서 두 번 움직여 `dragover`와 실제 `drop`을 발생시킵니다.
 - 순서도는 `flowchart.tsx`가 퍼즐·예시·자유 공방을, `flowchart-studio.tsx`가 기획서·처방전/리뷰/이미지 모달을 구성합니다. `flow-diagram.tsx`는 기호 편집·포트 연결·캔버스 이동·기호 옆 실행 조작, `flow-execution.tsx`는 실행 도구·모니터, `flowchart-export.ts`는 전체 문구·기획서·점검 상태의 PNG를 담당합니다. 순수 실행은 `flow-runner.mjs`·`flow-expressions.mjs`이며 문자열도 허용하지만 임의 JavaScript는 실행하지 않습니다. 기존 text/yes/no·연결·좌표는 호환 조회하고 배치 변경과 논리 변경을 구분합니다. 세부 회귀는 `review-flowchart-*.spec.ts`와 `review-flow-runner.test.mjs`에서 확인합니다.
 - `POST /api/classroom/ai`는 `lessonId,task,requestId(UUID),revision,input,missionId?,planning?`를 받고 서버가 현재 작품·열린 수업·학생 권한을 재확인합니다. `planning`은 자유 순서도의 `flow-plan` 후보에만 사용하며 저장된 작품을 채택 전에 바꾸지 않습니다. 샌드위치 해석의 HMAC은 사용자·실행회차·명령 ID·원문·동작·제공자에 연결됩니다. 저장과 제출은 서명과 원본 실행 규칙을 다시 검사합니다.

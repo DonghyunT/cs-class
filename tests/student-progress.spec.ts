@@ -9,8 +9,8 @@ import { auth, db, headers, initialPassword, localOnly, loginStudent, resetStude
 
 const studentId = "20190", uid = `student-${studentId}`, classId = "2-1";
 const programming = LESSONS.find(lesson => lesson.id === "programming-13")!;
-const sequence = LESSONS.find(lesson => lesson.id === "sequence-lab")!;
 const review = LESSONS.find(lesson => lesson.id === "review-abstraction")!;
+const reviews = LESSONS.filter(lesson => lesson.mode === "review");
 const endpoint = `/api/classroom/work/${programming.id}`;
 const studentEndpoint = "**/api/classroom/student";
 let originalClass: FirebaseFirestore.DocumentData | undefined;
@@ -108,30 +108,19 @@ test.afterAll(async () => {
   if (originalClass) await db.doc(`csClasses/${classId}`).set(originalClass);
 });
 
-test("entry-guidance: 정규 수업 추가로 비율이 내려가도 완료 수와 계산 설명을 유지한다", async ({ page }) => {
-  const regular = [sequence, LESSONS.find(lesson => lesson.id === "flowchart-lab")!, LESSONS.find(lesson => lesson.id === "entry-bot-lab")!];
-  const work = emptyWork(sequence); work.conceptSolved = sequence.concepts.map(concept => concept.id); work.quizSolved = [sequence.quiz[0].id]; work.updatedAt = Date.now();
-  await showDashboardFixture(page, [...regular, review], sequence.id, { [sequence.id]: work });
-  await expectProgress(page, "3/18", 17);
-  const guide = progressRegion(page).locator("details").filter({ has: page.getByText("진도 계산 안내", { exact: true }) });
-  await expect(guide).not.toHaveAttribute("open", "");
-  const toggle = guide.locator("summary"); await toggle.focus(); await toggle.press("Enter");
-  await expect(guide).toHaveAttribute("open", "");
-  await expect(guide).toContainText("완료 기록은 그대로예요.");
-  await expect(guide).toContainText("선택 복습과 도전은 제외해요.");
-  await showDashboardFixture(page, [...regular, programming, review], programming.id, { [sequence.id]: work });
-  await expectProgress(page, "3/31", 10);
-  await expect(progressRegion(page).getByText("진도 계산 안내", { exact: true })).toBeVisible();
+test("entry-guidance: 계산 안내 없이 정규 완료 수를 표시하고 선택 복습 추가로 집계를 바꾸지 않는다", async ({ page }) => {
+  const work = emptyWork(programming); work.conceptSolved = ["pc0", "pc1"]; work.quizSolved = ["language"]; work.updatedAt = Date.now();
+  await showDashboardFixture(page, [programming], programming.id, { [programming.id]: work });
+  await expectProgress(page, "3/13", 23);
+  await expect(progressRegion(page).getByText("진도 계산 안내", { exact: true })).toHaveCount(0);
+  await expect(progressRegion(page).locator("details")).toHaveCount(0);
+  await showDashboardFixture(page, [programming, ...reviews], programming.id, { [programming.id]: work });
+  await expectProgress(page, "3/13", 23);
+  await expect(progressRegion(page).getByText("진도 계산 안내", { exact: true })).toHaveCount(0);
 });
 
 test("필수 활동 개수를 합산하며 단계 평균·선택 복습·심화 제출을 제외", async ({ page }, testInfo) => {
-  await openLessons([sequence.id, programming.id, review.id], programming.id);
-  const finished = emptyWork(sequence);
-  finished.conceptSolved = sequence.concepts.map(concept => concept.id);
-  finished.quizSolved = sequence.quiz.map(question => question.id);
-  finished.submission = submission("sequence-submitted");
-  finished.updatedAt = Date.now();
-  await saveWork(finished);
+  await openLessons([programming.id, ...reviews.map(lesson => lesson.id)], programming.id);
   const partial = emptyWork(programming);
   partial.conceptSolved = ["pc0"];
   partial.quizSolved = ["language", "flow"];
@@ -145,28 +134,28 @@ test("필수 활동 개수를 합산하며 단계 평균·선택 복습·심화 
   optional.updatedAt = Date.now();
   await saveWork(optional);
   await page.goto("/student");
-  // Sequence: 6/6, programming: 4/13. Counts give 10/19, unlike averaging stage percentages.
-  await expectProgress(page, "10/19", 53);
+  // Four of thirteen required activities give 31%, unlike averaging 25%, 40%, and 25%.
+  await expectProgress(page, "4/13", 31);
   const overview = progressRegion(page);
   const concept = overview.getByRole("button", { name: /^개념 진도:/ });
   const quiz = overview.getByRole("button", { name: /^퀴즈 진도:/ });
   const practice = overview.getByRole("button", { name: /^실습 진도:/ });
-  await expect(concept).toHaveAccessibleName("개념 진도: 3/6개 완료, 50%");
-  await expect(quiz).toHaveAccessibleName("퀴즈 진도: 5/8개 완료, 63%");
-  await expect(practice).toHaveAccessibleName("실습 진도: 2/5개 완료, 40%");
+  await expect(concept).toHaveAccessibleName("개념 진도: 1/4개 완료, 25%");
+  await expect(quiz).toHaveAccessibleName("퀴즈 진도: 2/5개 완료, 40%");
+  await expect(practice).toHaveAccessibleName("실습 진도: 1/4개 완료, 25%");
   await expect(overview.getByRole("tooltip")).toHaveCount(0);
   await concept.focus();
   const tooltip = overview.getByRole("tooltip");
   await expect(tooltip).toContainText("개념");
-  await expect(tooltip).toContainText("3/6개 완료");
-  await expect(tooltip).toContainText("50%");
+  await expect(tooltip).toContainText("1/4개 완료");
+  await expect(tooltip).toContainText("25%");
   await concept.press("Escape");
   await expect(overview.getByRole("tooltip")).toHaveCount(0);
   await expect(concept).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(quiz).toBeFocused();
-  await expect(tooltip).toContainText("5/8개 완료");
-  await expect(tooltip).toContainText("63%");
+  await expect(tooltip).toContainText("2/5개 완료");
+  await expect(tooltip).toContainText("40%");
   await quiz.press("Escape");
   // The SVG strokes expose the same details as the keyboard/touch legend.
   const refresh = page.getByRole("button", { name: "수업 새로고침", exact: true });
@@ -203,23 +192,22 @@ test("필수 활동 개수를 합산하며 단계 평균·선택 복습·심화 
   }
   await page.mouse.move(stagePoints[2].x, stagePoints[2].y);
   await expect(tooltip).toContainText("실습");
-  await expect(tooltip).toContainText("2/5개 완료");
-  await expect(tooltip).toContainText("40%");
+  await expect(tooltip).toContainText("1/4개 완료");
+  await expect(tooltip).toContainText("25%");
   await page.mouse.move(stagePoints[0].x, stagePoints[0].y);
-  await expect(tooltip).toContainText("3/6개 완료");
+  await expect(tooltip).toContainText("1/4개 완료");
   // Details for one sector must not obstruct the other sectors.
   await page.mouse.move(stagePoints[1].x, stagePoints[1].y);
-  await expect(tooltip).toContainText("5/8개 완료");
-  await page.mouse.move(stagePoints[2].x, stagePoints[2].y);
   await expect(tooltip).toContainText("2/5개 완료");
+  await page.mouse.move(stagePoints[2].x, stagePoints[2].y);
+  await expect(tooltip).toContainText("1/4개 완료");
   await page.keyboard.press("Escape");
   await expect(overview.getByRole("tooltip")).toHaveCount(0);
   await expect(refresh).toBeFocused();
   await page.mouse.move(0, 0);
   await expect(overview.getByRole("tooltip")).toHaveCount(0);
   const lessonBars = page.getByRole("region", { name: "수업별 학습 진도", exact: true });
-  await expect(lessonBars.getByRole("progressbar")).toHaveCount(6);
-  await expect(lessonBars).toContainText(sequence.title);
+  await expect(lessonBars.getByRole("progressbar")).toHaveCount(3);
   await expect(lessonBars).toContainText(programming.title);
   for (const link of await lessonBars.getByRole("article").getByRole("link").all()) {
     const chrome = await link.evaluate(element => {
@@ -230,21 +218,42 @@ test("필수 활동 개수를 합산하며 단계 평균·선택 복습·심화 
     expect(chrome.background).toBe("rgba(0, 0, 0, 0)");
     expect(chrome.height).toBeGreaterThanOrEqual(44);
   }
-  await page.screenshot({ path: testInfo.outputPath("student-progress-53-percent.png"), fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath("student-progress-31-percent.png"), fullPage: true });
   await page.goto("/student/lessons");
-  for (const lesson of [sequence, programming]) {
+  for (const lesson of [programming]) {
     const card = page.locator("article").filter({ has: page.getByRole("heading", { name: lesson.title, exact: true }) });
     await expect(card.getByRole("progressbar")).toHaveCount(3);
   }
 });
 
-test("0%는 둥근 점 없이 이어진 배경만 표시하고 100%는 메인·격자에서 같은 세 구간을 채움", async ({ page }, testInfo) => {
+test("0%는 실제 값과 별도의 짧은 시작 표시를 유지하고 100%는 메인·격자에서 같은 세 구간을 채움", async ({ page }, testInfo) => {
   await openLessons([programming.id]);
   await page.goto("/student");
   await expectProgress(page, "0/13", 0);
   const overview = progressRegion(page);
   await expect(overview.locator("svg [data-stage]")).toHaveCount(3);
   await expect(overview.locator("svg path[stroke-dasharray]")).toHaveCount(0);
+  const start = overview.locator("svg [data-start-marker]");
+  await expect(start).toHaveCount(1);
+  const geometry = await start.evaluate(element => {
+    const path = element as SVGGeometryElement;
+    const point = path.getPointAtLength(0);
+    return { startX: point.x, startY: point.y, degrees: path.getTotalLength() / 78 * 180 / Math.PI, cap: getComputedStyle(path).strokeLinecap, stroke: getComputedStyle(path).stroke };
+  });
+  expect(geometry.startX).toBeCloseTo(90, 1);
+  expect(geometry.startY).toBeCloseTo(12, 1);
+  expect(geometry.degrees).toBeGreaterThanOrEqual(4);
+  expect(geometry.degrees).toBeLessThanOrEqual(6);
+  expect(geometry.cap).toBe("butt");
+  expect(geometry.stroke).not.toBe(await overview.locator('svg [data-stage="concept"]').evaluate(element => getComputedStyle(element).stroke));
+  for (const stage of ["개념", "퀴즈", "실습"]) {
+    const legend = overview.getByRole("button", { name: new RegExp(`^${stage} 진도:`) });
+    await legend.focus();
+    await expect(overview.getByRole("tooltip")).toContainText("0%");
+    await legend.press("Escape");
+    await expect(overview.getByRole("tooltip")).toHaveCount(0);
+    await expect(legend).toBeFocused();
+  }
   await expect(overview.getByRole("button", { name: "수업 시작", exact: true })).toHaveText("시작하기");
   const lessonRow = page.getByRole("region", { name: "수업별 학습 진도", exact: true }).getByRole("article", { name: programming.title, exact: true });
   await expect(lessonRow.getByRole("link")).toHaveText("시작하기");
@@ -255,6 +264,9 @@ test("0%는 둥근 점 없이 이어진 배경만 표시하고 100%는 메인·�
   await page.getByRole("button", { name: "격자 보기", exact: true }).click();
   await expect(course.locator("svg [data-stage]")).toHaveCount(3);
   await expect(course.locator("svg path[stroke-dasharray]")).toHaveCount(0);
+  await expect(course.locator("svg [data-start-marker]")).toHaveCount(1);
+  await expect(course.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
+  await expect(course.getByRole("progressbar")).toHaveAttribute("aria-valuetext", "필수 활동 0/13개 완료");
   const completed = emptyWork(programming);
   completed.conceptSolved = programming.concepts.map(concept => concept.id);
   completed.quizSolved = programming.quiz.map(question => question.id);
@@ -265,9 +277,11 @@ test("0%는 둥근 점 없이 이어진 배경만 표시하고 100%는 메인·�
   await expect(course.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100");
   await expect(course.getByRole("progressbar")).toHaveAttribute("aria-valuetext", "필수 활동 13/13개 완료");
   await expect(course.locator("svg path[stroke-dasharray]")).toHaveCount(3);
+  await expect(course.locator("svg [data-start-marker]")).toHaveCount(0);
   await course.screenshot({ path: testInfo.outputPath("activity-ring-grid-completed.png") });
   await page.goto("/student");
   await expectProgress(page, "13/13", 100);
+  await expect(overview.locator("svg [data-start-marker]")).toHaveCount(0);
   for (const label of ["개념", "퀴즈", "실습"]) {
     const legend = overview.getByRole("button", { name: new RegExp(`^${label} 진도:`) });
     await legend.focus();
@@ -280,9 +294,8 @@ test("0%는 둥근 점 없이 이어진 배경만 표시하고 100%는 메인·�
   await overview.screenshot({ path: testInfo.outputPath("activity-ring-main-completed.png") });
 });
 
-test("단계별 0%와 100%를 터치로 확인하고 세 수업을 좁은 창에서도 간결하게 표시", async ({ page, browser }, testInfo) => {
-  const third = LESSONS.find(lesson => lesson.id === "entry-bot-lab")!;
-  await openLessons([sequence.id, programming.id, third.id], programming.id);
+test("단계별 0%와 100%를 터치로 확인하고 정규 수업과 복습을 좁은 창에서 구분", async ({ page, browser }, testInfo) => {
+  await openLessons([programming.id, ...reviews.map(lesson => lesson.id)], programming.id);
   const work = emptyWork(programming);
   work.conceptSolved = programming.concepts.map(concept => concept.id);
   work.updatedAt = Date.now();
@@ -291,10 +304,12 @@ test("단계별 0%와 100%를 터치로 확인하고 세 수업을 좁은 창에
   const overview = progressRegion(page);
   const concept = overview.getByRole("button", { name: /^개념 진도:/ });
   const quiz = overview.getByRole("button", { name: /^퀴즈 진도:/ });
-  await expect(concept).toHaveAccessibleName("개념 진도: 4/8개 완료, 50%");
-  await expect(quiz).toHaveAccessibleName("퀴즈 진도: 0/11개 완료, 0%");
+  await expect(concept).toHaveAccessibleName("개념 진도: 4/4개 완료, 100%");
+  await expect(quiz).toHaveAccessibleName("퀴즈 진도: 0/5개 완료, 0%");
+  await expect(overview.locator("svg [data-start-marker]")).toHaveCount(0);
   const lessons = page.getByRole("region", { name: "수업별 학습 진도", exact: true });
-  await expect(lessons.getByRole("article")).toHaveCount(3);
+  await expect(lessons.getByRole("article")).toHaveCount(1);
+  await expect(lessons.getByRole("link", { name: "선택 복습 수업 둘러보기", exact: true })).toBeVisible();
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 844 });
     const refresh = page.getByRole("button", { name: "수업 새로고침", exact: true });
@@ -307,7 +322,7 @@ test("단계별 0%와 100%를 터치로 확인하고 세 수업을 좁은 창에
     const rows = lessons.getByRole("article");
     const first = (await rows.first().boundingBox())!;
     const last = (await rows.last().boundingBox())!;
-    expect(last.y + last.height - first.y, `세 수업 진도는 ${width}px에서 한 화면 높이의 절반 안에 표시`).toBeLessThanOrEqual(400);
+    expect(last.y + last.height - first.y, `정규 수업 진도는 ${width}px에서 간결하게 표시`).toBeLessThanOrEqual(400);
     for (const row of await rows.all()) {
       const bars = await row.getByRole("progressbar").all();
       const boxes = await Promise.all(bars.map(bar => bar.boundingBox()));
@@ -341,11 +356,12 @@ test("단계별 0%와 100%를 터치로 확인하고 세 수업을 좁은 창에
 });
 
 test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 제외·이어서 이동을 유지", async ({ page }, testInfo) => {
-  await openLessons([sequence.id, programming.id, review.id], programming.id);
-  const finished = emptyWork(sequence);
-  finished.conceptSolved = sequence.concepts.map(concept => concept.id);
-  finished.quizSolved = sequence.quiz.map(question => question.id);
-  finished.submission = submission("sequence-finished");
+  const finishedReview = reviews.find(lesson => lesson.id === "review-sandwich")!;
+  await openLessons([programming.id, ...reviews.map(lesson => lesson.id)], programming.id);
+  const finished = emptyWork(finishedReview);
+  finished.conceptSolved = finishedReview.concepts.map(concept => concept.id);
+  finished.quizSolved = finishedReview.quiz.map(question => question.id);
+  finished.submission = submission("review-finished");
   finished.updatedAt = Date.now();
   await saveWork(finished);
   const partial = emptyWork(programming);
@@ -361,11 +377,11 @@ test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 �
   const grid = page.getByRole("button", { name: "격자 보기", exact: true });
   const cards = page.getByRole("article");
   const programCard = page.getByRole("article", { name: programming.title, exact: true });
-  const sequenceCard = page.getByRole("article", { name: sequence.title, exact: true });
+  const finishedCard = page.getByRole("article", { name: finishedReview.title, exact: true });
   const reviewCard = page.getByRole("article", { name: review.title, exact: true });
   await expect(list).toHaveAttribute("aria-pressed", "true");
   await expect(grid).toHaveAttribute("aria-pressed", "false");
-  await expect(cards).toHaveCount(3);
+  await expect(cards).toHaveCount(4);
   await expect(cards.first()).toHaveAccessibleName(programming.title);
   await expect(programCard).toContainText("이어갈 곳: 실습 · 곱셈 계산기");
   await expect(programCard.getByRole("progressbar")).toHaveCount(3);
@@ -376,9 +392,11 @@ test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 �
   const programRing = programCard.getByRole("progressbar", { name: `${programming.title} 필수 활동 완료율`, exact: true });
   await expect(programRing).toHaveAttribute("aria-valuenow", "31");
   await expect(programRing).toHaveAttribute("aria-valuetext", "필수 활동 4/13개 완료");
-  await expect(sequenceCard.getByRole("progressbar", { name: `${sequence.title} 필수 활동 완료율`, exact: true })).toHaveAttribute("aria-valuenow", "100");
   await expect(programCard.locator("svg [data-stage]")).toHaveCount(3);
-  await expect(sequenceCard.locator("svg [data-stage]")).toHaveCount(3);
+  await expect(programCard.locator("svg [data-start-marker]")).toHaveCount(0);
+  await expect(finishedCard.getByRole("progressbar")).toHaveCount(0);
+  await expect(finishedCard).toContainText("복습 수업");
+  await expect(page.getByText("완료한 수업", { exact: true }).locator("..").locator("dd")).toHaveText("1개");
   await expect(reviewCard.getByRole("progressbar")).toHaveCount(0);
   await expect(reviewCard.locator("svg [data-stage]")).toHaveCount(0);
   await expect(reviewCard).toContainText("선택 복습 · 성적에 반영하지 않아요");
@@ -386,8 +404,8 @@ test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 �
   const unfinished = filters.getByRole("button", { name: "미완료", exact: true });
   await unfinished.click();
   await expect(unfinished).toBeFocused();
-  await expect(cards).toHaveCount(2);
-  await expect(sequenceCard).toHaveCount(0);
+  await expect(cards).toHaveCount(3);
+  await expect(finishedCard).toHaveCount(0);
   await expect(cards.first()).toHaveAccessibleName(programming.title);
   await list.focus();
   await list.press("Enter");
@@ -402,10 +420,10 @@ test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 �
   await expect(grid).toHaveAttribute("aria-pressed", "true");
   await filters.getByRole("button", { name: "완료", exact: true }).click();
   await expect(cards).toHaveCount(1);
-  await expect(cards.first()).toHaveAccessibleName(sequence.title);
-  await expect(sequenceCard.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100");
+  await expect(cards.first()).toHaveAccessibleName(finishedReview.title);
+  await expect(finishedCard.getByRole("progressbar")).toHaveCount(0);
   await filters.getByRole("button", { name: "전체", exact: true }).click();
-  await expect(cards).toHaveCount(3);
+  await expect(cards).toHaveCount(4);
   await expect(cards.first()).toHaveAccessibleName(programming.title);
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 844 });
@@ -421,7 +439,7 @@ test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 �
   await expect(page.getByRole("alert").filter({ hasText: "격자 진도 조회 연결 실패" })).toContainText("마지막으로 확인한 수업");
   await expect(refresh).toBeFocused();
   await expect(grid).toHaveAttribute("aria-pressed", "true");
-  await expect(cards).toHaveCount(3);
+  await expect(cards).toHaveCount(4);
   await expect(programRing).toHaveAttribute("aria-valuenow", "31");
   await page.unroute(studentEndpoint);
   const resume = programCard.getByRole("button", { name: "이어하기", exact: true });
@@ -475,6 +493,7 @@ test("빈 반과 선택 복습만 열린 반은 0% 대신 집계를 기다림", 
     const region = progressRegion(page);
     await expect(region.getByText("아직 열린 정규 수업이 없어요.", { exact: true })).toBeVisible();
     await expect(region.getByRole("progressbar")).toHaveCount(0);
+    await expect(region.locator("svg [data-start-marker]")).toHaveCount(0);
     await expect(region).not.toContainText("0%");
     await expect(region).not.toContainText("0/0");
   }
@@ -652,6 +671,7 @@ test("첫 조회는 초점을 유지하며 대기·실패의 가짜 0%와 재조
     await page.goto("/student");
     await expect(page.getByRole("status").filter({ hasText: "수업 기록을 확인하고 있어요." })).toBeVisible();
     await expect(progressRegion(page).getByRole("progressbar")).toHaveCount(0);
+    await expect(progressRegion(page).locator("svg [data-start-marker]")).toHaveCount(0);
     await expect(progressRegion(page).locator("#current-heading")).toHaveText("이번 수업을 확인하고 있어요.");
     await expectMobileCurrentFirst(page);
     const enterLessons = page.getByRole("button", { name: "열린 수업 보기", exact: true });
@@ -666,6 +686,7 @@ test("첫 조회는 초점을 유지하며 대기·실패의 가짜 0%와 재조
     await page.reload();
     await expect(page.getByRole("alert").filter({ hasText: "진도 조회 연결 실패" })).toBeVisible();
     await expect(progressRegion(page).getByRole("progressbar")).toHaveCount(0);
+    await expect(progressRegion(page).locator("svg [data-start-marker]")).toHaveCount(0);
     await expect(progressRegion(page).locator("#current-heading")).toHaveText("이번 수업을 확인하지 못했어요.");
     await expectMobileCurrentFirst(page);
     mode = "live";

@@ -10,7 +10,10 @@ if (!initial || !reset || initial === reset || !process.env.CS_TEST_GUEST_PASSWO
 for (let i = 1; i <= 11; i++) {
   const id = `2-${i}`;
   const opened = i === 1 || i === 10;
-  await db.collection("csClasses").doc(id).set({ id, name: `2학년 ${i}반`, currentLessonId: i === 1 ? "entry-bot-lab" : i === 10 ? "sequence-lab" : null, openedLessonIds: opened ? ["sequence-lab", "flowchart-lab", "entry-bot-lab"] : [], revision: 0 });
+  const openedLessonIds = opened
+    ? ["programming-13", "review-sandwich", "review-flowchart", "review-abstraction"]
+    : [];
+  await db.collection("csClasses").doc(id).set({ id, name: `2학년 ${i}반`, currentLessonId: opened ? "review-sandwich" : null, openedLessonIds, revision: 0 });
 }
 for (const studentId of ["20101", "20102", "21001", "21101"]) {
   const uid = `student-${studentId}`;
