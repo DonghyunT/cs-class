@@ -343,6 +343,9 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
   await page.reload(); await expect(page.getByRole("button", { name: "처리 기호: 알람 켜기", exact: true })).toBeVisible();
   expect((await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.nodes).toEqual(moved.nodes);
   const viewport = page.getByLabel("실제 순서도 연결", { exact: true });
+  // V1 배치의 넓은 창에서는 SVG 전체가 들어간다. 넘침이 있는 실제 창에서 휠을 검사한다.
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await expect.poll(() => viewport.evaluate(element => element.scrollWidth - element.clientWidth)).toBeGreaterThan(0);
   await viewport.scrollIntoViewIfNeeded(); await alarm.focus();
   const viewportBox = await viewport.boundingBox(); if (!viewportBox) throw Error("No visible canvas viewport");
   await page.mouse.move(viewportBox.x + viewportBox.width / 2, viewportBox.y + 80); await page.mouse.wheel(180, 0);
@@ -358,9 +361,13 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
   const recipeTrigger = page.getByRole("button", { name: /처방전 채우기/ });
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await expect.poll(() => viewport.evaluate(element => element.scrollWidth - element.clientWidth)).toBeGreaterThan(0);
   await viewport.scrollIntoViewIfNeeded(); await recipeTrigger.focus(); await viewport.scrollIntoViewIfNeeded();
   const wideViewport = await viewport.boundingBox(); if (!wideViewport) throw Error("No visible wide canvas");
-  await page.mouse.move(wideViewport.x + wideViewport.width / 2, wideViewport.y + 80); await page.mouse.wheel(-1000, 0);
+  await page.mouse.move(wideViewport.x + wideViewport.width / 2, wideViewport.y + 80); await page.mouse.wheel(180, 0);
+  await expect.poll(() => viewport.evaluate(element => element.scrollLeft)).toBeGreaterThan(0);
+  await page.mouse.wheel(-1000, 0);
   await expect.poll(() => viewport.evaluate(element => element.scrollLeft)).toBe(0);
   const chosenCenter = await viewport.evaluate(element => element.scrollLeft + element.clientWidth / 2);
   await page.setViewportSize({ width: 390, height: 1000 });

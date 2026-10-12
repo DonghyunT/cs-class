@@ -42,14 +42,19 @@ test("단계 왕복에도 명령 대화·실패·확인 질문과 읽던 위치�
   await input.press("Enter");
   await expect(feed.getByRole("alert")).toContainText("왕복 검사 AI 실패");
   await input.fill("다음에 보낼 작성 중 명령");
-  await feed.focus(); await page.keyboard.press("Home");
-  await expect.poll(() => feed.evaluate(element => element.scrollTop)).toBe(0);
-  await feed.evaluate(element => {
-    element.setAttribute("data-test-scroll-ended", "false");
-    element.addEventListener("scrollend", () => element.setAttribute("data-test-scroll-ended", "true"), { once: true });
-  });
-  await page.keyboard.press("ArrowDown");
-  await expect(feed).toHaveAttribute("data-test-scroll-ended", "true");
+  await feed.focus();
+  // Home의 늦은 scrollend를 다음 방향키의 완료로 받지 않는다.
+  for (const key of ["Home", "ArrowDown"]) {
+    await expect(feed).toBeFocused();
+    await feed.evaluate(element => {
+      element.setAttribute("data-test-scroll-ended", "false");
+      element.addEventListener("scrollend", () => element.setAttribute("data-test-scroll-ended", "true"), { once: true });
+    });
+    await page.keyboard.press(key);
+    await expect(feed).toHaveAttribute("data-test-scroll-ended", "true");
+    if (key === "Home") await expect.poll(() => feed.evaluate(element => element.scrollTop)).toBe(0);
+  }
+  await expect.poll(() => feed.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
   const readingPosition = await feed.evaluate(element => element.scrollTop);
   expect(readingPosition).toBeGreaterThan(0);
   const records = await feed.locator("[data-command-id]").count();
