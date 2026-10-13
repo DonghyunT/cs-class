@@ -4,7 +4,7 @@
 
 ## 보관 기록
 
-- **[2026-10-13 문서 다이어트 1단계 전 원문](cs-class/2026-10-13-before-doc-slimming/manifest.json):** 규칙 확정 및 DEVELOPMENT·AGENTS 슬리밍 작업 착수 전의 AGENTS.md, DEVELOPMENT.md, README.md를 Windows 작업 트리 바이트 그대로 보존했습니다.
+- **[2026-10-13 문서 다이어트 전 원문](cs-class/2026-10-13-before-doc-slimming/manifest.json):** 규칙 확정 및 문서 슬리밍 작업 착수 전의 AGENTS.md, DEVELOPMENT.md, README.md, PRD.md, DESIGN.md 5개를 Windows 작업 트리 바이트 그대로 보존했습니다.
 
 - **[2026-10-13 수업 화면 릴리스 마감 전 원문](cs-class/2026-10-13-before-lesson-release/manifest.json):** 누적 HANDOFF와 완료된 10/12 주석 반영 계획·10/11 순서도 V1 대조 분석·10/6 수업 공통 틀·10/7 가독성 개선 계획을 바이트 그대로 보존했습니다. 구현·검증·이전 배포 근거는 유지하고, 현재 기준과 다음 행동은 [최신 HANDOFF](../HANDOFF.md)에 모았습니다. 보관된 계획의 과거 실행·위임·승인은 현재 지시가 아닙니다.
 

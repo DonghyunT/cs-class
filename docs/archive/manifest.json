@@ -279,6 +279,20 @@
       "origin": "working-tree-before-doc-slimming-20261013",
       "baseCommit": "2a5ca08",
       "sha256": "e3cd480a261bcfb2ac0e7c35b1e9719c85dc1585b18d99c380c6f6508880c2e8"
+    },
+    {
+      "source": "docs/PRD.md",
+      "archive": "docs/archive/cs-class/2026-10-13-before-doc-slimming/PRD.md",
+      "origin": "working-tree-before-doc-slimming-20261013",
+      "baseCommit": "2a5ca08",
+      "sha256": "9e4e6f1b2f61f3a61e9a03ca707444014c919b5ea9713a86368edb3332d53c7c"
+    },
+    {
+      "source": "docs/DESIGN.md",
+      "archive": "docs/archive/cs-class/2026-10-13-before-doc-slimming/DESIGN.md",
+      "origin": "working-tree-before-doc-slimming-20261013",
+      "baseCommit": "2a5ca08",
+      "sha256": "efcb38c231cca26b08f8a8a793748b287e522d14824555284ee383a62e00bc4a"
     }
   ]
 }

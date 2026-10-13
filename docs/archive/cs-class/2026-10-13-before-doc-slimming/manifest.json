@@ -28,5 +28,25 @@
     "timezone": "Asia/Seoul",
     "source": "working tree before documentation slimming",
     "sha256": "e3cd480a261bcfb2ac0e7c35b1e9719c85dc1585b18d99c380c6f6508880c2e8"
+  },
+  {
+    "original": "docs/PRD.md",
+    "preserved": "PRD.md",
+    "baseCommit": "2a5ca08",
+    "branch": "codex/docs-slimming",
+    "preservedAt": "2026-10-13",
+    "timezone": "Asia/Seoul",
+    "source": "working tree before documentation slimming",
+    "sha256": "9e4e6f1b2f61f3a61e9a03ca707444014c919b5ea9713a86368edb3332d53c7c"
+  },
+  {
+    "original": "docs/DESIGN.md",
+    "preserved": "DESIGN.md",
+    "baseCommit": "2a5ca08",
+    "branch": "codex/docs-slimming",
+    "preservedAt": "2026-10-13",
+    "timezone": "Asia/Seoul",
+    "source": "working tree before documentation slimming",
+    "sha256": "efcb38c231cca26b08f8a8a793748b287e522d14824555284ee383a62e00bc4a"
   }
 ]
