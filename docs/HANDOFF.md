@@ -13,16 +13,14 @@
   - `scripts/run-selected-e2e.mjs`: 계획 JSON 기반 선별 E2E 실행기 작성 (affected 시 대상 spec + 스모크 spec 합성 실행, Firebase 에뮬레이터 래핑 및 `--running` 플래그 지원).
   - `package.json`: `test:scope`, `test:e2e:scope`, `test:e2e:scope:running` 스크립트 추가.
   - `.github/workflows/verify.yml`: `mode != 'docs'`로 앱 검증 조건 일반화 및 선별 E2E runner 연동 (`workflow_dispatch`는 항상 full E2E 398개 보장).
-- **관련 검사 및 빌드 검증 완료:**
-  - `npm.cmd run test:scope`: 13개 단위 테스트 통과 (2.7s).
-  - `node --test tests/ci-policy.test.mjs tests/e2e-scope.test.mjs tests/documentation.test.mjs`: 15개 테스트 통과 (2.7s).
-  - 선별 E2E 실제 구동(`run-selected-e2e.mjs --running`): 12개 spec 전수 통과 (37.3s).
-  - `npm.cmd run typecheck`: 성공 (tsc 오류 0개).
-  - `npm.cmd run lint`: 성공 (0 errors, 1 warning - 기존 테스트 미사용 변수).
-  - `git diff --check`: 공백 오류 없음.
+- **CI 전체 검증 및 후속 보완 완료:**
+  - `main` 푸시(`0c61e46..3992993`) 후 CI 전체 검증(403개 중 397개 통과, 5개 실패)을 통해 과거 자동 저장 가정 테스트 2개 파일 감지 및 보완:
+    - `tests/manual-save-entry.spec.ts`: EntryJS 로딩 지연 대응을 위해 `#entry-run` 활성화 대기 타임아웃 20초 명시.
+    - `tests/ui-workspace-refinement.spec.ts`: 수동 저장 전환 시맨틱 반영 (크기 변경 테스트에서 `Control+s`로 포커스 유지 저장, 503 모의 실패 테스트에서 직접 저장 버튼 클릭 및 `저장 확인 필요` 대기).
+  - 로컬 검증: 관련 9개 테스트 전수 통과 (`9 passed, 58.6s`), `typecheck` 통과, `lint` 통과.
 - **다음 단계:**
-  - 작업 B 독립 커밋 생성 (`feat: add scoped e2e test runner and ci policy`).
-  - 사용자에게 작업 결과 및 커밋 완료 보고.
+  - 보완 커밋 생성 (`fix: align workspace refinement tests with manual save semantics`) 및 `main` 푸시.
+  - GitHub Actions CI 최종 통과 확인.
 
 재개 근거: Git 추적 문서인 이 HANDOFF/계획A와 현재 코드, Git 제외 상세 작업 장부 `scratch/manual-save-implementation/`입니다. 새 소스 `src/components/student/work-draft.ts`, 새 검사 2개(`tests/manual-save.spec.ts`, `tests/manual-save-entry.spec.ts`)와 계획 2개(`docs/superpowers/plans/`)는 신규 파일입니다. 현재 변경은 로컬 작업 브랜치에만 있으며 원격에 반영하지 않았습니다.
 
