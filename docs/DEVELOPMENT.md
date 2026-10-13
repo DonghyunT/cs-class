@@ -398,6 +398,21 @@ npm.cmd run test:e2e
 
 `test:e2e`는 Auth·Firestore 에뮬레이터를 시작하고 종료합니다. 기존 에뮬레이터가 실행 중일 때만 `test:e2e:running`을 사용합니다. 로컬 전체 검사도 빌드된 앱으로 확인하려면 위 `try/finally` 안에서 `npm.cmd run test:e2e`를 실행합니다. Playwright는 `.spec.ts`만 수집하고 순수 검사는 `test:review`의 `.test.mjs`로 실행합니다.
 
+### 변경 영향별 선별 검증 (Scoped Verification)
+
+수정 범위에 따라 필요한 검사만 선별 실행하여 피드백 시간을 단축하고 안전성을 보장합니다.
+
+- **`npm.cmd run test:scope`**: CI 정책 및 E2E 매핑 순수 단위 테스트를 실행합니다 (`tests/ci-policy.test.mjs`, `tests/e2e-scope.test.mjs`).
+- **`npm.cmd run test:e2e:scope`**: 로컬의 미커밋 변경(working tree 및 staged) 또는 CI의 베이스 커밋 대비 변경 사항을 분석하여 선별된 E2E 테스트를 Firebase 에뮬레이터 환경에서 실행합니다.
+- **`npm.cmd run test:e2e:scope:running`**: 에뮬레이터 및 테스트 서버가 이미 실행 중일 때 선별 E2E만 빠르게 실행합니다.
+
+**선별 규칙:**
+1. **수업 전용 변경 (Affected):** 4개 수업(`review-sandwich`, `review-flowchart`, `review-abstraction`, `programming-13`) 중 변경된 수업의 전용 E2E 및 연관 인터랙션 테스트와 함께, 4개 수업 전체의 초경량 저장/복원 스모크 안전망(`tests/lesson-smoke.spec.ts`, ~17초)을 합성하여 실행합니다.
+2. **공통 및 설정 변경 (Full):** 공통 컴포넌트, 서버 로직, 라우트, 패키지 설정(`package.json` 등) 변경이나 불확실성이 있는 경우 자동으로 전체 E2E(full)로 승격됩니다.
+3. **문서 전용 변경 (Docs):** 마크다운 및 문서 검사만 수행하고 무거운 E2E 실행을 건너뜁니다.
+4. **CI 수동 실행 (`workflow_dispatch`):** 항상 전체 E2E(398개)를 수행하여 전체 품질을 확인합니다.
+
+
 ### 결과 재사용과 학생 계정·저장
 
 - 로컬에서는 관련 검사로 수정 결과를 확인하고 최종 통합에는 GitHub CI 결과를 활용합니다. 검사한 실행 코드·의존성·설정·검사 조건이 일치하면 동일한 전체 검사를 로컬에서 반복하지 않습니다. 대상 커밋·차이와 검사 종류·환경·결과·한계를 기록합니다.

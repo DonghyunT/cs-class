@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import { selectE2E } from "./e2e-scope.mjs";
 
 export function isDocument(file) {
   return file === "README.md" || file === "AGENTS.md" || /^docs\/.+\.md$/.test(file);
@@ -18,6 +19,37 @@ export function changedFiles(base, head = "HEAD") {
   if (!/^[a-f0-9]{40}$/i.test(base)) throw new Error("Invalid comparison SHA");
   git("merge-base", "--is-ancestor", base, head);
   return git("diff", "--name-only", "--no-renames", "-z", base, head).split("\0").filter(Boolean);
+}
+
+export function changedFilesLocal(baseRef = "origin/main") {
+  const files = new Set();
+  try {
+    // 1. Unstaged changes in working tree
+    for (const f of git("diff", "--name-only", "--no-renames", "-z").split("\0").filter(Boolean)) {
+      files.add(f);
+    }
+    // 2. Staged changes in index
+    for (const f of git("diff", "--cached", "--name-only", "--no-renames", "-z").split("\0").filter(Boolean)) {
+      files.add(f);
+    }
+    // 3. Committed changes compared to baseRef (or HEAD~1 if baseRef unavailable)
+    let comparisonBase = baseRef;
+    try {
+      git("rev-parse", "--verify", comparisonBase);
+    } catch {
+      comparisonBase = "HEAD~1";
+    }
+    try {
+      for (const f of git("diff", "--name-only", "--no-renames", "-z", comparisonBase, "HEAD").split("\0").filter(Boolean)) {
+        files.add(f);
+      }
+    } catch {
+      // If comparison fails, we rely on working tree + staged
+    }
+  } catch {
+    // Fallback if git fails
+  }
+  return Array.from(files);
 }
 
 // Only successful main push runs can establish a baseline; canceled/manual runs cannot.
@@ -47,16 +79,36 @@ export async function findBaseline(env, request = fetch, ancestor = (sha) => {
 }
 
 export async function selectScope(env, baseline = findBaseline, diff = changedFiles) {
-  if (env.GITHUB_EVENT_NAME !== "push" || env.GITHUB_REF !== "refs/heads/main") {
-    return { mode: "full", reason: "manual or non-main execution", base: null };
+  // Manual trigger in GitHub Actions is always full E2E
+  if (env.GITHUB_EVENT_NAME === "workflow_dispatch") {
+    return { mode: "full", reason: "manual workflow execution", base: null, lessonIds: [], testFiles: [] };
   }
+
+  // CI push on main branch
+  if (env.GITHUB_EVENT_NAME === "push" && env.GITHUB_REF === "refs/heads/main") {
+    try {
+      const base = await baseline(env);
+      if (!base) return { mode: "full", reason: "no verified main baseline", base: null, lessonIds: [], testFiles: [] };
+      const files = diff(base);
+      const plan = selectE2E(files);
+      return { ...plan, base };
+    } catch {
+      return { mode: "full", reason: "comparison unavailable; full verification required", base: null, lessonIds: [], testFiles: [] };
+    }
+  }
+
+  // Other CI events (pull_request, etc.)
+  if (env.GITHUB_EVENT_NAME || env.GITHUB_ACTIONS) {
+    return { mode: "full", reason: "manual or non-main execution", base: null, lessonIds: [], testFiles: [] };
+  }
+
+  // Local development execution (outside CI)
   try {
-    const base = await baseline(env);
-    if (!base) return { mode: "full", reason: "no verified main baseline", base: null };
-    const mode = classify(diff(base));
-    return { mode, reason: mode === "docs" ? "documents only since successful main CI" : "runtime/configuration or unclassified changes", base };
+    const files = typeof diff === "function" && diff !== changedFiles ? diff("local") : changedFilesLocal();
+    const plan = selectE2E(files);
+    return { ...plan, base: "local" };
   } catch {
-    return { mode: "full", reason: "comparison unavailable; full verification required", base: null };
+    return { mode: "full", reason: "local diff inspection failed", base: null, lessonIds: [], testFiles: [] };
   }
 }
 
@@ -73,9 +125,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   } else if (process.argv[2] === "scope") {
     const result = await selectScope(process.env);
     console.log(JSON.stringify(result));
-    if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `mode=${result.mode}\nbase=${result.base ?? ""}\n`);
-    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY,
-      `### Verification scope\n- Mode: ${result.mode}\n- Reason: ${result.reason}\n- Baseline: ${result.base ?? "none"}\n`);
+    try {
+      mkdirSync("scratch/ci", { recursive: true });
+      writeFileSync("scratch/ci/e2e-plan.json", JSON.stringify(result, null, 2));
+    } catch (err) {
+      console.warn("Could not write scratch/ci/e2e-plan.json:", err.message);
+    }
+    if (process.env.GITHUB_OUTPUT) {
+      appendFileSync(process.env.GITHUB_OUTPUT, `mode=${result.mode}\nbase=${result.base ?? ""}\nplan=scratch/ci/e2e-plan.json\n`);
+    }
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+        `### Verification scope\n- Mode: ${result.mode}\n- Reason: ${result.reason}\n- Baseline: ${result.base ?? "none"}\n- Lessons: ${result.lessonIds.join(", ") || "none"}\n- Test files: ${result.testFiles.length}\n`);
+    }
   } else {
     console.error("Usage: node scripts/ci-policy.mjs scope|ignore-build");
     process.exitCode = 1;

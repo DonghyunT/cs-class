@@ -2,23 +2,27 @@
 
 ## 현재 작업 상태
 
-2026-10-13(Asia/Seoul) **수동 저장 전환(작업 A) 구현 및 검증 완료**: `codex/verification-plan`·기준 `0c61e46`. 제품·검사·문서 수정 완료, 커밋/push/배포 미실시(사용자 승인 대기).
-편집 시 자동 저장 제거, 단일 snapshot 명시 저장 버튼 및 부모/iframe Ctrl+S 단축키, 내부 이동 메모리 보존, 외부 이동 3선택(저장 후 나가기 / 저장 안 하고 나가기 / 취소), 손들기·행동 저장 예외 구현 및 검증을 완료했습니다.
-
-- **초점 회귀 및 세부 이슈 해결 완료:**
-  - `programming-mission-navigation.spec.ts`: 후기 `<textarea>` 입력 중 `Ctrl+S`를 눌러도 disabled되지 않고 포커스를 유지하도록 `LessonEditor`의 일반 잠금과 캡처 잠금을 분리. 내부 이동 안내 문구를 메모리 보존 정책으로 갱신.
-  - `review-flowchart-v1-ui.spec.ts`: 낮은 창(1280x720) 높이 측정 시 네비게이션 동적 렌더링을 놓치지 않도록 `ResizeObserver` 관찰 대상에 네비게이션 컨테이너를 포함하여 5단계 작업실 높이 측정 통과.
-  - 미이관 테스트 보완: `sandwich-conversation.spec.ts`(초기화 후 saveDraft), `student-ui.spec.ts`(재접속 전 saved, 충돌 시 saveDraft 대신 버튼 클릭, 느린 저장 복원), `manual-save.spec.ts`(beforeunload 경고 취소 시 evaluate reload).
+2026-10-13(Asia/Seoul) **수동 저장 전환(작업 A) 및 영향별 선별 검증(작업 B) 구현 및 검증 완료**: `codex/verification-plan`·기준 `0c61e46`.
+- **작업 A 커밋 완료 (`3e341a3`):** `feat: convert student lesson editing to manual save`
+  - 편집 시 자동 저장 제거, 단일 snapshot 명시 저장 버튼 및 부모/iframe Ctrl+S 단축키, 내부 이동 메모리 보존, 외부 이동 3선택(저장 후 나가기 / 저장 안 하고 나가기 / 취소), 손들기·행동 저장 예외 구현 및 관련 26개 테스트 파일 전수 검증 통과.
+- **작업 B 선별 검증 파이프라인 구현 및 검증 완료:**
+  - `scripts/e2e-scope.mjs`: 4개 학생 수업(샌드위치, 순서도, 추상화, 프로그래밍) 패턴 매핑 및 변경 파일 기반 `affected`/`full`/`docs` 모드 선별 판정 순수 함수 구현.
+  - `tests/e2e-scope.test.mjs`: 선별 로직 7개 단위 테스트 작성 및 전수 통과.
+  - `tests/lesson-smoke.spec.ts`: 4개 수업 전체를 포괄하는 초고속 저장/복원 스모크 안전망 작성 (총 17.4초 소요, 전수 통과).
+  - `scripts/ci-policy.mjs`: 로컬 미커밋(working tree + staged) diff 추출(`changedFilesLocal`) 및 선별 계획 JSON(`scratch/ci/e2e-plan.json`) 생성 기능 추가. 단위 테스트 8개 전수 통과.
+  - `scripts/run-selected-e2e.mjs`: 계획 JSON 기반 선별 E2E 실행기 작성 (affected 시 대상 spec + 스모크 spec 합성 실행, Firebase 에뮬레이터 래핑 및 `--running` 플래그 지원).
+  - `package.json`: `test:scope`, `test:e2e:scope`, `test:e2e:scope:running` 스크립트 추가.
+  - `.github/workflows/verify.yml`: `mode != 'docs'`로 앱 검증 조건 일반화 및 선별 E2E runner 연동 (`workflow_dispatch`는 항상 full E2E 398개 보장).
 - **관련 검사 및 빌드 검증 완료:**
-  - 수동 저장 관련 26개 테스트 파일(총 200여 개 이상 spec) 타깃 실행 100% 통과 (`run.mjs` 사용).
-  - `npm.cmd run build`: 성공 (Next.js 16.3.6 Turbopack).
+  - `npm.cmd run test:scope`: 13개 단위 테스트 통과 (2.7s).
+  - `node --test tests/ci-policy.test.mjs tests/e2e-scope.test.mjs tests/documentation.test.mjs`: 15개 테스트 통과 (2.7s).
+  - 선별 E2E 실제 구동(`run-selected-e2e.mjs --running`): 12개 spec 전수 통과 (37.3s).
   - `npm.cmd run typecheck`: 성공 (tsc 오류 0개).
   - `npm.cmd run lint`: 성공 (0 errors, 1 warning - 기존 테스트 미사용 변수).
   - `git diff --check`: 공백 오류 없음.
-  - 테스트 종료 후 데몬 및 포트(3000, 8080, 9099, 4400) 정상 해제 확인.
 - **다음 단계:**
-  - 사용자 확인 및 승인 후 커밋(`feat: convert student lesson to manual save`) 여부 결정.
-  - 작업 B(영향별 검증 계획) 착수 여부 결정.
+  - 작업 B 독립 커밋 생성 (`feat: add scoped e2e test runner and ci policy`).
+  - 사용자에게 작업 결과 및 커밋 완료 보고.
 
 재개 근거: Git 추적 문서인 이 HANDOFF/계획A와 현재 코드, Git 제외 상세 작업 장부 `scratch/manual-save-implementation/`입니다. 새 소스 `src/components/student/work-draft.ts`, 새 검사 2개(`tests/manual-save.spec.ts`, `tests/manual-save-entry.spec.ts`)와 계획 2개(`docs/superpowers/plans/`)는 신규 파일입니다. 현재 변경은 로컬 작업 브랜치에만 있으며 원격에 반영하지 않았습니다.
 

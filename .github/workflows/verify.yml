@@ -28,7 +28,7 @@ jobs:
         env:
           DIFF_BASE: ${{ steps.scope.outputs.base || github.event.before || github.sha }}
         run: |
-          node --test tests/ci-policy.test.mjs tests/documentation.test.mjs
+          node --test tests/ci-policy.test.mjs tests/e2e-scope.test.mjs tests/documentation.test.mjs
           node scripts/check-docs.mjs
           if git cat-file -e "$DIFF_BASE^{commit}" 2>/dev/null; then
             git diff --check "$DIFF_BASE" HEAD
@@ -36,33 +36,33 @@ jobs:
             git show --check --format= HEAD
           fi
       - uses: actions/cache@v4
-        if: steps.scope.outputs.mode == 'full'
+        if: steps.scope.outputs.mode != 'docs'
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node24-npm-${{ hashFiles('package-lock.json') }}
       - uses: actions/cache@v4
-        if: steps.scope.outputs.mode == 'full'
+        if: steps.scope.outputs.mode != 'docs'
         with:
           path: .next/cache
           key: ${{ runner.os }}-node24-next-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-node24-next-${{ hashFiles('package-lock.json') }}-
-      - if: steps.scope.outputs.mode == 'full'
+      - if: steps.scope.outputs.mode != 'docs'
         run: npm ci
-      - if: steps.scope.outputs.mode == 'full'
+      - if: steps.scope.outputs.mode != 'docs'
         run: npm run lint
-      - if: steps.scope.outputs.mode == 'full'
+      - if: steps.scope.outputs.mode != 'docs'
         run: npm run typecheck
-      - if: steps.scope.outputs.mode == 'full'
+      - if: steps.scope.outputs.mode != 'docs'
         run: npm run test:review
-      - if: steps.scope.outputs.mode == 'full'
+      - if: steps.scope.outputs.mode != 'docs'
         run: npm run build
       - uses: actions/setup-java@v4
-        if: steps.scope.outputs.mode == 'full'
+        if: steps.scope.outputs.mode != 'docs'
         with:
           distribution: temurin
           java-version: '21'
-      - if: steps.scope.outputs.mode == 'full'
+      - if: steps.scope.outputs.mode != 'docs'
         run: npx playwright install --with-deps chromium
-      - if: steps.scope.outputs.mode == 'full'
-        run: npm run test:e2e
+      - if: steps.scope.outputs.mode != 'docs'
+        run: npm run test:e2e:scope

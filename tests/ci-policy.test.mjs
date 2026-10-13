@@ -36,6 +36,13 @@ test("scope compares all changes since last success, including failed code befor
   assert.equal((await selectScope(env, baseline, (base) => {
     assert.equal(base, sha); return ["src/lib/save.ts", "docs/HANDOFF.md"];
   })).mode, "full");
+
+  // Single lesson affected scope
+  const sandwichScope = await selectScope(env, baseline, () => ["src/components/student/review/sandwich.tsx"]);
+  assert.equal(sandwichScope.mode, "affected");
+  assert.deepEqual(sandwichScope.lessonIds, ["review-sandwich"]);
+  assert.ok(sandwichScope.testFiles.length > 0);
+  assert.equal(sandwichScope.base, sha);
 });
 
 test("baseline rejects failed/canceled/manual/current/nonancestor runs", async () => {
