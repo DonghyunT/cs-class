@@ -1,6 +1,6 @@
 # 알고리즘 복습 수업 — 원본 이식과 품질 검증
 
-정리: 2026-10-05(Asia/Seoul). 원본 Algorithm Studio와 실제 제공자 검사의 근거를 보관하는 참고 자료입니다. 제품 정책은 [PRD](../PRD.md#알고리즘-선택-복습--2026-10-05-확정), 실습 표현은 [DESIGN](../DESIGN.md#알고리즘-선택-복습), 실행/검증/복구는 [DEVELOPMENT](../DEVELOPMENT.md#알고리즘-복습-수업), 최신 배포와 다음 행동은 [HANDOFF](../HANDOFF.md)를 따릅니다.
+정리: 2026-10-05(Asia/Seoul). 원본 Algorithm Studio와 실제 제공자 검사의 근거를 보관하는 참고 자료입니다. 제품 정책은 [PRD](../PRD.md#알고리즘-선택-복습), 실습 표현은 [DESIGN](../DESIGN.md#알고리즘-선택-복습), 실행/검증/복구는 [DEVELOPMENT](../DEVELOPMENT.md#알고리즘-복습-수업), 최신 배포와 다음 행동은 [HANDOFF](../HANDOFF.md)를 따릅니다.
 
 세 복습 구현·Production 비밀 변수·AI 요청/캐시 TTL·11반 공개와 원작 실습 표현 복원은 완료했습니다. 초기 계획·단계별 실패/수정/리뷰·과거 키/승인/TTL 대기 기록은 [정리 전 원문](../archive/cs-class/2026-10-05-session-close/algorithm-review-integration.md)에 바이트 그대로 보존했습니다. 당시 승인과 미완료 문장은 현재 실행 지시가 아닙니다.
 

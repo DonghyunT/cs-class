@@ -251,7 +251,7 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 
 ## 알고리즘 복습 수업
 
-제품 정책은 [PRD](PRD.md#알고리즘-선택-복습--2026-10-05-확정), 원본 이식·AI 품질 근거는 [참고 자료](reference/algorithm-review-integration.md), 현재 공개 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 세 복습(추상화·샌드위치·순서도)은 이미 11개 반에 공개되어 있으며, 아래 스크립트는 향후 수업 설정 변경 및 비상 복구 절차입니다.
+제품 정책은 [PRD](PRD.md#알고리즘-선택-복습), 원본 이식·AI 품질 근거는 [참고 자료](reference/algorithm-review-integration.md), 현재 공개 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 세 복습(추상화·샌드위치·순서도)은 이미 11개 반에 공개되어 있으며, 아래 스크립트는 향후 수업 설정 변경 및 비상 복구 절차입니다.
 
 - **코드 구조:** `src/lib/classroom/review/`에 원본 기준 순수 샌드위치/순서도 실행·검사·미션·추상화 데이터를 둡니다. React 화면은 `src/components/student/review/`에 모으고 기존 단일 저장 writer·revision·메모리 복구를 사용합니다. 작품 수정 시 이전 제출본과 고정 교사 요청본은 유지합니다.
 - **추상화:** 저장된 `tutorialDone`으로 최초 맛보기 완료를 확인하고 기존 단계·초안·제출을 유지합니다. AI 요청 단계와 최신 초안을 고정해 늦은 응답이 다른 단계나 학생 입력을 덮지 않게 합니다. 대화 전송은 Enter, 줄바꿈은 Shift+Enter이며 한글 조합 중 Enter를 전송하지 않습니다. `tests/review-abstraction-v1-ux.spec.ts`에서 기존 기록·실패·재접속·클립보드·단계 왕복을 확인합니다.
