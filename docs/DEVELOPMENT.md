@@ -150,9 +150,9 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 
 | 구분 | 로컬 에이전트 실행 | 깃허브 CI 실행 (`.github/workflows/verify.yml`) |
 | :--- | :--- | :--- |
-| **일상 커밋 (Fast-Track)** | 선별 E2E(`test:e2e:scope:running`) 및 단위 검증만 실행 | 문서 변경 시 E2E 생략(15초), 수업 변경 시 선별 E2E만 실행(30초) |
-| **공통 모듈 수정 시** | 코어 스모크 통과 후, 에이전트가 사용자에게 전체 E2E 실행 여부를 질문 | 공통 스모크 세트 위주로 검증하며 빌드 검증 수행 |
-| **전체 E2E (398개)** | **사용자의 명시적 요청 또는 에이전트 질문 후 사전 승인 시에만 실행** | **GitHub Actions 웹의 `workflow_dispatch`(수동 실행)로만 한정** |
+| **일상 커밋 (Fast-Track)** | 선별 E2E(`test:e2e:scope:running`) 및 단위 검증만 실행 | 마지막 성공 CI 이후 변경을 누적 비교해 문서만이면 E2E 생략, 등록된 수업 변경이면 해당 E2E와 공통 스모크 실행 |
+| **공통 모듈·설정·미분류 변경 시** | 코어 스모크 통과 후, 에이전트가 사용자에게 전체 E2E 실행 여부를 질문 | 전체 E2E로 승격. 비교 기준을 확인하지 못한 경우도 전체 검사 |
+| **전체 E2E** | **사용자의 명시적 요청 또는 에이전트 질문 후 사전 승인 시에만 실행** | `main` push의 전체 승격 또는 GitHub Actions의 `workflow_dispatch` 수동 실행 |
 
 > [!IMPORTANT]
 > **전체 E2E(398개) 실행 및 선제적 질문 원칙:**
@@ -178,6 +178,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 ### 3.4 디버깅 및 Flaky 방지 원칙
 - **임의 지연 금지:** `waitForTimeout`이나 임의의 `sleep`으로 타이밍 문제를 회피하지 않습니다.
 - **결정론적 상태 대기:** `saveState` 배지 텍스트 변화(`저장 완료`, `저장하지 않은 변경 있음`), 특정 DOM 요소의 `toBeVisible()`, 또는 `networkidle`과 같은 명시적 상태 전이를 기준으로 대기합니다.
+- **수동 저장 이탈 검사:** Entry 작업실은 현재 작품을 비동기로 캡처한 뒤 이탈 확인창을 엽니다. 미저장 입력을 명시한 시나리오는 `expect(dialog).toBeVisible()` 후 나가기 선택과 서버 기록 보존을 확인합니다. 클릭 직후 `isVisible()` 한 번으로 확인창을 건너뛰지 않습니다.
 - **원인 분석:** 실패 시 `test-results/` 폴더의 스크린샷과 Playwright 트레이스 zip을 열어 실제 렌더링 상태를 확인합니다.
 
 ---

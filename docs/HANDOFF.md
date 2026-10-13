@@ -2,7 +2,17 @@
 
 ## 현재 작업 상태
 
-2026-10-14(Asia/Seoul) **문서 시스템 전면 리팩토링 및 엔지니어링 가이드 정립 완료**: `main`·기준 `ac67a5d`.
+2026-10-14(Asia/Seoul). 이 PC의 `main`을 원격 최신 `c3b2485`로 fast-forward하고 `codex/fix-manual-save-navigation-ci`에서 최신 CI 실패의 로컬 수정·검증을 마쳤습니다. 수정 커밋은 이 브랜치의 Git HEAD로 확인합니다. 아래 이전 PC 작업과 A0 조사는 과거 기록이며 현재 작업 지시와 구분합니다.
+
+- **원격 CI:** [c3b2485 검사](https://github.com/DonghyunT/cs-class/actions/runs/38437567017)는 E2E 401개 통과·1개 실패·1개 생략입니다. `.gitignore` 변경이 미분류되어 전체 검사로 승격됐고, 프로그래밍의 수업 나가기 검사에서 실패했습니다.
+- **원인·수정:** Entry 캡처 응답 뒤에 열리는 확인창을 클릭 직후 `isVisible()` 한 번으로 조회해 지나치는 경합입니다. 실제 미저장 입력을 명시하고 확인창 표시를 기다린 뒤 폐기·이동 및 서버의 기존 발견 기록 보존을 검사합니다. 제품 코드·저장 정책은 변경하지 않습니다.
+- **진단:** 정상 로컬 실행은 통과했으나 캡처 응답에 500ms 지연을 준 합성 진단에서 확인창이 열린 채 동일한 URL 대기 실패를 재현했고, 수정 후 같은 지연 조건에서 1개 통과했습니다. 응답을 무기한 보류한 앞선 진단은 4초 캡처 제한에 걸린 별도 실패로 구분합니다. 진단 장치는 최종 검사에서 제거했습니다. 의도적 실패 실행의 trace ZIP 정리에 Windows `EBUSY`가 있었으며 원인 판정은 PNG·DOM 캡처로 확인했습니다.
+- **검증·전달:** Windows·Node24.19.0·Java21·Playwright1.63/Chromium·빌드된 `next start`·demo Auth9099/Firestore8080에서 관련 E2E 5파일(`programming-classroom`, `manual-save-entry`, `manual-save`, `navigation`, `lesson-smoke`) 35개 통과(3.9분), 실패·생략0입니다. 타입·린트·정책/문서 회귀15개·활성 문서12개 링크/앵커·diffcheck와 독립 리뷰를 마쳤습니다. 앱 빌드는 변경 전 1회 성공했고 실행 코드가 동일해 재사용했습니다. 전체 E2E는 새로 실행하지 않았습니다. 상세 진단은 Git 제외 `scratch/ci-navigation-fix/`에 있으며 코드·검사·문서만 Git으로 전달합니다. 원격 push·CI 재실행·운영 배포는 이번 로컬 작업에서 수행하지 않았습니다.
+- **운영 조회:** 실제 운영 별칭은 성공한 `faaa82a`·`dpl_3hbBQeC2YXT949GXW32KL4QAQiyX`를 유지합니다. 익명 세션 API와 학생·교사 로그인 페이지 200을 확인했으며 실제 로그인·저장은 확인하지 않았습니다.
+
+### 이전 PC의 수동 저장·문서 정비
+
+2026-10-14 이전 PC의 문서 시스템 리팩토링 기록: 1차 기준 `ac67a5d`, 2차 정비 `be14f8d`.
 - **문서 체계 현대화 (1차 커밋 완료 `ac67a5d`):**
   - `AGENTS.md`: 62행 압축 단일 가이드라인 및 엄격한 가드레일 정립.
   - `docs/PRD.md`: SDD 사양 기반 제품 요구사항 계약으로 재구축 (활동 분모 일치: `programming-13`: 14, `review-abstraction`: 7, `review-sandwich`: 7, `review-flowchart`: 10).
@@ -122,7 +132,7 @@
 <a id="ci-개선-후속-작업"></a>
 ### CI 및 선별 검증 운영 현황
 - 2026-10-13 선별 검증 파이프라인(`scripts/e2e-scope.mjs`, `scripts/ci-policy.mjs`, `tests/lesson-smoke.spec.ts`) 구축 완료 후 `main`에 성공적으로 안착되었습니다.
-- 일반 push 시에는 문서 변경(E2E 생략) 및 변경 수업 선별 E2E만 가동되어 CI 시간을 대폭 단축하며, 398개 전체 E2E는 GitHub Actions 웹의 `workflow_dispatch`(수동 실행)로 한정하여 운영합니다. 상세 검사 기준은 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따릅니다.
+- 이번 원격 조회에서 `faaa82a`는 샌드위치 선별 E2E 30개 통과(2.2분), `c3b2485`는 `.gitignore` 미분류로 전체 검사에 승격된 것을 확인했습니다. CI 선택 기준은 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따르며 최신 실행의 결과는 첫머리에 기록합니다.
 
 ## 다른 PC에서 이어가기
 
