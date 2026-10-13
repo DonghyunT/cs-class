@@ -9,7 +9,7 @@
 - [초기 CI](https://github.com/DonghyunT/cs-class/actions/runs/38344538720): b6e2968·app28분37초·E2E384개 통과/Windows 전용1개 skip. [보완 CI](https://github.com/DonghyunT/cs-class/actions/runs/38347670921): d62be05·app30분57초·E2E 단계28분54초·384개 통과/1개 skip. 실행별 시간 차이를 캐시의 효과로 단정하지 않습니다.
 - 운영은 dpl_AnfXRBKDiGcjiFT8WTvJYHNi9N6C·READY·d62be05·운영 별칭을 확인했습니다. 앞선 빌드는 31초 후 Running Checks로 이전 운영을 유지하다 app 성공 후 공개됐습니다. 익명 config/session·학생/교사 로그인200 및 /.git/HEAD·config404를 확인했으며 실제 계정 로그인·저장은 시도하지 않았습니다.
 - 사용자 요청의 [수동 Preview](https://cs-class-8xi3e5096-donghyunt.vercel.app)는 b6e2968·READY입니다. 익명 접근은 Vercel 인증으로 이동하고 운영 Firebase 비밀정보가 없어 로그인 버튼은 비활성화됩니다. 화면 확인용이며 추가 CI·운영 교체는 만들지 않았습니다.
-- [문서 CI](https://github.com/DonghyunT/cs-class/actions/runs/38347033466)는 8fd1b2a·app9초·설치/빌드/E2E 생략입니다. 당시 Vercel은 .git 전체 제외로 비교에 실패해 재빌드했으며 d62be05에서 인증 config·hooks·logs·FETCH_HEAD 제외를 유지하고 비교 메타데이터를 남겼습니다. 최종 문서 push에서 앱 빌드 생략을 확인합니다.
+- [문서 CI](https://github.com/DonghyunT/cs-class/actions/runs/38347033466)는 8fd1b2a·app9초·설치/빌드/E2E 생략입니다. 당시 Vercel은 .git 전체 제외로 비교에 실패해 재빌드했으며 d62be05에서 인증 config·hooks·logs·FETCH_HEAD 제외를 유지하고 비교 메타데이터를 남겼습니다. [보완 후 문서 CI](https://github.com/DonghyunT/cs-class/actions/runs/38350518613)는 f9b449c·app15초 성공, 설치/빌드/E2E 모두 생략입니다. Vercel dpl_8uvpN7XGepqDfawL31tAHkn442YM의 Documents only: skip app build·CANCELED를 확인했고 운영은 d62be05를 유지합니다.
 - 앞선 정책 정비는 PR36의 65413a0와 PR37의 43a9cea로 반영됐습니다. 순서도 퍼즐 자동 제출·초안 복구·보관 CRLF 기준은 유지하며 검사 명령은 DEVELOPMENT, 배포는 FIREBASE_SETUP을 따릅니다.
 ### 이번 조사에서 확인한 근거
 
@@ -72,7 +72,7 @@
 
 ### CI 개선 후속 작업
 
-main의 전체 CI·대기 중 공개 차단·성공 후 공개·작업 브랜치의 자동 CI/Preview 없음·요청된 수동 Preview를 확인했습니다. 문서 CI의 무거운 검사 생략도 확인했으며 최종 문서 앱 빌드 생략 결과는 첫머리에 남깁니다.
+main의 전체 CI·대기 중 공개 차단·성공 후 공개·작업 브랜치의 자동 CI/Preview 없음·요청된 수동 Preview를 확인했습니다. 문서 CI의 무거운 검사 생략도 확인했으며 문서 앱 빌드 생략까지 확인했으며 결과는 첫머리에 기록했습니다. GitHub9/15초는 이번 문서 app job 관찰값이며 요금·평균 시간 절감을 보장하지 않습니다.
 
 다음 단계는 변경 코드와 기존 테스트의 실제 관계를 조사해 일반 기능의 관련 E2E 선택표를 만드는 일입니다. 인증·공통 저장·의존성·실행 설정·미분류/조회 실패는 전체 검사를 유지합니다. 단일 worker·학생 기록 보존을 유지하며 실제 대기 시간과 Actions 실행 시간으로 효과를 비교합니다. 상세 검사 기준을 이곳에 복제하지 않고 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따릅니다.
 
