@@ -1,3 +1,4 @@
+/* CS Class Review: Sandwich Stage Layout and UI Module */
 .reopen { margin-top:12px; }
 .summary[data-slot=dialog-content] { width:min(720px,calc(100vw - 32px)); max-width:720px; max-height:calc(100dvh - 32px); display:grid; grid-template-rows:auto minmax(0,1fr) auto; gap:20px; padding:28px; overflow:hidden; border:1px solid #dfe4eb; border-radius:24px; background:#fff; color:#202938; font-size:16px; line-height:1.7; }
 .summary .header[data-slot=dialog-header] { padding-right:36px; gap:10px; }
