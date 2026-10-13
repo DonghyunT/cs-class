@@ -2,8 +2,8 @@
 
 ## 현재 작업 상태
 
-2026-10-13(Asia/Seoul). **승인된 작업·검증 문서 정비와 로컬 문서 검증을 완료했습니다. CI 개선은 아래 후속 작업으로 남아 있습니다.**
-- 작업 브랜치: `codex/workflow-docs`, 시작 기준은 깨끗한 `main@22392d8`. 문서 정비와 아래 검토 보완을 하나의 로컬 커밋으로 마감합니다. 커밋 식별자는 Git 이력에서 확인하며 병합·push·배포는 수행하지 않았습니다.
+2026-10-13(Asia/Seoul). **작업·검증 문서 정비와 검토 보완을 PR #36으로 병합하고 운영 배포를 확인했습니다. CI 자동 선택 개선은 아래 후속 작업으로 남아 있습니다.**
+- 현재 작업 기준은 `main`입니다. `codex/workflow-docs`의 문서 커밋 `0ee2f87`을 [PR #36](https://github.com/DonghyunT/cs-class/pull/36)에서 `65413a0`에 squash 병합했습니다. 이 인계 기록은 별도 문서 마감 커밋으로 전달하며 최신 HEAD는 Git 이력과 대조합니다.
 - 이번 변경: AGENTS의 Ponytail `full`·Context7·Superpowers 적용 원칙과 탐색 범위를 정리하고, DEVELOPMENT에 검사 선택·실행 명령·결과 재사용·학생 계정/저장 완료 조건을 집약했습니다. README·FIREBASE_SETUP은 해당 기준과 배포 확인을 연결합니다.
 - 검토 보완: PRD에 순서도 퍼즐 1~3의 자동 제출 예외와 공용 PC의 미전송 초안 복구 경계를 명시했습니다. 컨설팅 보관 원문 2개의 CRLF를 기존 manifest 해시와 일치하도록 복원하고 `.gitattributes`에 해당 보관 폴더의 줄바꿈 변환 방지를 추가했습니다. manifest와 원문 내용은 변경하지 않았습니다.
 - 이번 범위는 문서 정비·위 검토 보완뿐입니다. 앱·DB·플러그인 원본·GitHub CI·Vercel 설정·DESIGN은 변경하지 않았습니다. 문서 지침 변경만으로 현재 GitHub CI의 전체 E2E가 줄어들지는 않습니다.
@@ -22,6 +22,13 @@
 | 10/13 GitHub 읽기 전용 조회 | 저장소 비공개 확인. 현재 workflow는 push·PR마다 전체 E2E, npm 캐시만 사용하며 단일 worker 유지 | 요금제·잔여 한도는 미확인. main 보호 규칙·ruleset 조회는 요금제 관련403으로 확인하지 못함 |
 
 검사 절차는 [DEVELOPMENT](DEVELOPMENT.md#검증), 자동화 변경은 [CI 후속 작업](#ci-개선-후속-작업)을 따릅니다.
+
+### 문서 정비 통합·배포 확인
+
+- 10/13 12:14 KST PR #36을 `main@65413a06e8b5c9ac80c439c5c678e19bdac6a83a`에 병합했습니다. Vercel `cs-class` Production 배포 `dpl_DujKyFxLvMzEWRfQqSTd8QV5rk2c`의 READY·동일 SHA·icn1·운영 별칭을 확인했습니다. 아래 수업 앱 릴리스의 실행 코드는 그대로입니다.
+- 자동 시작된 [PR CI](https://github.com/DonghyunT/cs-class/actions/runs/38340328278)는 린트·타입·순수 검사·빌드까지 통과한 뒤 전체 E2E 단계에서 취소했습니다. 중복 push CI와 main 병합 CI도 취소했습니다. `9576cd9` 이후 전체 변경 파일이 문서·보관 원문·`.gitattributes`·`.gitignore`에 한정되고 실행 코드·검사·의존성·실행 설정이 동일함을 확인하여 기존 [전체 CI 성공](https://github.com/DonghyunT/cs-class/actions/runs/38275942490)을 재사용했습니다. 이번 E2E가 새로 통과했다는 뜻이 아닙니다. 현재 workflow는 여전히 문서 변경에도 전체 검사를 자동 시작하며 자동 선택·중복 방지 개선은 미구현입니다.
+- 운영 읽기 전용 확인: `/api/auth/config` 200·운영 프로젝트·configured=true·emulatorHost=null, `/api/auth/session` 200·익명 session=null, 익명 학생/교사 API 각각401을 확인했습니다. 인앱 Chromium 657px에서 학생·교사 로그인 화면과 버튼 준비, 학생 화면 가로 넘침 없음, 확인한 콘솔 오류/경고0을 확인했습니다. 실제 계정 로그인·AI·저장은 이번 문서 배포에서 시도하지 않았습니다.
+- 이 배포 확인 기록은 후속 문서 PR로 전달합니다. 자동 승인 검토에서 `main` 직접 push와 `[skip ci]` 사용이 거부되어 별도 PR 경로를 사용합니다. 이후 문서 배포 SHA는 위 확인 배포와 구분하고 실제 최신 배포와 대조합니다.
 
 
 2026-10-13 직전 앱 릴리스: 사용자 요청의 수업 화면·순서도 수정과 운영 공개를 마쳤습니다. 앱·검사 `9576cd9`를 [PR #34](https://github.com/DonghyunT/cs-class/pull/34)로 병합했고 앱 릴리스 기준은 `main@8e32f7c`입니다. 이후 문서 커밋·배포 SHA와 구분하며 아래 수업 릴리스 검증은 당시 날짜·범위의 결과입니다.
