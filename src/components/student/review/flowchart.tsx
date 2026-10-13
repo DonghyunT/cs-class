@@ -93,7 +93,7 @@ export function Flowchart({ controller, practiceFocused = false, mode = "student
     };
     measure(); window.addEventListener("resize", measure);
     const observer = new ResizeObserver(measure), shell = element.closest("[data-lesson-shell]");
-    for (const header of shell?.querySelectorAll("header, [role='tablist'], [data-focused] > summary") ?? []) if (!element.contains(header)) observer.observe(header);
+    for (const header of shell?.querySelectorAll("header, [data-focused], [role='tablist'], [data-focused] > summary") ?? []) if (!element.contains(header)) observer.observe(header);
     const nav = element.querySelector("nav"); if (nav) observer.observe(nav);
     return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
   }, [missionId, practiceFocused]);

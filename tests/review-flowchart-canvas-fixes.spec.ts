@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
-import { db, headers, readyStudent } from "./emulator";
+import { db, headers, readyStudent, saveDraft } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 import type { FlowchartProject } from "../src/lib/classroom/review/project";
 
@@ -12,6 +12,7 @@ async function prepare(page: Page, fields: Partial<FlowchartProject>) {
   const work = await readWork(page.request);
   if (work.draft.reviewProject?.type !== "flowchart") throw Error("wrong project");
   Object.assign(work.draft.reviewProject, fields);
+  work.draft.stage = "practice";
   const saved = await page.request.post(workUrl, { headers, data: { revision: work.revision, draft: work.draft } });
   expect(saved.status()).toBe(200);
   await page.goto(`/classroom/${lessonId}?from=lessons`); await page.getByRole("tab", { name: /실습/ }).click();
@@ -53,7 +54,7 @@ test.describe("순서도 표시와 연결 회귀", () => {
     await page.keyboard.press("Tab"); await start.focus();
     await expect(start).toHaveAttribute("data-selected", "false");
     await expect(start.locator('[data-flow-shape]')).toHaveCSS("stroke-width", "4px");
-    await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+    await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
     const saved = (await readWork(page.request)).draft.reviewProject as FlowchartProject;
     expect(saved.nodes.find(item => item.id === "drag")).toMatchObject({ x: 550, y: 280 });
     await page.reload();

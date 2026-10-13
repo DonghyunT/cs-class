@@ -38,7 +38,7 @@ export function LessonWorkspace({ lesson, uid, returnOrigin, workspaceWide, prac
     return () => { cancelled = true; clearInterval(timer); window.removeEventListener("focus", focused); };
   }, []);
   const otherCurrent = dashboard?.lessons.find((item) => item.id === dashboard.classroom.currentLessonId && item.id !== lesson.id);
-  return <LessonShell lesson={lesson} returnOrigin={returnOrigin} workspaceWide={workspaceWide} practiceFocused={practiceFocused} practiceActive={frame?.stage === "practice"} onPracticeFocusedChange={onPracticeFocusedChange} saveLabel={frame?.saveLabel ?? (error ? "학습 기록 확인 필요" : "학습 불러오는 중…")} learningStatus={frame?.learningStatus} navigation={frame?.navigation} otherCurrent={otherCurrent} focusRequest={frame?.focusRequest}>
+  return <LessonShell lesson={lesson} returnOrigin={returnOrigin} workspaceWide={workspaceWide} practiceFocused={practiceFocused} practiceActive={frame?.stage === "practice"} onPracticeFocusedChange={onPracticeFocusedChange} saveLabel={frame?.saveLabel ?? (error ? "학습 기록 확인 필요" : "학습 불러오는 중…")} save={frame?.save} saveDisabled={frame?.saveDisabled} learningStatus={frame?.learningStatus} navigation={frame?.navigation} otherCurrent={otherCurrent} focusRequest={frame?.focusRequest}>
     {initial ? <StudentWorkEditor lesson={lesson} initial={initial} uid={uid} returnOrigin={returnOrigin} workspaceWide={workspaceWide} practiceFocused={practiceFocused} onPracticeFocusedChange={onPracticeFocusedChange} onWorkspaceWideChange={onWorkspaceWideChange} onWorkspaceStageChange={onWorkspaceStageChange} onFrameChange={setFrame} /> : error ? <div className={styles.empty} role="alert"><h2>수업을 불러오지 못했어요.</h2><p>{error}</p><Button onClick={() => setAttempt(value => value + 1)}>다시 불러오기</Button></div> : <div className={styles.loading} role="status"><BookOpen />저장된 학습을 불러오고 있어요.</div>}
   </LessonShell>;
 }
@@ -46,7 +46,10 @@ export function LessonWorkspace({ lesson, uid, returnOrigin, workspaceWide, prac
 
 const StudentWorkEditor = memo(function StudentWorkEditor({ lesson, initial, uid, ...view }: { lesson: Lesson; initial: Work; uid: string; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
   const entryExport = useRef<(() => Promise<string | null>) | null>(null);
-  const readEditorDraft = useCallback((current: WorkDraft) => entryExport.current ? readEntryDraft(lesson, current, entryExport.current) : Promise.resolve(current), [lesson]);
+  const readEditorDraft = useCallback((current: WorkDraft) => {
+    if (entryExport.current) return readEntryDraft(lesson, current, entryExport.current);
+    return Promise.resolve(current);
+  }, [lesson]);
   const controller = useWork(initial, uid, lesson.practice.type === "entryjs" || lesson.practice.type === "programming" ? readEditorDraft : undefined);
   return <LessonEditor lesson={lesson} initial={initial} controller={controller} entryExport={entryExport} {...view} />;
 });

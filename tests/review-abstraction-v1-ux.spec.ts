@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { db, headers, readyStudent } from "./emulator";
+import { db, headers, readyStudent, saveDraft } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 import type { AbstractionProject } from "../src/lib/classroom/review/project";
 
@@ -49,7 +49,7 @@ test("미완료 옛 워크북은 맛보기 1회를 거친 뒤 원래 단계와 �
   await page.getByRole("button", { name: "나의 실전 워크북 시작", exact: true }).click();
   await expect(page.getByRole("heading", { name: "나의 추상화 처방전", exact: true })).toBeFocused();
   await expect(page.getByLabel("실천 계획 1", { exact: true })).toHaveValue("");
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByLabel("실천 계획 1", { exact: true })).toHaveValue("");
   const work = await (await page.request.get(`/api/classroom/work/${id}`)).json() as Work;
@@ -72,7 +72,7 @@ test("명시한 AI 생성은 최신 3단계의 요소 7개를 모두 남기고 �
   expect((await candidates.getByRole("button").allTextContents()).map(text => text.replace(/^(남김|버림) · /, ""))).toEqual(order.map(text => text.replace("남김 · ", "")));
   await expect(page.getByRole("region", { name: "버릴 노이즈", exact: true })).toContainText(word);
   await expect(page.getByRole("region", { name: "닥터 대화", exact: true })).toContainText("합성 AI 피드백");
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   const discarded = await (await page.request.get(`/api/classroom/work/${id}`)).json() as Work;
   expect(discarded.draft.reviewProject).toMatchObject({ step: 3, noise: [word] });
   await page.reload();
@@ -85,7 +85,7 @@ test("명시한 AI 생성은 최신 3단계의 요소 7개를 모두 남기고 �
   expect(await plans.count()).toBeGreaterThanOrEqual(3);
   expect(await plans.count()).toBeLessThanOrEqual(5);
   await moveTo(page, 4, 3);
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   const work = await (await page.request.get(`/api/classroom/work/${id}`)).json() as Work;
   if (work.draft.reviewProject?.type !== "abstraction") throw Error("wrong lesson");
   expect(work.draft.reviewProject.noise).toEqual([]);
@@ -101,8 +101,10 @@ test("길이 1인 빈 요소와 계획은 AI가 덮지 않고 단계 왕복과 �
   await expect(page.getByRole("button", { name: "AI로 처방전 초안 만들기", exact: true })).toHaveCount(0);
   await moveTo(page, 3, 4);
   await expect(page.getByLabel("실천 계획 1", { exact: true })).toHaveValue("");
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.reload();
+  // 읽기 단계만 바꾼 경우 저장된 2단계로 돌아오며 빈 답안은 그대로 유지됩니다.
+  await moveTo(page, 2, 4);
   await expect(page.getByLabel("실천 계획 1", { exact: true })).toHaveValue("");
   await moveTo(page, 4, 3);
   await page.getByText("후보 단어 직접 편집", { exact: true }).click();
@@ -121,7 +123,7 @@ test("최초 요소 생성의 늦은 응답은 기다리며 직접 입력한 핵
   await page.getByLabel("핵심 요소", { exact: true }).fill("직접 쓴 핵심\n");
   await expect(page.getByRole("region", { name: "닥터 대화", exact: true }).getByRole("alert")).toContainText(/작품이 바뀌|보존/);
   await expect(page.getByLabel("핵심 요소", { exact: true })).toHaveValue("직접 쓴 핵심\n");
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.reload();
   await page.getByText("후보 단어 직접 편집", { exact: true }).click();
   await expect(page.getByLabel("핵심 요소", { exact: true })).toHaveValue("직접 쓴 핵심\n");
@@ -140,7 +142,7 @@ test("빈 계획 제안 실패와 재시도는 기존 계획과 상담 입력을
   await page.getByRole("button", { name: "이 요청 다시 시도", exact: true }).click();
   await expect(chat.getByRole("alert")).toHaveCount(2);
   await expect(input).toHaveValue("이미 작성하던 상담 질문");
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByLabel("실천 계획 1", { exact: true })).toHaveValue("내가 정한 계획");
 });
@@ -235,7 +237,7 @@ test("추상화 조건·태그·처방전 카드를 직접 편집하고 미완�
   expect(copied).toContain("현재: 과제가 아직 두 개 남았어요");
   expect(copied).toContain("1. 남은 과제를 먼저 확인한다");
   await expect(page.getByRole("button", { name: "인쇄 / PDF", exact: true })).toBeVisible();
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByLabel("실천 계획 1", { exact: true })).toHaveValue("남은 과제를 먼저 확인한다");
   await expect(page.getByLabel("실천 계획 2", { exact: true })).toHaveValue("");
@@ -267,7 +269,7 @@ test("추상화 닥터 중복 요청은 한 번만 보내고 늦은 응답은 �
   await expect(page.getByLabel("실천 계획 1", { exact: true })).toHaveValue("응답을 기다리며 직접 수정한 계획");
   await expect(chat.getByRole("button", { name: "추천 계획 모두 채택", exact: true })).toHaveCount(0);
   expect(requests).toHaveLength(1);
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByLabel("실천 계획 1", { exact: true })).toHaveValue("응답을 기다리며 직접 수정한 계획");
   expect(requests).toHaveLength(1);
@@ -302,7 +304,7 @@ test("추상화 닥터의 단계별 대화와 실패 전 제안을 유지하고 
   await expect(chat.getByRole("alert")).toHaveCount(2);
   await expect(chat).toContainText("목표에 도달하기");
   await expect(page.getByLabel("처방전 상담 질문", { exact: true })).toHaveValue("fixture-network");
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("button", { name: "해결 계획 다시 추천 받기", exact: true })).toBeVisible();
   await expect(chat).not.toContainText("fixture-network");

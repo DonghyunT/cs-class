@@ -62,6 +62,7 @@ test("다른 이번 수업 링크는 제목 아래에서 줄바꿈하고 저장 
   await page.route("**/api/classroom/work/review-sandwich", route => route.request().method() === "POST" ? route.fulfill({ status: 503, json: { message: "합성 저장 실패" } }) : route.continue());
   await page.getByRole("textbox", { name: "자연어 명령" }).fill("빵 봉지를 열어");
   await link.click();
+  await page.getByRole("dialog", { name: "저장하지 않은 변경이 있어요" }).getByRole("button", { name: "저장 후 나가기", exact: true }).click();
   await expect(page.locator("#work-save-error")).toContainText("합성 저장 실패");
   await expect(page).toHaveURL(/review-sandwich/);
   await expect(page.getByRole("textbox", { name: "자연어 명령" })).toHaveValue("빵 봉지를 열어");

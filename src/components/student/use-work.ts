@@ -8,6 +8,7 @@ import { programmingProjectMatches } from "@/lib/classroom/programming-entry";
 import { reviewProjectSchema, sameReviewProject } from "@/lib/classroom/review/project";
 import type { Submission, ValidationResult, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import type { AiReply, AiTask, FlowPlanning } from "@/lib/classroom/review/ai";
+import { sameWorkContent } from "./work-draft";
 
 type SaveState = "saved" | "dirty" | "saving" | "failed";
 type Recovery = { revision: number; draft: WorkDraft; at: number };
@@ -88,7 +89,8 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
     const cached = recovery.get(key);
     return cached && Date.now() - cached.at < 20 * 60_000 ? cached.draft : initial.draft;
   });
-  const [saveState, setSaveState] = useState<SaveState>(() => sameDraft(draft, initial.draft) ? "saved" : "dirty");
+  const [saveState, setSaveState] = useState<SaveState>(() => sameWorkContent(draft, initial.draft) ? "saved" : "dirty");
+  const [capturing, setCapturing] = useState(false);
   const [error, setError] = useState("");
   const [conflict, setConflict] = useState(false);
   const [remote, setRemote] = useState<Work | null>(null);
@@ -99,6 +101,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
   const failedAction = useRef<ActionFailure | null>(null);
   const checkingAction = useRef(false);
   const pendingAi = useRef<Promise<AiReply | null> | null>(null);
+  const finishingAi = useRef<Promise<void> | null>(null);
   const preparingAi = useRef(false);
   const server = useRef(initial);
   const local = useRef(draft);
@@ -109,6 +112,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
   const pendingAction = useRef<Promise<boolean> | null>(null);
   const { register } = useNavigationGuard();
   const isDirty = useCallback(() => !sameDraft(local.current, server.current.draft), []);
+  const hasUnsavedContent = useCallback(() => !sameWorkContent(local.current, server.current.draft), []);
   const clearActionFailure = useCallback(() => { failedAction.current = null; setActionFailure(null); }, []);
 
   const adopt = useCallback((next: Work, captured: WorkDraft) => {
@@ -116,7 +120,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
     server.current = next;
     setWork(next);
     if (sameDraft(local.current, captured)) { local.current = next.draft; setDraft(next.draft); }
-    if (sameDraft(local.current, next.draft)) recovery.delete(key);
+    if (sameWorkContent(local.current, next.draft)) recovery.delete(key);
     else recovery.set(key, { revision: next.revision, draft: local.current, at: Date.now() });
   }, [key]);
 
@@ -129,46 +133,67 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
     setConflict(problem instanceof ApiError && problem.code === "REVISION_CONFLICT");
   }, [clearActionFailure]);
 
-  const flush = useCallback(function flushWork(captureEditor = false): Promise<boolean> {
-    if (pendingAi.current) return pendingAi.current.then(() => flushWork(captureEditor));
-    if (saving.current) return captureEditor ? saving.current.then((saved) => saved ? flushWork(true) : false) : saving.current;
+  const captureDraft = useCallback(async (): Promise<WorkDraft> => {
+    if (!active.current) throw new Error("수업 화면이 바뀌었어요.");
+    if (!readEditorDraft) return structuredClone(local.current);
+    const before = structuredClone(local.current);
+    setCapturing(true);
+    try {
+      const captured = await readEditorDraft(before);
+      if (!active.current) throw new Error("수업 화면이 바뀌었어요.");
+      // Preserve edits in other fields made while native export was outstanding.
+      const latest = local.current;
+      const next = sameDraft(before, latest) ? captured : before.programming && captured.programming && latest.programming
+        ? { ...latest, programming: { ...latest.programming, projects: { ...latest.programming.projects, [before.programming.mission]: captured.programming.projects[before.programming.mission] } } }
+        : { ...latest, entryProject: captured.entryProject, practiceOrder: captured.practiceOrder };
+      local.current = next; setDraft(next);
+      if (hasUnsavedContent()) recovery.set(key, { revision: server.current.revision, draft: next, at: Date.now() });
+      return structuredClone(next);
+    } catch (problem) { fail(problem); throw problem; }
+    finally { if (active.current) setCapturing(false); }
+  }, [fail, hasUnsavedContent, key, readEditorDraft]);
+
+  const flush = useCallback(function flushWork(captureEditor = false, contentOnly = false): Promise<boolean> {
+    if (pendingAi.current) return pendingAi.current.then(() => flushWork(captureEditor, contentOnly));
+    if (saving.current) return contentOnly ? saving.current : saving.current.then(saved => saved ? flushWork(captureEditor) : false);
     if (!active.current || blocked.current) return Promise.resolve(false);
     if (!isDirty() && !(captureEditor && readEditorDraft)) { setSaveState("saved"); return Promise.resolve(true); }
     const operation = (async () => {
       setSaveState("saving");
       try {
-        // Native editors may still hold an uncommitted field when leaving or submitting.
-        if (captureEditor && readEditorDraft) {
-          const captured = await readEditorDraft(local.current);
-          if (!active.current) return false;
-          if (!sameDraft(local.current, captured)) {
-            local.current = captured; setDraft(captured);
-            recovery.set(key, { revision: server.current.revision, draft: captured, at: Date.now() });
-          }
-        }
-        // A single writer drains edits made during an outstanding request.
-        while (active.current && isDirty()) {
-          const captured = local.current;
+        const captured = captureEditor ? await captureDraft() : structuredClone(local.current);
+        if (!active.current) return false;
+        if (isDirty() && (!contentOnly || hasUnsavedContent())) {
           const next = await classroomApi.saveWork(initial.lessonId, server.current.revision, captured, uid);
           if (!active.current) return false;
           adopt(next, captured);
         }
         if (!active.current) return false;
-        setSaveState("saved"); setError("");
+        setSaveState(hasUnsavedContent() ? "dirty" : "saved"); setError("");
         return true;
       } catch (problem) { fail(problem); return false; }
       finally { saving.current = null; }
     })();
     saving.current = operation;
     return operation;
-  }, [adopt, fail, initial.lessonId, isDirty, key, readEditorDraft, uid]);
+  }, [adopt, captureDraft, fail, hasUnsavedContent, initial.lessonId, isDirty, readEditorDraft, uid]);
+
+  const save = useCallback(() => {
+    if (actionPending.current || preparingAi.current || pendingAi.current || failedAction.current?.uncertain) return Promise.resolve(false);
+    if (blocked.current) {
+      // A conflict requires explicit comparison; definite transport failures can be retried.
+      if (conflict) return Promise.resolve(false);
+      blocked.current = false; setError("");
+    }
+    return flush(true, true);
+  }, [conflict, flush]);
 
   const update = useCallback((next: WorkDraft) => {
     if (!active.current || actionPending.current) return;
     local.current = next;
     recovery.set(key, { revision: server.current.revision, draft: next, at: Date.now() });
     setDraft(next);
-    if (!blocked.current || failedAction.current?.uncertain) setSaveState(sameDraft(next, server.current.draft) ? "saved" : "dirty");
+    if ((!blocked.current || failedAction.current?.uncertain) && !saving.current) setSaveState(sameWorkContent(next, server.current.draft) ? "saved" : "dirty");
   }, [key]);
 
   const perform = useCallback((action: WorkAction): Promise<boolean> => {
@@ -183,7 +208,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
         const captured = local.current;
         const next = await classroomApi.act(initial.lessonId, server.current.revision, action, uid);
         if (!active.current) return false;
-        adopt(next, captured); setSaveState("saved"); setError("");
+        adopt(next, captured); setSaveState(hasUnsavedContent() ? "dirty" : "saved"); setError("");
         return true;
       } catch (problem) {
         if (!active.current) return false;
@@ -193,7 +218,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
           const failure = { action, before, uncertain, message: problem instanceof Error ? problem.message : "요청 결과를 확인하지 못했어요." };
           failedAction.current = failure; setActionFailure(failure);
           blocked.current = uncertain;
-          setSaveState(isDirty() ? "dirty" : "saved");
+          setSaveState(hasUnsavedContent() ? "dirty" : "saved");
         }
         return false;
       }
@@ -201,7 +226,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
     })();
     pendingAction.current = operation;
     return operation;
-  }, [adopt, clearActionFailure, fail, flush, initial.lessonId, isDirty, uid]);
+  }, [adopt, clearActionFailure, fail, flush, hasUnsavedContent, initial.lessonId, uid]);
 
   const recoverAction = useCallback(async (resend = false): Promise<boolean> => {
     const failure = failedAction.current;
@@ -218,7 +243,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
           local.current = { ...local.current, quizAnswers }; setDraft(local.current);
         }
         adopt(latest, failure.before.draft); clearActionFailure(); blocked.current = false;
-        setSaveState(isDirty() ? "dirty" : "saved");
+        setSaveState(hasUnsavedContent() ? "dirty" : "saved");
         return "confirmed";
       }
       if (latest.revision !== failure.before.revision || !sameDraft(latest.draft, failure.before.draft)) {
@@ -243,15 +268,18 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
       if (active.current && failedAction.current === failure) setActionFailure({ ...failure, verificationError: problem instanceof Error ? problem.message : "결과를 확인하지 못했어요." });
       return false;
     } finally { checkingAction.current = false; if (active.current) setCheckingResult(false); }
-  }, [adopt, clearActionFailure, fail, initial.lessonId, isDirty, uid]);
+  }, [adopt, clearActionFailure, fail, hasUnsavedContent, initial.lessonId, uid]);
 
   const requestAi = useCallback(async (task: AiTask, input: string, missionId?: string, requestId = crypto.randomUUID(), planning?: FlowPlanning): Promise<AiReply | null> => {
     if (actionPending.current || pendingAi.current || preparingAi.current || !active.current) return null;
     preparingAi.current = true;
+    let finishAi!: () => void;
+    finishingAi.current = new Promise<void>(resolve => { finishAi = resolve; });
     setAiBusy(true);
     try {
       if (!(await flush(true)) || !active.current) return null;
-      const captured = local.current;
+      // AI evaluates the confirmed server snapshot, not later edits made while saving it.
+      const captured = server.current.draft;
       const adoptResponse = (next: Work) => {
         const incoming = next.draft.reviewProject, edited = local.current.reviewProject;
         if (incoming?.type === "sandwich" && edited?.type === "sandwich" && incoming.runId === edited.runId) {
@@ -259,7 +287,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
           setDraft(local.current);
         }
         adopt(next, captured);
-        setSaveState(sameDraft(local.current, next.draft) ? "saved" : "dirty");
+        setSaveState(sameWorkContent(local.current, next.draft) ? "saved" : "dirty");
       };
       const operation = (async () => {
         try {
@@ -268,7 +296,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
         // AI appends a signed command while the student may already be typing the next one.
         // Merge only that server change; keep edits made both during preparation and the call.
         adoptResponse(reply.work);
-        return reply.work.draft.reviewProject?.type === "sandwich" || sameDraft(local.current, reply.work.draft) ? reply : null;
+        return reply.work.draft.reviewProject?.type === "sandwich" || sameWorkContent(local.current, reply.work.draft) ? reply : null;
         } catch (problem) {
           // Failed reviews may leave a snapshot-bound teacher request available.
           try { const latest = await classroomApi.work(initial.lessonId); if (active.current && latest.revision >= server.current.revision) adoptResponse(latest); } catch { /* Keep the original error and local input. */ }
@@ -277,7 +305,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
       })();
       pendingAi.current = operation.catch(() => null);
       return await operation;
-    } finally { pendingAi.current = null; preparingAi.current = false; if (active.current) setAiBusy(false); }
+    } finally { pendingAi.current = null; preparingAi.current = false; finishingAi.current = null; finishAi(); if (active.current) setAiBusy(false); }
   }, [adopt, flush, initial.lessonId, uid]);
 
   const retry = useCallback(async () => { if (failedAction.current?.uncertain) return false; blocked.current = false; setError(""); return flush(true); }, [flush]);
@@ -303,53 +331,68 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
 
   const switchStage = useCallback((stage: WorkDraft["stage"]): Promise<boolean> => {
     if (actionPending.current || !active.current) return Promise.resolve(false);
-    if (local.current.stage === stage) return flush(true);
     actionPending.current = true;
     const operation = (async () => {
       try {
-        if (!(await flush(true)) || !active.current) return false;
-        const captured = local.current;
-        setSaveState("saving");
-        const next = await classroomApi.saveWork(initial.lessonId, server.current.revision, { ...captured, stage }, uid);
-        if (!active.current) return false;
-        adopt(next, captured); setSaveState("saved"); setError("");
+        const captured = await captureDraft();
+        const next = { ...captured, stage };
+        local.current = next; setDraft(next);
+        if (hasUnsavedContent()) recovery.set(key, { revision: server.current.revision, draft: next, at: Date.now() });
+        if (!blocked.current) setSaveState(hasUnsavedContent() ? "dirty" : "saved");
         return true;
       } catch (problem) { fail(problem); return false; }
       finally { pendingAction.current = null; actionPending.current = false; }
     })();
     pendingAction.current = operation;
     return operation;
-  }, [adopt, fail, flush, initial.lessonId, uid]);
+  }, [captureDraft, fail, hasUnsavedContent, key]);
 
   useEffect(() => {
     active.current = true;
     const cached = recovery.get(key);
-    if (cached && cached.revision !== initial.revision && isDirty()) {
+    if (cached && cached.revision !== initial.revision && hasUnsavedContent()) {
       // A navigation may return after another tab saved. Never apply stale recovery silently.
       queueMicrotask(() => { if (active.current) { blocked.current = true; setConflict(true); setSaveState("failed"); setError("다른 창의 기록이 바뀌었어요. 보관한 입력과 서버 기록을 비교해 주세요."); } });
     }
     return () => { active.current = false; };
-  }, [initial.revision, isDirty, key]);
+  }, [initial.revision, hasUnsavedContent, key]);
+
+  const discardDraft = useCallback(() => {
+    if (saving.current || actionPending.current || pendingAi.current || preparingAi.current || failedAction.current?.uncertain) return false;
+    local.current = structuredClone(server.current.draft); setDraft(local.current);
+    recovery.delete(key); blocked.current = false; setConflict(false); setRemote(null); setError("");
+    clearActionFailure(); setSaveState("saved"); return true;
+  }, [clearActionFailure, key]);
+
+  const prepareLeave = useCallback(async () => {
+    if (finishingAi.current) await finishingAi.current;
+    if (pendingAction.current) await pendingAction.current;
+    if (saving.current) await saving.current;
+    if (!active.current || failedAction.current?.uncertain) return false;
+    try { await captureDraft(); return true; } catch (problem) { fail(problem); return false; }
+  }, [captureDraft, fail]);
 
   useEffect(() => register({
     flush: async () => {
-      if (pendingAi.current) await pendingAi.current;
+      if (finishingAi.current) await finishingAi.current;
       if (pendingAction.current) await pendingAction.current;
       return flush(true);
     },
-    isDirty: () => isDirty() || blocked.current || actionPending.current || !!pendingAi.current,
-  }), [flush, isDirty, register]);
+    save, prepareLeave, discard: discardDraft,
+    isDirty: () => hasUnsavedContent() || blocked.current || actionPending.current || preparingAi.current || !!pendingAi.current || !!saving.current,
+  }), [discardDraft, flush, hasUnsavedContent, prepareLeave, register, save]);
   useEffect(() => {
-    if (saveState !== "dirty") return;
-    const timer = window.setTimeout(() => { void flush(); }, 900);
-    return () => clearTimeout(timer);
-  }, [draft, flush, saveState]);
-  useEffect(() => {
-    const timer = window.setInterval(() => { if (!blocked.current && !actionPending.current && isDirty()) void flush(); }, 5_000);
-    const visible = () => { if (document.visibilityState === "hidden" && !blocked.current) void flush(); };
-    document.addEventListener("visibilitychange", visible);
-    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", visible); };
-  }, [flush, isDirty]);
+    const shortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "s") return;
+      if (!(event.target instanceof Element) || !event.target.closest("[data-lesson-shell]")) return;
+      event.preventDefault();
+      if (event.repeat || event.isComposing || event.keyCode === 229 || document.querySelector("[role=dialog]")) return;
+      if (event.target.closest("[data-lesson-shell]")?.querySelector<HTMLButtonElement>("[data-work-save]")?.matches('[disabled], [aria-disabled="true"]')) return;
+      void save();
+    };
+    window.addEventListener("keydown", shortcut, true);
+    return () => window.removeEventListener("keydown", shortcut, true);
+  }, [save]);
 
-  return { work, draft, saveState, error, conflict, remote, busy, aiBusy, actionFailure, actionBlocked: !!actionFailure?.uncertain, checkingResult, recoverAction, requestAi, update, perform, retry, compare, resolve, switchStage, flush, getDraft: () => local.current };
+  return { work, draft, saveState, error, conflict, remote, busy, aiBusy, capturing, actionFailure, actionBlocked: !!actionFailure?.uncertain, checkingResult, recoverAction, requestAi, update, perform, retry, compare, resolve, switchStage, flush, captureDraft, save, discardDraft, prepareLeave, getDraft: () => local.current };
 }

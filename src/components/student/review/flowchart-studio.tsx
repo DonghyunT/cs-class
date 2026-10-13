@@ -128,7 +128,7 @@ export function FlowchartStudio({ controller, mode }: { controller: ReviewContro
   async function exportImage(trigger: HTMLElement) {
     exportTrigger.current = trigger; setExportOpen(true); setExportBusy(true); setExportError(""); setImage(null); const request = ++exportRequest.current;
     try {
-      if (!await controller.flush()) throw Error("저장을 완료하지 못했어요. 현재 작품을 보존하고 저장 후 다시 내보내 주세요.");
+      await controller.captureDraft();
       const latest = current(), svg = canvas.current?.querySelector("svg"); if (!latest || !svg) throw Error("캔버스를 준비한 뒤 다시 시도해 주세요.");
       const validation = controller.work.missions?.free?.validation, review = controller.work.aiReview;
       const status = validation && sameReviewProject(latest, validation.reviewProject, "free") ? validation.passed ? "현재 작품 검증 통과" : "현재 작품 수정 필요" : "현재 작품 미검증";

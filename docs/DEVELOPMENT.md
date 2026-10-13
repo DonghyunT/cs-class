@@ -165,12 +165,12 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 
 - `npm ci`의 `postinstall`과 `npm run dev`·`npm run build`의 준비 단계가 [자산 목록](../scripts/entryjs-assets.json)의 버전·SHA-512로 브라우저 파일을 준비합니다. npm 레지스트리·공식 Entry CDN·고정한 공식 예제 커밋을 사용하며 브라우저는 `/entryjs/vendor/`의 로컬 파일을 읽습니다. 첫 설치에는 인터넷과 `tar`가 필요합니다(Windows 기본 tar 또는 해당 OS의 tar). 자산·다운로드 캐시는 Git 제외 `public/entryjs/vendor/`·`scratch/entryjs/`에 생성됩니다. 필요하면 `npm run prepare:entryjs`로 다시 준비합니다. 무결성이 다른 파일은 빌드에 사용하지 않습니다.
 - [작업실 HTML](../public/entryjs/workspace.html)·[브리지](../public/entryjs/workspace.js)는 `allow-scripts`만 허용한 iframe에서 실행합니다. Next.js 앱의 React 19와 EntryJS 보조 UI의 React 18을 분리합니다. iframe의 설정 저장소는 메모리이며 부모 화면의 쿠키·DOM·저장소에 접근할 수 없습니다. 공개 자산에만 CORS와 OPTIONS를 허용하고 수업 API의 인증·권한·Origin 검사는 유지합니다.
-- Entry 4.0.23의 일부 캔버스 조작 그림은 CORS 설정 없이 `new Image()`로 읽습니다. 브리지는 `Entry.init` 전에 해당 iframe의 이미지 생성에 `crossOrigin="anonymous"`를 지정하고 네이티브 이미지·prototype을 유지합니다. 기존 `/entryjs/*` CORS 헤더와 함께 EaselJS의 픽셀 기반 클릭 판정을 허용합니다. 질문 체크가 무반응이고 픽셀 읽기 보안 오류가 반복되면 요청의 CORS 설정을 확인하며, iframe에 `allow-same-origin`을 추가하거나 오류를 숨기지 않습니다. [프로그래밍 검사](../tests/programming-classroom.spec.ts)의 `entry-answer:`는 실제 캔버스 입력칸·체크 클릭, 한글·합성 IME Enter 보호, 자동 저장 대기·정지 뒤 재실행을 확인합니다. 숨은 입력창의 `fill`만으로 체크 버튼을 검증하지 않습니다.
+- Entry 4.0.23의 일부 캔버스 조작 그림은 CORS 설정 없이 `new Image()`로 읽습니다. 브리지는 `Entry.init` 전에 해당 iframe의 이미지 생성에 `crossOrigin="anonymous"`를 지정하고 네이티브 이미지·prototype을 유지합니다. 기존 `/entryjs/*` CORS 헤더와 함께 EaselJS의 픽셀 기반 클릭 판정을 허용합니다. 질문 체크가 무반응이고 픽셀 읽기 보안 오류가 반복되면 요청의 CORS 설정을 확인하며, iframe에 `allow-same-origin`을 추가하거나 오류를 숨기지 않습니다. [프로그래밍 검사](../tests/programming-classroom.spec.ts)의 `entry-answer:`는 실제 캔버스 입력칸·체크 클릭, 한글·합성 IME Enter 보호, 명시 저장·정지 뒤 재실행을 확인합니다. 숨은 입력창의 `fill`만으로 체크 버튼을 검증하지 않습니다.
 - 질문칸의 `show()`는 자체적으로 초점을 줍니다. 브리지에서 같은 프레임에 `focus()`를 다시 호출하면 Entry 4.0.23의 예약된 커서 타이머가 중복으로 남을 수 있으므로 재호출하지 않습니다. `Entry.init` 전 `CanvasInput.render`에 숨김 검사를 적용하여 종료 후 keyup·커서 callback이 입력칸을 다시 그리지 않도록 합니다. vendor 원문은 수정하지 않습니다. `entry-flicker:` 검사는 실제 응답 완료·수동 정지 뒤 두 커서 주기 동안 숨은 입력칸의 무대 재그리기 횟수를 확인합니다. DOM의 숨김 값이나 한 장의 캡처만으로 깜빡임 해소를 판정하지 않으며, 이 검사로 라이브러리의 모든 타이머 누수가 없다고 단정하지 않습니다.
 - `Entry.loadProject()`는 이미지를 읽는 동안에도 동기 반환합니다. 브리지는 고정 무대 객체의 실제 이미지 `decode()`와 bounds를 확인한 뒤 `loaded`를 보내 실행·검증을 허용합니다. 준비 중에는 공용 `#workspace`를 `inert`로 두어 공개 체험의 내부 실행·편집도 막고, 잠금 메시지가 와도 준비 상태를 유지합니다. 준비 전 run 이벤트도 중지합니다. 실패는 기존 오류/다시 불러오기 경로로 처리하고 저장된 작품을 유지합니다. `entry-assets:`는 이미지 응답 보류 중 실행 비활성, 준비 후 실제 응답, 이미지 실패 때 작품 보존·재시도를 확인하며 [이름 체험 검사](../tests/name-entry-pilot.spec.ts)에도 내부 작업실 준비 경계를 포함합니다. DOM 생성이나 프로젝트 객체 반환만으로 무대 준비를 판정하지 않습니다.
 - 학생 화면은 [EntryPracticeWorkspace](../src/components/student/entry-practice-workspace.tsx), 작품 읽기는 [entry-project.ts](../src/lib/classroom/entry-project.ts), 서버 조건 판정은 [solutions.ts](../src/lib/server/solutions.ts)에서 관리합니다. 네이티브 JSON-string 스크립트와 이전 미리보기 작품을 읽습니다. 시작·이동·시간 동안 말하기 블록과 상수 입력만 허용하고 고정한 엔트리봇·무대로 불러옵니다. 최대 50개 블록·직렬화된 작품 28KB, 이동 ±1000·말 80자·시간 0~10초를 지원합니다.
-- 실행 결과는 중지 **전**에 수집합니다. EntryJS는 중지하면 오브젝트를 실행 전 상태로 되돌리고 `exportProject`도 실행을 중지하므로, 실행 중 자동 저장은 정지 상태의 작품에 현재 코드만 반영합니다. 15초가 지나면 실행을 멈춥니다. 이 과제의 서버 채점은 지원 블록의 연결 구조·상수 값을 검사하며 서버에서 EntryJS를 실행하지 않습니다. 다른 과제의 반복·입력·충돌·난수 검사는 별도 설계합니다.
-- 네이티브 입력의 붙여넣기·IME는 `input`을 `keyup` 처리로 연결합니다. 단계 이동·화면 이동·검증·제출 전에는 편집기의 현재 작품을 읽고 저장하며 실패하면 이동을 멈춥니다. 드래그 중 임시 블록은 저장하지 않습니다. 작품을 불러올 때 작업실 `dReDraw`와 팔레트 `reDraw`의 예약을 순서대로 `flush()`한 뒤 편집을 허용합니다. 늦은 초기 갱신이 입력창을 닫지 않도록 하며, 자동 저장 이후 초점과 연속 입력도 검사합니다. EntryJS 팔레트 좌표 갱신에는 지연이 있으므로 UI 검사는 블록 모델의 좌표 준비 후 시작합니다.
+- 실행 결과는 중지 **전**에 수집합니다. EntryJS는 중지하면 오브젝트를 실행 전 상태로 되돌리고 `exportProject`도 실행을 중지하므로, 실행 중 명시 저장은 정지 상태의 작품에 현재 코드만 반영합니다. 15초가 지나면 실행을 멈춥니다. 이 과제의 서버 채점은 지원 블록의 연결 구조·상수 값을 검사하며 서버에서 EntryJS를 실행하지 않습니다. 다른 과제의 반복·입력·충돌·난수 검사는 별도 설계합니다.
+- 네이티브 입력의 붙여넣기·IME는 `input`을 `keyup` 처리로 연결합니다. 단계·미션 이동 전에는 현재 작품을 읽어 메모리에 확정합니다. 명시 저장·검증·제출·손들기는 현재 작품을 읽어 서버에 저장하며 실패하면 해당 행동을 멈춥니다. 외부 이동은 미저장 선택을 거칩니다. 드래그 중 임시 블록은 저장하지 않습니다. 작품을 불러올 때 작업실 `dReDraw`와 팔레트 `reDraw`의 예약을 순서대로 `flush()`한 뒤 편집을 허용합니다. 늦은 초기 갱신이 입력창을 닫지 않도록 하며, 명시 저장 이후 초점과 연속 입력도 검사합니다. EntryJS 팔레트 좌표 갱신에는 지연이 있으므로 UI 검사는 블록 모델의 좌표 준비 후 시작합니다.
 - [EntryJS 브라우저 검사](../tests/entryjs-ui.spec.ts)는 실제 드래그·숫자 입력·실행·무대 복원·저장·검증·제출·재접속, 저장/파일 로딩 실패 복구, 좁은 창·Esc·키보드 가로 이동을 확인합니다. 라이브러리 번들과 공개된 라이선스·NOTICE·COPYING·패키지 메타데이터는 자산 준비 시 함께 보존합니다.
 - `Classroom`은 사용자·수업 화면의 단계·넓게 보기·실습 집중 선택을 `LessonWorkspace`와 `LessonShell`에 전달합니다. 폭과 집중은 독립이며 같은 화면의 단계 왕복에 유지하고 새로고침/다른 수업에서는 기본 상태입니다. 집중은 프로그래밍·Entry·세 복습의 실습에서만 적용합니다. `PracticeGuidance`는 같은 children을 접어 편집기/iframe을 재생성하지 않으며 단계 바꾸기·실행·검증/제출·저장 오류·도움은 유지합니다. CSS로 배치만 바꾸며 iframe key/src와 작품을 유지합니다. 작업실 가까운 저장 표시는 기존 `useWork`를 사용하고 실제 제출·현재 작품의 검증과 구분합니다.
 - 공개 이름 체험([NamePractice](../src/components/prototype/programming/name-practice.tsx)·[name-entry.ts](../src/lib/classroom/name-entry.ts))은 `/entryjs/workspace.html?exercise=name`을 사용합니다. 질문 → 대답 → 실제 말하기의 입력을 확인하며, 질문 필드의 한국어 IME와 조합 중 Enter를 처리합니다. 실행 이벤트 안의 전체 export는 엔진을 멈추므로 그 순간에는 코드만 복사합니다. 단계·미션·홈 이동 전에는 활성 입력을 확정하고 작품을 내보냅니다. 대상 검사는 `tests/name-entry-pilot.spec.ts`입니다.
@@ -201,7 +201,7 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 - 공통 개념 UI는 `src/components/student/programming-concept.tsx`·인접 CSS, 문항 데이터는 `src/lib/classroom/programming-data.ts`, 이름 작품 처리는 `src/lib/classroom/name-entry.ts`에 둡니다. 운영 코드는 체험의 전체 상태나 초기값을 가져오지 않습니다. 체험의 탭 저장·복원은 기존 `lib/prototype/programming.ts`가 소유합니다.
 - `public/entryjs/workspace.js`의 `exercise=programming&mission=...`는 목표별 팔레트와 고정 A/B 변수를 사용합니다. 질문·말하기는 실제 엔진 이벤트로 확인하며 방향키 미션은 실행을 유지해 키 이벤트를 받습니다. 실행 중 전체 export로 엔진을 멈추지 않는 기존 정책을 유지합니다.
 - 이름 실행 확인은 `name-entry.ts`의 `checkNameMission(...).validNames`를 공유해 현재 작품에서 질문·대답·말하기를 끝낸 서로 다른 입력만 최대 2개 셉니다. 실제 작품 변경·실행 ID·중지 여부를 확인하며 같은 이름 반복은 늘리지 않습니다. UI는 0/2 → 1/2 → 2/2와 부족한 조건을 표시하고 재접속 후 작품/완료와 일시적인 실행 근거를 구분합니다. Entry 결과는 현재 X·Y이며 누적 이동 거리로 바꾸지 않습니다.
-- 대상 검사는 `tests/programming-classroom.spec.ts`·`tests/programming-learning.spec.ts`입니다. 실제 Entry 팔레트 조립·질문·변수 계산·네 방향키·중지와 무대 복원·저장 실패·미완성 복원·독립 제출·27명 병렬 API 흐름과 개념·퀴즈 오답 재도전·교사 제출 화면을 포함합니다. 화면 아래 iframe은 Chromium이 그리기를 미룰 수 있으므로 작업실로 스크롤한 뒤 팔레트 좌표 준비를 확인합니다. 브라우저와 API가 같은 작품을 수정하는 검사에서는 화면 이동으로 자동 저장을 마친 뒤 새 버전을 조회합니다. 최종 통합은 [변경 영향별 검사 기준](#변경-영향별-검사-기준)을 적용합니다.
+- 대상 검사는 `tests/programming-classroom.spec.ts`·`tests/programming-learning.spec.ts`입니다. 실제 Entry 팔레트 조립·질문·변수 계산·네 방향키·중지와 무대 복원·저장 실패·미완성 복원·독립 제출·27명 병렬 API 흐름과 개념·퀴즈 오답 재도전·교사 제출 화면을 포함합니다. 화면 아래 iframe은 Chromium이 그리기를 미룰 수 있으므로 작업실로 스크롤한 뒤 팔레트 좌표 준비를 확인합니다. 브라우저와 API가 같은 작품을 수정하는 검사에서는 명시 저장이 끝난 뒤 새 버전을 조회합니다. 최종 통합은 [변경 영향별 검사 기준](#변경-영향별-검사-기준)을 적용합니다.
 
 ### 공통 수업 편집기와 집중 모드
 
@@ -307,6 +307,50 @@ CI는 빌드된 앱·단일 E2E worker와 npm/`.next/cache`를 사용합니다. 
 
 학생 프로필 수정에서도 사용하는 공통 저장·권한 코드까지 변경하면 해당 공통 변경의 검사 범위를 적용합니다. 구체적인 기능별 검사는 [검증 노하우](#검증-노하우-기능별)의 관련 절을 따릅니다.
 
+### 수동 저장 전환의 코드 계약 (A0 조사)
+
+A0에서 조사한 서버/API 형식을 유지하며 학생 수업의 명시 저장을 적용합니다. 아래 표는 현재 코드의 책임입니다. 사용자 합의·작업 순서·완료 조건은 [계획A](superpowers/plans/2026-10-13-manual-save.md), 실제 측정 결과·환경·한계는 [HANDOFF](HANDOFF.md#현재-작업-상태)에 기록합니다.
+
+#### 저장 호출과 소유권
+
+| 경로 | 현재 책임 |
+| --- | --- |
+| [useWork.update/captureDraft](../src/components/student/use-work.ts) | 메모리 편집·내용 비교; native capture만 하며 자동 POST 없음 |
+| useWork.save/flush | save는 content-only no-op; exact flush는 명시 행동용; 단일 불변 snapshot/단일 writer; 추가 B 편집은 dirty로 유지 |
+| useWork.perform/requestAi | 필요한 snapshot+기존 action/AI 요청; AI 비교 기준은 확정 server snapshot이며 준비 중 추가 편집도 보존 |
+| useWork.retry/compare/resolve/recoverAction | 명시 재시도·충돌 비교·응답 유실 확인; uncertain 상태를 임의 성공/실패로 단정하지 않음 |
+| useWork.switchStage·[ProgrammingPractice.select](../src/components/student/programming-lesson.tsx) | capture 후 메모리 위치 변경; 미션별 작품 보존; 내부 이동 POST0 |
+| [work-draft](../src/components/student/work-draft.ts) | stage·미션·읽기 view/pan 제외; 실제 답안·tutorialDone·placements·도형 위치·Entry thread 배치는 내용으로 비교. ID·고정 media·실행 무대는 제외 |
+| [FlowchartStudio.exportImage](../src/components/student/review/flowchart-studio.tsx) | 현재 작품 capture+이미지 생성; 초안 POST 없음 |
+| [usePuzzleCompletion](../src/components/student/review/flowchart.tsx) | 실행 성공 snapshot을 validate→submit; 편집 후 다른 작품을 완료시키지 않음 |
+| [HelpButton](../src/components/classroom/help-button.tsx) | saveCurrent exact snapshot 후 help POST; 나가기 대화상자 없음 |
+| [navigation provider](../src/components/navigation-provider.tsx) | 학생 prepareLeave/save/discard 선택 guard; Link·logout·history 보호. 다른 화면 기존 flush 계약 유지 |
+| [LessonShell](../src/components/student/lesson-shell.tsx)·[Entry bridge](../public/entryjs/workspace.js) | 지속 저장 버튼·상태; parent/현재 iframe Ctrl/Cmd+S; native 경고만 제공하고 종료 POST 없음 |
+| [usePreviewWork](../src/components/teacher/use-preview-work.ts) | 메모리 capture·체험 평가; 학생 초안 POST0 |
+| 대시보드·community 등 | 기존 화면별 저장 정책 유지 |
+
+
+#### 서버와 편집기 계약
+
+- [클라이언트](../src/lib/classroom/client.ts)의 초안 POST는 `{ revision, draft }`, action은 `{ revision, action }`입니다. action이 현재 브라우저 초안을 직접 받는 구조가 아니므로 dirty 초안은 선행 save가 필요합니다. `X-CS-User`/boundUid/세션 epoch 검사를 유지합니다.
+- [서버 mutateWork](../src/lib/server/classroom.ts)는 학생 세션·계정·반 공개·draft schema/서명/크기를 확인합니다. 변경 초안은 revision+1 및 작품 쓰기, 동일 초안은 no-op이며 응답 유실 후 동일 재전송도 불필요한 쓰기를 피합니다. 초기 전환에 서버 API/데이터 migration을 추가하지 않습니다.
+- 초안 저장은 작품이 달라지면 validation/미션 validation·개념 feedback을 무효화할 수 있습니다. submission/완료와 현재 편집의 일치 여부는 [progress](../src/lib/classroom/progress.ts)·[review project](../src/lib/classroom/review/project.ts) 계약을 유지합니다. 수동 저장 전에도 현재 draft와 결과 snapshot 불일치를 표시해야 합니다.
+- [raiseHelp](../src/lib/server/help.ts)는 **서버 작품과 단계·미션·revision을 별도 도움 snapshot으로 기록**합니다. 사용자 합의에 따라 손들기는 현재 작품을 저장하고 요청하는 예외입니다. 저장 실패 때 도움 요청을 성공으로 보내지 않으며 결과 불확실/중복 ID 보호를 유지합니다.
+- session activity endpoint는 `/api/auth/activity`입니다. session GET/activity, 수업 공지·손들기 조회는 초안 저장과 분리하여 계측합니다. API 호출 수를 Firestore 과금 건수로 치환하지 않습니다.
+- [Entry bridge](../public/entryjs/workspace.js)는 실행 중 full export 대신 마지막 stopped snapshot의 코드만 갱신합니다. 부모의 [readProject](../src/components/student/entry-practice-workspace.tsx)는 message ID와 현재 source/origin=`null`/channel을 확인하며 export timeout은4초입니다. 이 경계를 유지하여 현재 iframe의 save-request만 처리합니다. 키 repeat·IME 조합·dialog 내부의 브라우저 저장 요청은 무시합니다.
+- [순서도 EditableLabel](../src/components/student/review/flow-diagram.tsx)은 input/compositionend/blur에서 초안을 갱신하지만 keydown 전파를 막습니다. 부모 bubble listener만으로 Ctrl+S를 구현하면 여기서 누락됩니다. capture listener 또는 해당 편집기의 명시 전달로 해결하고 한글 조합중 강제 확정/전송은 금지합니다.
+- 순서도 기획서 dialog의 recipe는 적용 버튼 전 별도 제안 상태입니다. 저장이 `기호와 화살표 초기화`를 포함하는 적용을 몰래 실행해서는 안 됩니다. 현재 적용 경계/메모리 draft를 유지하고 dialog 중 단축키·외부 이동 처리와 안내를 명시합니다.
+
+#### 내용 변경과 읽기 위치 변경
+
+사용자 합의: 위치만 바뀌면 미저장 경고 없이 이동하며 다음 **실제 내용 저장/명시 행동**에 위치도 함께 기록합니다. 별도 위치-only 서버 호출은 만들지 않습니다.
+
+- content dirty와 exact snapshot difference를 분리합니다. 서버 no-op/충돌 대조는 정확한 draft, 나가기 경고는 content projection을 사용합니다. 저장 결과의 content 일치와 아직 보내지 않은 위치를 혼동하지 않습니다.
+- 위치-only 후보: `draft.stage`, `programming.mission`, 추상화 `step/tutorialStep/view`, 순서도 `mission/guideStep/pan`. 사용자 답안·프로젝트·reflection·placements·도형 좌표/문구/연결·계획·명령·tutorialDone은 내용/진행으로 유지합니다. preview/서버 동작과 caller를 대조하여 후보를 확정합니다.
+- programming 미션 전환은 새 starter/keys의 복사 작품을 초기화합니다. 단순 위치 제외만으로 dirty가 사라지지 않습니다. 탐색 초기화와 사용자가 편집한 작품을 구분하고 신규 미션 방문만으로 실제 편집처럼 판단하지 않도록 설계합니다. 실제 수정 프로젝트를 무시하는 wildcard 비교는 금지합니다.
+- Entry export의 실행 좌표·기본 메타데이터만 바뀌는 경우와 실제 블록/입력 변경을 구분합니다. 제출용 `sameReviewProject`는 필드를 정규화/누락하므로 모든 초안 dirty 판정에 그대로 재사용하지 않습니다.
+- clean save의 서버 호출0은 내용·저장 필요 상태가 없는 경우입니다. 도움/채점/제출에서 현재 단계·미션을 포함한 snapshot이 필요한 경우 exact difference의 선행 저장은 명시 행동 예외에 포함합니다.
+
 ### 실행 방법
 
 모든 명령은 저장소 루트에서 실행합니다. E2E는 Java 21+와 Chromium·로컬 캐시가 필요하므로 [PC 준비](#다른-pc에서-시작)를 먼저 확인합니다. 실제 Firebase에 연결한 3000번 서버를 종료하고 `demo-cs-class`·Auth 9099·Firestore 8080을 확인합니다. 앱 주소는 `http://localhost:3000`이며 운영 쿠키 보안을 낮추지 않습니다.
@@ -401,7 +445,7 @@ npm.cmd run test:e2e
 
 - CI·로컬의 실행 모드와 대상 명령은 [실행 방법](#실행-방법)을 따릅니다. 두 경우 모두 에뮬레이터 환경변수를 명시하고, 시드 전에 사용자 demo 기록을 보존합니다.
 - 홈 조작 검사는 데스크톱 고정 배치(`data-pinned=true`)가 준비된 뒤 시작해 초기화 도중의 클릭·앵커 이동과 혼동하지 않습니다.
-- 같은 Playwright 페이지에서 계정·학습 시드를 교체할 때는 먼저 `about:blank`로 이동해 이전 편집기를 분리한 뒤 인증/시드를 준비합니다. 이전 Entry 자동 저장이 새 시드의 revision·미션을 덮는 경합을 제품의 복원 실패로 오인하지 않으며, 새 작업실의 실제 iframe 미션도 확인합니다.
+- 같은 Playwright 페이지에서 계정·학습 시드를 교체할 때는 먼저 `about:blank`로 이동해 이전 편집기를 분리한 뒤 인증/시드를 준비합니다. 이전 Entry의 진행 중인 저장/행동이 새 시드의 revision·미션을 덮는 경합을 제품의 복원 실패로 오인하지 않으며, 새 작업실의 실제 iframe 미션도 확인합니다.
 - 비밀번호 변경 화면도 이미 `/student` 주소를 사용하므로 URL만으로 갱신 완료를 판정하지 않습니다. 변경·재로그인 뒤 직접 수업으로 이동하는 검사는 실제 대시보드 표시와 세션 준비를 기다립니다.
 - E2E 앱 주소는 `http://localhost:3000`으로 통일합니다. Playwright API 쿠키 저장소는 HTTP의 `127.0.0.1`에서 운영 빌드의 Secure 쿠키를 보내지 않습니다. 테스트를 위해 운영 쿠키 보안을 낮추지 않습니다.
 

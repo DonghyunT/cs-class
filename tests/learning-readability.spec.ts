@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
-import { db, headers, initialPassword, loginStudent, resetStudent, studentPassword } from "./emulator";
+import { db, headers, initialPassword, loginStudent, resetStudent, studentPassword, saveDraft } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 import { REVIEW_LESSONS } from "../src/lib/classroom/review/lessons";
 import { LESSONS } from "../src/lib/classroom/catalog";
@@ -101,7 +101,7 @@ test("abstraction-workbook: AI 대기·실패와 저장503·충돌409 뒤에도 
   const current = page.getByLabel("현재 상태", { exact: true });
   await current.fill("과제 하나가 남았어요");
   await page.getByLabel("목표 상태", { exact: true }).fill("밤 10시 전에 제출함");
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
   await page.route("**/api/classroom/ai", async route => { await gate; await route.fulfill({ status: 503, json: { message: "합성 AI 연결 실패", code: "UNAVAILABLE" } }); });
@@ -116,6 +116,7 @@ test("abstraction-workbook: AI 대기·실패와 저장503·충돌409 뒤에도 
   let failure = 503;
   await page.route(`**${endpoint}`, async route => { if (route.request().method() === "POST") await route.fulfill({ status: failure, json: { message: "합성 저장 실패", code: failure === 409 ? "REVISION_CONFLICT" : "UNAVAILABLE" } }); else await route.continue(); });
   await current.fill("저장되지 않은 나의 현재 상태");
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(page.locator("#work-save-error")).toBeVisible();
   await page.getByRole("tab", { name: /퀴즈/ }).click();
   await expect(current).toHaveValue("저장되지 않은 나의 현재 상태");
@@ -130,6 +131,7 @@ test("abstraction-workbook: AI 대기·실패와 저장503·충돌409 뒤에도 
   await page.getByRole("tab", { name: /퀴즈/ }).click();
   await page.getByRole("tab", { name: /실습/ }).click();
   await page.reload();
+  await page.getByRole("tab", { name: /실습/ }).click();
   await expect(current).toHaveValue("저장되지 않은 나의 현재 상태");
   await expect(page.getByLabel("목표 상태", { exact: true })).toHaveValue("밤 10시 전에 제출함");
   await page.setViewportSize({ width: 390, height: 720 });
@@ -283,6 +285,7 @@ test("quiz-nav: 단일 문항·미답변 이동·채점·오답만 재도전·�
   await expect(page.locator("#quiz-question-title")).toHaveText(questions[0].prompt);
   await nav.getByRole("button").nth(1).click();
   await page.getByRole("radio").first().check();
+  await saveDraft(page);
   await expect.poll(async () => (await savedWork(page, endpoint)).draft.quizAnswers[questions[1].id]).toBeTruthy();
   await page.reload();
   await expect(page.locator("#quiz-question-title")).toHaveText(questions[0].prompt);
@@ -290,6 +293,7 @@ test("quiz-nav: 단일 문항·미답변 이동·채점·오답만 재도전·�
     await nav.getByRole("button").nth(i).click();
     await page.getByRole("radio").first().check();
   }
+  await saveDraft(page);
   await expect.poll(async () => Object.keys((await savedWork(page, endpoint)).draft.quizAnswers).length).toBe(questions.length);
   const before = await savedWork(page, endpoint);
   await page.getByRole("tab", { name: /실습/ }).click();
@@ -341,6 +345,7 @@ for (const lessonId of ["sequence-lab", "programming-13"]) {
           await nav.getByRole("button").nth(i).click();
           await panel.getByRole("radio").first().check();
         }
+        await saveDraft(page);
         await expect.poll(async () => Object.keys((await savedWork(page, endpoint)).draft.quizAnswers).length).toBe(questions.length);
       }
       const title = panel.locator(lessonId === "programming-13" ? "#programming-question" : "#quiz-question-title");
@@ -547,6 +552,7 @@ test("workspace-width: 복습의 기본 폭·집중 확대·단계 저장 실패
   await page.setViewportSize({ width: 1920, height: 900 });
   await expect(expand).toBeVisible();
   await expect(expand).toBeFocused();
+  await saveDraft(page);
   await page.reload();
   await expect(layout).toHaveAttribute("data-workspace-wide", "false");
   await expect(page.getByLabel("자연어 명령")).toHaveValue("빵 봉지를 열어");
@@ -555,9 +561,11 @@ test("workspace-width: 복습의 기본 폭·집중 확대·단계 저장 실패
     if (route.request().method() === "POST") await route.fulfill({ status: 503, json: { error: "단계를 저장하지 못했어요." } }); else await route.continue();
   });
   await page.getByRole("radio").first().check();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(page.locator("#work-save-error")).toBeVisible();
   await page.getByRole("tab", { name: /실습/ }).click();
   await expect(page.locator("#work-save-error")).toBeVisible();
-  await expect(page.getByRole("tab", { name: /개념/ })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: /실습/ })).toHaveAttribute("aria-selected", "true");
   await expect(layout).toHaveAttribute("data-workspace-wide", "false");
 });
 
@@ -634,6 +642,7 @@ test("sandwich-layout: 낮은 창의 초기 입력·실행·결과와 실제 기
   await page.getByRole("button", { name: "명령 다시 실행", exact: true }).waitFor();
   await page.getByRole("button", { name: "마지막 명령 되돌리기", exact: true }).click();
   await expect(latest).toContainText("빵 봉지를 열어");
+  await saveDraft(page);
   await expect.poll(async () => (await savedWork(page, endpoint)).draft.reviewProject?.type === "sandwich" && ((await savedWork(page, endpoint)).draft.reviewProject as { commands: unknown[] }).commands.length).toBe(1);
   await page.reload();
   await expect(latest).toContainText("빵 봉지를 열어");
@@ -693,6 +702,7 @@ test("sandwich-layout: 저장503·충돌409와 이전 제출·명령·초안 보
     if (route.request().method() === "POST") await route.fulfill({ status: failure, json: { message: "합성 저장 실패", code: failure === 409 ? "REVISION_CONFLICT" : "UNAVAILABLE" } }); else await route.continue();
   });
   await input.fill("아직 작성 중인 명령");
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(page.locator("#work-save-error")).toBeVisible();
   await page.getByRole("tab", { name: /개념/ }).click();
   await expect(input).toHaveValue("아직 작성 중인 명령");
@@ -707,6 +717,6 @@ test("sandwich-layout: 저장503·충돌409와 이전 제출·명령·초안 보
   await page.unroute(`**${endpoint}`);
   await page.getByRole("button", { name: "현재 입력을 새 버전으로 저장", exact: true }).click();
   await expect(page.locator("#work-save-error")).toHaveCount(0);
-  await page.reload(); await expect(input).toHaveValue("아직 작성 중인 명령");
+  await page.reload(); await page.getByRole("tab", { name: /실습/ }).click(); await expect(input).toHaveValue("아직 작성 중인 명령");
   expect((await savedWork(page, endpoint)).submission).toEqual(submitted);
 });

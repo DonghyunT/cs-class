@@ -4,7 +4,7 @@ import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { emptyWork, progressFor } from "../src/lib/classroom/progress";
 import { questions } from "../src/lib/classroom/programming-data";
 import type { Work, WorkAction } from "../src/lib/classroom/types";
-import { auth, db, headers, localOnly, loginStudent, readyStudent, readyTeacher, studentPassword } from "./emulator";
+import { auth, db, headers, localOnly, loginStudent, readyStudent, readyTeacher, studentPassword, saveDraft } from "./emulator";
 import { createHash } from "node:crypto";
 import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
 
@@ -60,6 +60,7 @@ test("entry-guidance: 두 이름 확인 수와 검증 부족 초점·수정·단
   await page.getByRole("tab", { name: /퀴즈/ }).click(); await page.getByRole("tab", { name: /실습/ }).click();
   await expect(count).toHaveText("서로 다른 이름 확인 0/2");
   await expect(page.getByText(/저장된 작품은 유지돼요\. 이 화면에서/)).toBeVisible();
+  await saveDraft(page);
   expect(parseProgrammingProject((await stored(page)).draft.programming!.projects.name)?.threads[0][2].params[1]).toMatchObject({ type: "number", params: ["0.3"] });
 });
 
@@ -359,6 +360,7 @@ test("실제 팔레트 이름 조립 · 서로 다른 두 입력 · 검증/제�
   await expect(page.getByRole("tab", { name: "실습 25%" })).toContainText("1/4개 제출");
   await expect(page.locator("#programming-next-mission")).toBeFocused();
   await page.getByLabel("오늘 발견한 것을 한 줄로 남겨볼까요?").fill("대답을 말하기에 넣었어요.");
+  await saveDraft(page);
   await expect.poll(async () => (await stored(page)).draft.programming!.reflection).toBe("대답을 말하기에 넣었어요.");
   await page.reload(); await expect(page.getByRole("button", { name: "이 작품 제출 완료" })).toBeDisabled();
   await page.locator("iframe").scrollIntoViewIfNeeded();
@@ -393,17 +395,20 @@ test("곱셈·평균 실제 실행 · 변수 팔레트 · 이동 이어 만들�
   await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
   await frame.getByText("움직임", { exact: true }).click();
   await connect(page, frame.locator("#entryWorkspaceBlockMenu g.block").filter({ hasText: "이동 방향으로" }).first(), frame.locator("#entryWorkspaceBoard g.block").filter({ hasText: "시작하기 버튼" }).first(), 46);
+  await saveDraft(page);
   await expect.poll(async () => parseProgrammingProject((await stored(page)).draft.programming!.projects.move)?.order).toEqual(["when_run_button_click", "move_direction"]);
   const moveBefore = (await stored(page)).draft.programming!.projects.move;
   await page.getByRole("button", { name: /방향키로 움직임 개선/ }).click();
   await page.locator('iframe[src$="mission=keys"]').scrollIntoViewIfNeeded();
   await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
-  expect(programmingProjectMatches((await stored(page)).draft.programming!.projects.keys, moveBefore)).toBe(true);
+  const displayedScript = await frame.locator("body").evaluate(() => (window as unknown as { Entry: { container: { getObject: (id: string) => { getScriptText: () => string } } } }).Entry.container.getObject("entrybot").getScriptText());
+  expect(programmingProjectMatches(JSON.stringify({ objects: [{ script: displayedScript }] }), moveBefore)).toBe(true);
+  expect((await stored(page)).draft.programming!.projects.move).toBe(moveBefore);
   await frame.getByText("시작", { exact: true }).click();
   await expect(frame.locator("#entryWorkspaceBlockMenu g.block").filter({ hasText: "키를 눌렀을 때" }).first()).toContainText("위쪽");
   // Load a four-key work through the same save API, then operate the real engine.
   await page.getByRole("link", { name: "수업 나가기", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
-  let work = await stored(page); work.draft.programming!.projects.keys = keysProject;
+  let work = await stored(page); work.draft.programming!.mission = "keys"; work.draft.programming!.projects.keys = keysProject;
   expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } })).status()).toBe(200);
   await page.goto(`/classroom/${id}?from=dashboard`); await page.locator("iframe").scrollIntoViewIfNeeded(); await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
   const native = page.frames().find((f) => f.url().includes("mission=keys"))!;
@@ -411,7 +416,10 @@ test("곱셈·평균 실제 실행 · 변수 팔레트 · 이동 이어 만들�
   await page.getByRole("button", { name: "실행하기", exact: true }).click(); await expect.poll(position).toEqual([10, 0]);
   for (const [label, expected] of [["↑ 위", [10, 10]], ["← 왼쪽", [0, 10]], ["↓ 아래", [0, 0]], ["→ 오른쪽", [10, 0]]] as const) { await page.getByRole("button", { name: label, exact: true }).click(); await expect.poll(position).toEqual(expected); }
   await page.getByRole("button", { name: "실행 정지" }).click(); await expect.poll(position).toEqual([0, 0]);
-  await page.getByRole("link", { name: "수업 나가기", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
+  await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "저장하지 않은 변경이 있어요" });
+  if (await dialog.isVisible()) await dialog.getByRole("button", { name: "저장하지 않고 나가기", exact: true }).click();
+  await expect(page).toHaveURL(/\/student$/);
   work = await stored(page); work.draft.programming!.projects.keys = buildProgrammingProject([[start(), ...movement(90, "")]]);
   expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } })).status()).toBe(200);
   await page.goto(`/classroom/${id}?from=dashboard`); await page.locator("iframe").scrollIntoViewIfNeeded(); await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
@@ -420,7 +428,7 @@ test("곱셈·평균 실제 실행 · 변수 팔레트 · 이동 이어 만들�
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator("iframe").scrollIntoViewIfNeeded();
   await expect(frame.locator("#entryWorkspaceBoard g.block").filter({ hasText: "이동 방향으로" }).first()).toBeVisible();
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.screenshot({ path: info.outputPath("programming-mobile.png"), fullPage: true });
   expect(errors).toEqual([]);
 });
@@ -460,18 +468,22 @@ test("한 반 27명의 동시 입장·작품 저장·검증은 각 학생의 기
   }
 });
 
-test("저장 실패는 미션 이동을 보호하고, 개념·퀴즈는 재접속 뒤 이어간다", async ({ page }) => {
+test("저장 실패에도 미션 간 초안은 유지하고, 명시 저장한 개념·퀴즈는 재접속 뒤 이어간다", async ({ page }) => {
   await prepare(page, "move", moveProject);
   await page.route(`**${endpoint}`, (route) => route.request().method() === "POST" ? route.abort("failed") : route.continue());
   await page.getByLabel("오늘 발견한 것을 한 줄로 남겨볼까요?").fill("저장 실패 중에도 유지");
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(page.getByRole("main").getByRole("alert")).toBeVisible();
   await page.getByRole("button", { name: /방향키로 움직임 개선/ }).click();
-  await expect(page.locator("#programming-mission-title")).toHaveText("시작 버튼으로 움직이기");
+  await expect(page.locator("#programming-mission-title")).toHaveText("방향키로 움직임 개선");
+  await expect(page.getByLabel("오늘 발견한 것을 한 줄로 남겨볼까요?")).toHaveValue("저장 실패 중에도 유지");
+  await expect(page.locator("#entry-run")).toBeEnabled();
   await page.unroute(`**${endpoint}`); await page.getByRole("button", { name: "저장 다시 확인" }).click();
   await page.getByRole("tab", { name: "개념 0%" }).click();
   await expect(page.getByRole("tab", { name: "개념 0%" })).toBeFocused();
   await page.getByRole("tab", { name: "퀴즈 0%" }).click();
   await page.getByRole("radio").nth(questions[0].correct).check();
+  await saveDraft(page);
   await expect.poll(async () => (await stored(page)).draft.quizAnswers[questions[0].id]).toBe(String(questions[0].correct));
   await page.getByRole("button", { name: "다음 문제" }).click();
   await page.reload();

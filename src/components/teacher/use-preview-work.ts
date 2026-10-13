@@ -56,10 +56,13 @@ export function usePreviewWork(lesson: Lesson, classId: string, uid: string, rea
     memory.current = { ...memory.current, draft: next }; setWork(memory.current);
     return true;
   }, [flush, update]);
+  const save = useCallback(() => flush(true), [flush]);
+  const captureDraft = useCallback(async () => { if (!await flush(true)) throw new Error("체험 작품을 확인하지 못했어요."); return structuredClone(local.current); }, [flush]);
   return {
-    work, draft, busy, error, actionFailure, saveState: error ? "failed" : "saved",
+    work, draft, busy, error, actionFailure, saveState: error ? "failed" : "saved", capturing: false,
     conflict: false, remote: null, aiBusy: false, actionBlocked: false, checkingResult: false,
     update, flush, perform, switchStage, getDraft: () => local.current,
+    captureDraft, save, discardDraft: () => false, prepareLeave: save,
     retry: () => flush(true), compare: async () => {}, resolve: async () => {},
     recoverAction: async () => actionFailure ? perform(actionFailure.action) : false,
     requestAi: async () => null,

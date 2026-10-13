@@ -438,7 +438,9 @@ test("학생·교사 실제 배치: 7개 너비·키보드·모바일·빈 상�
     if (role === "student") {
       await page.getByRole("button", { name: "수업 시작", exact: true }).click();
       await page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true }).check();
-      await page.getByRole("link", { name: "수업 나가기", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
+      await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
+      await page.getByRole("dialog", { name: "저장하지 않은 변경이 있어요" }).getByRole("button", { name: "저장 후 나가기", exact: true }).click();
+      await expect(page).toHaveURL(/\/student$/);
       await page.getByRole("button", { name: "이어하기", exact: true }).click(); await expect(page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true })).toBeChecked();
       await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
       await page.setViewportSize({ width: 1440, height: 900 });

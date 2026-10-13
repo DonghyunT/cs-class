@@ -201,6 +201,16 @@ try {
         // before exposing the editor, since selectMenu closes active inputs.
         Entry.getMainWS().dReDraw.flush();
         Entry.playground.blockMenu.reDraw.flush();
+        // This Entry version aligns freshly created threads on load. Restore authored
+        // anchors after that redraw; imported projects without anchors keep its layout.
+        const script = message.project.objects[0].script;
+        const threads = typeof script === "string" ? JSON.parse(script) : script;
+        const board = Entry.getMainWS().board;
+        board.code.getThreads().forEach((thread, index) => {
+          const anchor = threads[index]?.[0], view = thread.getFirstBlock()?.view;
+          if (view && Number.isFinite(anchor?.x) && Number.isFinite(anchor?.y)) view.moveTo(anchor.x, anchor.y, false);
+        });
+        board.scroller.resizeScrollBar();
         // loadProject returns before the stage image has finished loading.
         const stageObject = Entry.container.getObject("entrybot").entity.object;
         if (stageObject.image instanceof HTMLImageElement) await stageObject.image.decode();
@@ -241,8 +251,12 @@ try {
   // Resetting the preview can remove this frame while its stage image decodes.
   window.addEventListener("pagehide", (event) => { disposed = !event.persisted; clearInterval(monitor); Entry.stop(); });
   window.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      if (!event.repeat && !event.isComposing && event.keyCode !== 229 && !loading && !locked) send("save-request");
+    }
     if (event.key === "Escape") send("focus-return");
-  });
+  }, true);
   send("ready");
 } catch (error) {
   console.error("EntryJS initialization failed:", error.message);

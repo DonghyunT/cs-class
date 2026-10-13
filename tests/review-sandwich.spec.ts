@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { createHmac, randomUUID } from "node:crypto";
-import { db, headers, readyStudent, readyTeacher, studentPassword, loginStudent } from "./emulator";
+import { db, headers, readyStudent, readyTeacher, studentPassword, loginStudent, saveDraft } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 
 const id = "review-sandwich", uid = "student-20101";
@@ -64,7 +64,7 @@ test("샌드위치 완성 결과는 자동으로 열리고 실제 명령과 시�
   const reopen = page.getByRole("button", { name: "완성 결과 다시 보기" });
   await reopen.click(); await expect(dialog).toBeVisible(); await expect(dialog.getByRole("heading", { name: "샌드위치 완성 결과" })).toBeFocused();
   await page.keyboard.press("Escape"); await expect(reopen).toBeFocused();
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload();
   await expect(dialog).not.toBeVisible(); await expect(input).toHaveValue("다음 레시피를 위한 입력"); await expect(reopen).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -181,11 +181,11 @@ test("AI 준비·응답 대기 중 작성한 다음 입력과 서버 명령을 �
   await expect.poll(() => saving).toBe(true); await input.fill("준비 중 새로 쓴 명령"); releaseSave();
   await expect(page.getByRole("heading", { name: "알고리즘 실행 기록", exact: true })).toBeVisible();
   await expect(page.locator("ol").filter({ hasText: "빵 봉지를 열어" })).toBeVisible();
-  await expect(input).toHaveValue("준비 중 새로 쓴 명령"); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await expect(input).toHaveValue("준비 중 새로 쓴 명령"); await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await input.fill("fixture-slow"); await page.getByRole("button", { name: "실행" }).click();
   await expect(page.getByRole("button", { name: "명령을 해석하고 있어요…" })).toBeVisible(); await input.fill("응답 중 다음 명령");
   await expect(page.getByRole("button", { name: "실행" })).toBeEnabled();
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload();
   await expect(input).toHaveValue("응답 중 다음 명령");
   const work = await (await page.request.get(`/api/classroom/work/${id}`)).json(); expect(work.draft.reviewProject.commands).toHaveLength(1);
 });
@@ -212,7 +212,7 @@ test("명령 저장 뒤 응답만 유실되어도 복구 GET은 실행 기록과
   const input = page.getByLabel("자연어 명령"); await input.fill("빵 봉지를 열어"); await page.getByRole("button", { name: "실행" }).click();
   await expect.poll(() => committed).toBe(true); await input.fill("응답 유실 뒤 다음 입력"); release();
   await expect(page.getByRole("alert").filter({ hasText: "연결하지 못했어요" })).toBeVisible();
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue("응답 유실 뒤 다음 입력");
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue("응답 유실 뒤 다음 입력");
   const work = await (await page.request.get(`/api/classroom/work/${id}`)).json(); expect(work.draft.reviewProject.commands).toHaveLength(1);
 });
 test("복습 카드·키보드·44px·명령 실패·재접속·교사 상세", async ({ page, browser }) => {
@@ -226,7 +226,7 @@ test("복습 카드·키보드·44px·명령 실패·재접속·교사 상세", 
   await page.getByRole("tab", { name: /실습/ }).click();
   const input = page.getByLabel("자연어 명령"); await input.fill("식빵 꺼내"); await page.getByRole("button", { name: "실행" }).click();
   await expect(page.getByText("오류: 빵 봉지가 닫혀 있습니다!", { exact: false }).first()).toBeVisible();
-  await input.fill("쓰다가 멈춘 명령"); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await input.fill("쓰다가 멈춘 명령"); await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.reload(); await expect(input).toHaveValue("쓰다가 멈춘 명령");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: "scratch/review-lessons/sandwich-mobile.png", fullPage: true });

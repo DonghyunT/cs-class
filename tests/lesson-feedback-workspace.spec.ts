@@ -156,11 +156,14 @@ test.describe("수업 피드백 자유 공방", () => {
     const initialPan = ((await readWork(page.request)).draft.reviewProject as FlowchartProject).pan;
     await page.mouse.move(outside.x, outside.y); await page.mouse.down();
     await page.mouse.move(outside.x - 40, outside.y - 20, { steps: 4 }); await page.mouse.up();
-    await expect.poll(async () => ((await readWork(page.request)).draft.reviewProject as FlowchartProject).pan).toEqual({ x: initialPan.x + 40, y: initialPan.y + 20 });
+    const visiblePan = () => page.getByLabel("실제 순서도 연결", { exact: true }).locator('svg[aria-label="기호와 화살표로 연결한 순서도"]').evaluate(svg => ({ x: (svg as SVGSVGElement).viewBox.baseVal.x, y: (svg as SVGSVGElement).viewBox.baseVal.y }));
+    await expect.poll(visiblePan).toEqual({ x: initialPan.x + 40, y: initialPan.y + 20 });
+    expect(((await readWork(page.request)).draft.reviewProject as FlowchartProject).pan).toEqual(initialPan);
     const session = await page.context().newCDPSession(page);
     await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: outside.x, y: outside.y }] });
     await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: outside.x - 30, y: outside.y - 10 }] });
     await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); await session.detach();
-    await expect.poll(async () => ((await readWork(page.request)).draft.reviewProject as FlowchartProject).pan).toEqual({ x: initialPan.x + 70, y: initialPan.y + 30 });
+    await expect.poll(visiblePan).toEqual({ x: initialPan.x + 70, y: initialPan.y + 30 });
+    expect(((await readWork(page.request)).draft.reviewProject as FlowchartProject).pan).toEqual(initialPan);
   });
 });

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { db, headers, readyStudent } from "./emulator";
+import { db, headers, readyStudent, saveDraft } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 
 let originalClass: FirebaseFirestore.DocumentData | undefined;
@@ -55,7 +55,7 @@ test("추상화는 색으로 구분한 핵심·노이즈 작업 영역을 제공
   await page.getByText("후보 단어 직접 편집", { exact: true }).click();
   await page.getByLabel("핵심 요소").fill("현재 시각\n");
   await page.getByRole("textbox", { name: "버릴 노이즈", exact: true }).fill("시계 색상");
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.reload();
   await page.getByText("후보 단어 직접 편집", { exact: true }).click();
   await expect(page.getByLabel("핵심 요소")).toHaveValue("현재 시각\n");
@@ -123,7 +123,7 @@ test("순서도 보관함에서 선택해 실제 기호 빈칸에 놓고 저장�
   await slot.focus(); await page.keyboard.press("Enter");
   await expect(page.getByRole("button", { name: "입출력 기호: 물 500ml 냄비에 붓기", exact: true })).toBeVisible();
   await expect.poll(() => page.getByRole("button", { name: "입출력 기호: 물 500ml 냄비에 붓기", exact: true }).locator("polygon").evaluate(element => getComputedStyle(element).strokeWidth)).toBe("4px");
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("button", { name: "입출력 기호: 물 500ml 냄비에 붓기", exact: true })).toBeVisible();
   const source = palette.getByRole("button", { name: "가스레인지 켜서 물 끓이기", exact: true }), target = page.getByRole("button", { name: "처리 기호: 처리 ▭ (물 끓이기)", exact: true });

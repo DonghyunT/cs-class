@@ -76,6 +76,7 @@ test("뒤로가기 저장 실패는 원래 수업 유지 · 재시도 후 이동
     : route.continue());
   await page.getByRole("radio", { name: answerName }).check();
   await back(page);
+  await page.getByRole("dialog", { name: "저장하지 않은 변경이 있어요" }).getByRole("button", { name: "저장 후 나가기", exact: true }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText("저장 연결 확인");
   await expect(page).toHaveURL(new RegExp(`${classPath}(\\?from=dashboard)?$`));
   await expect(page.getByRole("radio", { name: answerName })).toBeChecked();
@@ -110,6 +111,7 @@ test("저장 응답 대기 중 뒤로가기 · 한 번 저장 후 원래 목적�
     await route.continue();
   });
   await page.getByRole("radio", { name: answerName }).check();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect.poll(() => postCount).toBe(1);
   await back(page);
   const observedPops = () => page.evaluate(() => (window as unknown as { navigationTestEvents: string[] }).navigationTestEvents);
@@ -148,6 +150,7 @@ test("앞으로가기의 새 답안도 저장 · Next 이력 상태와 추가 st
   const historyLength = await page.evaluate(() => history.length);
   await page.getByRole("radio", { name: answerName }).check();
   await forward(page);
+  await page.getByRole("dialog", { name: "저장하지 않은 변경이 있어요" }).getByRole("button", { name: "저장 후 나가기", exact: true }).click();
   await expect(page).toHaveURL(/\/student$/);
   expect(await savedAnswer()).toBe("0");
   await back(page);
@@ -166,6 +169,7 @@ test("여러 항목을 건너뛰는 이력 이동도 저장하고 기존 앞뒤 
   const historyLength = await page.evaluate(() => history.length);
   await page.getByRole("radio", { name: answerName }).check();
   await page.evaluate(() => history.go(-3));
+  await page.getByRole("dialog", { name: "저장하지 않은 변경이 있어요" }).getByRole("button", { name: "저장 후 나가기", exact: true }).click();
   await expect(page).toHaveURL(/\/student$/);
   await expect.poll(savedAnswer).toBe("0");
   await forward(page);

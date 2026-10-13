@@ -1,5 +1,5 @@
 import { randomUUID, createHash } from "node:crypto";
-import { expect, type APIRequestContext } from "@playwright/test";
+import { expect, type APIRequestContext, type Page } from "@playwright/test";
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
@@ -16,6 +16,10 @@ export const studentPassword = "student-test-7319";
 export const lessonId = "sequence-lab";
 export const correctOrder = ["start", "input", "greeting", "output", "end"];
 export const headers = { "X-CS-Class": "1" };
+export async function saveDraft(page: Page) {
+  await page.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(page.locator("[data-lesson-shell] header [role=status]")).toHaveText(/저장 완료|아직 학습 기록이 없어요/);
+}
 export async function localOnly(request: APIRequestContext) {
   const config = await (await request.get("/api/auth/config")).json();
   expect(config.projectId).toBe("demo-cs-class");

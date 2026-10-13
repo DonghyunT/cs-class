@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { buildProgrammingProject, parseProgrammingProject, programmingProjectMatches, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
-import { db, headers, readyStudent } from "./emulator";
+import { db, headers, readyStudent, saveDraft } from "./emulator";
 
 const lessonIds = ["programming-13", "entry-bot-lab", "review-sandwich", "review-abstraction", "review-flowchart"];
 let originalClass: FirebaseFirestore.DocumentData | undefined;
@@ -64,6 +64,7 @@ for (const id of lessonIds) {
     await expect(page.getByRole("button", { name: "실습 집중 모드 끝내기", exact: true })).toBeVisible();
     await page.reload();
     await expect(shell).toHaveAttribute("data-practice-focused", "false");
+    await page.getByRole("tab", { name: /^실습/ }).click();
     await expect(toggle).toBeVisible();
   });
 }
@@ -152,6 +153,7 @@ test("practice-focus-space: 네 보기의 실제 작업영역 증가·빈 숫자
   const iframe = (await page.locator("iframe").elementHandle())!;
   await frame.getByText("움직임", { exact: true }).click();
   await connect(page, frame.locator("#entryWorkspaceBlockMenu g.block").filter({ hasText: "이동 방향으로" }).first(), frame.locator("#entryWorkspaceBoard g.block").filter({ hasText: "시작하기 버튼" }).first(), 46);
+  await saveDraft(page);
   await expect.poll(async () => parseProgrammingProject((await storedProgramming(page)).draft.programming!.projects.move)?.order).toEqual(["when_run_button_click", "move_direction"]);
   await frame.locator("#entryWorkspaceBoard").getByText("10", { exact: true }).locator("..").click();
   const amount = frame.locator("input.entry-widget-input-field:visible"); await expect(amount).toBeFocused(); await amount.fill("");
@@ -159,6 +161,7 @@ test("practice-focus-space: 네 보기의 실제 작업영역 증가·빈 숫자
     const value = parseProgrammingProject((await storedProgramming(page)).draft.programming!.projects.move)?.threads[0][1].params[0];
     return value && typeof value === "object" && "type" in value && "params" in value ? { type: value.type, params: value.params } : value;
   };
+  await amount.press("Control+s");
   await expect.poll(savedAmount).toEqual(node("number", ""));
   const region = page.getByRole("region", { name: "엔트리 작업실 가로 이동", exact: true });
   const width = async () => {

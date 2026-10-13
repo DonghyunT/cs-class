@@ -24,7 +24,7 @@ import { LessonQuizPanel } from "./lesson-quiz-panel";
 const stages = [{ id: "concept", label: "개념", icon: BookOpen }, { id: "quiz", label: "퀴즈", icon: CheckCircle2 }, { id: "practice", label: "실습", icon: Layers3 }] as const;
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
-export type LessonFrame = { stage: Stage; saveLabel: string; learningStatus: ReactNode; navigation: ReactNode; focusRequest: { id: string; preventScroll?: boolean } | null };
+export type LessonFrame = { stage: Stage; saveLabel: string; save?: () => Promise<boolean>; saveDisabled?: boolean; learningStatus: ReactNode; navigation: ReactNode; focusRequest: { id: string; preventScroll?: boolean } | null };
 
 export type WorkspaceView = { returnOrigin: LessonOrigin; workspaceWide: boolean; practiceFocused: boolean; onPracticeFocusedChange: (focused: boolean) => void; onWorkspaceWideChange: (wide: boolean) => void; onWorkspaceStageChange: (stage: Stage) => void };
 
@@ -57,9 +57,11 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   useEffect(() => { displayedConcept.current = conceptId; }, [conceptId]);
   const [quizQuestionId, setQuizQuestionId] = useState(() => initial.quizRoundIds.find((id) => initial.quizRoundGraded ? !initial.quizFeedback[id]?.correct : !initial.draft.quizAnswers[id]) ?? initial.quizRoundIds[0] ?? lesson.quiz[0]?.id);
   const [experienceVersion, setExperienceVersion] = useState(0);
+  const [nativeReady, setNativeReady] = useState(false);
+  const needsNative = draft.stage === "practice" && (lesson.practice.type === "entryjs" || lesson.practice.type === "programming");
   useEffect(() => { onWorkspaceStageChange(draft.stage); }, [draft.stage, onWorkspaceStageChange]);
   const locked = busy || switchingTo !== null;
-  const actionLocked = locked || controller.actionBlocked;
+  const actionLocked = locked || controller.capturing || controller.actionBlocked || saveState === "saving";
   const draftMatchesValidation = work.validation?.passed && practiceMatches(draft, work.validation);
   const draftMatchesSubmission = practiceMatches(draft, work.submission);
   function selectConcept(id: string) { setConceptId(id); setFocusRequest({ id: `concept-title-${id}` }); }
@@ -68,7 +70,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     setFocusRequest({ id: "concept-experience-reset", preventScroll: true });
   }
   function moveQuestion(id: string) { setQuizQuestionId(id); setFocusRequest({ id: "quiz-question-title" }); }
-  const saveLabel = mode === "preview" ? error ? "체험 작품 확인 필요" : "이 창에서 체험 중" : switchingTo ? `입력 저장 후 ${stages.find(stage => stage.id === switchingTo)!.label}${switchingTo === "quiz" ? "로" : "으로"} 이동 중…` : controller.conflict ? "저장 기록 충돌" : saveState === "saved" ? work.updatedAt ? "저장 완료" : "아직 학습 기록이 없어요" : saveState === "saving" ? "저장 중…" : saveState === "failed" ? "저장 확인 필요" : "변경 내용 저장 대기";
+  const saveLabel = mode === "preview" ? error ? "체험 작품 확인 필요" : "이 창에서 체험 중" : switchingTo ? "입력 확인 후 이동 중…" : controller.conflict ? "저장 기록 충돌" : saveState === "saved" ? work.updatedAt ? "저장 완료" : "아직 학습 기록이 없어요" : saveState === "saving" ? "저장 중…" : saveState === "failed" ? "저장 확인 필요" : "저장하지 않은 변경 있음";
   const switchStage = useCallback(async (stage: Stage, focusTab = false) => {
     if (switchingTo || busy || actionBlocked) return;
     setSwitchingTo(stage);
@@ -123,8 +125,8 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     const stageSummary = (stage: Stage) => stage === "concept" ? `${progress.concept.completed}/${progress.concept.total}개 확인` : stage === "quiz" ? `${progress.quiz.completed}/${progress.quiz.total}문제 해결` : progress.practice.percent === 100 ? "완료" : `${progress.practice.completed}/${progress.practice.total}개 제출`;
     const navigation = <div className={styles.tabs} role="tablist" aria-label="수업 단계">{stages.map((stage, index) => <button key={stage.id} id={`tab-${stage.id}`} type="button" role="tab" aria-label={`${stage.label} ${progress[stage.id].percent}%`} aria-describedby={`tab-${stage.id}-progress`} aria-selected={draft.stage === stage.id} aria-controls={`panel-${stage.id}`} tabIndex={draft.stage === stage.id ? 0 : -1} disabled={actionLocked} onKeyDown={(event) => tabKey(event, index)} onClick={() => void switchStage(stage.id, true)}><stage.icon size={18} aria-hidden="true" /><span>{stage.label}</span><span id={`tab-${stage.id}-progress`} className={styles.tabPercent}>{stageSummary(stage.id)}</span><span className={styles.tabProgress} aria-hidden="true" data-stage-progress={stage.id} data-percent={progress[stage.id].percent}><span style={{ width: `${progress[stage.id].percent}%` }} /></span></button>)}</div>;
     // Only presentation goes to the persistent frame; useWork remains the sole owner of learning and saves.
-    onFrameChange({ stage: draft.stage, saveLabel, learningStatus: <LearningStatus lesson={lesson} work={work} />, navigation, focusRequest });
-  }, [onFrameChange, saveLabel, lesson, work, actionLocked, draft.stage, tabKey, switchStage, focusRequest]);
+    onFrameChange({ stage: draft.stage, saveLabel, save: mode === "student" ? controller.save : undefined, saveDisabled: locked || controller.capturing || controller.aiBusy || saveState === "saving" || controller.conflict || controller.actionBlocked || (needsNative && !nativeReady), learningStatus: <LearningStatus lesson={lesson} work={work} />, navigation, focusRequest });
+  }, [onFrameChange, saveLabel, lesson, work, actionLocked, draft.stage, tabKey, switchStage, focusRequest, controller.save, controller.capturing, controller.aiBusy, controller.conflict, controller.actionBlocked, locked, mode, saveState, needsNative, nativeReady]);
   const content = <>
     {error && <section id="work-save-error" tabIndex={-1} className={styles.errorPanel} role="alert"><strong>{controller.conflict ? "저장 기록이 서로 달라요." : "요청을 완료하지 못했어요."}</strong><p>{error}</p><p>현재 입력은 이 화면에 유지하고 있어요. 확인 전에는 창을 닫지 마세요.</p><Button variant="outline" disabled={busy} onClick={() => void (controller.conflict ? controller.compare() : controller.retry())}>{controller.conflict ? "서버 기록과 비교" : "저장 다시 확인"}</Button></section>}
     {controller.actionFailure && <section id="work-action-error" tabIndex={-1} className={styles.errorPanel} role="alert">
@@ -143,7 +145,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     {controller.remote && <section className={styles.conflictPanel} aria-label="저장 충돌 비교"><h2>어떤 입력으로 이어갈까요?</h2><p>서버의 완료·제출 기록은 유지돼요. 입력 내용은 아래에서 직접 선택하세요.</p><div className={styles.comparisonGrid}><div><h3>이 화면의 입력</h3><DraftComparison lesson={lesson} draft={draft} /></div><div><h3>서버에 저장된 입력</h3><DraftComparison lesson={lesson} draft={controller.remote.draft} /></div></div><div className={styles.actions}><Button disabled={busy} onClick={() => void controller.resolve(true)}>현재 입력을 새 버전으로 저장</Button><Button variant="outline" disabled={busy} onClick={() => void controller.resolve(false)}>서버 기록으로 이어하기</Button></div></section>}
 
 
-    {lesson.practice.type === "programming" && <ProgrammingLearningStage mode={mode} practiceFocused={practiceFocused} lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} conceptId={conceptId} quizQuestionId={quizQuestionId} onConceptChange={setConceptId} onQuizQuestionChange={setQuizQuestionId} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} />}
+    {lesson.practice.type === "programming" && <ProgrammingLearningStage mode={mode} practiceFocused={practiceFocused} lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} conceptId={conceptId} quizQuestionId={quizQuestionId} onConceptChange={setConceptId} onQuizQuestionChange={setQuizQuestionId} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} onEditorReady={setNativeReady} />}
 
     {lesson.practice.type !== "programming" && draft.stage === "concept" && <LessonConceptPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} conceptId={conceptId} experienceVersion={experienceVersion} onResetExperience={resetExperience} onSelectConcept={selectConcept} />}
 
@@ -164,10 +166,12 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
           <EntryPracticeWorkspace
             mode={mode}
             exportRef={entryExport}
+            onSave={mode === "student" ? controller.save : undefined}
+            onReadyChange={setNativeReady}
             lesson={lesson}
             work={work}
             draft={draft}
-            locked={locked}
+            locked={locked || controller.capturing}
             busy={busy}
             update={update}
             runAction={runAction}

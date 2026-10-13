@@ -17,9 +17,10 @@ import styles from "./entry-practice-workspace.module.css";
 const CHANNEL = "cs-class-entryjs";
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
-export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, actionsBlocked = false, update, runAction, exportRef, mission, saveLabel, saveState, workspaceWide, practiceFocused = false, mode = "student", onWorkspaceWideChange }: {
+export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, actionsBlocked = false, update, runAction, exportRef, mission, saveLabel, saveState, workspaceWide, practiceFocused = false, mode = "student", onWorkspaceWideChange, onSave, onReadyChange }: {
   lesson: Lesson; work: Work; draft: WorkDraft; locked: boolean; busy: boolean;
   actionsBlocked?: boolean;
+  onSave?: () => Promise<boolean>; onReadyChange?: (ready: boolean) => void;
   update: (next: WorkDraft) => void;
   runAction: (action: WorkAction, focusId: string) => Promise<void>;
   exportRef: RefObject<(() => Promise<string | null>) | null>;
@@ -63,6 +64,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   const validation = practiceMatches(draft, work.validation) ? work.validation : null;
   const submitted = practiceMatches(draft, work.submission);
   const nameCheck = mission?.id === "name" ? checkNameMission(draft.entryProject ?? "", recordedRuns) : null;
+  useEffect(() => { onReadyChange?.(phase === "ready"); return () => onReadyChange?.(false); }, [onReadyChange, phase]);
   useEffect(() => { if (localFocus) localFeedbackRef.current?.focus(); }, [localFocus]);
 
   function send(type: string, details: Record<string, unknown> = {}) {
@@ -102,7 +104,8 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
     function receive(event: MessageEvent) {
       if (event.source !== frame.current?.contentWindow || event.origin !== "null" || event.data?.channel !== CHANNEL) return;
       const message = event.data;
-      if (message.type === "ready") setBootReady(true);
+      if (message.type === "save-request") { if (mode === "student" && phase === "ready" && !locked && !preparing && !actionsBlocked) void onSave?.(); }
+      else if (message.type === "ready") setBootReady(true);
       else if (message.type === "loaded") { window.clearTimeout(bootTimer.current); setPhase("ready"); setError(""); }
       else if (message.type === "changed" && typeof message.project === "string" && !locked) {
         const next = parse(message.project);
@@ -150,12 +153,18 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
     }
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
-  }, [draft, locked, update, mission, parse, program]);
+  }, [draft, locked, update, mission, parse, program, mode, phase, preparing, actionsBlocked, onSave]);
 
   useEffect(() => {
     if (!bootReady || editorProject.current === (draft.entryProject ?? null)) return;
     const next = parse(draft.entryProject);
     if (!next) return;
+    const displayed = parse(editorProject.current);
+    // A capture normalizes fixed media/metadata. Reloading the same native code
+    // would stop a running engine and close its input field.
+    if (displayed && JSON.stringify(displayed.project) === JSON.stringify(next.project)) {
+      editorProject.current = draft.entryProject ?? null; return;
+    }
     editorProject.current = draft.entryProject ?? null;
     frame.current?.contentWindow?.postMessage({ channel: CHANNEL, type: "load", project: next.project }, "*");
   }, [bootReady, draft.entryProject, parse]);

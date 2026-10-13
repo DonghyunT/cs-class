@@ -2,6 +2,60 @@
 
 ## 현재 작업 상태
 
+2026-10-13(Asia/Seoul) **수동 저장 전환(작업 A) 구현 및 검증 완료**: `codex/verification-plan`·기준 `0c61e46`. 제품·검사·문서 수정 완료, 커밋/push/배포 미실시(사용자 승인 대기).
+편집 시 자동 저장 제거, 단일 snapshot 명시 저장 버튼 및 부모/iframe Ctrl+S 단축키, 내부 이동 메모리 보존, 외부 이동 3선택(저장 후 나가기 / 저장 안 하고 나가기 / 취소), 손들기·행동 저장 예외 구현 및 검증을 완료했습니다.
+
+- **초점 회귀 및 세부 이슈 해결 완료:**
+  - `programming-mission-navigation.spec.ts`: 후기 `<textarea>` 입력 중 `Ctrl+S`를 눌러도 disabled되지 않고 포커스를 유지하도록 `LessonEditor`의 일반 잠금과 캡처 잠금을 분리. 내부 이동 안내 문구를 메모리 보존 정책으로 갱신.
+  - `review-flowchart-v1-ui.spec.ts`: 낮은 창(1280x720) 높이 측정 시 네비게이션 동적 렌더링을 놓치지 않도록 `ResizeObserver` 관찰 대상에 네비게이션 컨테이너를 포함하여 5단계 작업실 높이 측정 통과.
+  - 미이관 테스트 보완: `sandwich-conversation.spec.ts`(초기화 후 saveDraft), `student-ui.spec.ts`(재접속 전 saved, 충돌 시 saveDraft 대신 버튼 클릭, 느린 저장 복원), `manual-save.spec.ts`(beforeunload 경고 취소 시 evaluate reload).
+- **관련 검사 및 빌드 검증 완료:**
+  - 수동 저장 관련 26개 테스트 파일(총 200여 개 이상 spec) 타깃 실행 100% 통과 (`run.mjs` 사용).
+  - `npm.cmd run build`: 성공 (Next.js 16.3.6 Turbopack).
+  - `npm.cmd run typecheck`: 성공 (tsc 오류 0개).
+  - `npm.cmd run lint`: 성공 (0 errors, 1 warning - 기존 테스트 미사용 변수).
+  - `git diff --check`: 공백 오류 없음.
+  - 테스트 종료 후 데몬 및 포트(3000, 8080, 9099, 4400) 정상 해제 확인.
+- **다음 단계:**
+  - 사용자 확인 및 승인 후 커밋(`feat: convert student lesson to manual save`) 여부 결정.
+  - 작업 B(영향별 검증 계획) 착수 여부 결정.
+
+재개 근거: Git 추적 문서인 이 HANDOFF/계획A와 현재 코드, Git 제외 상세 작업 장부 `scratch/manual-save-implementation/`입니다. 새 소스 `src/components/student/work-draft.ts`, 새 검사 2개(`tests/manual-save.spec.ts`, `tests/manual-save-entry.spec.ts`)와 계획 2개(`docs/superpowers/plans/`)는 신규 파일입니다. 현재 변경은 로컬 작업 브랜치에만 있으며 원격에 반영하지 않았습니다.
+
+### A0 변경 전 조사 근거
+
+2026-10-13(Asia/Seoul) 이 PC의 **A0 조사 완료** 상태: `codex/verification-plan`·기준/원격 `0c61e46`, 계획2개·README·PRD·DESIGN·DEVELOPMENT·HANDOFF 미커밋 문서 변경 있음. 다음 행동은 아래 조사 결과와 [수동 저장 계획A](superpowers/plans/2026-10-13-manual-save.md)를 검토한 뒤 승인된 A1–A6를 진행하는 것입니다. [검증 계획B](superpowers/plans/2026-10-13-scoped-verification.md)는 A 안정화 이후입니다. 제품 소스·추적된 테스트·CI 설정 변경, 새 앱 빌드·전체 E2E·커밋/push/배포는 하지 않았습니다. 아래 이전 CI/배포 결과와 이번 합성 계측 결과를 구분합니다.
+
+### 수동 저장 A0 조사·변경 전 요청 수
+
+- 사용자 추가 결정: 손들기는 **현재 작품을 저장하고 요청**하는 명시 예외. 위치만 바뀌면 **미저장 경고 없음**, 다음 내용 저장/명시 행동에 위치 포함. 현재 코드에는 두 결정이 아직 구현되지 않았습니다.
+- 코드 계약/caller/읽기 위치 projection·기획서 제안/적용 경계는 [DEVELOPMENT의 A0 조사](DEVELOPMENT.md#수동-저장-전환의-코드-계약-a0-조사), 제안 정책은 PRD/DESIGN, 실행/회귀는 계획A에 반영했습니다. 미해결 사용자 선택은 없으며 projection 후보·Entry metadata 정규화는 구현 시 실제 caller로 확인합니다.
+- 환경: 10/13 Windows·Node24.19.0·Java21·Playwright1.63.0/Chromium·현재 소스의 next dev, fresh demo-cs-class Auth9099/Firestore8080·localhost3000·AI fixture·단일 worker. 시작 전 netstat/PID/API 교차 조회에서 기존 앱/에뮬레이터 없음 확인. 기존 export를 import/덮어쓰기하지 않고 새 합성 환경만 사용했으며 게스트 세션은 사용하지 않았습니다.
+- 보존/무변경: 미커밋 문서4개를 scratch before-docs에 복사하고 source/config288파일 SHA-256 전후 일치(변경0)를 확인했습니다. 다른 미추적 outputs는 수정하지 않았습니다. 두 계측 종료 후 3000/8080/9099/4400/4500/4781 LISTENING 없음 확인.
+- 실행: scratch 임시 Playwright spec2개 각각 성공(요약2.3분/37.3초); 실제 시나리오17개+기존 정상 저장 버튼 미지원1항목. 첫 준비 실행은 임시 config 기준 cwd 때문에 MODULE_NOT_FOUND로 실패했고 제품 문제가 아니며 cwd를 루트로 지정한 뒤 실행했습니다. 전체 E2E/운영 검증이 아닙니다.
+
+| 합성 시나리오 | 초안 POST | 명시 행동·기타 요청 |
+| --- | --- | --- |
+| 추상화16자 연속 입력·80ms 간격 | 1 | 없음 |
+| 추상화3번 편집·각1400ms 멈춤 | 3 | 없음 |
+| 추상화24번 편집·300ms 간격 | 3 | 없음 |
+| 미저장 내용 편집 직후 단계 이동 | 2 | 없음 |
+| 내용 변경 없는 단계 이동 | 1 | 없음 |
+| 미저장 주제 입력 직후 AI 후보 요청 | 1 | AI POST1 |
+| 저장 응답 보류 중 A→B 추가 편집 | 2 | 없음 |
+| 미저장 내용 편집 직후 손들기 | 1 | help POST1 |
+| 순서도 도형1개 추가 | 1 | auth/activity POST1 별도 |
+| 순서도 포트2개 키보드 연결 | 1 | 없음 |
+| 순서도 문구 편집 직후 내보내기 | 1 | 없음 |
+| 순서도 문구 편집 직후 수업 나가기 | 1 | 도착 화면 API1 |
+| 미저장 개념 답안 선택 직후 정답 확인 | 1 | action POST1 |
+| 내용 변경 없는8초 대기 | 0 | 없음 |
+| 프로그래밍 새 미션 이동·기본 작품 초기화/capture | 2 | 없음 |
+| 프로그래밍 기존 미션으로 돌아가기 | 1 | 없음 |
+| 미저장 입력 직후 합성 hidden 이벤트 | 1 | 실제 탭 전환 측정 아님 |
+
+근거는 Git 제외 `scratch/manual-save-a0-20261013/`의 baseline/supplement JSON·spec/config/launch·로그·source hash summary입니다. 준비용 인증/시드/API와 메인 화면 로딩은 계측 행에서 제외했습니다. 본문·쿠키·학생 개인정보를 계측 JSON에 저장하지 않았습니다. 기존 화면에는 일반 저장 버튼이 없어 save 버튼 요청 수는 미지원이며 API 호출로 대신 계산하지 않았습니다. hidden은 visibilityState override+이벤트의 합성 측정입니다. 단일 PC/dev/합성 작업의 관찰값으로 일반 평균·production 호출량·Firestore 과금·절감률을 주장하지 않습니다. 실제 채점/AI 품질/퍼즐 성공 자동 기록 전체·물리 IME/탭 전환/운영은 A0 범위에서 입증하지 않았습니다.
+
 2026-10-13(Asia/Seoul). **개인 개발 CI·Preview·운영 공개 전환을 main@d62be05까지 반영했습니다. 최종 문서 마감 SHA는 Git HEAD, 검사 상태는 Actions에서 대조합니다.**
 
 - 작업 브랜치 push는 자동 CI·Preview 없음, main은 문서/전체 검사, 수동 실행은 전체 검사입니다. GitHub app을 Vercel Production 공개 조건으로 연결하고 같은 SHA의 성공 후 운영 전환을 확인했습니다. 관련 E2E 자동 선택은 후속 작업입니다.
@@ -71,6 +125,8 @@
 3. [첫 실제 수업 확인 순서](DEVELOPMENT.md#첫-실제-수업-확인-순서)에 따라 학교 PC·학교망·물리 한글 입력기와 승인 계정의 실제 로그인/저장·실학생 사용을 확인합니다. 실제 Solar 응답 품질·호출/실패 집계는 로컬 합성 AI 결과와 구분합니다.
 
 ### CI 개선 후속 작업
+
+합의된 범위와 구현 순서는 [통합 로드맵·검증 계획B](superpowers/plans/2026-10-13-scoped-verification.md)에 있습니다. 먼저 [수동 저장 계획A](superpowers/plans/2026-10-13-manual-save.md)를 안정화한 뒤 선택 검증을 적용합니다. 상세 실행 계획은 제안 단계이며 현재 자동 저장과 workflow의 docs/full 판정은 유지됩니다.
 
 main의 전체 CI·대기 중 공개 차단·성공 후 공개·작업 브랜치의 자동 CI/Preview 없음·요청된 수동 Preview를 확인했습니다. 문서 CI의 무거운 검사 생략도 확인했으며 문서 앱 빌드 생략까지 확인했으며 결과는 첫머리에 기록했습니다. GitHub9/15초는 이번 문서 app job 관찰값이며 요금·평균 시간 절감을 보장하지 않습니다.
 

@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
-import { db, headers, readyStudent } from "./emulator";
+import { db, headers, readyStudent, saveDraft } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 import type { FlowchartProject } from "../src/lib/classroom/review/project";
 
@@ -21,6 +21,7 @@ async function prepare(request: APIRequestContext, fields: Partial<FlowchartProj
   const work = await readWork(request);
   if (work.draft.reviewProject?.type !== "flowchart") throw Error("wrong review project");
   Object.assign(work.draft.reviewProject, fields);
+  work.draft.stage = "practice";
   const response = await request.post(workUrl, { headers, data: { revision: work.revision, draft: work.draft } });
   expect(response.status()).toBe(200);
   return await response.json() as Work;
@@ -232,6 +233,7 @@ test.describe("순서도 연구소 V1 작업실", () => {
     await expect(page.getByRole("button", { name: "이 작품 제출 완료", exact: true })).toBeDisabled();
     await page.getByRole("dialog", { name: /Solar AI 설계 점검/ }).press("Escape");
     await page.getByRole("button", { name: "처리 기호: 준비물을 챙긴다", exact: true }).focus(); await page.keyboard.press("ArrowRight");
+    await saveDraft(page);
     await expect.poll(async () => ((await readWork(page.request)).draft.reviewProject as FlowchartProject).nodes.find(node => node.id === "step")!.x).toBeGreaterThan(original.nodes[1].x);
     work = await readWork(page.request); expect(work.missions!.free.validation?.passed).toBe(true); expect(work.missions!.free.submission).toEqual(submission);
     await page.reload(); const restored = (await readWork(page.request)).draft.reviewProject as FlowchartProject;
@@ -249,6 +251,7 @@ test.describe("순서도 연구소 V1 작업실", () => {
     await page.getByRole("button", { name: "처리 기호: 준비물을 다시 확인한다", exact: true }).focus();
     for (let index = 0; index < 3; index++) await page.keyboard.press("Tab");
     await expect(page.getByRole("button", { name: "준비물을 다시 확인한다 연결 받기", exact: true })).toBeFocused(); await page.keyboard.press("Enter");
+    await saveDraft(page);
     await expect.poll(async () => (await readWork(page.request)).missions!.free.validation).toBeNull();
     await expect.poll(async () => ((await readWork(page.request)).draft.reviewProject as FlowchartProject).edges.find(edge => edge.from === "start")).toMatchObject({ from: "start", to: "step", label: "", fromPort: "bottom", toPort: "top" });
     work = await readWork(page.request); expect(work.missions!.free.submission).toEqual(submission);
@@ -286,6 +289,7 @@ test.describe("순서도 연구소 V1 작업실", () => {
     await dialog.getByRole("button", { name: "처방전 닫기", exact: true }).click(); await trigger.click();
     await expect(dialog.getByLabel("실행 계획", { exact: true }).first()).toHaveValue("상태 확인");
     await dialog.getByRole("button", { name: "처방전으로 초안 채우기", exact: true }).click();
+    await saveDraft(page);
     await expect.poll(async () => (await readWork(page.request)).draft.reviewProject).toMatchObject({ current: "아직 채택하지 않은 등교 준비", goal: "준비물을 챙겨 등교하기", conditions: ["준비물 확인", ""], core: ["준비물 목록"], cards: [{ type: "sequence", text: "상태 확인" }, { type: "sequence", text: "조건 확인" }, { type: "sequence", text: "목표 실행" }] });
     const saved = (await readWork(page.request)).draft.reviewProject as FlowchartProject;
     expect(saved.nodes).toEqual((seeded.draft.reviewProject as FlowchartProject).nodes); expect(saved.edges).toEqual((seeded.draft.reviewProject as FlowchartProject).edges);
@@ -337,6 +341,7 @@ test.describe("순서도 연구소 V1 작업실", () => {
     expect(await originalEditor.evaluate(element => element === document.querySelector('[aria-label="처리 기호 문구 직접 편집"]'))).toBe(true);
     await expect(editor).toBeFocused(); await page.keyboard.press("Enter");
     await expect(page.getByRole("button", { name: "처리 기호: Check supplies 준비물 확인", exact: true })).toBeFocused();
+    await saveDraft(page);
     await expect.poll(async () => ((await readWork(page.request)).draft.reviewProject as FlowchartProject).nodes.find(item => item.id === "step")!.text).toBe("Check supplies 준비물 확인");
     const saved = (await readWork(page.request)).draft.reviewProject as FlowchartProject;
     expect(saved.cards).toEqual((seeded.draft.reviewProject as FlowchartProject).cards); expect(saved.edges).toEqual((seeded.draft.reviewProject as FlowchartProject).edges);
@@ -351,7 +356,6 @@ test.describe("순서도 연구소 V1 작업실", () => {
     const toolbar = page.getByRole("toolbar", { name: "순서도 실행 제어", exact: true });
     await toolbar.getByLabel("실행 속도", { exact: true }).selectOption("2");
     await toolbar.getByRole("button", { name: "자동 실행", exact: true }).click();
-    await expect.poll(async () => ((await readWork(page.request)).draft.reviewProject as FlowchartProject).guideStep).toBe(4);
     const yes = page.getByLabel("실제 순서도 연결", { exact: true }).getByRole("button", { name: "07:20 · 예로 진행", exact: true });
     await expect(yes).toBeFocused();
     await expect(toolbar.getByRole("button", { name: "한 단계 실행", exact: true })).toBeDisabled();
@@ -359,6 +363,6 @@ test.describe("순서도 연구소 V1 작업실", () => {
     await yes.click();
     await expect(page.getByRole("status").filter({ hasText: "종료에 도달했어요!" })).toBeVisible();
     await expect(page.getByLabel("실제 순서도 연결", { exact: true }).locator('[data-flow-node="end"]')).toHaveAttribute("data-active", "true");
-    expect(((await readWork(page.request)).draft.reviewProject as FlowchartProject).guideStep).toBe(4);
+    expect(((await readWork(page.request)).draft.reviewProject as FlowchartProject).guideStep).toBe(0);
   });
 });

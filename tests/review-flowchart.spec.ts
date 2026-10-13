@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
-import { db, headers, readyStudent, readyTeacher } from "./emulator";
+import { db, headers, readyStudent, readyTeacher, saveDraft } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 import { missions } from "../src/lib/classroom/review/flowchart-data.mjs";
 import { guideGraph } from "../src/lib/classroom/review/flow-experience";
@@ -14,6 +14,7 @@ async function action(request: APIRequestContext, work: Work, type: string, miss
   const response = await request.post(`/api/classroom/work/${id}/action`, { headers, data: { revision: work.revision, action: { type, missionId } } }); expect(response.status()).toBe(200); return await response.json() as Work;
 }
 const correct = [{ s2: "b-m1-1", s3: "b-m1-2", s4: "b-m1-3" }, { s2: "b-m2-1", s3: "b-m2-2", s4_yes: "b-m2-yes", s4_no: "b-m2-no" }, { s2: "b-m3-in", s3: "b-m3-chk", s4_yes: "b-m3-yes", s4_no: "b-m3-no" }];
+async function visiblePan(page: Page) { return page.getByLabel("실제 순서도 연결", { exact: true }).locator('svg[aria-label="기호와 화살표로 연결한 순서도"]').evaluate(svg => ({ x: (svg as SVGSVGElement).viewBox.baseVal.x, y: (svg as SVGSVGElement).viewBox.baseVal.y })); }
 function puzzleSlot(page: Page, missionId: number, slotId: string) {
   const slot = missions.find(mission => mission.id === missionId)?.slots.find(item => item.id === slotId);
   if (!slot?.hint) throw Error("No editable puzzle slot");
@@ -58,6 +59,7 @@ test.describe("V1 순서도 직접 조작", () => {
     await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, { steps: 8 }); await page.mouse.up();
     await page.getByRole("button", { name: "비밀번호 다시 입력받기 다음 연결점", exact: true }).focus(); await page.keyboard.press("Enter");
     await page.getByRole("button", { name: "종료 연결 받기", exact: true }).focus(); await page.keyboard.press("Enter");
+    await saveDraft(page);
     await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.edges).toEqual([{ from: "start", to: "step", label: "", fromPort: "bottom", toPort: "top" }, { from: "step", to: "end", label: "", fromPort: "bottom", toPort: "top" }]);
     const saved = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
     expect(saved.nodes.find((n: { id: string }) => n.id === "step")).toMatchObject({ text: "비밀번호 다시 입력받기", x: 300, y: 210 }); expect(saved.cards).toEqual(initial.cards);
@@ -75,8 +77,10 @@ test.describe("V1 순서도 직접 조작", () => {
     await expect(page.getByRole("button", { name: "입출력 기호: 내용 입력", exact: true })).toBeVisible();
     await viewport.scrollIntoViewIfNeeded(); const box = await viewport.boundingBox(); if (!box) throw Error("canvas missing");
     await page.mouse.move(box.x + 25, box.y + 120); await page.mouse.down(); await page.mouse.move(box.x + 100, box.y + 155, { steps: 6 }); await page.mouse.up();
+    await saveDraft(page);
     await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan.x).toBe(-75);
     await page.getByRole("button", { name: "기호 세로 정렬", exact: true }).click();
+    await saveDraft(page);
     await expect.poll(async () => {
       const p = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
       return new Set(p.nodes.map((n: { x: number; shape: string }) => n.x + (n.shape === "terminal" ? 200 : n.shape === "process" ? 210 : 220) / 2)).size;
@@ -87,6 +91,7 @@ test.describe("V1 순서도 직접 조작", () => {
     const nodeBox = await node.locator("[data-flow-shape]").boundingBox(), trashBox = await trash.boundingBox(); if (!nodeBox || !trashBox) throw Error("trash missing");
     await page.mouse.move(nodeBox.x + 30, nodeBox.y + 15); await page.mouse.down(); await page.mouse.move(trashBox.x + trashBox.width / 2, trashBox.y + trashBox.height / 2, { steps: 8 }); await page.mouse.up();
     await expect(node).toHaveCount(0); await expect(viewport).toBeFocused();
+    await saveDraft(page);
     await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.nodes.length).toBe(3);
     const saved = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject; expect(saved.cards).toEqual(initial.cards); expect(saved.edges).toEqual([]);
     await page.setViewportSize({ width: 390, height: 680 }); await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -99,6 +104,7 @@ test.describe("V1 순서도 직접 조작", () => {
     await page.getByRole("button", { name: "기획서 펼치기", exact: true }).click(); await expect(page.getByRole("button", { name: "기획서 접기", exact: true })).toBeFocused();
     await page.getByRole("button", { name: "반복 카드 추가", exact: true }).click(); const cards = page.locator('fieldset[data-structure="loop"]');
     await cards.last().getByLabel("반복 지속 조건", { exact: true }).fill("정답이 아닌 동안"); await cards.last().getByLabel("반복할 행동", { exact: true }).fill("답을 다시 입력받기");
+    await saveDraft(page);
     await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.cards.length).toBe(2);
     const saved = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
     expect(saved.cards[0]).toEqual(initial.cards[0]); expect(saved.cards[1]).toMatchObject({ type: "loop", text: "정답이 아닌 동안", yes: "답을 다시 입력받기", no: "" });
@@ -120,7 +126,7 @@ test.describe("V1 순서도 직접 조작", () => {
     const initial = await free(page), viewport = page.getByLabel("실제 순서도 연결", { exact: true }); await viewport.scrollIntoViewIfNeeded();
     const box = await viewport.boundingBox(); if (!box) throw Error("canvas missing");
     await page.mouse.move(box.x + box.width - 35, box.y + 200); await page.mouse.down(); await page.mouse.move(box.x + 35, box.y + 200, { steps: 8 }); await page.mouse.up();
-    await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan.x).toBeGreaterThan(460);
+    await expect.poll(async () => (await visiblePan(page)).x).toBeGreaterThan(460);
     await page.getByRole("button", { name: "순서도 가운데 보기", exact: true }).click();
     const start = page.getByRole("button", { name: "시작·종료 기호: 시작", exact: true }).locator("[data-flow-shape]");
     await expect.poll(async () => {
@@ -128,21 +134,20 @@ test.describe("V1 순서도 직접 조작", () => {
       return !!symbol && !!frame && symbol.x >= frame.x && symbol.x + symbol.width <= frame.x + frame.width && symbol.y >= frame.y && symbol.y + symbol.height <= frame.y + frame.height;
     }).toBe(true);
     await expect.poll(async () => {
-      const p = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
-      return p.pan.x < 300;
+      return (await visiblePan(page)).x < 300;
     }).toBe(true);
     const saved = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject; expect(saved.nodes).toEqual(initial.nodes); expect(saved.edges).toEqual(initial.edges); expect(saved.cards).toEqual(initial.cards);
   });
   test("200개 기호를 정렬해도 허용 좌표 안에서 저장하고 모든 문구를 보존한다", async ({ page }) => {
     await free(page);
     await expect(page.getByRole("tab", { name: /실습/ })).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+    await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
     await page.goto("about:blank"); let work = await (await page.request.get(`/api/classroom/work/${id}`)).json() as Work;
     if (work.draft.reviewProject?.type !== "flowchart") throw Error("wrong lesson");
     const nodes = Array.from({ length: 200 }, (_, i) => ({ id: `layout-${i}`, shape: i === 0 || i === 199 ? "terminal" as const : "process" as const, text: i === 0 ? "시작" : i === 199 ? "종료" : `처리 ${i}`, x: 80 + i % 10 * 180, y: 60 + Math.floor(i / 10) * 140 }));
     work.draft.reviewProject.nodes = nodes;
     const response = await page.request.post(`/api/classroom/work/${id}`, { headers, data: { revision: work.revision, draft: work.draft } }); expect(response.status()).toBe(200); work = await response.json() as Work;
-    await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click(); await page.getByRole("button", { name: "기호 세로 정렬", exact: true }).click();
+    await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click(); await page.getByRole("button", { name: "기호 세로 정렬", exact: true }).click(); await saveDraft(page);
     await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).revision).toBeGreaterThan(work.revision);
     const saved = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
     expect(saved.nodes).toHaveLength(200); expect(saved.nodes.every((n: { x: number; y: number }) => Math.abs(n.x) <= 10000 && Math.abs(n.y) <= 10000)).toBe(true);
@@ -232,7 +237,7 @@ test.describe("flowchart 개념과 읽기 배치", () => {
     await page.getByRole("radio", { name: "비밀번호 입력 단계", exact: true }).check();
     await page.getByRole("button", { name: "정답 확인", exact: true }).click();
     await expect(page.locator("#concept-feedback-loop")).toBeFocused();
-    await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+    await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
     const before = await (await page.request.get(`/api/classroom/work/${id}`)).json();
     expect(before.conceptSolved).toEqual(["loop"]);
     for (let i = 0; i < 5; i++) await scene.getByRole("button", { name: "한 단계 실행", exact: true }).click();
@@ -274,7 +279,7 @@ test.describe("flowchart 개념과 읽기 배치", () => {
     await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, { steps: 6 });
     await page.mouse.move(targetBox.x + targetBox.width / 2 + 2, targetBox.y + targetBox.height / 2 + 2); await page.mouse.up();
     await expect(page.getByRole("button", { name: "처리 기호: 면과 분말스프 넣고 4분 끓이기", exact: true })).toBeVisible();
-    await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+    await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
     const saved = await (await page.request.get(`/api/classroom/work/${id}`)).json();
     expect(saved.draft.reviewProject.placements["1"]).toEqual(correct[0]);
     await page.reload(); await expect(page.getByRole("button", { name: "처리 기호: 가스레인지 켜서 물 끓이기", exact: true })).toBeVisible();
@@ -312,6 +317,7 @@ test("V1처럼 틀린 배치와 빈 기호를 실행하지 않고 답안을 보�
   await puzzleSlot(page, 2, "s2").selectOption(""); await run.getByRole("button", { name: "실행 준비 / 다시 시작" }).click();
   await expect(run).toContainText("빈 기호를 먼저 채워 주세요."); await expect(run.getByRole("button", { name: "한 단계 실행" })).toBeDisabled();
   await expect(inputSlot.locator("title")).toHaveText("입출력 ▱ (키 입력받기)");
+  await saveDraft(page);
   await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.placements["2"].s2).toBe("");
 });
 test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 기호만 되돌릴 수 있다", async ({ page }) => {
@@ -324,11 +330,11 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
   await page.getByRole("dialog", { name: "캔버스를 비울까요?", exact: true }).getByRole("button", { name: "기호와 화살표 비우기", exact: true }).click();
   await expect(page.getByRole("button", { name: "🚀 5. 나만의 백지", exact: true })).toHaveAttribute("aria-pressed", "true");
   const definition = await recipe(page); await expect(definition.getByLabel("현재 상태", { exact: true })).toHaveValue("현재 기록"); await definition.getByRole("button", { name: "처방전 닫기", exact: true }).click();
-  await expect(page.getByRole("region", { name: "자연어 기획서", exact: true }).getByLabel("실행 계획", { exact: true })).toHaveValue("계획 보존"); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "자연어 기획서", exact: true }).getByLabel("실행 계획", { exact: true })).toHaveValue("계획 보존"); await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   const fresh = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
   expect(fresh).toMatchObject({ placements: p.placements, guideStep: 4, current: p.current, goal: p.goal, conditions: p.conditions, core: p.core, cards: p.cards, edges: [], pan: { x: 0, y: 0 } }); expect(fresh.nodes).toHaveLength(2);
   await page.getByRole("button", { name: "편집 되돌리기", exact: true }).click(); await expect(page.getByRole("button", { name: "처리 기호: 추가 처리", exact: true })).toBeVisible();
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); const restoredDefinition = await recipe(page); await expect(restoredDefinition.getByLabel("현재 상태", { exact: true })).toHaveValue("현재 기록"); await restoredDefinition.getByRole("button", { name: "처방전 닫기", exact: true }).click();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); const restoredDefinition = await recipe(page); await expect(restoredDefinition.getByLabel("현재 상태", { exact: true })).toHaveValue("현재 기록"); await restoredDefinition.getByRole("button", { name: "처방전 닫기", exact: true }).click();
   await page.getByRole("button", { name: "처리 기호: 추가 처리", exact: true }).focus(); await page.keyboard.press("Delete");
   await page.getByRole("button", { name: "처리 기호 추가", exact: true }).click();
   await page.getByRole("button", { name: "처리 기호: 내용 입력", exact: true }).focus(); await page.keyboard.press("F2");
@@ -337,11 +343,11 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
   await page.getByRole("button", { name: "알람 켜기 연결 받기", exact: true }).focus(); await page.keyboard.press("Enter");
   await page.getByRole("button", { name: "알람 켜기 다음 연결점", exact: true }).focus(); await page.keyboard.press("Enter");
   await page.getByRole("button", { name: "종료 연결 받기", exact: true }).focus(); await page.keyboard.press("Enter");
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   const beforeMove = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.nodes.find((n: { text: string }) => n.text === "알람 켜기");
   const alarm = page.getByRole("button", { name: "처리 기호: 알람 켜기", exact: true }); await alarm.scrollIntoViewIfNeeded(); const box = await alarm.locator("[data-flow-shape]").boundingBox(); if (!box) throw new Error("No visible node");
   await page.mouse.move(box.x + 30, box.y + 15); await page.mouse.down(); await page.mouse.move(box.x + 80, box.y + 45, { steps: 4 }); await page.mouse.up();
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); const moved = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); const moved = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject;
   expect(moved.nodes).toHaveLength(3); expect(moved.edges).toHaveLength(2); expect(moved.nodes.find((n: { text: string }) => n.text === "알람 켜기").x).toBeGreaterThan(beforeMove.x);
   await page.reload(); await expect(page.getByRole("button", { name: "처리 기호: 알람 켜기", exact: true })).toBeVisible();
   expect((await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.nodes).toEqual(moved.nodes);
@@ -388,14 +394,12 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
   await page.getByRole("button", { name: /4단계: 순차 구조/ }).click();
   await page.getByRole("button", { name: "나만의 백지로 이동" }).click();
   await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();
-  const centeredSave = page.waitForResponse(response => response.url().endsWith(`/api/classroom/work/${id}`) && response.request().method() === "POST");
   await page.getByRole("button", { name: "순서도 가운데 보기", exact: true }).click();
-  expect((await centeredSave).status()).toBe(200);
-  const centeredPan = (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan;
+  const centeredPan = await visiblePan(page);
   await viewport.scrollIntoViewIfNeeded(); const panBox = await viewport.boundingBox(); if (!panBox) throw Error("No visible canvas");
   await page.mouse.move(panBox.x + panBox.width - 50, panBox.y + 100); await page.mouse.down(); await page.mouse.move(panBox.x + panBox.width - 250, panBox.y + 100, { steps: 6 }); await page.mouse.up();
   await viewport.focus();
-  await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan).toEqual({ x: centeredPan.x + 200, y: centeredPan.y });
+  await expect.poll(() => visiblePan(page)).toEqual({ x: centeredPan.x + 200, y: centeredPan.y });
   const panCenter = await viewport.evaluate(element => element.scrollLeft + element.clientWidth / 2);
   await page.setViewportSize({ width: 390, height: 1000 });
   await expect.poll(() => viewport.evaluate((element, center) => {
@@ -403,8 +407,9 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
     return Math.abs(element.scrollLeft + element.clientWidth / 2 - expectedCenter);
   }, panCenter)).toBeLessThanOrEqual(1);
   await expect(viewport).toBeFocused();
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
-  expect((await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan).toEqual({ x: centeredPan.x + 200, y: centeredPan.y });
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  expect(await visiblePan(page)).toEqual({ x: centeredPan.x + 200, y: centeredPan.y });
+  expect((await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.pan).toEqual(moved.pan);
 });
 test("세 퍼즐은 오류 관찰·실행·각 제출·재접속 기록을 유지한다", async ({ page }) => {
   await prepare(page.request); await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
@@ -450,6 +455,7 @@ test("자유 캔버스·공방·키보드·추상화 복사·교사 승인은 �
   await page.getByRole("button", { name: "AI 설계 점검 열기", exact: true }).click(); await page.getByRole("button", { name: "AI 설계 리뷰 받기" }).click(); await page.getByRole("button", { name: "선생님 확인 요청" }).click(); await expect(page.getByText(/선생님 확인 대기 중이에요/)).toBeVisible();
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); const work = await (await page.request.get(`/api/classroom/work/${id}`)).json();
   await page.getByRole("dialog", { name: /Solar AI 설계 점검/ }).press("Escape"); const changedRecipe = await recipe(page); await changedRecipe.getByLabel("목표 상태", { exact: true }).fill("수정 중인 별도 목표"); await changedRecipe.getByRole("button", { name: "처방전으로 초안 채우기", exact: true }).click();
+  await saveDraft(page);
   await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.goal).toBe("수정 중인 별도 목표");
   const teacher = await playwright.request.newContext({ baseURL: "http://localhost:3000" }); await readyTeacher(teacher);
   const approve = await teacher.post(`/api/classroom/students/${uid}/review/${id}`, { headers, data: { requestId: work.review.id, decision: "approve", message: "" } }); expect(approve.status()).toBe(200); const latest = await approve.json(); expect(latest.missions.free.submission.reviewProject.goal).toBe("정시에 등교함"); expect(latest.draft.reviewProject.goal).toBe("수정 중인 별도 목표"); await teacher.dispose();

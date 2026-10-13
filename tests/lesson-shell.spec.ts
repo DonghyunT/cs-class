@@ -154,10 +154,12 @@ test("학습 조회 실패에서도 나가기 · 저장 실패는 이동과 로�
   const input = page.getByRole("textbox", { name: "자연어 명령" });
   await input.fill("빵 봉지를 열어");
   await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
+  await page.getByRole("button", { name: "저장 후 나가기", exact: true }).click();
   await expect(page.locator("#work-save-error")).toContainText("저장 연결 실패");
   await expect(input).toHaveValue("빵 봉지를 열어");
   await page.getByRole("button", { name: "학생 메뉴", exact: true }).click();
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
+  await page.getByRole("button", { name: "저장 후 나가기", exact: true }).click();
   await expect(page).toHaveURL(/\/classroom\/review-sandwich/);
   await expect(input).toHaveValue("빵 봉지를 열어");
   fail = false;

@@ -9,7 +9,7 @@ import type { HelpRequest } from "@/lib/classroom/help";
 import styles from "./help.module.css";
 
 export function HelpButton({ lessonId }: { lessonId: string }) {
-  const { beforeLeave } = useNavigationGuard();
+  const { saveCurrent } = useNavigationGuard();
   const [request, setRequest] = useState<HelpRequest | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState("");
   const [ready, setReady] = useState(false);
   const busyRef = useRef(false);
@@ -31,7 +31,7 @@ export function HelpButton({ lessonId }: { lessonId: string }) {
     try {
       if (request) { await api("classroom/help/cancel", { id: request.id }); if (current === version.current) { setRequest(null); retryId.current = null; } }
       else {
-        if (!(await beforeLeave())) { setError("저장 문제를 해결한 뒤 손들어 주세요."); return; }
+        if (!(await saveCurrent())) { setError("저장 문제를 해결한 뒤 손들어 주세요."); return; }
         if (current !== version.current) return;
         retryId.current ??= crypto.randomUUID();
         const value = await api<{ request: HelpRequest }>("classroom/help", { id: retryId.current, lessonId });

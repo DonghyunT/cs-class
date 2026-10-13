@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { correctOrder, initialPassword, lessonId, resetStudent, studentPassword } from "./emulator";
+import { correctOrder, initialPassword, lessonId, resetStudent, studentPassword, saveDraft } from "./emulator";
 
 const studentId = "20102";
 const workPath = `**/api/classroom/work/${lessonId}`;
@@ -19,7 +19,7 @@ async function enter(page: Page) {
   await page.goto(`/classroom/${lessonId}?from=dashboard`);
   await expect(page.getByRole("heading", { name: "설명을 읽고 바로 확인해요" })).toBeVisible();
 }
-async function saved(page: Page) { await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); }
+async function saved(page: Page) { await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); }
 
 test.beforeEach(async ({ request }) => { await resetStudent(request, studentId); });
 
@@ -40,6 +40,7 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   await expect(page.getByRole("button", { name: "이번 회차 결과 확인" })).toBeDisabled();
   await page.getByRole("button", { name: "먼저 실습하기" }).click();
   await expect(page.getByRole("tab", { name: "실습 0%" })).toHaveAttribute("aria-selected", "true");
+  await saved(page);
   await page.reload();
   await expect(page.getByRole("tab", { name: "실습 0%" })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("tab", { name: "퀴즈 0%" }).click();
@@ -110,22 +111,16 @@ test("저장 실패 때 입력과 단계 유지, 재시도 후 이동", async ({
   await enter(page);
   await page.route(workPath, (route) => route.request().method() === "POST" ? route.abort("failed") : route.continue());
   await page.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
-  await page.getByRole("tab", { name: "퀴즈 0%" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("서버에 연결하지 못했어요");
   await expect(page.getByRole("tab", { name: "개념 0%" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("radio", { name: "컵에 물을 200mL 따른다" })).toBeChecked();
   await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}(\\?from=dashboard)?$`));
+  await page.getByRole("button", { name: "취소", exact: true }).click();
   await page.unroute(workPath);
   await page.getByRole("button", { name: "저장 다시 확인" }).click();
   await saved(page);
-  // A failure of only the new stage write must keep the old panel too.
-  await page.route(workPath, (route) => route.request().method() === "POST" ? route.abort("failed") : route.continue());
-  await page.getByRole("tab", { name: "퀴즈 0%" }).click();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("서버에 연결하지 못했어요");
-  await expect(page.getByRole("tab", { name: "개념 0%" })).toHaveAttribute("aria-selected", "true");
-  await page.unroute(workPath);
-  await page.getByRole("button", { name: "저장 다시 확인" }).click();
   await page.getByRole("tab", { name: "퀴즈 0%" }).click();
   await expect(page.getByRole("tab", { name: "퀴즈 0%" })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
@@ -144,11 +139,14 @@ test("느린 저장 중 새 입력을 보존하고 이동 전에 최신 답안�
     await route.continue();
   });
   await page.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await captured;
   await page.getByRole("radio", { name: "물을 적당히 준비한다" }).check();
   await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}(\\?from=dashboard)?$`));
   release();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("button", { name: "저장 후 나가기", exact: true }).click();
   await expect(page).toHaveURL(/\/student$/);
   await expect(page.getByRole("heading", { name: "오늘은 무엇을 해볼까요?", exact: true })).toBeVisible();
   await page.goto(`/classroom/${lessonId}?from=dashboard`);
@@ -169,10 +167,12 @@ test("두 탭 저장 충돌은 현재 입력을 유지하고 명시적으로 해
   await expect(other.getByRole("radio", { name: "물을 적당히 준비한다" })).toBeVisible();
   const firstSave = answerSaved(page, "clear");
   await page.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
+  await saveDraft(page);
   const firstRecord = await (await firstSave).json();
   expect(firstRecord.draft.conceptAnswers.algorithm).toBe("clear");
-  await saved(page);
+  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await other.getByRole("radio", { name: "물을 적당히 준비한다" }).check();
+  await other.getByRole("button", { name: "저장", exact: true }).click();
   await expect(other.getByRole("main").getByRole("alert")).toContainText("저장 기록이 서로 달라요");
   await expect(other.getByRole("radio", { name: "물을 적당히 준비한다" })).toBeChecked();
   await other.getByRole("button", { name: "서버 기록과 비교" }).click();
@@ -182,14 +182,16 @@ test("두 탭 저장 충돌은 현재 입력을 유지하고 명시적으로 해
   const resolvedRecord = await (await resolvedSave).json();
   expect(resolvedRecord.draft.conceptAnswers.algorithm).toBe("vague");
   expect(resolvedRecord.revision).toBeGreaterThan(firstRecord.revision);
-  await saved(other);
+  await expect(other.getByText("저장 완료", { exact: true })).toBeVisible();
   const newerSave = answerSaved(other, "clear");
   await other.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
+  await saveDraft(other);
   const newerRecord = await (await newerSave).json();
   expect(newerRecord.draft.conceptAnswers.algorithm).toBe("clear");
   expect(newerRecord.revision).toBeGreaterThan(resolvedRecord.revision);
-  await saved(other);
+  await expect(other.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.getByRole("radio", { name: "물을 적당히 준비한다" }).check();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("저장 기록이 서로 달라요");
   await page.getByRole("button", { name: "서버 기록과 비교" }).click();
   await page.getByRole("button", { name: "서버 기록으로 이어하기" }).click();

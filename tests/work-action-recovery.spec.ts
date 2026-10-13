@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { createHash } from "node:crypto";
-import { auth, correctOrder, db, headers, initialPassword, lessonId, loginStudent, resetStudent, studentPassword } from "./emulator";
+import { auth, correctOrder, db, headers, initialPassword, lessonId, loginStudent, resetStudent, studentPassword, saveDraft } from "./emulator";
 import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
 import type { Work, WorkAction } from "../src/lib/classroom/types";
 
@@ -11,7 +11,7 @@ test.beforeAll(async () => { originalClass = (await db.doc("csClasses/2-1").get(
 test.beforeEach(async ({ page }) => {
   await resetStudent(page.request, studentId);
   expect((await loginStudent(page.request, initialPassword, studentId)).status()).toBe(200);
-  expect((await page.request.post("/api/auth/password", { headers, data: { password: studentPassword } })).status()).toBe(200);
+  expect((await page.request.post("/api/auth/password", { headers, data: { password: studentPassword, saveDraft } })).status()).toBe(200);
   await page.goto(`/classroom/${lessonId}`);
 });
 test.afterAll(async () => {
@@ -40,12 +40,12 @@ async function prepareAction(page: Page, type: WorkAction["type"]) {
 }
 
 for (const status of [200, 503, 409]) {
-  test(`단계 저장 대기 안내·중복 이동 차단·입력 보존 (${status})`, async ({ page }) => {
+  test(`명시 저장 대기 안내·중복 저장 차단·입력 보존 (${status})`, async ({ page }) => {
     let started!: () => void, release!: () => void, posts = 0;
     const pending = new Promise<void>(resolve => { started = resolve; });
     const gate = new Promise<void>(resolve => { release = resolve; });
     await page.route(`**${endpoint}`, async route => {
-      if (route.request().method() !== "POST" || route.request().postDataJSON().draft.stage !== "quiz") return route.continue();
+      if (route.request().method() !== "POST") return route.continue();
       posts++; started(); await gate;
       if (status === 200) await route.continue();
       else await route.fulfill({ status, json: { code: status === 409 ? "REVISION_CONFLICT" : "UNAVAILABLE", message: "시험 단계 저장 실패" } });
@@ -53,17 +53,16 @@ for (const status of [200, 503, 409]) {
     await chooseConcept(page);
     const quiz = page.getByRole("tab", { name: "퀴즈 0%", exact: true });
     try {
-      await quiz.click(); await pending;
-      await expect(page.getByText("입력 저장 후 퀴즈로 이동 중…", { exact: true })).toBeVisible();
+      await page.getByRole("button", { name: "저장", exact: true }).click(); await pending;
+      await expect(page.getByText("저장 중…", { exact: true }).first()).toBeVisible();
       await expect(quiz).toBeDisabled();
       await expect(page.getByRole("tab", { name: "개념 0%", exact: true })).toHaveAttribute("aria-selected", "true");
-      await quiz.dispatchEvent("click");
+      await page.getByRole("button", { name: "저장", exact: true }).dispatchEvent("click");
       expect(posts).toBe(1);
     } finally { release(); }
-    await expect(page.getByText("입력 저장 후 퀴즈로 이동 중…", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("저장 중…", { exact: true })).toHaveCount(0);
     if (status === 200) {
-      await expect(quiz).toHaveAttribute("aria-selected", "true");
-      await expect(quiz).toBeFocused();
+      await expect(page.getByRole("tab", { name: "개념 0%", exact: true })).toHaveAttribute("aria-selected", "true");
       expect((await stored(page)).draft.conceptAnswers.algorithm).toBe("clear");
     } else {
       await expect(page.locator("#work-save-error")).toContainText("시험 단계 저장 실패");
@@ -162,6 +161,7 @@ test("결과 조회 실패와 느린 조회 중 새 입력은 보존하고 해�
     expect(savePosts).toBe(0);
   } finally { release(); }
   await expect(page.locator("#work-action-error")).toHaveCount(0);
+  await saveDraft(page);
   await expect.poll(async () => (await stored(page)).draft.conceptAnswers.algorithm).toBe("vague");
 });
 
@@ -348,6 +348,7 @@ for (const programming of [false, true]) {
     await expect(result).toContainText("이번 회차 결과는 채점할 때 저장된 답안 기준이에요.");
     await expect(panel.getByRole("status").filter({ hasText: "채점 당시 답안 결과" })).toContainText(hint);
     await expect(panel.getByRole("radio", { name: answerLabel, exact: true })).toBeChecked();
+    await saveDraft(page);
     await expect.poll(async () => ((await (await page.request.get(workEndpoint)).json()) as Work).draft.quizAnswers[question]).toBe(lateAnswer);
     const after: Work = await (await page.request.get(workEndpoint)).json();
     expect(after.quizFeedback).toEqual(graded.quizFeedback);

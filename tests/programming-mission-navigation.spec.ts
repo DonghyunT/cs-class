@@ -115,7 +115,7 @@ test("제출 응답의 최신 단계가 달라지면 사라진 다음 버튼 대
   await expect(page.locator("#programming-next-mission")).toHaveCount(0);
 });
 
-test("이전 제출 복원과 자동 저장은 초점을 빼앗지 않고 작품 수정 시 다음 버튼 강조를 해제한다", async ({ page }) => {
+test("이전 제출 복원과 수동 저장은 초점을 빼앗지 않고 작품 수정 시 다음 버튼 강조를 해제한다", async ({ page }) => {
   await prepare(page, "move", true);
   const navigation = page.getByRole("navigation", { name: "미션 앞뒤 이동", exact: true });
   const next = page.getByRole("button", { name: "다음 미션", exact: true });
@@ -123,6 +123,7 @@ test("이전 제출 복원과 자동 저장은 초점을 빼앗지 않고 작품
   await expect(next).not.toBeFocused();
   const reflection = page.getByLabel("오늘 발견한 것을 한 줄로 남겨볼까요?");
   await reflection.fill("앞뒤로 작품을 살펴봤어요.");
+  await reflection.press("Control+s");
   await expect.poll(async () => (await page.request.get(endpoint)).json().then((work: Work) => work.draft.programming!.reflection)).toBe("앞뒤로 작품을 살펴봤어요.");
   await expect(reflection).toBeFocused();
   const frame = page.frameLocator("iframe");

@@ -1,7 +1,9 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
-type Guard = { flush: () => Promise<boolean>; isDirty: () => boolean };
+type Guard = { flush: () => Promise<boolean>; isDirty: () => boolean; prepareLeave?: () => Promise<boolean>; save?: () => Promise<boolean>; discard?: () => boolean };
 type HistoryPosition = { owner: string; index: number };
 const POSITION_KEY = "__csClassHistory";
 
@@ -18,11 +20,39 @@ function withPosition(state: unknown, position: HistoryPosition) {
   return { ...(state && typeof state === "object" ? state : {}), [POSITION_KEY]: position };
 }
 
-const Context = createContext<{ register: (guard: Guard) => () => void; beforeLeave: () => Promise<boolean> } | null>(null);
+const Context = createContext<{ register: (guard: Guard) => () => void; beforeLeave: () => Promise<boolean>; saveCurrent: () => Promise<boolean> } | null>(null);
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const router = useRouter(); const guard = useRef<Guard | null>(null); const moving = useRef(false);
+  const [confirmation, setConfirmation] = useState<Guard | null>(null), [confirmBusy, setConfirmBusy] = useState(false);
+  const resolver = useRef<((allowed: boolean) => void) | null>(null), pendingLeave = useRef<Promise<boolean> | null>(null);
+  const leaveTrigger = useRef<HTMLElement | null>(null), cancelButton = useRef<HTMLButtonElement>(null);
   const register = useCallback((value: Guard) => { guard.current = value; return () => { if (guard.current === value) guard.current = null; }; }, []);
-  const beforeLeave = useCallback(() => guard.current?.flush() ?? Promise.resolve(true), []);
+  const resolveLeave = useCallback((allowed: boolean) => { const finish = resolver.current; resolver.current = null; setConfirmation(null); setConfirmBusy(false); finish?.(allowed); }, []);
+  const checkLeave = useCallback((current: Guard): Promise<boolean> => {
+    if (pendingLeave.current) return pendingLeave.current;
+    const operation = (async () => {
+      if (!current.prepareLeave) return current.flush();
+      if (!await current.prepareLeave() || guard.current !== current) return false;
+      if (!current.isDirty()) return true;
+      leaveTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      return new Promise<boolean>(resolve => { resolver.current = resolve; setConfirmation(current); });
+    })().finally(() => { pendingLeave.current = null; });
+    pendingLeave.current = operation;
+    return operation;
+  }, []);
+  const beforeLeave = useCallback(() => guard.current ? checkLeave(guard.current) : Promise.resolve(true), [checkLeave]);
+  const saveCurrent = useCallback(() => guard.current?.flush() ?? Promise.resolve(true), []);
+  useEffect(() => () => { resolver.current?.(false); resolver.current = null; }, []);
+  const chooseLeave = async (choice: "save" | "discard" | "cancel") => {
+    if (!confirmation || confirmBusy) return;
+    if (choice === "cancel") { resolveLeave(false); return; }
+    setConfirmBusy(true);
+    try {
+      const current = confirmation;
+      const allowed = choice === "discard" ? current.discard?.() ?? false : await (current.save?.() ?? current.flush());
+      resolveLeave(allowed && guard.current === current && !current.isDirty());
+    } catch { resolveLeave(false); }
+  };
   useEffect(() => {
     let active = true;
     let position = positionOf(history.state) ?? { owner: crypto.randomUUID(), index: 0 };
@@ -74,7 +104,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       attempt.started = true; attempt.phase = "saving";
       // Wait until the browser is back at the original entry before saving.
       // The editor stays mounted because Next never receives the intercepted pop.
-      void attempt.guard.flush().then((saved) => {
+      void checkLeave(attempt.guard).then((saved) => {
         attempt.result = saved;
         finishAtOrigin(attempt);
       }, () => {
@@ -141,7 +171,19 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       if (history.pushState === push) history.pushState = originalPush;
       if (history.replaceState === replace) history.replaceState = originalReplace;
     };
-  }, [beforeLeave, router]);
-  return <Context.Provider value={{ register, beforeLeave }}>{children}</Context.Provider>;
+  }, [beforeLeave, checkLeave, router]);
+  return <Context.Provider value={{ register, beforeLeave, saveCurrent }}>{children}
+    <Dialog open={!!confirmation} onOpenChange={open => { if (!open && !confirmBusy) resolveLeave(false); }}>
+      <DialogContent initialFocus={cancelButton} finalFocus={() => leaveTrigger.current?.isConnected ? leaveTrigger.current : false} showCloseButton={!confirmBusy}>
+        <DialogTitle>저장하지 않은 변경이 있어요</DialogTitle>
+        <DialogDescription>저장하지 않고 나가면 마지막으로 저장한 내용만 남아요.</DialogDescription>
+        <div className="flex flex-wrap gap-2">
+          <Button disabled={confirmBusy} onClick={() => void chooseLeave("save")}>{confirmBusy ? "확인 중…" : "저장 후 나가기"}</Button>
+          <Button variant="outline" disabled={confirmBusy} onClick={() => void chooseLeave("discard")}>저장하지 않고 나가기</Button>
+          <Button ref={cancelButton} variant="ghost" disabled={confirmBusy} onClick={() => void chooseLeave("cancel")}>취소</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </Context.Provider>;
 }
 export function useNavigationGuard() { const value = useContext(Context); if (!value) throw new Error("NavigationProvider is missing"); return value; }

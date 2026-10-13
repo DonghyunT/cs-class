@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { db, headers, initialPassword, loginStudent, resetStudent, studentPassword } from "./emulator";
+import { db, headers, initialPassword, loginStudent, resetStudent, studentPassword, saveDraft } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 
 // 화면을 검토하는 20102 계정과 분리한 로컬 합성 계정이다.
@@ -226,6 +226,7 @@ test("큰 화면의 재료 크기와 주방·대화 배치", async ({ page }, te
   }
   await execute(page, "식빵 두 장을 꺼내");
   await page.getByLabel("자연어 명령").fill("빵 봉지를 열어");
+  await saveDraft(page);
   await expect.poll(async () => {
     const work: Work = await (await page.request.get(endpoint)).json();
     return work.draft.reviewProject?.type === "sandwich" ? work.draft.reviewProject.input : "";
@@ -318,6 +319,7 @@ test("명령과 로봇 응답이 시간순으로 이어지고 읽던 위치·초
   await expect(feed).not.toContainText("합성 연결 실패");
   await expect(feed).not.toContainText("알아서 샌드위치를 만들어");
   await expect(input).toHaveValue("");
+  await saveDraft(page);
   await expect.poll(async () => {
     const work: Work = await (await page.request.get(endpoint)).json();
     return work.draft.reviewProject?.type === "sandwich" ? work.draft.reviewProject.commands.length : -1;

@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
-import { db, headers, readyStudent } from "./emulator";
+import { db, headers, readyStudent, saveDraft } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 import type { FlowchartProject } from "../src/lib/classroom/review/project";
 import { missions } from "../src/lib/classroom/review/flowchart-data.mjs";
@@ -17,6 +17,7 @@ async function prepare(page: Page, fields: Partial<FlowchartProject> = {}) {
   const work = await read(page.request);
   if (work.draft.reviewProject?.type !== "flowchart") throw Error("wrong lesson");
   Object.assign(work.draft.reviewProject, fields);
+  work.draft.stage = "practice";
   const response = await page.request.post(workUrl, { headers, data: { revision: work.revision, draft: work.draft } });
   expect(response.status()).toBe(200);
   await page.goto(`/classroom/${lessonId}?from=lessons`);
@@ -47,6 +48,7 @@ test.describe("순서도 퍼즐·예시 공방 V1 누락 회귀", () => {
     await palette.getByText("목록으로 배치하기", { exact: true }).click();
     const target = palette.getByLabel("처리 ▭ (물 끓이기)", { exact: true });
     await target.selectOption("b-m1-1");
+    await saveDraft(page);
     await expect.poll(async () => (await project(page)).placements["1"]).toEqual({ s2: "", s3: "b-m1-1" });
     await expect(page.getByRole("button", { name: "입출력 기호: 물 500ml 냄비에 붓기", exact: true })).toHaveCount(1);
     await page.getByRole("button", { name: "물 500ml 냄비에 붓기 기호 제거", exact: true }).click();
@@ -54,6 +56,7 @@ test.describe("순서도 퍼즐·예시 공방 V1 누락 회귀", () => {
     await expect(page.getByRole("button", { name: "처리 기호: 처리 ▭ (물 끓이기)", exact: true })).toBeFocused();
     expect(await palette.locator("[data-shape]").evaluateAll(items => items.map(item => item.getAttribute("aria-label")))).toEqual(order);
     await target.selectOption("b-m1-2");
+    await saveDraft(page);
     await expect.poll(async () => (await project(page)).placements["1"]).toEqual({ s2: "", s3: "b-m1-2" });
     await page.reload();
     await expect(page.getByRole("button", { name: "처리 기호: 가스레인지 켜서 물 끓이기", exact: true })).toBeVisible();
@@ -83,11 +86,12 @@ test.describe("순서도 퍼즐·예시 공방 V1 누락 회귀", () => {
     await expect(page.getByLabel("실제 순서도 연결", { exact: true }).locator('[data-flow-node="check"]')).toHaveAttribute("aria-label", "판단 기호: 7시 30분이거나 그 이전인가요?");
     await page.getByRole("button", { name: "나만의 백지로 이동", exact: true }).click();
     await expect(navigation(page).getByRole("button", { name: "🚀 5. 나만의 백지", exact: true })).toHaveAttribute("aria-pressed", "true");
-    await expect.poll(async () => (await project(page)).mission).toBe("free");
+    // 읽기 위치는 메모리에서만 바뀌고 기존 작품은 서버와 화면 모두 유지됩니다.
+    expect((await project(page)).mission).toBe("guide");
     const saved = await project(page);
     expect(saved.nodes).toEqual(original.nodes); expect(saved.edges).toEqual(original.edges); expect(saved.cards).toEqual(original.cards);
     expect(saved.current).toBe(original.current);
-    await page.reload(); await expect(page.getByRole("button", { name: "시작·종료 기호: 시작", exact: true })).toBeVisible();
+    await page.reload(); await page.getByRole("button", { name: "나만의 백지로 이동", exact: true }).click(); await expect(page.getByRole("button", { name: "시작·종료 기호: 시작", exact: true })).toBeVisible();
     expect((await project(page)).nodes).toEqual(original.nodes);
   });
 

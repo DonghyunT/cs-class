@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { buildEntryProject, parseEntryProject } from "../src/lib/classroom/entry-project";
 import type { Work } from "../src/lib/classroom/types";
-import { db, headers, initialPassword, loginStudent, resetStudent, studentPassword } from "./emulator";
+import { db, headers, initialPassword, loginStudent, resetStudent, studentPassword, saveDraft } from "./emulator";
 
 const studentId = "20104";
 const lessonId = "entry-bot-lab";
@@ -47,12 +47,16 @@ test("실제 EntryJS 블록 조립·실행·저장·검증·제출·복원", asy
   const move = frame.locator("#entryWorkspaceBlockMenu g.block").filter({ hasText: "이동 방향으로" }).first();
   const start = frame.locator("#entryWorkspaceBoard g.block").filter({ hasText: "시작하기 버튼" }).first();
   await connect(page, move, start, 46);
+  await saveDraft(page);
+  await saveDraft(page);
   const stored = async (): Promise<Work> => (await page.request.get(endpoint)).json();
   await expect.poll(async () => parseEntryProject((await stored()).draft.entryProject)?.order).toEqual(["when_run_button_click", "move_direction"]);
   await frame.getByText("생김새", { exact: true }).click();
   const say = frame.locator("#entryWorkspaceBlockMenu g.block").filter({ hasText: "초 동안" }).first();
   const connectedMove = frame.locator("#entryWorkspaceBoard g.block").filter({ hasText: /^이동 방향으로10만큼 움직이기$/ }).first();
   await connect(page, say, connectedMove, 42, 140);
+  await saveDraft(page);
+  await saveDraft(page);
   await expect.poll(async () => parseEntryProject((await stored()).draft.entryProject)?.order).toEqual(["when_run_button_click", "move_direction", "dialog_time"]);
   await frame.locator("#entryWorkspaceBoard").getByText("4", { exact: true }).locator("..").click();
   const input = frame.locator("input:not([disabled]):visible");
@@ -74,8 +78,8 @@ test("실제 EntryJS 블록 조립·실행·저장·검증·제출·복원", asy
   await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
   await frame.locator("#entryWorkspaceBoard").getByText("10", { exact: true }).locator("..").click();
   await frame.locator("input:not([disabled]):visible").fill("20");
-  await expect.poll(async () => parseEntryProject((await stored()).draft.entryProject)?.threads[0][1]).toEqual({ type: "move_direction", amount: 20 });
-  // Initial palette drawing and autosave must not close an active native field.
+  expect(parseEntryProject((await stored()).draft.entryProject)?.threads[0][1]).toEqual({ type: "move_direction", amount: 10 });
+  // Editing stays local and must not close an active native field.
   await expect(frame.locator("input:not([disabled]):visible")).toBeFocused();
   await frame.locator("input:not([disabled]):visible").press("End");
   await frame.locator("input:not([disabled]):visible").pressSequentially("1");
@@ -83,6 +87,7 @@ test("실제 EntryJS 블록 조립·실행·저장·검증·제출·복원", asy
   await frame.locator("input:not([disabled]):visible").fill("20");
   await frame.locator("input:not([disabled]):visible").press("Enter");
   await expect(page.getByRole("button", { name: "수정한 작품 제출" })).toBeDisabled();
+  await saveDraft(page);
   await expect.poll(async () => parseEntryProject((await stored()).draft.entryProject)?.threads[0][1]).toEqual({ type: "move_direction", amount: 20 });
   expect((await stored()).submission).toEqual(submitted);
   await page.reload();
@@ -105,18 +110,22 @@ test("EntryJS 저장 실패 복구 · 단계 이동 직전 입력 · 좁은 화�
   await page.route(`**${endpoint}`, (route) => route.request().method() === "POST" ? route.abort("failed") : route.continue());
   await input.fill("20");
   await input.press("Enter");
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("서버에 연결하지 못했어요");
   await page.getByRole("tab", { name: "개념 0%" }).click();
-  await expect(page.getByRole("tab", { name: "실습 0%" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "개념 0%" })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: "실습 0%" }).click();
+  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
   await expect(frame.locator("#entryWorkspaceBoard").getByText("20", { exact: true })).toBeVisible();
   await page.unroute(`**${endpoint}`);
   await page.getByRole("button", { name: "저장 다시 확인" }).click();
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await frame.locator("#entryWorkspaceBoard").getByText("20", { exact: true }).locator("..").click();
   await frame.locator("input:not([disabled]):visible").fill("30");
   // Changing stages must commit an active native field without requiring Enter.
   await page.getByRole("tab", { name: "개념 0%" }).click();
   await expect(page.getByRole("tab", { name: "개념 0%" })).toHaveAttribute("aria-selected", "true");
+  await saveDraft(page);
   const work: Work = await (await page.request.get(endpoint)).json();
   expect(parseEntryProject(work.draft.entryProject)?.threads[0][1]).toEqual({ type: "move_direction", amount: 30 });
   await page.getByRole("tab", { name: "실습 0%" }).click();

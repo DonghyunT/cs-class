@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { db, headers, readyStudent, readyTeacher } from "./emulator";
+import { db, headers, readyStudent, readyTeacher, saveDraft } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 import { createHash, randomUUID } from "node:crypto";
 const id = "review-abstraction";
@@ -31,7 +31,7 @@ test("AI 후보 채택·맛보기 저장·키보드·상담 비보관", async ({
   await prepare(page.request); await db.collection("csAiUsage").doc("student-20101").delete();
   await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
   await page.getByLabel("맛보기 상황").selectOption("late"); await page.getByRole("button", { name: "맛보기 다음" }).click(); await page.getByRole("button", { name: "맛보기 다음" }).click();
-  await page.getByRole("button", { name: "남김 · 침대 이불 색깔" }).click(); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(page.getByRole("button", { name: "버림 · 침대 이불 색깔" })).toBeVisible();
+  await page.getByRole("button", { name: "남김 · 침대 이불 색깔" }).click(); await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(page.getByRole("button", { name: "버림 · 침대 이불 색깔" })).toBeVisible();
   await finishTutorial(page, 3); await page.getByLabel("고민 키워드").fill("지각"); await page.getByRole("button", { name: "현재·목표 후보 받기" }).click();
   await page.getByRole("button", { name: "이 제안 채택" }).first().click(); await expect(page.getByLabel("현재 상태", { exact: true })).toHaveValue("지각함");
   await moveTo(page, 1, 2); await expect(page.getByRole("button", { name: "이 제안 채택" })).toHaveCount(0);
@@ -51,10 +51,10 @@ test("맛보기 최초 완료를 유지하며 실전의 불완전 입력과 처�
   await moveTo(page, 1, 2); await page.getByText("조건 한 번에 편집", { exact: true }).click(); await page.getByLabel("지킬 조건", { exact: true }).fill("밤 10시 이전\n");
   await moveTo(page, 2, 3); await page.getByText("후보 단어 직접 편집", { exact: true }).click(); await page.getByLabel("핵심 요소", { exact: true }).fill("현재 시각\n남은 과제");
   await moveTo(page, 3, 4); await page.getByText("실천 계획 한 번에 편집", { exact: true }).click(); await page.getByLabel("해결 계획", { exact: true }).fill("남은 과제를 확인한다\n작게 나눠 해결한다");
-  await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload();
+  await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload();
   await expect(page.getByLabel("해결 계획", { exact: true })).toHaveValue("남은 과제를 확인한다\n작게 나눠 해결한다", { timeout: 15000 });
   await page.getByRole("button", { name: "작품 검증", exact: true }).click(); await page.getByRole("button", { name: "작품 제출", exact: true }).click(); await expect(page.getByText("복습 작품을 제출했어요.")).toBeVisible();
-  await moveTo(page, 4, 1); await page.getByLabel("현재 상태", { exact: true }).fill(""); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(page.getByLabel("현재 상태", { exact: true })).toHaveValue("");
+  await moveTo(page, 4, 1); await page.getByLabel("현재 상태", { exact: true }).fill(""); await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(page.getByLabel("현재 상태", { exact: true })).toHaveValue("");
   const work = await (await page.request.get(`/api/classroom/work/${id}`)).json(); expect(work.submission.reviewProject.current).toBe("과제를 미루고 있어요"); expect(work.draft.reviewProject.plans).toHaveLength(2);
 });
 test("추상화의 보완 요청은 고정한 작품을 승인하며 재요청 뒤 옛 요청을 거부한다", async ({ request, playwright }) => {
@@ -104,12 +104,12 @@ test("31줄의 불완전 편집은 AI 채택과 재접속 뒤에도 보존하며
   await prepare(page.request); await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click(); await finishTutorial(page); await moveTo(page, 1, 2);
   await page.getByText("조건 한 번에 편집", { exact: true }).click();
   const input = page.getByLabel("지킬 조건", { exact: true }), lines = Array.from({ length: 31 }, (_, i) => `조건${i}`).join("\n");
-  await input.fill(lines); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue(lines);
+  await input.fill(lines); await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue(lines);
   await db.collection("csAiUsage").doc("student-20101").delete();
   await page.getByRole("button", { name: "조건 추천 받기" }).click(); await page.getByRole("button", { name: "이 제안 채택" }).first().click();
-  await expect(input).toHaveValue(`${lines}\n조건을 지키기`); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue(`${lines}\n조건을 지키기`);
-  await expect(input).toHaveAttribute("maxlength", "1000"); await page.getByText("조건 한 번에 편집", { exact: true }).click(); await input.fill("가".repeat(1000)); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue("가".repeat(1000));
-  await page.getByText("조건 한 번에 편집", { exact: true }).click(); await input.fill("\n".repeat(1000)); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
+  await expect(input).toHaveValue(`${lines}\n조건을 지키기`); await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue(`${lines}\n조건을 지키기`);
+  await expect(input).toHaveAttribute("maxlength", "1000"); await page.getByText("조건 한 번에 편집", { exact: true }).click(); await input.fill("가".repeat(1000)); await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible(); await page.reload(); await expect(input).toHaveValue("가".repeat(1000));
+  await page.getByText("조건 한 번에 편집", { exact: true }).click(); await input.fill("\n".repeat(1000)); await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "조건 다시 추천 받기", exact: true }).click(); await page.getByRole("button", { name: "이 제안 채택" }).first().click();
   await expect(page.getByRole("complementary", { name: "추상화 닥터" }).getByRole("alert")).toContainText("제안이 저장 한도를 넘어요"); await expect(input).toHaveValue("\n".repeat(1000)); await page.reload(); await expect(input).toHaveValue("\n".repeat(1000));
 });
