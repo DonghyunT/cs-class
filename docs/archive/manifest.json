@@ -293,6 +293,20 @@
       "origin": "working-tree-before-doc-slimming-20261013",
       "baseCommit": "2a5ca08",
       "sha256": "efcb38c231cca26b08f8a8a793748b287e522d14824555284ee383a62e00bc4a"
+    },
+    {
+      "source": "docs/reference/consulting-improvement-plan-2026-10-08.md",
+      "archive": "docs/archive/cs-class/2026-10-10-before-consulting-release/consulting-improvement-plan-2026-10-08.md",
+      "origin": "completed-consulting-plan-doc-slimming-20261013",
+      "baseCommit": "ff2a1c0",
+      "sha256": "e4b6db2dd59163e5ff268f7b0fa0fadebc9e7ad9456b3ebebe6def03cbcd2d6e"
+    },
+    {
+      "source": "docs/reference/project-consulting-2026-10-08.md",
+      "archive": "docs/archive/cs-class/2026-10-10-before-consulting-release/project-consulting-2026-10-08.md",
+      "origin": "completed-consulting-report-doc-slimming-20261013",
+      "baseCommit": "ff2a1c0",
+      "sha256": "2a2b6672d308f49e05be43b603f37ebd33f1f2ec3fe45011a1106addf8017d5a"
     }
   ]
 }

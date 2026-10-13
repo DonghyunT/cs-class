@@ -1,6 +1,6 @@
 # Firebase 연결과 검증
 
-문서 갱신: 2026-10-07. 실제 환경 확인 날짜·범위는 HANDOFF를 따릅니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다.
+문서 갱신: 2026-10-13. 실제 환경 확인 날짜·범위는 HANDOFF를 따릅니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다.
 
 ## 연결 기준
 
@@ -62,7 +62,7 @@ Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 �
 
 배포 후 Cron 인증 없는 요청의 401, 담당 교사의 첫 수동 갱신, 학생 본인 반 조회·직접 일정 보존을 확인합니다. Vercel Cron 설정·실제 예약 실행 로그와 `csTimetables/74022.checkedAt`을 확인한 뒤에만 운영 일일 갱신이 검증됐다고 기록합니다. 로컬 `next start`의 호출 검증을 실제 예약 실행으로 표현하지 않습니다.
 
-2026-10-04 운영에 등록했습니다. Production 전용 sensitive CRON_SECRET·일일 예약 Enabled, 인증된 첫 갱신 200·정보 26개 저장·기존 반 설정/직접 일정 보존·일별 중복 방지와 Vercel 플랫폼 수동 Run 200을 확인했습니다. 10/5 첫 자연 예약의 관측 결과는 미확인이며, 다음 점검에서 실제 로그와 `checkedAt`을 대조합니다. 배포 SHA·확인 환경·운영 증거와 범위는 [운영 릴리스 기록](HANDOFF.md#104-실제-수업시간표-운영-릴리스)을 따릅니다.
+Production 환경에 sensitive CRON_SECRET 및 일일 예약(Enabled)이 등록되어 있습니다. 일일 중복 방지와 기존 일정 보존이 적용되며, 배포 SHA·확인 환경 및 운영 이력은 [HANDOFF](HANDOFF.md)를 따릅니다.
 
 ### 복습 AI 서버 설정
 
@@ -74,9 +74,9 @@ cs-class Vercel 프로젝트(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Production �
 
 공개 전 AI 캐시/요청 장부에만 `expiresAt` TTL을 활성화합니다. 기존 인덱스 설정을 읽어 보존하고 `firestore.indexes.json`의 두 컬렉션을 확인한 뒤 승인된 프로젝트에 `npx firebase deploy --only firestore:indexes --project cs-class-f74c4`로 적용합니다. [공식 TTL/인덱스 정의](https://firebase.google.com/docs/reference/firestore/indexes)를 따르며 Firestore 비용·활성 상태를 확인합니다. 학생 작품/제출 컬렉션에는 적용하지 않습니다. 현재 적용 여부·실제 Solar 품질·배포 SHA/로그인·반 공개는 HANDOFF에서 확인합니다.
 
-2026-10-05 사용자 승인으로 Vercel `cs-class`의 `UPSTAGE_API_KEY`·`CS_AI_COMMAND_SECRET`을 Production 전용 Sensitive 변수로 등록했습니다. 로컬 `.env.local`은 Git 제외이며 이 PC의 파일 접근 권한도 제한했습니다. Preview/Development에 복사하지 않습니다. 기존 비밀 파일 전체를 env pull로 덮어쓰거나 원문을 로그·명령 인자·문서에 옮기지 않습니다.
+Vercel `cs-class`의 `UPSTAGE_API_KEY`와 `CS_AI_COMMAND_SECRET`은 Production 전용 Sensitive 변수로 등록되어 있습니다. 로컬 `.env.local`은 Git 제외이며 파일 접근 권한을 제한합니다. Preview나 Development에는 복사하지 않으며, 원문을 로그·명령 인자·문서에 노출하지 않습니다.
 
-같은 날 사용자가 프로젝트 결제 계정을 직접 연결했습니다. `billingEnabled=true` 확인 후 두 AI 컬렉션 TTL만 적용했고 17:48 KST에 `ACTIVE`를 확인했습니다. 적용 전 복합 인덱스/필드 override는 모두 비어 있었으며 Git 제외 `scratch/review-lessons/production-indexes-before-ttl-20261005.json`에 백업했습니다. 만료 직후 삭제 완료를 보장하지 않으며 실제 정리·청구와 월 AI 예산은 운영 집계로 확인합니다.
+프로젝트 결제 계정이 연결되어 있으며, 두 AI 컬렉션(`csAiCache`, `csAiRequests`)의 `expiresAt` TTL 인덱스가 적용되어 있습니다. 만료 직후 즉시 삭제 완료를 보장하지 않으며 실제 정리·청구 및 월 AI 예산은 운영 집계로 확인합니다.
 
 ## 실제 프로젝트 초기화와 시험
 
@@ -88,7 +88,7 @@ cs-class Vercel 프로젝트(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Production �
 
 ### 승인된 운영 테스트 계정
 
-2026-10-03 사용자가 승인한 12개 운영 체험 계정을 `cs-class-f74c4`에 별도로 발급했습니다. 학번·교사 담당 범위·실학생 정책과의 경계는 [PRD](PRD.md#운영-테스트-계정), 실제 생성·검증 범위는 [HANDOFF](HANDOFF.md#103-운영-테스트-계정-발급)를 따릅니다. 기존 demo 시드와 폐기된 `check-cloud-flow --apply`는 변경하지 않았으며 이 승인은 반복 검사나 다른 운영 계정 생성으로 확대하지 않습니다.
+승인된 12개 운영 체험 계정이 `cs-class-f74c4`에 발급되어 있습니다. 학번·교사 담당 범위·실학생 정책과의 경계는 [PRD](PRD.md#운영-테스트-계정), 실제 발급 및 검증 범위는 [HANDOFF](HANDOFF.md)를 따릅니다. 기존 demo 시드와 폐기된 `check-cloud-flow --apply`는 변경하지 않으며 반복 검사나 다른 운영 계정 생성으로 확대하지 않습니다.
 
 학생은 [학생 입장](https://cs-class-donghyunt.vercel.app/login/student)에서 전달받은 해당 반의 학번과 공통 비밀번호를 입력합니다. 교사는 [교사 입장](https://cs-class-donghyunt.vercel.app/login/teacher)에서 `교사 비밀번호 로그인`을 선택하고 같은 비밀번호만 입력합니다. 이 테스트 계정은 비밀번호 변경 없이 대시보드로 이동합니다. 비밀번호 원문과 반별 안내는 발급 PC의 Git 제외 `scratch/private/배포-테스트-로그인.txt`에만 전달하며 저장소·일반 로그에는 넣지 않습니다. 다른 PC에서는 본인이 안전한 경로로 안내 파일을 별도로 옮깁니다.
 
@@ -114,7 +114,7 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 
 개인 비밀번호 계정은 Firebase REST로 앱 장부 밖에서 인증·비밀번호 변경을 시도할 수 있습니다. 임시 입장은 이 경로에서 차단했지만 정상 개인 비밀번호는 호환성을 유지합니다. Firebase Console의 Authentication 비밀번호 정책(Require·최소 8자·영문/숫자)과 Identity Toolkit 남용 방어·할당량을 운영 수업의 동시 입장 규모에 맞춰 별도로 확인합니다. 설정의 현재 강제 여부는 이 코드 검사로 입증하지 않으며 실제 변경은 기존 사용자의 영향을 확인한 뒤 적용합니다. 관련 공식 문서: [비밀번호 정책](https://firebase.google.com/docs/auth/web/password-auth#recommended_set_a_password_policy), [할당량](https://firebase.google.com/docs/auth/limits).
 
-2026-10-02 기존 Firebase CLI 로그인으로 승인 프로젝트 `config`를 읽기 전용 조회했습니다(HTTP 200). 이메일/비밀번호 인증은 활성화돼 있고 응답에 `passwordPolicyConfig`가 없습니다. 운영 네이티브 8자 정책이 강제된 것으로 보고하지 않습니다. 후속 정책을 적용할 때 기존 사용자의 입장을 막는 `forceUpgradeOnSignin`을 먼저 확인하며, 현재 릴리스는 이 설정·계정·학생 자료를 변경하지 않았습니다.
+운영 프로젝트의 이메일/비밀번호 인증은 활성화되어 있습니다. 운영 네이티브 8자 정책이나 `passwordPolicyConfig` 강제는 기존 사용자의 입장을 차단하는 `forceUpgradeOnSignin` 등을 감안해 점진적으로 검토합니다. 세부 확인 기록은 [HANDOFF](HANDOFF.md)를 따릅니다.
 
 ## 데이터와 남은 한계
 

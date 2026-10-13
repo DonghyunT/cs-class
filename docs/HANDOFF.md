@@ -2,23 +2,23 @@
 
 ## 현재 작업 상태
 
-2026-10-13(Asia/Seoul). **문서 다이어트 1·2·3단계(규칙 확정, DEVELOPMENT·AGENTS 정리, PRD·DESIGN 교차 정합성 확보 및 정돈)를 완료하고 사용자 최종 확인 대기 중입니다.**
+2026-10-13(Asia/Seoul). **전체 문서 체계 일괄 정비(AGENTS, PRD, DESIGN, DEVELOPMENT, FIREBASE_SETUP, reference 거대 완료 문서 아카이빙)를 완료하고 사용자 최종 확인 대기 중입니다.**
 - 작업 브랜치: `codex/docs-slimming`
-- 작업 커밋:
-  - `b94738a`: `docs: preserve originals before documentation slimming [skip ci]` (1단계 원본 아카이브 및 SHA-256 매니페스트)
-  - `8fd75ea`: `docs: clarify document responsibilities [skip ci]` (README 문서 기준 및 상태/기준 분리)
-  - `c82fd18`: `docs: consolidate verification know-how into DEVELOPMENT [skip ci]` (DEVELOPMENT 낡은 이력 정리 및 기능별 검증 노하우 신설)
-  - `cd1a045`: `docs: slim AGENTS.md and link verification know-how [skip ci]` (AGENTS.md 21.0KB -> 7.0KB 감량)
-  - `4d88138`: `docs: record completion of documentation slimming phase 1 [skip ci]` (1단계 완료 기록)
-  - `73af0bb`: `docs: preserve PRD and DESIGN originals before slimming [skip ci]` (PRD·DESIGN 원본 아카이브 및 SHA-256 매니페스트)
-  - `8738350`: `docs: harmonize and structure PRD and DESIGN specifications [skip ci]` (PRD·DESIGN 교차 정합성 확보, 날짜/상태 서술 정돈, 상호 링크 일원화)
-- 앱 소스 코드는 일절 변경하지 않았습니다.
-- A4 자체검증 완료:
-  - 10개 핵심 활성 문서 간 상호 링크 및 앵커 100% 유효 (`scratch/check-docs-links.js` 0 error 통과).
-  - `git diff --check` 통과 (불필요한 공백/포맷 결함 없음).
-  - 보관함(`docs/archive/cs-class/2026-10-13-before-doc-slimming/`) 원본 바이트 및 매니페스트 SHA-256 100% 일치.
-  - 보안 규칙, 권한 경계, 협업 원칙, 테스트 데이터 격리 조건 100% 보존.
+- 작업 완료 내역:
+  1. **원본 보존 및 매니페스트 관리**: `docs/archive/cs-class/2026-10-13-before-doc-slimming/`에 수정 전 5대 문서(AGENTS, DEVELOPMENT, README, PRD, DESIGN) 원본을 Windows 바이트 그대로 보존 및 SHA-256 기록 완료.
+  2. **AGENTS.md 정돈**: 작업/검증 원칙에 집중하도록 21.0KB에서 7.0KB로 슬림화, 14개 기능별 검증 노하우는 DEVELOPMENT로 집약.
+  3. **PRD.md & DESIGN.md 정합성 확보**: PRD는 확정 제품 정책 명세(96KB->37KB), DESIGN은 시각·컴포넌트 기준(76KB->15KB)으로 역할 분담 확립 및 중복 제거.
+  4. **reference 거대 완료 문서 아카이빙**: 이미 10/10 배포 완료된 컨설팅 보고서 2개(`project-consulting-2026-10-08.md`, `consulting-improvement-plan-2026-10-08.md`, 총 128KB)를 `docs/archive/cs-class/2026-10-10-before-consulting-release/`로 이동 및 매니페스트 갱신.
+  5. **DEVELOPMENT.md 정돈**: 과거 파일럿(대시보드, 프로그래밍 프로토타입, 복습 수업 롤아웃) 일지 거품을 걷어내고 순수 개발·환경·CLI·14개 검증 노하우 중심 가이드로 정돈 (85.9KB->70.2KB).
+  6. **FIREBASE_SETUP.md 정돈**: 본문에 혼재된 과거 날짜별 릴리스/확인 일지를 걷어내고 현재형 인프라/서버 설정 사양으로 정돈.
+  7. **README.md 및 상호 링크 동기화**: 모든 활성 문서 간 링크와 외부 진입 앵커 100% 호환 보장.
+- 앱 소스 코드는 일절 변경하지 않았습니다 (순수 문서 정비).
+- 자체검증 완료:
+  - 10개 핵심 활성 문서 간 상호 링크 및 앵커 100% 유효 (`node scratch/check-docs-links.js` 0 error 통과).
+  - `git diff --check` 통과 (공백 및 서식 결함 없음).
+  - 보안 규칙, 권한 경계(강사님 10·11반), 협업 원칙, 테스트 데이터 격리 조건 100% 보존.
 - 사용자 최종 확인 전에는 main 병합 및 원격 push를 진행하지 않습니다.
+
 
 2026-10-13 직전 릴리스: 사용자 요청의 수업 화면·순서도 수정과 운영 공개를 마쳤습니다. 앱·검사 `9576cd9`를 [PR #34](https://github.com/DonghyunT/cs-class/pull/34)로 병합했고 앱 릴리스 기준은 `main@8e32f7c`입니다. 문서 마감 브랜치 `codex/lesson-release-handoff`의 변경은 문서만 포함합니다. 이 문서에 적힌 검증은 아래 날짜·범위의 결과이며 문서 마감 뒤 새로 실행한 전체 검사로 표현하지 않습니다.
 

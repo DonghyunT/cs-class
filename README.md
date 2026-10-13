@@ -41,8 +41,8 @@ Firebase 키 없이 사용하는 가상 계정 개발 모드입니다. [로컬 �
 | 후속 기능의 비용 가정은 무엇인가요? | [운영비 예상안 · 참고 자료](docs/reference/OPERATING_COST_ESTIMATE.md) |
 | 알고리즘 세 수업의 원본과 AI 품질 근거는 어디에 있나요? | [알고리즘 복습 · 원본 이식과 품질 검증](docs/reference/algorithm-review-integration.md) |
 | 원본 PPT 없이 13차시 내용과 체험을 어떻게 파악하나요? | [프로그래밍 13차시 · 수업 자료와 체험 기록](docs/reference/programming-13.md) |
-| 컨설팅의 개선 제안과 실행 순서는 무엇인가요? | [진단 보고서](docs/reference/project-consulting-2026-10-08.md) · [승인된 후속 개선 계획](docs/reference/consulting-improvement-plan-2026-10-08.md) |
-| 수업에 들어간 뒤 사용하는 공통 UI는 어떻게 구성하나요? | [공통 수업 화면 기준](docs/DESIGN.md#수업-전용-공통-틀--2026-10-06-구현) |
+| 컨설팅의 개선 제안과 실행 순서는 무엇인가요? | [진단 보고서](docs/archive/cs-class/2026-10-10-before-consulting-release/project-consulting-2026-10-08.md) · [승인된 후속 개선 계획](docs/archive/cs-class/2026-10-10-before-consulting-release/consulting-improvement-plan-2026-10-08.md) |
+| 수업에 들어간 뒤 사용하는 공통 UI는 어떻게 구성하나요? | [공통 수업 화면 기준](docs/DESIGN.md#수업-전용-공통-틀) |
 | 완료된 구현 지시와 이전 판단 근거는 어디에 있나요? | [문서 보관함](docs/archive/README.md) |
 | 에이전트는 어떤 규칙을 지켜야 하나요? | [AGENTS · 작업 규칙](AGENTS.md) |
 

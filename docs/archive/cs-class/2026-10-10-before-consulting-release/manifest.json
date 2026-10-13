@@ -8,5 +8,25 @@
     "original": "docs/HANDOFF.md",
     "preserved": "HANDOFF.md",
     "sha256": "a201ff8f500017276d3efbc5be0d15bc652ddaf6f2cf209b2f06e3dadc784df0"
+  },
+  {
+    "preservedAt": "2026-10-13",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/docs-slimming",
+    "baseCommit": "ff2a1c0",
+    "source": "completed consulting plan archived during documentation slimming",
+    "original": "docs/reference/consulting-improvement-plan-2026-10-08.md",
+    "preserved": "consulting-improvement-plan-2026-10-08.md",
+    "sha256": "e4b6db2dd59163e5ff268f7b0fa0fadebc9e7ad9456b3ebebe6def03cbcd2d6e"
+  },
+  {
+    "preservedAt": "2026-10-13",
+    "timezone": "Asia/Seoul",
+    "branch": "codex/docs-slimming",
+    "baseCommit": "ff2a1c0",
+    "source": "completed consulting report archived during documentation slimming",
+    "original": "docs/reference/project-consulting-2026-10-08.md",
+    "preserved": "project-consulting-2026-10-08.md",
+    "sha256": "2a2b6672d308f49e05be43b603f37ebd33f1f2ec3fe45011a1106addf8017d5a"
   }
 ]
