@@ -1,28 +1,68 @@
 name: Verify CS Class
 on:
-  pull_request:
   push:
-    branches: ['main', 'codex/**']
+    branches: ['main']
+  workflow_dispatch:
 permissions:
   contents: read
+  actions: read
+concurrency:
+  group: verify-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 jobs:
   app:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test:review
-      - run: npm run build
+      - id: scope
+        name: Select verification scope
+        run: node scripts/ci-policy.mjs scope
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Verify policy and documentation
+        env:
+          DIFF_BASE: ${{ steps.scope.outputs.base || github.event.before || github.sha }}
+        run: |
+          node --test tests/ci-policy.test.mjs tests/documentation.test.mjs
+          node scripts/check-docs.mjs
+          if git cat-file -e "$DIFF_BASE^{commit}" 2>/dev/null; then
+            git diff --check "$DIFF_BASE" HEAD
+          else
+            git show --check --format= HEAD
+          fi
+      - uses: actions/cache@v4
+        if: steps.scope.outputs.mode == 'full'
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node24-npm-${{ hashFiles('package-lock.json') }}
+      - uses: actions/cache@v4
+        if: steps.scope.outputs.mode == 'full'
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-node24-next-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-node24-next-${{ hashFiles('package-lock.json') }}-
+      - if: steps.scope.outputs.mode == 'full'
+        run: npm ci
+      - if: steps.scope.outputs.mode == 'full'
+        run: npm run lint
+      - if: steps.scope.outputs.mode == 'full'
+        run: npm run typecheck
+      - if: steps.scope.outputs.mode == 'full'
+        run: npm run test:review
+      - if: steps.scope.outputs.mode == 'full'
+        run: npm run build
       - uses: actions/setup-java@v4
+        if: steps.scope.outputs.mode == 'full'
         with:
           distribution: temurin
           java-version: '21'
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - if: steps.scope.outputs.mode == 'full'
+        run: npx playwright install --with-deps chromium
+      - if: steps.scope.outputs.mode == 'full'
+        run: npm run test:e2e

@@ -16,7 +16,7 @@ Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 학습 플랫폼*
 
 ## 빠르게 시작하기
 
-기능·버그 수정과 학생 계정정보 저장의 [검사 선택·실행 방법](docs/DEVELOPMENT.md#검증)은 DEVELOPMENT를 따릅니다.
+개발·로컬 관련 검사 → 작업 브랜치 push → 완료한 작업을 main에 반영 → CI와 Vercel 빌드 → 검사 성공 후 운영 공개 순서입니다. PR은 선택 사항이며 작업 브랜치에는 자동 CI·Preview가 없습니다. [검사·수동 실행](docs/DEVELOPMENT.md#검증)과 [Preview·배포](docs/FIREBASE_SETUP.md#vercel-서버-설정)를 확인합니다.
 
 Node.js 24·Java 21+를 준비하고 **저장소 루트 `cs-class/`**에서 실행합니다.
 
@@ -133,4 +133,4 @@ cs-class/
 
 ## 협업 방식
 
-선생님과 주요 화면을 대화하며 정하고, 합의한 범위 안에서는 실행·검증·수정을 자율적으로 진행합니다. 중요한 질문은 하나씩 묻습니다. 제품 결정은 PRD, 디자인 기준은 DESIGN, 실행 설정은 DEVELOPMENT, 현재 상태와 다음 작업은 HANDOFF에 기록합니다. 비용·실제 데이터·접근 범위·전체 기술 전환은 협의합니다.
+선생님 혼자 개발하는 흐름에 맞춰 합의한 범위의 실행·검증·수정을 자율적으로 진행합니다. 작업 브랜치 push는 보관·전달용이고 Preview는 사용자 선택이 있을 때만 생성합니다. 중요한 질문은 하나씩 묻습니다. 제품 결정은 PRD, 디자인 기준은 DESIGN, 실행 설정은 DEVELOPMENT, 현재 상태와 다음 작업은 HANDOFF에 기록합니다. 비용·실제 데이터·접근 범위·전체 기술 전환은 협의합니다.
