@@ -62,7 +62,7 @@ main push는 CI와 Vercel 빌드를 병행합니다. Production의 Deployment Ch
 
 ### 수동 Preview
 
-Git 자동 배포는 main만 허용합니다. 작업 브랜치 push는 Preview를 만들지 않으며 에이전트는 생성 여부를 묻습니다. 명시적 선택이 있을 때 기존 프로젝트의 **Preview** 환경으로 브랜치·SHA를 지정해 생성하고, 같은 SHA의 준비된 배포는 재사용합니다. 응답 없음은 생성 승인이 아닙니다. Preview 생성은 CI·운영 공개를 자동 실행하지 않습니다.
+Git 자동 배포는 main만 허용합니다. 작업 브랜치 push는 Preview를 만들지 않으며 에이전트는 생성 여부를 묻습니다. 명시적 선택이 있을 때 기존 프로젝트의 **Preview** 환경으로 브랜치·SHA를 지정해 생성하고, 같은 SHA의 준비된 배포는 재사용합니다. 응답 없음은 생성 승인이 아닙니다. Preview 생성은 CI·운영 공개를 자동 실행하지 않습니다. 플러그인의 create_deployment에서 기존 project와 gitSource의 전체 SHA를 지정하고 target은 생략합니다(API의 기본값이 Preview이며 문자열 `preview`는 받지 않습니다). 생성 후 환경·SHA·READY를 확인합니다.
 
 Preview에는 운영 Firebase 비밀정보·학생 자료를 복사하지 않고 호스팅 게스트·에뮬레이터도 켜지 않습니다. 온라인 화면 확인과 로그인·저장 검증을 구분하며 별도 인증용 Preview 환경은 이번에 만들지 않습니다. main 빌드의 CI 대기 중 배포별 주소는 **Production 설정**일 수 있으므로 Preview와 혼동하지 않고 실제 학생 자료를 변경하지 않습니다. 아래 접근 보호를 유지하며 대상 SHA·주소·환경·검증 한계를 HANDOFF에 기록합니다.
 
