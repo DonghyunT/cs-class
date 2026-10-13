@@ -201,7 +201,7 @@ node scripts/measure-public-home.mjs https://cs-class-donghyunt.vercel.app scrat
 - 공통 개념 UI는 `src/components/student/programming-concept.tsx`·인접 CSS, 문항 데이터는 `src/lib/classroom/programming-data.ts`, 이름 작품 처리는 `src/lib/classroom/name-entry.ts`에 둡니다. 운영 코드는 체험의 전체 상태나 초기값을 가져오지 않습니다. 체험의 탭 저장·복원은 기존 `lib/prototype/programming.ts`가 소유합니다.
 - `public/entryjs/workspace.js`의 `exercise=programming&mission=...`는 목표별 팔레트와 고정 A/B 변수를 사용합니다. 질문·말하기는 실제 엔진 이벤트로 확인하며 방향키 미션은 실행을 유지해 키 이벤트를 받습니다. 실행 중 전체 export로 엔진을 멈추지 않는 기존 정책을 유지합니다.
 - 이름 실행 확인은 `name-entry.ts`의 `checkNameMission(...).validNames`를 공유해 현재 작품에서 질문·대답·말하기를 끝낸 서로 다른 입력만 최대 2개 셉니다. 실제 작품 변경·실행 ID·중지 여부를 확인하며 같은 이름 반복은 늘리지 않습니다. UI는 0/2 → 1/2 → 2/2와 부족한 조건을 표시하고 재접속 후 작품/완료와 일시적인 실행 근거를 구분합니다. Entry 결과는 현재 X·Y이며 누적 이동 거리로 바꾸지 않습니다.
-- 대상 검사는 `tests/programming-classroom.spec.ts`·`tests/programming-learning.spec.ts`입니다. 실제 Entry 팔레트 조립·질문·변수 계산·네 방향키·중지와 무대 복원·저장 실패·미완성 복원·독립 제출·27명 병렬 API 흐름과 개념·퀴즈 오답 재도전·교사 제출 화면을 포함합니다. 화면 아래 iframe은 Chromium이 그리기를 미룰 수 있으므로 작업실로 스크롤한 뒤 팔레트 좌표 준비를 확인합니다. 브라우저와 API가 같은 작품을 수정하는 검사에서는 화면 이동으로 자동 저장을 마친 뒤 새 버전을 조회합니다. 최종 통합은 아래 전체 검증을 따릅니다.
+- 대상 검사는 `tests/programming-classroom.spec.ts`·`tests/programming-learning.spec.ts`입니다. 실제 Entry 팔레트 조립·질문·변수 계산·네 방향키·중지와 무대 복원·저장 실패·미완성 복원·독립 제출·27명 병렬 API 흐름과 개념·퀴즈 오답 재도전·교사 제출 화면을 포함합니다. 화면 아래 iframe은 Chromium이 그리기를 미룰 수 있으므로 작업실로 스크롤한 뒤 팔레트 좌표 준비를 확인합니다. 브라우저와 API가 같은 작품을 수정하는 검사에서는 화면 이동으로 자동 저장을 마친 뒤 새 버전을 조회합니다. 최종 통합은 [변경 영향별 검사 기준](#변경-영향별-검사-기준)을 적용합니다.
 
 ### 공통 수업 편집기와 집중 모드
 
@@ -275,31 +275,93 @@ node scripts/review-rollout.mjs --mode restore --plan scratch/review-lessons/san
 
 ## 검증
 
-저장소 루트에서 실행합니다. Java 21+와 최초 `npx playwright install chromium`이 필요합니다. 실제 Firebase에 연결한 3000번 서버는 종료한 뒤 실행합니다.
+### 용어와 현재 자동화
+
+**CI(Continuous Integration, 지속적 통합)**는 코드를 합칠 때 자동으로 검사하는 절차입니다. **E2E(End-to-End)**는 브라우저에서 로그인·수업 입장·저장·다시 열기처럼 사용자 흐름을 확인하는 검사 종류입니다. 로컬 E2E는 내 PC에서 명령으로 실행하고, GitHub CI는 GitHub의 실행 서버에서 자동으로 실행합니다.
+
+현재 [workflow](../.github/workflows/verify.yml)는 `main`·`codex/**` push와 PR 생성·갱신 등에서 lint·typecheck·test:review·build·전체 E2E를 실행합니다. PR이 열린 `codex/**` 브랜치에 push하면 push용과 PR용이 모두 시작될 수 있고 main 병합도 push 검사 대상입니다. 중복 방지·이전 실행 자동 취소·`.next/cache` 보존·관련 E2E 자동 선택·수동 실행은 아직 설정하지 않았습니다. 아래 검사 기준은 작업에 필요한 범위를 정하는 지침이며 현재 CI가 그 범위로 자동 축소됐다는 뜻이 아닙니다. 개선 작업과 실행 결과는 [HANDOFF](HANDOFF.md#ci-개선-후속-작업)에 기록합니다.
+
+현재 `npm run build`는 EntryJS 준비 뒤 `next build`를 실행하며 E2E를 포함하지 않습니다. GitHub CI와 Vercel 배포는 별개이며, CI 성공이 운영 공개를 자동 차단·허용한다고 가정하지 않습니다. 공개 전 검사 확인과 배포 후 확인은 [서버 안내](FIREBASE_SETUP.md#vercel-서버-설정)를 따릅니다.
+
+테스트 프로그램 실행 자체가 Codex 토큰을 사용하는 것은 아닙니다. 에이전트가 명령을 선택하고 출력·실패를 분석하는 대화와 도구 응답 처리에는 Codex 사용량이 듭니다. GitHub Actions 실행 시간·저장 공간과 Vercel 빌드·배포·함수 사용량은 각 서비스에서 별도로 관리합니다. 비공개 저장소의 Actions 한도는 계정 단위로 공유하므로 [GitHub 사용량 화면](https://github.com/settings/billing)과 [공식 비용 안내](https://docs.github.com/en/billing/concepts/product-billing/github-actions)를 확인합니다. 요금제·잔여량을 확인하기 전에는 추정하지 않습니다.
+
+### 변경 영향별 검사 기준
+
+| 변경 | 작업 중 로컬 검사 | 병합 전 필요한 검사 |
+| --- | --- | --- |
+| 문서만 수정 | 내용·링크·앵커·공백 | 문서 검사 |
+| 문구·색상·국소 UI | 해당 화면·조작·좁은 창·초점·콘솔 | 관련 정적 검사·화면 검사 |
+| 일반 기능·버그 | 타입 검사·재현·관련 회귀 검사 | 린트·빌드·관련 E2E |
+| 학생 프로필 표시·편집 | 타입·관련 회귀 검사·소유권·저장 실패·재접속 | 린트·빌드·관련 계정 검사·핵심 로그인/저장 흐름 |
+| 인증·세션·학생 식별값·발급/초기화·공통 저장·DB 구조/규칙 | 권한·실패·기존 기록 보존 | 린트·타입·빌드·전체 E2E |
+| 공용 부품·의존성·실행 설정·영향 불명확 | 사용 흐름과 영향 조사 | 관련 정적 검사·빌드·사용 흐름 E2E. 범위를 증명하지 못하면 전체 E2E |
+
+국소 수정은 공용 스타일·컴포넌트에 영향을 주지 않는 경우로 한정합니다. 공용 변경은 사용하는 흐름 전체를 포함하고, 파일명만 보고 검사 범위를 단정하지 않습니다. 순수 복습 엔진·AI 프로토콜을 변경하면 `npm run test:review`도 실행합니다. 기존 테스트를 먼저 확장하고 로직·행동 변경에는 회귀 조건을 남기되, 문서·문구·색상만 바뀐 경우 구현을 그대로 따라 쓰는 불필요한 테스트를 추가하지 않습니다.
+
+학생 프로필 수정에서도 사용하는 공통 저장·권한 코드까지 변경하면 해당 공통 변경의 검사 범위를 적용합니다. 구체적인 기능별 검사는 [검증 노하우](#검증-노하우-기능별)의 관련 절을 따릅니다.
+
+### 실행 방법
+
+모든 명령은 저장소 루트에서 실행합니다. E2E는 Java 21+와 Chromium·로컬 캐시가 필요하므로 [PC 준비](#다른-pc에서-시작)를 먼저 확인합니다. 실제 Firebase에 연결한 3000번 서버를 종료하고 `demo-cs-class`·Auth 9099·Firestore 8080을 확인합니다. 앱 주소는 `http://localhost:3000`이며 운영 쿠키 보안을 낮추지 않습니다.
+
+일반 로컬 개발 검사는 `CI`가 설정되지 않은 터미널에서 실행합니다. 기존 터미널에 `CI`가 남아 있으면 아래 앱 스크립트가 `next start`를 선택하므로 검사 전에 값을 확인합니다.
+
+**에뮬레이터가 꺼져 있을 때 대상 파일만 검사:** 자식 Playwright 명령 안에 대상 파일을 넣습니다. `npm run test:e2e -- ...`의 추가 인자는 Firebase CLI에 전달되므로 대상 지정에 사용하지 않습니다.
 
 ```powershell
-npm run lint
-npm run typecheck
-npm run test:review
-npm run build
-npm run test:e2e
+node node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only auth,firestore --project demo-cs-class "node node_modules/@playwright/test/cli.js test tests/settings.spec.ts"
 ```
 
-`test:e2e`는 Auth·Firestore 에뮬레이터를 시작하고 종료합니다. 이미 `dev:emulator`가 실행 중일 때만 `npm run test:e2e:running`을 사용합니다. 테스트는 로컬 `demo-cs-class`를 확인한 뒤 가상 계정을 준비하며 운영 데이터는 사용하지 않습니다.
-
-에뮬레이터가 꺼져 있을 때 대상 파일만 새로 검사하려면 위 Java·캐시 준비 후 다음처럼 자식 명령에 파일을 넣습니다. `npm run test:e2e -- ...`의 추가 인자는 Firebase CLI로 전달되므로 Playwright 옵션을 그 뒤에 붙이지 않습니다.
+**에뮬레이터가 이미 실행 중일 때 대상 파일만 검사:** demo 프로젝트·호스트와 기존 앱의 fixture·실행 모드가 맞는지 먼저 확인합니다. 실제 서버나 오래된 빌드를 재사용해 통과시키지 않습니다.
 
 ```powershell
-node node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only auth,firestore --project demo-cs-class "node node_modules/@playwright/test/cli.js test tests/auth-security.spec.ts tests/dashboard-performance.spec.ts"
+npm.cmd run test:e2e:running -- tests/settings.spec.ts
 ```
 
-GitHub Actions는 `main`·`codex/**` push와 PR에서 lint·typecheck·test:review·build·E2E를 실행하며 E2E는 빌드된 앱을 `next start`로 실행해 검사합니다. 로컬 E2E는 개발 서버를 사용합니다. UI 확인 기준은 [AGENTS](../AGENTS.md)를 따릅니다. 구체적인 연결·운영상 한계는 [Firebase 연결 안내](FIREBASE_SETUP.md)를 확인합니다.
+위 검사는 [앱 실행 스크립트](../scripts/dev-emulator.mjs)가 새 앱을 시작할 때 시드를 실행합니다. 기존 demo 기록은 [테스트 환경과 데이터 보호](#테스트-환경과-데이터-보호)에 따라 먼저 보존하며, 사용 중인 미리보기 계정·기록과 검사를 섞지 않습니다.
 
-Windows에서 검사 뒤 `next start` 종료가 멈추면 이번 실행의 PID와 명령을 확인해 해당 테스트 서버만 종료합니다. Playwright는 서버 종료 후 최종 결과를 출력하므로 E2E 요약과 종료 코드까지 확인합니다.
+**프로덕션 빌드로 관련 흐름을 확인할 때:** 빌드가 필요하거나 현재 소스에 맞는 기존 빌드가 없으면 먼저 빌드합니다. 실행 중인 앱은 검증한 해당 PID만 종료하고, 새 앱이 `next start`로 시작되는지 확인합니다. 다음 예는 에뮬레이터가 꺼진 상태에서 실행하며 `CI`를 종료 뒤 복원합니다.
 
-PowerShell의 `Stop-Process`가 객체 참조 오류로 종료하지 못하면 검증한 같은 PID에 `[System.Diagnostics.Process]::GetProcessById($pilotServerPid).Kill()`을 사용할 수 있습니다. `$pilotServerPid`에는 이번 검사에서 시작한 `next start --hostname localhost --port 3000`임을 부모 스크립트·명령줄로 대조한 PID만 넣습니다. 다른 앱 서버·Node 프로세스를 일괄 종료하지 않습니다.
+```powershell
+npm.cmd run build
+if ($LASTEXITCODE -ne 0) { throw "빌드 실패: 검사를 중단합니다." }
+$previousCI = $env:CI
+try {
+  $env:CI = "1"
+  node node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only auth,firestore --project demo-cs-class "node node_modules/@playwright/test/cli.js test tests/settings.spec.ts"
+} finally {
+  if ($null -eq $previousCI) { Remove-Item Env:CI -ErrorAction SilentlyContinue }
+  else { $env:CI = $previousCI }
+}
+```
 
-앱 테스트 주소는 `http://localhost:3000`입니다. 운영 쿠키 보안을 낮추지 않습니다. 빌드 후 PowerShell에서 `$env:CI='1'`을 설정하고 E2E를 실행하면 CI와 같은 `next start` 검사가 됩니다. 실행 후에는 해당 터미널의 기존 CI 환경값으로 복원합니다. 날짜별 실행 결과와 미검증 항목은 [HANDOFF](HANDOFF.md)에 기록합니다.
+**전체 검사가 필요한 경우의 로컬 실행:** 다음 명령 묶음은 매번의 필수 절차가 아닙니다. 각 명령의 실패 원인을 해결한 뒤 다음 단계로 진행하며, 실패한 빌드 대신 기존 빌드를 검사하지 않습니다.
+
+```powershell
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd run test:review
+npm.cmd run build
+npm.cmd run test:e2e
+```
+
+`test:e2e`는 Auth·Firestore 에뮬레이터를 시작하고 종료합니다. 기존 에뮬레이터가 실행 중일 때만 `test:e2e:running`을 사용합니다. 로컬 전체 검사도 빌드된 앱으로 확인하려면 위 `try/finally` 안에서 `npm.cmd run test:e2e`를 실행합니다. Playwright는 `.spec.ts`만 수집하고 순수 검사는 `test:review`의 `.test.mjs`로 실행합니다.
+
+### 결과 재사용과 학생 계정·저장
+
+- 로컬에서는 관련 검사로 수정 결과를 확인하고 최종 통합에는 GitHub CI 결과를 활용합니다. 검사한 실행 코드·의존성·설정·검사 조건이 일치하면 동일한 전체 검사를 로컬에서 반복하지 않습니다. 대상 커밋·차이와 검사 종류·환경·결과·한계를 기록합니다.
+- 후속 수정은 관련 범위를 재검사합니다. 병합 대상 변경·충돌 해결·환경 차이·새 실패가 있으면 범위를 다시 평가합니다. 오래된 결과·dev 성공·READY만으로 현재 빌드와 운영 동작을 확인했다고 기록하지 않습니다.
+- Windows 전용 검사, 물리 한글 입력기, 실제 브라우저 조작, 프로덕션 CSS 적용 순서 등 GitHub CI가 확인하지 않은 항목은 해당 환경에서 검사합니다. [UI 기준](#ui-및-상호작용-공통)과 [CSS 기준](#css-및-컴포넌트-구현-규칙)을 유지합니다.
+
+학생 계정·저장 관련 변경의 완료 조건은 다음과 같습니다.
+
+1. 저장 후 새로고침·재로그인해도 값이 유지됩니다.
+2. 다른 학생·담당 외 교사의 조회·변경이 차단됩니다.
+3. 저장 실패·응답 유실·늦은 응답·중복 요청에서도 입력과 기존 기록이 보존됩니다.
+4. 기존 계정·작품·제출 기록의 호환성이 유지됩니다.
+5. 비밀값·개인정보가 로그·불필요한 응답에 노출되지 않습니다.
+
+검사는 demo에서 수행하고, 시드 전 사용자 기록 보존은 [데이터 보호](#테스트-환경과-데이터-보호)를 적용합니다. 실제 학생 자료의 일괄 수정·이관은 영향·백업·복구 범위를 별도로 합의합니다. 날짜별 검사 결과와 미검증 항목은 [HANDOFF](HANDOFF.md)에만 기록합니다.
 
 ## 검증 노하우 (기능별)
 
@@ -325,10 +387,12 @@ PowerShell의 `Stop-Process`가 객체 참조 오류로 종료하지 못하면 �
 - 제한된 Windows 환경에서 사용자 캐시 접근이 실패하면 이미 준비한 Git 제외 캐시를 `FIREBASE_EMULATORS_PATH`·`PLAYWRIGHT_BROWSERS_PATH`로 지정하고 Java 21+의 PATH를 확인합니다.
 - `$env:` 설정은 터미널별이므로 새 PowerShell에서도 실행 전 준비합니다.
 - Java·`tar`·Playwright의 자식 프로세스 `EPERM`과 Next 네이티브 컴파일러의 경로 확인 접근 거부는 설치·설정 오류와 구분하고 허용된 검사 실행에서 재확인합니다. 실제 경로·복사 가능한 준비 명령·최초 설치는 [다른 PC에서 시작](#다른-pc에서-시작)을 따릅니다. 기존 캐시를 확인하기 전에 같은 다운로드·설치를 반복하지 않습니다.
+- 검사 뒤 `next start` 종료가 멈추면 이번 실행의 PID·명령을 확인해 해당 테스트 서버만 종료합니다. Playwright는 서버 종료 후 최종 결과를 출력하므로 요약과 종료 코드까지 확인합니다.
+- PowerShell의 `Stop-Process`가 객체 참조 오류로 종료하지 못하면 검증한 같은 PID에 `[System.Diagnostics.Process]::GetProcessById($pilotServerPid).Kill()`을 사용할 수 있습니다. `$pilotServerPid`에는 이번 검사에서 시작한 `next start --hostname localhost --port 3000`임을 부모 스크립트·명령줄로 대조한 PID만 넣습니다. 다른 앱 서버·Node 프로세스를 일괄 종료하지 않습니다.
 
 ### Playwright 공통 환경
 
-- CI의 E2E는 먼저 만든 빌드를 `next start`로 실행하고, 로컬은 개발 서버를 사용합니다. 두 경우 모두 에뮬레이터 환경변수를 명시하고 로컬 시드를 준비합니다.
+- CI·로컬의 실행 모드와 대상 명령은 [실행 방법](#실행-방법)을 따릅니다. 두 경우 모두 에뮬레이터 환경변수를 명시하고, 시드 전에 사용자 demo 기록을 보존합니다.
 - 홈 조작 검사는 데스크톱 고정 배치(`data-pinned=true`)가 준비된 뒤 시작해 초기화 도중의 클릭·앵커 이동과 혼동하지 않습니다.
 - 같은 Playwright 페이지에서 계정·학습 시드를 교체할 때는 먼저 `about:blank`로 이동해 이전 편집기를 분리한 뒤 인증/시드를 준비합니다. 이전 Entry 자동 저장이 새 시드의 revision·미션을 덮는 경합을 제품의 복원 실패로 오인하지 않으며, 새 작업실의 실제 iframe 미션도 확인합니다.
 - 비밀번호 변경 화면도 이미 `/student` 주소를 사용하므로 URL만으로 갱신 완료를 판정하지 않습니다. 변경·재로그인 뒤 직접 수업으로 이동하는 검사는 실제 대시보드 표시와 세션 준비를 기다립니다.

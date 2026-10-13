@@ -16,6 +16,8 @@ Next.js·TypeScript와 **Firebase Auth·Firestore를 연결한 학습 플랫폼*
 
 ## 빠르게 시작하기
 
+기능·버그 수정과 학생 계정정보 저장의 [검사 선택·실행 방법](docs/DEVELOPMENT.md#검증)은 DEVELOPMENT를 따릅니다.
+
 Node.js 24·Java 21+를 준비하고 **저장소 루트 `cs-class/`**에서 실행합니다.
 
 ```powershell
