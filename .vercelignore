@@ -1,4 +1,9 @@
-.git
+# Git commit metadata is needed by the Ignored Build Step before Next.js builds.
+# Keep credentials, hooks and reflogs out of the build workspace.
+.git/config
+.git/hooks
+.git/logs
+.git/FETCH_HEAD
 .github
 .vercel
 .env*

@@ -82,5 +82,12 @@ test("real Git diff includes cumulative code and both sides of a rename", () => 
     assert.ok(files.includes("docs/old.md")); assert.ok(files.includes("src/old.md"));
     assert.equal(classify(files), "full");
     assert.throws(() => changedFiles("invalid"));
+    // Vercel removes ignored files before running the skip command. Keep commit
+    // objects/refs, but remove authentication configuration, hooks and reflogs.
+    rmSync(path.join(root, ".git/config"));
+    rmSync(path.join(root, ".git/hooks"), { recursive: true, force: true });
+    rmSync(path.join(root, ".git/logs"), { recursive: true, force: true });
+    assert.deepEqual(changedFiles(code), files);
+    assert.equal(ignoreBuild({ VERCEL_GIT_PREVIOUS_SHA: code }), false);
   } finally { process.chdir(previous); rmSync(root, { recursive: true, force: true }); }
 });

@@ -56,7 +56,7 @@ Preview와 Production 양쪽에 일반 설정 `NODE_OPTIONS=--experimental-requi
 
 main push는 CI와 Vercel 빌드를 병행합니다. Production의 Deployment Checks에 GitHub `app`을 요구하며 성공 전에는 새 배포를 운영 도메인에 연결하지 않습니다. 실패·취소·대기는 기존 운영 버전을 유지합니다. 빌드 READY와 운영 별칭 연결을 구분하며, 실제 설정·동작 확인은 [HANDOFF](HANDOFF.md#현재-작업-상태)를 따릅니다.
 
-문서 전용 변경은 `vercel.json`의 Ignored Build Step으로 앱 빌드를 생략합니다. `VERCEL_GIT_PREVIOUS_SHA`(같은 프로젝트·브랜치의 마지막 성공 배포)부터 비교하며 기준 없음·이력 부족·판정 실패는 빌드를 진행합니다. 생략은 CANCELED로 표시되고 배포 한도에 포함될 수 있습니다. 문서 push 뒤 main과 운영 SHA가 달라도 정상입니다.
+문서 전용 변경은 `vercel.json`의 Ignored Build Step으로 앱 빌드를 생략합니다. `VERCEL_GIT_PREVIOUS_SHA`(같은 프로젝트·브랜치의 마지막 성공 배포)부터 비교하며 기준 없음·이력 부족·판정 실패는 빌드를 진행합니다. Vercel은 판정 전에 제외 파일을 지우므로 `.vercelignore`에서 Git commit 메타데이터는 남기고 인증 config·hooks·logs는 제외합니다. 생략은 CANCELED로 표시되고 배포 한도에 포함될 수 있습니다. 문서 push 뒤 main과 운영 SHA가 달라도 정상입니다.
 
 공개 후 SHA·운영 별칭·API·로그인 화면을 확인합니다. READY·익명 응답만으로 실제 계정 로그인·저장/재접속 성공을 주장하지 않습니다. CI와 Vercel의 검사 SHA가 같은지 확인하며 Force Promote는 기본 절차로 사용하지 않습니다. 오류 복구는 확인된 이전 운영 배포로 되돌리고, 재발 방지를 코드에 반영해 검사 후 공개합니다. 검사 명령은 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따릅니다.
 
