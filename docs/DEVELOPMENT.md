@@ -307,9 +307,11 @@ CI는 빌드된 앱·단일 E2E worker와 npm/`.next/cache`를 사용합니다. 
 
 학생 프로필 수정에서도 사용하는 공통 저장·권한 코드까지 변경하면 해당 공통 변경의 검사 범위를 적용합니다. 구체적인 기능별 검사는 [검증 노하우](#검증-노하우-기능별)의 관련 절을 따릅니다.
 
-### 수동 저장 전환의 코드 계약 (A0 조사)
+### 학생 수업 수동 저장 아키텍처 및 계약
+<a id="학생-수업-수동-저장-아키텍처-및-계약"></a>
+<a id="수동-저장-전환의-코드-계약-a0-조사"></a>
 
-A0에서 조사한 서버/API 형식을 유지하며 학생 수업의 명시 저장을 적용합니다. 아래 표는 현재 코드의 책임입니다. 사용자 합의·작업 순서·완료 조건은 [계획A](superpowers/plans/2026-10-13-manual-save.md), 실제 측정 결과·환경·한계는 [HANDOFF](HANDOFF.md#현재-작업-상태)에 기록합니다.
+학생 수업의 작업 저장은 자동 저장을 배제하고 명시적인 수동 저장(Manual Save) 아키텍처를 따릅니다. 아래 표는 컴포넌트별 소유권과 저장 책임입니다. 확정 제품 정책은 [PRD](PRD.md#학생-수업의-수동-저장-정책), 최신 검증 상태는 [HANDOFF](HANDOFF.md#현재-작업-상태)를 따릅니다.
 
 #### 저장 호출과 소유권
 
@@ -350,6 +352,55 @@ A0에서 조사한 서버/API 형식을 유지하며 학생 수업의 명시 저
 - programming 미션 전환은 새 starter/keys의 복사 작품을 초기화합니다. 단순 위치 제외만으로 dirty가 사라지지 않습니다. 탐색 초기화와 사용자가 편집한 작품을 구분하고 신규 미션 방문만으로 실제 편집처럼 판단하지 않도록 설계합니다. 실제 수정 프로젝트를 무시하는 wildcard 비교는 금지합니다.
 - Entry export의 실행 좌표·기본 메타데이터만 바뀌는 경우와 실제 블록/입력 변경을 구분합니다. 제출용 `sameReviewProject`는 필드를 정규화/누락하므로 모든 초안 dirty 판정에 그대로 재사용하지 않습니다.
 - clean save의 서버 호출0은 내용·저장 필요 상태가 없는 경우입니다. 도움/채점/제출에서 현재 단계·미션을 포함한 snapshot이 필요한 경우 exact difference의 선행 저장은 명시 행동 예외에 포함합니다.
+
+### 신규 수업 추가 및 선별 검증 연동 (체크리스트)
+<a id="신규-수업-추가-및-선별-검증-연동-체크리스트"></a>
+
+새로운 수업을 추가할 때 모든 에이전트는 아래 4단계를 순서대로 완료해야 합니다.
+
+#### 1단계: 컴포넌트 분리 (`src/components/student/...`)
+- **컴포넌트 위치**: `src/components/student/review/<수업ID>.tsx` 또는 전용 하위 폴더에 배치합니다.
+- **공통 셸 구성**: [`LessonWorkspace`](../src/components/student/lesson-workspace.tsx) 또는 [`LessonEditor`](../src/components/student/lesson-editor.tsx)를 부모 레이아웃으로 감싸 공통 헤더·진도 바·저장 버튼 영역을 확보합니다.
+
+#### 2단계: 저장 상태 연동 (`useWork`)
+- **훅 연결**: 학생 작업 관리는 반드시 공통 훅 [`useWork`](../src/components/student/use-work.ts)를 사용합니다.
+  ```typescript
+  const { draft, updateDraft, saveDraft, hasUnsavedChanges, saveState, saving } = useWork({
+    lessonId: "<수업ID>",
+    classId,
+    studentId
+  });
+  ```
+- **수동 저장 연동**:
+  - `saveDraft()`: 상단 '저장' 버튼 클릭 또는 키보드 이벤트 시 호출합니다.
+  - `Ctrl+S` / `Cmd+S`: 키보드 단축키 감지 시 `event.preventDefault()` 후 `saveDraft()`를 실행합니다.
+  - `hasUnsavedChanges`: 미저장 변경이 있을 때 상태 배지(`저장하지 않은 변경 있음`)를 표시합니다.
+  - `NavigationProvider`: `useWork` 내부에 이미 내장되어 있어, 미저장 시 수업 밖 이동 가드가 자동 활성화됩니다.
+- **금지 사항**: 컴포넌트 내부에 독자적인 `debounce` 자동 저장 타이머를 신설하지 않습니다.
+
+#### 3단계: E2E 테스트 작성 (`tests/<수업ID>.spec.ts`)
+- **명시적 저장 시맨틱 검증**: 자동 저장을 기다리는 단언 대신, 명시적 단축키 또는 버튼 조작을 통한 저장 성공을 검증합니다.
+  ```typescript
+  // 입력 후 Ctrl+S로 저장하고 상태 확인
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("button", { name: /저장 완료/ })).toBeVisible();
+  ```
+- **이탈 가드 검증**: 변경 후 다른 화면으로 나갈 때 3선택 모달(`저장 후 나가기`, `저장하지 않고 나가기`, `취소`)이 노출되는지 확인합니다.
+
+#### 4단계: 선별 검증기 등록 (`scripts/e2e-scope.mjs` & `tests/lesson-smoke.spec.ts`)
+- **매핑 등록**: [`scripts/e2e-scope.mjs`](../scripts/e2e-scope.mjs)의 `LESSON_MAPPINGS`에 신규 수업 패턴과 테스트 파일을 등록합니다.
+  ```javascript
+  "<수업ID>": {
+    lessonId: "<수업ID>",
+    patterns: [
+      /^src\/components\/student\/review\/<수업ID>(?:\.tsx|\.module\.css)$/
+    ],
+    tests: [
+      "tests/<수업ID>.spec.ts"
+    ]
+  }
+  ```
+- **스모크 안전망 등록**: [`tests/lesson-smoke.spec.ts`](../tests/lesson-smoke.spec.ts)의 대상 수업 목록에 추가하여 17초 공통 스모크의 보호를 받도록 합니다.
 
 ### 실행 방법
 
@@ -407,7 +458,7 @@ npm.cmd run test:e2e
 - **`npm.cmd run test:e2e:scope:running`**: 에뮬레이터 및 테스트 서버가 이미 실행 중일 때 선별 E2E만 빠르게 실행합니다.
 
 **선별 규칙:**
-1. **수업 전용 변경 (Affected):** 4개 수업(`review-sandwich`, `review-flowchart`, `review-abstraction`, `programming-13`) 중 변경된 수업의 전용 E2E 및 연관 인터랙션 테스트와 함께, 4개 수업 전체의 초경량 저장/복원 스모크 안전망(`tests/lesson-smoke.spec.ts`, ~17초)을 합성하여 실행합니다.
+1. **수업 전용 변경 (Affected):** `scripts/e2e-scope.mjs`의 `LESSON_MAPPINGS`에 등록된 수업(기존 수업 및 신규 추가 수업) 중 변경된 수업의 전용 E2E 및 연관 인터랙션 테스트와 함께, 등록된 수업 전체의 초경량 저장/복원 스모크 안전망(`tests/lesson-smoke.spec.ts`, ~17초)을 합성하여 실행합니다.
 2. **공통 및 설정 변경 (Full):** 공통 컴포넌트, 서버 로직, 라우트, 패키지 설정(`package.json` 등) 변경이나 불확실성이 있는 경우 자동으로 전체 E2E(full)로 승격됩니다.
 3. **문서 전용 변경 (Docs):** 마크다운 및 문서 검사만 수행하고 무거운 E2E 실행을 건너뜁니다.
 4. **CI 수동 실행 (`workflow_dispatch`):** 항상 전체 E2E(398개)를 수행하여 전체 품질을 확인합니다.

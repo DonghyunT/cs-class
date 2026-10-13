@@ -18,11 +18,10 @@
     - `tests/manual-save-entry.spec.ts`: EntryJS 로딩 지연 대응을 위해 `#entry-run` 활성화 대기 타임아웃 20초 명시.
     - `tests/ui-workspace-refinement.spec.ts`: 수동 저장 전환 시맨틱 반영 (크기 변경 테스트에서 `Control+s`로 포커스 유지 저장, 503 모의 실패 테스트에서 직접 저장 버튼 클릭 및 `저장 확인 필요` 대기).
   - 로컬 검증: 관련 9개 테스트 전수 통과 (`9 passed, 58.6s`), `typecheck` 통과, `lint` 통과.
-- **다음 단계:**
-  - 보완 커밋 생성 (`fix: align workspace refinement tests with manual save semantics`) 및 `main` 푸시.
-  - GitHub Actions CI 최종 통과 확인.
+  - 보완 커밋 푸시 완료 ([`b3d3aae`](file:///d:/workspace/cs-class/docs/HANDOFF.md): `fix: align workspace refinement tests with manual save semantics`), GitHub Actions 최종 CI(`38413425294`) 연계.
+  - 에이전트 신규 수업 추가 체크리스트 및 수동 저장/선별 검증 문서 정비 완료.
 
-재개 근거: Git 추적 문서인 이 HANDOFF/계획A와 현재 코드, Git 제외 상세 작업 장부 `scratch/manual-save-implementation/`입니다. 새 소스 `src/components/student/work-draft.ts`, 새 검사 2개(`tests/manual-save.spec.ts`, `tests/manual-save-entry.spec.ts`)와 계획 2개(`docs/superpowers/plans/`)는 신규 파일입니다. 현재 변경은 로컬 작업 브랜치에만 있으며 원격에 반영하지 않았습니다.
+재개 근거: Git 추적 문서인 이 HANDOFF와 현재 코드, Git 제외 상세 작업 장부 `scratch/manual-save-implementation/`입니다. 새 소스 `src/components/student/work-draft.ts`, 새 검사 2개(`tests/manual-save.spec.ts`, `tests/manual-save-entry.spec.ts`)와 계획 2개(`docs/superpowers/plans/`)는 신규 파일입니다.
 
 ### A0 변경 전 조사 근거
 
@@ -30,8 +29,8 @@
 
 ### 수동 저장 A0 조사·변경 전 요청 수
 
-- 사용자 추가 결정: 손들기는 **현재 작품을 저장하고 요청**하는 명시 예외. 위치만 바뀌면 **미저장 경고 없음**, 다음 내용 저장/명시 행동에 위치 포함. 현재 코드에는 두 결정이 아직 구현되지 않았습니다.
-- 코드 계약/caller/읽기 위치 projection·기획서 제안/적용 경계는 [DEVELOPMENT의 A0 조사](DEVELOPMENT.md#수동-저장-전환의-코드-계약-a0-조사), 제안 정책은 PRD/DESIGN, 실행/회귀는 계획A에 반영했습니다. 미해결 사용자 선택은 없으며 projection 후보·Entry metadata 정규화는 구현 시 실제 caller로 확인합니다.
+- 사용자 추가 결정: 손들기는 **현재 작품을 저장하고 요청**하는 명시 예외. 위치만 바뀌면 **미저장 경고 없음**, 다음 내용 저장/명시 행동에 위치 포함.
+- 코드 계약/caller/읽기 위치 projection·기획서 제안/적용 경계는 [수동 저장 아키텍처](DEVELOPMENT.md#학생-수업-수동-저장-아키텍처-및-계약), 제안 정책은 PRD/DESIGN, 실행/회귀는 계획A에 반영했습니다. 미해결 사용자 선택은 없으며 projection 후보·Entry metadata 정규화는 구현 시 실제 caller로 확인합니다.
 - 환경: 10/13 Windows·Node24.19.0·Java21·Playwright1.63.0/Chromium·현재 소스의 next dev, fresh demo-cs-class Auth9099/Firestore8080·localhost3000·AI fixture·단일 worker. 시작 전 netstat/PID/API 교차 조회에서 기존 앱/에뮬레이터 없음 확인. 기존 export를 import/덮어쓰기하지 않고 새 합성 환경만 사용했으며 게스트 세션은 사용하지 않았습니다.
 - 보존/무변경: 미커밋 문서4개를 scratch before-docs에 복사하고 source/config288파일 SHA-256 전후 일치(변경0)를 확인했습니다. 다른 미추적 outputs는 수정하지 않았습니다. 두 계측 종료 후 3000/8080/9099/4400/4500/4781 LISTENING 없음 확인.
 - 실행: scratch 임시 Playwright spec2개 각각 성공(요약2.3분/37.3초); 실제 시나리오17개+기존 정상 저장 버튼 미지원1항목. 첫 준비 실행은 임시 config 기준 cwd 때문에 MODULE_NOT_FOUND로 실패했고 제품 문제가 아니며 cwd를 루트로 지정한 뒤 실행했습니다. 전체 E2E/운영 검증이 아닙니다.

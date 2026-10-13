@@ -5,7 +5,7 @@ import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { emptyWork } from "../src/lib/classroom/progress";
 import { resumeLabelFor } from "../src/lib/classroom/lesson-navigation";
 import type { Work } from "../src/lib/classroom/types";
-import { db, headers, initialPassword, loginStudent, resetStudent, studentPassword, saveDraft } from "./emulator";
+import { db, headers, initialPassword, loginStudent, resetStudent, studentPassword } from "./emulator";
 
 const studentId = "20102";
 let originalClass: FirebaseFirestore.DocumentData | undefined;
@@ -242,7 +242,6 @@ test("workspace-availability: 실제 셸 경계·로딩 중 초점·입력·실�
   await reflection.press("Control+s");
   await expect.poll(async () => ((await (await page.request.get(endpoint)).json()) as Work).draft.programming?.reflection).toBe("폭을 바꿔도 입력을 이어가요");
   const guidance = page.getByRole("complementary", { name: programmingMissions[0].title, exact: true });
-  const editor = page.getByRole("region", { name: "엔트리 블록 코딩 작업", exact: true });
   for (const width of [1339, 1340, 1339]) {
     await page.setViewportSize({ width, height: 720 });
     // Compare both boxes before the focused iframe's scroll position can change.

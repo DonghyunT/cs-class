@@ -2,12 +2,29 @@
 
 중학교 정보 수업을 위한 Next.js·TypeScript, Firebase Auth·Firestore 기반 웹 프로젝트입니다. V1 자산은 필요할 때만 모듈화해 재사용합니다.
 
+## 작업별 참조 문서 안내 (SSOT)
+작업 시작 시 이 파일과 [HANDOFF](docs/HANDOFF.md)를 먼저 읽고, 변경 영역에 맞는 문서만 선별하여 탐색 범위를 좁힙니다.
+
+| 작업 유형 | 최우선 참조 문서 | 확인 범위 |
+| :--- | :--- | :--- |
+| 제품 기능·요구사항·저장 정책 | [PRD](docs/PRD.md) | 기능 정책, 권한 경계, 저장 및 예산 기준 |
+| 화면 레이아웃·UI·상호작용 | [DESIGN](docs/DESIGN.md) | 수업 공통 틀, 색상, 포커스, 반응형 기준 |
+| 신규 수업 개발·환경·검증 | [DEVELOPMENT](docs/DEVELOPMENT.md) | [수업 추가 체크리스트](docs/DEVELOPMENT.md#신규-수업-추가-및-선별-검증-연동-체크리스트), [선별 검증](docs/DEVELOPMENT.md#변경-영향별-선별-검증-scoped-verification) |
+| Firebase·배포·서버 설정 | [FIREBASE_SETUP](docs/FIREBASE_SETUP.md) | Vercel 배포, Rules, 계정 복구 절차 |
+| 저장소 구조·문서 목차 | [README](README.md) | 폴더 구조, 문서별 역할 분담 기준 |
+| 현재 진행 상태·남은 작업 | [HANDOFF](docs/HANDOFF.md) | 기준 커밋, SHA, CI 결과, 다음 작업 |
+
 ## 개발 환경과 원칙
 - 앱은 저장소 루트에서 `npm ci` 후 실행합니다. 로컬 검증은 `npm run dev:emulator`, 실제 Firebase 연결은 Git 제외 `.env.local`과 `npm run dev`를 사용합니다. Windows PowerShell에서 실행 차단 시 `npm.cmd`·`npx.cmd`를 사용합니다.
 - 서버·Vercel 배포·Firebase 설정 및 장애 복구는 [FIREBASE_SETUP](docs/FIREBASE_SETUP.md#vercel-서버-설정)을 따릅니다. 배포 성공 판정은 READY 상태뿐 아니라 실제 배포 SHA·별칭·`/api/auth/session` 응답과 로그인 화면까지 확인합니다.
-- 제품 결정은 [PRD](docs/PRD.md), 디자인 기준은 [DESIGN](docs/DESIGN.md), 폴더 목차·배치 기준은 [README](README.md), 실행·환경 절차는 [DEVELOPMENT](docs/DEVELOPMENT.md), 현재 진행 상태·남은 작업은 [HANDOFF](docs/HANDOFF.md)를 따릅니다.
-- 작업 시작에는 이 파일과 HANDOFF를 읽고, 변경에 관련된 기준 문서·코드로 탐색 범위를 좁힙니다. 매 작업에서 전체 문서를 다시 읽지 않습니다.
 - 관련 컴포넌트는 `src/components/home/`·`student/`처럼 기능별로 묶고 공통 UI는 `ui/`에 둡니다. 화면별 스타일은 담당 컴포넌트 옆에 두며 파일 이동 시 import와 활성 문서 경로를 함께 갱신합니다.
+
+### 학생 수업 구현 및 수동 저장 규칙
+- **저장 상태 관리:** 학생 작업 관리는 반드시 공통 훅 [`useWork`](src/components/student/use-work.ts)를 사용합니다. 개별 `debounce` 자동 저장 타이머를 신설하지 않습니다.
+- **명시적 저장 및 단축키:** 저장 조작은 명시적 `saveDraft()`, `Ctrl+S`(Mac: `Cmd+S`), `LessonWorkspace` 상단 저장 버튼을 연동합니다.
+- **이탈 가드:** 미저장 변경이 있을 때 수업 외부 이동은 `NavigationProvider` 가드를 통해 `[저장 후 나가기 / 저장 안 하고 나가기 / 취소]` 선택지를 제공합니다.
+- **손들기(도움 요청) 예외:** 손들기는 현재 작업물을 자동 선행 저장한 뒤 도움 요청 API를 호출합니다.
+- **신규 수업 추가 시 필수 4단계 체크리스트:** 신규 수업 추가 시 [개발 안내의 수업 추가 체크리스트](docs/DEVELOPMENT.md#신규-수업-추가-및-선별-검증-연동-체크리스트)를 순서대로 준수합니다 (UI 분리 → `useWork` 연동 → 수동저장 E2E 작성 → `scripts/e2e-scope.mjs` 및 `tests/lesson-smoke.spec.ts` 등록).
 
 ## 문서 관리
 - 저장 위치와 문서별 역할은 [README의 문서 기준](README.md#문서의-위치와-내용-기준)을 따릅니다. 정책·절차는 한 곳에서만 관리하고 진행 상태는 HANDOFF에만 기록합니다. 제안·확정·구현·검증·배포를 엄격히 구분합니다.
@@ -23,7 +40,7 @@
 
 ## 검증
 - 작업별 완료 조건을 정하고 실패 원인 확인·수정·재검증을 반복합니다. 같은 실패가 세 번 남으면 가설과 접근을 재검토하며 요구사항을 낮춰 검사를 통과시키지 않습니다.
-- 검사는 [변경 영향별 검사 기준](docs/DEVELOPMENT.md#변경-영향별-선별-검증-scoped-verification)에 따라 선택합니다. 작업 중에는 선별 검사(`npm run test:e2e:scope`, `npm run test:scope`)로 수정 결과를 확인하고 최종 통합에는 GitHub CI 결과를 활용합니다. 특정 수업 코드만 변경된 경우 해당 수업 E2E와 4개 수업 공통 스모크(`tests/lesson-smoke.spec.ts`)를 선별 실행하며, 공통 모듈이나 설정 변경 시에는 전체 E2E로 안전하게 승격합니다. 커밋·인계마다 빌드·전체 E2E를 일괄 실행하지 않으며, 문서만 수정한 경우에는 내용·링크·앵커·공백 검사로 완료합니다.
+- 검사는 [변경 영향별 검사 기준](docs/DEVELOPMENT.md#변경-영향별-선별-검증-scoped-verification)에 따라 선택합니다. 작업 중에는 선별 검사(`npm run test:e2e:scope`, `npm run test:scope`)로 수정 결과를 확인하고 최종 통합에는 GitHub CI 결과를 활용합니다. 특정 수업 코드만 변경된 경우 해당 수업 E2E와 등록된 수업 공통 스모크(`tests/lesson-smoke.spec.ts`)를 선별 실행하며, 공통 모듈이나 설정 변경 시에는 전체 E2E로 안전하게 승격합니다. 커밋·인계마다 빌드·전체 E2E를 일괄 실행하지 않으며, 문서만 수정한 경우에는 내용·링크·앵커·공백 검사로 완료합니다.
 - 검증된 실행 코드·의존성·설정·검사 조건이 같으면 동일한 전체 검사를 로컬에서 반복하지 않습니다. 후속 수정·병합 대상 변경·충돌 해결·환경 차이·새 실패가 있으면 영향 범위를 다시 판단하고 재검사 이유를 설명합니다. 필요한 로컬 화면·Windows 전용 검증은 유지합니다.
 - 기존 테스트를 먼저 확장하고 로직·행동 변경에는 회귀 조건을 남깁니다. 문서·문구·색상만 바뀐 경우 불필요한 테스트를 추가하지 않습니다. 실행 명령과 결과 재사용·학생 계정/저장 완료 조건은 [DEVELOPMENT의 검증](docs/DEVELOPMENT.md#검증)을 따릅니다.
 - 테스트는 `demo-cs-class`와 로컬 9099·8080만 사용하며 3000번 실제 서버는 종료 후 실행합니다. 운영 DB에 테스트 시드나 합성 계정을 넣지 않고 단일 세션 정책을 유지합니다.
