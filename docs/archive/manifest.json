@@ -258,6 +258,27 @@
       "origin": "completed-plan-release-cleanup-20261013",
       "baseCommit": "8e052c81683e909c9922ec48ad89bc07e5c30cdb",
       "sha256": "4388d89fb5c7d5e6bd9c0d227de06548abefa4fc47366c22092328ec28fe283c"
+    },
+    {
+      "source": "AGENTS.md",
+      "archive": "docs/archive/cs-class/2026-10-13-before-doc-slimming/AGENTS-historical.md",
+      "origin": "working-tree-before-doc-slimming-20261013",
+      "baseCommit": "2a5ca08",
+      "sha256": "9bb3c2f9e206ac892ef293570ca683941f05a5e886ba112e1dacd26c7ce1827f"
+    },
+    {
+      "source": "docs/DEVELOPMENT.md",
+      "archive": "docs/archive/cs-class/2026-10-13-before-doc-slimming/DEVELOPMENT.md",
+      "origin": "working-tree-before-doc-slimming-20261013",
+      "baseCommit": "2a5ca08",
+      "sha256": "0eeff85e25914e97303fa1514f46866d804bc35a12498f1ad823d71e4e6ffd75"
+    },
+    {
+      "source": "README.md",
+      "archive": "docs/archive/cs-class/2026-10-13-before-doc-slimming/README.md",
+      "origin": "working-tree-before-doc-slimming-20261013",
+      "baseCommit": "2a5ca08",
+      "sha256": "e3cd480a261bcfb2ac0e7c35b1e9719c85dc1585b18d99c380c6f6508880c2e8"
     }
   ]
 }
