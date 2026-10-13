@@ -2,14 +2,15 @@
 
 ## 현재 작업 상태
 
-2026-10-13(Asia/Seoul). **개인 개발 CI·Preview·운영 공개 전환을 main@b6e2968에 반영하고 전체 CI 성공 후 운영 공개를 확인했습니다. 이번 결과 기록은 문서 마감 커밋으로 전달합니다. 최신 HEAD·문서 검사 결과는 Git/Actions에서 대조합니다.**
+2026-10-13(Asia/Seoul). **개인 개발 CI·Preview·운영 공개 전환을 main@d62be05까지 반영했습니다. 최종 문서 마감 SHA는 Git HEAD, 검사 상태는 Actions에서 대조합니다.**
 
-- 기준 main은 `43a9cea`입니다. workflow는 main push·수동 실행, 문서는 가벼운 검사, 코드는 기존 전체 검사로 바꿨습니다. 관련 E2E 자동 선택은 후속 작업입니다.
-- Vercel `cs-class`의 Deployment Checks에 GitHub `app`을 Production 공개 조건으로 저장했습니다. 설정 화면의 성공 알림을 확인했으며 13:03 KST 새 빌드(31초)가 Running Checks로 공개 대기하고 실제 운영 주소가 43a9cea를 유지함을 확인했습니다. 13:31 KST app 성공 후 같은 배포 dpl_ELW51Rw6fDm5daDi1dUEXUg2iUfd·b6e2968이 운영 별칭에 연결됨을 확인했습니다.
-- 작업 브랜치 push 후 자동 CI·Preview는 생성되지 않았습니다. 이후 사용자 요청으로 b6e2968의 [수동 Preview](https://cs-class-8xi3e5096-donghyunt.vercel.app)를 생성해 READY·학생 로그인 화면을 확인했습니다. 운영 Firebase 비밀정보가 없는 화면 확인용으로 로그인 버튼은 비활성화되며 실제 로그인·저장은 시도하지 않았습니다. 문서 앱 빌드 생략·npm/Next 캐시와 안전한 누적 변경 판정을 추가했습니다.
-- 로컬 판정/문서 회귀8개(실제 Git 누적 변경·이름 변경 포함) 통과·활성 문서10개 링크/앵커 오류0·추가 코드 린트 및 diffcheck 통과. 독립 검토의 새 문서 누락·없는 비교 SHA 처리 권고를 반영했습니다. [초기 전체 CI](https://github.com/DonghyunT/cs-class/actions/runs/38344538720) 성공: app28분37초·E2E 단계25분45초, E2E384개 통과·Windows 전용1개 skip. 빌드32초·린트18초·타입10초·문서/판정1초. 이전 실행과 환경·캐시가 달라 E2E 시간 차이를 이번 설정의 효과로 단정하지 않습니다. 작업 브랜치 push 뒤 CI·Preview 생성0을 확인했습니다. 로컬 앱 빌드·전체 E2E는 반복하지 않았고 앱·DB·실학생 자료·보관 원문은 변경하지 않았습니다.
-- 앞선 문서 정책 정비는 [PR36](https://github.com/DonghyunT/cs-class/pull/36) `65413a0` 및 [PR37](https://github.com/DonghyunT/cs-class/pull/37) `43a9cea`로 반영됐습니다. 당시 순서도 퍼즐 자동 제출·초안 복구 경계·보관 CRLF 복원을 유지합니다. 정책·권한은 AGENTS/PRD, 명령은 DEVELOPMENT, 배포는 FIREBASE_SETUP을 따릅니다.
-
+- 작업 브랜치 push는 자동 CI·Preview 없음, main은 문서/전체 검사, 수동 실행은 전체 검사입니다. GitHub app을 Vercel Production 공개 조건으로 연결하고 같은 SHA의 성공 후 운영 전환을 확인했습니다. 관련 E2E 자동 선택은 후속 작업입니다.
+- 로컬 판정/문서 회귀8개·추가 코드 린트·활성 문서10개 링크/앵커·diffcheck 통과. 독립 검토의 새 문서 누락·없는 비교 SHA 처리를 반영했습니다. 앱·DB·실학생 자료·보관 원문은 변경하지 않았습니다.
+- [초기 CI](https://github.com/DonghyunT/cs-class/actions/runs/38344538720): b6e2968·app28분37초·E2E384개 통과/Windows 전용1개 skip. [보완 CI](https://github.com/DonghyunT/cs-class/actions/runs/38347670921): d62be05·app30분57초·E2E 단계28분54초·384개 통과/1개 skip. 실행별 시간 차이를 캐시의 효과로 단정하지 않습니다.
+- 운영은 dpl_AnfXRBKDiGcjiFT8WTvJYHNi9N6C·READY·d62be05·운영 별칭을 확인했습니다. 앞선 빌드는 31초 후 Running Checks로 이전 운영을 유지하다 app 성공 후 공개됐습니다. 익명 config/session·학생/교사 로그인200 및 /.git/HEAD·config404를 확인했으며 실제 계정 로그인·저장은 시도하지 않았습니다.
+- 사용자 요청의 [수동 Preview](https://cs-class-8xi3e5096-donghyunt.vercel.app)는 b6e2968·READY입니다. 익명 접근은 Vercel 인증으로 이동하고 운영 Firebase 비밀정보가 없어 로그인 버튼은 비활성화됩니다. 화면 확인용이며 추가 CI·운영 교체는 만들지 않았습니다.
+- [문서 CI](https://github.com/DonghyunT/cs-class/actions/runs/38347033466)는 8fd1b2a·app9초·설치/빌드/E2E 생략입니다. 당시 Vercel은 .git 전체 제외로 비교에 실패해 재빌드했으며 d62be05에서 인증 config·hooks·logs·FETCH_HEAD 제외를 유지하고 비교 메타데이터를 남겼습니다. 최종 문서 push에서 앱 빌드 생략을 확인합니다.
+- 앞선 정책 정비는 PR36의 65413a0와 PR37의 43a9cea로 반영됐습니다. 순서도 퍼즐 자동 제출·초안 복구·보관 CRLF 기준은 유지하며 검사 명령은 DEVELOPMENT, 배포는 FIREBASE_SETUP을 따릅니다.
 ### 이번 조사에서 확인한 근거
 
 | 확인일·대상 | 실제 확인 | 한계 |
@@ -71,7 +72,7 @@
 
 ### CI 개선 후속 작업
 
-이번 전환의 실제 완료 여부는 첫머리와 CI·배포 링크를 확인합니다. 전체 CI·대기 중 공개 차단·성공 후 공개를 확인했습니다. [문서 CI](https://github.com/DonghyunT/cs-class/actions/runs/38347033466)는 app9초·성공으로 npm 설치·빌드·E2E를 모두 생략했습니다. Vercel은 기존 .vercelignore가 .git 전체를 먼저 지워 비교에 실패해 재빌드했습니다. 인증 config·hooks·logs 제외를 유지하며 commit 메타데이터를 남기는 수정과 실제 Git 회귀를 추가했고, 설정 수정 후 전체 CI·문서 빌드 생략을 다시 확인합니다. 작업 브랜치 push는 자동 CI·Preview 없음도 확인하고 Preview를 원하는지 묻습니다.
+main의 전체 CI·대기 중 공개 차단·성공 후 공개·작업 브랜치의 자동 CI/Preview 없음·요청된 수동 Preview를 확인했습니다. 문서 CI의 무거운 검사 생략도 확인했으며 최종 문서 앱 빌드 생략 결과는 첫머리에 남깁니다.
 
 다음 단계는 변경 코드와 기존 테스트의 실제 관계를 조사해 일반 기능의 관련 E2E 선택표를 만드는 일입니다. 인증·공통 저장·의존성·실행 설정·미분류/조회 실패는 전체 검사를 유지합니다. 단일 worker·학생 기록 보존을 유지하며 실제 대기 시간과 Actions 실행 시간으로 효과를 비교합니다. 상세 검사 기준을 이곳에 복제하지 않고 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따릅니다.
 
