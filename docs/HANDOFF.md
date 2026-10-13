@@ -2,24 +2,18 @@
 
 ## 현재 작업 상태
 
-2026-10-13(Asia/Seoul) **수동 저장 전환(작업 A) 및 영향별 선별 검증(작업 B) 구현 및 검증 완료**: `codex/verification-plan`·기준 `0c61e46`.
-- **작업 A 커밋 완료 (`3e341a3`):** `feat: convert student lesson editing to manual save`
-  - 편집 시 자동 저장 제거, 단일 snapshot 명시 저장 버튼 및 부모/iframe Ctrl+S 단축키, 내부 이동 메모리 보존, 외부 이동 3선택(저장 후 나가기 / 저장 안 하고 나가기 / 취소), 손들기·행동 저장 예외 구현 및 관련 26개 테스트 파일 전수 검증 통과.
-- **작업 B 선별 검증 파이프라인 구현 및 검증 완료:**
-  - `scripts/e2e-scope.mjs`: 4개 학생 수업(샌드위치, 순서도, 추상화, 프로그래밍) 패턴 매핑 및 변경 파일 기반 `affected`/`full`/`docs` 모드 선별 판정 순수 함수 구현.
-  - `tests/e2e-scope.test.mjs`: 선별 로직 7개 단위 테스트 작성 및 전수 통과.
-  - `tests/lesson-smoke.spec.ts`: 4개 수업 전체를 포괄하는 초고속 저장/복원 스모크 안전망 작성 (총 17.4초 소요, 전수 통과).
-  - `scripts/ci-policy.mjs`: 로컬 미커밋(working tree + staged) diff 추출(`changedFilesLocal`) 및 선별 계획 JSON(`scratch/ci/e2e-plan.json`) 생성 기능 추가. 단위 테스트 8개 전수 통과.
-  - `scripts/run-selected-e2e.mjs`: 계획 JSON 기반 선별 E2E 실행기 작성 (affected 시 대상 spec + 스모크 spec 합성 실행, Firebase 에뮬레이터 래핑 및 `--running` 플래그 지원).
-  - `package.json`: `test:scope`, `test:e2e:scope`, `test:e2e:scope:running` 스크립트 추가.
-  - `.github/workflows/verify.yml`: `mode != 'docs'`로 앱 검증 조건 일반화 및 선별 E2E runner 연동 (`workflow_dispatch`는 항상 full E2E 398개 보장).
-- **CI 전체 검증 및 후속 보완 완료:**
-  - `main` 푸시(`0c61e46..3992993`) 후 CI 전체 검증(403개 중 397개 통과, 5개 실패)을 통해 과거 자동 저장 가정 테스트 2개 파일 감지 및 보완:
-    - `tests/manual-save-entry.spec.ts`: EntryJS 로딩 지연 대응을 위해 `#entry-run` 활성화 대기 타임아웃 20초 명시.
-    - `tests/ui-workspace-refinement.spec.ts`: 수동 저장 전환 시맨틱 반영 (크기 변경 테스트에서 `Control+s`로 포커스 유지 저장, 503 모의 실패 테스트에서 직접 저장 버튼 클릭 및 `저장 확인 필요` 대기).
-  - 로컬 검증: 관련 9개 테스트 전수 통과 (`9 passed, 58.6s`), `typecheck` 통과, `lint` 통과.
-  - 보완 커밋 푸시 완료 ([`b3d3aae`](file:///d:/workspace/cs-class/docs/HANDOFF.md): `fix: align workspace refinement tests with manual save semantics`), GitHub Actions 최종 CI(`38413425294`) 연계.
-  - 에이전트 신규 수업 추가 체크리스트 및 수동 저장/선별 검증 문서 정비 완료.
+2026-10-14(Asia/Seoul) **문서 시스템 전면 리팩토링 및 엔지니어링 가이드 정립 완료**: `main`·기준 `ac67a5d`.
+- **문서 체계 현대화 (1차 커밋 완료 `ac67a5d`):**
+  - `AGENTS.md`: 62행 압축 단일 가이드라인 및 엄격한 가드레일 정립.
+  - `docs/PRD.md`: SDD 사양 기반 제품 요구사항 계약으로 재구축 (활동 분모 일치: `programming-13`: 14, `review-abstraction`: 7, `review-sandwich`: 7, `review-flowchart`: 10).
+- **문서 체계 현대화 (2차 개편 완료):**
+  - `README.md`: 현대적 쇼케이스 포맷(기능 카드, Mermaid 다이어그램, 일원화된 SSOT 문서 색인표, 플랫 스퀘어 배지).
+  - `docs/DESIGN.md`: 실제 CSS 변수 및 색상 코드 1:1 일치, 경직된 금지어 배제 및 목적 지향적 UI 권장 원칙(Design Considerations) 도입.
+  - `docs/DEVELOPMENT.md`: 623행에서 260행으로 대폭 슬림화. 투 트랙 브랜치 전략(Fast-Track vs PR-Track), 계층형 검증 티어, 사용자 직접 브라우저 검증(`--ui`, `--headed`), 4단계 신규 수업 체크리스트 확립.
+- **수동 저장 전환 및 선별 검증 파이프라인 (2026-10-13 검증 완료):**
+  - 수동 저장(`useWork`, `Ctrl+S`, `NavigationProvider`) 및 4개 수업 전체 선별 E2E 파이프라인(`scripts/e2e-scope.mjs`, `tests/lesson-smoke.spec.ts`) 안정화 완료.
+  - 문서 검증: `node scripts/check-docs.mjs` (Active documents: 12, errors: 0).
+  - 단위 검증: `npm run test:scope` (13 pass), `npm run test:review` (16 pass).
 
 재개 근거: Git 추적 문서인 이 HANDOFF와 현재 코드, Git 제외 상세 작업 장부 `scratch/manual-save-implementation/`입니다. 새 소스 `src/components/student/work-draft.ts`, 새 검사 2개(`tests/manual-save.spec.ts`, `tests/manual-save-entry.spec.ts`)와 계획 2개(`docs/superpowers/plans/`)는 신규 파일입니다.
 
@@ -121,17 +115,14 @@
 
 ## 다음에 이어갈 작업
 
-1. [CI 개선 후속 작업](#ci-개선-후속-작업)을 별도 구현·검증 단위로 진행합니다. 기능·버그 수정과 학생 계정정보 저장 작업은 [변경 영향별 검사 기준](DEVELOPMENT.md#변경-영향별-검사-기준)을 적용합니다.
-2. 오늘 앱 릴리스의 운영 화면에서 순서도 드래그·분기·출력 콘솔과 프로그래밍 제출 뒤 다음 미션 흐름을 사용자 관점에서 확인합니다. 새 요구사항은 여기서 이어받습니다.
-3. [첫 실제 수업 확인 순서](DEVELOPMENT.md#첫-실제-수업-확인-순서)에 따라 학교 PC·학교망·물리 한글 입력기와 승인 계정의 실제 로그인/저장·실학생 사용을 확인합니다. 실제 Solar 응답 품질·호출/실패 집계는 로컬 합성 AI 결과와 구분합니다.
+1. **신규 수업 추가 및 확장:** [수업 추가 4단계 체크리스트](DEVELOPMENT.md#신규-수업-추가-및-선별-검증-연동-체크리스트)에 따라 신규 수업 추가 시 `src/components/student/` 격리, `useWork` 수동 저장 연결, 상태 배지 단언 E2E 작성, `scripts/e2e-scope.mjs` 선별 등록 절차를 준수합니다.
+2. **투 트랙 브랜치 & 통합 정책 준수:** 일상 기능/수업 추가는 Fast-Track(`codex/` ➔ 선별 검증 ➔ `main` 반영)으로 빠르게 진행하고, 대규모 아키텍처 개편 및 방향성 피벗은 PR-Track(GitHub PR 발행 ➔ Diff 리뷰 ➔ CI 확인)을 활용합니다. 큰 변경 시에는 에이전트가 로컬 전체 E2E 실행 여부를 사전에 질문하여 승인을 얻습니다.
+3. **현장 수업 확인:** [첫 실제 수업 확인 순서](DEVELOPMENT.md#첫-실제-수업-확인-순서)에 따라 학교 PC·학교망·물리 한글 입력기 환경에서 승인 계정의 실제 로그인/저장과 실학생 사용성을 점검합니다.
 
-### CI 개선 후속 작업
-
-합의된 범위와 구현 순서는 [통합 로드맵·검증 계획B](superpowers/plans/2026-10-13-scoped-verification.md)에 있습니다. 먼저 [수동 저장 계획A](superpowers/plans/2026-10-13-manual-save.md)를 안정화한 뒤 선택 검증을 적용합니다. 상세 실행 계획은 제안 단계이며 현재 자동 저장과 workflow의 docs/full 판정은 유지됩니다.
-
-main의 전체 CI·대기 중 공개 차단·성공 후 공개·작업 브랜치의 자동 CI/Preview 없음·요청된 수동 Preview를 확인했습니다. 문서 CI의 무거운 검사 생략도 확인했으며 문서 앱 빌드 생략까지 확인했으며 결과는 첫머리에 기록했습니다. GitHub9/15초는 이번 문서 app job 관찰값이며 요금·평균 시간 절감을 보장하지 않습니다.
-
-다음 단계는 변경 코드와 기존 테스트의 실제 관계를 조사해 일반 기능의 관련 E2E 선택표를 만드는 일입니다. 인증·공통 저장·의존성·실행 설정·미분류/조회 실패는 전체 검사를 유지합니다. 단일 worker·학생 기록 보존을 유지하며 실제 대기 시간과 Actions 실행 시간으로 효과를 비교합니다. 상세 검사 기준을 이곳에 복제하지 않고 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따릅니다.
+<a id="ci-개선-후속-작업"></a>
+### CI 및 선별 검증 운영 현황
+- 2026-10-13 선별 검증 파이프라인(`scripts/e2e-scope.mjs`, `scripts/ci-policy.mjs`, `tests/lesson-smoke.spec.ts`) 구축 완료 후 `main`에 성공적으로 안착되었습니다.
+- 일반 push 시에는 문서 변경(E2E 생략) 및 변경 수업 선별 E2E만 가동되어 CI 시간을 대폭 단축하며, 398개 전체 E2E는 GitHub Actions 웹의 `workflow_dispatch`(수동 실행)로 한정하여 운영합니다. 상세 검사 기준은 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따릅니다.
 
 ## 다른 PC에서 이어가기
 
