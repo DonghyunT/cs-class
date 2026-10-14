@@ -2,15 +2,18 @@
 
 ## 현재 작업 상태
 
-2026-10-14(Asia/Seoul). 이 PC의 `main`을 원격 최신 `c3b2485`로 fast-forward하고 `codex/fix-manual-save-navigation-ci`에서 CI 실패의 로컬 수정·검증(`a874e37`)과 후속 문서 정확성 보정을 마쳤습니다. 최신 문서 마감 커밋은 이 브랜치의 Git HEAD로 확인합니다. 아래 이전 PC 작업과 A0 조사는 과거 기록이며 현재 작업 지시와 구분합니다.
+2026-10-14(Asia/Seoul). CI 실패 수정(`a874e37`)과 문서 보정(`cef2b64`)을 `main@0c32a3b1a8d4ccc69f4475f94c47b8c38b4e5ada`에 통합하고 운영 공개를 마쳤습니다. 사용자의 명시 요청에 따라 **이번 릴리스는 GitHub CI 없이** 로컬 검증을 재사용했습니다. 최신 문서 마감 HEAD와 아래 앱 배포 SHA는 구분합니다. 아래 이전 PC 작업과 A0 조사는 과거 기록입니다.
+
+- **통합·CI 생략:** `codex/fix-manual-save-navigation-ci`의 검증된 트리와 릴리스 트리가 동일함을 확인한 뒤 `main`에 push했습니다. 릴리스 메시지의 `[skip ci]`로 같은 SHA의 Actions 실행은 생성되지 않았습니다. Vercel Git 자동 빌드는 완료됐지만 운영 별칭이 이전 배포를 유지해 수동 Promote API로 이번 배포를 공개했습니다. 기존 workflow·GitHub `app` 배포 검사 설정은 변경하지 않았으며 다음 일반 릴리스는 기존 CI 판정을 따릅니다.
+- **운영 배포:** 10/14 12:33 KST 확인. Vercel `cs-class` Production의 `dpl_8GKENV11fbMUPpSVUERMPNBFvdKF`·READY·icn1·위 릴리스 SHA와 실제 [운영 별칭](https://cs-class-donghyunt.vercel.app)의 배포 ID 일치를 확인했습니다. 직전 복구 후보는 `faaa82a0d001f11d49aafee3a65a4544cabdc71e`·`dpl_3hbBQeC2YXT949GXW32KL4QAQiyX`입니다.
+- **운영 확인 범위:** 익명 `/api/auth/config` 200·configured=true·emulatorHost=null, `/api/auth/session` 200·session=null, 익명 학생/교사 수업 API 각각401·SIGNED_OUT, 학생/교사 로그인 페이지 각각200을 확인했습니다. 인앱 Chromium 약700px에서 두 로그인 화면과 활성 버튼을 확인했고 관찰한 콘솔 오류/경고는0입니다. 실제 계정 로그인·Google OAuth·AI·학생 저장/제출은 이번 배포 확인에서 실행하지 않았습니다.
 
 - **후속 문서 보정:** DEVELOPMENT의 `useWork` 호출·반환 함수·저장 상태 검사·백업 필수 인자를 실제 코드와 맞췄고, 고정 검사 개수·시간 안내를 목록 조회 및 실행별 기록으로 바꿨습니다. DESIGN은 전역 CSS 토큰과 컴포넌트별 색상 규격을 구분합니다. 문서 검사 2개·활성 문서12개 링크/앵커·diffcheck·독립 리뷰 통과, 현재 E2E 목록403개/61파일을 확인했습니다. 앱·검사·설정 변경 없이 문서만 수정해 빌드·E2E는 새로 실행하지 않았습니다. 백업 예시는 CLI 인자 검사와 대조했으며 실제 명부·운영 백업은 실행하지 않았습니다.
 
 - **원격 CI:** [c3b2485 검사](https://github.com/DonghyunT/cs-class/actions/runs/38437567017)는 E2E 401개 통과·1개 실패·1개 생략입니다. `.gitignore` 변경이 미분류되어 전체 검사로 승격됐고, 프로그래밍의 수업 나가기 검사에서 실패했습니다.
 - **원인·수정:** Entry 캡처 응답 뒤에 열리는 확인창을 클릭 직후 `isVisible()` 한 번으로 조회해 지나치는 경합입니다. 실제 미저장 입력을 명시하고 확인창 표시를 기다린 뒤 폐기·이동 및 서버의 기존 발견 기록 보존을 검사합니다. 제품 코드·저장 정책은 변경하지 않습니다.
 - **진단:** 정상 로컬 실행은 통과했으나 캡처 응답에 500ms 지연을 준 합성 진단에서 확인창이 열린 채 동일한 URL 대기 실패를 재현했고, 수정 후 같은 지연 조건에서 1개 통과했습니다. 응답을 무기한 보류한 앞선 진단은 4초 캡처 제한에 걸린 별도 실패로 구분합니다. 진단 장치는 최종 검사에서 제거했습니다. 의도적 실패 실행의 trace ZIP 정리에 Windows `EBUSY`가 있었으며 원인 판정은 PNG·DOM 캡처로 확인했습니다.
-- **검증·전달:** Windows·Node24.19.0·Java21·Playwright1.63/Chromium·빌드된 `next start`·demo Auth9099/Firestore8080에서 관련 E2E 5파일(`programming-classroom`, `manual-save-entry`, `manual-save`, `navigation`, `lesson-smoke`) 35개 통과(3.9분), 실패·생략0입니다. 타입·린트·정책/문서 회귀15개·활성 문서12개 링크/앵커·diffcheck와 독립 리뷰를 마쳤습니다. 앱 빌드는 변경 전 1회 성공했고 실행 코드가 동일해 재사용했습니다. 전체 E2E는 새로 실행하지 않았습니다. 상세 진단은 Git 제외 `scratch/ci-navigation-fix/`에 있으며 코드·검사·문서만 Git으로 전달합니다. 원격 push·CI 재실행·운영 배포는 이번 로컬 작업에서 수행하지 않았습니다.
-- **운영 조회:** 실제 운영 별칭은 성공한 `faaa82a`·`dpl_3hbBQeC2YXT949GXW32KL4QAQiyX`를 유지합니다. 익명 세션 API와 학생·교사 로그인 페이지 200을 확인했으며 실제 로그인·저장은 확인하지 않았습니다.
+- **재사용한 로컬 검증:** Windows·Node24.19.0·Java21·Playwright1.63/Chromium·빌드된 `next start`·demo Auth9099/Firestore8080에서 관련 E2E 5파일(`programming-classroom`, `manual-save-entry`, `manual-save`, `navigation`, `lesson-smoke`) 35개 통과(3.9분), 실패·생략0입니다. 타입·린트·정책/문서 회귀15개·활성 문서12개 링크/앵커·diffcheck와 독립 리뷰를 마쳤습니다. 앱 빌드는 변경 전 1회 성공했고 실행 코드가 동일해 재사용했습니다. 전체 E2E는 새로 실행하지 않았습니다. 상세 진단은 Git 제외 `scratch/ci-navigation-fix/`에 있으며 코드·검사·문서만 Git으로 전달합니다. 위 운영 빌드·공개와 구분되는 배포 전 로컬 결과입니다.
 
 ### 이전 PC의 수동 저장·문서 정비
 
