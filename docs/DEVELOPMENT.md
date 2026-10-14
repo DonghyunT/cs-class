@@ -39,6 +39,8 @@ npm run dev:emulator
 - **합성 테스트 계정 초기 비밀번호:** [scripts/local-test-env.mjs](../scripts/local-test-env.mjs)에 정의되어 있으며 실제 비밀정보는 포함하지 않습니다.
 
 ### 1.4 에뮬레이터 데이터 보존 및 복원 (Export/Import)
+
+읽기 최적화의 선별 검사는 `tests/help-paused.spec.ts`, `tests/read-polling.spec.ts`로 손들기 중지·교사 수동 조회·권한·느린 응답 경합을 확인합니다. 손들기 활성 모드 검사(`help-requests`, `help-races`, 관련 UI 검사)는 보존하되 공유 설정이 false이면 명시적으로 생략하며 이를 통과로 집계하지 않습니다. 복구 시 설정을 true로 변경한 뒤 재빌드하여 활성 모드 검사를 실행합니다. `tests/read-usage.spec.ts`는 공개 수업 4개·학생 27명·담당 반 11개의 10분 가상 시간 요청 샘플이며 과금 실측이 아닙니다. 다른 Playwright 실행과 병렬로 돌릴 때는 `--output` 경로를 분리해야 합니다. 가상 시계와 서버 시계가 어긋나 활동 갱신 응답은 측정용 fixture로 분리하고 세션 비용은 별도 모형으로 계산합니다.
 <a id="기존-demo-기록을-복원해-보기"></a>
 <a id="테스트-환경과-데이터-보호"></a>
 

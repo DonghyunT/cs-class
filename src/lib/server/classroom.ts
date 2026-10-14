@@ -37,6 +37,12 @@ export async function studentDashboard(): Promise<StudentDashboard> {
     return { classroom, lessons, work };
   });
 }
+export async function studentClassroom(): Promise<Pick<StudentDashboard, "classroom" | "lessons">> {
+  return authorized(await identity(), async (tx, account) => {
+    const classroom = await studentClass(tx, account);
+    return { classroom, lessons: RELEASED_LESSONS.filter(lesson => classroom.openedLessonIds.includes(lesson.id)) };
+  });
+}
 export async function getWork(lessonId: string) {
   requireCondition(findLesson(lessonId), 404, "NOT_FOUND", "수업을 찾을 수 없어요.");
   return authorized(await identity(), async (tx, account) => {

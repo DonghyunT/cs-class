@@ -35,6 +35,7 @@ export const classroomApi = {
   touch: (idleForMs = 0) => api<{ session: Session }>("auth/activity", { idleForMs }),
   logout: () => api<{ ok: boolean }>("auth/logout", {}),
   student: () => api<StudentDashboard>("classroom/student"),
+  studentClassroom: () => api<Pick<StudentDashboard, "classroom" | "lessons">>("classroom/student/class"),
   teacher: (classId?: string, lessonId?: string) => api<TeacherDashboard>(`classroom/teacher?${new URLSearchParams({ ...(classId ? { classId } : {}), ...(lessonId ? { lessonId } : {}) })}`),
   updateClass: (classId: string, revision: number, currentLessonId: string | null, openedLessonIds: string[], expectedUid?: string) => api<ClassSettings>(`classroom/classes/${encodeURIComponent(classId)}`, { revision, currentLessonId, openedLessonIds }, "POST", expectedUid),
   resetPassword: (uid: string, expectedUid?: string) => api<{ password: string; expiresAt: number }>(`classroom/students/${encodeURIComponent(uid)}/reset`, {}, "POST", expectedUid),

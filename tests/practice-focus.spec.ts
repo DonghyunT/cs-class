@@ -1,3 +1,4 @@
+import { CLASSROOM_HELP_ENABLED } from "../src/lib/classroom/features";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { buildProgrammingProject, parseProgrammingProject, programmingProjectMatches, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
@@ -35,7 +36,7 @@ for (const id of lessonIds) {
     await expect(page.getByRole("button", { name: "실습 집중 모드 끝내기", exact: true })).toBeFocused();
     await expect(page.getByRole("tab", { name: /^개념/ })).toBeHidden();
     await expect(page.getByRole("link", { name: "수업 나가기", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "손들기", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "손들기", exact: true })).toHaveCount(CLASSROOM_HELP_ENABLED ? 1 : 0);
     if (await iframe.count()) await expect(iframe).toHaveAttribute("data-focus-preserved", "same");
     if (id === "review-sandwich") await expect(input).toHaveValue("작성 중인 명령");
     const wide = page.getByRole("button", { name: "작업실 넓게 보기", exact: true });

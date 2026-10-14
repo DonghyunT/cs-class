@@ -11,6 +11,7 @@ import { LoadingState, Skeleton } from "@/components/ui/loading-state";
 import { useSession, useTeacherClass } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
 import { classroomApi } from "@/lib/classroom/client";
+import { CLASSROOM_HELP_ENABLED } from "@/lib/classroom/features";
 import { latestSubmissionAtFor, submissionCountFor } from "@/lib/classroom/progress";
 import { seoulToday, eventDate } from "@/lib/classroom/planner";
 import type { Session, StudentDashboard, TeacherDashboard } from "@/lib/classroom/types";
@@ -33,22 +34,30 @@ function Dashboard({ session, teacher, explicitClassId }: { session: Session; te
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [helpStatus, setHelpStatus] = useState<HelpRequestsStatus | null>(null);
   const request = useRef(0);
+  const inFlight = useRef<{ key: string; version: number; promise: Promise<void> } | null>(null);
   const { beforeLeave } = useNavigationGuard();
-  const refresh = useCallback(async () => {
+  const refresh = useCallback((): Promise<void> => {
+    const key = `${teacher}:${classId ?? ""}`;
+    if (inFlight.current?.key === key && inFlight.current.version === request.current) return inFlight.current.promise;
     const version = ++request.current;
     setLoading(true);
-    try {
+    const promise = Promise.resolve().then(async () => { try {
       const value = teacher ? (classId ? await classroomApi.teacher(classId) : null) : await classroomApi.student();
       if (version === request.current) { setData(value); setUpdatedAt(Date.now()); setError(""); }
     } catch (problem) { if (version === request.current) setError(problem instanceof Error ? problem.message : "수업 기록을 불러오지 못했어요."); }
-    finally { if (version === request.current) setLoading(false); }
+    finally {
+      if (version === request.current) setLoading(false);
+      if (inFlight.current?.version === version) inFlight.current = null;
+    } });
+    inFlight.current = { key, version, promise };
+    return promise;
   }, [teacher, classId]);
   useEffect(() => {
     let active = true;
     queueMicrotask(() => { if (active) void refresh(); });
-    const timer = setInterval(() => { if (document.visibilityState === "visible") void refresh(); }, 30_000);
-    return () => { active = false; request.current += 1; clearInterval(timer); };
-  }, [refresh]);
+    const timer = teacher ? null : setInterval(() => { if (document.visibilityState === "visible") void refresh(); }, 30_000);
+    return () => { active = false; request.current += 1; if (timer !== null) clearInterval(timer); };
+  }, [refresh, teacher]);
   const active = data && (!classId || data.classroom.id === classId) ? data : null;
   const student = active && "work" in active ? active : null;
   const staff = active && "students" in active ? active : null;
@@ -63,7 +72,7 @@ function Dashboard({ session, teacher, explicitClassId }: { session: Session; te
   return <div className={`${styles.page} ${styles.dashboardHome}`} data-role={teacher ? "teacher" : "student"}>
     <header className={styles.heading}><div><span className={styles.eyebrow}>{teacher ? "선생님 공간" : `${session.studentId} 학생의 교실`}</span><h1>오늘은 무엇을 해볼까요?</h1><p>할 일을 살펴보고, 하던 활동을 이어가세요.</p></div><div className={styles.headingTools}><time dateTime={seoulToday()}><CalendarDays size={16} aria-hidden="true" />{eventDate(seoulToday())}</time>{!teacher && <Button className={styles.refresh} size="icon" variant="ghost" aria-label="수업 새로고침" title="새로고침" onClick={() => void refresh()}><RefreshCw size={16} aria-hidden="true" /></Button>}</div></header>
     {teacher && session.classIds.length > 0 && <TeacherToolbar classId={classId} classrooms={staff?.classrooms ?? session.classIds.map(id => ({ id, name: `2학년 ${id.split("-")[1]}반` }))} onClassChange={async value => { if (await beforeLeave()) { request.current += 1; selection.setClassId(value); } }} onRefresh={refresh} refreshing={loading} updatedAt={updatedAt}><Button variant="outline" nativeButton={false} render={<Link href={`/teacher/classes${classId ? `?classId=${classId}` : ""}`} />}>수업 관리<ArrowRight size={16} aria-hidden="true" /></Button></TeacherToolbar>}
-    {teacher && classId && <div className={styles.helpJump}>{help?.count != null ? help.count > 0 ? <a href="#help-heading-all" onClick={event => { event.preventDefault(); const heading = document.getElementById("help-heading-all"); heading?.focus({ preventScroll: true }); heading?.scrollIntoView({ block: "start" }); }}>손든 학생 {help.count}명 보기<ArrowRight size={16} aria-hidden="true" /></a> : <span>손든 학생이 없어요.</span> : <span role="status">{help?.error ? "손들기 확인 필요 · 아래에서 다시 조회해 주세요." : "손들기 확인 중…"}</span>}{help?.count != null && help.error && <small>마지막 조회 기록 · 최신 확인 필요</small>}</div>}
+    {teacher && CLASSROOM_HELP_ENABLED && classId && <div className={styles.helpJump}>{help?.count != null ? help.count > 0 ? <a href="#help-heading-all" onClick={event => { event.preventDefault(); const heading = document.getElementById("help-heading-all"); heading?.focus({ preventScroll: true }); heading?.scrollIntoView({ block: "start" }); }}>손든 학생 {help.count}명 보기<ArrowRight size={16} aria-hidden="true" /></a> : <span>손든 학생이 없어요.</span> : <span role="status">{help?.error ? "손들기 확인 필요 · 아래에서 다시 조회해 주세요." : "손들기 확인 중…"}</span>}{help?.count != null && help.error && <small>마지막 조회 기록 · 최신 확인 필요</small>}</div>}
     {error && <div className={styles.error} role="alert"><p>{error} {active && "마지막으로 확인한 수업 기록이에요."}</p><Button variant="outline" onClick={() => void refresh()}>수업 다시 불러오기</Button></div>}
     {loading && !active && !error && <LoadingState>수업 기록을 확인하고 있어요.</LoadingState>}
     {!teacher ? <LearningOverview data={student} loading={loading} error={Boolean(error)} /> : <section className={styles.current} aria-labelledby="current-heading"><div><span className={styles.eyebrow}><BookOpen size={17} aria-hidden="true" />{active?.classroom.name && `${active.classroom.name} · `}이번 수업</span>{loading && !active && !error ? <><h2 id="current-heading" className="sr-only">이번 수업 확인 중</h2><div className={styles.currentLoading}><Skeleton /><Skeleton /></div></> : <><h2 id="current-heading">{currentTitle}</h2><p>{current?.description ?? "수업 관리에서 담당 반의 수업을 준비해요."}</p></>}</div>
@@ -86,7 +95,7 @@ function Dashboard({ session, teacher, explicitClassId }: { session: Session; te
         {staff && !submitted.length && <p className={styles.muted}>아직 이 수업에 저장된 제출 작품이 없어요.</p>}
         <p className={styles.muted}>작품을 열어 본 여부는 기록하지 않아요.</p>
       {!active && session.classIds.length > 0 && <p className={styles.muted}>수업 기록을 확인하면 다음 행동이 보여요.</p>}
-    </section>}{teacher && classId && <HelpRequests key={classId} classId={classId} onStatusChange={setHelpStatus} />}{teacher && <TodoList uid={session.uid} />}</div><div className={styles.sideColumn}>{classId ? <ScheduleList key={classId} uid={session.uid} teacher={teacher} classId={classId} summary /> : <section className={styles.panel}><h2>다가오는 일정</h2><p className={styles.empty}>담당 반이 연결되면 일정을 확인할 수 있어요.</p></section>}<p className={styles.footnote}>일정은 수업을 준비하는 안내예요.<br />학습과 제출 상태는 수업 기록에서 확인해요.</p></div></div>
+    </section>}{teacher && CLASSROOM_HELP_ENABLED && classId && <HelpRequests key={classId} classId={classId} onStatusChange={setHelpStatus} />}{teacher && <TodoList uid={session.uid} />}</div><div className={styles.sideColumn}>{classId ? <ScheduleList key={classId} uid={session.uid} teacher={teacher} classId={classId} summary /> : <section className={styles.panel}><h2>다가오는 일정</h2><p className={styles.empty}>담당 반이 연결되면 일정을 확인할 수 있어요.</p></section>}<p className={styles.footnote}>일정은 수업을 준비하는 안내예요.<br />학습과 제출 상태는 수업 기록에서 확인해요.</p></div></div>
     <Link className={styles.allLessons} href={teacher ? `/teacher/classes${classId ? `?classId=${encodeURIComponent(classId)}` : ""}` : `${home}/lessons`}>{teacher ? "담당 반 수업 관리" : "다른 수업도 이어갈 수 있어요. 열린 수업 보기"}<ArrowRight size={16} aria-hidden="true" /></Link>
   </div>;
 }

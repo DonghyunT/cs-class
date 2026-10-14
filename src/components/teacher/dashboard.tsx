@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { SuccessToasts } from "@/components/ui/toast";
 import { classroomApi } from "@/lib/classroom/client";
+import { CLASSROOM_HELP_ENABLED } from "@/lib/classroom/features";
 import { progressFor, STATUS_LABELS, submissionCountFor } from "@/lib/classroom/progress";
 import { programmingMissions } from "@/lib/classroom/programming-entry";
 import type { ClassSettings, Lesson, Progress, Stage, StudentRow, TeacherDashboard, WorkSummary } from "@/lib/classroom/types";
@@ -51,49 +52,41 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
   const [filterClassId, setFilterClassId] = useState(selectedClassId);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const request = useRef(0);
-  const busy = useRef(false);
+  const inFlight = useRef<{ key: string; version: number; promise: Promise<TeacherDashboard | null> } | null>(null);
   const mutating = useRef(false);
-  const lastFetched = useRef(0);
   if (filterClassId !== selectedClassId) {
     setFilterClassId(selectedClassId); setSelectedLessonId(undefined); setSearch(""); setStatusFilter("all"); setPendingOnly(false); setPasswordOnly(false);
   }
 
   const load = useCallback((): Promise<TeacherDashboard | null> => {
     if (mutating.current) return Promise.resolve(null);
+    const key = `${selectedClassId}:${selectedLessonId ?? ""}`;
+    if (inFlight.current?.key === key && inFlight.current.version === request.current) return inFlight.current.promise;
     const version = ++request.current;
-    busy.current = true;
-    return classroomApi.teacher(selectedClassId, selectedLessonId).then((result) => {
+    const promise = classroomApi.teacher(selectedClassId, selectedLessonId).then((result) => {
       if (version !== request.current) return null;
       setData(result); setError("");
-      const now = Date.now(); setUpdatedAt(now); lastFetched.current = now;
+      setUpdatedAt(Date.now());
       return result;
     }, (problem: unknown) => {
       if (version === request.current) setError(problemMessage(problem));
       return null;
     }).finally(() => {
-      if (version === request.current) { busy.current = false; setFetching(false); }
+      if (version === request.current) setFetching(false);
+      if (inFlight.current?.version === version) inFlight.current = null;
     });
+    inFlight.current = { key, version, promise };
+    return promise;
   }, [selectedClassId, selectedLessonId]);
 
   useEffect(() => {
     void load();
-    const refreshIfVisible = () => {
-      if (document.visibilityState === "visible" && !busy.current && !mutating.current && Date.now() - lastFetched.current >= 10_000) { setFetching(true); void load(); }
-    };
-    const timer = window.setInterval(refreshIfVisible, 30_000);
-    window.addEventListener("focus", refreshIfVisible);
-    document.addEventListener("visibilitychange", refreshIfVisible);
-    return () => {
-      request.current += 1;
-      window.clearInterval(timer);
-      window.removeEventListener("focus", refreshIfVisible);
-      document.removeEventListener("visibilitychange", refreshIfVisible);
-    };
+    return () => { request.current += 1; };
   }, [load]);
 
   const lockMutation = useCallback((locked: boolean) => {
     mutating.current = locked;
-    if (locked) { request.current += 1; busy.current = false; setFetching(false); }
+    if (locked) { request.current += 1; setFetching(false); }
   }, []);
 
   const matching = data && (!selectedClassId || selectedClassId === data.classroom.id) && (!selectedLessonId || selectedLessonId === data.selectedLessonId);
@@ -182,7 +175,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
           </li>;
         })}</ul> : <div className={styles.empty}><h3>아직 열린 수업이 없어요.</h3><p>위의 수업 관리에서 학생에게 열어 줄 수업을 선택해 주세요.</p></div>}
       </section>}
-      {view === "students" && <HelpRequests classId={active.classroom.id} lessonId={active.selectedLessonId ?? undefined} />}
+      {CLASSROOM_HELP_ENABLED && view === "students" && <HelpRequests classId={active.classroom.id} lessonId={active.selectedLessonId ?? undefined} />}
       {view === "students" && <section className={styles.students} aria-labelledby="students-title">
         <div className={styles.sectionHeading}><div><h2 id="students-title">학생별 학습 현황</h2><p>개념·퀴즈·실습의 진행과 제출된 작품을 확인해요.</p></div><label className={styles.lessonPicker}>확인할 수업<Select label="확인할 수업" value={active.selectedLessonId ?? ""} disabled={!openedLessons.length} onValueChange={(value) => { selectedContext.current = ""; request.current += 1; setFetching(true); setSelectedLessonId(value); resetFilters(); setUrlConditions({ lessonId: value }); setError(""); }} options={[...(!active.selectedLessonId ? [{ value: "", label: "열린 수업이 없어요" }] : []), ...openedLessons.map((item) => ({ value: item.id, label: item.title }))]} /></label></div>
         <div className={styles.summary}>

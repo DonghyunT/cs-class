@@ -1,3 +1,4 @@
+import { CLASSROOM_HELP_ENABLED } from "../src/lib/classroom/features";
 import { expect, test, type Page } from "@playwright/test";
 import { db, headers, readyStudent } from "./emulator";
 
@@ -81,6 +82,7 @@ test("저장 후 나가기 실패는 입력을 보존하고 재시도 성공 후
 });
 
 test("Ctrl+S는 학생 초안을 저장하고 손들기는 최신 작품을 별도 저장한다", async ({ page }) => {
+  test.skip(!CLASSROOM_HELP_ENABLED, "손들기 활성 모드 검사; 일반 Ctrl+S는 별도 검사");
   const input = page.getByLabel("현재 상태", { exact: true }); await input.fill("단축키 저장"); await input.press("Control+s");
   await expect.poll(() => stored(page)).toBe("단축키 저장"); await input.fill("도움 요청본");
   const helpResponse = page.waitForResponse(response => new URL(response.url()).pathname === "/api/classroom/help" && response.request().method() === "POST");

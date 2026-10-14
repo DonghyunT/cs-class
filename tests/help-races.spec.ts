@@ -1,3 +1,4 @@
+import { CLASSROOM_HELP_ENABLED } from "../src/lib/classroom/features";
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page, type Response } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
@@ -62,7 +63,7 @@ test("늦은 손들기 조회가 성공한 새 도움 요청 상태를 덮어쓰
     await expect(raise).toBeEnabled();
     await expect(page.getByRole("radio", { name: "컵에 물을 200mL 따른다" })).toBeVisible();
     delayNextRead = true;
-    await page.clock.fastForward(30_001);
+    await page.clock.fastForward(60_001);
     await expect.poll(() => gateEntered).toBe(true);
     await raise.click();
     const lower = page.getByRole("button", { name: "손 내리기", exact: true });
@@ -160,3 +161,6 @@ test("완료 처리 중이던 이전 목록 응답이 완료한 학생을 다시
     await expect(help.getByRole("heading", { name: /손든 학생/ })).toHaveText("손든 학생 1");
   } finally { delayed.release(); await page.unrouteAll({ behavior: "wait" }); }
 });
+
+// Retained for reactivation; disabled mode is checked by help-paused.spec.ts.
+test.skip(!CLASSROOM_HELP_ENABLED, "손들기 일시 중지: 활성 모드 검사 보존");

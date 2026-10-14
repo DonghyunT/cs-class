@@ -9,6 +9,7 @@ import { useNavigationGuard } from "@/components/navigation-provider";
 import type { Lesson } from "@/lib/classroom/types";
 import styles from "./lesson-shell.module.css";
 import { HelpButton } from "@/components/classroom/help-button";
+import { CLASSROOM_HELP_ENABLED } from "@/lib/classroom/features";
 
 export type LessonOrigin = "dashboard" | "lessons";
 export function LessonShell({ lesson, returnOrigin, workspaceWide, practiceFocused = false, practiceActive = false, onPracticeFocusedChange, preview, saveLabel, save, saveDisabled, learningStatus, navigation, otherCurrent, focusRequest, children }: {
@@ -56,7 +57,7 @@ export function LessonShell({ lesson, returnOrigin, workspaceWide, practiceFocus
         <Link className={styles.leave} href={preview ? `/teacher/classes?classId=${encodeURIComponent(preview.classId)}` : returnOrigin === "dashboard" ? "/student" : "/student/lessons"}><ArrowLeft size={18} aria-hidden="true" />{preview ? "수업 관리로 돌아가기" : "수업 나가기"}</Link>
         <div className={styles.title}><div className={styles.titleLine}><h1>{lesson.title}</h1>{learningStatus}</div>{otherCurrent && <Link className={styles.currentLesson} href={`/classroom/${otherCurrent.id}?from=${returnOrigin}`}>이번 수업: {otherCurrent.title} · 이동</Link>}</div>
         <div className={styles.saveArea}>{!preview && <Button data-work-save size="sm" aria-disabled={!save || saveDisabled} onClick={() => { if (save && !saveDisabled) void save(); }} title="저장 (Ctrl+S / Cmd+S)"><Save size={16} aria-hidden="true" />저장</Button>}<span className={styles.save} role="status">{saveLabel === "저장 완료" && <CloudCheck size={17} aria-hidden="true" />}{saveLabel}</span></div>
-        {!preview && <HelpButton lessonId={lesson.id} />}
+        {!preview && CLASSROOM_HELP_ENABLED && <HelpButton lessonId={lesson.id} />}
         {!preview && <details ref={menu} className={styles.account} onToggle={event => setOpen(event.currentTarget.open)} onKeyDown={event => {
           if (event.key === "Escape" && menu.current?.open) { event.preventDefault(); event.stopPropagation(); menu.current.open = false; menuToggle.current?.focus({ preventScroll: true }); }
         }}>

@@ -1,3 +1,4 @@
+import { CLASSROOM_HELP_ENABLED } from "../src/lib/classroom/features";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { auth, db, headers, localOnly, lessonId, studentPassword } from "./emulator";
@@ -73,6 +74,12 @@ test("요청 당시 저장본과 이후 저장본을 구분하고 새로운 손�
   expect((await db.doc(`csHelpSnapshots/${uid}`).get()).data()).toEqual(snapshotBeforeCancelledReplay);
   expect((await db.doc(`csHelpLimits/${uid}`).get()).data()).toEqual(limitBeforeCancelledReplay);
   expect((await request.post(`/api/classroom/help/${uid}/resolve`, { headers: teacherHeaders, data: { id: afterCancel } })).status()).toBe(200);
+  const resolved = (await db.doc(`csHelpRequests/${uid}`).get()).data();
+  const lateCancel = await request.post("/api/classroom/help/cancel", { headers: studentHeaders, data: { id: afterCancel } });
+  expect(lateCancel.status()).toBe(200);
+  expect((await lateCancel.json()).request.status).toBe("resolved");
+  expect((await db.doc(`csHelpRequests/${uid}`).get()).data()).toEqual(resolved);
+  expect((await (await request.get("/api/classroom/help?classId=2-1", { headers: teacherHeaders })).json()).requests.some((item: { uid: string }) => item.uid === uid)).toBe(false);
 });
 
 test("타반·역할·CSRF·계정 교체와 이동·비활성 경계를 지키고 중복 전송은 한도를 소비하지 않는다", async ({ request }) => {
@@ -175,3 +182,6 @@ test("손들기는 저장된 작품과 위치를 보관하고 동일 요청 재�
   expect((await request.post("/api/classroom/help", { headers: studentHeaders, data: { id: randomUUID(), lessonId } })).status()).toBe(403);
   expect((await db.collection("csHelpLimits").doc(uid).get()).data()?.count).toBe(1);
 });
+
+// Retained for reactivation; disabled mode is checked by help-paused.spec.ts.
+test.skip(!CLASSROOM_HELP_ENABLED, "손들기 일시 중지: 활성 모드 검사 보존");

@@ -1,6 +1,7 @@
 {
   "indexes": [
-    { "collectionGroup": "csQuestions", "queryScope": "COLLECTION", "fields": [ { "fieldPath": "classId", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" } ] }
+    { "collectionGroup": "csQuestions", "queryScope": "COLLECTION", "fields": [ { "fieldPath": "classId", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" } ] },
+    { "collectionGroup": "csHelpRequests", "queryScope": "COLLECTION", "fields": [ { "fieldPath": "classId", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" } ] }
   ],
   "fieldOverrides": [
     { "collectionGroup": "csAiRequests", "fieldPath": "expiresAt", "ttl": true, "indexes": [] },

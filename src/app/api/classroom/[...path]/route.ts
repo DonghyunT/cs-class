@@ -1,11 +1,13 @@
 import { body, failure, failureResponse, json } from "@/lib/server/http";
-import { decideReview, getWork, mutateWork, studentDashboard, teacherDashboard, teacherWork, updateClass } from "@/lib/server/classroom";
+import { decideReview, getWork, mutateWork, studentClassroom, studentDashboard, teacherDashboard, teacherWork, updateClass } from "@/lib/server/classroom";
 import { classroomAi } from "@/lib/server/review-ai";
 import { resetStudentPassword } from "@/lib/server/auth";
 import { readTodos, saveTodos, readSchedule, saveSchedule, refreshScheduleTimetable } from "@/lib/server/planner";
 import { clearHelp, raiseHelp, readHelp, readHelpSnapshot } from "@/lib/server/help";
 import { createQuestion, deleteQuestion, readCommunity, readQuestion, replyQuestion, resolveQuestion } from "@/lib/server/community";
 import type { FailureOperation } from "@/lib/server/failure-log";
+import { CLASSROOM_HELP_ENABLED } from "@/lib/classroom/features";
+import { requireCondition } from "@/lib/server/errors";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -14,6 +16,7 @@ export async function GET(request: Request, context: Context) {
   let operation: FailureOperation = "classroom.request";
   try {
     const { path } = await context.params; const query = new URL(request.url).searchParams;
+    requireCondition(path[0] !== "help" || CLASSROOM_HELP_ENABLED, 403, "HELP_DISABLED", "손들기는 잠시 사용하지 않아요.");
     if (path.length === 1 && path[0] === "community") { operation = "classroom.community.list"; return json(await readCommunity(query.get("classId") ?? undefined, query.get("after") ?? undefined)); }
     if (path.length === 2 && path[0] === "community") { operation = "classroom.community.read"; return json(await readQuestion(path[1])); }
     if (path.length === 1 && path[0] === "help") { operation = "classroom.help.list"; return json(await readHelp(query.get("classId") ?? undefined)); }
@@ -21,6 +24,7 @@ export async function GET(request: Request, context: Context) {
     if (path.length === 1 && path[0] === "todos") { operation = "classroom.todos.read"; return json(await readTodos()); }
     if (path.length === 1 && path[0] === "schedule") { operation = "classroom.schedule.read"; return json(await readSchedule(query.get("classId") ?? undefined)); }
     if (path.length === 1 && path[0] === "student") { operation = "classroom.student.dashboard"; return json(await studentDashboard()); }
+    if (path.length === 2 && path[0] === "student" && path[1] === "class") { operation = "classroom.student.dashboard"; return json(await studentClassroom()); }
     if (path.length === 1 && path[0] === "teacher") { operation = "classroom.teacher.dashboard"; return json(await teacherDashboard(query.get("classId") ?? undefined, query.get("lessonId") ?? undefined)); }
     if (path.length === 2 && path[0] === "work") { operation = "classroom.work.read"; return json(await getWork(path[1])); }
     if (path.length === 4 && path[0] === "students" && path[2] === "work" && /^[a-zA-Z0-9_-]{1,128}$/.test(path[1])) { operation = "classroom.teacher.work.read"; return json(await teacherWork(path[1], path[3])); }
@@ -31,6 +35,7 @@ export async function POST(request: Request, context: Context) {
   let operation: FailureOperation = "classroom.request";
   try {
     const { path } = await context.params;
+    requireCondition(path[0] !== "help" || CLASSROOM_HELP_ENABLED, 403, "HELP_DISABLED", "손들기는 잠시 사용하지 않아요.");
     const input = await body(request, path.length === 2 && path[0] === "work" && (path[1] === "programming-13" || path[1].startsWith("review-")) ? 192000 : 32768);
     if (path.length === 2 && path[0] === "community") { operation = "classroom.community.create"; return json(await createQuestion(path[1], input)); }
     if (path.length === 3 && path[0] === "community" && path[2] === "answers") { operation = "classroom.community.reply"; return json(await replyQuestion(path[1], input)); }

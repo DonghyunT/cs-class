@@ -299,10 +299,9 @@ test("[후속3b-충돌] 다른 교사 공개 후 409·최신 조회로 공개 �
 
   // An external teacher commits while this dialog still owns its original revision.
   await classRef.update({ revision: 1, currentLessonId: otherTeacherOpened.id, openedLessonIds: [first.id, otherTeacherOpened.id] });
-  const polled = page.waitForResponse(response => new URL(response.url()).pathname === "/api/classroom/teacher" && response.status() === 200);
-  await page.clock.fastForward(30_000);
-  await (await polled).finished();
-  await expect(page.locator("#current-lesson-title")).toHaveText(otherTeacherOpened.title);
+  await page.clock.fastForward(60_000);
+  // Manual refresh keeps the previous snapshot while this modal is open.
+  await expect(page.locator("#current-lesson-title")).toHaveText(first.title);
   await expect(summary).toContainText("새로 공개할 수업 2개");
   await expect(currentPicker).toHaveText(ownChoice.title);
 

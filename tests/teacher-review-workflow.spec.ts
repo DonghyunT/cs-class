@@ -79,10 +79,8 @@ async function openViewer(page: Page, index: number) {
   await expect(viewer(page, index)).toBeVisible();
 }
 
-async function pollTeacher(page: Page) {
-  const response = page.waitForResponse(response => new URL(response.url()).pathname === "/api/classroom/teacher" && response.status() === 200);
-  await page.clock.fastForward(30_001);
-  await (await response).finished();
+async function waitWithoutTeacherRefresh(page: Page) {
+  await page.clock.fastForward(60_001);
 }
 
 async function focusInside(page: Page, index: number) {
@@ -341,7 +339,7 @@ test("[4차-5-요청ID] 열기 중·열린 뒤 바뀐 요청을 자동 승인하
     await draft.fill("옛 요청을 보던 안내 초안");
     const newest = requestedWork(0, "열린 뒤 바뀐 요청 목표");
     await workRef(0).set({ ...newest, uid: uids[0], classId: "2-1" });
-    await pollTeacher(page);
+    await waitWithoutTeacherRefresh(page);
     await expect(viewer(page, 0)).toContainText("열기 중 바뀐 요청 목표");
     await expect(viewer(page, 0)).not.toContainText("열린 뒤 바뀐 요청 목표");
     await expect(draft).toHaveValue("옛 요청을 보던 안내 초안");
@@ -363,7 +361,7 @@ test("[4차-5-요청ID] 열기 중·열린 뒤 바뀐 요청을 자동 승인하
   }
 });
 
-test("[4차-5-계정창] 요청 행이 사라져도 초기화 확인·임시 결과·닫기 초점을 보존", async ({ page }) => {
+test("[4차-5-계정창] 수동 조회 전까지 행·초기화 확인·임시 결과·닫기 초점을 보존", async ({ page }) => {
   await page.clock.install();
   await openPending(page);
   await row(page, 0).getByRole("button", { name: `${studentIds[0]} 비밀번호 초기화`, exact: true }).click();
@@ -371,13 +369,15 @@ test("[4차-5-계정창] 요청 행이 사라져도 초기화 확인·임시 결
   await expect(confirm.getByRole("button", { name: "취소", exact: true })).toBeFocused();
   const first = (await workRef(0).get()).data()! as Work;
   expect((await page.request.post(reviewPath(0), { headers, data: { requestId: first.review!.id, decision: "changes", message: "다른 교사의 합성 처리" } })).status()).toBe(200);
-  await pollTeacher(page);
-  await expect(row(page, 0)).toHaveCount(0);
+  await waitWithoutTeacherRefresh(page);
+  await expect(row(page, 0)).toHaveCount(1);
   await expect(confirm).toBeVisible();
   await expect(confirm).toContainText(studentIds[0]);
   await expect(confirm.getByRole("button", { name: "취소", exact: true })).toBeFocused();
   await confirm.getByRole("button", { name: "취소", exact: true }).click();
-  await expect(pendingOnly(page)).toBeFocused();
+  await expect(row(page, 0).getByRole("button", { name: `${studentIds[0]} 비밀번호 초기화`, exact: true })).toBeFocused();
+  await page.getByRole("button", { name: "수업 새로고침", exact: true }).click();
+  await expect(row(page, 0)).toHaveCount(0);
   await row(page, 1).getByRole("button", { name: `${studentIds[1]} 비밀번호 초기화`, exact: true }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "초기화하기", exact: true }).click();
   const result = page.getByRole("dialog", { name: `${studentIds[1]} 학생의 임시 비밀번호`, exact: true });
@@ -389,13 +389,15 @@ test("[4차-5-계정창] 요청 행이 사라져도 초기화 확인·임시 결
   const fingerprint = createHash("sha256").update(await password.inputValue()).digest("hex");
   const second = (await workRef(1).get()).data()! as Work;
   expect((await page.request.post(reviewPath(1), { headers, data: { requestId: second.review!.id, decision: "approve", message: "" } })).status()).toBe(200);
-  await pollTeacher(page);
-  await expect(row(page, 1)).toHaveCount(0);
+  await waitWithoutTeacherRefresh(page);
+  await expect(row(page, 1)).toHaveCount(1);
   await expect(result).toBeVisible();
   await expect(password).toBeFocused();
   expect(createHash("sha256").update(await password.inputValue()).digest("hex") === fingerprint).toBe(true);
   expect((await db.doc(`csAccounts/${uids[1]}`).get()).data()!.mustChangePassword).toBe(true);
   await result.getByRole("button", { name: "전달 완료", exact: true }).click();
   await expect(result).toHaveCount(0);
-  await expect(pendingOnly(page)).toBeFocused();
+  await expect(row(page, 1).getByRole("button", { name: `${studentIds[1]} 비밀번호 초기화`, exact: true })).toBeFocused();
+  await page.getByRole("button", { name: "수업 새로고침", exact: true }).click();
+  await expect(row(page, 1)).toHaveCount(0);
 });

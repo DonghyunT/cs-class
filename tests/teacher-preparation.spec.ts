@@ -1,3 +1,4 @@
+import { CLASSROOM_HELP_ENABLED } from "../src/lib/classroom/features";
 import { expect, test, type Page } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import type { HelpRequest } from "../src/lib/classroom/help";
@@ -17,6 +18,7 @@ async function choose(page: Page, className: string) {
 }
 
 test("[R3-help-context] 같은 손들기 조회로 여러 수업·미션과 상단 진입·성공 시각을 표시", async ({ page }) => {
+  test.skip(!CLASSROOM_HELP_ENABLED, "손들기 활성 모드 검사");
   await readyTeacher(page.request);
   let reads = 0;
   await page.route("**/api/classroom/help?classId=*", async route => {
@@ -42,6 +44,7 @@ test("[R3-help-context] 같은 손들기 조회로 여러 수업·미션과 상�
 });
 
 test("[R3-help-state] 최초 실패는 0명으로 숨기지 않고 마지막 성공조회·건수를 실패와 반전환에서 구분", async ({ page }) => {
+  test.skip(!CLASSROOM_HELP_ENABLED, "손들기 활성 모드 검사");
   await readyTeacher(page.request);
   let fail = true;
   let release!: () => void;

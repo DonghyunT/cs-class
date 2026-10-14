@@ -13,7 +13,7 @@ import styles from "./student.module.css";
 export function LessonWorkspace({ lesson, uid, returnOrigin, workspaceWide, practiceFocused, onPracticeFocusedChange, onWorkspaceWideChange, onWorkspaceStageChange }: { lesson: Lesson; uid: string } & WorkspaceView) {
   const [frame, setFrame] = useState<LessonFrame | null>(null);
   const [initial, setInitial] = useState<Work | null>(null);
-  const [dashboard, setDashboard] = useState<StudentDashboard | null>(null);
+  const [dashboard, setDashboard] = useState<Pick<StudentDashboard, "classroom" | "lessons"> | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -27,7 +27,7 @@ export function LessonWorkspace({ lesson, uid, returnOrigin, workspaceWide, prac
     const refresh = async () => {
       if (fetching || document.visibilityState !== "visible") return;
       fetching = true;
-      try { const value = await classroomApi.student(); if (!cancelled) setDashboard(value); }
+      try { const value = await classroomApi.studentClassroom(); if (!cancelled) setDashboard(value); }
       catch { /* Work requests show actionable errors; a failed announcement refresh does not replace an editor. */ }
       finally { fetching = false; }
     };

@@ -20,7 +20,7 @@ export async function readHelp(classId?: string) {
       return { request: request?.classId === classroom.id && request.status === "pending" ? request : null };
     }
     requireCondition(classId && account.classIds.includes(classId), 403, "FORBIDDEN", "담당 반의 도움 요청만 확인할 수 있어요.");
-    const result = await tx.get(admin().db.collection("csHelpRequests").where("classId", "==", classId));
+    const result = await tx.get(admin().db.collection("csHelpRequests").where("classId", "==", classId).where("status", "==", "pending"));
     const pending = result.docs.map(doc => doc.data() as HelpRequest).filter(item => item.status === "pending");
     const accounts = pending.length ? await tx.getAll(...pending.map(item => admin().db.collection("csAccounts").doc(item.uid))) : [];
     const requests = pending.filter((item, index) => { const student = accounts[index].data(); return student?.role === "student" && !student.disabled && student.classId === classId; }).sort((a, b) => a.requestedAt - b.requestedAt);
