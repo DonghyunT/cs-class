@@ -28,8 +28,14 @@ if (existsSync(planPath)) {
   } catch {}
 }
 
-if (!plan || !plan.mode) {
+if (!plan || !["docs", "affected", "smoke", "full"].includes(plan.mode)) {
   console.error("Plan does not contain a valid mode property:", plan);
+  process.exit(1);
+}
+
+if (plan.mode === "full" && (process.env.GITHUB_EVENT_NAME || process.env.GITHUB_ACTIONS)
+  && process.env.GITHUB_EVENT_NAME !== "workflow_dispatch") {
+  console.error("Full E2E requires workflow_dispatch; regenerate the automatic CI plan.");
   process.exit(1);
 }
 
@@ -42,10 +48,11 @@ if (plan.mode === "docs") {
 
 let testTargets = [];
 const env = { ...process.env, ...testEnv };
+delete env.CS_SMOKE_LESSON_IDS;
 
-if (plan.mode === "affected") {
+if (plan.mode === "affected" || plan.mode === "smoke") {
   if (!Array.isArray(plan.testFiles) || plan.testFiles.length === 0) {
-    console.error("Affected mode requested but no test files were specified!");
+    console.error("Selected mode requested but no test files were specified!");
     process.exit(1);
   }
   // Validate that all test files exist
@@ -55,8 +62,8 @@ if (plan.mode === "affected") {
       process.exit(1);
     }
   }
-  testTargets = [...plan.testFiles, "tests/lesson-smoke.spec.ts"];
-  if (Array.isArray(plan.lessonIds) && plan.lessonIds.length > 0) {
+  testTargets = [...new Set([...plan.testFiles, "tests/lesson-smoke.spec.ts"])];
+  if (plan.mode === "affected" && Array.isArray(plan.lessonIds) && plan.lessonIds.length > 0) {
     env.CS_SMOKE_LESSON_IDS = JSON.stringify(plan.lessonIds);
   }
   console.log(`[E2E Runner] Selected tests (${testTargets.length}):\n  ${testTargets.join("\n  ")}`);

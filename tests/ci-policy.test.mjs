@@ -22,12 +22,24 @@ test("only explicit documentation paths are light checks", () => {
   assert.equal(classify(["docs/old.md", "src/new.md"]), "full");
 });
 
-test("manual/non-main execution is full; unavailable comparison is full", async () => {
-  assert.equal((await selectScope({ ...env, GITHUB_EVENT_NAME: "workflow_dispatch" })).mode, "full");
-  assert.equal((await selectScope({ ...env, GITHUB_REF: "refs/heads/codex/work" })).mode, "full");
-  assert.equal((await selectScope(env, async () => null)).mode, "full");
-  assert.equal((await selectScope(env, async () => { throw new Error("API failure"); })).mode, "full");
-  assert.equal((await selectScope(env, async () => sha, () => { throw new Error("missing history"); })).mode, "full");
+test("only explicit manual CI runs select the full E2E suite", async () => {
+  assert.equal((await selectScope({ ...env, GITHUB_EVENT_NAME: "workflow_dispatch" }, async () => {
+    throw new Error("manual execution must not need a baseline");
+  })).mode, "full");
+  for (const automatic of [env, { ...env, GITHUB_EVENT_NAME: "pull_request" },
+    { ...env, GITHUB_REF: "refs/heads/codex/work" }, { GITHUB_ACTIONS: "true" }]) {
+    const plan = await selectScope(automatic, async () => null);
+    assert.equal(plan.mode, "smoke");
+    assert.deepEqual(plan.testFiles, ["tests/lesson-smoke.spec.ts"]);
+  }
+  for (const [baseline, diff] of [
+    [async () => { throw new Error("API failure"); }],
+    [async () => sha, () => { throw new Error("missing history"); }],
+  ]) {
+    const plan = await selectScope(env, baseline, diff);
+    assert.equal(plan.mode, "smoke");
+    assert.deepEqual(plan.testFiles, ["tests/lesson-smoke.spec.ts"]);
+  }
 });
 
 test("scope compares all changes since last success, including failed code before docs push", async () => {
@@ -35,7 +47,7 @@ test("scope compares all changes since last success, including failed code befor
   assert.equal((await selectScope(env, baseline, () => ["docs/HANDOFF.md"])).mode, "docs");
   assert.equal((await selectScope(env, baseline, (base) => {
     assert.equal(base, sha); return ["src/lib/save.ts", "docs/HANDOFF.md"];
-  })).mode, "full");
+  })).mode, "smoke");
 
   // Single lesson affected scope
   const sandwichScope = await selectScope(env, baseline, () => ["src/components/student/review/sandwich.tsx"]);
@@ -43,6 +55,23 @@ test("scope compares all changes since last success, including failed code befor
   assert.deepEqual(sandwichScope.lessonIds, ["review-sandwich"]);
   assert.ok(sandwichScope.testFiles.length > 0);
   assert.equal(sandwichScope.base, sha);
+});
+
+test("shared changes retain related lesson tests and all registered lesson smoke checks", async () => {
+  const plan = await selectScope({ ...env, GITHUB_EVENT_NAME: "pull_request" }, async () => sha,
+    () => ["src/components/student/review/sandwich.tsx", "src/components/student/use-work.ts"]);
+  assert.equal(plan.mode, "smoke");
+  assert.equal(plan.base, sha);
+  assert.deepEqual(plan.lessonIds, ["review-sandwich"]);
+  assert.deepEqual(new Set(plan.testFiles), new Set(["tests/review-sandwich.spec.ts", "tests/sandwich-conversation.spec.ts",
+    "tests/review-practice-ui.spec.ts", "tests/lesson-feedback-workspace.spec.ts", "tests/lesson-smoke.spec.ts"]));
+  const common = await selectScope(env, async () => sha, () => ["src/components/student/use-work.ts"]);
+  assert.equal(common.mode, "smoke");
+  assert.deepEqual(common.testFiles, ["tests/lesson-smoke.spec.ts"]);
+});
+
+test("local common changes still require a full-suite decision by the user", async () => {
+  assert.equal((await selectScope({}, undefined, () => ["src/components/student/use-work.ts"])).mode, "full");
 });
 
 test("baseline rejects failed/canceled/manual/current/nonancestor runs", async () => {

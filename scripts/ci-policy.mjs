@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { selectE2E } from "./e2e-scope.mjs";
+import { matchLesson, selectE2E } from "./e2e-scope.mjs";
 
 export function isDocument(file) {
   return file === "README.md" || file === "AGENTS.md" || /^docs\/.+\.md$/.test(file);
@@ -78,28 +78,31 @@ export async function findBaseline(env, request = fetch, ancestor = (sha) => {
   return null;
 }
 
+function smokeScope(reason, base = null, files = []) {
+  const related = selectE2E(files.filter(file => matchLesson(file)));
+  return { mode: "smoke", reason: `${reason}; full E2E requires workflow_dispatch`, base,
+    lessonIds: related.mode === "affected" ? related.lessonIds : [],
+    testFiles: [...new Set([...(related.mode === "affected" ? related.testFiles : []), "tests/lesson-smoke.spec.ts"])] };
+}
+
 export async function selectScope(env, baseline = findBaseline, diff = changedFiles) {
   // Manual trigger in GitHub Actions is always full E2E
   if (env.GITHUB_EVENT_NAME === "workflow_dispatch") {
     return { mode: "full", reason: "manual workflow execution", base: null, lessonIds: [], testFiles: [] };
   }
 
-  // CI push on main branch
-  if (env.GITHUB_EVENT_NAME === "push" && env.GITHUB_REF === "refs/heads/main") {
+  // Automatic CI never escalates to the full suite, even if comparison fails.
+  if (env.GITHUB_EVENT_NAME || env.GITHUB_ACTIONS) {
     try {
       const base = await baseline(env);
-      if (!base) return { mode: "full", reason: "no verified main baseline", base: null, lessonIds: [], testFiles: [] };
+      if (!base) return smokeScope("no successful main baseline");
       const files = diff(base);
       const plan = selectE2E(files);
+      if (plan.mode === "full") return smokeScope(plan.reason, base, files);
       return { ...plan, base };
     } catch {
-      return { mode: "full", reason: "comparison unavailable; full verification required", base: null, lessonIds: [], testFiles: [] };
+      return smokeScope("comparison unavailable");
     }
-  }
-
-  // Other CI events (pull_request, etc.)
-  if (env.GITHUB_EVENT_NAME || env.GITHUB_ACTIONS) {
-    return { mode: "full", reason: "manual or non-main execution", base: null, lessonIds: [], testFiles: [] };
   }
 
   // Local development execution (outside CI)
