@@ -4,24 +4,20 @@
 
 ## 현재 작업 상태
 
-작업 브랜치 `codex/architecture-clarity`, 시작 기준 `main@6c778dd9e2796fbbe6b9c8bf8c8b6f2cf25a41fd`입니다. [셀프 계획서](superpowers/plans/2026-10-14-architecture-clarity.md)로 구조 정리를 수행하고 [PR #38](https://github.com/DonghyunT/cs-class/pull/38)을 등록했습니다. 사용자가 병합 전 CI 정책 복원을 요청해 같은 PR에 후속 수정합니다. main 병합은 사용자가 직접 수행하며 자동 머지는 사용하지 않습니다. 원격 CI의 최신 결과는 PR과 해당 HEAD의 Actions 실행에서 확인합니다.
+2026-10-14(Asia/Seoul). 홈 CSS 분할, `useWork` 복구 판정 적출, `HANDOFF.md` 아카이빙 및 CI 정책 복원을 담은 [PR #38](https://github.com/DonghyunT/cs-class/pull/38)이 `main@d79fa44ee997d386695c3db918dc142126b44fab`에 병합되었습니다. GitHub Actions `app` 검사 통과 후 Vercel Production 배포 및 라이브 도메인 연결을 확인했습니다.
 
-- 홈 CSS를 기본/입장 선택창, 히어로, 수업 시연, 역할 안내, 하단 입장/푸터로 분리했습니다. 기존 `public-home.css`를 단일 진입점으로 유지하며 공통 반응형·모션·후행 규칙은 마지막에 둡니다. import를 펼친 내용과 원본이 정확히 일치합니다.
-- `hasRecoveryFields`·`hasActionResult`를 `student/work-recovery.ts`로 옮겼습니다. `useWork`의 상태·저장·AI·이탈 책임은 그대로입니다. 서버 없는 `playwright.logic.config.ts`의 복구 경계 검사 12개가 통과했고 `test:review`에 연결했습니다.
-- HANDOFF의 과거 상세를 [구조 정리 전 원문](archive/cs-class/2026-10-14-before-architecture-clarity/HANDOFF.md)으로 바이트 그대로 보존했습니다. 기존 보관 파일은 변경하지 않습니다. DEVELOPMENT의 대기 기준에서 `networkidle` 권고를 보정했습니다.
-- 구조 정리 당시 공통 훅·스타일·설정의 영향 판정은 `full`이었고, 사용자가 **관련 검사와 공통 스모크만** 실행하도록 선택했습니다. 로컬 전체 E2E는 실행하지 않았습니다. 관련7파일54개·리뷰/복구28개·정책/문서15개와 타입·린트·빌드를 통과했습니다. 읽기 전용 독립 리뷰의 Critical/Important 지적은 없었고 보관 출처를 Windows 작업 트리로 명시하라는 제안을 반영했습니다.
-- 구조 정리 커밋 `178f4d8`의 [수동 전체 CI](https://github.com/DonghyunT/cs-class/actions/runs/38539265058)는 성공했습니다. E2E402개 통과·Windows 전용1개 생략·실패0, E2E28.8분·job31분18초입니다. 이 결과를 후속 CI 설정 변경까지 검사한 결과로 읽지 않습니다.
-- 후속 정책: PR·main의 자동 CI는 선별/전체 등록 수업 스모크이며 전체 E2E는 `workflow_dispatch` 수동 실행만 허용합니다. 공통 변경·비교 실패·남아 있는 `full` 계획도 자동 전체 실행 사유로 쓰지 않습니다. 앱 런타임 코드는 후속 정책 수정에서 변경하지 않습니다.
-- 후속 로컬 검증: 정책/러너·문서19개, 리뷰/복구28개, lint·typecheck·문서 링크/앵커·diff 검사 통과. 읽기 전용 독립 리뷰에서 조치가 필요한 유의미한 결함은 없었습니다. 후속 원격 결과는 최신 PR 자동 CI와 PR 본문에 기록합니다.
+- **홈 CSS 분할 검증:** 5개 영역으로 분할된 홈 스타일에 대해 로컬 `next start`(port 3000) 환경에서 [`tests/landing.spec.ts`](../tests/landing.spec.ts) 7개 브라우저 E2E 검사를 직접 실행하여 전원 통과(22.3초)했습니다. 반응형(320px/FHD), 모션 줄이기, 5장면 스크롤 핀 전환, 키보드 조작 모두 정상입니다.
+- **작업 복구 단위 검증:** `hasRecoveryFields`·`hasActionResult`를 `src/components/student/work-recovery.ts`로 적출하고 `playwright.logic.config.ts` 기반 단위 검사 12개 통과를 확인했습니다. `npm run test:review`에 연동되어 28개 검사가 가동됩니다.
+- **CI 정책 최적화:** 공통·설정 변경 시 자동 CI가 30분 전체 E2E로 승격되던 동작을 방지하고 등록 수업 스모크 모드(2~3분)로 전환했습니다. 전체 E2E는 `workflow_dispatch` 수동 실행으로만 수행됩니다.
+- **원격 배포 확인:** Vercel `cs-class` Production의 배포 `AnF6N1UGxnBnuJX6ojMtQyv58WpD`·READY·icn1와 [운영 별칭](https://cs-class-donghyunt.vercel.app)의 일치를 확인했습니다. 익명 `/api/auth/config`·`/api/auth/session` 200, 학생/교사 로그인 페이지 200, 비인가 `/api/classroom/*`의 401 SIGNED_OUT 정상 응답을 확인했습니다.
 
 ## 최신 운영 릴리스 기록
 
-다음은 이전 작업에서 **10/14 12:33 KST에 확인한 기록**입니다. 이번 구조 정리에서 운영 상태를 재조회하거나 새 코드를 공개한 결과가 아닙니다.
+10/14 19:35 KST 확인. 구조 정리 및 CI 정책 개선이 적용된 최신 릴리스입니다.
 
-- 앱 릴리스 기준은 `main@0c32a3b1a8d4ccc69f4475f94c47b8c38b4e5ada`입니다. CI 실패 수정 `a874e37`과 문서 보정 `cef2b64`를 통합했고, 문서 마감 HEAD `6c778dd`와 앱 배포 SHA를 구분합니다.
-- 사용자 요청으로 당시 GitHub CI를 생략하고 동일 실행 트리의 로컬 검증을 재사용했습니다. `[skip ci]`로 해당 SHA의 Actions 실행은 생성되지 않았습니다. Vercel 자동 빌드 후 운영 별칭이 이전 배포에 남아 수동 Promote API로 공개했습니다. 기존 workflow·GitHub app 배포 검사 설정은 유지됐으며 다음 일반 릴리스는 기존 정책을 따릅니다.
-- 운영 배포는 `dpl_8GKENV11fbMUPpSVUERMPNBFvdKF`·READY·icn1·위 앱 SHA와 [운영 별칭](https://cs-class-donghyunt.vercel.app)의 배포 ID 일치를 확인한 기록입니다. 직전 복구 후보는 `faaa82a0d001f11d49aafee3a65a4544cabdc71e`·`dpl_3hbBQeC2YXT949GXW32KL4QAQiyX`입니다. 복구 절차는 [FIREBASE_SETUP](FIREBASE_SETUP.md#vercel-서버-설정)을 따릅니다.
-- 당시 익명 config/session 및 학생·교사 로그인 페이지 200, 익명 수업 API 401·SIGNED_OUT, 인앱 Chromium 로그인 버튼·콘솔 오류/경고0을 확인했습니다. 실제 계정 로그인·Google OAuth·AI·학생 저장/제출은 실행하지 않았습니다.
+- **앱 릴리스 기준:** `main@d79fa44ee997d386695c3db918dc142126b44fab` (PR #38).
+- **운영 배포:** Vercel `cs-class` Production 배포 `AnF6N1UGxnBnuJX6ojMtQyv58WpD`·READY·icn1·운영 별칭 일치. 직전 복구 후보는 `0c32a3b1a8d4ccc69f4475f94c47b8c38b4e5ada`·`dpl_8GKENV11fbMUPpSVUERMPNBFvdKF`입니다.
+- **운영 확인 범위:** 익명 config/session 200, 학생/교사 로그인 200, 비인가 `/api/classroom/*` 401 SIGNED_OUT, 분할된 CSS 번들 청크(`0bwhr_evpr584.css`) 정상 서빙 확인. 실제 계정 로그인·Google OAuth·AI·학생 저장은 실행하지 않았습니다.
 
 ## 검증 상태
 
