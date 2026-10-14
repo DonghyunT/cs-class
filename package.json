@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test:review": "node tests/review-engines.test.mjs && node tests/review-ai-protocol.test.mjs && node tests/review-flow-runner.test.mjs && node tests/review-rollout.test.mjs",
+    "test:review": "node tests/review-engines.test.mjs && node tests/review-ai-protocol.test.mjs && node tests/review-flow-runner.test.mjs && node tests/review-rollout.test.mjs && playwright test --config=playwright.logic.config.ts",
     "test": "playwright test",
     "test:e2e": "firebase emulators:exec --only auth,firestore --project demo-cs-class \"playwright test\"",
     "test:e2e:running": "playwright test",

@@ -120,6 +120,7 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 | `useWork.save` / `flush` | 사용자 명시 행동용; 단일 불변 스냅샷/단일 writer; 추가 편집은 dirty로 유지 |
 | `useWork.perform` / `requestAi` | AI 요청 비교 기준은 확정된 서버 스냅샷이며 대기 중 추가 편집도 보존 |
 | [`work-draft.ts`](../src/components/student/work-draft.ts) | `stage`·미션 위치 등 읽기 뷰는 내용 비교에서 제외; 실제 답안·배치·코드만 내용(Dirty)으로 판정 |
+| [`work-recovery.ts`](../src/components/student/work-recovery.ts) | 서버 복구 기록의 형식·기본값 누락과 원래 요청의 수업·revision·작품 결과를 판별; 상태 변경·네트워크 전송은 `useWork`가 전담 |
 | [`navigation-provider.tsx`](../src/components/navigation-provider.tsx) | `prepareLeave` / `save` / `discard` 3선택 이탈 가드. 외부 링크, 브라우저 뒤로가기, 로그아웃 보호 |
 | [`HelpButton`](../src/components/classroom/help-button.tsx) | 손들기 요청 시 현재 작품의 exact 스냅샷을 먼저 서버에 저장 후 도움 요청 POST 전송 |
 | [`LessonShell`](../src/components/student/lesson-shell.tsx) | 저장 버튼과 상태 배지 노출; `useWork`와 Entry 브리지가 창/iframe 단축키를 같은 `save`로 전달 |
@@ -146,7 +147,9 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 | **Tier 2: 선별 E2E (Scoped)** | 변경된 수업 + 공통 스모크 | `npm run test:e2e:scope:running` (서버 구동 중)<br>`npm run test:e2e:scope` (원스톱) | 기능 구현 완료 시 (기본) |
 | **Tier 3: 전체 E2E (Full Suite)** | 전체 회귀 검증 | `npm run test:e2e` | **사용자 명시 요청 시에만** |
 
-검사 개수는 `npx playwright test --list`로 현재 목록을 조회합니다. 실행 시간은 검사 범위·PC/CI 환경·캐시·에뮬레이터 준비 상태에 따라 달라지므로 고정된 상한으로 안내하지 않습니다. 날짜·환경·범위별 실제 결과는 [HANDOFF의 검증 기록](HANDOFF.md#현재-작업-상태)에 남깁니다.
+`test:review`는 기존 Node 리뷰 검사와 [`playwright.logic.config.ts`](../playwright.logic.config.ts)의 `tests/*.test.ts`를 실행합니다. 이 TypeScript 검사 경로는 브라우저 fixture를 쓰지 않으며 앱 서버·에뮬레이터를 시작하지 않습니다.
+
+검사 개수는 `npx playwright test --list`로 현재 E2E 목록을 조회하고, 순수 TypeScript 목록은 `npx playwright test --config=playwright.logic.config.ts --list`로 확인합니다. 실행 시간은 검사 범위·PC/CI 환경·캐시·에뮬레이터 준비 상태에 따라 달라지므로 고정된 상한으로 안내하지 않습니다. 날짜·환경·범위별 실제 결과는 [HANDOFF의 검증 기록](HANDOFF.md#현재-작업-상태)에 남깁니다.
 
 ### 3.2 로컬 에이전트 vs 깃허브 CI 검증 매트릭스
 로컬과 CI 모두 평시에는 **선별 검증 및 코어 스모크**를 기본으로 삼아 자원과 시간을 절약합니다:
@@ -180,7 +183,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 
 ### 3.4 디버깅 및 Flaky 방지 원칙
 - **임의 지연 금지:** `waitForTimeout`이나 임의의 `sleep`으로 타이밍 문제를 회피하지 않습니다.
-- **결정론적 상태 대기:** `saveState` 배지 텍스트 변화(`저장 완료`, `저장하지 않은 변경 있음`), 특정 DOM 요소의 `toBeVisible()`, 또는 `networkidle`과 같은 명시적 상태 전이를 기준으로 대기합니다.
+- **기대 상태 대기:** 저장 배지의 `toHaveText()` 또는 `await expect(locator).toBeVisible()`처럼 자동 재시도하는 단언으로 준비 상태를 확인합니다. 필요한 경우 특정 요청의 응답을 기다린 뒤 화면 상태도 단언합니다. `networkidle`이나 클릭 직후 한 번의 `isVisible()` 조회를 준비 완료 기준으로 쓰지 않습니다. [Playwright 공식 권고](https://playwright.dev/docs/best-practices#use-web-first-assertions)를 따릅니다.
 - **수동 저장 이탈 검사:** Entry 작업실은 현재 작품을 비동기로 캡처한 뒤 이탈 확인창을 엽니다. 미저장 입력을 명시한 시나리오는 `expect(dialog).toBeVisible()` 후 나가기 선택과 서버 기록 보존을 확인합니다. 클릭 직후 `isVisible()` 한 번으로 확인창을 건너뛰지 않습니다.
 - **원인 분석:** 실패 시 `test-results/` 폴더의 스크린샷과 Playwright 트레이스 zip을 열어 실제 렌더링 상태를 확인합니다.
 
