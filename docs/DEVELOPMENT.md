@@ -76,24 +76,24 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 - **공통 셸 구성:** [`LessonWorkspace`](../src/components/student/lesson-workspace.tsx) 또는 [`LessonEditor`](../src/components/student/lesson-editor.tsx)로 감싸 공통 헤더·진도율 바·저장 상태 배지 영역을 확보합니다.
 
 #### 2단계: 저장 상태 연동 (`useWork`)
-- 반드시 공통 훅 [`useWork`](../src/components/student/use-work.ts)를 사용합니다:
+- [`LessonWorkspace`의 `StudentWorkEditor`](../src/components/student/lesson-workspace.tsx)처럼 서버에서 받은 `initial: Work`와 로그인한 계정의 `uid`로 공통 훅 [`useWork`](../src/components/student/use-work.ts)를 초기화합니다:
   ```typescript
-  const { draft, updateDraft, saveDraft, hasUnsavedChanges, saveState, saving } = useWork({
-    lessonId: "<수업ID>",
-    classId,
-    studentId
-  });
+  const controller = useWork(initial, uid);
+  const { draft, update, save, saveState } = controller;
   ```
-- **수동 저장 연동:** 상단 '저장' 버튼 클릭 및 키보드 `Ctrl+S` / `Cmd+S` 시 `saveDraft()`를 실행합니다.
-- **이탈 가드:** `NavigationProvider`가 `useWork`에 내장되어 있어, 미저장(`hasUnsavedChanges`) 상태에서 외부 링크 이동 시 3선택 모달이 자동 활성화됩니다.
+- Entry 작업실은 기존 `StudentWorkEditor`처럼 네이티브 작품을 읽는 함수를 준비해 `useWork(initial, uid, readEditorDraft)`로 전달합니다.
+- **수업 컴포넌트 연결:** 하위 수업 컴포넌트는 이미 생성한 `controller`를 전달받아 사용합니다. 같은 작품에 `useWork`를 중복 생성하지 않습니다.
+- **수동 저장 연동:** 상단 '저장' 버튼에는 `save`를 전달하며, 키보드 `Ctrl+S` / `Cmd+S`도 같은 `save()`를 호출합니다.
+- **이탈 가드:** `useWork`가 `NavigationProvider`에 현재 작품의 가드를 등록합니다. 미저장 내용이 있으면 외부 이동 전에 `저장 후 나가기`, `저장하지 않고 나가기`, `취소`를 선택합니다.
 - **금지:** 컴포넌트 내부에 독자적인 `debounce` 자동 저장 타이머를 신설하지 않습니다.
 
 #### 3단계: E2E 테스트 작성 (`tests/<수업ID>.spec.ts`)
-- 명시적 단축키 또는 저장 버튼 조작을 통한 상태 배지 변화(`저장 완료`)를 단언합니다:
+- 수업 입력칸에서 실제 내용을 편집한 뒤 단축키 또는 저장 버튼을 조작하고, 상단 `role="status"`의 `저장 완료`를 단언합니다. 버튼 이름은 저장 전후 모두 `저장`입니다:
   ```typescript
   await page.keyboard.press("Control+s");
-  await expect(page.getByRole("button", { name: /저장 완료/ })).toBeVisible();
+  await expect(page.locator('[data-lesson-shell] header [role="status"]')).toHaveText("저장 완료");
   ```
+- 저장 버튼으로 검사할 때는 기존 [`saveDraft(page)` 검사 도우미](../tests/emulator.ts)를 재사용할 수 있습니다.
 - 변경 후 다른 화면 이동 시 이탈 가드 모달(`저장 후 나가기`, `저장하지 않고 나가기`, `취소`) 노출을 확인합니다.
 
 #### 4단계: 선별 검증기 등록 (`scripts/e2e-scope.mjs` & `tests/lesson-smoke.spec.ts`)
@@ -105,7 +105,7 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
     tests: ["tests/<수업ID>.spec.ts"]
   }
   ```
-- [`tests/lesson-smoke.spec.ts`](../tests/lesson-smoke.spec.ts) 대상 수업 목록에 추가하여 17초 공통 스모크의 보호를 받도록 합니다.
+- [`tests/lesson-smoke.spec.ts`](../tests/lesson-smoke.spec.ts) 대상 수업 목록에 추가하여 공통 저장·복원 스모크에 포함합니다.
 
 ### 2.3 학생 수업 수동 저장 아키텍처 및 코드 계약
 <a id="학생-수업-수동-저장-아키텍처-및-계약"></a>
@@ -115,13 +115,14 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 
 | 컴포넌트 / 훅 | 저장 책임 및 코드 계약 |
 | :--- | :--- |
-| [`useWork.updateDraft`](../src/components/student/use-work.ts) | 메모리 편집 및 내용 비교; 네이티브 캡처만 수행하며 자동 네트워크 POST 없음 |
-| `useWork.saveDraft` / `flush` | 사용자 명시 행동용; 단일 불변 스냅샷/단일 writer; 추가 편집은 dirty로 유지 |
+| [`useWork.update`](../src/components/student/use-work.ts) | 메모리 편집 및 내용 비교; 자동 네트워크 POST 없음 |
+| `useWork.captureDraft` | 필요 시 네이티브 작품을 읽어 메모리 초안에 반영; 캡처 중 추가 편집도 보존 |
+| `useWork.save` / `flush` | 사용자 명시 행동용; 단일 불변 스냅샷/단일 writer; 추가 편집은 dirty로 유지 |
 | `useWork.perform` / `requestAi` | AI 요청 비교 기준은 확정된 서버 스냅샷이며 대기 중 추가 편집도 보존 |
 | [`work-draft.ts`](../src/components/student/work-draft.ts) | `stage`·미션 위치 등 읽기 뷰는 내용 비교에서 제외; 실제 답안·배치·코드만 내용(Dirty)으로 판정 |
 | [`navigation-provider.tsx`](../src/components/navigation-provider.tsx) | `prepareLeave` / `save` / `discard` 3선택 이탈 가드. 외부 링크, 브라우저 뒤로가기, 로그아웃 보호 |
 | [`HelpButton`](../src/components/classroom/help-button.tsx) | 손들기 요청 시 현재 작품의 exact 스냅샷을 먼저 서버에 저장 후 도움 요청 POST 전송 |
-| [`LessonShell`](../src/components/student/lesson-shell.tsx) | 지속적인 저장 상태 배지 노출, 창/iframe 내부 `Ctrl+S` 수신 및 `saveDraft` 중계 |
+| [`LessonShell`](../src/components/student/lesson-shell.tsx) | 저장 버튼과 상태 배지 노출; `useWork`와 Entry 브리지가 창/iframe 단축키를 같은 `save`로 전달 |
 
 - **Content Dirty vs. Exact Snapshot Difference:** 화면 이동 경고는 학생의 실제 작업 내용 변화(Content Dirty)만 감지하며, 탭 위치나 스크롤 좌표만 바뀐 경우에는 경고창 없이 이동합니다.
 
@@ -138,24 +139,26 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 ### 3.1 계층형 검증 티어 (Tiered Verification)
 일상적인 빠른 개발 피드백(Vibe Coding)을 위해 검증은 가벼운 순서대로 계층화되어 있습니다:
 
-| 티어 | 검증 범위 | 실행 명령 | 실행 시간 | 권장 실행 시점 |
-| :--- | :--- | :--- | :--- | :--- |
-| **Tier 1: 초경량 단위 검증** | 순수 로직, 문서, 정책 | `npm run test:scope`<br>`npm run test:review`<br>`node scripts/check-docs.mjs` | **< 3초** | 파일 저장 시, 상시 반복 |
-| **Tier 1.5: 정적 검사** | 타입 안정성, 린트 | `npm run lint`<br>`npm run typecheck` | **< 15초** | 커밋 전 필수 |
-| **Tier 2: 선별 E2E (Scoped)** | 변경된 수업 + 공통 스모크 | `npm run test:e2e:scope:running` (서버 구동 중)<br>`npm run test:e2e:scope` (원스톱) | **< 30초** | 기능 구현 완료 시 (기본) |
-| **Tier 3: 전체 E2E (Full Suite)** | 전체 회귀 검증 (398개) | `npm run test:e2e` | **3~4분** | **사용자 명시 요청 시에만** |
+| 티어 | 검증 범위 | 실행 명령 | 권장 실행 시점 |
+| :--- | :--- | :--- | :--- |
+| **Tier 1: 초경량 단위 검증** | 순수 로직, 문서, 정책 | `npm run test:scope`<br>`npm run test:review`<br>`node scripts/check-docs.mjs` | 파일 저장 시, 상시 반복 |
+| **Tier 1.5: 정적 검사** | 타입 안정성, 린트 | `npm run lint`<br>`npm run typecheck` | 커밋 전 필수 |
+| **Tier 2: 선별 E2E (Scoped)** | 변경된 수업 + 공통 스모크 | `npm run test:e2e:scope:running` (서버 구동 중)<br>`npm run test:e2e:scope` (원스톱) | 기능 구현 완료 시 (기본) |
+| **Tier 3: 전체 E2E (Full Suite)** | 전체 회귀 검증 | `npm run test:e2e` | **사용자 명시 요청 시에만** |
+
+검사 개수는 `npx playwright test --list`로 현재 목록을 조회합니다. 실행 시간은 검사 범위·PC/CI 환경·캐시·에뮬레이터 준비 상태에 따라 달라지므로 고정된 상한으로 안내하지 않습니다. 날짜·환경·범위별 실제 결과는 [HANDOFF의 검증 기록](HANDOFF.md#현재-작업-상태)에 남깁니다.
 
 ### 3.2 로컬 에이전트 vs 깃허브 CI 검증 매트릭스
 로컬과 CI 모두 평시에는 **선별 검증 및 코어 스모크**를 기본으로 삼아 자원과 시간을 절약합니다:
 
 | 구분 | 로컬 에이전트 실행 | 깃허브 CI 실행 (`.github/workflows/verify.yml`) |
 | :--- | :--- | :--- |
-| **일상 커밋 (Fast-Track)** | 선별 E2E(`test:e2e:scope:running`) 및 단위 검증만 실행 | 문서 변경 시 E2E 생략(15초), 수업 변경 시 선별 E2E만 실행(30초) |
-| **공통 모듈 수정 시** | 코어 스모크 통과 후, 에이전트가 사용자에게 전체 E2E 실행 여부를 질문 | 공통 스모크 세트 위주로 검증하며 빌드 검증 수행 |
-| **전체 E2E (398개)** | **사용자의 명시적 요청 또는 에이전트 질문 후 사전 승인 시에만 실행** | **GitHub Actions 웹의 `workflow_dispatch`(수동 실행)로만 한정** |
+| **일상 커밋 (Fast-Track)** | 선별 E2E(`test:e2e:scope:running`) 및 단위 검증만 실행 | 마지막 성공 CI 이후 변경을 누적 비교해 문서만이면 E2E 생략, 등록된 수업 변경이면 해당 E2E와 공통 스모크 실행 |
+| **공통 모듈·설정·미분류 변경 시** | 코어 스모크 통과 후, 에이전트가 사용자에게 전체 E2E 실행 여부를 질문 | 전체 E2E로 승격. 비교 기준을 확인하지 못한 경우도 전체 검사 |
+| **전체 E2E** | **사용자의 명시적 요청 또는 에이전트 질문 후 사전 승인 시에만 실행** | `main` push의 전체 승격 또는 GitHub Actions의 `workflow_dispatch` 수동 실행 |
 
 > [!IMPORTANT]
-> **전체 E2E(398개) 실행 및 선제적 질문 원칙:**
+> **전체 E2E 실행 및 선제적 질문 원칙:**
 > - 평시 로컬 개발에서는 터미널 점유 및 컨텍스트 스위칭을 방지하기 위해 전체 E2E를 절대 임의로 실행하지 않습니다.
 > - **실행 조건:**
 >   1. **사용자의 명시적 요청:** 사용자가 "전체 E2E 돌려줘"라고 직접 지시한 경우.
@@ -178,6 +181,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 ### 3.4 디버깅 및 Flaky 방지 원칙
 - **임의 지연 금지:** `waitForTimeout`이나 임의의 `sleep`으로 타이밍 문제를 회피하지 않습니다.
 - **결정론적 상태 대기:** `saveState` 배지 텍스트 변화(`저장 완료`, `저장하지 않은 변경 있음`), 특정 DOM 요소의 `toBeVisible()`, 또는 `networkidle`과 같은 명시적 상태 전이를 기준으로 대기합니다.
+- **수동 저장 이탈 검사:** Entry 작업실은 현재 작품을 비동기로 캡처한 뒤 이탈 확인창을 엽니다. 미저장 입력을 명시한 시나리오는 `expect(dialog).toBeVisible()` 후 나가기 선택과 서버 기록 보존을 확인합니다. 클릭 직후 `isVisible()` 한 번으로 확인창을 건너뛰지 않습니다.
 - **원인 분석:** 실패 시 `test-results/` 폴더의 스크린샷과 Playwright 트레이스 zip을 열어 실제 렌더링 상태를 확인합니다.
 
 ---
@@ -235,7 +239,7 @@ node scripts/student-roster.mjs --csv private/student-roster.csv --year 2026 --m
 node --env-file=.env.local scripts/student-roster.mjs --csv private/student-roster.csv --year 2026 --mode issue --class 2-1 --output private/class-2-1.ndjson --apply --confirm-project cs-class-f74c4
 
 # 3. 비상 시 수업 기록 백업
-node --env-file=.env.local scripts/student-roster.mjs --mode backup --output private/backup.json --apply --confirm-project cs-class-f74c4
+node --env-file=.env.local scripts/student-roster.mjs --csv private/student-roster.csv --year 2026 --mode backup --output private/backup.json --apply --confirm-project cs-class-f74c4
 ```
 
 ### 5.2 실패 진단 및 에러 로깅 규격

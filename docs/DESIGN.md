@@ -19,6 +19,8 @@
 
 밝은 무채색 표면 위에 맑은 파랑(`Clear Blue`)을 주요 강조색으로 사용하고, 절제된 시맨틱 보조색을 배합합니다.
 
+**전역 CSS 토큰:** 아래 변수는 [`globals.css`](../src/app/globals.css)의 `:root` 또는 `@theme inline`에 정의되어 있습니다.
+
 | 토큰 이름 | CSS 변수 | HEX | 역할 및 사용 기준 |
 | :--- | :--- | :--- | :--- |
 | **Canvas White** | `--background`, `--card` | `#FFFFFF` | 기본 페이지 배경 및 카드 표면 |
@@ -26,15 +28,20 @@
 | **Ink** | `--foreground` | `#202637` | 본문 기본 텍스트 및 헤드라인 (고대비) |
 | **Quiet Slate** | `--muted-foreground` | `#626C80` | 보조 설명, 라벨, 메타데이터 텍스트 |
 | **Fine Border** | `--border` | `#E6E9F0` | 입력창, 카드, 프레임 경계선 |
-| **Clear Blue** | `--primary` | `#315BFA` | 주 액션 버튼, 활성 탭, 키보드 포커스 링 |
+| **Clear Blue** | `--primary` | `#315BFA` | 주 액션 버튼, 활성 탭 |
 | **Blue Mist** | `--color-accent` | `#EDF3FF` | 선택된 항목의 옅은 배경, 하이라이트 |
 | **Warm Surface** | `--warm-surface` | `#FFF3E8` | 안내 배너 및 작은 그래픽의 따뜻한 보조 배경 |
 | **Warm Border** | `--warm-border` | `#EDC3A8` | 따뜻한 안내 배너 테두리 |
 | **Destructive** | `--color-destructive` | `#BC3D3D` | 위험 행동, 삭제, 에러 상태 강조 |
-| **Teacher Purple** | `--color-teacher` | `#79639F` | 교사 비밀번호 로그인 버튼 전용 액센트 |
-| **Stage Concept** | `--stage-concept` | `#376FC8` | 진도 게이지 개념 단계 (파랑, 트랙 `#DCE6F5`) |
-| **Stage Quiz** | `--stage-quiz` | `#8860BA` | 진도 게이지 퀴즈 단계 (보라, 트랙 `#E8DEF4`) |
-| **Stage Practice** | `--stage-practice` | `#268673` | 진도 게이지 실습 단계 (청록, 트랙 `#D9EBE5`) |
+
+**컴포넌트별 색상 규격:** 아래 색상은 전역 토큰이 아닌 담당 컴포넌트의 스타일입니다. 진도 게이지는 각 단계 클래스 안에서 `--stage-color`와 `--stage-track`을 설정합니다.
+
+| 규격 이름 | HEX | 구현 위치 및 사용 기준 |
+| :--- | :--- | :--- |
+| **Teacher Purple** | `#79639F` | [`login-screen.module.css`](../src/components/login-screen.module.css)의 교사 비밀번호 로그인 버튼 |
+| **Stage Concept** | `#376FC8` | [`activity-progress-ring.module.css`](../src/components/student/activity-progress-ring.module.css)의 `.concept`; 트랙 `#DCE6F5` |
+| **Stage Quiz** | `#8860BA` | 같은 파일의 `.quiz`; 트랙 `#E8DEF4` |
+| **Stage Practice** | `#268673` | 같은 파일의 `.practice`; 트랙 `#D9EBE5` |
 
 - **액센트 규칙:** 주요 조작(CTA)과 포커스는 `Clear Blue`를 중심으로 일관되게 전달하며, 중요한 동작의 위계가 명확히 드러나도록 구성합니다.
 - **접근성 대비:** 본문 텍스트는 배경 대비 4.5:1 이상, 큰 텍스트 및 핵심 UI 경계선은 3:1 이상의 WCAG AA 명암비를 권장합니다.
