@@ -1,10 +1,13 @@
 # 이어갈 작업
 
-갱신: 2026-10-14(Asia/Seoul). 아래 현재 작업과 운영 릴리스 기록을 구분합니다. 확정 기능은 [PRD](PRD.md), 화면은 [DESIGN](DESIGN.md), 실행·검증은 [DEVELOPMENT](DEVELOPMENT.md), 작업 규칙은 [AGENTS](../AGENTS.md)를 따릅니다.
+갱신: 2026-10-16(Asia/Seoul). 아래 현재 작업과 운영 릴리스 기록을 구분합니다. 확정 기능은 [PRD](PRD.md), 화면은 [DESIGN](DESIGN.md), 실행·검증은 [DEVELOPMENT](DEVELOPMENT.md), 작업 규칙은 [AGENTS](../AGENTS.md)를 따릅니다.
 
 ## 현재 작업 상태
 
-2026-10-14 후속 정책인 **교사 현황 수동 갱신·손들기 일시 중지**까지 같은 브랜치에서 로컬 구현·검증했습니다. [최종 계획·검증 기록](superpowers/plans/2026-10-14-manual-refresh-help-pause.md)을 현재 동작의 기준으로 봅니다. 사용자 승인으로 로컬 커밋에 정리하며, 푸시·배포는 하지 않습니다.
+2026-10-14 후속 정책인 **교사 현황 수동 갱신·손들기 일시 중지**는 `main@a3ad3090926798c43589f6a30298f22b1f9de1a6`에 반영됐습니다. [최종 계획·검증 기록](superpowers/plans/2026-10-14-manual-refresh-help-pause.md)을 현재 동작의 기준으로 봅니다.
+
+- **원격·운영 상태(10/15 조회):** 같은 SHA의 GitHub CI `app`은 성공했습니다. 미분류 파일(`firestore.indexes.json`)이 있어 smoke 모드가 되었고 선택된 검사는 `tests/lesson-smoke.spec.ts` 1개뿐이므로, 아래 전용 검사 17개는 CI가 아니라 로컬 결과입니다. Vercel Production 배포 `dpl_AXSEpYeQCJsstHdZgXUCxSmag5FP`는 READY이며 운영 별칭에 연결돼 있습니다. 새 복합 인덱스의 Firebase 배포 여부는 확인하지 않았습니다.
+- **배포 게이트(10/15):** 이 배포 당시 Vercel Deployment Checks는 제거된 상태였고(사용자 확인) 빌드 완료(13:03:24Z)가 CI 성공(13:04:47Z)보다 앞섰습니다. 전체 CI의 긴 대기를 피하려고 제거했던 것을 사용자가 10/15에 대시보드에서 GitHub `app`(Production)으로 다시 연결했고 화면에 항목이 표시됩니다. 연결 뒤 첫 비문서 push에서 Checks 단계와 운영 반영 대기를 아직 확인하지 않았습니다. 유지 규칙은 [CI와 운영 공개](FIREBASE_SETUP.md#ci와-운영-공개)를 따릅니다.
 
 - 공유 `CLASSROOM_HELP_ENABLED = false`로 학생/교사 손들기 UI와 전용 래퍼를 언마운트하고 모든 help GET·POST를 DB 접근 전에 `403 / HELP_DISABLED`로 막습니다. 코드·기록·인덱스는 보존하며 복구는 설정 변경과 재빌드·배포가 필요합니다.
 - 교사 홈·학생 현황·수업 관리의 타이머·포커스 재조회를 제거했습니다. 최초 진입·반/수업 변경·수동 갱신·자체 변경 작업 후 반영과 늦은 응답 방지는 유지합니다. 학생 안내·인증·활동·수동 저장 정책은 유지합니다.
@@ -13,7 +16,7 @@
 
 ### 1차 최적화 기록(후속 정책 적용 전)
 
-2026-10-14 읽기 최적화는 `codex/firestore-read-optimization`의 로컬 미커밋 변경으로 구현·검증했습니다(기준 `3a06cf0`). 원격 푸시·인덱스 배포·Vercel 반영은 하지 않았으며 아래 운영 릴리스는 그대로입니다. [작업 계획·측정 해석](superpowers/plans/2026-10-14-firestore-read-optimization.md)을 먼저 확인합니다.
+2026-10-14 읽기 최적화는 `codex/firestore-read-optimization`에서 구현·검증했습니다(기준 `3a06cf0`). 이 구간은 당시 로컬 측정 기록이며 이후 후속 정책과 함께 위 `a3ad309`로 반영됐습니다. [작업 계획·측정 해석](superpowers/plans/2026-10-14-firestore-read-optimization.md)을 먼저 확인합니다.
 
 - 교사 현황 60초·포커스 재조회 간격 30초, 학생 손들기 평상시 60초·대기 중 30초, 주기 전환의 즉시 재조회 방지, 조회 중복·이전 응답 방지, 취소 충돌 재조회, 대기 요청만 조회하는 쿼리와 복합 인덱스를 반영했습니다.
 - 학생 수업 화면도 열린 수업 전체 작품을 30초마다 읽던 경로를 발견해 `GET /api/classroom/student/class`로 축소했습니다. 안내 갱신은 기존 30초·포커스 방식을 유지하고 작품·저장·인증 정책은 유지했습니다.
@@ -21,7 +24,7 @@
 - 공개 수업 4개·27명·담당 반 11개·10분 가상 시간의 정기 요청은 교사 과제/학생 손들기 각각 20→10회, 학생 수업 안내는 전체 작품 조회20회→반 설정 조회20회입니다. 문서 읽기 모형과 정상 30초 세션 갱신 가정으로 약 54% 절감이지만 하루 4반×45분의 정기 읽기만 약 5.7만 회입니다. **하루 4만 회 목표는 미충족**이며 종전 4.4만 회 예측은 안내 조회 누락으로 폐기합니다. 실제 과금·학생 행동량 실측으로 표현하지 않습니다.
 - 독립 리뷰의 앱 중요 회귀 지적은 없었고, 공개 수업 없는 초기 측정 시드 지적은 공개 수업 조건의 전후 재측정으로 보완했습니다. 원자료와 실패·복구 기록은 Git 제외 `scratch/firestore-read-optimization/`에 있습니다.
 
-2026-10-14(Asia/Seoul). 홈 CSS 분할, `useWork` 복구 판정 적출, `HANDOFF.md` 아카이빙 및 CI 정책 복원을 담은 [PR #38](https://github.com/DonghyunT/cs-class/pull/38)이 `main@d79fa44ee997d386695c3db918dc142126b44fab`에 병합되었습니다. GitHub Actions `app` 검사 통과 후 Vercel Production 배포 및 라이브 도메인 연결을 확인했습니다.
+2026-10-14(Asia/Seoul). 홈 CSS 분할, `useWork` 복구 판정 적출, `HANDOFF.md` 아카이빙 및 CI 정책 복원을 담은 [PR #38](https://github.com/DonghyunT/cs-class/pull/38)이 `main@d79fa44ee997d386695c3db918dc142126b44fab`에 병합되었습니다. GitHub Actions `app` 검사 성공과 Vercel Production 배포 READY·라이브 도메인 연결을 각각 확인했습니다. 두 확인의 선후 관계는 기록하지 않았습니다.
 
 - **홈 CSS 분할 검증:** 5개 영역으로 분할된 홈 스타일에 대해 로컬 `next start`(port 3000) 환경에서 [`tests/landing.spec.ts`](../tests/landing.spec.ts) 7개 브라우저 E2E 검사를 직접 실행하여 전원 통과(22.3초)했습니다. 반응형(320px/FHD), 모션 줄이기, 5장면 스크롤 핀 전환, 키보드 조작 모두 정상입니다.
 - **작업 복구 단위 검증:** `hasRecoveryFields`·`hasActionResult`를 `src/components/student/work-recovery.ts`로 적출하고 `playwright.logic.config.ts` 기반 단위 검사 12개 통과를 확인했습니다. `npm run test:review`에 연동되어 28개 검사가 가동됩니다.
@@ -30,11 +33,11 @@
 
 ## 최신 운영 릴리스 기록
 
-10/14 19:35 KST 확인. 구조 정리 및 CI 정책 개선이 적용된 최신 릴리스입니다.
+10/16 10:33 KST 확인. Firestore 읽기 최적화 및 교사 현황 수동 갱신·손들기 일시 중지가 적용된 최신 릴리스입니다.
 
-- **앱 릴리스 기준:** `main@d79fa44ee997d386695c3db918dc142126b44fab` (PR #38).
-- **운영 배포:** Vercel `cs-class` Production 배포 `AnF6N1UGxnBnuJX6ojMtQyv58WpD`·READY·icn1·운영 별칭 일치. 직전 복구 후보는 `0c32a3b1a8d4ccc69f4475f94c47b8c38b4e5ada`·`dpl_8GKENV11fbMUPpSVUERMPNBFvdKF`입니다.
-- **운영 확인 범위:** 익명 config/session 200, 학생/교사 로그인 200, 비인가 `/api/classroom/*` 401 SIGNED_OUT, 분할된 CSS 번들 청크(`0bwhr_evpr584.css`) 정상 서빙 확인. 실제 계정 로그인·Google OAuth·AI·학생 저장은 실행하지 않았습니다.
+- **앱 릴리스 기준:** `main@a3ad3090926798c43589f6a30298f22b1f9de1a6`.
+- **운영 배포:** Vercel `cs-class` Production 배포 `dpl_AXSEpYeQCJsstHdZgXUCxSmag5FP`·READY·운영 별칭 일치. 직전 복구 후보는 `d79fa44ee997d386695c3db918dc142126b44fab`·`AnF6N1UGxnBnuJX6ojMtQyv58WpD`입니다.
+- **운영 확인 범위:** 익명 `/api/auth/config`·`/api/auth/session` 200, 학생/교사 로그인 200, 비인가 `/api/classroom/student` 401 `SIGNED_OUT`, 비활성 `/api/classroom/help` 403 `HELP_DISABLED` 정상 응답 확인. 실제 계정 로그인·Google OAuth·AI·학생 저장은 실행하지 않았습니다.
 
 ## 검증 상태
 
@@ -48,9 +51,9 @@
 
 ## 다음에 이어갈 작업
 
-다음 단계는 원격 반영 승인과 실제 수업 행동량 확인입니다. 4반 무료 한도 운영을 아직 보장하지 않습니다. 손들기 중지 앱에는 관련 인덱스 배포가 선행 필수 조건은 아니며, 재활성화 전에 오래된 대기 요청 처리 기준·인덱스 준비·활성 모드 검사를 확인합니다. 승인 없는 운영 기록 정리·인증 캐시·운영 테스트 시드·Preview 생성은 하지 않습니다.
+다음 단계는 배포 게이트의 첫 동작 확인과 실제 수업 행동량 확인입니다. 4반 무료 한도 운영을 아직 보장하지 않습니다. 손들기 중지 앱에는 관련 인덱스 배포가 선행 필수 조건은 아니며, 재활성화 전에 오래된 대기 요청 처리 기준·인덱스 준비·활성 모드 검사를 확인합니다. 승인 없는 운영 기록 정리·인증 캐시·운영 테스트 시드·Preview 생성은 하지 않습니다.
 
-1. PR의 후속 정책 변경과 최신 선별/스모크 CI 결과를 확인한 뒤 사용자가 수동 병합합니다. PR 업데이트는 자동 CI를 실행하며 전체 E2E를 반복하지 않습니다. 기존 전체 CI는 `178f4d8`의 기록이고, PR CI는 GitHub의 임시 병합 ref를 checkout하므로 실행의 대상 HEAD·기준 main을 함께 확인합니다.
+1. 다음 비문서 push에서 Vercel 배포의 Checks(`app`) 대기와 운영 반영 순서를 확인해 위 배포 게이트 기록을 확정합니다. 확인 전에는 게이트가 동작한다고 기록하지 않습니다. 기존 전체 CI는 `178f4d8`의 기록이며, 자동 CI는 전체 E2E를 반복하지 않습니다.
 2. 신규 수업은 [4단계 체크리스트](DEVELOPMENT.md#신규-수업-추가-및-선별-검증-연동-체크리스트)를 따릅니다. 학생 저장은 공통 `useWork`, 교사 체험은 메모리 경계를 유지합니다.
 3. 실제 학교 PC·학교망·물리 한글 입력기에서 [첫 수업 확인](DEVELOPMENT.md#첫-실제-수업-확인-순서)을 수행합니다. 운영 실제 로그인·AI·저장/제출, 터치·화면 읽기·200% 확대·프린터·자연 Cron은 아직 해당 환경에서 확인할 사항입니다.
 

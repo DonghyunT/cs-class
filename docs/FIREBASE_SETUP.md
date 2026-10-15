@@ -56,13 +56,19 @@ Preview와 Production 양쪽에 일반 설정 `NODE_OPTIONS=--experimental-requi
 
 ### CI와 운영 공개
 
-main push는 CI와 Vercel 빌드를 병행합니다. Production의 Deployment Checks에 GitHub `app`을 요구하며 성공 전에는 새 배포를 운영 도메인에 연결하지 않습니다. 실패·취소·대기는 기존 운영 버전을 유지합니다. 빌드 READY와 운영 별칭 연결을 구분하며, 실제 설정·동작 확인은 [HANDOFF](HANDOFF.md#현재-작업-상태)를 따릅니다.
+main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Deployment Checks에 GitHub `app` 검사를 Production 조건으로 연결하며, 성공 전에는 새 배포를 운영 도메인에 연결하지 않습니다. 실패·취소·대기는 기존 운영 버전을 유지합니다. 이 설정은 Vercel 대시보드에서만 바꿀 수 있어 코드나 문서만으로는 현재 상태를 알 수 없습니다. 빌드 READY와 운영 별칭 연결을 구분하며, 연결 여부와 실제 동작을 확인한 기록은 [HANDOFF](HANDOFF.md#현재-작업-상태)를 따릅니다. 게이트를 추가·제거하면 같은 작업에서 이 절과 HANDOFF를 함께 고칩니다.
 
-자동 `app` 검사는 정책·단위·정적 검사·빌드와 선별/공통 스모크이며, 전체 E2E는 승인된 `workflow_dispatch` 수동 실행으로만 수행합니다. 배포 검사 통과를 전체 E2E 통과로 바꾸어 기록하지 않습니다. 범위는 [개발 안내의 검증 매트릭스](DEVELOPMENT.md#검증)를 따릅니다.
+자동 `app` 검사는 정책·단위·정적 검사·빌드와 선별/공통 스모크이며, 전체 E2E는 승인된 `workflow_dispatch` 수동 실행으로만 수행합니다. 배포 검사 통과를 전체 E2E 통과로 바꾸어 기록하지 않습니다. 범위는 [개발 안내의 검증 매트릭스](DEVELOPMENT.md#검증)를 따릅니다. 자동 `app`은 수 분 단위로 끝나는 선별/스모크 범위이며 실제 시간은 실행별 기록을 따릅니다.
+
+게이트와 workflow는 `app`이라는 검사 이름으로 맺어져 있어 아래를 함께 지킵니다.
+
+- `.github/workflows/verify.yml`의 job ID `app`을 바꾸거나 지우기 전에 Vercel의 Deployment Checks를 먼저 새 이름으로 바꿉니다. 이름이 어긋나면 새 배포가 운영에 연결되지 않고 대기합니다.
+- 커밋 메시지에 `[skip ci]`를 쓰지 않습니다. 앱 변경 커밋에서 `app` 검사가 만들어지지 않아 같은 이유로 대기합니다. 문서만 바꾼 커밋은 Vercel이 빌드를 생략(CANCELED)하므로 게이트와 무관하며 `app`도 문서 모드로 짧게 끝나, `[skip ci]`로 얻는 것이 없습니다.
+- 전체 E2E 수동 실행은 같은 SHA에 별도의 `app` 실행을 만듭니다. 이것이 같은 SHA의 배포 대기를 늘리는지는 확인하지 않았으므로 그렇다고 가정하여, 배포 직후의 `main` SHA에서는 운영 반영을 확인한 뒤 실행하고 승인된 전체 검사는 가능하면 작업 브랜치·PR의 SHA에서 실행합니다.
 
 문서 전용 변경은 `vercel.json`의 Ignored Build Step으로 앱 빌드를 생략합니다. `VERCEL_GIT_PREVIOUS_SHA`(같은 프로젝트·브랜치의 마지막 성공 배포)부터 비교하며 기준 없음·이력 부족·판정 실패는 빌드를 진행합니다. Vercel은 판정 전에 제외 파일을 지우므로 `.vercelignore`에서 Git commit 메타데이터는 남기고 인증 config·hooks·logs는 제외합니다. 생략은 CANCELED로 표시되고 배포 한도에 포함될 수 있습니다. 문서 push 뒤 main과 운영 SHA가 달라도 정상입니다.
 
-공개 후 SHA·운영 별칭·API·로그인 화면을 확인합니다. READY·익명 응답만으로 실제 계정 로그인·저장/재접속 성공을 주장하지 않습니다. CI와 Vercel의 검사 SHA가 같은지 확인하며 Force Promote는 기본 절차로 사용하지 않습니다. 오류 복구는 확인된 이전 운영 배포로 되돌리고, 재발 방지를 코드에 반영해 검사 후 공개합니다. 검사 명령은 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따릅니다.
+공개 후 SHA·운영 별칭·API·로그인 화면을 확인합니다. READY·익명 응답만으로 실제 계정 로그인·저장/재접속 성공을 주장하지 않습니다. CI와 Vercel의 검사 SHA가 같은지 확인하며 Force Promote는 기본 절차로 사용하지 않습니다. 게이트를 우회하는 수동 Promote나 검사 제거는 사용자의 명시 요청이 있을 때만 하고, 우회한 릴리스는 `app` 검사 없이 공개했다고 HANDOFF에 기록합니다. 오류 복구는 확인된 이전 운영 배포로 되돌리고, 재발 방지를 코드에 반영해 검사 후 공개합니다. 검사 명령은 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따릅니다.
 
 ### 수동 Preview
 

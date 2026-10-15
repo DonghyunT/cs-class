@@ -162,7 +162,7 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 | **공통 모듈·설정·미분류 변경 시** | 코어 스모크 통과 후, 에이전트가 사용자에게 전체 E2E 실행 여부를 질문 | `smoke` 모드로 전체 등록 수업 스모크와 확인된 관련 수업 검사 실행. 비교 기준이 없거나 조회에 실패해도 전체 검사로 승격하지 않음 |
 | **전체 E2E** | **사용자의 명시적 요청 또는 에이전트 질문 후 사전 승인 시에만 실행** | **GitHub Actions의 `workflow_dispatch` 수동 실행으로만 수행** |
 
-자동 CI의 `app`에는 비문서 변경의 정책·단위 검사, lint, typecheck, 빌드와 위 선별/스모크 검사가 포함됩니다. 스모크 성공을 전체 회귀 검증 성공으로 해석하지 않습니다. 큰 변경의 전체 검사가 필요하면 별도로 승인받아 수동 실행합니다. 수동 실행 결과는 PR에 실행 SHA·범위와 함께 기록합니다.
+자동 CI의 `app`에는 비문서 변경의 정책·단위 검사, lint, typecheck, 빌드와 위 선별/스모크 검사가 포함됩니다. 스모크 성공을 전체 회귀 검증 성공으로 해석하지 않습니다. 큰 변경의 전체 검사가 필요하면 별도로 승인받아 수동 실행합니다. 수동 실행 결과는 PR에 실행 SHA·범위와 함께 기록합니다. `main` push의 `app` 성공은 Vercel 운영 반영의 조건이기도 하며, 그 규칙(`[skip ci]` 금지·검사 이름 변경 순서 등)은 [서버 안내](FIREBASE_SETUP.md#ci와-운영-공개)가 단일 기준입니다.
 
 [`run-selected-e2e.mjs`](../scripts/run-selected-e2e.mjs)는 자동 GitHub 실행에서 남아 있는 `full` 계획과 알 수 없는 모드를 실행 전에 거절합니다. `smoke` 모드는 수업 필터를 해제해 전체 등록 수업을 확인하고, 등록 수업만의 `affected` 모드는 해당 수업에 한정합니다. [PR 이벤트](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)와 [수동 실행](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)은 GitHub 공식 안내를 따릅니다.
 

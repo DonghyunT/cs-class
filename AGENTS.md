@@ -32,6 +32,7 @@
 - **전체 E2E:** 로컬은 사용자 사전 승인, GitHub는 명시적인 `workflow_dispatch` 수동 실행으로만 수행합니다. PR 업데이트·main 병합은 전체 검사 실행 승인이 아닙니다.
 - **결과 재사용:** 동일 코드·설정 조건이면 로컬 전체 E2E를 반복하지 않고 단위/선별 검증 후 GitHub CI를 활용합니다.
 - **배포 검증:** Vercel 배포 시 [서버 설정의 판정 기준](docs/FIREBASE_SETUP.md#vercel-서버-설정)을 준수합니다.
+- **배포 게이트:** `main` push의 GitHub `app` 검사 성공이 Vercel Production 반영 조건입니다. 커밋 메시지에 `[skip ci]`를 쓰지 않고, `app` 이름을 바꾸거나 게이트를 우회·제거하기 전 [CI와 운영 공개](docs/FIREBASE_SETUP.md#ci와-운영-공개)를 따릅니다.
 - **작업 브랜치:** `codex/` 브랜치에서 작업 권장. Preview는 사용자 명시 요청 시에만 생성합니다.
 
 ## 절대 금지 사항 (Strict Guardrails)
