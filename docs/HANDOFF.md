@@ -4,11 +4,12 @@
 
 ## 현재 작업 상태
 
-**반영 보류(2026-10-16, `codex/dashboard-calendar-lesson-header` 로컬 커밋, 미푸시):** 사용자가 로컬 화면을 확인한 뒤 아쉬운 부분이 생겨 main 반영·푸시를 보류했습니다. 구체적인 아쉬운 점은 아직 기록되지 않았으니 이어서 작업할 때 먼저 확인합니다. 변경 내용은 대시보드 달력 `일~토` 전환·주말 글자색, 교사 이번 수업 카드를 학생과 같은 좌측 진도/우측 수업 순서로 정렬하고 `수업 미리보기` 추가, 교사 일정 링크 `일정 관리`, 수업 헤더 821px 이상 좌(나가기)/중앙(제목)/우(저장·메뉴) 3구획, 실습 집중 모드 알약형 아이콘 버튼. 기준은 [DESIGN](DESIGN.md) §4.1·§4.4입니다.
+**반영 보류(2026-10-16, `codex/dashboard-calendar-lesson-header`, 원격 작업 브랜치만 푸시):** 사용자가 로컬 화면을 확인한 뒤 아쉬운 부분이 생겨 main 반영과 PR을 보류했습니다. 다른 PC에서 이어 수정하도록 작업 브랜치만 원격에 올렸습니다(작업 브랜치 push는 CI·Vercel 배포를 만들지 않음). 구체적인 아쉬운 점은 아직 기록되지 않았으니 이어서 작업할 때 먼저 확인합니다. 변경 내용은 대시보드 달력 `일~토` 전환·주말 글자색, 교사 이번 수업 카드를 학생과 같은 좌측 진도/우측 수업 순서로 정렬하고 `수업 미리보기` 추가, 교사 일정 링크 `일정 관리`, 수업 헤더 821px 이상 좌(나가기)/중앙(제목)/우(저장·메뉴) 3구획, 실습 집중 모드 알약형 아이콘 버튼. 기준은 [DESIGN](DESIGN.md) §4.1·§4.4입니다.
 
 - 린트·타입·문서·`test:review` 통과. 새 demo 에뮬레이터에서 대시보드·달력·헤더·집중 모드 관련 11파일과 공통 스모크 선별 98개 중 97개 통과, 1개(437px 교사 카드 높이 336px>320px)를 모바일 여백 축소로 고친 뒤 해당 대시보드 3파일 25개 재실행 통과. 전체 E2E는 실행하지 않았습니다.
 - 이 PC의 Git Bash에는 Java PATH가 없어 Git 제외 `scratch/tools/java/runtime/jdk-21.0.12.1+1/bin`을 앞에 붙여 실행했고, Playwright headless Chromium(`chromium_headless_shell-1243`)을 새로 설치했습니다. 대표 스크린샷은 Git 제외 `scratch/dashboard-header-shots/`에 있습니다.
 - 개념 인터랙션 고도화(파트 3)는 수업별로 나눠 신규 수업 이후 진행하기로 했습니다.
+- 다른 PC에서 이어가기: `git fetch origin` → `git switch codex/dashboard-calendar-lesson-header` → `npm ci`. JDK 21 `bin`을 PATH 앞에 추가하고(`scratch/`는 Git으로 전달되지 않음), E2E를 돌리려면 `npx playwright install --only-shell chromium`이 필요합니다. 화면 확인은 `npm run dev:emulator` 후 `http://localhost:3000`의 게스트 입장을 사용합니다.
 
 2026-10-14 후속 정책인 **교사 현황 수동 갱신·손들기 일시 중지**는 `main@a3ad3090926798c43589f6a30298f22b1f9de1a6`에 반영됐습니다. [최종 계획·검증 기록](superpowers/plans/2026-10-14-manual-refresh-help-pause.md)을 현재 동작의 기준으로 봅니다.
 
