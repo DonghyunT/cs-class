@@ -26,7 +26,7 @@ export function LearningOverview({ data, loading, error }: { data: StudentDashbo
   const label = current ? progressFor(current, work).status === "completed" ? "다시 보기" : work?.updatedAt ? "이어하기" : "수업 시작" : "열린 수업 보기";
   return <section className={styles.overview} aria-labelledby="learning-overview-heading" aria-describedby="learning-overview-scope">
     <div className={styles.current}>
-      <span className={styles.eyebrow}>{data?.classroom.name && `${data.classroom.name} · `}이번 수업</span>
+      <span className={styles.eyebrow}><BookOpen size={17} aria-hidden="true" />{data?.classroom.name && `${data.classroom.name} · `}이번 수업</span>
       <h3 id="current-heading">{current?.title ?? (!data && loading && !error ? "이번 수업을 확인하고 있어요." : !data && error ? "이번 수업을 확인하지 못했어요." : "다음 수업을 기다리고 있어요.")}</h3>
       <p>{current?.description ?? "열린 수업에서 먼저 학습해도 좋아요."}</p>
       {current && <div className={styles.resume}><LearningStatus lesson={current} work={work} /><span>{resumeLabelFor(current, work)}</span></div>}

@@ -161,7 +161,7 @@ test("닉네임은 상단·하단 프로필에 보이며 새 탐색 메뉴와 �
     await expect(menu.getByRole("link")).toHaveCount(role === "teacher" ? 5 : 4);
     await expect(menu.getByRole("link", { name: "반 일정", exact: true })).toHaveCount(0);
     await expect(menu.getByRole("link", { name: "우리 반 질문", exact: true })).toBeVisible();
-    await expect(page.getByRole("region", { name: "다가오는 일정", exact: true }).getByRole("link", { name: "전체 보기", exact: true })).toHaveAttribute("href", role === "teacher" ? "/teacher/schedule?classId=2-1" : "/student/schedule");
+    await expect(page.getByRole("region", { name: "다가오는 일정", exact: true }).getByRole("link", { name: role === "teacher" ? "일정 관리" : "전체 보기", exact: true })).toHaveAttribute("href", role === "teacher" ? "/teacher/schedule?classId=2-1" : "/student/schedule");
     await menu.getByRole("link", { name: "설정", exact: true }).press("Enter");
     await expect(page).toHaveURL(new RegExp(`/${role}/settings${role === "teacher" ? "\\?classId=2-1" : ""}$`));
     await expect(menu.getByRole("link", { name: "설정", exact: true })).toHaveAttribute("aria-current", "page");

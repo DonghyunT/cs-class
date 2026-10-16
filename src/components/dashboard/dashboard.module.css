@@ -34,7 +34,9 @@
 .current::after { content: ""; position: absolute; right: 27%; top: 27px; width: 19px; height: 19px; border-radius: 5px; background: #a8c5f0; box-shadow: 25px 30px 0 #e9e4f7, -24px 45px 0 #f8e1d5; transform: rotate(12deg); opacity: .72; pointer-events: none; }
 .current > div { min-width: 0; flex: 1; position: relative; z-index: 1; }
 .dashboardHome[data-role=teacher] .current::after{display:none}
-.dashboardHome[data-role=teacher] .current>div:last-child{flex:0 1 380px}
+/* Same order as the student overview: progress left, current lesson right; DOM keeps the lesson first. */
+.current > .currentProgress { flex: 0 1 380px; order: -1; padding-right: 28px; border-right: 1px solid #d7e3f7; }
+.page .currentAction[data-slot="button"] { margin-top: 16px; }
 .current h2 { margin: 6px 0; font-size: 22px; font-weight: 700; line-height: 1.5; letter-spacing: -.035em; word-break: keep-all; }
 .current p { color: #526173; font-size: 14px; margin: 0; word-break: keep-all; }
 .current > [data-slot="button"] { flex-shrink: 0; position: relative; z-index: 1; }
@@ -110,6 +112,8 @@
 .monthCalendar td { height: 40px; text-align: center; }
 .monthCalendar time { position: relative; display: grid; place-items: center; width: min(38px, 100%); height: 38px; margin: auto; border-radius: 12px; color: #344255; font-size: 13px; font-weight: 550; }
 .monthCalendar time[data-event="true"] { color: #8e4b2c; background: #fff0e8; font-weight: 700; }
+.monthCalendar th:first-child, .monthCalendar td:first-child time:not([data-event="true"], [aria-current]) { color: #b44c43; }
+.monthCalendar th:last-child, .monthCalendar td:last-child time:not([data-event="true"], [aria-current]) { color: #4f6b9a; }
 .monthCalendar time[aria-current="date"] { color: #fff; background: #376fc8; box-shadow: 0 5px 12px -8px #1f4e9a; font-weight: 700; }
 .calendarDot { position: absolute; bottom: 4px; width: 5px; height: 5px; border-radius: 50%; background: #c9714d; }
 .monthCalendar time[aria-current="date"] .calendarDot { background: #fff; }
@@ -127,7 +131,8 @@
   .headingTools { align-self: flex-end; }
   .current { padding: 20px; align-items: start; flex-direction: column; gap: 16px; }
   .current > div { width: 100%; }
-  .dashboardHome[data-role=teacher] .current>div:last-child{flex:none}
+  .current > .currentProgress { flex: none; order: 0; padding: 0; border-right: 0; }
+  .page .currentAction[data-slot="button"] { margin-top: 10px; }
   .current h2 { font-size: 21px; }
   .panel { padding: 20px 16px; border-radius: 18px; }
   .columns, .mainColumn { gap: 20px; }

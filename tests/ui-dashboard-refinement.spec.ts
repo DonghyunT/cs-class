@@ -28,7 +28,7 @@ test('반은 메뉴·새로고침에서 유지하고 유효하지 않은 URL은 
   await expect(page).toHaveURL(/classId=2-5/);
   await page.reload();
   await expect(page.getByRole('combobox', { name: '담당 반', exact: true })).toContainText('2학년 5반');
-  await page.getByRole('region', { name: '다가오는 일정', exact: true }).getByRole('link', { name: '전체 보기', exact: true }).click();
+  await page.getByRole('region', { name: '다가오는 일정', exact: true }).getByRole('link', { name: '일정 관리', exact: true }).click();
   await expect(page).toHaveURL(/\/teacher\/schedule\?classId=2-5$/);
   await expect(page.getByRole('combobox', { name: '담당 반', exact: true })).toContainText('2학년 5반');
   await page.goto('/teacher');
