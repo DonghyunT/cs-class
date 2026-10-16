@@ -82,9 +82,10 @@ export function nameProjectLines(raw: string): string[] {
   return parseNameProject(raw)?.threads.flatMap((t) => t.map((n) => n.type === "ask_and_wait" ? `${expression(n.params[0] as Node)} · ${labels[n.type]}` : n.type === "dialog_time" ? `${expression(n.params[0] as Node)} · ${expression(n.params[1] as Node)}초 동안 ${n.params[2] === "think" ? "생각하기" : "말하기"}` : n.type === "when_some_key_pressed" ? `키 ${n.params[1]}를 눌렀을 때` : labels[n.type])) ?? ["읽지 못한 작품 원문을 보존하고 있어요."];
 }
 
-export function checkNameMission(raw: string, runs: NameRun[]): { passed: boolean; message: string; issue: "project" | "structure" | "runs" | null; validNames: 0 | 1 | 2 } {
+// The lesson passes its own parser so run keys match the keys it recorded.
+export function checkNameMission(raw: string, runs: NameRun[], parse: (raw: unknown) => { key: string; threads: Node[][] } | null = parseNameProject): { passed: boolean; message: string; issue: "project" | "structure" | "runs" | null; validNames: 0 | 1 | 2 } {
   const fail = (issue: "project" | "structure", message: string) => ({ passed: false, message, issue, validNames: 0 as const });
-  const p = parseNameProject(raw);
+  const p = parse(raw);
   if (!p) return fail("project", "작품을 읽지 못했어요. 입력한 작품을 보존하고 다시 확인해 주세요.");
   const threads = p.threads.filter((t) => t[0]?.type === "when_run_button_click");
   if (threads.length !== 1) return fail("structure", "시작하기 버튼 아래 한 줄로 질문과 말하기를 연결해 주세요.");

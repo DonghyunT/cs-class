@@ -1,0 +1,658 @@
+{
+ "name": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"이름은?\"]},null]},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"combine_something\",\"params\":[null,{\"type\":\"text\",\"params\":[\"내 이름은 \"]},null,{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"number\",\"params\":[\"0.2\"]},\"speak\",null]}]]",
+  "order": [
+   "when_run_button_click",
+   "ask_and_wait",
+   "dialog_time"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"이름은?\"]},null]},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"combine_something\",\"params\":[null,{\"type\":\"text\",\"params\":[\"내 이름은 \"]},null,{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"number\",\"params\":[\"0.2\"]},\"speak\",null]}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "이름은? · 묻고 대답 기다리기",
+   "내 이름은  + 대답 · 0.2초 동안 말하기"
+  ],
+  "checks": {
+   "name": {
+    "passed": true,
+    "message": "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요."
+   },
+   "average": {
+    "passed": false,
+    "message": "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요."
+   },
+   "move": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   }
+  }
+ },
+ "name:exported": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"이름은?\"]},null]},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"combine_something\",\"params\":[null,{\"type\":\"text\",\"params\":[\"내 이름은 \"]},null,{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"number\",\"params\":[\"0.2\"]},\"speak\",null]}]]",
+  "order": [
+   "when_run_button_click",
+   "ask_and_wait",
+   "dialog_time"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null],\"id\":\"b021\",\"x\":40,\"y\":50},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"이름은?\"],\"id\":\"b104\",\"x\":0,\"y\":0},null],\"id\":\"b112\",\"x\":0,\"y\":0},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"combine_something\",\"params\":[null,{\"type\":\"text\",\"params\":[\"내 이름은 \"],\"id\":\"b2014\",\"x\":0,\"y\":0},null,{\"type\":\"get_canvas_input_value\",\"params\":[null],\"id\":\"b20322\",\"x\":0,\"y\":0},null],\"id\":\"b2017\",\"x\":0,\"y\":0},{\"type\":\"number\",\"params\":[\"0.2\"],\"id\":\"b216\",\"x\":0,\"y\":0},\"speak\",null],\"id\":\"b211\",\"x\":0,\"y\":0}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "이름은? · 묻고 대답 기다리기",
+   "내 이름은  + 대답 · 0.2초 동안 말하기"
+  ],
+  "checks": {
+   "name": {
+    "passed": true,
+    "message": "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요."
+   },
+   "average": {
+    "passed": false,
+    "message": "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요."
+   },
+   "move": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   }
+  }
+ },
+ "multiply": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]},{\"type\":\"set_variable\",\"params\":[\"cs-A\",{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]},{\"type\":\"set_variable\",\"params\":[\"cs-B\",{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"get_variable\",\"params\":[\"cs-A\"]},\"MULTI\",{\"type\":\"get_variable\",\"params\":[\"cs-B\"]}]},{\"type\":\"number\",\"params\":[\"0.2\"]},\"speak\",null]}]]",
+  "order": [
+   "when_run_button_click",
+   "ask_and_wait",
+   "set_variable",
+   "ask_and_wait",
+   "set_variable",
+   "dialog_time"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]},{\"type\":\"set_variable\",\"params\":[\"cs-A\",{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]},{\"type\":\"set_variable\",\"params\":[\"cs-B\",{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"get_variable\",\"params\":[\"cs-A\"]},\"MULTI\",{\"type\":\"get_variable\",\"params\":[\"cs-B\"]}]},{\"type\":\"number\",\"params\":[\"0.2\"]},\"speak\",null]}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "숫자는? · 묻고 대답 기다리기",
+   "변수 A에 대답 저장하기",
+   "숫자는? · 묻고 대답 기다리기",
+   "변수 B에 대답 저장하기",
+   "(변수 A × 변수 B) · 0.2초 동안 말하기"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   },
+   "multiply": {
+    "passed": true,
+    "message": "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요."
+   },
+   "average": {
+    "passed": false,
+    "message": "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요."
+   },
+   "move": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   }
+  }
+ },
+ "multiply:exported": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]},{\"type\":\"set_variable\",\"params\":[\"cs-A\",{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]},{\"type\":\"set_variable\",\"params\":[\"cs-B\",{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"get_variable\",\"params\":[\"cs-A\"]},\"MULTI\",{\"type\":\"get_variable\",\"params\":[\"cs-B\"]}]},{\"type\":\"number\",\"params\":[\"0.2\"]},\"speak\",null]}]]",
+  "order": [
+   "when_run_button_click",
+   "ask_and_wait",
+   "set_variable",
+   "ask_and_wait",
+   "set_variable",
+   "dialog_time"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null],\"id\":\"b021\",\"x\":40,\"y\":50},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"],\"id\":\"b104\",\"x\":0,\"y\":0},null],\"id\":\"b112\",\"x\":0,\"y\":0},{\"type\":\"set_variable\",\"params\":[\"cs-A\",{\"type\":\"get_canvas_input_value\",\"params\":[null],\"id\":\"b2122\",\"x\":0,\"y\":0},null],\"id\":\"b212\",\"x\":0,\"y\":0},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"],\"id\":\"b304\",\"x\":0,\"y\":0},null],\"id\":\"b312\",\"x\":0,\"y\":0},{\"type\":\"set_variable\",\"params\":[\"cs-B\",{\"type\":\"get_canvas_input_value\",\"params\":[null],\"id\":\"b4122\",\"x\":0,\"y\":0},null],\"id\":\"b412\",\"x\":0,\"y\":0},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"get_variable\",\"params\":[\"cs-A\"],\"id\":\"b50012\",\"x\":0,\"y\":0},\"MULTI\",{\"type\":\"get_variable\",\"params\":[\"cs-B\"],\"id\":\"b50212\",\"x\":0,\"y\":0}],\"id\":\"b5010\",\"x\":0,\"y\":0},{\"type\":\"number\",\"params\":[\"0.2\"],\"id\":\"b516\",\"x\":0,\"y\":0},\"speak\",null],\"id\":\"b511\",\"x\":0,\"y\":0}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "숫자는? · 묻고 대답 기다리기",
+   "변수 A에 대답 저장하기",
+   "숫자는? · 묻고 대답 기다리기",
+   "변수 B에 대답 저장하기",
+   "(변수 A × 변수 B) · 0.2초 동안 말하기"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   },
+   "multiply": {
+    "passed": true,
+    "message": "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요."
+   },
+   "average": {
+    "passed": false,
+    "message": "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요."
+   },
+   "move": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   }
+  }
+ },
+ "average": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]},{\"type\":\"set_variable\",\"params\":[\"cs-A\",{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]},{\"type\":\"set_variable\",\"params\":[\"cs-B\",{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"get_variable\",\"params\":[\"cs-A\"]},\"PLUS\",{\"type\":\"get_variable\",\"params\":[\"cs-B\"]}]},\"DIVIDE\",{\"type\":\"number\",\"params\":[\"2\"]}]},{\"type\":\"number\",\"params\":[\"0.2\"]},\"speak\",null]}]]",
+  "order": [
+   "when_run_button_click",
+   "ask_and_wait",
+   "set_variable",
+   "ask_and_wait",
+   "set_variable",
+   "dialog_time"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]},{\"type\":\"set_variable\",\"params\":[\"cs-A\",{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]},{\"type\":\"set_variable\",\"params\":[\"cs-B\",{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"get_variable\",\"params\":[\"cs-A\"]},\"PLUS\",{\"type\":\"get_variable\",\"params\":[\"cs-B\"]}]},\"DIVIDE\",{\"type\":\"number\",\"params\":[\"2\"]}]},{\"type\":\"number\",\"params\":[\"0.2\"]},\"speak\",null]}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "숫자는? · 묻고 대답 기다리기",
+   "변수 A에 대답 저장하기",
+   "숫자는? · 묻고 대답 기다리기",
+   "변수 B에 대답 저장하기",
+   "((변수 A + 변수 B) ÷ 2) · 0.2초 동안 말하기"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요."
+   },
+   "average": {
+    "passed": true,
+    "message": "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요."
+   },
+   "move": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   }
+  }
+ },
+ "average:exported": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]},{\"type\":\"set_variable\",\"params\":[\"cs-A\",{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]},{\"type\":\"set_variable\",\"params\":[\"cs-B\",{\"type\":\"get_canvas_input_value\",\"params\":[null]},null]},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"get_variable\",\"params\":[\"cs-A\"]},\"PLUS\",{\"type\":\"get_variable\",\"params\":[\"cs-B\"]}]},\"DIVIDE\",{\"type\":\"number\",\"params\":[\"2\"]}]},{\"type\":\"number\",\"params\":[\"0.2\"]},\"speak\",null]}]]",
+  "order": [
+   "when_run_button_click",
+   "ask_and_wait",
+   "set_variable",
+   "ask_and_wait",
+   "set_variable",
+   "dialog_time"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null],\"id\":\"b021\",\"x\":40,\"y\":50},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"],\"id\":\"b104\",\"x\":0,\"y\":0},null],\"id\":\"b112\",\"x\":0,\"y\":0},{\"type\":\"set_variable\",\"params\":[\"cs-A\",{\"type\":\"get_canvas_input_value\",\"params\":[null],\"id\":\"b2122\",\"x\":0,\"y\":0},null],\"id\":\"b212\",\"x\":0,\"y\":0},{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"],\"id\":\"b304\",\"x\":0,\"y\":0},null],\"id\":\"b312\",\"x\":0,\"y\":0},{\"type\":\"set_variable\",\"params\":[\"cs-B\",{\"type\":\"get_canvas_input_value\",\"params\":[null],\"id\":\"b4122\",\"x\":0,\"y\":0},null],\"id\":\"b412\",\"x\":0,\"y\":0},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"get_variable\",\"params\":[\"cs-A\"],\"id\":\"b500012\",\"x\":0,\"y\":0},\"PLUS\",{\"type\":\"get_variable\",\"params\":[\"cs-B\"],\"id\":\"b500212\",\"x\":0,\"y\":0}],\"id\":\"b50010\",\"x\":0,\"y\":0},\"DIVIDE\",{\"type\":\"number\",\"params\":[\"2\"],\"id\":\"b5026\",\"x\":0,\"y\":0}],\"id\":\"b5010\",\"x\":0,\"y\":0},{\"type\":\"number\",\"params\":[\"0.2\"],\"id\":\"b516\",\"x\":0,\"y\":0},\"speak\",null],\"id\":\"b511\",\"x\":0,\"y\":0}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "숫자는? · 묻고 대답 기다리기",
+   "변수 A에 대답 저장하기",
+   "숫자는? · 묻고 대답 기다리기",
+   "변수 B에 대답 저장하기",
+   "((변수 A + 변수 B) ÷ 2) · 0.2초 동안 말하기"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요."
+   },
+   "average": {
+    "passed": true,
+    "message": "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요."
+   },
+   "move": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "이번 목표에 필요한 질문을 차례로 연결해 주세요."
+   }
+  }
+ },
+ "move": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}]]",
+  "order": [
+   "when_run_button_click",
+   "direction_absolute",
+   "move_direction"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "이동 방향을 90°로 정하기",
+   "이동 방향으로 10만큼 움직이기"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "질문 다음에 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 보세요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요."
+   },
+   "average": {
+    "passed": false,
+    "message": "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요."
+   },
+   "move": {
+    "passed": true,
+    "message": "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "시작 신호마다 한 줄의 코드를 연결해 주세요."
+   }
+  }
+ },
+ "move:exported": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}]]",
+  "order": [
+   "when_run_button_click",
+   "direction_absolute",
+   "move_direction"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null],\"id\":\"b021\",\"x\":40,\"y\":50},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"],\"id\":\"b105\",\"x\":0,\"y\":0},null],\"id\":\"b118\",\"x\":0,\"y\":0},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"],\"id\":\"b206\",\"x\":0,\"y\":0},null],\"id\":\"b214\",\"x\":0,\"y\":0}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "이동 방향을 90°로 정하기",
+   "이동 방향으로 10만큼 움직이기"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "질문 다음에 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 보세요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요."
+   },
+   "average": {
+    "passed": false,
+    "message": "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요."
+   },
+   "move": {
+    "passed": true,
+    "message": "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "시작 신호마다 한 줄의 코드를 연결해 주세요."
+   }
+  }
+ },
+ "keys": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"38\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"0\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"39\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"40\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"180\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"37\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"270\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}]]",
+  "order": [
+   "when_run_button_click",
+   "direction_absolute",
+   "move_direction",
+   "when_some_key_pressed",
+   "direction_absolute",
+   "move_direction",
+   "when_some_key_pressed",
+   "direction_absolute",
+   "move_direction",
+   "when_some_key_pressed",
+   "direction_absolute",
+   "move_direction",
+   "when_some_key_pressed",
+   "direction_absolute",
+   "move_direction"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"38\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"0\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"39\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"40\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"180\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"37\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"270\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "이동 방향을 90°로 정하기",
+   "이동 방향으로 10만큼 움직이기",
+   "위쪽 키를 눌렀을 때",
+   "이동 방향을 0°로 정하기",
+   "이동 방향으로 10만큼 움직이기",
+   "오른쪽 키를 눌렀을 때",
+   "이동 방향을 90°로 정하기",
+   "이동 방향으로 10만큼 움직이기",
+   "아래쪽 키를 눌렀을 때",
+   "이동 방향을 180°로 정하기",
+   "이동 방향으로 10만큼 움직이기",
+   "왼쪽 키를 눌렀을 때",
+   "이동 방향을 270°로 정하기",
+   "이동 방향으로 10만큼 움직이기"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "질문 다음에 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 보세요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요."
+   },
+   "average": {
+    "passed": false,
+    "message": "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요."
+   },
+   "move": {
+    "passed": true,
+    "message": "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요."
+   },
+   "keys": {
+    "passed": true,
+    "message": "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요."
+   }
+  }
+ },
+ "keys:exported": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"38\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"0\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"39\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"40\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"180\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"37\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"270\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}]]",
+  "order": [
+   "when_run_button_click",
+   "direction_absolute",
+   "move_direction",
+   "when_some_key_pressed",
+   "direction_absolute",
+   "move_direction",
+   "when_some_key_pressed",
+   "direction_absolute",
+   "move_direction",
+   "when_some_key_pressed",
+   "direction_absolute",
+   "move_direction",
+   "when_some_key_pressed",
+   "direction_absolute",
+   "move_direction"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null],\"id\":\"b021\",\"x\":40,\"y\":50},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"],\"id\":\"b105\",\"x\":0,\"y\":0},null],\"id\":\"b118\",\"x\":0,\"y\":0},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"],\"id\":\"b206\",\"x\":0,\"y\":0},null],\"id\":\"b214\",\"x\":0,\"y\":0}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"38\"],\"id\":\"b10021\",\"x\":40,\"y\":140},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"0\"],\"id\":\"b10105\",\"x\":0,\"y\":0},null],\"id\":\"b10118\",\"x\":0,\"y\":0},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"],\"id\":\"b10206\",\"x\":0,\"y\":0},null],\"id\":\"b10214\",\"x\":0,\"y\":0}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"39\"],\"id\":\"b20021\",\"x\":40,\"y\":230},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"],\"id\":\"b20105\",\"x\":0,\"y\":0},null],\"id\":\"b20118\",\"x\":0,\"y\":0},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"],\"id\":\"b20206\",\"x\":0,\"y\":0},null],\"id\":\"b20214\",\"x\":0,\"y\":0}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"40\"],\"id\":\"b30021\",\"x\":40,\"y\":320},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"180\"],\"id\":\"b30105\",\"x\":0,\"y\":0},null],\"id\":\"b30118\",\"x\":0,\"y\":0},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"],\"id\":\"b30206\",\"x\":0,\"y\":0},null],\"id\":\"b30214\",\"x\":0,\"y\":0}],[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"37\"],\"id\":\"b40021\",\"x\":40,\"y\":410},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"270\"],\"id\":\"b40105\",\"x\":0,\"y\":0},null],\"id\":\"b40118\",\"x\":0,\"y\":0},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"],\"id\":\"b40206\",\"x\":0,\"y\":0},null],\"id\":\"b40214\",\"x\":0,\"y\":0}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "이동 방향을 90°로 정하기",
+   "이동 방향으로 10만큼 움직이기",
+   "위쪽 키를 눌렀을 때",
+   "이동 방향을 0°로 정하기",
+   "이동 방향으로 10만큼 움직이기",
+   "오른쪽 키를 눌렀을 때",
+   "이동 방향을 90°로 정하기",
+   "이동 방향으로 10만큼 움직이기",
+   "아래쪽 키를 눌렀을 때",
+   "이동 방향을 180°로 정하기",
+   "이동 방향으로 10만큼 움직이기",
+   "왼쪽 키를 눌렀을 때",
+   "이동 방향을 270°로 정하기",
+   "이동 방향으로 10만큼 움직이기"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "질문 다음에 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 보세요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요."
+   },
+   "average": {
+    "passed": false,
+    "message": "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요."
+   },
+   "move": {
+    "passed": true,
+    "message": "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요."
+   },
+   "keys": {
+    "passed": true,
+    "message": "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요."
+   }
+  }
+ },
+ "blank": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"\"]},null]}],[{\"type\":\"get_variable\",\"params\":[\"cs-A\"]}]]",
+  "order": [
+   "when_run_button_click",
+   "direction_absolute",
+   "move_direction",
+   "get_variable"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"\"]},null]}],[{\"type\":\"get_variable\",\"params\":[\"cs-A\"]}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "이동 방향을 90°로 정하기",
+   "이동 방향으로 만큼 움직이기",
+   "변수 A · 아직 연결하지 않은 블록"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "실행할 숫자 입력을 확인해 주세요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "실행할 숫자 입력을 확인해 주세요."
+   },
+   "average": {
+    "passed": false,
+    "message": "실행할 숫자 입력을 확인해 주세요."
+   },
+   "move": {
+    "passed": false,
+    "message": "실행할 숫자 입력을 확인해 주세요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "실행할 숫자 입력을 확인해 주세요."
+   }
+  }
+ },
+ "blank:exported": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"\"]},null]}],[{\"type\":\"get_variable\",\"params\":[\"cs-A\"]}]]",
+  "order": [
+   "when_run_button_click",
+   "direction_absolute",
+   "move_direction",
+   "get_variable"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null],\"id\":\"b021\",\"x\":40,\"y\":50},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"],\"id\":\"b105\",\"x\":0,\"y\":0},null],\"id\":\"b118\",\"x\":0,\"y\":0},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"\"],\"id\":\"b206\",\"x\":0,\"y\":0},null],\"id\":\"b214\",\"x\":0,\"y\":0}],[{\"type\":\"get_variable\",\"params\":[\"cs-A\"],\"id\":\"b10012\",\"x\":40,\"y\":140}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "이동 방향을 90°로 정하기",
+   "이동 방향으로 만큼 움직이기",
+   "변수 A · 아직 연결하지 않은 블록"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "실행할 숫자 입력을 확인해 주세요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "실행할 숫자 입력을 확인해 주세요."
+   },
+   "average": {
+    "passed": false,
+    "message": "실행할 숫자 입력을 확인해 주세요."
+   },
+   "move": {
+    "passed": false,
+    "message": "실행할 숫자 입력을 확인해 주세요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "실행할 숫자 입력을 확인해 주세요."
+   }
+  }
+ },
+ "keyDraft": {
+  "key": "[[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"81\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}]]",
+  "order": [
+   "when_some_key_pressed",
+   "direction_absolute",
+   "move_direction"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"81\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "81번 키를 눌렀을 때",
+   "이동 방향을 90°로 정하기",
+   "이동 방향으로 10만큼 움직이기"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "시작 신호마다 한 줄의 코드를 연결해 주세요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "시작 신호마다 한 줄의 코드를 연결해 주세요."
+   },
+   "average": {
+    "passed": false,
+    "message": "시작 신호마다 한 줄의 코드를 연결해 주세요."
+   },
+   "move": {
+    "passed": false,
+    "message": "시작 신호마다 한 줄의 코드를 연결해 주세요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "시작 신호마다 한 줄의 코드를 연결해 주세요."
+   }
+  }
+ },
+ "keyDraft:exported": {
+  "key": "[[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"81\"]},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"]},null]},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"]},null]}]]",
+  "order": [
+   "when_some_key_pressed",
+   "direction_absolute",
+   "move_direction"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_some_key_pressed\",\"params\":[null,\"81\"],\"id\":\"b021\",\"x\":40,\"y\":50},{\"type\":\"direction_absolute\",\"params\":[{\"type\":\"angle\",\"params\":[\"90\"],\"id\":\"b105\",\"x\":0,\"y\":0},null],\"id\":\"b118\",\"x\":0,\"y\":0},{\"type\":\"move_direction\",\"params\":[{\"type\":\"number\",\"params\":[\"10\"],\"id\":\"b206\",\"x\":0,\"y\":0},null],\"id\":\"b214\",\"x\":0,\"y\":0}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "81번 키를 눌렀을 때",
+   "이동 방향을 90°로 정하기",
+   "이동 방향으로 10만큼 움직이기"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "시작 신호마다 한 줄의 코드를 연결해 주세요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "시작 신호마다 한 줄의 코드를 연결해 주세요."
+   },
+   "average": {
+    "passed": false,
+    "message": "시작 신호마다 한 줄의 코드를 연결해 주세요."
+   },
+   "move": {
+    "passed": false,
+    "message": "시작 신호마다 한 줄의 코드를 연결해 주세요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "시작 신호마다 한 줄의 코드를 연결해 주세요."
+   }
+  }
+ },
+ "loose": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"get_canvas_input_value\",\"params\":[null]},{\"type\":\"number\",\"params\":[\"0.2\"]},\"speak\",null]}],[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"number\",\"params\":[\"1\"]},\"PLUS\",{\"type\":\"number\",\"params\":[\"2\"]}]}],[{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]}]]",
+  "order": [
+   "when_run_button_click",
+   "dialog_time",
+   "calc_basic",
+   "ask_and_wait"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"get_canvas_input_value\",\"params\":[null]},{\"type\":\"number\",\"params\":[\"0.2\"]},\"speak\",null]}],[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"number\",\"params\":[\"1\"]},\"PLUS\",{\"type\":\"number\",\"params\":[\"2\"]}]}],[{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "대답 · 0.2초 동안 말하기",
+   "(1 + 2) · 아직 연결하지 않은 블록",
+   "숫자는? · 묻고 대답 기다리기"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "질문 다음에 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 보세요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요."
+   },
+   "average": {
+    "passed": false,
+    "message": "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요."
+   },
+   "move": {
+    "passed": false,
+    "message": "시작하기 아래에 이동 블록을 연결해 보세요. 오른쪽 방향은 90°예요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "‘키를 눌렀을 때’ 아래에 방향을 정하고 움직여요. 위 0°·오른쪽 90°·아래 180°·왼쪽 270°예요."
+   }
+  }
+ },
+ "loose:exported": {
+  "key": "[[{\"type\":\"when_run_button_click\",\"params\":[null]},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"get_canvas_input_value\",\"params\":[null]},{\"type\":\"number\",\"params\":[\"0.2\"]},\"speak\",null]}],[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"number\",\"params\":[\"1\"]},\"PLUS\",{\"type\":\"number\",\"params\":[\"2\"]}]}],[{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"]},null]}]]",
+  "order": [
+   "when_run_button_click",
+   "dialog_time",
+   "calc_basic",
+   "ask_and_wait"
+  ],
+  "project": "{\"scenes\":[{\"id\":\"scene1\",\"name\":\"장면 1\"}],\"objects\":[{\"id\":\"entrybot\",\"name\":\"강아지\",\"script\":[[{\"type\":\"when_run_button_click\",\"params\":[null],\"id\":\"b021\",\"x\":40,\"y\":50},{\"type\":\"dialog_time\",\"params\":[{\"type\":\"get_canvas_input_value\",\"params\":[null],\"id\":\"b1022\",\"x\":0,\"y\":0},{\"type\":\"number\",\"params\":[\"0.2\"],\"id\":\"b116\",\"x\":0,\"y\":0},\"speak\",null],\"id\":\"b111\",\"x\":0,\"y\":0}],[{\"type\":\"calc_basic\",\"params\":[{\"type\":\"number\",\"params\":[\"1\"],\"id\":\"b10006\",\"x\":0,\"y\":0},\"PLUS\",{\"type\":\"number\",\"params\":[\"2\"],\"id\":\"b10026\",\"x\":0,\"y\":0}],\"id\":\"b10010\",\"x\":40,\"y\":140}],[{\"type\":\"ask_and_wait\",\"params\":[{\"type\":\"text\",\"params\":[\"숫자는?\"],\"id\":\"b20004\",\"x\":0,\"y\":0},null],\"id\":\"b20012\",\"x\":40,\"y\":230}]],\"objectType\":\"sprite\",\"rotateMethod\":\"free\",\"scene\":\"scene1\",\"selectedPictureId\":\"dog1\",\"lock\":false,\"sprite\":{\"sounds\":[],\"pictures\":[{\"id\":\"dog1\",\"name\":\"강아지\",\"imageType\":\"svg\",\"fileurl\":\"/entryjs/name-dog.svg\",\"thumbUrl\":\"/entryjs/name-dog.svg\",\"dimension\":{\"width\":144,\"height\":144}}]},\"entity\":{\"x\":0,\"y\":0,\"regX\":72,\"regY\":72,\"scaleX\":0.65,\"scaleY\":0.65,\"rotation\":0,\"direction\":90,\"width\":144,\"height\":144,\"visible\":true}}],\"variables\":[{\"id\":\"timer\",\"name\":\"초시계\",\"variableType\":\"timer\",\"visible\":false,\"value\":\"0\",\"x\":134,\"y\":-70,\"object\":null,\"isCloud\":false},{\"id\":\"answer\",\"name\":\"대답\",\"variableType\":\"answer\",\"visible\":false,\"value\":\"0\",\"x\":150,\"y\":-100,\"object\":null,\"isCloud\":false},{\"id\":\"cs-A\",\"name\":\"A\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":130,\"object\":null,\"isCloud\":false,\"isRealTime\":false},{\"id\":\"cs-B\",\"name\":\"B\",\"variableType\":\"variable\",\"value\":0,\"visible\":false,\"x\":-210,\"y\":100,\"object\":null,\"isCloud\":false,\"isRealTime\":false}],\"messages\":[],\"functions\":[],\"tables\":[],\"speed\":60,\"expansionBlocks\":[],\"aiUtilizeBlocks\":[],\"externalModules\":[],\"externalModulesLite\":[],\"interface\":{\"menuWidth\":230,\"canvasWidth\":320,\"object\":\"entrybot\"}}",
+  "lines": [
+   "시작하기 버튼을 클릭했을 때",
+   "대답 · 0.2초 동안 말하기",
+   "(1 + 2) · 아직 연결하지 않은 블록",
+   "숫자는? · 묻고 대답 기다리기"
+  ],
+  "checks": {
+   "name": {
+    "passed": false,
+    "message": "질문 다음에 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 보세요."
+   },
+   "multiply": {
+    "passed": false,
+    "message": "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요."
+   },
+   "average": {
+    "passed": false,
+    "message": "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요."
+   },
+   "move": {
+    "passed": false,
+    "message": "시작하기 아래에 이동 블록을 연결해 보세요. 오른쪽 방향은 90°예요."
+   },
+   "keys": {
+    "passed": false,
+    "message": "‘키를 눌렀을 때’ 아래에 방향을 정하고 움직여요. 위 0°·오른쪽 90°·아래 180°·왼쪽 270°예요."
+   }
+  }
+ }
+}

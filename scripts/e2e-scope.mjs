@@ -53,6 +53,7 @@ export const LESSON_MAPPINGS = {
     patterns: [
       /^src\/components\/student\/programming-(?:lesson\.tsx|lesson\.module\.css|concept\.tsx|concept\.module\.css)$/,
       /^src\/components\/student\/entry-practice-workspace(?:\.tsx|\.module\.css)$/,
+      /^src\/lib\/classroom\/(?:programming-entry|name-entry|entry-palette)\.ts$/,
       /^public\/entryjs\/.+$/,
       /^scripts\/prepare-entryjs\.mjs$/
     ],

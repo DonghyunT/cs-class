@@ -2,7 +2,7 @@ import { CLASSROOM_HELP_ENABLED } from "../src/lib/classroom/features";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { buildProgrammingProject, parseProgrammingProject, programmingProjectMatches, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
-import { db, headers, readyStudent, saveDraft } from "./emulator";
+import { db, headers, readyStudent, saveDraft, entryReset, entryStart, entryStop } from "./emulator";
 
 const lessonIds = ["programming-13", "entry-bot-lab", "review-sandwich", "review-abstraction", "review-flowchart"];
 let originalClass: FirebaseFirestore.DocumentData | undefined;
@@ -83,7 +83,7 @@ async function prepareProgramming(page: Page, mission: "name" | "move", project 
   await page.setViewportSize({ width: 1840, height: 1000 });
   await page.goto("/classroom/programming-13?from=dashboard");
   await page.locator("iframe").scrollIntoViewIfNeeded();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
   return page.frameLocator("iframe");
 }
 
@@ -125,12 +125,12 @@ test("practice-focus-live: 질문 대기 중 집중·넓게 전환 뒤 실제 �
   const iframe = (await page.locator("iframe").elementHandle())!;
   const input = frame.getByLabel("강아지 이름 대답");
   const answer = "전환 중인 초코";
-  await page.getByRole("button", { name: "실행하기", exact: true }).click();
+  await entryStart(page).click();
   await expect(input).toBeVisible(); await clickAnswerCanvas(page); await expect(input).toBeFocused();
   await page.keyboard.insertText(answer);
   const stillWaiting = async () => {
     expect(await iframe.evaluate(element => element === document.querySelector('iframe[src*="/entryjs/workspace.html"]'))).toBe(true);
-    await expect(page.getByRole("button", { name: "실행 정지", exact: true })).toBeEnabled();
+    await expect(entryStop(page)).toBeEnabled();
     await expect(input).toBeVisible(); await expect(input).toHaveValue(answer);
     expect(programmingProjectMatches(project, (await storedProgramming(page)).draft.programming!.projects.name)).toBe(true);
   };
@@ -141,7 +141,7 @@ test("practice-focus-live: 질문 대기 중 집중·넓게 전환 뒤 실제 �
   await page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true }).click(); await stillWaiting();
   await clickAnswerCanvas(page, true);
   await expect(page.getByRole("status").filter({ hasText: `마지막 말: ${answer}` })).toBeVisible({ timeout: 10000 });
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+  await expect(entryStart(page)).toBeVisible();
   await expect(page.getByRole("status", { name: "서로 다른 이름 확인", exact: true })).toHaveText("서로 다른 이름 확인 1/2");
   await page.screenshot({ path: info.outputPath("focus-live-answer.png"), fullPage: false });
   expect(errors).toEqual([]);
@@ -181,10 +181,10 @@ test("practice-focus-space: 네 보기의 실제 작업영역 증가·빈 숫자
   await page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true }).click();
   expect(await width()).toBeCloseTo(normal, 0);
   await page.getByRole("tab", { name: /^퀴즈/ }).click(); await page.getByRole("tab", { name: /^실습/ }).click();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+  await expect(entryStart(page)).toBeVisible();
   await expect.poll(savedAmount).toEqual(node("number", ""));
   await page.reload();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
   await expect(page.locator("[data-lesson-shell]")).toHaveAttribute("data-practice-focused", "false");
   await expect(page.locator("[data-lesson-shell]")).toHaveAttribute("data-workspace-wide", "false");
   await expect.poll(savedAmount).toEqual(node("number", ""));

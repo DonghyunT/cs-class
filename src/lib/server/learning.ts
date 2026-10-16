@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Lesson, Work, WorkAction } from "../classroom/types";
 import { parseEntryProject } from "../classroom/entry-project";
-import { checkProgrammingMission, missionById, parseProgrammingProject, programmingProjectMatches } from "../classroom/programming-entry";
+import { MAX_PROJECT_BYTES, checkProgrammingMission, missionById, parseProgrammingProject, programmingProjectMatches } from "../classroom/programming-entry";
 import { practiceMatches } from "../classroom/progress";
 import { requireCondition } from "./errors";
 import { getLessonSolution } from "./solutions";
@@ -48,8 +48,11 @@ export function validateDraft(draft: z.infer<typeof draftSchema>, lesson: Lesson
   requireCondition(!draft.reviewProject, 400, "INVALID_PROJECT", "이 수업의 작품 형식을 확인해 주세요.");
   if (lesson.practice.type === "programming") {
     requireCondition(draft.programming && missionById(draft.programming.mission) && Object.keys(draft.programming.projects).length <= 5 && Object.entries(draft.programming.projects).every(([id, raw]) => missionById(id) && parseProgrammingProject(raw)), 400, "INVALID_PROJECT", "미션의 작품과 입력값을 확인해 주세요.");
-    requireCondition(Object.values(draft.programming!.projects).every((raw) => Buffer.byteLength(raw, "utf8") <= 32768) && Buffer.byteLength(JSON.stringify(draft), "utf8") <= 120000, 400, "PROJECT_TOO_LARGE", "작품이 저장 한도를 넘었어요. 현재 블록을 보존하고 필요한 블록만 남겨 다시 시도해 주세요.");
-    return { ...draft, entryProject: null, practiceOrder: [] };
+    // Store the server's own normalization, never the client's raw extra fields.
+    const projects = Object.fromEntries(Object.entries(draft.programming!.projects).map(([id, raw]) => [id, JSON.stringify(parseProgrammingProject(raw)!.project)]));
+    const normalized = { ...draft, programming: { ...draft.programming!, projects }, entryProject: null, practiceOrder: [] };
+    requireCondition(Object.values(projects).every((project) => Buffer.byteLength(project, "utf8") <= MAX_PROJECT_BYTES) && Buffer.byteLength(JSON.stringify(normalized), "utf8") <= 120000, 400, "PROJECT_TOO_LARGE", "작품이 저장 한도를 넘었어요. 현재 블록을 보존하고 필요한 블록만 남겨 다시 시도해 주세요.");
+    return normalized;
   }
   requireCondition(!draft.programming, 400, "INVALID_PROJECT", "이 수업의 작품 형식을 확인해 주세요.");
   if (lesson.practice.type === "entryjs") {

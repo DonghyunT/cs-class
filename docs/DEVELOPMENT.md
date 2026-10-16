@@ -208,6 +208,12 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 - **iframe 격리:** 작업실(`public/entryjs/workspace.html`)과 브리지(`workspace.js`)는 `allow-scripts`만 허용한 격리 iframe에서 구동되며 부모의 쿠키나 세션에 접근할 수 없습니다.
 - **이미지 CORS & 포커스:** `Entry.init` 전 이미지 생성에 `crossOrigin="anonymous"`를 적용하여 픽셀 클릭 판정을 보장합니다. 질문창 커서 깜빡임 방지를 위해 중복 `focus()` 호출을 제한합니다.
 - **수동 저장 연동:** 실행 중 전체 내보내기 대신 정지 상태의 코드만 반영하며, `useWork`를 통해 단일 불변 스냅샷으로 저장합니다.
+- **수업 팔레트와 미션 블록:** 팔레트·이름표·미션별 허용 블록은 [`entry-palette.ts`](../src/lib/classroom/entry-palette.ts) 한 곳에 둡니다. 격리 iframe은 이 모듈을 가져올 수 없어 `workspace.js`의 `PROGRAMMING_PALETTE`에 복사본을 두며, `tests/entry-palette.test.ts`가 두 목록이 같은지 확인합니다. `EntryStatic.getAllBlocks`는 `Entry.init` 전에 바꿔야 반영됩니다.
+- **저장 파서와 기존 키:** `parseProgrammingProject`는 원래 12종 블록을 기존 분기 그대로 정제하고, 그 밖의 팔레트 블록만 일반 규칙(원래 `params`, 반복·조건 블록에만 `statements`)으로 보존합니다. 이 순서를 바꾸면 기존 작품의 `key`가 달라져 검증·제출 기록과 이름 미션 실행 기록이 어긋납니다. `tests/fixtures/entry-legacy-keys.json`이 기존 키·정규화·채점 결과를 고정하며, 의도한 형식 변경이 아니면 이 파일을 다시 만들지 않습니다.
+- **실행·이벤트:** 프로그래밍 수업은 툴바 실행 버튼 없이 엔트리의 "시작하기/정지하기"를 씁니다(`entry-bot-lab`은 툴바 버튼 유지). 감시기는 모든 오브젝트의 실행 코드가 비면 끝내되, 이벤트로 시작하는 줄이 있으면 결과와 이름 실행 기록을 `finished`로 한 번 보내고 `waiting`을 알린 뒤 정지·15초까지 유지합니다. 이름 실행 기록은 강아지(`entity.parent.id === "entrybot"`)의 묻기·말하기만 남깁니다. 테스트는 `tests/emulator.ts`의 `entryStart`·`entryStop`·`entryReset` 도우미를 씁니다.
+- **오브젝트 추가:** 프로그래밍 수업에서만 `objectEditable`·`objectaddable`·`objectdeletable`을 켭니다. 엔트리 추가 버튼의 `openSpriteManager`를 `add-object-request`로 전달하면 수업 화면이 `ENTRY_SPRITES` 대화상자를 열고, 고른 그림으로 만든 모델을 `add-object`로 보냅니다. `removeObject`는 불러오는 중이 아니면 `entrybot` 삭제를 막습니다. 엔트리는 새 오브젝트를 목록 맨 앞에 넣으므로 파서는 강아지를 `id`로 찾고, 추가 오브젝트의 그림은 목록 파일과 일치할 때만 받아 다시 조립합니다. 오브젝트가 강아지뿐이면 키·정규화는 이전과 같습니다.
+- **심포지엄 후속(2026-10-16):** 원래 12종 블록이 자기 분기 조건에 맞지 않으면 일반 규칙으로 넘기지 않고 거부합니다(교사 작품 보기 오류 방지). 파서는 정규화가 한 번에 수렴하도록 이름을 자른 뒤 다시 다듬고, 엔트리가 음수로 뒤집은 크기는 부호를 유지합니다. 서버는 받은 원문 대신 자체 정규화본을 저장하고 `MAX_PROJECT_BYTES`(32,768)를 클라이언트와 공유합니다. 파서 결과의 `gradeKey`(강아지 코드만)는 이름 미션 실행 기록에, `key`(작품 전체)는 검증·제출 비교에 씁니다. 엔트리의 복제·붙여넣기(`addCloneObject`)는 강아지 복제와 6개 초과를 막고, 추가 직후에는 강아지를 다시 선택합니다. 채점 오류 중 인터프리터가 의도한 `MissionError`만 학생에게 보이고, 나머지는 미션 힌트로 대신합니다.
+- **채점 범위:** `missionBlockIssue`가 미션 신호로 시작하는 줄(값 블록·반복 안쪽 포함)에서 미션 밖 블록을 찾아 이름표로 안내하고, 서버 인터프리터는 그 뒤에만 실행합니다.
 
 ### 4.2 알고리즘 복습 연구소
 <a id="알고리즘-복습-수업"></a>
