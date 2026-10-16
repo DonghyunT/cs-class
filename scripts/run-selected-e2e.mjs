@@ -1,31 +1,38 @@
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { testEnv } from "./local-test-env.mjs";
 import { selectScope } from "./ci-policy.mjs";
 
 const args = process.argv.slice(2);
 const isRunning = args.includes("--running");
+const allowFull = args.includes("--full");
+const isCI = Boolean(process.env.GITHUB_EVENT_NAME || process.env.GITHUB_ACTIONS);
 const planArgIdx = args.indexOf("--plan");
-const planPath = planArgIdx !== -1
-  ? args[planArgIdx + 1]
-  : (process.env.CS_E2E_PLAN_PATH || "scratch/ci/e2e-plan.json");
+const explicitPlanPath = planArgIdx !== -1 ? args[planArgIdx + 1] : process.env.CS_E2E_PLAN_PATH;
+// CI reads the plan written by `ci-policy.mjs scope`; local runs never reuse a leftover default file.
+const planPath = explicitPlanPath || (isCI ? "scratch/ci/e2e-plan.json" : null);
 
 let plan;
-if (existsSync(planPath)) {
+if (planPath && existsSync(planPath)) {
   try {
     plan = JSON.parse(readFileSync(planPath, "utf8"));
   } catch (err) {
     console.error(`Invalid plan JSON at ${planPath}:`, err.message);
     process.exit(1);
   }
+} else if (explicitPlanPath && !isCI) {
+  console.error(`Plan file not found: ${explicitPlanPath}`);
+  process.exit(1);
 } else {
-  // Generate plan dynamically if no plan file exists
   plan = await selectScope(process.env);
-  try {
-    mkdirSync(path.dirname(planPath), { recursive: true });
-    writeFileSync(planPath, JSON.stringify(plan, null, 2));
-  } catch {}
+  if (planPath) {
+    try {
+      mkdirSync(path.dirname(planPath), { recursive: true });
+      writeFileSync(planPath, JSON.stringify(plan, null, 2));
+    } catch {}
+  }
 }
 
 if (!plan || !["docs", "affected", "smoke", "full"].includes(plan.mode)) {
@@ -33,9 +40,14 @@ if (!plan || !["docs", "affected", "smoke", "full"].includes(plan.mode)) {
   process.exit(1);
 }
 
-if (plan.mode === "full" && (process.env.GITHUB_EVENT_NAME || process.env.GITHUB_ACTIONS)
-  && process.env.GITHUB_EVENT_NAME !== "workflow_dispatch") {
+if (plan.mode === "full" && isCI && process.env.GITHUB_EVENT_NAME !== "workflow_dispatch") {
   console.error("Full E2E requires workflow_dispatch; regenerate the automatic CI plan.");
+  process.exit(1);
+}
+
+if (plan.mode === "full" && !isCI && !allowFull) {
+  console.error(`[E2E Runner] Scope resolved to full E2E (${plan.reason}); not running it.`);
+  console.error("Local full E2E needs the user's prior approval. After approval, rerun with --full.");
   process.exit(1);
 }
 
@@ -82,8 +94,16 @@ if (isRunning) {
   child.on("exit", (code) => process.exit(code ?? 1));
 } else {
   // Wrap with firebase emulators:exec
-  env.CS_E2E_PLAN_PATH = path.resolve(planPath);
-  const childCmd = `node scripts/run-selected-e2e.mjs --running`;
+  let tempDir = null;
+  if (planPath) {
+    env.CS_E2E_PLAN_PATH = path.resolve(planPath);
+  } else {
+    // Hand the freshly computed local plan to the child without leaving a reusable default file.
+    tempDir = mkdtempSync(path.join(tmpdir(), "cs-class-e2e-plan-"));
+    env.CS_E2E_PLAN_PATH = path.join(tempDir, "plan.json");
+    writeFileSync(env.CS_E2E_PLAN_PATH, JSON.stringify(plan, null, 2));
+  }
+  const childCmd = `node scripts/run-selected-e2e.mjs --running${allowFull ? " --full" : ""}`;
   const firebaseBin = path.join("node_modules", "firebase-tools", "lib", "bin", "firebase.js");
   const child = spawn(process.execPath, [
     firebaseBin, "emulators:exec",
@@ -94,5 +114,8 @@ if (isRunning) {
     env,
     stdio: "inherit"
   });
-  child.on("exit", (code) => process.exit(code ?? 1));
+  child.on("exit", (code) => {
+    if (tempDir) rmSync(tempDir, { recursive: true, force: true });
+    process.exit(code ?? 1);
+  });
 }
