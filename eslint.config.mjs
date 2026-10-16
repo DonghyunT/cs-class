@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     "**/coverage/**",
     // Reference material and local artifacts are not application source.
     "archive/**",
+    // Claude Code session worktrees are separate checkouts of this repository.
+    ".claude/**",
     "docs/**",
     "outputs/**",
     "scratch/**",
