@@ -75,7 +75,8 @@ test("실제 EntryJS 블록 조립·실행·저장·검증·제출·복원", asy
   const submitted = (await stored()).submission;
   await page.reload();
   await expect(page.getByRole("button", { name: "이 작품 제출 완료" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+  // The reload boots EntryJS again; wait as long as the first load does.
+  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
   await frame.locator("#entryWorkspaceBoard").getByText("10", { exact: true }).locator("..").click();
   await frame.locator("input:not([disabled]):visible").fill("20");
   expect(parseEntryProject((await stored()).draft.entryProject)?.threads[0][1]).toEqual({ type: "move_direction", amount: 10 });
