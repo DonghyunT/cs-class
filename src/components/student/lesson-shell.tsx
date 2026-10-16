@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, ChevronDown, CloudCheck, LogOut, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, CloudCheck, LogOut, Maximize2, Minimize2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
@@ -54,21 +54,21 @@ export function LessonShell({ lesson, returnOrigin, workspaceWide, practiceFocus
   }}>
     <header className={styles.header}>
       <div className={styles.headerInner}>
-        <Link className={styles.leave} href={preview ? `/teacher/classes?classId=${encodeURIComponent(preview.classId)}` : returnOrigin === "dashboard" ? "/student" : "/student/lessons"}><ArrowLeft size={18} aria-hidden="true" />{preview ? "수업 관리로 돌아가기" : "수업 나가기"}</Link>
-        <div className={styles.title}><div className={styles.titleLine}><h1>{lesson.title}</h1>{learningStatus}</div>{otherCurrent && <Link className={styles.currentLesson} href={`/classroom/${otherCurrent.id}?from=${returnOrigin}`}>이번 수업: {otherCurrent.title} · 이동</Link>}</div>
-        <div className={styles.saveArea}>{!preview && <Button data-work-save size="sm" aria-disabled={!save || saveDisabled} onClick={() => { if (save && !saveDisabled) void save(); }} title="저장 (Ctrl+S / Cmd+S)"><Save size={16} aria-hidden="true" />저장</Button>}<span className={styles.save} role="status">{saveLabel === "저장 완료" && <CloudCheck size={17} aria-hidden="true" />}{saveLabel}</span></div>
+        <div className={styles.nav}><Link className={styles.leave} href={preview ? `/teacher/classes?classId=${encodeURIComponent(preview.classId)}` : returnOrigin === "dashboard" ? "/student" : "/student/lessons"}><ArrowLeft size={18} aria-hidden="true" />{preview ? "수업 관리로 돌아가기" : "수업 나가기"}</Link>{otherCurrent && <Link className={styles.currentLesson} href={`/classroom/${otherCurrent.id}?from=${returnOrigin}`} aria-label={`이번 수업: ${otherCurrent.title} · 이동`} title={`이번 수업: ${otherCurrent.title}`}><span>이번 수업: {otherCurrent.title}</span><ArrowRight size={16} aria-hidden="true" /></Link>}</div>
+        <div className={styles.title}><div className={styles.titleLine}><h1>{lesson.title}</h1>{learningStatus}</div></div>
+        <div className={styles.tools}><div className={styles.saveArea}>{!preview && <Button data-work-save size="sm" aria-disabled={!save || saveDisabled} onClick={() => { if (save && !saveDisabled) void save(); }} title="저장 (Ctrl+S / Cmd+S)"><Save size={16} aria-hidden="true" />저장</Button>}<span className={styles.save} role="status">{saveLabel === "저장 완료" && <CloudCheck size={17} aria-hidden="true" />}{saveLabel}</span></div>
         {!preview && CLASSROOM_HELP_ENABLED && <HelpButton lessonId={lesson.id} />}
         {!preview && <details ref={menu} className={styles.account} onToggle={event => setOpen(event.currentTarget.open)} onKeyDown={event => {
           if (event.key === "Escape" && menu.current?.open) { event.preventDefault(); event.stopPropagation(); menu.current.open = false; menuToggle.current?.focus({ preventScroll: true }); }
         }}>
           <summary ref={menuToggle} role="button" aria-label="학생 메뉴" aria-expanded={open}>{session?.studentId ?? "학생"}<ChevronDown size={16} aria-hidden="true" /></summary>
           <div className={styles.accountPanel}><p>{session?.studentId} 학생으로 학습 중</p><Button ref={logoutButton} variant="ghost" disabled={leaving} onClick={() => void leaveAccount()}><LogOut size={17} aria-hidden="true" />{leaving ? "저장 확인 중…" : "로그아웃"}</Button></div>
-        </details>}
+        </details>}</div>
       </div>
       {preview && <div className={styles.previewToolbar}><strong>교사 미리보기 · 이 창에서만 체험</strong><p>체험 내용은 새로고침·수업 변경·나가기 때 사라집니다. 학생 기록에는 반영되지 않아요.</p>{preview.controls}</div>}
     </header>
     <main id="main-content" tabIndex={-1} className={styles.main}>
-      <div className={styles.navigation} data-focused={practiceFocused}><details className={styles.stagePicker} data-focused={practiceFocused} open={!practiceFocused}><summary>단계 바꾸기</summary>{navigation}</details>{canFocus && <Button ref={focusToggle} className={styles.focusToggle} variant="outline" aria-pressed={practiceFocused} onClick={() => changeFocus(!practiceFocused)}>{practiceFocused ? "실습 집중 모드 끝내기" : "실습 집중 모드"}</Button>}</div>
+      <div className={styles.navigation} data-focused={practiceFocused}><details className={styles.stagePicker} data-focused={practiceFocused} open={!practiceFocused}><summary>단계 바꾸기</summary>{navigation}</details>{canFocus && <Button ref={focusToggle} className={styles.focusToggle} variant="outline" aria-pressed={practiceFocused} onClick={() => changeFocus(!practiceFocused)}>{practiceFocused ? <Minimize2 size={16} aria-hidden="true" /> : <Maximize2 size={16} aria-hidden="true" />}{practiceFocused ? "실습 집중 모드 끝내기" : "실습 집중 모드"}</Button>}</div>
       {logoutError && <p role="alert" className={styles.error}>{logoutError}</p>}
       {children}
     </main>
