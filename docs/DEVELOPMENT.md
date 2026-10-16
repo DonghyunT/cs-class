@@ -277,4 +277,4 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
   ```
 - **Playwright Secure 쿠키 이슈:** E2E 앱 주소는 항상 `http://localhost:3000`을 사용합니다. `127.0.0.1`에서는 운영 빌드의 Secure 쿠키 전송이 차단될 수 있습니다.
 - **Stitch 디자인 플러그인:** Codex Stitch 연동 키는 `STITCH_API_KEY` 환경변수로만 관리하며 저장소나 로그에 노출하지 않습니다.
-- **Claude Code 설정:** `.claude/settings.json`은 `.env*.local`·서비스 계정 키 읽기와 Firestore 삭제·Firebase 배포 도구를 막고, 운영 Firebase 도구 호출·`git push`·PR 병합·Vercel 승격을 매번 확인받습니다. `.claude/launch.json`은 내장 미리보기용 `dev:emulator` 실행 설정이며 시스템 JDK 21이 필요합니다.
+- **Claude Code 전용 설정:** `.claude/`는 Claude Code만 읽으며 다른 에이전트의 동작과 공통 규칙은 [AGENTS](../AGENTS.md)를 따릅니다. `settings.json`은 Claude에서 `.env*.local`·서비스 계정 키 읽기와 Firestore 삭제·Firebase 배포 도구를 막고, 운영 Firebase 도구·`git push`·PR 병합·Vercel 승격을 매번 확인받습니다. `launch.json`은 내장 미리보기용 `dev:emulator` 실행 설정입니다.

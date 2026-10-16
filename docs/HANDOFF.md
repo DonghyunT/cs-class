@@ -4,12 +4,6 @@
 
 ## 현재 작업 상태
 
-### Claude Code 작업 환경 정비(`main@d481643`, 2026-10-17)
-
-- `.claude/settings.json`은 `.env*.local`·서비스 계정 키 읽기와 Firestore 삭제·Firebase 배포 도구를 막고, 운영 Firebase 도구·`git push`·PR 병합·Vercel 승격·배포 생성은 매번 확인받습니다. 더미 파일로 `Read`·`cat` 차단을 확인했습니다.
-- main CI `app` 성공(미분류 `.claude/settings.json`으로 smoke 모드, `lesson-smoke` 4개 통과). GitHub Production 배포 상태 `success`는 CI 성공 2초 뒤였습니다(18:22:40Z→18:22:42Z, UTC). 앱 코드 변경은 없습니다.
-- 이 PC에 Temurin JDK 21.0.12를 시스템 설치하고 `scratch/` JDK 없이 에뮬레이터 실행을 확인했습니다. 내장 미리보기 설정 `.claude/launch.json`도 저장소에 공유합니다. Claude 앱 재시작 뒤 미리보기 실행은 아직 확인하지 않았습니다.
-
 **반영(2026-10-17, [PR #39](https://github.com/DonghyunT/cs-class/pull/39) → `main@be4c403`):** 로컬 화면 확인 뒤 남은 아쉬운 점은 "이번 수업이 다른 수업일 때만 수업 헤더가 높아지는 것"이었습니다. 이번 수업 링크를 제목 아래에서 `수업 나가기` 옆 알약형 링크로 옮겨 821px 이상에서 링크 유무와 관계없이 헤더 높이(약 69px)를 같게 했고, 820px 이하는 제목 아래에 둡니다(`05c35bc`, [DESIGN](DESIGN.md) §4.1). `tests/lesson-ui-consistency.spec.ts`와 공통 스모크 선별 8개, 린트·타입·문서 검사를 통과했습니다. 821px 부근에서 저장 상태 문구가 줄바꿈되어 헤더가 약 100px가 되는 것은 이전부터 있던 현상입니다. 변경 내용은 대시보드 달력 `일~토` 전환·주말 글자색, 교사 이번 수업 카드를 학생과 같은 좌측 진도/우측 수업 순서로 정렬하고 `수업 미리보기` 추가, 교사 일정 링크 `일정 관리`, 수업 헤더 821px 이상 좌(나가기)/중앙(제목)/우(저장·메뉴) 3구획, 실습 집중 모드 알약형 아이콘 버튼. 기준은 [DESIGN](DESIGN.md) §4.1·§4.4입니다.
 
 - 린트·타입·문서·`test:review` 통과. 새 demo 에뮬레이터에서 대시보드·달력·헤더·집중 모드 관련 11파일과 공통 스모크 선별 98개 중 97개 통과, 1개(437px 교사 카드 높이 336px>320px)를 모바일 여백 축소로 고친 뒤 해당 대시보드 3파일 25개 재실행 통과. 전체 E2E는 실행하지 않았습니다.
@@ -61,6 +55,7 @@
 - **운영 배포:** Vercel `cs-class` Production 배포 `dpl_7A6kh7nRmPLQNgM3TLohSBkMC2Eb`·READY·운영 별칭(`cs-class-donghyunt.vercel.app`) 연결 확인. 직전 복구 후보는 `be4c403`·`dpl_8uCDYeQYNPSpsD64VERiTagq4exg`, 그 전은 `a3ad309`·`dpl_AXSEpYeQCJsstHdZgXUCxSmag5FP`입니다.
 - **CI:** 세 병합 모두 main `app` 성공. #41 병합 후 smoke 모드(미분류 `scripts/e2e-scope.mjs`) 56개 통과. 전체 E2E 미실행.
 - **운영 확인 범위:** 익명 `/api/auth/config`·`/api/auth/session` 200, 학생 로그인 페이지 200, 비인가 `/api/classroom/student` 401, 새 스프라이트(`/entryjs/sprites/*.svg`) 200, 운영 `workspace.js`에 수업 팔레트·오브젝트 추가 처리 포함 확인. 실제 계정 로그인·학생 저장·엔트리 실습은 운영에서 실행하지 않았습니다.
+- **이후 설정·문서 반영:** `d481643`(Claude Code 권한 설정)·`23026a7`(Claude 미리보기 설정, JDK 설치 안내)은 앱 코드 변경이 없습니다. 두 커밋 모두 main `app` 성공(미분류 `.claude/` 파일로 smoke, 4개 통과)과 Production 배포 `success`를 확인했고, 앱 릴리스 기준은 위 #41 그대로입니다.
 
 ## 검증 상태
 
