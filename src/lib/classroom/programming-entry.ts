@@ -41,6 +41,8 @@ export function newAddedObject(spriteId: string, existing: number): AddedObject 
 
 // Same per-mission limit the server enforces on the normalized project.
 export const MAX_PROJECT_BYTES = 32_768;
+// Raw EntryJS exports carry ~600 bytes of metadata per block; the request schema accepts this much.
+export const MAX_RAW_PROJECT_CHARS = 250_000;
 const projectBytes = (project: unknown) => new TextEncoder().encode(JSON.stringify(project)).length;
 
 export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0): string {
@@ -57,8 +59,7 @@ export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObj
 // `key` compares whole saved works (validation/submission). `gradeKey` covers only
 // the dog's code, which is all grading and the name mission's run records use.
 export function parseProgrammingProject(raw: unknown): { project: Record<string, unknown>; key: string; gradeKey: string; bytes: number; threads: EntryNode[][]; order: string[]; added: AddedObject[]; mainIndex: number } | null {
-  // Raw EntryJS exports carry ~600 bytes of metadata per block; saved projects are normalized.
-  if (typeof raw !== "string" || raw.length > 250_000) return null;
+  if (typeof raw !== "string" || raw.length > MAX_RAW_PROJECT_CHARS) return null;
   try {
     const p = JSON.parse(raw);
     if (!object(p) || !Array.isArray(p.objects) || p.objects.length < 1 || p.objects.length > 1 + MAX_ADDED_OBJECTS || !p.objects.every(object)) return null;

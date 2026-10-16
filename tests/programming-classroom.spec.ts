@@ -582,3 +582,19 @@ test("이름 미션: 다른 오브젝트·이벤트 줄이 있어도 강아지�
   await page.getByRole("button", { name: "조건 검증", exact: true }).click();
   await expect(page.getByRole("button", { name: "작품 제출", exact: true })).toBeEnabled();
 });
+
+test("추가 오브젝트가 실행 중 움직여도 정지 뒤 저장본과 미저장 상태가 바뀌지 않는다", async ({ page }) => {
+  const ball = { ...newAddedObject("ball", 0)!, id: "obj-moving", threads: [[start(), node("move_x", number(50), null), node("change_scale_size", number(20), null), node("hide", null), node("wait_second", number("0.3"), null)]] };
+  const project = buildProgrammingProject([[start(), ...movement(90)]], [ball], 1);
+  await prepare(page, "move", project);
+  const status = page.locator("[data-lesson-shell] header [role=status]");
+  const before = await status.textContent();
+  expect(before).not.toContain("저장하지 않은");
+  await entryStart(page).click();
+  await expect(page.getByRole("status").filter({ hasText: "현재 위치 X 10" })).toBeVisible();
+  await expect(entryStart(page)).toBeVisible();
+  await page.locator("iframe").focus(); await page.mouse.move(5, 5); await page.mouse.up();
+  await expect(status).toHaveText(before!);
+  const saved = parseProgrammingProject((await stored(page)).draft.programming!.projects.move)!;
+  expect(saved.added[0].entity).toMatchObject({ x: ball.entity.x, scaleX: ball.entity.scaleX, visible: true });
+});

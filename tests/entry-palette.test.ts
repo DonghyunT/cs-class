@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { LEGACY_INPUTS } from "./entry-legacy-inputs";
 import legacyKeys from "./fixtures/entry-legacy-keys.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
+import { readEntryDraft } from "../src/components/student/read-editor-draft";
 import { ENTRY_PALETTE } from "../src/lib/classroom/entry-palette";
 import { buildProgrammingProject, checkProgrammingMission, entryObjectModel, missionBlockIssue, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
@@ -210,4 +211,16 @@ test("비슷한 블록과 다른 오브젝트에 만든 시작 줄을 구체적�
   expect(missionBlockIssue("move", project([[start(), node("move_x", number("10"), null)]]))).toContain("대신 ‘이동 방향으로 ( )만큼 움직이기’");
   const wrongObject = withObjects([[]], [ball([[start(), node("move_direction", number("10"), null)]], { name: "축구공" })]);
   expect(checkProgrammingMission("move", wrongObject).message).toBe("강아지가 아니라 ‘축구공’에 시작하기 줄이 있어요. 오브젝트 목록에서 강아지를 고른 뒤 코드를 만들어 주세요.");
+});
+
+test("저장할 때 다른 미션에 남은 엔트리 원문도 정규화해 서버 한도 안으로 보낸다", async () => {
+  const bulky = exported([[start(), ...Array.from({ length: 30 }, () => node("move_x", number("1"), null))], ...Array.from({ length: 2 }, () => Array.from({ length: 30 }, () => node("move_y", number("1"), null)))]);
+  expect(bulky.length).toBeGreaterThan(30_000);
+  const current: WorkDraft = { ...emptyWork(PROGRAMMING_LESSON).draft, programming: { mission: "move", projects: { name: bulky, move: project([[start()]]) }, reflection: "" } };
+  const saved = await readEntryDraft(PROGRAMMING_LESSON, current, async () => exported([[start(), node("move_direction", number("10"), null)]]));
+  const name = saved.programming!.projects.name;
+  expect(name).toBe(JSON.stringify(parseProgrammingProject(bulky)!.project));
+  expect(name.length).toBeLessThan(bulky.length / 3);
+  expect(parseProgrammingProject(name)!.key).toBe(parseProgrammingProject(bulky)!.key);
+  expect(parseProgrammingProject(saved.programming!.projects.move)!.order).toEqual(["when_run_button_click", "move_direction"]);
 });

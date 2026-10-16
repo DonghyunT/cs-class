@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Lesson, Work, WorkAction } from "../classroom/types";
 import { parseEntryProject } from "../classroom/entry-project";
-import { MAX_PROJECT_BYTES, checkProgrammingMission, missionById, parseProgrammingProject, programmingProjectMatches } from "../classroom/programming-entry";
+import { MAX_PROJECT_BYTES, MAX_RAW_PROJECT_CHARS, checkProgrammingMission, missionById, parseProgrammingProject, programmingProjectMatches } from "../classroom/programming-entry";
 import { practiceMatches } from "../classroom/progress";
 import { requireCondition } from "./errors";
 import { getLessonSolution } from "./solutions";
@@ -16,7 +16,7 @@ export const draftSchema = z.object({
   quizAnswers: z.record(z.string().max(30), z.string().max(30)),
   practiceOrder: z.array(z.string().max(30)).max(50),
   entryProject: z.string().max(100000).nullable().optional(),
-  programming: z.object({ mission: z.string().max(20), projects: z.record(z.string().max(20), z.string().max(80000)), reflection: z.string().max(500) }).strict().optional(),
+  programming: z.object({ mission: z.string().max(20), projects: z.record(z.string().max(20), z.string().max(MAX_RAW_PROJECT_CHARS)), reflection: z.string().max(500) }).strict().optional(),
   reviewProject: reviewProjectSchema.optional(),
 }).strict();
 
