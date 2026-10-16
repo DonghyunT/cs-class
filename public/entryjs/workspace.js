@@ -8,6 +8,18 @@ const programming = params.get("exercise") === "programming";
 const traced = namePilot || programming;
 const mission = params.get("mission");
 let disposed = false;
+// Copy of ENTRY_PALETTE in src/lib/classroom/entry-palette.ts. This sandboxed
+// script cannot import it; tests/entry-palette.test.ts keeps both lists equal.
+const PROGRAMMING_PALETTE = [
+  { category: "start", blocks: ["when_run_button_click", "when_some_key_pressed", "mouse_clicked", "mouse_click_cancled", "when_object_click", "when_object_click_canceled"] },
+  { category: "flow", blocks: ["wait_second", "repeat_basic", "repeat_inf", "repeat_while_true", "stop_repeat", "continue_repeat", "_if", "if_else", "wait_until_true", "stop_object", "restart_project", "when_clone_start", "create_clone", "delete_clone", "remove_all_clones"] },
+  { category: "moving", blocks: ["move_direction", "bounce_wall", "move_x", "move_y", "move_xy_time", "locate_x", "locate_y", "locate_xy", "locate_xy_time", "locate", "locate_object_time", "rotate_relative", "direction_relative", "rotate_by_time", "direction_relative_duration", "rotate_absolute", "direction_absolute", "see_angle_object", "move_to_angle"] },
+  { category: "looks", blocks: ["show", "hide", "dialog_time", "dialog", "remove_dialog", "add_effect_amount", "change_effect_amount", "erase_all_effects", "change_scale_size", "set_scale_size", "stretch_scale_size", "reset_scale_size", "flip_x", "flip_y", "change_object_index"] },
+  { category: "brush", blocks: ["brush_stamp", "start_drawing", "stop_drawing", "set_color", "change_thickness", "set_thickness", "start_fill", "stop_fill", "set_fill_color", "set_random_color", "change_brush_transparency", "set_brush_tranparency", "brush_erase_all"] },
+  { category: "judgement", blocks: ["is_clicked", "is_object_clicked", "is_press_some_key", "reach_something", "is_type", "boolean_basic_operator", "boolean_and_or", "boolean_not"] },
+  { category: "calc", blocks: ["calc_basic", "calc_rand", "coordinate_mouse", "coordinate_object", "quotient_and_mod", "calc_operation", "get_project_timer_value", "choose_project_timer_action", "set_visible_project_timer", "get_date", "distance_something", "length_of_string", "count_match_string", "combine_something", "char_at", "substring", "index_of_string", "replace_string", "reverse_of_string", "change_string_case"] },
+  { category: "variable", blocks: ["ask_and_wait", "get_canvas_input_value", "set_visible_answer", "get_variable", "change_variable", "set_variable", "show_variable", "hide_variable"] },
+];
 const send = (type, details = {}) => { if (!disposed) parent.postMessage({ channel: CHANNEL, type, ...details }, location.origin); };
 let loading = false;
 let locked = false;
@@ -19,12 +31,24 @@ let nameRun = null;
 let awaitingAnswer = false;
 let activeTime = 0;
 let lastTick = 0;
+// Event lines keep a run open after the start lines finish, so students can
+// click or press keys. The finished result is reported once at that point.
+const EVENT_STARTS = ["when_some_key_pressed", "mouse_clicked", "mouse_click_cancled", "when_object_click", "when_object_click_canceled"];
+let waitsForEvents = false;
+let reported = false;
+
+function captureScripts() {
+  for (const object of original.objects) {
+    const live = Entry.container.getObject(object.id);
+    if (live) object.script = live.getScriptText();
+  }
+}
 
 function exportProject() {
   // Entry.exportProject stops the engine. During a run, export only code into
   // the last stopped snapshot so runtime coordinates never replace the draft.
   if (Entry.engine.isState("stop")) original = Entry.exportProject();
-  else if (original) original.objects[0].script = Entry.container.getObject("entrybot").getScriptText();
+  else if (original) captureScripts();
   if (!original) throw new Error("Project not loaded");
   return JSON.stringify(original);
 }
@@ -47,7 +71,7 @@ function result(reason) {
 }
 
 async function stop(reason) {
-  if (monitor !== null) { clearInterval(monitor); monitor = null; result(reason); }
+  if (monitor !== null) { clearInterval(monitor); monitor = null; if (!reported) result(reason); else send("waiting-ended", { reason }); }
   if (!Entry.engine.isState("stop")) await Entry.engine.toggleStop();
 }
 
@@ -83,16 +107,8 @@ try {
   };
   EntryStatic.fontFamily = "sans-serif";
   if (programming && mission === "keys") Entry.block.when_some_key_pressed.def.params = [null, "38"];
-  EntryStatic.getAllBlocks = () => programming && mission !== "name" ? (mission === "move" || mission === "keys" ? [
-    { category: "start", blocks: mission === "keys" ? ["when_run_button_click", "when_some_key_pressed"] : ["when_run_button_click"] },
-    { category: "moving", blocks: ["move_direction", "direction_absolute"] },
-  ] : [
-    { category: "start", blocks: ["when_run_button_click"] },
-    { category: "variable", blocks: ["ask_and_wait", "get_canvas_input_value", "set_variable", "get_variable"] },
-    { category: "looks", blocks: ["dialog_time"] },
-    { category: "calc", blocks: ["calc_basic", "combine_something"] },
-  ]) : namePilot || programming ? [
-    { category: "start", blocks: programming ? ["when_run_button_click"] : ["when_run_button_click", "when_some_key_pressed"] },
+  EntryStatic.getAllBlocks = () => programming ? PROGRAMMING_PALETTE : namePilot ? [
+    { category: "start", blocks: ["when_run_button_click", "when_some_key_pressed"] },
     { category: "variable", blocks: ["ask_and_wait", "get_canvas_input_value"] },
     { category: "looks", blocks: ["dialog_time"] },
     { category: "calc", blocks: ["combine_something"] },
@@ -104,8 +120,9 @@ try {
   Entry.creationChangedEvent = new Entry.Event(window);
   Entry.init(document.getElementById("workspace"), {
     type: "workspace", libDir: "/entryjs/vendor", entryDir: "/entry",
-    projectsaveable: false, objectEditable: false, objectaddable: false,
-    objectdeletable: false, pictureeditable: false, soundeditable: false,
+    // The programming lesson lets students add objects from the lesson's own sprites.
+    projectsaveable: false, objectEditable: programming, objectaddable: programming,
+    objectdeletable: programming, pictureeditable: false, soundeditable: false,
     sceneEditable: false, variableEnable: false, listEnable: false,
     functionEnable: false, messageEnable: false, hardwareEnable: false,
     aiLearningEnable: false, aiUtilizeDisable: true, expansionDisable: true,
@@ -120,8 +137,10 @@ try {
         const first = !script.isInit;
         const input = Entry.container.inputValue;
         const answered = script.isInit && input.complete && input.sprite === entity && Entry.stage.inputField?._isHidden;
-        if (!script.isInit && nameRun) { awaitingAnswer = true; nameRun.steps.push({ kind: "ask", value: String(script.getValue("VALUE", script)) }); }
-        if (answered && nameRun) { awaitingAnswer = false; nameRun.steps.push({ kind: "answer", value: String(Entry.container.getInputValue()) }); }
+        // Only the dog's question and speech belong to the name mission's run record.
+        const own = entity.parent?.id === "entrybot";
+        if (!script.isInit && nameRun && own) { awaitingAnswer = true; nameRun.steps.push({ kind: "ask", value: String(script.getValue("VALUE", script)) }); }
+        if (answered && nameRun && own) { awaitingAnswer = false; nameRun.steps.push({ kind: "answer", value: String(Entry.container.getInputValue()) }); }
         const result = ask.call(this, entity, script);
         if (first) {
           const field = Entry.stage.inputField;
@@ -136,10 +155,31 @@ try {
       try {
         const first = !script.isStart;
         const result = say.call(this, entity, script);
-        if (first && nameRun) nameRun.steps.push({ kind: "say", value: String(entity.dialog?.message_ ?? "") });
+        if (first && nameRun && entity.parent?.id === "entrybot") nameRun.steps.push({ kind: "say", value: String(entity.dialog?.message_ ?? "") });
         return result;
       } catch (error) { if (nameRun) nameRun.failed = true; throw error; }
     };
+  }
+  if (programming) {
+    // Grading reads the dog's code, so the dog cannot be deleted. Loading clears all objects.
+    const removeObject = Entry.container.removeObject;
+    Entry.container.removeObject = function (id, ...rest) {
+      if (!loading && (typeof id === "string" ? id : id?.id) === "entrybot") { send("main-object-locked"); return; }
+      const removed = removeObject.call(this, id, ...rest);
+      queueMicrotask(changed);
+      return removed;
+    };
+    // Duplicate and paste skip the sprite list. The dog stays unique and the object limit holds.
+    const addCloneObject = Entry.container.addCloneObject;
+    Entry.container.addCloneObject = function (source, ...rest) {
+      if (source?.id === "entrybot") { send("clone-blocked", { reason: "main" }); return undefined; }
+      if (Entry.container.getAllObjects().length >= 6) { send("clone-blocked", { reason: "limit" }); return undefined; }
+      const clone = addCloneObject.call(this, source, ...rest);
+      queueMicrotask(changed);
+      return clone;
+    };
+    // Entry's add button only asks for a sprite; the lesson page shows its own sprite list.
+    Entry.addEventListener("openSpriteManager", () => { if (!locked && !loading) send("add-object-request"); });
   }
   Entry.creationChangedEvent.attach(window, () => queueMicrotask(changed));
   document.addEventListener("input", (event) => {
@@ -160,12 +200,14 @@ try {
     if (traced) {
       // The run event fires during the engine transition. A full export here
       // calls toggleStop; capture the code without changing engine state.
-      original.objects[0].script = Entry.container.getObject("entrybot").getScriptText();
+      captureScripts();
       nameRun = { id: crypto.randomUUID(), project: JSON.stringify(original), steps: [] };
       awaitingAnswer = false; activeTime = 0; lastTick = Date.now();
       send("name-start", { id: nameRun.id, project: nameRun.project });
     }
     lastSpeech = "";
+    reported = false;
+    waitsForEvents = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => EVENT_STARTS.includes(thread.getFirstBlock()?.type)));
     startedAt = Date.now();
     send("running", { running: true });
     clearInterval(monitor);
@@ -174,12 +216,17 @@ try {
       const object = Entry.container.getObject("entrybot");
       const speech = object?.entity.dialog?.message_?.replaceAll("\n", "");
       if (speech) lastSpeech = speech;
-      if (object && object.script.executors.length === 0 && !(programming && mission === "keys")) void stop("finished");
-      else if ((traced ? activeTime : Date.now() - startedAt) >= 15000) void stop("timeout");
+      const idle = Entry.container.getAllObjects().every((item) => item.script.executors.length === 0);
+      if (idle && !(programming && mission === "keys")) {
+        if (!waitsForEvents) void stop("finished");
+        else if (!reported) { result("finished"); reported = true; send("waiting"); }
+      }
+      if (monitor === null) return;
+      if ((traced ? activeTime : Date.now() - startedAt) >= 15000) void stop("timeout");
     }, 100);
   });
   Entry.addEventListener("beforeStop", () => {
-    if (monitor !== null) { clearInterval(monitor); monitor = null; result("stopped"); }
+    if (monitor !== null) { clearInterval(monitor); monitor = null; if (!reported) result("stopped"); else send("waiting-ended", { reason: "stopped" }); }
   });
   Entry.addEventListener("stop", () => { send("running", { running: false }); });
   window.addEventListener("message", async (event) => {
@@ -203,7 +250,9 @@ try {
         Entry.playground.blockMenu.reDraw.flush();
         // This Entry version aligns freshly created threads on load. Restore authored
         // anchors after that redraw; imported projects without anchors keep its layout.
-        const script = message.project.objects[0].script;
+        // Added objects come first in Entry's list; the dog is found by id and shown first.
+        Entry.container.selectObject("entrybot");
+        const script = (message.project.objects.find((object) => object.id === "entrybot") ?? message.project.objects[0]).script;
         const threads = typeof script === "string" ? JSON.parse(script) : script;
         const board = Entry.getMainWS().board;
         board.code.getThreads().forEach((thread, index) => {
@@ -220,6 +269,13 @@ try {
         loading = false;
         document.getElementById("workspace").inert = locked;
         send("loaded");
+      } else if (message.type === "add-object" && programming && !locked && !loading && message.object && typeof message.object.id === "string") {
+        await stop("stopped");
+        Entry.container.addObject(message.object, 0);
+        // Keep the dog selected: its code is the graded code.
+        Entry.container.selectObject("entrybot");
+        changed();
+        send("object-added", { name: String(message.object.name ?? "") });
       } else if (message.type === "lock") {
         locked = message.locked === true;
         document.getElementById("workspace").inert = locked || loading;

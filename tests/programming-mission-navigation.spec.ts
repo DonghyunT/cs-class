@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { buildProgrammingProject, programmingProjectMatches, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { DocumentData } from "firebase-admin/firestore";
 import type { Work } from "../src/lib/classroom/types";
-import { db, headers, readyStudent } from "./emulator";
+import { db, headers, readyStudent, entryReset } from "./emulator";
 
 const id = "programming-13", endpoint = `/api/classroom/work/${id}`;
 const workRef = db.doc(`csWork/student-20101__${id}`), classRef = db.doc("csClasses/2-1");
@@ -43,7 +43,7 @@ async function prepare(page: Page, mission = "move", submitted = false) {
   }
   await page.goto(`/classroom/${id}?from=dashboard`);
   await page.locator("iframe").scrollIntoViewIfNeeded();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
 }
 
 async function validate(page: Page) {

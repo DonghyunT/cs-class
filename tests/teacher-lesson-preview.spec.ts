@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import { emptyWork } from "../src/lib/classroom/progress";
-import { db, headers, readyStudent, readyTeacher } from "./emulator";
+import { db, headers, readyStudent, readyTeacher, entryReset, entryStart, entryStop } from "./emulator";
 
 const previewUrl = (id: string) => `/teacher/preview/${id}?classId=2-1`;
 const evaluateUrl = (id: string) => `/api/teacher-preview/${id}/evaluate`;
@@ -33,7 +33,7 @@ test("teacher-preview: 7수업 실제 화면·메모리 답안·초기화·학�
     await expect(page.getByRole("tabpanel")).toBeVisible();
     if (lesson.practice.type === "entryjs" || lesson.practice.type === "programming") {
       await page.locator("iframe").scrollIntoViewIfNeeded();
-      await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
+      await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
     }
     await page.locator("[data-lesson-shell] > header").getByRole("button", { name: "체험 초기화", exact: true }).click();
     await expect(page.getByRole("tab", { name: /^개념/ })).toHaveAttribute("aria-selected", "true");
@@ -85,7 +85,7 @@ test("teacher-preview-entry: 그림을 불러오는 중 초기화해도 분리�
     const oldFrame = page.frames().find(frame => frame.url().includes("mission=name"));
     if (!oldFrame) throw Error("name workspace frame missing");
     await expect.poll(() => oldFrame.evaluate(() => (window as unknown as { Entry?: { isLoadProject: boolean } }).Entry?.isLoadProject)).toBe(true);
-    await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeDisabled();
+    await expect(entryReset(page)).toBeDisabled();
     const reset = page.locator("[data-lesson-shell] > header").getByRole("button", { name: "체험 초기화", exact: true });
     await expect(reset).toBeEnabled(); await reset.click();
     await expect(page.getByRole("tab", { name: /^개념/ })).toHaveAttribute("aria-selected", "true");
@@ -95,7 +95,7 @@ test("teacher-preview-entry: 그림을 불러오는 중 초기화해도 분리�
     await expect.poll(() => cancelled.length).toBeGreaterThan(0);
     await page.getByRole("tab", { name: /^실습/ }).click();
     await page.locator("iframe").scrollIntoViewIfNeeded();
-    await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
+    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
     const newFrame = page.frames().find(frame => frame.url().includes("mission=name"));
     expect(newFrame).toBeDefined(); expect(newFrame).not.toBe(oldFrame);
     await expect(page.getByRole("button", { name: "작업실 다시 불러오기", exact: true })).toHaveCount(0);
@@ -159,7 +159,7 @@ test("teacher-preview-entry: 실제 조립·질문 응답·보기 전환·체험
   await page.goto(previewUrl("programming-13"));
   await page.getByRole("tab", { name: /^실습/ }).click();
   await page.locator("iframe").scrollIntoViewIfNeeded();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
   const frame = page.frameLocator("iframe");
   const menu = frame.locator("#entryWorkspaceBlockMenu g.block"), board = frame.locator("#entryWorkspaceBoard g.block");
   // Same palette coordinates and real drag used by programming-classroom.
@@ -200,19 +200,19 @@ test("teacher-preview-entry: 실제 조립·질문 응답·보기 전환·체험
     await page.mouse.click(rect.x + position.x, rect.y + position.y);
   };
   for (const [index, name] of ["교사 초코", "교사 보리"].entries()) {
-    await page.getByRole("button", { name: "실행하기", exact: true }).click();
+    await entryStart(page).click();
     await expect(input).toBeVisible(); await clickCanvas(); await expect(input).toBeFocused();
     await page.keyboard.insertText(name);
     if (index === 0) {
       await page.getByRole("button", { name: "실습 집중 모드", exact: true }).click();
       await page.getByRole("button", { name: "작업실 넓게 보기", exact: true }).click();
       expect(await iframe.evaluate(element => element === document.querySelector("iframe"))).toBe(true);
-      await expect(page.getByRole("button", { name: "실행 정지", exact: true })).toBeEnabled();
+      await expect(entryStop(page)).toBeEnabled();
       await expect(input).toHaveValue(name); await expect(input).toBeVisible();
       await clickCanvas(); await expect(input).toBeFocused(); await page.keyboard.press("Enter");
     } else await clickCanvas(true);
     await expect(page.getByRole("status").filter({ hasText: `마지막 말: ${name}` })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+    await expect(entryStart(page)).toBeVisible();
     await expect(page.getByRole("status", { name: "서로 다른 이름 확인", exact: true })).toHaveText(`서로 다른 이름 확인 ${index + 1}/2`);
   }
   await expect(page.locator("[data-lesson-shell]")).toHaveAttribute("data-practice-focused", "true");
@@ -230,7 +230,7 @@ test("teacher-preview-entry: 실제 조립·질문 응답·보기 전환·체험
   await expect(page.getByText("단계 바꾸기", { exact: true }).locator("..")).toHaveAttribute("open", "");
   await page.getByRole("tab", { name: /^퀴즈/ }).click();
   await page.getByRole("tab", { name: /^실습/ }).click();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
   // Read the restored engine only after execution has stopped; no export in run.
   const restoredProject = () => page.frames().find(item => item.url().includes("mission=name"))!.evaluate(() => {
     const project = (window as unknown as { Entry: { exportProject: () => { objects: { script: unknown }[] } } }).Entry.exportProject();
@@ -249,7 +249,7 @@ test("teacher-preview-entry: 실제 조립·질문 응답·보기 전환·체험
   await page.reload();
   await expect(page.getByRole("tab", { name: /^개념/ })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("tab", { name: /^실습/ }).click();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
   await expect(board.filter({ hasText: "묻고 대답 기다리기" })).toHaveCount(0);
   await expect(board.filter({ hasText: "초 동안" })).toHaveCount(0);
   await expect(page.getByRole("tab", { name: /^실습/ })).toContainText("0/4개 제출");

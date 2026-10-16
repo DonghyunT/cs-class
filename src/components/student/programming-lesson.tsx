@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Check, Lightbulb, RotateCcw } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { ProgrammingConcept as ProgrammingConceptView } from "./programming-concept";
 import { concepts, questions } from "@/lib/classroom/programming-data";
+import { missionBlockLabels } from "@/lib/classroom/entry-palette";
 import { buildProgrammingProject, missionById, programmingMissions } from "@/lib/classroom/programming-entry";
 import { practiceMatches } from "@/lib/classroom/progress";
 import type { Lesson, WorkAction, WorkDraft } from "@/lib/classroom/types";
@@ -115,7 +116,7 @@ function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exp
         <div className={styles.heading}><div><span>{"optional" in mission ? "선택 도전 · 기본 완료 조건에 포함되지 않아요" : `MISSION 0${programmingMissions.findIndex((m) => m.id === mission.id) + 1}`}</span><h3 id="programming-mission-title" tabIndex={-1}>{mission.title}</h3><p>{mission.goal}</p></div></div>
         {mission.id === "keys" && <p className={styles.carry}>앞 미션의 작품이 있으면 처음 시작할 때 가져와요. 아직 없다면 시작 블록에서 만들 수 있어요. {mode === "preview" ? "각 미션의 작품과 체험 제출은 이 창에서 따로 유지돼요." : "각 미션의 저장본과 제출본은 따로 유지돼요."}</p>}
         <PracticeGuidance focused={practiceFocused} label="실험·블록 연결 힌트"><div className={styles.experiment}><h4><Lightbulb size={17} aria-hidden="true" />먼저 해볼 작은 실험</h4><p>{mission.experiment}</p></div>
-        <details key={mission.id} className={styles.hint}><summary>블록 연결 힌트</summary><p>{mission.hint}</p></details></PracticeGuidance>
+        <details key={mission.id} className={styles.hint}><summary>블록 연결 힌트</summary><p>{mission.hint}</p><p>검증에 쓰는 블록: {missionBlockLabels(mission.id).join(" · ")}. 다른 블록도 자유롭게 써 볼 수 있지만, 검증할 때는 시작 블록 아래에 이 블록만 연결해 주세요.</p></details></PracticeGuidance>
       </aside>
       <div className={styles.workArea}>
         <EntryPracticeWorkspace mode={mode} key={mission.id} mission={mission} lesson={lesson} work={{ ...work, validation: current.validation, submission: current.submission }} draft={{ ...draft, entryProject: raw, practiceOrder: [] }} locked={locked || switching || controller.capturing} busy={controller.busy} exportRef={exportRef} onSave={mode === "student" ? controller.save : undefined} onReadyChange={onEditorReady} runAction={runPracticeAction} workspaceWide={workspaceWide} practiceFocused={practiceFocused} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} saveState={controller.saveState} actionsBlocked={controller.actionBlocked} update={(next) => {

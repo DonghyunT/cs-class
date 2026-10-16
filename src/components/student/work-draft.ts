@@ -3,18 +3,20 @@ import { buildProgrammingProject, parseProgrammingProject, programmingMissions }
 import { parseEntryProject } from "@/lib/classroom/entry-project";
 const starter = buildProgrammingProject();
 
-type ContentNode = { type: string; params: unknown[]; x?: number; y?: number };
+type ContentNode = { type: string; params: unknown[]; statements?: ContentNode[][]; x?: number; y?: number };
 function scriptContent(threads: ContentNode[][]) {
-  const semantic = (node: { type: string; params: unknown[] }): unknown => ({ type: node.type, params: (node.params ?? [null]).map((value, index) => {
-    if (value && typeof value === "object" && "type" in value && "params" in value) return semantic(value as { type: string; params: unknown[] });
+  const semantic = (node: ContentNode): unknown => ({ type: node.type, params: (node.params ?? [null]).map((value, index) => {
+    if (value && typeof value === "object" && "type" in value && "params" in value) return semantic(value as ContentNode);
     return index === 0 && ["number", "angle"].includes(node.type) ? String(value) : value;
-  }) });
+  }), ...(node.statements?.length ? { statements: node.statements.map(thread => thread.map(semantic)) } : {}) });
   // A thread's anchor is an authored layout; nested reporter coordinates and IDs are native metadata.
   return threads.map(thread => ({ x: thread[0]?.x ?? 50, y: thread[0]?.y ?? 30, blocks: thread.map(semantic) }));
 }
 function programmingContent(raw: string) {
   const parsed = parseProgrammingProject(raw);
-  return parsed ? scriptContent(parsed.threads) : raw;
+  if (!parsed) return raw;
+  // Added objects' names, positions and code are edits too; dog-only projects keep their shape.
+  return parsed.added.length ? { main: scriptContent(parsed.threads), mainIndex: parsed.mainIndex, added: parsed.added.map((o) => ({ ...o, threads: scriptContent(o.threads) })) } : scriptContent(parsed.threads);
 }
 function entryContent(raw: string) {
   if (!parseEntryProject(raw)) return raw;

@@ -38,6 +38,14 @@
 - **CI 정책 최적화:** 공통·설정 변경 시 자동 CI가 30분 전체 E2E로 승격되던 동작을 방지하고 등록 수업 스모크 모드(2~3분)로 전환했습니다. 전체 E2E는 `workflow_dispatch` 수동 실행으로만 수행됩니다.
 - **원격 배포 확인:** Vercel `cs-class` Production의 배포 `AnF6N1UGxnBnuJX6ojMtQyv58WpD`·READY·icn1와 [운영 별칭](https://cs-class-donghyunt.vercel.app)의 일치를 확인했습니다. 익명 `/api/auth/config`·`/api/auth/session` 200, 학생/교사 로그인 페이지 200, 비인가 `/api/classroom/*`의 401 SIGNED_OUT 정상 응답을 확인했습니다.
 
+### 엔트리 전체 팔레트·오브젝트 추가(`codex/entry-full-palette`, 2026-10-16)
+
+[계획·실측·심포지엄 기록](superpowers/plans/2026-10-16-entry-full-palette.md)을 기준으로 봅니다. 프로그래밍 수업 작업실에 104블록 수업 팔레트, 미션 밖 블록 저장·검증 안내, 이벤트 줄 실행 유지, 엔트리 '시작하기' 단일 실행 버튼, 오브젝트 추가(그림 8종·최대 5개, 강아지 삭제·복제 불가, 채점은 강아지 코드만)를 넣었습니다. 기존 작품 키·정규화는 `tests/fixtures/entry-legacy-keys.json`으로 고정했습니다.
+
+- 단위 `entry-palette` 14개·`test:review` 26개·`test:scope`·린트·타입·문서 통과. 새 demo 에뮬레이터에서 프로그래밍 수업 매핑·교사 미리보기·작업실 배치·classroom-api·공통 스모크 85개 중 84개 통과, 1개는 다른 세션의 파일 정리로 Playwright 기록 파일이 사라진 실패라 단독 재실행에서 통과. 전체 E2E 미실행.
+- 리뷰어 3명(교실 UX·보안·아키텍처) 심포지엄 합의 1~5를 반영했습니다. 보류 항목은 계획 문서에 적었습니다.
+- 내장 브라우저는 격리 iframe을 막으므로 엔트리 화면 확인은 일반 Chrome/Edge에서 합니다. 실제 화면 확인은 아직 사용자 몫입니다.
+
 ## 최신 운영 릴리스 기록
 
 10/16 10:33 KST 확인. Firestore 읽기 최적화 및 교사 현황 수동 갱신·손들기 일시 중지가 적용된 최신 릴리스입니다.

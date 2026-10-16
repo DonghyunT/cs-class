@@ -16,6 +16,10 @@ export const studentPassword = "student-test-7319";
 export const lessonId = "sequence-lab";
 export const correctOrder = ["start", "input", "greeting", "output", "end"];
 export const headers = { "X-CS-Class": "1" };
+// The programming lesson runs from Entry's own start button under the stage.
+export const entryReset = (page: Page) => page.getByRole("button", { name: "무대 처음 위치로 초기화", exact: true });
+export const entryStart = (page: Page) => page.frameLocator("iframe").getByRole("button", { name: "시작하기", exact: true });
+export const entryStop = (page: Page) => page.frameLocator("iframe").getByRole("button", { name: "정지하기", exact: true });
 export async function saveDraft(page: Page) {
   await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(page.locator("[data-lesson-shell] header [role=status]")).toHaveText(/저장 완료|아직 학습 기록이 없어요/);

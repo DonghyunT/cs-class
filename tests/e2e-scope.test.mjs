@@ -50,6 +50,8 @@ test("matchLesson matches lesson specific files accurately", () => {
   assert.equal(matchLesson("src/lib/classroom/review/flow-runner.mjs"), "review-flowchart");
   assert.equal(matchLesson("src/components/student/review/abstraction.tsx"), "review-abstraction");
   assert.equal(matchLesson("src/components/student/programming-lesson.tsx"), "programming-13");
+  assert.equal(matchLesson("src/lib/classroom/entry-palette.ts"), "programming-13");
+  assert.equal(matchLesson("src/lib/classroom/programming-entry.ts"), "programming-13");
   assert.equal(matchLesson("src/components/student/entry-practice-workspace.tsx"), "programming-13");
   assert.equal(matchLesson("public/entryjs/workspace.js"), "programming-13");
   assert.equal(matchLesson("src/components/student/use-work.ts"), null);

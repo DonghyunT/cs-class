@@ -5,7 +5,7 @@ import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { emptyWork } from "../src/lib/classroom/progress";
 import { resumeLabelFor } from "../src/lib/classroom/lesson-navigation";
 import type { Work } from "../src/lib/classroom/types";
-import { db, headers, initialPassword, loginStudent, resetStudent, studentPassword } from "./emulator";
+import { db, headers, initialPassword, loginStudent, resetStudent, studentPassword, entryReset, entryStart, entryStop } from "./emulator";
 
 const studentId = "20102";
 let originalClass: FirebaseFirestore.DocumentData | undefined;
@@ -40,7 +40,7 @@ async function enter(page: Page, lesson: "programming-13" | "entry-bot-lab", opt
   expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft } })).status()).toBe(200);
   await page.goto(`/classroom/${lesson}`, { waitUntil: options.waitForReady === false ? "domcontentloaded" : "load" });
   await page.locator("iframe").scrollIntoViewIfNeeded();
-  if (options.waitForReady !== false) await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
+  if (options.waitForReady !== false) await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
   return endpoint;
 }
 
@@ -95,7 +95,8 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   expect(iframeBox.width).toBeGreaterThanOrEqual(1000);
   expect(toolbarBox.height).toBeLessThanOrEqual(80);
   expect(toolbarBox.y + toolbarBox.height).toBeLessThanOrEqual(iframeBox.y);
-  await expect(toolbar.getByRole("button")).toHaveCount(3);
+  // The programming lesson runs from Entry's own start button, so the toolbar keeps reset and wide view.
+  await expect(toolbar.getByRole("button")).toHaveCount(2);
   for (const support of [states, help]) {
     await expect(support).toBeVisible();
     expect((await support.boundingBox())!.y).toBeGreaterThanOrEqual(iframeBox.y + iframeBox.height);
@@ -115,8 +116,6 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   await expect(guidance.getByText(mission.hint, { exact: true })).toBeVisible();
   await hint.press("Enter");
   await expect(guidance.getByText(mission.hint, { exact: true })).toBeHidden();
-  await page.keyboard.press("Tab");
-  await expect(editor.getByRole("button", { name: "실행하기", exact: true })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(editor.getByRole("button", { name: "무대 처음 위치로 초기화", exact: true })).toBeFocused();
   await page.keyboard.press("Tab");
@@ -219,11 +218,11 @@ test("workspace-availability: 실제 셸 경계·로딩 중 초점·입력·실�
   const endpoint = await enter(page, "programming-13", { waitForReady: false, programmingProject: project });
   const shell = page.locator("[data-lesson-shell]"), iframe = page.locator("iframe");
   const identity = await iframe.elementHandle();
-  const run = page.locator("#entry-run");
+  const run = entryStart(page);
   const toggle = page.getByRole("button", { name: "작업실 넓게 보기", exact: true });
   const restore = page.getByRole("button", { name: "기본 크기로 돌아가기", exact: true });
   try {
-    await expect(run).toBeDisabled();
+    await expect(entryReset(page)).toBeDisabled();
     await toggle.focus();
     await expect(toggle).toBeFocused();
     await page.setViewportSize({ width: 1280, height: 720 });
@@ -231,7 +230,7 @@ test("workspace-availability: 실제 셸 경계·로딩 중 초점·입력·실�
     // A disabled run button cannot receive the disappearing toggle's focus.
     await expect(page.getByText("엔트리 작업실", { exact: true })).toBeFocused();
   } finally { release(); }
-  await expect(run).toBeEnabled({ timeout: 20_000 });
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20_000 });
   expect(await identity!.evaluate(element => element === document.querySelector("iframe"))).toBe(true);
   const native = page.frames().find(frame => frame.url().includes("exercise=programming"))!;
   const before = await native.evaluate(() => (window as unknown as { Entry: { exportProject: () => unknown } }).Entry.exportProject());
@@ -290,7 +289,7 @@ test("workspace-availability: 실제 셸 경계·로딩 중 초점·입력·실�
   await page.setViewportSize({ width: 1920, height: 720 });
   await toggle.click();
   await run.click();
-  const stop = page.getByRole("button", { name: "실행 정지", exact: true });
+  const stop = entryStop(page);
   await expect(stop).toBeVisible();
   const response = page.frameLocator("iframe").locator("input:not([disabled]):visible");
   await expect(response).toBeVisible();
@@ -307,7 +306,7 @@ test("workspace-availability: 실제 셸 경계·로딩 중 초점·입력·실�
   await expect(stop).toBeVisible();
   await expect(response).toHaveValue("초코");
   await stop.click();
-  await expect(run).toBeEnabled();
+  await expect(run).toBeVisible();
   expect(await identity!.evaluate(element => element === document.querySelector("iframe"))).toBe(true);
   const after = await native.evaluate(() => (window as unknown as { Entry: { exportProject: () => unknown } }).Entry.exportProject());
   expect(parseProgrammingProject(JSON.stringify(after))?.key).toBe(beforeProgram!.key);

@@ -1,10 +1,10 @@
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
-import { buildProgrammingProject, checkProgrammingMission, parseProgrammingProject, programmingProjectMatches, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, checkProgrammingMission, newAddedObject, parseProgrammingProject, programmingProjectMatches, type EntryNode } from "../src/lib/classroom/programming-entry";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { emptyWork, progressFor } from "../src/lib/classroom/progress";
 import { questions } from "../src/lib/classroom/programming-data";
 import type { Work, WorkAction } from "../src/lib/classroom/types";
-import { auth, db, headers, localOnly, loginStudent, readyStudent, readyTeacher, studentPassword, saveDraft } from "./emulator";
+import { auth, db, headers, localOnly, loginStudent, readyStudent, readyTeacher, studentPassword, saveDraft, entryReset, entryStart, entryStop } from "./emulator";
 import { createHash } from "node:crypto";
 import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
 
@@ -34,7 +34,7 @@ async function prepare(page: Page, mission = "name", project = buildProgrammingP
   await page.goto(`/classroom/${id}?from=dashboard`);
   await page.locator("iframe").scrollIntoViewIfNeeded();
   await expect(page.locator("iframe")).toHaveAttribute("src", new RegExp(`[?&]mission=${mission}(?:&|$)`));
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
   return page.frameLocator("iframe");
 }
 const stored = async (page: Page): Promise<Work> => (await page.request.get(endpoint)).json();
@@ -48,9 +48,9 @@ test("entry-guidance: 두 이름 확인 수와 검증 부족 초점·수정·단
   await expect(page.locator("#entry-local-feedback")).toContainText("서로 다른 이름");
   await expect(page.locator("#entry-local-feedback")).not.toContainText("연결");
   for (const [name, expected] of [["초코", 1], ["초코", 1], ["보리", 2]] as const) {
-    await page.getByRole("button", { name: "실행하기", exact: true }).click();
+    await entryStart(page).click();
     const input = frame.getByLabel("강아지 이름 대답"); await input.fill(name); await input.press("Enter");
-    await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+    await expect(entryStart(page)).toBeVisible();
     await expect(count).toHaveText(`서로 다른 이름 확인 ${expected}/2`);
   }
   await frame.locator("#entryWorkspaceBoard").getByText("0.2", { exact: true }).first().locator("..").click();
@@ -66,13 +66,13 @@ test("entry-guidance: 두 이름 확인 수와 검증 부족 초점·수정·단
 
 test("entry-guidance: 시작 블록의 다음 행동과 위아래 위치를 정확히 안내한다", async ({ page }) => {
   await prepare(page);
-  await page.getByRole("button", { name: "실행하기", exact: true }).click();
+  await entryStart(page).click();
   await expect(page.getByRole("status").filter({ hasText: "시작 신호가 준비됐어요." })).toContainText("질문");
   await prepare(page, "move", buildProgrammingProject([[start(), ...movement(0, "10")]]));
-  await page.getByRole("button", { name: "실행하기", exact: true }).click();
+  await entryStart(page).click();
   await expect(page.getByRole("status").filter({ hasText: "현재 위치" })).toContainText("X 0 · Y 10");
   await prepare(page, "name", buildProgrammingProject([[start()], [node("ask_and_wait", node("text", "분리된 질문"), null)]]));
-  await page.getByRole("button", { name: "실행하기", exact: true }).click();
+  await entryStart(page).click();
   await expect(page.getByRole("status").filter({ hasText: "실행을 마쳤어요." })).toContainText("마지막 말: 아직 없음");
   await expect(page.getByText("시작 신호가 준비됐어요.", { exact: false })).toHaveCount(0);
 });
@@ -82,14 +82,14 @@ test("entry-guidance: 두 이름 확인은 같은 이름 아홉 번·중지·실
   const frame = await prepare(page, "name", nameProject);
   const count = page.getByRole("status", { name: "서로 다른 이름 확인", exact: true });
   for (const [index, name] of ["초코", "보리", ...Array<string>(9).fill("보리")].entries()) {
-    await page.getByRole("button", { name: "실행하기", exact: true }).click();
+    await entryStart(page).click();
     const input = frame.getByLabel("강아지 이름 대답"); await input.fill(name); await input.press("Enter");
-    await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+    await expect(entryStart(page)).toBeVisible();
     await expect(count).toHaveText(`서로 다른 이름 확인 ${index ? 2 : 1}/2`);
   }
-  await page.getByRole("button", { name: "실행하기", exact: true }).click();
+  await entryStart(page).click();
   await expect(frame.getByLabel("강아지 이름 대답")).toBeVisible();
-  await page.getByRole("button", { name: "실행 정지", exact: true }).click();
+  await entryStop(page).click();
   await expect(count).toHaveText("서로 다른 이름 확인 2/2");
   const native = page.frames().find(item => item.url().includes("mission=name"))!;
   // Fail the engine's answer dependency once without changing any blocks.
@@ -98,9 +98,9 @@ test("entry-guidance: 두 이름 확인은 같은 이름 아홉 번·중지·실
     const original = container.getInputValue;
     container.getInputValue = () => { container.getInputValue = original; throw new Error("합성 실행 응답 실패"); };
   });
-  await page.getByRole("button", { name: "실행하기", exact: true }).click();
+  await entryStart(page).click();
   const input = frame.getByLabel("강아지 이름 대답"); await input.fill("실패 입력"); await input.press("Enter");
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+  await expect(entryStart(page)).toBeVisible();
   await expect(count).toHaveText("서로 다른 이름 확인 2/2");
   await page.getByRole("button", { name: "조건 검증", exact: true }).click();
   await expect(page.getByRole("button", { name: "작품 제출", exact: true })).toBeEnabled();
@@ -217,14 +217,14 @@ test("entry-answer: 실제 질문칸에서 한글·조합 Enter·저장 대기·
   const frame = await prepare(page, "name", nameProject);
   try {
     for (const name of ["초코", "보리"]) {
-      await page.getByRole("button", { name: "실행하기", exact: true }).click();
+      await entryStart(page).click();
       const input = frame.getByLabel("강아지 이름 대답"); await expect(input).toBeVisible();
       await clickAnswerCanvas(page);
       await expect(input).toBeFocused();
       await input.dispatchEvent("compositionstart");
       await page.keyboard.insertText(name);
       await input.dispatchEvent("keydown", { key: "Enter", keyCode: 13, which: 13, isComposing: true });
-      await expect(page.getByRole("button", { name: "실행 정지", exact: true })).toBeEnabled();
+      await expect(entryStop(page)).toBeEnabled();
       await expect(input).toHaveValue(name);
       await input.dispatchEvent("compositionend", { data: name });
       // The 900 ms debounce and five-second save interval must not blur the answer.
@@ -232,7 +232,7 @@ test("entry-answer: 실제 질문칸에서 한글·조합 Enter·저장 대기·
       await expect(input).toBeFocused();
       await page.keyboard.press("Enter");
       await expect(page.getByRole("status").filter({ hasText: `마지막 말: ${name}` })).toBeVisible({ timeout: 10000 });
-      await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+      await expect(entryStart(page)).toBeVisible();
     }
     expect(errors).toEqual([]);
   } catch (error) { await attachAnswerState(page, info, errors); throw error; }
@@ -243,11 +243,11 @@ test("entry-answer: 정지 뒤 다시 실행한 질문칸의 실제 파란 체�
   const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
   const frame = await prepare(page, "name", nameProject);
   try {
-    await page.getByRole("button", { name: "실행하기", exact: true }).click();
+    await entryStart(page).click();
     await expect(frame.getByLabel("강아지 이름 대답")).toBeVisible();
-    await page.getByRole("button", { name: "실행 정지", exact: true }).click();
-    await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
-    await page.getByRole("button", { name: "실행하기", exact: true }).click();
+    await entryStop(page).click();
+    await expect(entryStart(page)).toBeVisible();
+    await entryStart(page).click();
     const input = frame.getByLabel("강아지 이름 대답"); await expect(input).toBeVisible();
     await clickAnswerCanvas(page); await expect(input).toBeFocused();
     await page.keyboard.insertText("바둑이");
@@ -255,7 +255,7 @@ test("entry-answer: 정지 뒤 다시 실행한 질문칸의 실제 파란 체�
     await page.waitForTimeout(5500);
     await clickAnswerCanvas(page, true);
     await expect(page.getByRole("status").filter({ hasText: "마지막 말: 바둑이" })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+    await expect(entryStart(page)).toBeVisible();
     expect(errors).toEqual([]);
   } catch (error) { await attachAnswerState(page, info, errors); throw error; }
 });
@@ -271,9 +271,9 @@ test("entry-assets: 그림 준비 전 실행을 막고 그림 로딩 실패에�
     const native = page.frames().find((frame) => frame.url().includes("mission=name"))!;
     await expect.poll(() => native.evaluate(() => (window as unknown as { Entry?: { isLoadProject: boolean } }).Entry?.isLoadProject)).toBe(true);
     await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-    await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeDisabled();
+    await expect(entryReset(page)).toBeDisabled();
   } finally { release(); await preparation; }
-  await page.getByRole("button", { name: "실행하기", exact: true }).click();
+  await entryStart(page).click();
   const input = page.frameLocator("iframe").getByLabel("강아지 이름 대답");
   await clickAnswerCanvas(page); await expect(input).toBeFocused();
   await page.keyboard.insertText("별이"); await page.keyboard.press("Enter");
@@ -283,11 +283,11 @@ test("entry-assets: 그림 준비 전 실행을 막고 그림 로딩 실패에�
   await page.route("**/entryjs/name-dog.svg", (route) => route.abort());
   await page.reload();
   await expect(page.getByRole("button", { name: "작업실 다시 불러오기", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeDisabled();
+  await expect(entryReset(page)).toBeDisabled();
   expect(programmingProjectMatches(project, (await stored(page)).draft.programming!.projects.name)).toBe(true);
   await page.unroute("**/entryjs/name-dog.svg");
   await page.getByRole("button", { name: "작업실 다시 불러오기", exact: true }).click();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+  await expect(entryStart(page)).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -295,7 +295,7 @@ test("entry-flicker: 대답 완료와 수동 정지 뒤 숨은 질문칸을 무�
   test.setTimeout(45000);
   const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
   const frame = await prepare(page, "name", nameProject);
-  const run = page.getByRole("button", { name: "실행하기", exact: true });
+  const run = entryStart(page);
   await run.click();
   const input = frame.getByLabel("강아지 이름 대답"); await expect(input).toBeVisible();
   const native = page.frames().find((entryFrame) => entryFrame.url().includes("mission=name"))!;
@@ -328,7 +328,7 @@ test("entry-flicker: 대답 완료와 수동 정지 뒤 숨은 질문칸을 무�
   await run.click(); await expect(input).toBeVisible();
   await clickAnswerCanvas(page); await expect(input).toBeFocused();
   await page.keyboard.insertText("미완료");
-  await page.getByRole("button", { name: "실행 정지", exact: true }).click();
+  await entryStop(page).click();
   await expect(run).toBeEnabled(); await page.waitForTimeout(1200);
   expect(await stoppedState()).toEqual({ stopped: true, hidden: true, hiddenPaints: 0 });
   expect(errors).toEqual([]);
@@ -339,7 +339,8 @@ test("실제 팔레트 이름 조립 · 서로 다른 두 입력 · 검증/제�
   const errors: string[] = []; page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
   const frame = await prepare(page);
-  await expect(frame.locator("#entryWorkspaceBlockMenu g.block").filter({ hasText: "키를 눌렀을 때" })).toHaveCount(0);
+  // Every mission shows the full lesson palette; grading limits the blocks instead.
+  await expect(frame.locator("#entryWorkspaceBlockMenu g.block").filter({ hasText: "키를 눌렀을 때" })).toHaveCount(1);
   await expect(frame.getByText("자료", { exact: true })).toBeVisible();
   const menu = frame.locator("#entryWorkspaceBlockMenu g.block"), board = frame.locator("#entryWorkspaceBoard g.block");
   await frame.getByText("자료", { exact: true }).click();
@@ -349,7 +350,7 @@ test("실제 팔레트 이름 조립 · 서로 다른 두 입력 · 검증/제�
   await frame.getByText("자료", { exact: true }).click();
   await connect(page, menu.filter({ hasText: /^\s*대답\s*$/ }).first(), board.filter({ hasText: "초 동안" }).last().getByText("안녕!", { exact: true }).locator(".."), 12, 18, -8);
   for (const name of ["초코", "보리"]) {
-    await page.getByRole("button", { name: "실행하기", exact: true }).click();
+    await entryStart(page).click();
     const input = frame.getByLabel("강아지 이름 대답"); await input.fill(name); await input.press("Enter");
     await expect(page.getByRole("status").filter({ hasText: `마지막 말: ${name}` })).toBeVisible({ timeout: 10000 });
   }
@@ -365,8 +366,7 @@ test("실제 팔레트 이름 조립 · 서로 다른 두 입력 · 검증/제�
   await page.reload(); await expect(page.getByRole("button", { name: "이 작품 제출 완료" })).toBeDisabled();
   await page.locator("iframe").scrollIntoViewIfNeeded();
   await frame.locator("#entryWorkspaceBoard").getByText("안녕!", { exact: true }).first().locator("..").click();
-  await page.keyboard.press("Escape"); await expect(page.locator("#entry-run")).toBeFocused();
-  await page.keyboard.press("Tab"); await expect(page.getByRole("button", { name: "무대 처음 위치로" })).toBeFocused();
+  await page.keyboard.press("Escape"); await expect(entryReset(page)).toBeFocused();
   await page.screenshot({ path: info.outputPath("programming-desktop.png"), fullPage: true });
   expect(errors).toEqual([]);
 });
@@ -378,21 +378,21 @@ test("곱셈·평균 실제 실행 · 변수 팔레트 · 이동 이어 만들�
   let frame = await prepare(page, "multiply", math());
   await frame.getByText("자료", { exact: true }).click();
   await expect(frame.locator("#entryWorkspaceBlockMenu g.block").filter({ hasText: "정하기" }).first()).toBeVisible();
-  await page.getByRole("button", { name: "실행하기", exact: true }).click();
+  await entryStart(page).click();
   for (const value of ["6", "4"]) { const input = frame.getByLabel("강아지 질문 대답"); await expect(input).toBeVisible(); await input.fill(value); await input.press("Enter"); if (value === "6") await expect(input).toHaveValue(""); }
   await expect(page.getByRole("status").filter({ hasText: "마지막 말: 24" })).toBeVisible();
   await page.getByRole("link", { name: "수업 나가기", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
   const averageWork = await stored(page); averageWork.draft.programming!.mission = "average"; averageWork.draft.programming!.projects.average = math(true);
   expect((await page.request.post(endpoint, { headers, data: { revision: averageWork.revision, draft: averageWork.draft } })).status()).toBe(200);
   await page.goto(`/classroom/${id}?from=dashboard`); await page.locator("iframe").scrollIntoViewIfNeeded();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
-  await page.getByRole("button", { name: "실행하기", exact: true }).click();
+  await expect(entryStart(page)).toBeVisible();
+  await entryStart(page).click();
   for (const value of ["6", "4"]) { const input = frame.getByLabel("강아지 질문 대답"); await expect(input).toBeVisible(); await input.fill(value); await input.press("Enter"); if (value === "6") await expect(input).toHaveValue(""); }
   await expect(page.getByRole("status").filter({ hasText: "마지막 말: 5" })).toBeVisible();
   await page.getByRole("button", { name: /시작 버튼으로 움직이기/ }).click();
   await page.locator('iframe[src$="mission=move"]').scrollIntoViewIfNeeded();
   frame = page.frameLocator("iframe");
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+  await expect(entryStart(page)).toBeVisible();
   await frame.getByText("움직임", { exact: true }).click();
   await connect(page, frame.locator("#entryWorkspaceBlockMenu g.block").filter({ hasText: "이동 방향으로" }).first(), frame.locator("#entryWorkspaceBoard g.block").filter({ hasText: "시작하기 버튼" }).first(), 46);
   await saveDraft(page);
@@ -400,7 +400,7 @@ test("곱셈·평균 실제 실행 · 변수 팔레트 · 이동 이어 만들�
   const moveBefore = (await stored(page)).draft.programming!.projects.move;
   await page.getByRole("button", { name: /방향키로 움직임 개선/ }).click();
   await page.locator('iframe[src$="mission=keys"]').scrollIntoViewIfNeeded();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+  await expect(entryStart(page)).toBeVisible();
   const displayedScript = await frame.locator("body").evaluate(() => (window as unknown as { Entry: { container: { getObject: (id: string) => { getScriptText: () => string } } } }).Entry.container.getObject("entrybot").getScriptText());
   expect(programmingProjectMatches(JSON.stringify({ objects: [{ script: displayedScript }] }), moveBefore)).toBe(true);
   expect((await stored(page)).draft.programming!.projects.move).toBe(moveBefore);
@@ -410,12 +410,12 @@ test("곱셈·평균 실제 실행 · 변수 팔레트 · 이동 이어 만들�
   await page.getByRole("link", { name: "수업 나가기", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
   let work = await stored(page); work.draft.programming!.mission = "keys"; work.draft.programming!.projects.keys = keysProject;
   expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } })).status()).toBe(200);
-  await page.goto(`/classroom/${id}?from=dashboard`); await page.locator("iframe").scrollIntoViewIfNeeded(); await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+  await page.goto(`/classroom/${id}?from=dashboard`); await page.locator("iframe").scrollIntoViewIfNeeded(); await expect(entryStart(page)).toBeVisible();
   const native = page.frames().find((f) => f.url().includes("mission=keys"))!;
   const position = () => native.evaluate(() => { const e = (window as unknown as { Entry: { container: { getObject: (id: string) => { entity: { getX: () => number; getY: () => number } } } } }).Entry.container.getObject("entrybot").entity; return [Math.round(e.getX()) || 0, Math.round(e.getY()) || 0]; });
-  await page.getByRole("button", { name: "실행하기", exact: true }).click(); await expect.poll(position).toEqual([10, 0]);
+  await entryStart(page).click(); await expect.poll(position).toEqual([10, 0]);
   for (const [label, expected] of [["↑ 위", [10, 10]], ["← 왼쪽", [0, 10]], ["↓ 아래", [0, 0]], ["→ 오른쪽", [10, 0]]] as const) { await page.getByRole("button", { name: label, exact: true }).click(); await expect.poll(position).toEqual(expected); }
-  await page.getByRole("button", { name: "실행 정지" }).click(); await expect.poll(position).toEqual([0, 0]);
+  await entryStop(page).click(); await expect.poll(position).toEqual([0, 0]);
   await page.getByLabel("오늘 발견한 것을 한 줄로 남겨볼까요?").fill("방향키 실행을 확인했습니다.");
   await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "저장하지 않은 변경이 있어요" });
@@ -425,7 +425,7 @@ test("곱셈·평균 실제 실행 · 변수 팔레트 · 이동 이어 만들�
   work = await stored(page); work.draft.programming!.projects.keys = buildProgrammingProject([[start(), ...movement(90, "")]]);
   expect(work.draft.programming!.reflection).toBe("");
   expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } })).status()).toBe(200);
-  await page.goto(`/classroom/${id}?from=dashboard`); await page.locator("iframe").scrollIntoViewIfNeeded(); await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+  await page.goto(`/classroom/${id}?from=dashboard`); await page.locator("iframe").scrollIntoViewIfNeeded(); await expect(entryStart(page)).toBeVisible();
   expect(parseProgrammingProject((await stored(page)).draft.programming!.projects.keys)?.threads[0][2].params[0]).toEqual(number(""));
   for (const width of [320, 390, 768, 1440]) { await page.setViewportSize({ width, height: 844 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }
   await page.setViewportSize({ width: 390, height: 844 });
@@ -480,7 +480,7 @@ test("저장 실패에도 미션 간 초안은 유지하고, 명시 저장한 �
   await page.getByRole("button", { name: /방향키로 움직임 개선/ }).click();
   await expect(page.locator("#programming-mission-title")).toHaveText("방향키로 움직임 개선");
   await expect(page.getByLabel("오늘 발견한 것을 한 줄로 남겨볼까요?")).toHaveValue("저장 실패 중에도 유지");
-  await expect(page.locator("#entry-run")).toBeEnabled();
+  await expect(entryStart(page)).toBeVisible();
   await page.unroute(`**${endpoint}`); await page.getByRole("button", { name: "저장 다시 확인" }).click();
   await page.getByRole("tab", { name: "개념 0%" }).click();
   await expect(page.getByRole("tab", { name: "개념 0%" })).toBeFocused();
@@ -497,4 +497,104 @@ test("저장 실패에도 미션 간 초안은 유지하고, 명시 저장한 �
   await expect(page.getByRole("button", { name: "이전 문제" })).toBeDisabled();
   await expect(page.getByRole("radio").nth(questions[0].correct)).toBeChecked();
   expect((await stored(page)).draft.programming!.reflection).toBe("저장 실패 중에도 유지");
+});
+
+test("전체 팔레트: 8개 카테고리 · 미션 밖 블록 저장·복원 · 검증 안내 · 떨어진 블록 무시", async ({ page }) => {
+  const loop: EntryNode = { ...node("repeat_basic", number(2), null), statements: [[node("wait_second", number("0.1"), null)]] };
+  const loose = [node("when_object_click", null), node("bounce_wall", null)];
+  const frame = await prepare(page, "move", buildProgrammingProject([[start(), ...movement(90), loop], loose]));
+  for (const category of ["start", "flow", "moving", "looks", "brush", "judgement", "calc", "variable"]) await expect(frame.locator(`#entryCategory${category}`)).toBeVisible();
+  for (const category of ["sound", "text", "func", "analysis", "ai_utilize", "expansion", "arduino"]) await expect(frame.locator(`#entryCategory${category}`)).toHaveCount(0);
+  type EntryWindow = { Entry: { container: { getObject: (id: string) => { getScriptText: () => string } }; getMainWS: () => { board: { code: { createThread: (blocks: unknown[]) => void } } } } };
+  const script = () => frame.locator("body").evaluate(() => JSON.parse((window as unknown as EntryWindow).Entry.container.getObject("entrybot").getScriptText()) as { type: string; statements: { type: string }[][] }[][]);
+  const restored = await script();
+  expect(restored[0][3].type).toBe("repeat_basic");
+  expect(restored[0][3].statements[0].map((block) => block.type)).toEqual(["wait_second"]);
+  expect(restored[1].map((block) => block.type)).toEqual(["when_object_click", "bounce_wall"]);
+  // An edit in the editor goes through the raw EntryJS export and manual save.
+  await frame.locator("body").evaluate(() => { (window as unknown as EntryWindow).Entry.getMainWS().board.code.createThread([{ type: "show" }]); document.dispatchEvent(new MouseEvent("mouseup")); });
+  await saveDraft(page);
+  const saved = parseProgrammingProject((await stored(page)).draft.programming!.projects.move)!;
+  expect(saved.threads[0][3].statements?.[0].map((block) => block.type)).toEqual(["wait_second"]);
+  expect(saved.order).toContain("show");
+  await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+  await expect(page.locator("#practice-feedback")).toHaveText("이번 미션은 기본 블록으로 확인해요. ‘( )번 반복하기’ 블록을 빼고 다시 검증해 주세요.");
+  await prepare(page, "move", buildProgrammingProject([[start(), ...movement(90)], loose, [loop]]));
+  await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+  await expect(page.locator("#practice-feedback")).toHaveText("목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요.");
+  await page.getByRole("button", { name: "작품 제출", exact: true }).click();
+  await expect.poll(async () => !!(await stored(page)).missions?.move?.submission).toBe(true);
+});
+
+type EntryObject = { id: string; name: string };
+type ObjectsWindow = { Entry: { playground: { object: EntryObject }; container: { getAllObjects: () => EntryObject[]; getObject: (id: string) => EntryObject; removeObject: (id: string) => void; selectObject: (id: string) => void; addCloneObject: (object: EntryObject) => unknown }; getMainWS: () => { board: { code: { createThread: (blocks: unknown[]) => void } } } } };
+
+test("오브젝트 추가: 그림 고르기 · 코드 저장·복원 · 강아지 삭제 막기 · 이벤트 대기 후 정지 · 채점은 강아지만", async ({ page }) => {
+  const frame = await prepare(page, "move", moveProject);
+  const objects = () => frame.locator("body").evaluate(() => (window as unknown as ObjectsWindow).Entry.container.getAllObjects().map((o) => o.name));
+  await frame.getByRole("button", { name: "오브젝트 추가하기", exact: true }).click();
+  const picker = page.getByRole("dialog", { name: "오브젝트 추가하기" });
+  await expect(picker).toBeVisible();
+  await picker.getByRole("button", { name: "공", exact: true }).click();
+  await expect(picker).toBeHidden();
+  await expect.poll(objects).toEqual(["공", "강아지"]);
+  // The dog stays selected after adding, since its code is graded.
+  await expect.poll(() => frame.locator("body").evaluate(() => (window as unknown as ObjectsWindow).Entry.playground.object.id)).toBe("entrybot");
+  await expect(page.getByRole("status").filter({ hasText: "‘공’을(를) 추가했어요." })).toBeVisible();
+  await frame.locator("body").evaluate(() => { const { Entry } = window as unknown as ObjectsWindow; Entry.container.selectObject(Entry.container.getAllObjects()[0].id); Entry.getMainWS().board.code.createThread([{ type: "when_object_click" }, { type: "move_x", params: [{ type: "number", params: ["30"] }, null] }]); document.dispatchEvent(new MouseEvent("mouseup")); });
+  await saveDraft(page);
+  const saved = parseProgrammingProject((await stored(page)).draft.programming!.projects.move)!;
+  expect(saved.added.map((o) => [o.name, o.sprite, o.threads.flat().map((b) => b.type)])).toEqual([["공", "ball", ["when_object_click", "move_x"]]]);
+  await page.reload();
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+  await expect.poll(objects).toEqual(["공", "강아지"]);
+  await frame.locator("body").evaluate(() => (window as unknown as ObjectsWindow).Entry.container.removeObject("entrybot"));
+  await expect.poll(objects).toEqual(["공", "강아지"]);
+  await expect(page.getByRole("status").filter({ hasText: "강아지는 미션 검증에 쓰여서 지울 수 없어요." })).toBeVisible();
+  // Entry's duplicate/paste menu skips the sprite list; the dog cannot be copied.
+  await frame.locator("body").evaluate(() => { const { Entry } = window as unknown as ObjectsWindow; Entry.container.addCloneObject(Entry.container.getObject("entrybot")); });
+  await expect.poll(objects).toEqual(["공", "강아지"]);
+  await expect(page.getByRole("status").filter({ hasText: "강아지는 복제할 수 없어요." })).toBeVisible();
+  await entryStart(page).click();
+  const result = page.getByRole("status").filter({ hasText: "현재 위치 X 10" });
+  await expect(result).toContainText("키를 누르거나 오브젝트를 클릭해 보세요.");
+  await expect(entryStop(page)).toBeVisible();
+  await entryStop(page).click();
+  await expect(entryStart(page)).toBeVisible();
+  await expect(result).toContainText("실행을 멈췄어요.");
+  await expect(result).not.toContainText("키를 누르거나 오브젝트를 클릭해 보세요.");
+  await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+  await expect(page.locator("#practice-feedback")).toHaveText("목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요.");
+});
+
+test("이름 미션: 다른 오브젝트·이벤트 줄이 있어도 강아지의 두 실행을 확인한다", async ({ page }) => {
+  const ball = { ...newAddedObject("ball", 0)!, threads: [[node("when_object_click", null), node("dialog_time", node("text", "공이에요"), number(1), "speak", null)]] };
+  const frame = await prepare(page, "name", buildProgrammingProject(JSON.parse(nameProject).objects[0].script, [ball], 1));
+  const count = page.getByRole("status", { name: "서로 다른 이름 확인", exact: true });
+  for (const [name, expected] of [["초코", 1], ["보리", 2]] as const) {
+    await entryStart(page).click();
+    const input = frame.getByLabel("강아지 이름 대답"); await input.fill(name); await input.press("Enter");
+    await expect(count).toHaveText(`서로 다른 이름 확인 ${expected}/2`);
+    await expect(entryStop(page)).toBeVisible();
+    await entryStop(page).click();
+    await expect(entryStart(page)).toBeVisible();
+  }
+  await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+  await expect(page.getByRole("button", { name: "작품 제출", exact: true })).toBeEnabled();
+});
+
+test("추가 오브젝트가 실행 중 움직여도 정지 뒤 저장본과 미저장 상태가 바뀌지 않는다", async ({ page }) => {
+  const ball = { ...newAddedObject("ball", 0)!, id: "obj-moving", threads: [[start(), node("move_x", number(50), null), node("change_scale_size", number(20), null), node("hide", null), node("wait_second", number("0.3"), null)]] };
+  const project = buildProgrammingProject([[start(), ...movement(90)]], [ball], 1);
+  await prepare(page, "move", project);
+  const status = page.locator("[data-lesson-shell] header [role=status]");
+  const before = await status.textContent();
+  expect(before).not.toContain("저장하지 않은");
+  await entryStart(page).click();
+  await expect(page.getByRole("status").filter({ hasText: "현재 위치 X 10" })).toBeVisible();
+  await expect(entryStart(page)).toBeVisible();
+  await page.locator("iframe").focus(); await page.mouse.move(5, 5); await page.mouse.up();
+  await expect(status).toHaveText(before!);
+  const saved = parseProgrammingProject((await stored(page)).draft.programming!.projects.move)!;
+  expect(saved.added[0].entity).toMatchObject({ x: ball.entity.x, scaleX: ball.entity.scaleX, visible: true });
 });
