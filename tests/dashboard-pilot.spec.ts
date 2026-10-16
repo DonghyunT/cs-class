@@ -413,6 +413,9 @@ test("학생·교사 실제 배치: 7개 너비·키보드·모바일·빈 상�
     const calendar = page.getByRole("table", { name: /일정 달력/ });
     const [year, month] = seoulToday().split("-").map(Number);
     await expect(calendar.locator("time")).toHaveCount(new Date(Date.UTC(year, month, 0)).getUTCDate());
+    await expect(calendar.getByRole("columnheader")).toHaveText(["일", "월", "화", "수", "목", "금", "토"]);
+    const firstWeek = calendar.locator("tbody tr").first().locator("td");
+    await expect(firstWeek.nth(new Date(Date.UTC(year, month - 1, 1)).getUTCDay()).locator("time")).toHaveText("1");
     await expect(calendar.locator(`time[datetime="${seoulToday()}"]`)).toHaveAttribute("aria-current", "date");
     await expect(calendar.locator(`time[datetime="${seoulToday()}"]`)).toHaveAttribute("aria-label", /일정 2개/);
     if (role === "teacher") await expect(page.getByRole("link", { name: /학습 현황.*등록 학생/ })).toBeVisible();

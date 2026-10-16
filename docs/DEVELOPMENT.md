@@ -164,7 +164,7 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 
 자동 CI의 `app`에는 비문서 변경의 정책·단위 검사, lint, typecheck, 빌드와 위 선별/스모크 검사가 포함됩니다. 스모크 성공을 전체 회귀 검증 성공으로 해석하지 않습니다. 큰 변경의 전체 검사가 필요하면 별도로 승인받아 수동 실행합니다. 수동 실행 결과는 PR에 실행 SHA·범위와 함께 기록합니다. `main` push의 `app` 성공은 Vercel 운영 반영의 조건이기도 하며, 그 규칙(`[skip ci]` 금지·검사 이름 변경 순서 등)은 [서버 안내](FIREBASE_SETUP.md#ci와-운영-공개)가 단일 기준입니다.
 
-[`run-selected-e2e.mjs`](../scripts/run-selected-e2e.mjs)는 자동 GitHub 실행에서 남아 있는 `full` 계획과 알 수 없는 모드를 실행 전에 거절합니다. `smoke` 모드는 수업 필터를 해제해 전체 등록 수업을 확인하고, 등록 수업만의 `affected` 모드는 해당 수업에 한정합니다. [PR 이벤트](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)와 [수동 실행](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)은 GitHub 공식 안내를 따릅니다.
+[`run-selected-e2e.mjs`](../scripts/run-selected-e2e.mjs)는 자동 GitHub 실행에서 남아 있는 `full` 계획과 알 수 없는 모드를 실행 전에 거절합니다. 로컬 실행은 `--plan`이나 `CS_E2E_PLAN_PATH`를 명시하지 않으면 남은 `scratch/ci/e2e-plan.json`을 읽지 않고 범위를 매번 새로 계산하며, 결과가 `full`이면 이유만 출력하고 멈춥니다. 사용자 승인 후에만 `--full`을 붙여 실행합니다(예: `npm run test:e2e:scope -- --full`). `smoke` 모드는 수업 필터를 해제해 전체 등록 수업을 확인하고, 등록 수업만의 `affected` 모드는 해당 수업에 한정합니다. [PR 이벤트](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)와 [수동 실행](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)은 GitHub 공식 안내를 따릅니다.
 
 > [!IMPORTANT]
 > **전체 E2E 실행 및 선제적 질문 원칙:**

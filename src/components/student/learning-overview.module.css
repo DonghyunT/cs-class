@@ -10,7 +10,7 @@
 .waiting svg { color: #376fc8; }
 .waiting p { font-size: 14px; margin: 0; }
 .current { grid-area: current; min-width: 0; border-left: 1px solid #d7e3f7; padding-left: 36px; }
-.eyebrow { font-size: 13px; font-weight: 650; color: #376fc8; }
+.eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; color: #376fc8; }
 .current h3 { font-size: clamp(22px, 2.4vw, 29px); font-weight: 720; line-height: 1.45; letter-spacing: -.04em; margin: 10px 0; word-break: keep-all; overflow-wrap: anywhere; }
 .current > p { margin: 0; color: #526173; font-size: 15px; line-height: 1.8; word-break: keep-all; overflow-wrap: anywhere; }
 .resume { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; font-size: 14px; color: #526173; }
