@@ -47,7 +47,7 @@ test("공통 수업 헤더·단계 폭과 완료 진도는 모든 수업에서 �
     await page.screenshot({ path: testInfo.outputPath(`lesson-${lesson.id}-1920.png`) });
   }
 });
-test("다른 이번 수업 링크는 제목 아래에서 줄바꿈하고 저장 실패 시 이동을 막는다", async ({ page }) => {
+test("다른 이번 수업 링크는 나가기 옆에서 헤더 높이를 늘리지 않고 저장 실패 시 이동을 막는다", async ({ page }) => {
   await enter(page, "review-sandwich");
   const link = page.locator("header").getByRole("link", { name: /이번 수업:.*이동/ });
   await expect(link).toHaveAttribute("href", "/classroom/programming-13?from=lessons");
@@ -56,6 +56,7 @@ test("다른 이번 수업 링크는 제목 아래에서 줄바꿈하고 저장 
     await page.setViewportSize({ width, height: 712 });
     await expect(link).toBeVisible();
     expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    if (width >= 1280) expect((await page.getByRole("banner").boundingBox())!.height).toBeLessThanOrEqual(72);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
   }
   await page.getByRole("tab", { name: /^실습/ }).click();
