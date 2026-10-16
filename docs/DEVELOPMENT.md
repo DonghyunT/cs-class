@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-10-14(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-10-17(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -10,7 +10,7 @@
 
 ### 1.1 시스템 요구사항
 - **Node.js:** `v24.x` (LTS)
-- **Java:** `JDK 21+` (Firebase Auth/Firestore 에뮬레이터 구동용, `java -version` 확인)
+- **Java:** `JDK 21+` (Firebase Auth/Firestore 에뮬레이터 구동용, `java -version` 확인). Windows는 PC마다 `winget install EclipseAdoptium.Temurin.21.JDK`로 설치한 뒤 터미널과 에이전트 앱을 다시 엽니다.
 - **Git & PowerShell / Bash**
 
 ### 1.2 저장소 복제 및 로컬 실행
@@ -25,7 +25,7 @@ npm run dev:emulator
 > - Windows PowerShell에서 스크립트 실행 권한 차단 시 `npm.cmd` 및 `npx.cmd`를 사용합니다.
 > - Windows 사용자 캐시에서 `EPERM` 접근 오류 발생 시 Git 제외 폴더 캐시를 지정합니다:
 >   `npm.cmd ci --cache .\scratch\npm-cache --no-audit --no-fund`
-> - Java PATH가 누락된 경우, 설치된 JDK 21의 `bin` 디렉터리를 터미널 PATH 앞에 추가합니다:
+> - 설치 없이 임시로 쓰는 JDK라면 그 `bin` 디렉터리를 터미널 PATH 앞에 추가합니다:
 >   `$env:PATH = "C:\path\to\jdk-21\bin;$env:PATH"`
 
 ### 1.3 로컬 게스트 계정 및 테스트 자격 증명
@@ -277,3 +277,4 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
   ```
 - **Playwright Secure 쿠키 이슈:** E2E 앱 주소는 항상 `http://localhost:3000`을 사용합니다. `127.0.0.1`에서는 운영 빌드의 Secure 쿠키 전송이 차단될 수 있습니다.
 - **Stitch 디자인 플러그인:** Codex Stitch 연동 키는 `STITCH_API_KEY` 환경변수로만 관리하며 저장소나 로그에 노출하지 않습니다.
+- **Claude Code 설정:** `.claude/settings.json`은 `.env*.local`·서비스 계정 키 읽기와 Firestore 삭제·Firebase 배포 도구를 막고, 운영 Firebase 도구 호출·`git push`·PR 병합·Vercel 승격을 매번 확인받습니다. `.claude/launch.json`은 내장 미리보기용 `dev:emulator` 실행 설정이며 시스템 JDK 21이 필요합니다.
