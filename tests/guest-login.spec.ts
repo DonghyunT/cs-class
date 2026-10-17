@@ -1,8 +1,7 @@
-import { createHash } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { guestLoginEnabled } from "../src/lib/server/guest-mode";
 import { testEnv } from "../scripts/local-test-env.mjs";
-import { db, headers, localOnly } from "./emulator";
+import { clearLoginLimit, db, headers, localOnly } from "./emulator";
 import type { Work } from "../src/lib/classroom/types";
 
 const lessonId = "programming-13";
@@ -10,7 +9,7 @@ const lessonId = "programming-13";
 test.beforeEach(async ({ request }) => {
   await localOnly(request);
   for (const uid of ["student-21099", "guest-teacher"]) {
-    await db.collection("csRateLimits").doc(createHash("sha256").update(uid).digest("hex")).delete();
+    await clearLoginLimit(uid);
   }
 });
 

@@ -1,8 +1,7 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
-import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
-import { auth, db, headers, initialPassword, localOnly, loginStudent, readyTeacher, resetStudent, studentPassword } from "./emulator";
+import { auth, clearLoginLimit, db, headers, initialPassword, localOnly, loginStudent, readyTeacher, resetStudent, studentPassword } from "./emulator";
 import { testEnv } from "../scripts/local-test-env.mjs";
 
 const studentIds = ["20193", "20194"];
@@ -50,10 +49,7 @@ test.afterAll(async () => {
   for (const uid of uids) {
     for (const lesson of LESSONS) await db.doc(`csWork/${uid}__${lesson.id}`).delete();
     for (const collection of ["csAccounts", "csAiUsage"]) await db.doc(`${collection}/${uid}`).delete();
-    for (const password of [initialPassword, studentPassword]) {
-      const key = createHash("sha256").update(`credential:${uid}:${passwordDigest(password)}`).digest("hex");
-      await db.doc(`csRateLimits/${key}`).delete();
-    }
+    await clearLoginLimit(uid);
     await auth.deleteUser(uid).catch(error => { if (error.code !== "auth/user-not-found") throw error; });
   }
   for (const [classId, data] of originalClasses) {

@@ -37,8 +37,12 @@ export async function resetStudent(request: APIRequestContext, studentId = "2010
   const classId = `2-${Number(studentId.slice(1, 3))}`;
   await db.collection("csAccounts").doc(uid).set({ uid, role: "student", studentId, classId, classIds: [], mustChangePassword: true, temporaryPassword: { hash: passwordDigest(initialPassword), expiresAt: Date.now() + 30 * 60_000 }, disabled: false, authVersion: 0, authBusy: null, session: null });
   await db.collection("csWork").doc(`${uid}__${lessonId}`).delete();
-  for (const password of [initialPassword, studentPassword]) await db.collection("csRateLimits").doc(createHash("sha256").update(`credential:${uid}:${passwordDigest(password)}`).digest("hex")).delete();
+  await clearLoginLimit(uid);
   await db.collection("csClasses").doc(classId).set({ id: classId, name: `2학년 ${Number(studentId.slice(1, 3))}반`, revision: 0, currentLessonId: lessonId, openedLessonIds: [lessonId] });
+}
+// The per-account login budget would otherwise carry over between tests on one emulator.
+export async function clearLoginLimit(uid: string) {
+  await db.collection("csRateLimits").doc(createHash("sha256").update(`account:${uid}`).digest("hex")).delete();
 }
 export async function loginStudent(request: APIRequestContext, password = initialPassword, studentId = "20101") {
   return request.post("/api/auth/login", { headers, data: { role: "student", studentId, password } });

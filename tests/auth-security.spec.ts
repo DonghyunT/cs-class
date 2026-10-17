@@ -2,9 +2,8 @@ import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { test, expect } from "@playwright/test";
-import { auth, db, headers, initialPassword, lessonId, loginStudent, readyStudent, readyTeacher, resetStudent, studentPassword } from "./emulator";
+import { auth, clearLoginLimit, db, headers, initialPassword, lessonId, loginStudent, readyStudent, readyTeacher, resetStudent, studentPassword } from "./emulator";
 import { testEnv } from "../scripts/local-test-env.mjs";
-import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
 
 const resetPath = "/api/classroom/students/student-20101/reset";
 test("개별 임시 비밀번호는 다른 학생·Firebase·공통값으로 우회할 수 없고 소비 뒤 폐기", async ({ request, playwright }) => {
@@ -47,19 +46,21 @@ test("만료·이전 임시값·검증값 없는 기존 공통 계정은 재발�
   expect((await loginStudent(request, initialPassword)).status()).toBe(401);
 });
 
-test("타인의 오답 제한은 정상 임시 입장·강사 입장을 잠그지 않음", async ({ request }) => {
-  await resetStudent(request);
-  // 동일한 에뮬레이터에서 재검사해도 이 검사가 만든 오답 예산을 다음 실행에 남기지 않는다.
-  const limits = [["student-20101", "wrong-security-password"], ["instructor", "wrong-instructor-security"]]
-    .map(([uid, password]) => db.collection("csRateLimits").doc(createHash("sha256").update(`credential:${uid}:${passwordDigest(password)}`).digest("hex")));
-  await Promise.all(limits.map(ref => ref.delete()));
+test("계정 상한은 비밀번호를 바꿔 넣어도 30회에서 잠그고, 다른 계정은 그대로·교사 초기화로 풀림", async ({ request, playwright }) => {
+  await resetStudent(request); await clearLoginLimit("instructor");
+  const staff = await playwright.request.newContext({ baseURL: "http://localhost:3000" });
   try {
-    for (let i = 0; i < 12; i++) expect((await loginStudent(request, "wrong-security-password")).status()).toBe(401);
-    expect((await loginStudent(request, "wrong-security-password")).status()).toBe(429);
+    for (let i = 0; i < 29; i++) expect((await loginStudent(request, `wrong-security-${i}`)).status()).toBe(401);
     expect((await loginStudent(request)).status()).toBe(200);
-    for (let i = 0; i < 12; i++) expect((await request.post("/api/auth/login", { headers, data: { role: "instructor", studentId: "", password: "wrong-instructor-security" } })).status()).toBe(401);
+    expect((await loginStudent(request)).status()).toBe(429);
     expect((await request.post("/api/auth/login", { headers, data: { role: "instructor", studentId: "", password: testEnv.CS_TEST_INSTRUCTOR_PASSWORD } })).status()).toBe(200);
-  } finally { await Promise.all(limits.map(ref => ref.delete())); }
+    await readyTeacher(staff);
+    const reset = await staff.post(resetPath, { headers, data: {} }); expect(reset.status()).toBe(200);
+    expect((await loginStudent(request, (await reset.json()).password)).status()).toBe(200);
+  } finally {
+    // 동일한 에뮬레이터에서 재검사해도 이 검사가 쓴 예산을 다음 실행에 남기지 않는다.
+    await staff.dispose(); await clearLoginLimit("student-20101"); await clearLoginLimit("instructor");
+  }
 });
 
 test("출처 예산은 학번·전달 헤더를 바꿔도 적용되고 기존 세션은 유지", async ({ request }) => {
@@ -99,7 +100,7 @@ test("같은 학교 출처의 27명 동시 입장이 모두 성공", async ({ pl
     await ref.delete();
     for (const { studentId, request } of students) {
       await db.doc(`csAccounts/student-${studentId}`).delete();
-      await db.collection("csRateLimits").doc(createHash("sha256").update(`credential:student-${studentId}:${passwordDigest(initialPassword)}`).digest("hex")).delete();
+      await clearLoginLimit(`student-${studentId}`);
       await auth.deleteUser(`student-${studentId}`).catch((error: { code: string }) => {
         if (error.code !== "auth/user-not-found") throw error;
       });

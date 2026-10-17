@@ -2,11 +2,10 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { createHash, randomUUID } from "node:crypto";
-import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
+import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { testEnv } from "../scripts/local-test-env.mjs";
-import { auth, db, headers, localOnly, loginStudent } from "./emulator";
+import { auth, clearLoginLimit, db, headers, localOnly, loginStudent } from "./emulator";
 const run = promisify(execFile);
 const csv = "학년,반,번호,학번\n2,9,25,20925\n2,9,26,20926\n";
 
@@ -51,7 +50,7 @@ test("명부 계획·개별 등록·반별 30분 발급·기존 작품 보존·�
     expect((await db.collection("csWork").doc(`${uids[0]}__programming-13`).get()).data()!.draft.reflection).toBe("기존 학습");
   } finally {
     for (const uid of uids) { await auth.deleteUser(uid).catch(() => {}); await db.collection("csAccounts").doc(uid).delete(); await db.collection("csWork").doc(`${uid}__programming-13`).delete(); }
-    for (const uid of uids) for (const password of passwords) await db.collection("csRateLimits").doc(createHash("sha256").update(`credential:${uid}:${passwordDigest(password)}`).digest("hex")).delete();
+    for (const uid of uids) await clearLoginLimit(uid);
     if (!directory.startsWith(path.resolve("private") + path.sep) || !path.basename(directory).startsWith("roster-test-")) throw Error("Unsafe cleanup path.");
     await rm(directory, { recursive: true, force: true });
   }

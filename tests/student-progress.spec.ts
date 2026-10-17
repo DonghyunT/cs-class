@@ -1,11 +1,9 @@
-import { createHash } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import { emptyWork } from "../src/lib/classroom/progress";
 import { buildProgrammingProject } from "../src/lib/classroom/programming-entry";
 import type { StudentDashboard, Work, WorkAction } from "../src/lib/classroom/types";
-import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
-import { auth, db, headers, initialPassword, localOnly, loginStudent, resetStudent, studentPassword } from "./emulator";
+import { auth, clearLoginLimit, db, headers, initialPassword, localOnly, loginStudent, resetStudent, studentPassword } from "./emulator";
 
 const studentId = "20190", uid = `student-${studentId}`, classId = "2-1";
 const programming = LESSONS.find(lesson => lesson.id === "programming-13")!;
@@ -100,10 +98,7 @@ test.afterAll(async () => {
   if (!ownsStudent) return;
   for (const lesson of LESSONS) await db.doc(`csWork/${uid}__${lesson.id}`).delete();
   for (const collection of ["csAccounts", "csAiUsage"]) await db.doc(`${collection}/${uid}`).delete();
-  for (const password of [initialPassword, studentPassword]) {
-    const key = createHash("sha256").update(`credential:${uid}:${passwordDigest(password)}`).digest("hex");
-    await db.doc(`csRateLimits/${key}`).delete();
-  }
+  await clearLoginLimit(uid);
   await auth.deleteUser(uid).catch(error => { if (error.code !== "auth/user-not-found") throw error; });
   if (originalClass) await db.doc(`csClasses/${classId}`).set(originalClass);
 });

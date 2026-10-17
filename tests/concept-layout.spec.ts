@@ -1,8 +1,6 @@
-import { createHash } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
-import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
-import { auth, db, headers, initialPassword, loginStudent, resetStudent, studentPassword } from "./emulator";
+import { auth, clearLoginLimit, db, headers, initialPassword, loginStudent, resetStudent, studentPassword } from "./emulator";
 
 const studentId = "21003", uid = `student-${studentId}`, classPath = "csClasses/2-10";
 let originalClass: FirebaseFirestore.DocumentData | undefined;
@@ -17,7 +15,7 @@ test.beforeEach(async ({ page }) => {
 test.afterAll(async () => {
   for (const lesson of LESSONS) await db.doc(`csWork/${uid}__${lesson.id}`).delete();
   for (const path of [`csAccounts/${uid}`, `csAiUsage/${uid}`]) await db.doc(path).delete();
-  for (const password of [initialPassword, studentPassword]) await db.doc(`csRateLimits/${createHash("sha256").update(`credential:${uid}:${passwordDigest(password)}`).digest("hex")}`).delete();
+  await clearLoginLimit(uid);
   if (originalClass) await db.doc(classPath).set(originalClass);
   await auth.deleteUser(uid).catch(() => {});
 });

@@ -4,9 +4,7 @@ import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { emptyWork, progressFor } from "../src/lib/classroom/progress";
 import { questions } from "../src/lib/classroom/programming-data";
 import type { Work, WorkAction } from "../src/lib/classroom/types";
-import { auth, db, headers, localOnly, loginStudent, readyStudent, readyTeacher, studentPassword, saveDraft, entryReset, entryStart, entryStop } from "./emulator";
-import { createHash } from "node:crypto";
-import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
+import { auth, clearLoginLimit, db, headers, localOnly, loginStudent, readyStudent, readyTeacher, studentPassword, saveDraft, entryReset, entryStart, entryStop } from "./emulator";
 
 const id = PROGRAMMING_LESSON.id, endpoint = `/api/classroom/work/${id}`;
 const node = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
@@ -472,7 +470,7 @@ test("한 반 27명의 동시 입장·작품 저장·검증은 각 학생의 기
     for (const { api } of contexts) await api.dispose();
     for (const uid of created) {
       await auth.deleteUser(uid); await db.collection("csAccounts").doc(uid).delete(); await db.collection("csWork").doc(`${uid}__${id}`).delete();
-      await db.collection("csRateLimits").doc(createHash("sha256").update(`credential:${uid}:${passwordDigest(studentPassword)}`).digest("hex")).delete();
+      await clearLoginLimit(uid);
     }
     await classRef.set(original);
   }
