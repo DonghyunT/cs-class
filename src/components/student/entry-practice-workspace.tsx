@@ -171,6 +171,16 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   }, [draft, locked, update, mission, parse, program, mode, phase, preparing, actionsBlocked, onSave]);
 
   useEffect(() => {
+    if (!bootReady) return;
+    // Sent before the project loads, so the smaller stage is ready when the workspace appears.
+    const narrow = window.matchMedia("(max-width: 600px)");
+    const fit = () => frame.current?.contentWindow?.postMessage({ channel: CHANNEL, type: "stage-size", narrow: narrow.matches }, "*");
+    fit();
+    narrow.addEventListener("change", fit);
+    return () => narrow.removeEventListener("change", fit);
+  }, [bootReady]);
+
+  useEffect(() => {
     if (!bootReady || editorProject.current === (draft.entryProject ?? null)) return;
     const next = parse(draft.entryProject);
     if (!next) return;

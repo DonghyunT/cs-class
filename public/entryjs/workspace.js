@@ -130,6 +130,7 @@ try {
     blockSaveImageEnable: false, iframeDomAccess: "none", fullScreenEnable: false,
     commentDisable: true,
   });
+  const wideStage = Entry.interfaceState.canvasWidth;
   if (traced) {
     const ask = Entry.block.ask_and_wait.func;
     Entry.block.ask_and_wait.func = function (entity, script) {
@@ -279,6 +280,9 @@ try {
       } else if (message.type === "lock") {
         locked = message.locked === true;
         document.getElementById("workspace").inert = locked || loading;
+      } else if (message.type === "stage-size") {
+        // Phone-width pages show only this frame's left edge. Entry's smallest stage keeps its start button there.
+        Entry.resizeElement({ ...Entry.interfaceState, canvasWidth: message.narrow === true ? Entry.CANVAS_DEFAULT_WIDTH : wideStage });
       } else if (message.type === "export") {
         document.activeElement?.blur();
         Entry.getMainWS().syncCode();
