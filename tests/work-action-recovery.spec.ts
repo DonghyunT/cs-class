@@ -1,7 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createHash } from "node:crypto";
-import { auth, correctOrder, db, headers, initialPassword, lessonId, loginStudent, resetStudent, studentPassword, saveDraft } from "./emulator";
-import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
+import { auth, clearLoginLimit, correctOrder, db, headers, initialPassword, lessonId, loginStudent, resetStudent, studentPassword, saveDraft } from "./emulator";
 import type { Work, WorkAction } from "../src/lib/classroom/types";
 
 const studentId = "20109", uid = `student-${studentId}`;
@@ -18,7 +16,7 @@ test.afterAll(async () => {
   await db.doc(`csWork/${uid}__${lessonId}`).delete();
   await db.doc(`csWork/${uid}__programming-13`).delete();
   await db.doc(`csAccounts/${uid}`).delete();
-  for (const password of [initialPassword, studentPassword]) await db.doc(`csRateLimits/${createHash("sha256").update(`credential:${uid}:${passwordDigest(password)}`).digest("hex")}`).delete();
+  await clearLoginLimit(uid);
   if (originalClass) await db.doc("csClasses/2-1").set(originalClass);
   await auth.deleteUser(uid).catch(() => {});
 });

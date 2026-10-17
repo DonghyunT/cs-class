@@ -103,8 +103,8 @@ async function loginPasswordAccount(role: Role, uid: string, email: string, pass
   // Vercel가 덮어쓰는 출처만 신뢰합니다. 로컬에서는 전달 헤더로 제한을 우회하지 못합니다.
   const source = process.env.VERCEL ? (await headers()).get("x-vercel-forwarded-for") ?? "unknown" : "local";
   await limitLogin(`source:${source}`, 600, 60_000);
-  // 같은 학교의 동시 입장은 허용하고, 타인의 오답은 정상 비밀번호의 예산을 소모하지 않습니다.
-  await limitLogin(`credential:${uid}:${hash(password)}`, 12, 15 * 60_000);
+  // 계정마다 따로 세어 같은 학교의 동시 입장은 허용합니다. 교사의 비밀번호 초기화가 이 잠금을 풉니다.
+  await limitLogin(`account:${uid}`, 30, 15 * 60_000);
   const initial = (await db.collection("csAccounts").doc(uid).get()).data() as Account | undefined;
   requireCondition(initial && initial.role === role && !initial.disabled, 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
   requireCondition(!initial?.authBusy, 423, "ACCOUNT_BUSY", "계정 정보를 변경하고 있어요. 잠시 후 다시 시도해 주세요.");
@@ -115,14 +115,22 @@ async function loginPasswordAccount(role: Role, uid: string, email: string, pass
     requireCondition(temporary.hash.length === digest.length && timingSafeEqual(Buffer.from(temporary.hash), Buffer.from(digest)), 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
     return openSession(uid, initial.authVersion, role);
   }
-  const host = process.env.FIREBASE_AUTH_EMULATOR_HOST;
-  const endpoint = host ? `http://${host}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword` : "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword";
-  const response = await fetch(`${endpoint}?key=${encodeURIComponent(process.env.FIREBASE_WEB_API_KEY!)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, returnSecureToken: true }), cache: "no-store", signal: AbortSignal.timeout(15000) });
-  requireCondition(response.ok, 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
-  const data = await response.json();
+  const data = await signInWithPassword(email, password);
+  requireCondition(data, 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
   const token = await auth.verifyIdToken(data.idToken, true);
   requireCondition(initial && token.uid === uid && initial.role === role && !initial.disabled, 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
   return openSession(uid, initial.authVersion, role);
+}
+// Firebase는 차단·설정 오류도 4xx로 알리므로 문서에 있는 자격 증명 오류만 비밀번호 오답으로 봅니다.
+const wrongCredentials = ["EMAIL_NOT_FOUND", "INVALID_PASSWORD", "USER_DISABLED", "INVALID_LOGIN_CREDENTIALS"];
+async function signInWithPassword(email: string, password: string): Promise<{ idToken: string } | null> {
+  const host = process.env.FIREBASE_AUTH_EMULATOR_HOST;
+  const endpoint = host ? `http://${host}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword` : "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword";
+  const response = await fetch(`${endpoint}?key=${encodeURIComponent(process.env.FIREBASE_WEB_API_KEY!)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, returnSecureToken: true }), cache: "no-store", signal: AbortSignal.timeout(15000) });
+  if (response.ok) return response.json();
+  const reason = /^[A-Z_]+/.exec(String((await response.json().catch(() => null))?.error?.message ?? ""))?.[0];
+  requireCondition(reason && wrongCredentials.includes(reason), 503, "PASSWORD_VERIFY", "비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.");
+  return null;
 }
 export async function loginGoogle(idToken: string) {
   const { auth, db } = admin();
@@ -224,12 +232,8 @@ export async function changeOwnPassword(currentPassword: string, password: strin
   requireCondition(!user.disabled, 401, "SIGNED_OUT", "사용할 수 없는 계정이에요. 선생님께 알려 주세요.");
   requireCondition(passwordProvider(user) === "password" && user.email, 403, "PASSWORD_PROVIDER", "이 계정의 비밀번호는 로그인 제공 서비스에서 관리해 주세요.");
   await limitLogin(`password-change:${who.uid}`, 8, 15 * 60_000);
-  const host = process.env.FIREBASE_AUTH_EMULATOR_HOST;
-  const endpoint = host ? `http://${host}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword` : "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword";
-  const response = await fetch(`${endpoint}?key=${encodeURIComponent(process.env.FIREBASE_WEB_API_KEY!)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: user.email, password: currentPassword, returnSecureToken: true }), cache: "no-store", signal: AbortSignal.timeout(15000) });
-  requireCondition(response.status < 500, 503, "PASSWORD_VERIFY", "현재 비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.");
-  requireCondition(response.ok, 403, "CURRENT_PASSWORD", "현재 비밀번호를 확인해 주세요.");
-  const data = await response.json();
+  const data = await signInWithPassword(user.email, currentPassword);
+  requireCondition(data, 403, "CURRENT_PASSWORD", "현재 비밀번호를 확인해 주세요.");
   let token;
   try { token = await auth.verifyIdToken(data.idToken, true); }
   catch { throw new ServiceError(403, "CURRENT_PASSWORD", "현재 비밀번호를 확인해 주세요."); }
@@ -264,6 +268,7 @@ export async function resetStudentPassword(uid: string) {
     const account = (await tx.get(ref)).data() as Account;
     requireCondition(account.authBusy === lock, 409, "ACCOUNT_CHANGED", "계정 상태를 다시 확인해 주세요.");
     tx.update(ref, { authBusy: null, authBusyAt: null, authVersion: account.authVersion + 1, mustChangePassword: true, temporaryPassword: credential.temporaryPassword, session: null });
+    tx.delete(db.collection("csRateLimits").doc(hash(`account:${uid}`)));
   });
   return { password: credential.password, expiresAt: credential.temporaryPassword.expiresAt };
 }

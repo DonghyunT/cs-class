@@ -2,8 +2,7 @@ import { CLASSROOM_HELP_ENABLED } from "../src/lib/classroom/features";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { auth, db, headers, localOnly, lessonId, studentPassword } from "./emulator";
-import { loginStudent } from "./emulator";
-import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
+import { clearLoginLimit, loginStudent } from "./emulator";
 
 const uid = "student-20188", teacherUid = "help-teacher-test";
 let classBefore: FirebaseFirestore.DocumentData | undefined;
@@ -158,7 +157,7 @@ test.afterEach(async () => {
   for (const collection of ["csHelpRequests", "csHelpSnapshots", "csHelpLimits", "csAccounts"]) for (const target of [uid, teacherUid]) await db.collection(collection).doc(target).delete();
   await db.collection("csWork").doc(`${uid}__${lessonId}`).delete();
   for (const target of [uid, teacherUid]) await auth.deleteUser(target).catch(() => undefined);
-  await db.collection("csRateLimits").doc(createHash("sha256").update(`credential:${uid}:${passwordDigest(studentPassword)}`).digest("hex")).delete();
+  await clearLoginLimit(uid);
   if (classBefore) await db.collection("csClasses").doc("2-1").set(classBefore); else await db.collection("csClasses").doc("2-1").delete();
 });
 

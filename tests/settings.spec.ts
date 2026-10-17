@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { auth, db, headers, localOnly, loginStudent, studentPassword } from "./emulator";
+import { auth, clearLoginLimit, db, headers, localOnly, loginStudent, studentPassword } from "./emulator";
 
 const studentId = "20192", uid = `student-${studentId}`, googleUid = "settings-google-test";
 const newPassword = "settings-test-9251", wrongPassword = "settings-wrong-9123";
@@ -14,7 +14,7 @@ async function removeOwned() {
     await db.doc(`csAccounts/${user}`).delete();
     await db.doc(`csWork/${user}__sequence-lab`).delete();
     await db.doc(`csRateLimits/${createHash("sha256").update(`password-change:${user}`).digest("hex")}`).delete();
-    for (const password of [studentPassword, newPassword, wrongPassword]) await db.doc(`csRateLimits/${createHash("sha256").update(`credential:${user}:${createHash("sha256").update(password).digest("hex")}`).digest("hex")}`).delete();
+    await clearLoginLimit(user);
   }
 }
 test.beforeAll(async ({ request }) => {

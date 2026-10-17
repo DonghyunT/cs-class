@@ -5,7 +5,6 @@ import { buildProgrammingProject } from "../src/lib/classroom/programming-entry"
 import { emptyWork, latestSubmissionAtFor, submissionCountFor } from "../src/lib/classroom/progress";
 import type { AbstractionProject } from "../src/lib/classroom/review/project";
 import type { Lesson, TeacherDashboard, Work } from "../src/lib/classroom/types";
-import { passwordDigest } from "../src/lib/server/temporary-password.mjs";
 import { testEnv } from "../scripts/local-test-env.mjs";
 import { auth, db, headers, localOnly, readyTeacher, studentPassword } from "./emulator";
 
@@ -137,7 +136,7 @@ test.afterAll(async () => {
   for (const uid of uids) {
     batch.delete(db.doc(`csAccounts/${uid}`));
     for (const lesson of lessons) batch.delete(db.doc(`csWork/${uid}__${lesson.id}`));
-    for (const key of [`credential:${uid}:${passwordDigest(studentPassword)}`, `password-change:${uid}`]) batch.delete(db.doc(`csRateLimits/${createHash("sha256").update(key).digest("hex")}`));
+    for (const key of [`account:${uid}`, `password-change:${uid}`]) batch.delete(db.doc(`csRateLimits/${createHash("sha256").update(key).digest("hex")}`));
   }
   for (const [classId, original] of originalClasses) {
     if (original) batch.set(db.doc(`csClasses/${classId}`), original);
