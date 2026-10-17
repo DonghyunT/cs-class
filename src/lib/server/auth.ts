@@ -115,20 +115,22 @@ async function loginPasswordAccount(role: Role, uid: string, email: string, pass
     requireCondition(temporary.hash.length === digest.length && timingSafeEqual(Buffer.from(temporary.hash), Buffer.from(digest)), 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
     return openSession(uid, initial.authVersion, role);
   }
-  const response = await signInWithPassword(email, password);
-  requireCondition(response.ok, 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
-  const data = await response.json();
+  const data = await signInWithPassword(email, password);
+  requireCondition(data, 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
   const token = await auth.verifyIdToken(data.idToken, true);
   requireCondition(initial && token.uid === uid && initial.role === role && !initial.disabled, 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
   return openSession(uid, initial.authVersion, role);
 }
-async function signInWithPassword(email: string, password: string) {
+// Firebase는 차단·설정 오류도 4xx로 알리므로 문서에 있는 자격 증명 오류만 비밀번호 오답으로 봅니다.
+const wrongCredentials = ["EMAIL_NOT_FOUND", "INVALID_PASSWORD", "USER_DISABLED", "INVALID_LOGIN_CREDENTIALS"];
+async function signInWithPassword(email: string, password: string): Promise<{ idToken: string } | null> {
   const host = process.env.FIREBASE_AUTH_EMULATOR_HOST;
   const endpoint = host ? `http://${host}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword` : "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword";
   const response = await fetch(`${endpoint}?key=${encodeURIComponent(process.env.FIREBASE_WEB_API_KEY!)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, returnSecureToken: true }), cache: "no-store", signal: AbortSignal.timeout(15000) });
-  // 제공자 장애를 비밀번호 오답으로 안내하지 않습니다.
-  requireCondition(response.status < 500, 503, "PASSWORD_VERIFY", "비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.");
-  return response;
+  if (response.ok) return response.json();
+  const reason = /^[A-Z_]+/.exec(String((await response.json().catch(() => null))?.error?.message ?? ""))?.[0];
+  requireCondition(reason && wrongCredentials.includes(reason), 503, "PASSWORD_VERIFY", "비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.");
+  return null;
 }
 export async function loginGoogle(idToken: string) {
   const { auth, db } = admin();
@@ -230,9 +232,8 @@ export async function changeOwnPassword(currentPassword: string, password: strin
   requireCondition(!user.disabled, 401, "SIGNED_OUT", "사용할 수 없는 계정이에요. 선생님께 알려 주세요.");
   requireCondition(passwordProvider(user) === "password" && user.email, 403, "PASSWORD_PROVIDER", "이 계정의 비밀번호는 로그인 제공 서비스에서 관리해 주세요.");
   await limitLogin(`password-change:${who.uid}`, 8, 15 * 60_000);
-  const response = await signInWithPassword(user.email, currentPassword);
-  requireCondition(response.ok, 403, "CURRENT_PASSWORD", "현재 비밀번호를 확인해 주세요.");
-  const data = await response.json();
+  const data = await signInWithPassword(user.email, currentPassword);
+  requireCondition(data, 403, "CURRENT_PASSWORD", "현재 비밀번호를 확인해 주세요.");
   let token;
   try { token = await auth.verifyIdToken(data.idToken, true); }
   catch { throw new ServiceError(403, "CURRENT_PASSWORD", "현재 비밀번호를 확인해 주세요."); }
