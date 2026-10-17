@@ -230,7 +230,7 @@ function CommunityBoard({ uid, classId, teacher, onClassChange }: { uid: string;
             <h2 ref={threadTitle} tabIndex={-1}>{question.title}</h2>
             <div className={styles.threadActions}>
               {(teacher || question.author.uid === uid) && <Button variant="ghost" aria-disabled={saving || threadLoading} onClick={resolve}>{question.resolved ? "질문 다시 열기" : "해결됨으로 표시"}</Button>}
-              {question.author.uid === uid && <Button ref={deleteButton} variant="ghost" aria-disabled={saving || threadLoading} onClick={() => {
+              {(teacher || question.author.uid === uid) && <Button ref={deleteButton} variant="ghost" aria-disabled={saving || threadLoading} onClick={() => {
                 if (!saving && !threadLoading) { setDeleteError(""); setDeleteTarget({ id: question.id, title: question.title }); }
               }}><Trash2 size={15} aria-hidden="true" />질문 삭제</Button>}
             </div>

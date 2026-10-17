@@ -298,7 +298,7 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 <a id="실패-진단과-오류-번호"></a>
 <a id="공통-데이터-계약을-수정할-때"></a>
 
-- 서버 오류 응답은 `src/lib/server/failure-log.ts`를 통해 고정된 5개 필드(`requestId`, `operation`, `category`, `status`, `timestamp`)만 구조화 로깅합니다.
+- 서버 오류 응답은 `src/lib/server/failure-log.ts`를 통해 고정된 5개 필드(`requestId`, `operation`, `category`, `status`, `timestamp`)를 구조화 로깅합니다. 분류가 `unexpected`인 오류에만 허용 목록에 있는 `errorName`(오류 종류, 예: `TypeError`)과 `errorCode`(Firestore gRPC 상태 이름, 예: `ABORTED`, 또는 `FIREBASE_NOT_CONFIGURED` 같은 서버 설정 코드)를 더하고, 목록 밖의 값은 남기지 않습니다. 오류 메시지·스택·원인은 기록하지 않습니다.
 - 학생 식별자, 인증 토큰, 비밀번호, Zod 에러 상세 등 민감 정보는 로그로 복사하지 않습니다.
 
 ### 5.3 트러블슈팅 FAQ
