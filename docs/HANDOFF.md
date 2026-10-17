@@ -1,12 +1,20 @@
 # 이어갈 작업
 
-갱신: 2026-10-17(Asia/Seoul). 아래 현재 작업과 운영 릴리스 기록을 구분합니다. 확정 기능은 [PRD](PRD.md), 화면은 [DESIGN](DESIGN.md), 실행·검증은 [DEVELOPMENT](DEVELOPMENT.md), 작업 규칙은 [AGENTS](../AGENTS.md)를 따릅니다.
+갱신: 2026-10-18(Asia/Seoul). 아래 현재 작업과 운영 릴리스 기록을 구분합니다. 확정 기능은 [PRD](PRD.md), 화면은 [DESIGN](DESIGN.md), 실행·검증은 [DEVELOPMENT](DEVELOPMENT.md), 작업 규칙은 [AGENTS](../AGENTS.md)를 따릅니다.
 
 ## 현재 작업 상태
 
 진행 중인 작업은 없습니다. 다음 작업은 아래 [다음에 이어갈 작업](#다음에-이어갈-작업)을 따릅니다.
 
 ### 반영된 이전 작업
+
+#### 로그인 계정 상한·장애 안내([PR #44](https://github.com/DonghyunT/cs-class/pull/44) → `main@007a468`, 2026-10-18)
+
+2026-10-17 저장소 점검의 F1·F2입니다. 로그인 제한이 "계정 + 비밀번호" 조합마다 따로 세져 한 계정에 서로 다른 비밀번호를 넣으면 계정 전체 상한이 없었고, 시도마다 비밀번호 해시에서 만든 이름의 문서가 `csRateLimits`에 남았습니다. 이제 계정당 15분 30회(성공 포함)로 세고, 교사가 학생 비밀번호를 초기화하면 그 잠금 기록도 지웁니다([PRD](PRD.md) §6.1). 로그인과 비밀번호 변경의 Firebase 호출은 `signInWithPassword` 하나로 합쳤고, 공식 문서의 자격 증명 오류(`EMAIL_NOT_FOUND`·`INVALID_PASSWORD`·`USER_DISABLED`·`INVALID_LOGIN_CREDENTIALS`)만 비밀번호 오답으로 안내합니다. 5xx·차단(`TOO_MANY_ATTEMPTS_TRY_LATER`)·설정 오류는 503 `PASSWORD_VERIFY`입니다.
+
+- 검사: 13개 검사 파일이 옛 `credential:` 문서를 직접 지우던 정리를 `tests/emulator.ts`의 `clearLoginLimit(uid)`로 통일했습니다. `auth-security`의 제한 검사는 오답 29번 → 정상 입장 → 31번째 잠김 → 강사 계정 영향 없음 → 교사 초기화로 해제를 확인합니다.
+- 검증: 린트·타입·문서·`test:review` 27개 통과. 새 demo 에뮬레이터에서 바뀐 E2E 12파일 102개 통과·4개 생략(손들기 꺼짐)·실패 0(8.2분). Codex 리뷰 지적 1건(Firebase 4xx 운영 오류도 오답으로 안내)을 반영한 뒤 `auth-security`·`settings`·`guest-login` 19개 통과. PR CI `app`은 smoke 모드로 공통 스모크 4개만 실행했습니다. **전체 E2E는 사용자 결정으로 생략했습니다.** 30회 상한이 긴 검사 실행에서 넘치지 않는지는 다음 전체 E2E에서 확인합니다.
+- 운영 `csRateLimits`의 옛 `credential:` 문서는 지우지 않았습니다(운영 DB 작업, 별도 승인 대상). 5xx·차단 응답은 에뮬레이터로 만들 수 없어 자동 검사가 없습니다. 운영 반영은 아래 [최신 운영 릴리스 기록](#최신-운영-릴리스-기록)에 있습니다.
 
 #### 엔트리 좁은 화면 무대([PR #43](https://github.com/DonghyunT/cs-class/pull/43) → `main@71fbf53`, 2026-10-17)
 
@@ -67,12 +75,18 @@
 
 ## 최신 운영 릴리스 기록
 
-10/17 23:26 KST 확인. 엔트리 좁은 화면 무대([PR #43](https://github.com/DonghyunT/cs-class/pull/43))를 squash 병합했습니다.
+10/18 00:53 KST 확인. 로그인 계정 상한·장애 안내([PR #44](https://github.com/DonghyunT/cs-class/pull/44))를 squash 병합했습니다.
 
-- **앱 릴리스 기준:** `main@71fbf5302a6b7340cf0068dd6d981aed46ddbdae` (#43). 같은 날 앞선 앱 반영은 `d9ff913`(#41)·`be4c403`(#39)·`74371d8`(#40)입니다.
-- **운영 배포:** Vercel `cs-class` Production 배포 `dpl_8N4rqo3ZP5LzHU1671NnqDk3J7wh`·READY·운영 별칭(`cs-class-donghyunt.vercel.app`) 연결 확인. 직전 복구 후보는 `23026a7`·`dpl_8J6H8THvskbhD7QMLYQCY9SAwe3o`(앱 코드는 #41과 같음), 그 전 앱 변경 배포는 `d9ff913`·`dpl_7A6kh7nRmPLQNgM3TLohSBkMC2Eb`입니다.
-- **CI·배포 게이트:** main `app` 성공. 미분류 `tests/programming-classroom.spec.ts` 때문에 smoke 모드로 프로그래밍 수업 검사 8파일과 전체 수업 스모크 56개, 단위 27개가 통과했습니다. Vercel 빌드는 14:13:56Z에 READY였고, GitHub Production 배포 상태는 CI 성공(14:25:20Z) 2초 뒤인 14:25:22Z에 `success`가 됐습니다(UTC). 전체 E2E 미실행.
-- **운영 확인 범위:** 익명 `/api/auth/config`·`/api/auth/session` 200, 학생 로그인 페이지 200, 비인가 `/api/classroom/student` 401(`SIGNED_OUT`), 운영 `workspace.js`에 `stage-size` 처리 포함 확인. 실제 계정 로그인·휴대폰 화면·엔트리 실습은 운영에서 실행하지 않았습니다.
+- **앱 릴리스 기준:** `main@007a468f848a95323823f66649dfffce227a57f0` (#44).
+- **운영 배포:** Vercel `cs-class` Production 배포 `dpl_6f1Cs5h2M12VdavZAQxXWjvvtAaJ`·READY·icn1·운영 별칭(`cs-class-donghyunt.vercel.app`) 연결 확인. 직전 복구 후보는 `71fbf53`(#43)·`dpl_8N4rqo3ZP5LzHU1671NnqDk3J7wh`입니다.
+- **CI·배포 게이트:** main `app` 성공. 미분류 `src/lib/server/auth.ts` 때문에 smoke 모드로 공통 스모크 4개와 단위 27개가 통과했습니다. Vercel 빌드는 15:49:46Z에 READY였고, GitHub Production 배포 상태는 CI 성공(15:52:23Z) 2초 뒤인 15:52:25Z에 `success`가 됐습니다(UTC). 전체 E2E는 사용자 결정으로 생략했습니다.
+- **운영 확인 범위:** 익명 `/api/auth/config`·`/api/auth/session` 200, 학생 로그인 페이지 `/login/student` 200, 비인가 `/api/classroom/student` 401(`SIGNED_OUT`). 실제 학생 계정 로그인·잠금·교사 초기화는 운영 계정의 로그인 예산을 쓰므로 운영에서 실행하지 않았습니다.
+
+이전 릴리스(10/17 23:26 KST 확인): 엔트리 좁은 화면 무대([PR #43](https://github.com/DonghyunT/cs-class/pull/43), `main@71fbf53`)를 squash 병합했습니다.
+
+- **운영 배포:** `dpl_8N4rqo3ZP5LzHU1671NnqDk3J7wh`. 직전 복구 후보는 `23026a7`·`dpl_8J6H8THvskbhD7QMLYQCY9SAwe3o`(앱 코드는 #41과 같음)였습니다.
+- **CI·배포 게이트:** main `app` 성공(smoke 모드, 프로그래밍 수업 검사 8파일과 전체 수업 스모크 56개). GitHub Production 배포 상태는 CI 성공(14:25:20Z) 2초 뒤 `success`(UTC). 전체 E2E 미실행.
+- **운영 확인 범위:** 익명 API·학생 로그인 페이지·비인가 401, 운영 `workspace.js`의 `stage-size` 처리 포함 확인. 실제 계정 로그인·휴대폰 화면·엔트리 실습은 운영에서 실행하지 않았습니다.
 
 이전 릴리스(10/17 02:20 KST 확인): 실행기 수정(#40)·대시보드/수업 헤더(#39)·엔트리 전체 팔레트와 오브젝트 추가(#41)를 이 순서로 squash 병합했습니다.
 
@@ -96,7 +110,7 @@
 
 다음 단계는 실제 수업 행동량 확인과 엔트리 후속입니다. 4반 무료 한도 운영을 아직 보장하지 않습니다. 손들기 중지 앱에는 관련 인덱스 배포가 선행 필수 조건은 아니며, 재활성화 전에 오래된 대기 요청 처리 기준·인덱스 준비·활성 모드 검사를 확인합니다. 승인 없는 운영 기록 정리·인증 캐시·운영 테스트 시드·Preview 생성은 하지 않습니다.
 
-0. **저장소 점검 후속(2026-10-17 점검, PR 하나씩 순서대로):** 로그인 계정 상한·장애 안내(F1·F2, `codex/login-limit`) → 교사 확인 결정 뒤 학생 저장 충돌(F3, `classroom.ts` `decideReview`의 revision 증가) → 예상 못 한 서버 오류의 종류·코드를 허용 목록으로 로그에 추가(F4) → Q&A 담당 교사 삭제 허용(F5) → 프로그래밍 프로토타입 삭제와 `name-entry-pilot` 검사 이전, AGENTS 컴포넌트 구조 문장 갱신(F6·F7). 각 PR이 끝나면 이 줄에서 해당 항목을 지웁니다. 별도 확인 거리: `programming-concept.module.css`의 `--line`·`--ink` 등 변수가 프로토타입에만 정의돼 정식 수업에서 비어 있음.
+0. **저장소 점검 후속(2026-10-17 점검, PR 하나씩 순서대로, F1·F2는 #44로 완료):** 교사 확인 결정 뒤 학생 저장 충돌(F3, `classroom.ts` `decideReview`의 revision 증가) → 예상 못 한 서버 오류의 종류·코드를 허용 목록으로 로그에 추가(F4) → Q&A 담당 교사 삭제 허용(F5) → 프로그래밍 프로토타입 삭제와 `name-entry-pilot` 검사 이전, AGENTS 컴포넌트 구조 문장 갱신(F6·F7). 각 PR이 끝나면 이 줄에서 해당 항목을 지웁니다. 별도 확인 거리: `programming-concept.module.css`의 `--line`·`--ink` 등 변수가 프로토타입에만 정의돼 정식 수업에서 비어 있음.
 1. **엔트리 후속(우선순위 순):** 심포지엄 보류 항목(미션 블록을 분류 맨 앞에, 교사 화면 새 블록 입력값 표시, 이벤트 대기 시간을 15초에서 빼기, 엔트리 내부 API 존재 검사). 실제 수업에서 104블록이 첫 수업에 과한지도 관찰합니다.
 2. 신규 수업은 [4단계 체크리스트](DEVELOPMENT.md#신규-수업-추가-및-선별-검증-연동-체크리스트)를 따릅니다. 학생 저장은 공통 `useWork`, 교사 체험은 메모리 경계를 유지합니다.
 3. 실제 학교 PC·학교망·물리 한글 입력기에서 [첫 수업 확인](DEVELOPMENT.md#첫-실제-수업-확인-순서)을 수행합니다. 운영 실제 로그인·AI·저장/제출, 터치·화면 읽기·200% 확대·프린터·자연 Cron은 아직 해당 환경에서 확인할 사항입니다.
