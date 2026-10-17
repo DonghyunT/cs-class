@@ -68,7 +68,12 @@ main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Depl
 
 문서 전용 변경은 `vercel.json`의 Ignored Build Step으로 앱 빌드를 생략합니다. `VERCEL_GIT_PREVIOUS_SHA`(같은 프로젝트·브랜치의 마지막 성공 배포)부터 비교하며 기준 없음·이력 부족·판정 실패는 빌드를 진행합니다. Vercel은 판정 전에 제외 파일을 지우므로 `.vercelignore`에서 Git commit 메타데이터는 남기고 인증 config·hooks·logs는 제외합니다. 생략은 CANCELED로 표시되고 배포 한도에 포함될 수 있습니다. 문서 push 뒤 main과 운영 SHA가 달라도 정상입니다.
 
-공개 후 SHA·운영 별칭·API·로그인 화면을 확인합니다. READY·익명 응답만으로 실제 계정 로그인·저장/재접속 성공을 주장하지 않습니다. CI와 Vercel의 검사 SHA가 같은지 확인하며 Force Promote는 기본 절차로 사용하지 않습니다. 게이트를 우회하는 수동 Promote나 검사 제거는 사용자의 명시 요청이 있을 때만 하고, 우회한 릴리스는 `app` 검사 없이 공개했다고 HANDOFF에 기록합니다. 오류 복구는 확인된 이전 운영 배포로 되돌리고, 재발 방지를 코드에 반영해 검사 후 공개합니다. 검사 명령은 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따릅니다.
+공개 후 확인은 [PR 경로](DEVELOPMENT.md#위험도별-반영-경로)의 기본 절차입니다.
+- **PR 경로:** SHA·운영 별칭·익명 API·로그인 화면을 확인합니다. 게이트가 `app`을 기다렸는지는 GitHub Production 배포 상태의 `success` 시각이 `app` 성공 직후인지로 판단합니다(`gh api repos/DonghyunT/cs-class/deployments/<id>/statuses`). Vercel 빌드 READY는 `app` 성공보다 먼저 올 수 있으므로 판단 근거로 쓰지 않습니다.
+- **직접 push 경로:** 게이트(`app` 성공 전 운영 미연결)에 맡기고, 이상이 있을 때만 확인합니다.
+- READY·익명 응답만으로 실제 계정 로그인·저장/재접속 성공을 주장하지 않습니다. CI와 Vercel의 검사 SHA가 같은지 확인하며 Force Promote는 기본 절차로 사용하지 않습니다.
+- 게이트를 우회하는 수동 Promote나 검사 제거는 사용자의 명시 요청이 있을 때만 하고, 우회한 릴리스는 `app` 검사 없이 공개했다고 HANDOFF에 기록합니다. HANDOFF에는 이처럼 이상·우회·복구가 있을 때만 배포 세부를 남깁니다.
+- 오류 복구는 확인된 이전 운영 배포로 되돌리고, 재발 방지를 코드에 반영해 검사 후 공개합니다. 검사 명령은 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따릅니다.
 
 ### 수동 Preview
 

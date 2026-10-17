@@ -8,15 +8,35 @@
     ],
     "ask": [
       "mcp__plugin_firebase_firebase",
-      "Bash(git push *)",
-      "PowerShell(git push *)",
-      "Bash(gh pr merge *)",
-      "PowerShell(gh pr merge *)",
+      "Bash(git push *--force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * -f*)",
+      "Bash(git push *--delete*)",
+      "Bash(git push * -d *)",
+      "Bash(git push *+*)",
+      "Bash(git push *--mirror*)",
+      "Bash(git push *--prune*)",
+      "Bash(gh pr merge *--admin*)",
+      "PowerShell(git push *--force*)",
+      "PowerShell(git push -f*)",
+      "PowerShell(git push * -f*)",
+      "PowerShell(git push *--delete*)",
+      "PowerShell(git push * -d *)",
+      "PowerShell(git push *+*)",
+      "PowerShell(git push *--mirror*)",
+      "PowerShell(git push *--prune*)",
+      "PowerShell(gh pr merge *--admin*)",
       "mcp__plugin_github_github__merge_pull_request",
       "mcp__plugin_github_github__push_files",
       "mcp__plugin_github_github__create_or_update_file",
       "mcp__610a77cd-f15a-4119-8703-60e767de575a__request_promote",
       "mcp__610a77cd-f15a-4119-8703-60e767de575a__create_deployment"
+    ],
+    "allow": [
+      "Bash(git push *)",
+      "PowerShell(git push *)",
+      "Bash(gh pr merge *)",
+      "PowerShell(gh pr merge *)"
     ]
   }
 }
