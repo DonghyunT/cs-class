@@ -143,7 +143,8 @@ export async function decideReview(uid: string, lessonId: string, payload: unkno
       if (request.missionId) work.missions = { ...work.missions, [request.missionId]: { validation: work.missions?.[request.missionId]?.validation ?? null, submission } };
       else work.submission = submission;
     }
-    work.revision++; work.updatedAt = Date.now(); tx.set(ref, { ...work, uid, classId: student.classId }); return work;
+    // Revision guards the student's draft; a decision leaves the draft alone, so an open student screen keeps saving.
+    work.updatedAt = Date.now(); tx.set(ref, { ...work, uid, classId: student.classId }); return work;
   });
 }
 export async function updateClass(classId: string, payload: unknown) {

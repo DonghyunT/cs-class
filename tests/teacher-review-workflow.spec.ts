@@ -6,7 +6,7 @@ import { emptyWork, latestSubmissionAtFor, submissionCountFor } from "../src/lib
 import type { AbstractionProject } from "../src/lib/classroom/review/project";
 import type { Lesson, TeacherDashboard, Work } from "../src/lib/classroom/types";
 import { testEnv } from "../scripts/local-test-env.mjs";
-import { auth, db, headers, localOnly, readyTeacher, studentPassword } from "./emulator";
+import { auth, db, headers, localOnly, readyStudent, readyTeacher, studentPassword } from "./emulator";
 
 const ordinary = LESSONS.find(lesson => lesson.id === "sequence-lab")!;
 const programming = LESSONS.find(lesson => lesson.id === "programming-13")!;
@@ -357,6 +357,41 @@ test("[4차-5-요청ID] 열기 중·열린 뒤 바뀐 요청을 자동 승인하
   } finally {
     release();
     await page.unrouteAll({ behavior: "wait" });
+  }
+});
+
+test("[4차-5-결정후저장] 요청 뒤 열어 둔 학생 화면은 교사 결정 뒤에도 충돌 없이 수정본을 저장하고 결정을 받음", async ({ page, browser }) => {
+  // The shared login account is the only student a browser can sign in as; restore the class it resets.
+  const context = await browser.newContext({ baseURL: "http://localhost:3000" });
+  const stored = db.doc(`csWork/student-20101__${review.id}`);
+  try {
+    await readyStudent(context.request);
+    await db.doc("csClasses/2-1").update({ openedLessonIds: lessons.map(lesson => lesson.id) });
+    const requested = requestedWork(0);
+    Object.assign(requested.draft.reviewProject!, { tutorialDone: true, step: 4 });
+    await stored.set({ ...requested, uid: "student-20101", classId: "2-1" });
+    const student = await context.newPage();
+    await student.goto(`/classroom/${review.id}`);
+    await student.getByRole("tab", { name: /실습/ }).click();
+    const submitPanel = student.getByRole("region", { name: "작품 검증과 제출", exact: true });
+    await expect(submitPanel).toContainText("선생님 확인 대기 중이에요.");
+    await student.getByLabel("실천 계획 1", { exact: true }).fill("요청 뒤 화면에서 고친 계획");
+    const message = "조건을 하나 더 적어 보세요.";
+    expect((await page.request.post(`/api/classroom/students/student-20101/review/${review.id}`, { headers, data: { requestId: requested.review!.id, decision: "changes", message } })).status()).toBe(200);
+    const saved = student.waitForResponse(response => new URL(response.url()).pathname === `/api/classroom/work/${review.id}` && response.request().method() === "POST");
+    await student.getByRole("button", { name: "저장", exact: true }).click();
+    expect((await saved).status()).toBe(200);
+    await expect(student.locator("[data-lesson-shell] header [role=status]")).toHaveText("저장 완료");
+    await expect(student.getByText("저장 기록이 서로 달라요.", { exact: true })).toHaveCount(0);
+    await expect(student.getByLabel("실천 계획 1", { exact: true })).toHaveValue("요청 뒤 화면에서 고친 계획");
+    await expect(submitPanel).toContainText(message);
+    const latest = (await stored.get()).data()! as Work;
+    expect((latest.draft.reviewProject as AbstractionProject).plans).toEqual(["요청 뒤 화면에서 고친 계획"]);
+    expect(latest.review).toMatchObject({ id: requested.review!.id, status: "changes", message });
+    expect((latest.review!.project as AbstractionProject).plans).toEqual(["합성 계획"]);
+  } finally {
+    await context.close();
+    await stored.delete();
   }
 });
 
