@@ -42,7 +42,7 @@ export function buildNameProject(blocks: NameBlock[] = [{ id: "start", kind: "st
   return JSON.stringify(project);
 }
 
-// Only this pilot's native blocks enter its iframe. Keep editable literals,
+// Only the name mission's native blocks are accepted. Keep editable literals,
 // including empty fields; execution checks must not erase an unfinished draft.
 export function parseNameProject(raw: unknown): { project: Record<string, unknown>; key: string; threads: Node[][] } | null {
   if (typeof raw !== "string" || raw.length > 100_000) return null;
@@ -74,12 +74,6 @@ export function parseNameProject(raw: unknown): { project: Record<string, unknow
     (project.objects as Record<string, unknown>[])[0].script = threads;
     return { project, threads, key: JSON.stringify(threads.map((t) => t.map(semantic))) };
   } catch { return null; }
-}
-
-export function nameProjectLines(raw: string): string[] {
-  const labels: Record<string, string> = { when_run_button_click: "시작하기 버튼을 클릭했을 때", when_some_key_pressed: "키를 눌렀을 때", ask_and_wait: "묻고 대답 기다리기", dialog_time: "말하기" };
-  const expression = (node: Node): string => node.type === "get_canvas_input_value" ? "대답" : node.type === "combine_something" ? `${expression(node.params[1] as Node)} + ${expression(node.params[3] as Node)}` : String(node.params[0] ?? "입력 중");
-  return parseNameProject(raw)?.threads.flatMap((t) => t.map((n) => n.type === "ask_and_wait" ? `${expression(n.params[0] as Node)} · ${labels[n.type]}` : n.type === "dialog_time" ? `${expression(n.params[0] as Node)} · ${expression(n.params[1] as Node)}초 동안 ${n.params[2] === "think" ? "생각하기" : "말하기"}` : n.type === "when_some_key_pressed" ? `키 ${n.params[1]}를 눌렀을 때` : labels[n.type])) ?? ["읽지 못한 작품 원문을 보존하고 있어요."];
 }
 
 // The lesson passes its own parser so run keys match the keys it recorded.

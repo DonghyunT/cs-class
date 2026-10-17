@@ -61,7 +61,7 @@ export const LESSON_MAPPINGS = {
       "tests/programming-classroom.spec.ts",
       "tests/programming-learning.spec.ts",
       "tests/programming-mission-navigation.spec.ts",
-      "tests/programming-prototype.spec.ts",
+      "tests/programming-name-mission.spec.ts",
       "tests/entryjs-ui.spec.ts",
       "tests/manual-save-entry.spec.ts",
       "tests/practice-focus.spec.ts",

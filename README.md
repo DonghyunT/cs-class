@@ -9,7 +9,7 @@
 [![EntryJS](https://img.shields.io/badge/EntryJS-4.0.23-28a745?style=flat-square)](https://playentry.org/)
 [![Tailwind](https://img.shields.io/badge/Tailwind-v4-06b6d4?style=flat-square)](https://tailwindcss.com/)
 
-[🚀 운영 사이트 열기](https://cs-class-donghyunt.vercel.app) · [🧪 프로그래밍 프로토타입 체험](https://cs-class-donghyunt.vercel.app/prototype/programming)
+[🚀 운영 사이트 열기](https://cs-class-donghyunt.vercel.app)
 
 ---
 
@@ -144,11 +144,9 @@ cs-class/
 │  │  ├─ community/       # 우리 반 질문(Q&A)
 │  │  ├─ classroom/       # 손들기
 │  │  ├─ explore/         # 공개 홈의 수업 소개(데모) 화면
-│  │  ├─ settings/        # 닉네임·비밀번호 설정
-│  │  └─ prototype/       # 프로그래밍 경험 검토용 프로토타입
+│  │  └─ settings/        # 닉네임·비밀번호 설정
 │  └─ lib/
 │     ├─ classroom/       # 도메인 타입, 진도 측정, 수업 메타데이터
-│     ├─ prototype/       # 프로그래밍 프로토타입 상태 계산
 │     └─ server/          # 인증 장부, Firestore 서비스, Q&A 서버 로직
 ├─ tests/                 # Playwright E2E 검증 및 단위 테스트 스위트
 ├─ public/entryjs/        # EntryJS 4.0.23 편집기 및 브라우저 정적 자산

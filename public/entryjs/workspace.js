@@ -3,9 +3,8 @@
 
 const CHANNEL = "cs-class-entryjs";
 const params = new URLSearchParams(location.search);
-const namePilot = params.get("exercise") === "name";
 const programming = params.get("exercise") === "programming";
-const traced = namePilot || programming;
+const traced = programming;
 const mission = params.get("mission");
 let disposed = false;
 // Copy of ENTRY_PALETTE in src/lib/classroom/entry-palette.ts. This sandboxed
@@ -107,12 +106,7 @@ try {
   };
   EntryStatic.fontFamily = "sans-serif";
   if (programming && mission === "keys") Entry.block.when_some_key_pressed.def.params = [null, "38"];
-  EntryStatic.getAllBlocks = () => programming ? PROGRAMMING_PALETTE : namePilot ? [
-    { category: "start", blocks: ["when_run_button_click", "when_some_key_pressed"] },
-    { category: "variable", blocks: ["ask_and_wait", "get_canvas_input_value"] },
-    { category: "looks", blocks: ["dialog_time"] },
-    { category: "calc", blocks: ["combine_something"] },
-  ] : [
+  EntryStatic.getAllBlocks = () => programming ? PROGRAMMING_PALETTE : [
     { category: "start", blocks: ["when_run_button_click"] },
     { category: "moving", blocks: ["move_direction"] },
     { category: "looks", blocks: ["dialog_time"] },
