@@ -11,6 +11,7 @@
 ### 1.1 시스템 요구사항
 - **Node.js:** `v24.x` (LTS)
 - **Java:** `JDK 21+` (Firebase Auth/Firestore 에뮬레이터 구동용, `java -version` 확인). Windows는 PC마다 `winget install EclipseAdoptium.Temurin.21.JDK`로 설치한 뒤 터미널과 에이전트 앱을 다시 엽니다.
+- **Chromium(E2E):** `npx playwright install --only-shell chromium` (PowerShell 차단 시 `npx.cmd`)
 - **Git & PowerShell / Bash**
 
 ### 1.2 저장소 복제 및 로컬 실행

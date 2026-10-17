@@ -430,9 +430,16 @@ test("곱셈·평균 실제 실행 · 변수 팔레트 · 이동 이어 만들�
   for (const width of [320, 390, 768, 1440]) { await page.setViewportSize({ width, height: 844 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator("iframe").scrollIntoViewIfNeeded();
+  // Phones see only the workspace's left edge, so a smaller stage keeps its start button there.
+  const scroller = page.getByRole("region", { name: "엔트리 작업실 가로 이동" });
+  await scroller.evaluate((element) => { element.scrollLeft = 0; });
+  await expect.poll(async () => { const box = (await scroller.boundingBox())!, button = (await entryStart(page).boundingBox())!; return box.x + box.width - (button.x + button.width); }).toBeGreaterThanOrEqual(0);
   await expect(frame.locator("#entryWorkspaceBoard g.block").filter({ hasText: "이동 방향으로" }).first()).toBeVisible();
   await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await page.screenshot({ path: info.outputPath("programming-mobile.png"), fullPage: true });
+  const narrowStart = (await entryStart(page).boundingBox())!.width;
+  await page.setViewportSize({ width: 1440, height: 844 });
+  await expect.poll(async () => (await entryStart(page).boundingBox())!.width).toBeGreaterThan(narrowStart);
   expect(errors).toEqual([]);
 });
 
