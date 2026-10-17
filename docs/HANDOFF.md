@@ -4,14 +4,18 @@
 
 ## 현재 작업 상태
 
-**진행(2026-10-17, `codex/entry-narrow-start-button`, 미병합):** 600px 이하 화면에서 엔트리 무대 아래 `시작하기`가 작업실 가로 스크롤 안쪽으로 밀리던 문제를 고쳤습니다. 무대 아래 버튼 줄의 오른쪽 끝이 작업실 왼쪽에서 465px라 약 506px보다 좁은 화면에서는 버튼이 잘렸습니다. 이제 좁은 화면에서는 무대를 엔트리 최소 크기(324px)로 줄입니다. 수업 화면이 `(max-width: 600px)` 변화를 iframe에 `stage-size` 메시지로 알리고, `public/entryjs/workspace.js`가 엔트리 자체 `Entry.resizeElement`로 무대 폭을 바꿉니다. 601px 이상에서는 기본 480px로 돌아갑니다. 무대 폭은 화면 상태일 뿐이라 서버 저장본(정규화)과 미저장 판정(블록 내용 비교)에는 영향이 없습니다. 기준은 [DESIGN](DESIGN.md) §5.1입니다.
+진행 중인 작업은 없습니다. 다음 작업은 아래 [다음에 이어갈 작업](#다음에-이어갈-작업)을 따릅니다.
+
+### 반영된 이전 작업
+
+#### 엔트리 좁은 화면 무대([PR #43](https://github.com/DonghyunT/cs-class/pull/43) → `main@71fbf53`, 2026-10-17)
+
+600px 이하 화면에서 엔트리 무대 아래 `시작하기`가 작업실 가로 스크롤 안쪽으로 밀리던 문제를 고쳤습니다. 무대 아래 버튼 줄의 오른쪽 끝이 작업실 왼쪽에서 465px라 약 506px보다 좁은 화면에서는 버튼이 잘렸습니다. 이제 좁은 화면에서는 무대를 엔트리 최소 크기(324px)로 줄입니다. 수업 화면이 `(max-width: 600px)` 변화를 iframe에 `stage-size` 메시지로 알리고, `public/entryjs/workspace.js`가 엔트리 자체 `Entry.resizeElement`로 무대 폭을 바꿉니다. 601px 이상에서는 기본 480px로 돌아갑니다. 무대 폭은 화면 상태일 뿐이라 서버 저장본(정규화)과 미저장 판정(블록 내용 비교)에는 영향이 없습니다. 기준은 [DESIGN](DESIGN.md) §5.1입니다.
 
 - 측정(새 demo 에뮬레이터, 게스트 학생, 프로그래밍 수업 작업실): 수정 전에는 500px 이하에서 `시작하기`가 잘렸고, 수정 뒤에는 360~600px에서 `오브젝트 추가하기`·`시작하기`가 모두 보입니다. 320px에서는 `시작하기` 오른쪽 여백 약 30px가 가려지지만 글자와 누르는 영역은 보입니다. 1440px로 돌아오면 480px 무대로 복원됩니다. 측정표와 스크린샷은 Git 제외 `scratch/entry-narrow-start/`에 있습니다.
 - 회귀 검사: `tests/programming-classroom.spec.ts`의 곱셈·평균 검사에 390px 첫 화면의 `시작하기` 위치와 1440px 복원 확인을 추가했습니다.
-- 검증: 린트·타입·문서·`test:review` 통과. 새 demo 에뮬레이터에서 프로그래밍 수업 매핑 8파일과 공통 스모크(프로그래밍) 53개 모두 통과(7.2분). 검사 파일을 바꾸면 선별 규칙상 미분류가 되므로 `run-selected-e2e.mjs --plan`으로 프로그래밍 수업 범위를 직접 지정했습니다. 전체 E2E는 실행하지 않았습니다.
-- 남은 일: PR·CI·병합·운영 확인. 실제 휴대폰 기기에서는 확인하지 않았습니다.
-
-### 반영된 이전 작업
+- 검증: 린트·타입·문서·`test:review` 통과. 새 demo 에뮬레이터에서 프로그래밍 수업 매핑 8파일과 공통 스모크(프로그래밍) 53개 모두 통과(7.2분). 검사 파일을 바꾸면 선별 규칙상 미분류가 되므로 `run-selected-e2e.mjs --plan`으로 프로그래밍 수업 범위를 직접 지정했습니다. PR CI `app`은 smoke 모드로 56개 통과했고 Codex 리뷰 지적은 없었습니다. 전체 E2E는 실행하지 않았습니다.
+- 실제 휴대폰 기기에서는 확인하지 않았습니다. 운영 반영은 아래 [최신 운영 릴리스 기록](#최신-운영-릴리스-기록)에 있습니다.
 
 #### 엔트리 전체 팔레트·오브젝트 추가([PR #41](https://github.com/DonghyunT/cs-class/pull/41) → `main@d9ff913`, 2026-10-17)
 
@@ -63,14 +67,20 @@
 
 ## 최신 운영 릴리스 기록
 
-10/17 02:20 KST 확인. 실행기 수정(#40)·대시보드/수업 헤더(#39)·엔트리 전체 팔레트와 오브젝트 추가(#41)를 이 순서로 squash 병합했습니다.
+10/17 23:26 KST 확인. 엔트리 좁은 화면 무대([PR #43](https://github.com/DonghyunT/cs-class/pull/43))를 squash 병합했습니다.
 
-- **앱 릴리스 기준:** `main@d9ff9137d0456139334916216691e97ac27c59ca` (#41). 같은 날 앞선 반영은 `74371d8`(#40)·`be4c403`(#39)입니다.
-- **운영 배포:** Vercel `cs-class` Production 배포 `dpl_7A6kh7nRmPLQNgM3TLohSBkMC2Eb`·READY·운영 별칭(`cs-class-donghyunt.vercel.app`) 연결 확인. 직전 복구 후보는 `be4c403`·`dpl_8uCDYeQYNPSpsD64VERiTagq4exg`, 그 전은 `a3ad309`·`dpl_AXSEpYeQCJsstHdZgXUCxSmag5FP`입니다.
+- **앱 릴리스 기준:** `main@71fbf5302a6b7340cf0068dd6d981aed46ddbdae` (#43). 같은 날 앞선 앱 반영은 `d9ff913`(#41)·`be4c403`(#39)·`74371d8`(#40)입니다.
+- **운영 배포:** Vercel `cs-class` Production 배포 `dpl_8N4rqo3ZP5LzHU1671NnqDk3J7wh`·READY·운영 별칭(`cs-class-donghyunt.vercel.app`) 연결 확인. 직전 복구 후보는 `23026a7`·`dpl_8J6H8THvskbhD7QMLYQCY9SAwe3o`(앱 코드는 #41과 같음), 그 전 앱 변경 배포는 `d9ff913`·`dpl_7A6kh7nRmPLQNgM3TLohSBkMC2Eb`입니다.
+- **CI·배포 게이트:** main `app` 성공. 미분류 `tests/programming-classroom.spec.ts` 때문에 smoke 모드로 프로그래밍 수업 검사 8파일과 전체 수업 스모크 56개, 단위 27개가 통과했습니다. Vercel 빌드는 14:13:56Z에 READY였고, GitHub Production 배포 상태는 CI 성공(14:25:20Z) 2초 뒤인 14:25:22Z에 `success`가 됐습니다(UTC). 전체 E2E 미실행.
+- **운영 확인 범위:** 익명 `/api/auth/config`·`/api/auth/session` 200, 학생 로그인 페이지 200, 비인가 `/api/classroom/student` 401(`SIGNED_OUT`), 운영 `workspace.js`에 `stage-size` 처리 포함 확인. 실제 계정 로그인·휴대폰 화면·엔트리 실습은 운영에서 실행하지 않았습니다.
+
+이전 릴리스(10/17 02:20 KST 확인): 실행기 수정(#40)·대시보드/수업 헤더(#39)·엔트리 전체 팔레트와 오브젝트 추가(#41)를 이 순서로 squash 병합했습니다.
+
+- **운영 배포:** #41은 `dpl_7A6kh7nRmPLQNgM3TLohSBkMC2Eb`였고, 그 전 복구 후보는 `be4c403`·`dpl_8uCDYeQYNPSpsD64VERiTagq4exg`, `a3ad309`·`dpl_AXSEpYeQCJsstHdZgXUCxSmag5FP`입니다.
 - **CI:** 세 병합 모두 main `app` 성공. #41 병합 후 smoke 모드(미분류 `scripts/e2e-scope.mjs`) 56개 통과. 전체 E2E 미실행.
 - **운영 확인 범위:** 익명 `/api/auth/config`·`/api/auth/session` 200, 학생 로그인 페이지 200, 비인가 `/api/classroom/student` 401, 새 스프라이트(`/entryjs/sprites/*.svg`) 200, 운영 `workspace.js`에 수업 팔레트·오브젝트 추가 처리 포함 확인. 실제 계정 로그인·학생 저장·엔트리 실습은 운영에서 실행하지 않았습니다.
 - **배포 게이트 확인:** 비문서 병합 세 번 모두 Vercel 빌드는 main `app` 성공보다 먼저 READY였지만, GitHub Production 배포 상태 `success`("Deployment has completed")는 매번 CI 성공 2~3초 뒤였습니다(#40 CI 16:48:16Z→16:48:19Z, #39 16:51:40Z→16:51:42Z, #41 17:18:08Z→17:18:10Z, UTC). Deployment Checks가 `app`을 기다린 뒤 운영에 반영한 것으로 판단합니다. 근거는 `gh api repos/DonghyunT/cs-class/deployments/<id>/statuses`이며, Vercel 배포 이벤트 API는 연결 범위 문제로 403이었습니다.
-- **이후 설정·문서 반영:** [#42](https://github.com/DonghyunT/cs-class/pull/42)(`1adc0da`, ESLint가 `.claude/` 작업 폴더를 검사하지 않게 함)·`d481643`(Claude Code 권한 설정)·`23026a7`(Claude 미리보기 설정, JDK 설치 안내)은 앱 코드 변경이 없습니다. 세 커밋 모두 main `app` 성공과 Production 배포 `success`를 확인했습니다(`d481643`·`23026a7`은 미분류 `.claude/` 파일로 smoke, 4개 통과). 그 뒤 `5de77b2`는 문서 전용이라 CI만 성공했고 Vercel 빌드는 생략됐습니다. 앱 릴리스 기준은 위 #41 그대로입니다.
+- **이후 설정·문서 반영:** [#42](https://github.com/DonghyunT/cs-class/pull/42)(`1adc0da`, ESLint가 `.claude/` 작업 폴더를 검사하지 않게 함)·`d481643`(Claude Code 권한 설정)·`23026a7`(Claude 미리보기 설정, JDK 설치 안내)은 앱 코드 변경이 없습니다. 세 커밋 모두 main `app` 성공과 Production 배포 `success`를 확인했습니다(`d481643`·`23026a7`은 미분류 `.claude/` 파일로 smoke, 4개 통과). 그 뒤 `5de77b2`는 문서 전용이라 CI만 성공했고 Vercel 빌드는 생략됐습니다. 이 기간의 앱 코드는 #41 그대로였습니다.
 
 ## 검증 상태
 
@@ -86,10 +96,9 @@
 
 다음 단계는 실제 수업 행동량 확인과 엔트리 후속입니다. 4반 무료 한도 운영을 아직 보장하지 않습니다. 손들기 중지 앱에는 관련 인덱스 배포가 선행 필수 조건은 아니며, 재활성화 전에 오래된 대기 요청 처리 기준·인덱스 준비·활성 모드 검사를 확인합니다. 승인 없는 운영 기록 정리·인증 캐시·운영 테스트 시드·Preview 생성은 하지 않습니다.
 
-1. **엔트리 좁은 화면 수정 마무리:** 위 [현재 작업 상태](#현재-작업-상태)의 PR·CI·병합과 운영 확인.
-2. **엔트리 후속(우선순위 순):** 심포지엄 보류 항목(미션 블록을 분류 맨 앞에, 교사 화면 새 블록 입력값 표시, 이벤트 대기 시간을 15초에서 빼기, 엔트리 내부 API 존재 검사). 실제 수업에서 104블록이 첫 수업에 과한지도 관찰합니다.
-3. 신규 수업은 [4단계 체크리스트](DEVELOPMENT.md#신규-수업-추가-및-선별-검증-연동-체크리스트)를 따릅니다. 학생 저장은 공통 `useWork`, 교사 체험은 메모리 경계를 유지합니다.
-4. 실제 학교 PC·학교망·물리 한글 입력기에서 [첫 수업 확인](DEVELOPMENT.md#첫-실제-수업-확인-순서)을 수행합니다. 운영 실제 로그인·AI·저장/제출, 터치·화면 읽기·200% 확대·프린터·자연 Cron은 아직 해당 환경에서 확인할 사항입니다.
+1. **엔트리 후속(우선순위 순):** 심포지엄 보류 항목(미션 블록을 분류 맨 앞에, 교사 화면 새 블록 입력값 표시, 이벤트 대기 시간을 15초에서 빼기, 엔트리 내부 API 존재 검사). 실제 수업에서 104블록이 첫 수업에 과한지도 관찰합니다.
+2. 신규 수업은 [4단계 체크리스트](DEVELOPMENT.md#신규-수업-추가-및-선별-검증-연동-체크리스트)를 따릅니다. 학생 저장은 공통 `useWork`, 교사 체험은 메모리 경계를 유지합니다.
+3. 실제 학교 PC·학교망·물리 한글 입력기에서 [첫 수업 확인](DEVELOPMENT.md#첫-실제-수업-확인-순서)을 수행합니다. 운영 실제 로그인·AI·저장/제출, 터치·화면 읽기·200% 확대·프린터·자연 Cron은 아직 해당 환경에서 확인할 사항입니다.
 
 ## CI 및 선별 검증 운영 현황
 
