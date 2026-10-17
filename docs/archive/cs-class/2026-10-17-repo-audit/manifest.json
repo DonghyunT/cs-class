@@ -1,0 +1,13 @@
+{
+  "archivedAt": "2026-10-18 Asia/Seoul",
+  "sourceCommit": "8afb5fb6919f0f0611003393d7a1c06b9cbb0cde",
+  "files": [
+    {
+      "source": "scratch/repo-audit-2026-10-17/REPORT.md (Git-ignored, audit PC only)",
+      "archived": "REPORT.md",
+      "bytes": 41891,
+      "sha256": "a67877699db8ccca83b23f611db1e8da7ebc890dd15eda99357cc2f18e00d011"
+    }
+  ],
+  "sourceRepresentation": "Byte-for-byte copy of the Git-ignored report file (LF); the audit read the repository at main@8afb5fb"
+}

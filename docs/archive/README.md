@@ -4,6 +4,8 @@
 
 ## 보관 기록
 
+- **[2026-10-17 저장소 전체 점검 보고서](cs-class/2026-10-17-repo-audit/manifest.json):** main@8afb5fb 기준 읽기 전용 점검 보고서(발견 F1~F7)를 점검 PC의 Git 제외 폴더에서 바이트 그대로 옮겼습니다. 처리 상태는 현재 HANDOFF를 따릅니다([안내](cs-class/2026-10-17-repo-audit/README.md)).
+
 - **[2026-10-18 완료 계획·낡은 참고 문서 원문](cs-class/2026-10-18-completed-plans/manifest.json):** `docs/superpowers/plans/`의 완료 계획 6개와 `docs/reference/`의 설명 문서 3개를 `git mv`로 옮겨 내용 그대로 보존했습니다. 지금도 유효한 사실은 현재 문서로 옮겼습니다([안내](cs-class/2026-10-18-completed-plans/README.md)).
 
 - **[2026-10-18 HANDOFF 압축 전 원문](cs-class/2026-10-18-before-handoff-compact/manifest.json):** main@de0bcb3의 HANDOFF를 Git blob(LF) 그대로 보존했습니다. PR #38~#44의 릴리스 세부와 10/14 검증 표를 포함합니다.

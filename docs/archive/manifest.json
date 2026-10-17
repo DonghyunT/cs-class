@@ -384,6 +384,13 @@
       "origin": "handoff-before-architecture-clarity-20261014-crlf-working-tree-copy",
       "baseCommit": "6c778dd",
       "sha256": "4c2c907f918fdb13dbff0fe98a9fec359a95f396cb7885b070c482350a23552e"
+    },
+    {
+      "source": "scratch/repo-audit-2026-10-17/REPORT.md",
+      "archive": "docs/archive/cs-class/2026-10-17-repo-audit/REPORT.md",
+      "origin": "repo-audit-report-git-ignored-copy-20261018",
+      "baseCommit": "8afb5fb",
+      "sha256": "a67877699db8ccca83b23f611db1e8da7ebc890dd15eda99357cc2f18e00d011"
     }
   ]
 }
