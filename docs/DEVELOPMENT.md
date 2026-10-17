@@ -36,7 +36,7 @@ npm run dev:emulator
 - **에뮬레이터 포트:** Auth `9099`, Firestore `8080`, Web App `3000` (프로젝트 ID: `demo-cs-class`)
 - **게스트 즉시 로그인:**
   - **학생 게스트:** 로그인 화면 아래 `빠르게 체험하기`의 `게스트 학생` (학번 `21099`, 2학년 10반)
-  - **교사 게스트:** 같은 곳의 `게스트 교사` (교사 권한, 2학년 10반 담당)
+  - **교사 게스트:** 같은 곳의 `게스트 교사` (교사 권한, 2학년 1~11반 담당, 처음 화면은 1반)
 - **그 밖의 합성 계정:** 학생 `20101`, 강사 `instructor` 등은 [scripts/seed-emulator.mjs](../scripts/seed-emulator.mjs)가 만듭니다.
 - **합성 테스트 계정 초기 비밀번호:** [scripts/local-test-env.mjs](../scripts/local-test-env.mjs)에 정의되어 있으며 실제 비밀정보는 포함하지 않습니다.
 

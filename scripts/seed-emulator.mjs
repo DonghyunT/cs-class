@@ -30,6 +30,6 @@ for (const guest of [
 ]) {
   try { await auth.createUser({ uid: guest.uid, email: guest.email, password: process.env.CS_TEST_GUEST_PASSWORD }); }
   catch (error) { if (error.code !== "auth/uid-already-exists") throw error; await auth.updateUser(guest.uid, { password: process.env.CS_TEST_GUEST_PASSWORD, disabled: false }); }
-  await db.collection("csAccounts").doc(guest.uid).set({ uid: guest.uid, role: guest.role, studentId: guest.studentId, classId: guest.role === "student" ? "2-10" : null, classIds: guest.role === "teacher" ? ["2-10"] : [], mustChangePassword: false, disabled: false, authVersion: 0, authBusy: null, session: null });
+  await db.collection("csAccounts").doc(guest.uid).set({ uid: guest.uid, role: guest.role, studentId: guest.studentId, classId: guest.role === "student" ? "2-10" : null, classIds: guest.role === "teacher" ? Array.from({ length: 11 }, (_, index) => `2-${index + 1}`) : [], mustChangePassword: false, disabled: false, authVersion: 0, authBusy: null, session: null });
 }
 console.log("Local emulator ready: 11 class records, 4 synthetic students, 1 instructor, 2 guest accounts. No cloud writes.");
