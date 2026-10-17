@@ -222,7 +222,6 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 ### 4.1 EntryJS 4.0.23 실습 환경
 <a id="entryjs-실습"></a>
 <a id="운영-프로그래밍-수업"></a>
-<a id="프로그래밍-수업-프로토타입"></a>
 <a id="코드-위치와-역할"></a>
 
 - **자산 및 무결성:** `npm ci` 시 `scripts/prepare-entryjs.mjs`가 SHA-512 검증 후 `public/entryjs/vendor/`에 브라우저 자산을 준비합니다.

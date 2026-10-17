@@ -13,7 +13,7 @@ export const concepts = [
   },
 ] as const;
 
-// Stored pc0~3 and prototype indices keep their original meaning; display order is separate.
+// Stored pc0~3 keep their original meaning; display order is separate.
 export const conceptOrder = [4, 0, 1, 2, 3] as const;
 
 export const questions = [

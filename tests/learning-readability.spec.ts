@@ -194,7 +194,7 @@ test("concept-nav: 한 개념·자유 이동·순서 밖 완료와 단계 왕복
   expect((await savedWork(page, endpoint)).conceptSolved.sort()).toEqual(["clear", "finite", "structure"]);
 });
 
-test("concept-nav: 연결된 수업과 공개 프로토타입의 개념 진입", async ({ page }) => {
+test("concept-nav: 연결된 수업의 개념 진입", async ({ page }) => {
   for (const id of lessonIds.slice(0, 4)) {
     await prepare(page, id);
     const nav = page.getByRole("navigation", { name: "개념 목록" });
@@ -204,8 +204,6 @@ test("concept-nav: 연결된 수업과 공개 프로토타입의 개념 진입",
     await page.getByRole("tab", { name: /개념/ }).click();
     await expect(page.locator(id === "programming-13" ? "#concept-title" : "#panel-concept article h3").first()).toHaveText(title!);
   }
-  await page.goto("/prototype/programming");
-  await expect(page.getByRole("navigation", { name: "개념 목록" })).toBeVisible();
 });
 
 test("algorithm-scene: 그림의 도포 면과 로봇 해석 예시", async ({ page }) => {
