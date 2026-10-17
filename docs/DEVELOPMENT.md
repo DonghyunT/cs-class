@@ -35,8 +35,9 @@ npm run dev:emulator
 - **접속 주소:** `http://localhost:3000`
 - **에뮬레이터 포트:** Auth `9099`, Firestore `8080`, Web App `3000` (프로젝트 ID: `demo-cs-class`)
 - **게스트 즉시 로그인:**
-  - **학생 게스트:** 학생 로그인 카드 하단의 `게스트로 체험하기` 클릭 (계정: `21099`, 합성 학번 `20101` 등)
-  - **교사 게스트:** 교사 로그인 카드 하단의 `게스트로 체험하기` 클릭 (10·11반 담당 강사 권한)
+  - **학생 게스트:** 로그인 화면 아래 `빠르게 체험하기`의 `게스트 학생` (학번 `21099`, 2학년 10반)
+  - **교사 게스트:** 같은 곳의 `게스트 교사` (교사 권한, 2학년 10반 담당)
+- **그 밖의 합성 계정:** 학생 `20101`, 강사 `instructor` 등은 [scripts/seed-emulator.mjs](../scripts/seed-emulator.mjs)가 만듭니다.
 - **합성 테스트 계정 초기 비밀번호:** [scripts/local-test-env.mjs](../scripts/local-test-env.mjs)에 정의되어 있으며 실제 비밀정보는 포함하지 않습니다.
 
 ### 1.4 에뮬레이터 데이터 보존 및 복원 (Export/Import)
@@ -54,6 +55,18 @@ npx.cmd firebase emulators:export .\scratch\demo-backup --project demo-cs-class
 npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class --import .\scratch\demo-backup
 ```
 
+`npm run dev:emulator`는 시작할 때마다 `scripts/seed-emulator.mjs`로 합성 계정·반 설정을 다시 씁니다. 가져온 기록을 그대로 앱에서 보려면, 위처럼 에뮬레이터를 `--import`로 띄운 뒤 두 번째 터미널에서 아래 명령으로 **시드 없이** 앱만 실행합니다. `testEnv`가 demo 프로젝트와 로컬 에뮬레이터(9099/8080)를 가리키므로 운영에 연결되지 않습니다.
+
+```powershell
+node --input-type=module -e "import { spawn } from 'node:child_process'; import { testEnv } from './scripts/local-test-env.mjs'; const app = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--hostname', 'localhost', '--port', '3000'], { stdio: 'inherit', env: { ...process.env, ...testEnv } }); app.on('exit', code => process.exit(code ?? 1));"
+```
+
+이 방법은 합성 시간표 서버를 자동으로 띄우지 않습니다(필요하면 [학교 시간표 연동](#학교-시간표-연동) 참고). 종료 전에 새 export를 남기며, export는 개인 기록이므로 저장소에 넣지 않습니다.
+
+### 1.5 다른 PC에서 진행 중 작업 이어가기
+- HEAD·브랜치·기존 차이를 먼저 확인하고 기록을 보존합니다. 진행 중 작업은 [HANDOFF](HANDOFF.md#현재-작업-상태)에 적힌 브랜치로 `git fetch origin` → `git switch <브랜치>` → `npm ci` 순서로 이어 갑니다.
+- Git은 코드·검사·문서만 전달합니다. 비밀 설정·관리자 키·로컬 에뮬레이터 기록·`scratch/`는 비공개 경로로 따로 옮기고 기존 기록과 대조합니다. 운영 계정·명부는 [서버 안내](FIREBASE_SETUP.md#승인된-운영-테스트-계정)와 아래 [명부 절차](#실학생-명부-준비와-반별-발급)를 따릅니다.
+
 ---
 
 ## 2. 브랜치 전략 및 수업 개발 워크플로우 (Workflow & Checklist)
@@ -65,12 +78,13 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 
 | 경로 | 대상 | 절차 |
 | :--- | :--- | :--- |
-| **PR 경로** | 학생 데이터·인증·권한·작업 저장 흐름(`useWork`)·Firestore 규칙·로그에 남기는 정보의 범위, 여러 화면이 함께 쓰는 공통 틀(`LessonShell`, `globals.css`), 배포와 검증 설정(`vercel.json`, `.github/workflows/`, `scripts/ci-policy.mjs`, `scripts/e2e-scope.mjs`), 의존성 변경 | 작업 브랜치 → 로컬 검증(§3의 Tier 1~2) → GitHub PR(자동 리뷰·CI) → squash 병합 |
-| **직접 push 경로** | 그 밖의 작은 변경: 문서, 화면 문구·스타일, 검사만 바꾸는 변경, 한 수업 화면 | 로컬 검증(§3의 Tier 1~2) → `main`에 직접 push. CI는 `main`에서 한 번 돕니다 |
+| **PR 경로** | 학생 데이터·인증·권한·작업 저장 흐름(`useWork`)·Firestore 규칙·로그에 남기는 정보의 범위, 여러 화면이 함께 쓰는 공통 틀(`LessonShell`, `globals.css`), 신규 수업 추가(선별 검증기 등록 포함), 배포와 검증 설정(`vercel.json`, `.vercelignore`, `firebase.json`, `firestore.indexes.json`, `.github/workflows/`, `playwright*.config.ts`, CI가 실행하는 `scripts/*.mjs`), 의존성 변경, 그리고 아래 직접 push 대상에 없는 모든 변경 | 작업 브랜치 → 로컬 검증(§3의 Tier 1~2) → GitHub PR(자동 리뷰·CI) → squash 병합 → [공개 후 확인](FIREBASE_SETUP.md#ci와-운영-공개) |
+| **직접 push 경로** | 다음에 해당하는 작은 변경만: 문서(`*.md`), 이미 있는 한 수업·한 화면의 문구·스타일·화면 코드, `tests/` 아래 파일만 바꾸는 변경 | 로컬 검증(§3의 Tier 1~2, 문서만 바꾸면 `node scripts/check-docs.mjs`만) → `main`에 직접 push → `main` CI 결과 확인. CI는 `main`에서 한 번 실행됩니다 |
 
 - **작업 브랜치 이름:** 기능은 `feat/<이름>`, 버그는 `fix/<이름>`, 문서·설정·정리는 `chore/<이름>`입니다.
 - **커밋 메시지:** 영어 명령형 제목(예: `Limit student logins per account`)과, 무엇을 왜 바꿨는지 적는 본문으로 씁니다. 직접 push 경로에서는 로컬에서 돌린 검사 파일과 통과 개수를 본문에 적습니다. 로컬 결과는 GitHub에 남지 않기 때문입니다.
-- **승인:** push와 병합은 [AGENTS의 승인 범위](../AGENTS.md#검증-및-배포-규칙) 안에서 합니다.
+- **승인:** push와 병합은 [AGENTS의 승인 범위](../AGENTS.md#검증-및-배포-규칙) 안에서 합니다. PR 경로는 작업을 시작할 때 전체 E2E 실행 여부도 함께 정합니다.
+- **직접 push 뒤 CI 실패:** 운영은 이전 버전 그대로입니다. 곧바로 고친 커밋을 올리거나 `git revert`로 되돌리며, 실패를 둔 채 다른 변경을 올리지 않습니다.
 
 ### 2.2 신규 수업 추가 4단계 체크리스트
 <a id="신규-수업-추가-및-선별-검증-연동-체크리스트"></a>
@@ -151,7 +165,7 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 | **Tier 1: 초경량 단위 검증** | 순수 로직, 문서, 정책 | `npm run test:scope`<br>`npm run test:review`<br>`node scripts/check-docs.mjs` | 파일 저장 시, 상시 반복 |
 | **Tier 1.5: 정적 검사** | 타입 안정성, 린트 | `npm run lint`<br>`npm run typecheck` | 커밋 전 필수 |
 | **Tier 2: 선별 E2E (Scoped)** | 변경된 수업 + 공통 스모크 | `npm run test:e2e:scope:running` (서버 구동 중)<br>`npm run test:e2e:scope` (원스톱) | 기능 구현 완료 시 (기본) |
-| **Tier 3: 전체 E2E (Full Suite)** | 전체 회귀 검증 | `npm run test:e2e` | **사용자 명시 요청 시에만** |
+| **Tier 3: 전체 E2E (Full Suite)** | 전체 회귀 검증 | `npm run test:e2e` | **사용자 승인 시에만** (아래 §3.2) |
 
 `test:review`는 기존 Node 리뷰 검사와 [`playwright.logic.config.ts`](../playwright.logic.config.ts)의 `tests/*.test.ts`를 실행합니다. 이 TypeScript 검사 경로는 브라우저 fixture를 쓰지 않으며 앱 서버·에뮬레이터를 시작하지 않습니다.
 
@@ -162,14 +176,14 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 
 | 구분 | 로컬 에이전트 실행 | 깃허브 CI 실행 (`.github/workflows/verify.yml`) |
 | :--- | :--- | :--- |
-| **직접 push 경로** | Tier 1~2를 통과시키고 결과를 커밋 본문에 적습니다. 등록 수업 변경은 선별 E2E(`test:e2e:scope:running`), 미분류 변경은 아래 안내대로 관련 검사 파일을 함께 돌립니다 | `main` push에서 한 번 실행합니다. 마지막 성공 main CI 이후 변경을 누적 비교해 문서만이면 E2E를 생략하고, 등록 수업 변경이면 해당 E2E와 공통 스모크를 실행합니다 |
-| **PR 경로** | 위와 같습니다. [§2.1의 큰 변경](#위험도별-반영-경로)이면 에이전트가 전체 E2E 실행 여부를 사용자에게 묻습니다 | PR과 `main` push에서 각각 실행합니다. `main` 실행은 배포 게이트 신호이기도 합니다 |
-| **공통 모듈·설정·미분류 변경 (두 경로 공통)** | 위 안내대로 관련 검사 파일을 직접 고릅니다 | `smoke` 모드로 전체 등록 수업 스모크와 확인된 관련 수업 검사를 실행합니다. 비교 기준이 없거나 조회에 실패해도 전체 검사로 승격하지 않습니다 |
+| **직접 push 경로** | Tier 1~2를 통과시키고 결과를 커밋 본문에 적습니다(문서만 바꾸면 `check-docs`만). 등록 수업 변경은 선별 E2E(`test:e2e:scope:running`)를 돌리고, 미분류 파일이 섞이면 아래 안내대로 검사 파일을 직접 고릅니다 | `main` push에서 한 번 실행합니다. 마지막 성공 main CI 이후 변경을 누적 비교해 문서만이면 E2E를 생략하고, 등록 수업 변경이면 해당 E2E와 공통 스모크를, 미분류 파일이 있으면 아래 `smoke` 모드를 실행합니다 |
+| **PR 경로** | 직접 push 경로와 같은 로컬 검사를 돌리고 결과는 PR 설명에 적습니다. 전체 E2E 실행 여부는 작업을 시작할 때 사용자와 정합니다 | PR과 `main` push에서 각각 실행합니다. `main` 실행은 배포 게이트 신호이기도 합니다 |
+| **미분류 파일(서버·공통·설정·검사 파일)이 있을 때** | 로컬 선별 도구는 `full`을 내고 멈추므로, 아래 안내대로 검사 파일을 직접 고릅니다 | `smoke` 모드로 전체 등록 수업 스모크와 확인된 관련 수업 검사를 실행합니다. 비교 기준이 없거나 조회에 실패해도 전체 검사로 승격하지 않습니다 |
 | **전체 E2E** | **사용자의 명시적 요청 또는 에이전트 질문 후 사전 승인 시에만 실행** | **GitHub Actions의 `workflow_dispatch` 수동 실행으로만 수행** |
 
-**미분류 변경의 로컬 검사:** 선별 도구는 서버·공통 파일을 특정 수업에 연결하지 못해 공통 스모크만 고릅니다. 이때는 바꾼 코드를 직접 사용하는 검사 파일을 골라, 에뮬레이터가 실행 중인 상태에서 `npm run test:e2e:running -- tests/<파일>.spec.ts`로 함께 돌립니다(예: `src/lib/server/auth.ts` → `auth-security`·`settings`·`guest-login`). 선별 도구가 `full`을 내면 멈추고 사용자에게 묻습니다.
+**미분류 파일이 있을 때의 로컬 검사:** 로컬 선별 도구(`npm run test:e2e:scope`)는 수업에 매핑되지 않은 파일(서버·공통·설정·검사 파일 등)이 하나라도 있으면 `full`을 내고 멈춥니다. CI는 같은 경우 `smoke`로 낮춥니다. 이때는 전체 E2E를 돌리지 말고, 바꾼 코드를 직접 사용하는 검사 파일과 공통 스모크를 에뮬레이터가 실행 중인 상태에서 `npm run test:e2e:running -- tests/<파일>.spec.ts tests/lesson-smoke.spec.ts`로 돌립니다(예: `src/lib/server/auth.ts` → `auth-security`·`settings`·`guest-login`). **파일을 지정하지 않으면 전체 E2E가 실행되므로** 반드시 파일을 지정합니다. 전체 E2E가 필요하다고 판단되면 사용자에게 묻습니다.
 
-자동 CI의 `app`에는 비문서 변경의 정책·단위 검사, lint, typecheck, 빌드와 위 선별/스모크 검사가 포함됩니다. 스모크 성공을 전체 회귀 검증 성공으로 해석하지 않습니다. 큰 변경의 전체 검사가 필요하면 별도로 승인받아 수동 실행합니다. 수동 실행 결과는 PR에 실행 SHA·범위와 함께 기록합니다. `main` push의 `app` 성공은 Vercel 운영 반영의 조건이기도 하며, 그 규칙(`[skip ci]` 금지·검사 이름 변경 순서 등)은 [서버 안내](FIREBASE_SETUP.md#ci와-운영-공개)가 단일 기준입니다.
+자동 CI의 `app`에는 비문서 변경의 정책·단위 검사, lint, typecheck, 빌드와 위 선별/스모크 검사가 포함됩니다. 스모크 성공을 전체 회귀 검증 성공으로 해석하지 않습니다. PR 경로에서 전체 검사가 필요하면 별도로 승인받아 수동 실행합니다. 수동 실행 결과는 PR에 실행 SHA·범위와 함께 기록합니다. `main` push의 `app` 성공은 Vercel 운영 반영의 조건이기도 하며, 그 규칙(`[skip ci]` 금지·검사 이름 변경 순서 등)은 [서버 안내](FIREBASE_SETUP.md#ci와-운영-공개)가 단일 기준입니다.
 
 [`run-selected-e2e.mjs`](../scripts/run-selected-e2e.mjs)는 자동 GitHub 실행에서 남아 있는 `full` 계획과 알 수 없는 모드를 실행 전에 거절합니다. 로컬 실행은 `--plan`이나 `CS_E2E_PLAN_PATH`를 명시하지 않으면 남은 `scratch/ci/e2e-plan.json`을 읽지 않고 범위를 매번 새로 계산하며, 결과가 `full`이면 이유만 출력하고 멈춥니다. 사용자 승인 후에만 `--full`을 붙여 실행합니다(예: `npm run test:e2e:scope -- --full`). `smoke` 모드는 수업 필터를 해제해 전체 등록 수업을 확인하고, 등록 수업만의 `affected` 모드는 해당 수업에 한정합니다. [PR 이벤트](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)와 [수동 실행](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)은 GitHub 공식 안내를 따릅니다.
 
@@ -178,7 +192,7 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 > - 평시 로컬 개발에서는 터미널 점유 및 컨텍스트 스위칭을 방지하기 위해 전체 E2E를 절대 임의로 실행하지 않습니다.
 > - **실행 조건:**
 >   1. **사용자의 명시적 요청:** 사용자가 "전체 E2E 돌려줘"라고 직접 지시한 경우.
->   2. **큰 변경 작업 시 에이전트의 선제적 확인:** [§2.1의 PR 경로 대상](#위험도별-반영-경로)에 해당하면 에이전트가 먼저 *"큰 변경이라 전체 E2E를 돌려볼까요?"*라고 질문하고 **사용자의 확인 및 승인을 받은 후** 실행합니다.
+>   2. **PR 경로 작업의 사전 확인:** [§2.1의 PR 경로](#위험도별-반영-경로) 작업은 시작할 때 에이전트가 전체 E2E 실행 여부를 묻고, **사용자의 확인 및 승인을 받은 후** 실행합니다.
 
 ### 3.3 사용자 직접 브라우저 검증 및 대화형 디버깅
 에이전트의 자동 단언 외에도, 개발자가 브라우저를 직접 띄워 눈으로 확인하고 상호작용할 수 있습니다:
@@ -251,20 +265,34 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 
 ### 5.1 학생 명부 및 계정 관리 도구
 <a id="실학생-명부-준비와-반별-발급"></a>
-<a id="첫-실제-수업-확인-순서"></a>
 
-실제 학생 명부의 계정 생성 및 관리는 승인된 환경에서 전용 스크립트로 수행합니다 (모든 입력/출력 파일은 Git 제외 `private/`에 보관):
+실제 학생 계정의 등록·발급은 실제 명부·학년도·Firebase 대상·복구 범위를 확인한 뒤 승인된 범위에서만 전용 스크립트로 합니다. `--apply`는 학생 계정이나 비공개 파일을 실제로 바꿉니다. 모든 입력·전달·백업 파일은 Git 제외 `private/`에 두고, 폴더 접근 권한을 선생님만 볼 수 있게 설정합니다(Git 제외가 파일 접근 보호를 대신하지는 않습니다).
+
+1. **명부 변환:** 기존 Excel(2학년 `1반`~`11반` 시트, 첫 행 `번호`·`학번`)을 CSV로 바꿉니다. 이름·공통 비밀번호 열은 복사하지 않고 원본은 읽기만 합니다.
+2. **검증과 계획(읽기 전용):** `validate`로 형식을, 기본 모드(`plan`)로 기존 계정·반 기록·이메일 충돌을 확인합니다. 다른 명부나 학년도의 같은 학번은 거절합니다.
+3. **사전 등록:** `register`는 계정을 만들되 최초 입장 비밀번호는 아직 발급하지 않습니다. 중단되면 계정을 비활성·잠금으로 남기며, 같은 명부·학년도의 중단만 `--resume`으로 재개합니다.
+4. **반별 발급:** 수업 직전에 `issue`로 반별 임시값(30분 만료)을 만듭니다. 출력 파일에서 `issued` 확인 행이 있는 학생에게만 개별 전달하고, 공용 화면에 전체 파일을 띄우지 않습니다. 11개 반을 미리 한꺼번에 발급하면 수업 전에 만료됩니다. 이미 개인 비밀번호를 정한 학생은 교사 화면의 초기화를 씁니다.
+5. **수업 기록 백업:** `backup`은 반 설정·비밀 없는 계정 정보·`csWork`만 담습니다. 자동 복원이나 전체 시스템 백업이 아닙니다.
 
 ```powershell
-# 1. 명부 검증 및 사전 계획 수립 (읽기 전용)
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/roster-from-xlsx.ps1 -Source '<명부의 절대 경로>' -Output private/student-roster.csv
 node scripts/student-roster.mjs --csv private/student-roster.csv --year 2026 --mode validate
-
-# 2. 반별 최초 임시 접속값 발급 (30분 만료)
+# 기본 모드는 plan(읽기 전용)입니다.
+node --env-file=.env.local scripts/student-roster.mjs --csv private/student-roster.csv --year 2026
+node --env-file=.env.local scripts/student-roster.mjs --csv private/student-roster.csv --year 2026 --mode register --apply --confirm-project cs-class-f74c4
 node --env-file=.env.local scripts/student-roster.mjs --csv private/student-roster.csv --year 2026 --mode issue --class 2-1 --output private/class-2-1.ndjson --apply --confirm-project cs-class-f74c4
-
-# 3. 비상 시 수업 기록 백업
 node --env-file=.env.local scripts/student-roster.mjs --csv private/student-roster.csv --year 2026 --mode backup --output private/backup.json --apply --confirm-project cs-class-f74c4
 ```
+
+발급이 중단되면 완료·실패 학생을 비공개 파일에서 확인하고, 남은 잠금은 [계정 변경 장애 복구](FIREBASE_SETUP.md#계정-변경-장애-복구)를 씁니다. 계정·작품을 지우고 다시 등록하는 방식으로 복구하지 않습니다. 검사 코드는 `tests/student-roster.spec.ts`이며 운영 자료를 쓰지 않습니다.
+
+#### 첫 실제 수업 확인 순서
+
+1. **수업 전:** 실제 학년도·명부·대상 반을 확인하고 위 변환·검증·계획을 먼저 실행합니다. 교사의 `수업 관리`에서 해당 반의 공개 수업과 이번 수업을 확인합니다.
+2. **수업 직전:** 해당 반의 임시값을 발급해 완료된 것만 학생별로 전달합니다. 학생은 최초 입장에서 본인 비밀번호를 정하고 배정된 반과 이번 수업 제목을 확인합니다. 만료·입장 실패는 교사가 계정 상태를 확인하며, 공통 비밀번호로 우회하지 않습니다.
+3. **수업 중:** 학생 한 명의 학교 브라우저에서 개념·퀴즈·실습 진입과 실제 엔트리 블록 입력·실행·정지를 확인합니다. 프로그래밍 수업은 기본 네 미션과 선택 도전을 구분하고 `저장 완료`·검증 통과·제출 완료를 각각 확인합니다.
+4. **저장 확인:** 저장 실패 때 입력이 남는지, 재시도 뒤 같은 작업을 이어가는지 확인합니다. 학교망·실제 입력기·로그아웃 후 재접속은 로컬 에뮬레이터 결과와 따로 기록합니다. 학생 비밀번호·작품 원문을 공개 화면이나 로그에 남기지 않습니다.
+5. **수업 종료 전:** 교사의 `학생 현황·계정`에서 진행과 제출을 확인합니다(제출 학생 수와 작품 수를 구분). 발견한 문제는 범위·환경과 함께 [HANDOFF](HANDOFF.md#남은-한계와-다음-결정)에 남깁니다.
 
 ### 5.2 실패 진단 및 에러 로깅 규격
 <a id="실패-진단과-오류-번호"></a>
@@ -285,12 +313,12 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
   Get-NetTCPConnection -LocalPort 9099,8080,3000 -ErrorAction SilentlyContinue | Select-Object OwningProcess -Unique
   ```
 - **Playwright Secure 쿠키 이슈:** E2E 앱 주소는 항상 `http://localhost:3000`을 사용합니다. `127.0.0.1`에서는 운영 빌드의 Secure 쿠키 전송이 차단될 수 있습니다.
-- **Stitch 디자인 플러그인:** Codex Stitch 연동 키는 `STITCH_API_KEY` 환경변수로만 관리하며 저장소나 로그에 노출하지 않습니다.
+- **Stitch 디자인 연동:** API 키는 `STITCH_API_KEY` 환경변수로만 관리하며(설정 스크립트 `scripts/Set-StitchApiKey.ps1`) 저장소나 로그에 노출하지 않습니다.
 - **Claude Code 전용 설정:** `.claude/`는 Claude Code만 읽으며, 다른 에이전트의 동작과 공통 규칙은 [AGENTS](../AGENTS.md)를 따릅니다.
   - `settings.json`은 `.env*.local`·서비스 계정 키 읽기와 Firestore 삭제·Firebase 배포 도구를 막습니다.
-  - 매번 확인받는 것: 운영 Firebase 도구, GitHub 도구의 직접 쓰기, Vercel 승격·배포, 강제 push(`--force`, `-f`, `+` 참조), 원격 브랜치 삭제(`--delete`, `-d`), `--mirror`·`--prune` push, `gh pr merge --admin`.
+  - 매번 확인받는 것: 운영 Firebase 도구, GitHub 도구의 직접 쓰기, Vercel 승격·배포, 강제 push(`--force`, `-f`, `+` 참조), 원격 브랜치 삭제(`git push`의 `--delete`·`-d`, `gh pr merge`의 `--delete-branch`·`-d`), `--mirror`·`--prune` push, `gh pr merge --admin`.
   - 일반 `git push`와 `gh pr merge`는 확인 없이 실행됩니다. 언제 해도 되는지는 [AGENTS의 승인 범위](../AGENTS.md#검증-및-배포-규칙)가 정합니다.
-  - 이 규칙은 명령 문자열만 비교하는 실수 방지 장치입니다. 다른 형태로 쓴 명령(예: `git -C . push`, 콜론으로 원격 브랜치를 지우는 `git push origin :이름`)은 잡지 못하므로 보안 경계로 여기지 않습니다.
+  - 이 규칙은 명령 문자열만 비교하는 실수 방지 장치입니다. 다른 형태로 쓴 명령(예: 콜론으로 원격 브랜치를 지우는 `git push origin :이름`, `-uf`처럼 묶어 쓴 짧은 옵션)은 잡지 못하므로 보안 경계로 여기지 않습니다.
   - `launch.json`은 내장 미리보기용 `dev:emulator` 실행 설정입니다.
 
 ---
@@ -316,11 +344,11 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 ### 6.2 쓰기 규칙
 - **절차와 상태를 나눕니다.** 절차 문서에는 절차만 씁니다. "현재 ~되어 있다" 같은 상태는 FIREBASE_SETUP 끝의 운영 환경 현황 표(마지막 확인일 포함)나 HANDOFF에만 씁니다.
 - **HANDOFF는 짧게 유지합니다.**
-  - "최근 반영"은 5개까지 두고, 항목마다 무엇(PR·SHA)·검증·한계를 2~3줄로 씁니다. 전체 E2E를 돌렸는지 반드시 적습니다.
-  - 5개를 넘으면 가장 오래된 항목을 지웁니다. 원문은 Git과 PR에 남습니다.
+  - "최근 반영"에는 PR 경로 변경과 사용자에게 보이는 변경을 적습니다. 5개까지 두고, 항목마다 무엇·검증·한계를 2~3줄로 씁니다. 항목은 PR 번호(직접 push는 커밋 제목)로 식별하고, 전체 E2E를 돌렸는지 반드시 적습니다.
+  - 5개를 넘으면 가장 오래된 항목을 지웁니다. 지우기 전에 아직 유효한 한계는 "남은 한계"로 옮깁니다. 원문은 Git과 PR에 남습니다.
   - HANDOFF 전체는 약 8KB 이내로 유지합니다.
-- **기록은 반영과 함께 씁니다.** HANDOFF 기록은 반영하는 같은 PR·커밋 안에서 쓰고, 병합 뒤 기록만을 위한 커밋을 따로 만들지 않습니다. 배포 ID·시각은 이상·우회·복구가 있을 때만 적습니다.
-- **계획 문서는 진행 중일 때만 둡니다.** 진행 중인 작업 계획만 `docs/plans/`에 두고, 끝나면 보관 스냅샷으로 옮깁니다. 현재 동작의 기준으로 계획 문서를 가리키지 않습니다.
-- **큰 구조 변경은 원문을 남깁니다.** 문서 구조를 크게 바꿀 때는 원문을 `docs/archive/cs-class/<날짜>-<이름>/`에 README와 manifest(sha256 포함)와 함께 남기고, [보관함 목록](archive/README.md)에 항목을 추가합니다.
-- **갱신일은 큰 변경 때만 고칩니다.** 각 문서 첫머리의 "갱신:" 날짜는 내용이 크게 바뀔 때만 고칩니다.
+- **기록은 반영과 함께 씁니다.** HANDOFF 기록은 반영하는 같은 PR·커밋 안에서, 병합 전에 알 수 있는 검증만으로 씁니다. 병합 뒤 기록만을 위한 커밋을 따로 만들지 않습니다. 배포 ID·시각은 이상·우회·복구가 있을 때만 적습니다.
+- **계획 문서는 진행 중일 때만 둡니다.** 진행 중인 작업 계획은 도구의 기본 저장 경로와 관계없이 `docs/plans/`에 두고(폴더는 필요할 때 만듭니다), 끝나면 보관 스냅샷으로 옮깁니다. 현재 동작의 기준으로 계획 문서를 가리키지 않습니다.
+- **구조를 바꿀 때는 원문을 남깁니다.** 문서의 절을 크게 추가·삭제·이동하거나 문서를 옮길 때, 다른 문서가 고정 경로로 가리킬 수 있도록 원문을 `docs/archive/cs-class/<날짜>-<이름>/`에 README와 manifest(sha256 포함)와 함께 남기고 [보관함 목록](archive/README.md)에 항목을 추가합니다.
+- **갱신일은 규칙이 바뀔 때만 고칩니다.** 각 문서 첫머리의 "갱신:" 날짜는 규칙·정책·절차의 내용이 바뀔 때만 고치고, 표현만 다듬을 때는 두지 않습니다.
 - **도구 중립으로 씁니다.** 여러 에이전트가 함께 읽으므로 특정 도구 이름에 기대는 규칙을 쓰지 않습니다. 도구 전용 설정은 그 도구의 폴더(예: `.claude/`)에 두고 §5.3처럼 따로 설명합니다.

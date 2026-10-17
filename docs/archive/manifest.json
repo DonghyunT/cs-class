@@ -381,7 +381,7 @@
     {
       "source": "docs/HANDOFF.md",
       "archive": "docs/archive/cs-class/2026-10-14-before-architecture-clarity/HANDOFF.md",
-      "origin": "handoff-before-architecture-clarity-20261014",
+      "origin": "handoff-before-architecture-clarity-20261014-crlf-working-tree-copy",
       "baseCommit": "6c778dd",
       "sha256": "4c2c907f918fdb13dbff0fe98a9fec359a95f396cb7885b070c482350a23552e"
     }

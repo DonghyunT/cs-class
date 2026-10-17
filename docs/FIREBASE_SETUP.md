@@ -4,7 +4,7 @@
 
 ## 연결 기준
 
-손들기를 활성화한 앱을 운영에 반영할 때는 `firestore.indexes.json`의 `csHelpRequests` 복합 인덱스(`classId ASC`, `status ASC`, COLLECTION 범위)를 먼저 배포하고 준비 완료를 확인한 뒤 앱을 반영합니다. 현재 일시 중지 설정에서는 관련 API가 DB 접근 전에 차단되어 이 인덱스 배포가 앱 배포의 선행 필수 조건은 아닙니다. 구성·기존 기록은 보존합니다. 복구 전 기존 대기 요청의 처리 기준과 활성 모드 검사를 확인하며, 에뮬레이터 통과로 운영 인덱스 준비를 판정하거나 운영 합성 시드를 사용하지 않습니다.
+손들기를 활성화한 앱을 운영에 반영할 때는 `firestore.indexes.json`의 `csHelpRequests` 복합 인덱스(`classId ASC`, `status ASC`, COLLECTION 범위)를 먼저 배포하고 준비 완료를 확인한 뒤 앱을 반영합니다. 손들기가 중지된 동안에는 관련 API가 DB 접근 전에 차단되어 이 인덱스 배포가 앱 배포의 선행 조건은 아닙니다. 구성·기존 기록은 보존합니다. 복구 전 기존 대기 요청의 처리 기준과 활성 모드 검사를 확인하며, 에뮬레이터 통과로 운영 인덱스 준비를 판정하거나 운영 합성 시드를 사용하지 않습니다.
 
 실제 환경은 이메일/비밀번호·Google 제공자, 서버의 교사 허용 목록과 서버 전용 Firestore 규칙을 사용합니다. 관리자 키 원본은 저장소 밖에 두고 Git 제외 `.env.local`은 경로만 참조합니다. 설정 상태와 마지막 확인일은 [운영 환경 현황](#운영-환경-현황)에 둡니다. 이 문서의 설정 절차가 계정 등록이나 운영 변경의 승인을 뜻하지 않습니다.
 
@@ -42,7 +42,7 @@ Google 로그인을 확인할 때는 승인된 `localhost`를 사용해 [교사 
 
 기본 질문 기능은 `firestore.indexes.json`의 `csQuestions` 복합 인덱스(`classId ASC / createdAt DESC`)를 사용합니다. 운영 공개 전 실제 프로젝트의 기존 인덱스·AI TTL을 확인·보존하고 적용한 인덱스의 `READY`를 확인합니다. 로컬 에뮬레이터 성공만으로 운영 인덱스 준비를 판단하지 않습니다. 질문/답변·손들기/저장본·한도 장부도 기존 전체 서버 전용 규칙으로 직접 DB 접근을 거부합니다. 인덱스 적용 상태는 [운영 환경 현황](#운영-환경-현황)을 봅니다.
 
-연결 프로젝트는 `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)입니다. Root Directory는 비워 둔 저장소 루트, Framework Preset은 Next.js, Node.js는 24.x이며 빌드·설치·출력은 프레임워크 기본값을 사용합니다. Git 연동의 작업 브랜치는 Preview, `main`은 Production입니다. MCP는 프로젝트 연결로 호출하고 팀 범위를 임의로 덧붙이지 않습니다. 응답에 루트 설정이 없으면 Build and Deployment 화면에서 확인합니다. 한 도구의 403을 전체 연결 불가로 일반화하지 않습니다.
+연결 프로젝트는 `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)입니다. Root Directory는 비워 둔 저장소 루트, Framework Preset은 Next.js, Node.js는 24.x이며 빌드·설치·출력은 프레임워크 기본값을 사용합니다. Git 자동 배포는 `main`(Production)만 하며(`vercel.json`), Preview는 아래 [수동 Preview](#수동-preview)로만 만듭니다. 조회 응답에 루트 설정이 없으면 Build and Deployment 화면에서 확인합니다. 한 도구나 API의 403을 전체 연결 불가로 일반화하지 않습니다.
 
 Node 서버 함수는 `vercel.json`의 `regions: ["icn1"]`로 서울에 배치합니다. 기본 Firestore도 서울이므로 반 조회·인증·저장마다 미국 서버를 왕복하지 않도록 한 설정입니다. [Vercel 공식 지역 설정](https://vercel.com/docs/functions/configuring-functions/region)에 따라 새 배포부터 적용되며 정적 파일의 CDN 배치와 구분합니다. 공개 후 배포의 `regions`·SHA·별칭과 인증 API를 확인합니다. 복구가 필요하면 이 설정만 이전 값으로 되돌려 재배포하며 데이터베이스·반 설정·학생 기록은 이동하거나 초기화하지 않습니다.
 
@@ -64,12 +64,12 @@ main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Depl
 
 - `.github/workflows/verify.yml`의 job ID `app`을 바꾸거나 지우기 전에 Vercel의 Deployment Checks를 먼저 새 이름으로 바꿉니다. 이름이 어긋나면 새 배포가 운영에 연결되지 않고 대기합니다.
 - 커밋 메시지에 `[skip ci]`를 쓰지 않습니다. 앱 변경 커밋에서 `app` 검사가 만들어지지 않아 같은 이유로 대기합니다. 문서만 바꾼 커밋은 Vercel이 빌드를 생략(CANCELED)하므로 게이트와 무관하며 `app`도 문서 모드로 짧게 끝나, `[skip ci]`로 얻는 것이 없습니다.
-- 전체 E2E 수동 실행은 같은 SHA에 별도의 `app` 실행을 만듭니다. 이것이 같은 SHA의 배포 대기를 늘리는지는 확인하지 않았으므로 그렇다고 가정하여, 배포 직후의 `main` SHA에서는 운영 반영을 확인한 뒤 실행하고 승인된 전체 검사는 가능하면 작업 브랜치·PR의 SHA에서 실행합니다.
+- 전체 E2E 수동 실행은 같은 SHA에 별도의 `app` 실행을 만듭니다. 이것이 같은 SHA의 배포 대기를 늘리는지는 확인하지 않았습니다. 늘릴 수 있다고 보고, 배포 직후의 `main` SHA에서는 운영 반영을 확인한 뒤 실행하며, 승인된 전체 검사는 가능하면 작업 브랜치·PR의 SHA에서 실행합니다.
 
 문서 전용 변경은 `vercel.json`의 Ignored Build Step으로 앱 빌드를 생략합니다. `VERCEL_GIT_PREVIOUS_SHA`(같은 프로젝트·브랜치의 마지막 성공 배포)부터 비교하며 기준 없음·이력 부족·판정 실패는 빌드를 진행합니다. Vercel은 판정 전에 제외 파일을 지우므로 `.vercelignore`에서 Git commit 메타데이터는 남기고 인증 config·hooks·logs는 제외합니다. 생략은 CANCELED로 표시되고 배포 한도에 포함될 수 있습니다. 문서 push 뒤 main과 운영 SHA가 달라도 정상입니다.
 
 공개 후 확인은 [PR 경로](DEVELOPMENT.md#위험도별-반영-경로)의 기본 절차입니다.
-- **PR 경로:** SHA·운영 별칭·익명 API·로그인 화면을 확인합니다. 게이트가 `app`을 기다렸는지는 GitHub Production 배포 상태의 `success` 시각이 `app` 성공 직후인지로 판단합니다(`gh api repos/DonghyunT/cs-class/deployments/<id>/statuses`). Vercel 빌드 READY는 `app` 성공보다 먼저 올 수 있으므로 판단 근거로 쓰지 않습니다.
+- **PR 경로:** SHA·운영 별칭·익명 API·로그인 화면을 확인합니다. 게이트가 `app`을 기다렸는지는 GitHub Production 배포 상태의 `success` 시각이 `app` 성공 직후인지로 판단합니다(배포 ID는 `gh api 'repos/DonghyunT/cs-class/deployments?sha=<SHA>&environment=Production'`로 찾고, 상태는 `gh api repos/DonghyunT/cs-class/deployments/<ID>/statuses`로 봅니다). Vercel 빌드 READY는 `app` 성공보다 먼저 올 수 있으므로 판단 근거로 쓰지 않습니다.
 - **직접 push 경로:** 게이트(`app` 성공 전 운영 미연결)에 맡기고, 이상이 있을 때만 확인합니다.
 - READY·익명 응답만으로 실제 계정 로그인·저장/재접속 성공을 주장하지 않습니다. CI와 Vercel의 검사 SHA가 같은지 확인하며 Force Promote는 기본 절차로 사용하지 않습니다.
 - 게이트를 우회하는 수동 Promote나 검사 제거는 사용자의 명시 요청이 있을 때만 하고, 우회한 릴리스는 `app` 검사 없이 공개했다고 HANDOFF에 기록합니다. HANDOFF에는 이처럼 이상·우회·복구가 있을 때만 배포 세부를 남깁니다.
@@ -77,9 +77,9 @@ main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Depl
 
 ### 수동 Preview
 
-Git 자동 배포는 main만 허용합니다. 작업 브랜치 push는 Preview를 만들지 않으며 에이전트는 생성 여부를 묻습니다. 명시적 선택이 있을 때 기존 프로젝트의 **Preview** 환경으로 브랜치·SHA를 지정해 생성하고, 같은 SHA의 준비된 배포는 재사용합니다. 응답 없음은 생성 승인이 아닙니다. Preview 생성은 CI·운영 공개를 자동 실행하지 않습니다. 플러그인의 create_deployment에서 기존 project와 gitSource의 전체 SHA를 지정하고 target은 생략합니다(API의 기본값이 Preview이며 문자열 `preview`는 받지 않습니다). 생성 후 환경·SHA·READY를 확인합니다.
+Git 자동 배포는 `main`만 허용하므로 작업 브랜치 push는 Preview를 만들지 않습니다. Preview는 사용자가 요청할 때만 만듭니다([AGENTS](../AGENTS.md#검증-및-배포-규칙)). 요청이 있으면 기존 프로젝트의 **Preview** 환경으로 브랜치·SHA를 지정해 생성하고, 같은 SHA의 준비된 배포는 재사용합니다. Preview 생성은 CI·운영 공개를 자동 실행하지 않습니다. Vercel 배포 생성(API·CLI·대시보드)에서 기존 프로젝트와 gitSource의 전체 SHA를 지정하고 target은 생략합니다(API의 기본값이 Preview이며 문자열 `preview`는 받지 않습니다). 생성 후 환경·SHA·READY를 확인합니다.
 
-Preview에는 운영 Firebase 비밀정보·학생 자료를 복사하지 않고 호스팅 게스트·에뮬레이터도 켜지 않습니다. 온라인 화면 확인과 로그인·저장 검증을 구분하며 별도 인증용 Preview 환경은 이번에 만들지 않습니다. main 빌드의 CI 대기 중 배포별 주소는 **Production 설정**일 수 있으므로 Preview와 혼동하지 않고 실제 학생 자료를 변경하지 않습니다. 아래 접근 보호를 유지하며 대상 SHA·주소·환경·검증 한계를 HANDOFF에 기록합니다.
+Preview에는 운영 Firebase 비밀정보·학생 자료를 복사하지 않고 호스팅 게스트·에뮬레이터도 켜지 않습니다. 온라인 화면 확인과 로그인·저장 검증을 구분하며 별도 인증용 Preview 환경은 만들지 않습니다. main 빌드의 CI 대기 중 배포별 주소는 **Production 설정**일 수 있으므로 Preview와 혼동하지 않고 실제 학생 자료를 변경하지 않습니다. 아래 접근 보호를 유지하며, 대상 SHA·주소·환경·검증 한계는 요청한 사용자에게 보고합니다.
 
 Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 적용되는 주소에서는 앱 API에 도달하기 전에 Vercel 인증 화면으로 이동할 수 있습니다. 프로젝트 도메인·Preview·배포별 주소의 적용 범위를 구분하며, 이전 배포 주소에서 관찰한 302를 모든 운영 도메인의 현재 동작으로 일반화하지 않습니다. 학생 공개 배포 때는 이 보호의 실제 적용 범위와 학생 계정 등록을 함께 결정합니다.
 
@@ -93,11 +93,11 @@ Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 �
 
 ### 복습 AI 서버 설정
 
-cs-class Vercel 프로젝트(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Production 서버 설정에 `UPSTAGE_API_KEY`와 임의 생성한32자 이상 `CS_AI_COMMAND_SECRET`을 Sensitive로 등록합니다. 키를 채팅·Git·로그·브라우저 `NEXT_PUBLIC_*`에 넣지 않습니다. 기존 Algorithm Studio의 Sensitive 키는 재조회/이식할 수 없는 경우 직접 등록이 필요합니다. Preview에 운영 인증값이나 AI 키를 자동 복사하지 않습니다.
+cs-class Vercel 프로젝트(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Production 서버 설정에 `UPSTAGE_API_KEY`와 임의 생성한 32자 이상 `CS_AI_COMMAND_SECRET`을 Sensitive로 등록합니다. 키를 채팅·Git·로그·브라우저 `NEXT_PUBLIC_*`에 넣지 않습니다. 기존 Algorithm Studio의 Sensitive 키는 재조회/이식할 수 없는 경우 직접 등록이 필요합니다. Preview에 운영 인증값이나 AI 키를 자동 복사하지 않습니다.
 
-공개 전 실제 제공자 확인에는 이 PC의 Git 제외 `.env.local` 또는 사용자가 지정한 비공개 로컬 설정 경로도 필요합니다. Vercel에 Sensitive로 등록한 키는 다시 읽어 로컬 검사에 가져올 수 있다고 가정하지 않습니다. 합성 제공자 검사와 실제 Solar12회 품질 검사의 준비·범위는 [개발 안내](DEVELOPMENT.md#알고리즘-복습-수업)를 따릅니다.
+공개 전 실제 제공자 확인에는 로컬 PC의 Git 제외 `.env.local` 또는 사용자가 지정한 비공개 로컬 설정 경로도 필요합니다. Vercel에 Sensitive로 등록한 키는 다시 읽어 로컬 검사에 가져올 수 있다고 가정하지 않습니다. 실제 Solar 호출 검사의 원칙은 [개발 안내](DEVELOPMENT.md#알고리즘-복습-수업)를 따릅니다.
 
-서버는 [Upstage 공식 Chat API](https://console.upstage.ai/api/chat)의 `solar-pro4`와 구조화 JSON 출력을 사용합니다. 출력 한도는 순서도 기획 제안1,600토큰, 나머지800토큰입니다. 제공자25초·전체45초·브라우저50초이며 응답 잘림·형식 오류를 성공으로 처리하지 않습니다. AI 제한·비보관·월 예산 정책은 [PRD](PRD.md#알고리즘-선택-복습), 실행/복구는 [DEVELOPMENT](DEVELOPMENT.md#알고리즘-복습-수업)를 따릅니다. `CS_AI_PAUSED=1`로 새 AI 요청을 중지할 수 있습니다.
+서버는 [Upstage 공식 Chat API](https://console.upstage.ai/api/chat)의 `solar-pro4`와 구조화 JSON 출력을 사용합니다. 출력 토큰·호출 한도와 비보관 정책은 [PRD §4.3](PRD.md#43-선택-복습-수업-공통-정책)을 따릅니다. 시간 제한은 제공자 25초·전체 45초·브라우저 50초이며, 응답 잘림·형식 오류를 성공으로 처리하지 않습니다. `CS_AI_PAUSED=1`로 새 AI 요청을 중지할 수 있습니다.
 
 공개 전 AI 캐시/요청 장부에만 `expiresAt` TTL을 활성화합니다. 기존 인덱스 설정을 읽어 보존하고 `firestore.indexes.json`의 두 컬렉션을 확인한 뒤 승인된 프로젝트에 `npx firebase deploy --only firestore:indexes --project cs-class-f74c4`로 적용합니다. [공식 TTL/인덱스 정의](https://firebase.google.com/docs/reference/firestore/indexes)를 따르며 Firestore 비용·활성 상태를 확인합니다. 학생 작품/제출 컬렉션에는 적용하지 않습니다. 적용 상태는 [운영 환경 현황](#운영-환경-현황)을 봅니다.
 
@@ -115,11 +115,11 @@ TTL은 만료 직후 즉시 삭제를 보장하지 않으며, 실제 정리·청
 
 ### 승인된 운영 테스트 계정
 
-운영에는 사용자 승인으로 만든 체험 계정 12개만 둡니다(발급 상태는 [운영 환경 현황](#운영-환경-현황)). 학번·교사 담당 범위·실학생 정책과의 경계는 [PRD](PRD.md#운영-테스트-계정), 당시 발급·검증 기록은 [보관함](archive/README.md)의 인계 원문을 봅니다. 기존 demo 시드와 폐기된 `check-cloud-flow --apply`는 변경하지 않으며 반복 검사나 다른 운영 계정 생성으로 확대하지 않습니다.
+운영에는 사용자 승인으로 만든 체험 계정만 둡니다. 구성과 실학생 정책의 예외는 [PRD §6.3](PRD.md#운영-테스트-계정), 발급 상태는 [운영 환경 현황](#운영-환경-현황), 당시 발급·검증 기록은 [보관함](archive/README.md)의 인계 원문을 봅니다. 기존 demo 시드와 폐기된 `check-cloud-flow --apply`는 변경하지 않으며 반복 검사나 다른 운영 계정 생성으로 확대하지 않습니다.
 
 학생은 [학생 입장](https://cs-class-donghyunt.vercel.app/login/student)에서 전달받은 해당 반의 학번과 공통 비밀번호를 입력합니다. 교사는 [교사 입장](https://cs-class-donghyunt.vercel.app/login/teacher)에서 `교사 비밀번호 로그인`을 선택하고 같은 비밀번호만 입력합니다. 이 테스트 계정은 비밀번호 변경 없이 대시보드로 이동합니다. 비밀번호 원문과 반별 안내는 발급 PC의 Git 제외 `scratch/private/배포-테스트-로그인.txt`에만 전달하며 저장소·일반 로그에는 넣지 않습니다. 다른 PC에서는 본인이 안전한 경로로 안내 파일을 별도로 옮깁니다.
 
-발급 당시 1반에는 수업 1개가 열려 있고 2~11반에는 열린 수업이 없었습니다. 해당 반을 체험하려면 교사가 `수업 관리`에서 반을 선택하고 수업을 열어야 합니다. 학생 기록과 수업 설정은 운영 DB에 저장되므로 체험 뒤 실제 학생 기록과 혼동하지 않도록 합성 학번을 사용합니다. 교사 초기화를 실행하면 공통 비밀번호 대신 새 학생별 임시값과 개인 비밀번호 설정 절차를 사용합니다.
+해당 반을 체험하려면 교사가 `수업 관리`에서 반을 선택하고 수업을 열어야 합니다. 학생 기록과 수업 설정은 운영 DB에 저장되므로 체험 뒤 실제 학생 기록과 혼동하지 않도록 합성 학번을 사용합니다. 교사 초기화를 실행하면 공통 비밀번호 대신 새 학생별 임시값과 개인 비밀번호 설정 절차를 사용합니다.
 
 ## 로컬 자동 검사
 
@@ -137,7 +137,7 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 
 ### 보안 수정 적용과 남은 공급자 경계
 
-학생별 임시 발급·만료·재발급 운영은 [PRD](PRD.md#학생-비밀번호와-초기화)를 따릅니다. 기존 정상 개인 계정·교사 Google 로그인·학습 기록을 이 배포에서 일괄 변경하지 않습니다. 공통값을 쓰는 변경 필요 계정은 개별 재발급이 필요합니다. 최초 등록은 `temporary-password.mjs`의 생성 결과에서 Firebase용 값과 학생용 값을 분리하고 `temporaryPassword` 검증값·만료를 함께 등록해야 하며 기존 엑셀 공통값을 그대로 넣지 않습니다.
+학생별 임시 발급·만료·재발급 운영은 [PRD](PRD.md#학생-비밀번호와-초기화)를 따릅니다. 기존 정상 개인 계정·교사 Google 로그인·학습 기록은 보안 수정을 배포할 때 일괄 변경하지 않습니다. 공통값을 쓰는 변경 필요 계정은 개별 재발급이 필요합니다. 최초 등록은 `temporary-password.mjs`의 생성 결과에서 Firebase용 값과 학생용 값을 분리하고 `temporaryPassword` 검증값·만료를 함께 등록해야 하며 기존 엑셀 공통값을 그대로 넣지 않습니다.
 
 개인 비밀번호 계정은 Firebase REST로 앱 장부 밖에서 인증·비밀번호 변경을 시도할 수 있습니다. 임시 입장은 이 경로에서 차단했지만 정상 개인 비밀번호는 호환성을 유지합니다. Firebase Console의 Authentication 비밀번호 정책(Require·최소 8자·영문/숫자)과 Identity Toolkit 남용 방어·할당량을 운영 수업의 동시 입장 규모에 맞춰 별도로 확인합니다. 설정의 현재 강제 여부는 이 코드 검사로 입증하지 않으며 실제 변경은 기존 사용자의 영향을 확인한 뒤 적용합니다. 관련 공식 문서: [비밀번호 정책](https://firebase.google.com/docs/auth/web/password-auth#recommended_set_a_password_policy), [할당량](https://firebase.google.com/docs/auth/limits).
 
@@ -153,8 +153,8 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 - `csTodos/{uid}`: 본인 개인 할 일의 `revision`과 `items`(항목 ID·텍스트·완료 의도). 서버 세션 UID만 사용하고 교사도 다른 사용자의 목록을 조회하지 않습니다.
 - `csSchedules/{classId}`: 반 일정의 `revision`과 `items`(항목 ID·제목·한국 날짜·선택 수업 ID). 학생은 본인 반 조회만, 교사·강사는 담당 반 조회·수정만 허용합니다. 계정·반 권한·열린 수업을 같은 서버 트랜잭션에서 확인합니다.
 - `csTimetables/74022`: 정규화한 학교 정보 수업의 날짜·반·교시·시작 시각·변경 표시·원본 수정 시각·확인 시각과 비공개 갱신 lease/시도 시각/예약 성공 날짜. 서버 조회에서 반을 제한하고 lease 인증값은 응답하지 않습니다. 직접 일정과 저장소를 분리해 갱신 실패나 수업 교체가 수동 기록을 덮어쓰지 않습니다.
-- 데이터는 서버 API로만 접근하며 직접 Firestore 접근은 차단합니다. 쓰기는 Origin·세션 UID·revision을 검사합니다. 재시도·동시 변경·한도·일정의 제품 의미는 [PRD](PRD.md#작은-버전의-경계와-저장-동작)를 기준으로 합니다.
-- `csRateLimits`, `csGoogleExchanges`: 로그인 제한과 Google 로그인 토큰 재사용 방지. 로그인 제한은 출처·계정 단위 횟수만 저장합니다(2026-10-18 이전에 만든 `credential:` 문서는 비밀번호에서 파생한 해시가 문서 이름에 들어 있어, 운영 정리 때 함께 지울 대상입니다). 후속 운영에서 보관 기간·정리 작업을 마련합니다.
+- 데이터는 서버 API로만 접근하며 직접 Firestore 접근은 차단합니다. 쓰기는 Origin·세션 UID·revision을 검사합니다. 재시도·동시 변경의 제품 의미는 [PRD §3.2](PRD.md#작업-저장과-통신-비용), 일정 한도는 [PRD §5.3](PRD.md#작은-버전의-경계와-저장-동작)을 기준으로 합니다.
+- `csRateLimits`, `csGoogleExchanges`: 로그인 제한과 Google 로그인 토큰 재사용 방지. 로그인 제한은 출처·계정 단위 횟수만 저장합니다. 2026-10-18 이전 기록의 정리 기준은 [운영 환경 현황](#운영-환경-현황)에 있습니다. 후속 운영에서 보관 기간·정리 작업을 마련합니다.
 - 무활동 만료·연장·동시 접속·저장 기록의 제품 정책은 [PRD의 로그인 정책](PRD.md#로그인-정책)에 모읍니다. 서버 세션은 계정의 세션 해시·활동 시각과 대조합니다.
 - 세션 쿠키는 HttpOnly·SameSite=Strict, 배포 환경 Secure이며 지속 만료일을 넣지 않습니다. 브라우저의 세션 복원 기능은 쿠키를 복구할 수 있어 창 닫기를 절대적인 로그아웃 보장으로 취급하지 않습니다. 공용 PC에서는 로그아웃을 사용합니다.
 - 미전송 초안과 강제 종료 후 복구 경계는 [PRD의 저장 정책](PRD.md#작업-저장과-통신-비용), 미해결 제품·운영 과제는 [HANDOFF](HANDOFF.md#남은-한계와-다음-결정)에 있습니다. EntryJS 실행·자산·검사는 [개발 안내](DEVELOPMENT.md#entryjs-실습)를 따릅니다.
@@ -164,7 +164,7 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 
 ## 운영 환경 현황
 
-운영 설정의 현재 상태를 한곳에 모읍니다. 위 절들은 절차만 설명합니다. 상태가 바뀌거나 다시 확인하면 이 표만 고칩니다. "2026-10-13판 문서 기록"은 그 무렵 이 문서에 적혀 있던 내용을 옮긴 것이며, 이번에 다시 확인하지는 않았습니다.
+운영 설정의 현재 상태를 한곳에 모읍니다. 위 절들은 절차만 설명합니다. 상태가 바뀌거나 다시 확인하면 이 표만 고칩니다. "2026-10-13판 문서 기록"은 그 무렵 이 문서에 적혀 있던 내용을 옮긴 것이며, 2026-10-18 정비 때 다시 확인하지는 않았습니다.
 
 | 항목 | 상태 | 근거·마지막 확인 |
 | :--- | :--- | :--- |
@@ -178,4 +178,4 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 | 손들기 인덱스 | `csHelpRequests` 복합 인덱스의 운영 배포 여부 미확인. 손들기 중지 중이라 앱 배포의 선행 조건은 아님 | 2026-10-15 |
 | 인증 제공자 | 이메일/비밀번호·Google 활성. 네이티브 비밀번호 정책의 강제 여부는 미확인(점진 검토 대상) | 2026-10-13판 문서 기록 |
 | 운영 계정 | 승인된 체험 계정 12개 발급. 실학생 계정은 일괄 생성하지 않음 | 2026-10-13판 문서 기록 |
-| 로그인 제한 문서 | `csRateLimits`에 2026-10-18 이전 `credential:` 문서가 남음. 정리는 운영 DB 작업 승인 필요 | 2026-10-18 |
+| 로그인 제한 문서 | `csRateLimits`에 2026-10-18 이전의 비밀번호별 기록(`credential:` 키)이 남음. 문서 ID가 해시라 이름으로는 구분할 수 없으므로, `start`가 #44 배포(2026-10-18 00:52 KST) 이전인 문서를 지웁니다(모두 만료된 기록이라 기능 영향 없음). 소금 없는 비밀번호 해시가 섞여 있어 우선 정리 대상이며, 운영 DB 작업 승인이 필요 | 2026-10-18 |

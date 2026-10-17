@@ -26,7 +26,7 @@
 
 - **[2026-10-05 UI 개선 전 인계 원문](cs-class/2026-10-05-before-ui-refinement/manifest.json):** 기준 커밋 `d619277`의 HANDOFF를 바이트 그대로 보존했습니다. 10/3~10/4 교사 화면·실제 수업·명부·시간표 릴리스와 검사·CI·배포 근거를 포함합니다. 현재 인계는 [HANDOFF](../HANDOFF.md)에 최신 결과와 남은 행동을 모으고, 과거 릴리스의 세부 반복 기록은 이 보관본에서 확인합니다.
 
-- **[2026-10-01 로컬 게스트·목록·공통 UI 릴리스 문서 정리 전 원문](cs-class/2026-10-01-before-local-ui-release/manifest.json):** `codex/continuation-ready-20261001`·기준 HEAD `de147cc`의 미커밋 PRD·DESIGN·DEVELOPMENT·FIREBASE_SETUP·HANDOFF 5개를 바이트 그대로 보존했습니다. 이전 릴리스와 PC 복귀, 게스트·낙관적 목록·선택 메뉴의 단계별 검사 기록을 남기고, 대체된 초기 기능 구상·이전 폴더 이식 안내·누적 이력은 현재 기준에서 정리했습니다. 최신 구현·검증·배포는 [HANDOFF](../HANDOFF.md), 문서별 역할은 [README](../../README.md#문서의-위치와-내용-기준)를 따릅니다.
+- **[2026-10-01 로컬 게스트·목록·공통 UI 릴리스 문서 정리 전 원문](cs-class/2026-10-01-before-local-ui-release/manifest.json):** `codex/continuation-ready-20261001`·기준 HEAD `de147cc`의 미커밋 PRD·DESIGN·DEVELOPMENT·FIREBASE_SETUP·HANDOFF 5개를 바이트 그대로 보존했습니다. 이전 릴리스와 PC 복귀, 게스트·낙관적 목록·선택 메뉴의 단계별 검사 기록을 남기고, 대체된 초기 기능 구상·이전 폴더 이식 안내·누적 이력은 현재 기준에서 정리했습니다. 최신 구현·검증·배포는 [HANDOFF](../HANDOFF.md), 문서별 역할은 [README](../../README.md#5-프로젝트-문서-색인-documentation-map)를 따릅니다.
 
 - **[2026-10-01 프로그래밍 프로토타입 릴리스 전 인계 원문](cs-class/2026-10-01-before-programming-release/manifest.json):** `codex/continuation-prep`의 미커밋 [HANDOFF](cs-class/2026-10-01-before-programming-release/HANDOFF.md)를 바이트 그대로 보존했습니다. 9/30 프로토타입 55개 검사, 10/1 사용자 피드백·23파일 이식 ZIP, 이전 대시보드 CI·운영 확인·성능 측정의 상세 맥락을 포함합니다. 기준 HEAD는 `3ac9ed5`이며 당시 미커밋·배포 미실행 상태는 이후 사용자가 요청한 병합·배포와 구분합니다. 현재 인계는 [HANDOFF](../HANDOFF.md)를 따릅니다.
 
