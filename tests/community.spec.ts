@@ -347,7 +347,7 @@ test("질문·답변 실패의 초안을 보관하고 재시도·키보드·좁�
   expect(errors).toEqual([]);
 });
 
-test("본인 질문만 삭제하며 모든 답변을 함께 제거하고 동시 답변을 남기지 않음", async ({ page, request }) => {
+test("작성자와 담당 교사만 질문을 삭제하며 모든 답변을 함께 제거하고 동시 답변을 남기지 않음", async ({ page, request }) => {
   const id = randomUUID();
   expect((await page.request.post(`${base}/2-1`, { headers, data: { id, title: "삭제 권한 확인", body: "모든 답변도 함께 지워요.", lessonId: null } })).status()).toBe(200);
   await db.doc(`csAccounts/${uids[1]}`).update({ classId: "2-1" });
@@ -356,7 +356,9 @@ test("본인 질문만 삭제하며 모든 답변을 함께 제거하고 동시 
   expect((await request.post(`${base}/${id}/delete`, { headers, data: {} })).status()).toBe(403);
   await readyTeacher(request);
   teacherUid = (await auth.getUserByEmail(testEnv.CS_TEACHER_EMAILS)).uid;
+  await db.doc(`csAccounts/${teacherUid}`).update({ classIds: ["2-2"] });
   expect((await request.post(`${base}/${id}/delete`, { headers, data: {} })).status()).toBe(403);
+  await db.doc(`csAccounts/${teacherUid}`).update({ classIds: ["2-1", "2-2"] });
   expect((await page.request.post(`${base}/${id}/delete`, { data: {} })).status()).toBe(403);
   expect((await page.request.post(`${base}/${id}/delete`, { headers: { ...headers, Origin: "https://outside.invalid" }, data: {} })).status()).toBe(403);
   expect((await page.request.post(`${base}/${id}/delete`, { headers, data: { author: uids[1] } })).status()).toBe(400);
@@ -373,11 +375,19 @@ test("본인 질문만 삭제하며 모든 답변을 함께 제거하고 동시 
   expect((await page.request.get(`${base}/${id}`)).status()).toBe(404);
   expect((await page.request.post(`${base}/${id}/delete`, { headers, data: {} })).status()).toBe(404);
   expect((await (await page.request.get(base)).json()).questions.some((item: { id: string }) => item.id === id)).toBe(false);
-  const teacherQuestion = randomUUID();
-  try {
-    expect((await request.post(`${base}/2-1`, { headers, data: { id: teacherQuestion, title: "교사 본인 질문", body: "본인만 삭제해요.", lessonId: null } })).status()).toBe(200);
-    expect((await request.post(`${base}/${teacherQuestion}/delete`, { headers, data: {} })).status()).toBe(200);
-  } finally { await db.doc(`csQuestions/${teacherQuestion}`).delete(); }
+  const studentQuestion = randomUUID();
+  expect((await page.request.post(`${base}/2-1`, { headers, data: { id: studentQuestion, title: "선생님이 정리할 질문", body: "부적절한 질문은 담당 교사가 지워요.", lessonId: null } })).status()).toBe(200);
+  expect((await page.request.post(`${base}/${studentQuestion}/answers`, { headers, data: { id: randomUUID(), body: "함께 지워질 답변" } })).status()).toBe(200);
+  await readyTeacher(page.request);
+  await page.goto("/teacher/community?classId=2-1");
+  await page.getByRole("region", { name: "우리 반 질문 목록", exact: true }).getByRole("button", { name: /선생님이 정리할 질문/ }).click();
+  await page.getByRole("region", { name: "질문과 답변", exact: true }).getByRole("button", { name: "질문 삭제", exact: true }).click();
+  const dialog = page.getByRole("alertdialog", { name: "질문을 삭제할까요?", exact: true });
+  const [deleted] = await Promise.all([page.waitForResponse(response => response.url().endsWith(`/${studentQuestion}/delete`)), dialog.getByRole("button", { name: "삭제하기", exact: true }).click()]);
+  expect(deleted.status()).toBe(200);
+  await expect(dialog).not.toBeVisible();
+  expect((await db.doc(`csQuestions/${studentQuestion}`).get()).exists).toBe(false);
+  expect((await db.collection(`csQuestions/${studentQuestion}/answers`).get()).empty).toBe(true);
 });
 
 test("질문 쓰기 기호·삭제 취소·실패 재시도·초점과 다른 초안을 보존", async ({ page }) => {

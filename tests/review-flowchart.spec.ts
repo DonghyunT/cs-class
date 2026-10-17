@@ -120,6 +120,8 @@ test.describe("V1 순서도 직접 조작", () => {
     await expect(run.getByRole("status")).toContainText("현재 기호: 물 500ml 냄비에 붓기");
     await run.getByRole("button", { name: "자동 실행", exact: true }).click(); await expect(run.getByRole("status")).toContainText("종료에 도달했어요!");
     await expect(run.getByLabel("실시간 데이터 흐름")).toContainText("면과 분말스프 넣고 4분 끓이기");
+    // Reaching the end auto-validates and submits; reset stays disabled until both finish (flowchart-auto-completion covers the in-flight case).
+    await expect(page.locator("#review-action-feedback")).toContainText("복습 기록 완료");
     await run.getByRole("button", { name: "실행 중지", exact: true }).click(); await expect(run.getByRole("button", { name: "실행 준비 / 다시 시작" })).toBeFocused();
   });
   test("빈 캔버스를 이동한 뒤 가운데 보기는 실제 시작 기호를 다시 보여 준다", async ({ page }) => {

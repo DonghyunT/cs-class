@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import { buildEntryProject, parseEntryProject } from "../src/lib/classroom/entry-project";
-import { buildProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, MAX_PROJECT_BYTES, parseProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import { emptyWork } from "../src/lib/classroom/progress";
 import { initialReviewProject, type FlowchartProject } from "../src/lib/classroom/review/project";
 import type { Work, WorkAction } from "../src/lib/classroom/types";
@@ -110,7 +110,10 @@ test("preview-api: 위조 상태·승인·문항·미션·과거 작품 형식�
   programming.draft.programming = { mission: "name", projects: { name: projects.name }, reflection: "" };
   programming = await evaluate(request, programming, { type: "validate-practice", missionId: "name" });
   programming = await evaluate(request, programming, { type: "submit-practice", missionId: "name" });
-  const oversizedRaw = projects.name + " ".repeat(32769);
+  // The limit applies to the server's normalized project (#41), so grow it with real blocks; padding whitespace is stripped.
+  const long = say(node("text", "가".repeat(180)));
+  const oversizedRaw = buildProgrammingProject([[start(), ...Array.from({ length: 30 }, () => long)], Array.from({ length: 30 }, () => long)]);
+  expect(parseProgrammingProject(oversizedRaw)?.bytes).toBeGreaterThan(MAX_PROJECT_BYTES);
   for (const location of ["validation", "submission"] as const) {
     const work = structuredClone(programming);
     work.missions!.name[location]!.entryProject = oversizedRaw;

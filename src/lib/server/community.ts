@@ -131,7 +131,7 @@ export async function deleteQuestion(questionId: string, payload: unknown) {
   deleteInput.parse(payload);
   return authorized(await identity(), async (tx, account) => {
     const question = await storedQuestion(tx, account, questionId);
-    requireCondition(question.author.uid === account.uid, 403, "FORBIDDEN", "본인이 작성한 질문만 삭제할 수 있어요.");
+    requireCondition(question.author.uid === account.uid || account.role !== "student", 403, "FORBIDDEN", "작성자와 담당 선생님만 삭제할 수 있어요.");
     const ref = questionRef(questionId);
     const answers = await tx.get(ref.collection("answers"));
     await takeWriteSlot(tx, account);

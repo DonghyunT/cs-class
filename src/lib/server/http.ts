@@ -36,5 +36,5 @@ export function failure(error: unknown, context?: { operation: FailureOperation 
   const value = service ? { code: error.code, message: error.message }
     : invalid ? { code: "INVALID", message: "입력한 내용을 확인하고 다시 시도해 주세요." }
       : { code: "UNAVAILABLE", message: "서버에서 처리하지 못했어요. 잠시 후 다시 시도해 주세요." };
-  return failureResponse(value, status, context, service ? failureCategory(status) : invalid ? "invalid_input" : "unexpected");
+  return logFailureResponse(json(value, status), { ...context, category: service ? failureCategory(status) : invalid ? "invalid_input" : "unexpected", error });
 }
