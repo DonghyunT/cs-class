@@ -121,7 +121,7 @@ npm run dev:emulator
 | **[`docs/DESIGN.md`](docs/DESIGN.md)** | 시각 디자인 기준, 시맨틱 색상 토큰, 반응형 기준(820px), LessonShell 명세 | 디자이너, UI 개발자 |
 | **[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)** | 로컬 에뮬레이터 설정, 신규 수업 추가 체크리스트, 기능별 검증 노하우 | 개발자 |
 | **[`docs/FIREBASE_SETUP.md`](docs/FIREBASE_SETUP.md)** | Vercel 서버 설정, Firestore 인덱스/규칙, AI 환경변수, 장애 복구 절차 | 인프라/서버 엔지니어 |
-| **[`docs/HANDOFF.md`](docs/HANDOFF.md)** | 현재 기준 커밋, CI 파이프라인 상태, 남은 한계 및 다음에 이어갈 작업 | 인수인계자, 개발자 |
+| **[`docs/HANDOFF.md`](docs/HANDOFF.md)** | 현재 작업 상태, 최근 반영과 검증, 다음 작업, 남은 한계 | 인수인계자, 개발자 |
 
 ---
 

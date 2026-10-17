@@ -1,0 +1,13 @@
+{
+  "archivedAt": "2026-10-18 Asia/Seoul",
+  "sourceCommit": "de0bcb312a9087a64cc6747fe6c24d2805cfa68b",
+  "files": [
+    {
+      "source": "docs/HANDOFF.md",
+      "archived": "HANDOFF.md",
+      "bytes": 27469,
+      "sha256": "75a3466aa538eccb56aebda3aa5c72ed9777818b8d0aad43a89c4d514759b08d"
+    }
+  ],
+  "sourceRepresentation": "LF-normalized Git blob (git show de0bcb3:docs/HANDOFF.md), not a Windows CRLF working-tree checkout"
+}

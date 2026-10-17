@@ -156,7 +156,7 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 
 `test:review`는 기존 Node 리뷰 검사와 [`playwright.logic.config.ts`](../playwright.logic.config.ts)의 `tests/*.test.ts`를 실행합니다. 이 TypeScript 검사 경로는 브라우저 fixture를 쓰지 않으며 앱 서버·에뮬레이터를 시작하지 않습니다.
 
-검사 개수는 `npx playwright test --list`로 현재 E2E 목록을 조회하고, 순수 TypeScript 목록은 `npx playwright test --config=playwright.logic.config.ts --list`로 확인합니다. 실행 시간은 검사 범위·PC/CI 환경·캐시·에뮬레이터 준비 상태에 따라 달라지므로 고정된 상한으로 안내하지 않습니다. 날짜·환경·범위별 실제 결과는 [HANDOFF의 검증 기록](HANDOFF.md#현재-작업-상태)에 남깁니다.
+검사 개수는 `npx playwright test --list`로 현재 E2E 목록을 조회하고, 순수 TypeScript 목록은 `npx playwright test --config=playwright.logic.config.ts --list`로 확인합니다. 실행 시간은 검사 범위·PC/CI 환경·캐시·에뮬레이터 준비 상태에 따라 달라지므로 고정된 상한으로 안내하지 않습니다. 실제 검증 범위와 결과는 [HANDOFF의 최근 반영](HANDOFF.md#최근-반영)에 남깁니다.
 
 ### 3.2 로컬 에이전트 vs 깃허브 CI 검증 매트릭스
 로컬과 CI 모두 평시에는 **선별 검증 및 코어 스모크**를 기본으로 삼아 자원과 시간을 절약합니다:
