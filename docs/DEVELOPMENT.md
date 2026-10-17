@@ -41,7 +41,6 @@ npm run dev:emulator
 
 ### 1.4 에뮬레이터 데이터 보존 및 복원 (Export/Import)
 
-읽기 최적화의 선별 검사는 `tests/help-paused.spec.ts`, `tests/read-polling.spec.ts`로 손들기 중지·교사 수동 조회·권한·느린 응답 경합을 확인합니다. 손들기 활성 모드 검사(`help-requests`, `help-races`, 관련 UI 검사)는 보존하되 공유 설정이 false이면 명시적으로 생략하며 이를 통과로 집계하지 않습니다. 복구 시 설정을 true로 변경한 뒤 재빌드하여 활성 모드 검사를 실행합니다. `tests/read-usage.spec.ts`는 공개 수업 4개·학생 27명·담당 반 11개의 10분 가상 시간 요청 샘플이며 과금 실측이 아닙니다. 다른 Playwright 실행과 병렬로 돌릴 때는 `--output` 경로를 분리해야 합니다. 가상 시계와 서버 시계가 어긋나 활동 갱신 응답은 측정용 fixture로 분리하고 세션 비용은 별도 모형으로 계산합니다.
 <a id="기존-demo-기록을-복원해-보기"></a>
 <a id="테스트-환경과-데이터-보호"></a>
 
@@ -145,7 +144,7 @@ npx.cmd firebase emulators:start --only auth,firestore --project demo-cs-class -
 <a id="ci-개선-후속-작업"></a>
 
 ### 3.1 계층형 검증 티어 (Tiered Verification)
-일상적인 빠른 개발 피드백(Vibe Coding)을 위해 검증은 가벼운 순서대로 계층화되어 있습니다:
+빠른 개발 피드백을 위해 검증은 가벼운 순서대로 계층화되어 있습니다:
 
 | 티어 | 검증 범위 | 실행 명령 | 권장 실행 시점 |
 | :--- | :--- | :--- | :--- |
@@ -219,8 +218,8 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 - **수업 팔레트와 미션 블록:** 팔레트·이름표·미션별 허용 블록은 [`entry-palette.ts`](../src/lib/classroom/entry-palette.ts) 한 곳에 둡니다. 격리 iframe은 이 모듈을 가져올 수 없어 `workspace.js`의 `PROGRAMMING_PALETTE`에 복사본을 두며, `tests/entry-palette.test.ts`가 두 목록이 같은지 확인합니다. `EntryStatic.getAllBlocks`는 `Entry.init` 전에 바꿔야 반영됩니다.
 - **저장 파서와 기존 키:** `parseProgrammingProject`는 원래 12종 블록을 기존 분기 그대로 정제하고, 그 밖의 팔레트 블록만 일반 규칙(원래 `params`, 반복·조건 블록에만 `statements`)으로 보존합니다. 이 순서를 바꾸면 기존 작품의 `key`가 달라져 검증·제출 기록과 이름 미션 실행 기록이 어긋납니다. `tests/fixtures/entry-legacy-keys.json`이 기존 키·정규화·채점 결과를 고정하며, 의도한 형식 변경이 아니면 이 파일을 다시 만들지 않습니다.
 - **실행·이벤트:** 프로그래밍 수업은 툴바 실행 버튼 없이 엔트리의 "시작하기/정지하기"를 씁니다(`entry-bot-lab`은 툴바 버튼 유지). 감시기는 모든 오브젝트의 실행 코드가 비면 끝내되, 이벤트로 시작하는 줄이 있으면 결과와 이름 실행 기록을 `finished`로 한 번 보내고 `waiting`을 알린 뒤 정지·15초까지 유지합니다. 이름 실행 기록은 강아지(`entity.parent.id === "entrybot"`)의 묻기·말하기만 남깁니다. 테스트는 `tests/emulator.ts`의 `entryStart`·`entryStop`·`entryReset` 도우미를 씁니다.
-- **오브젝트 추가:** 프로그래밍 수업에서만 `objectEditable`·`objectaddable`·`objectdeletable`을 켭니다. 엔트리 추가 버튼의 `openSpriteManager`를 `add-object-request`로 전달하면 수업 화면이 `ENTRY_SPRITES` 대화상자를 열고, 고른 그림으로 만든 모델을 `add-object`로 보냅니다. `removeObject`는 불러오는 중이 아니면 `entrybot` 삭제를 막습니다. 엔트리는 새 오브젝트를 목록 맨 앞에 넣으므로 파서는 강아지를 `id`로 찾고, 추가 오브젝트의 그림은 목록 파일과 일치할 때만 받아 다시 조립합니다. 오브젝트가 강아지뿐이면 키·정규화는 이전과 같습니다.
-- **심포지엄 후속(2026-10-16):** 원래 12종 블록이 자기 분기 조건에 맞지 않으면 일반 규칙으로 넘기지 않고 거부합니다(교사 작품 보기 오류 방지). 파서는 정규화가 한 번에 수렴하도록 이름을 자른 뒤 다시 다듬고, 엔트리가 음수로 뒤집은 크기는 부호를 유지합니다. 서버는 받은 원문 대신 자체 정규화본을 저장하고 `MAX_PROJECT_BYTES`(32,768)를 클라이언트와 공유합니다. 파서 결과의 `gradeKey`(강아지 코드만)는 이름 미션 실행 기록에, `key`(작품 전체)는 검증·제출 비교에 씁니다. 엔트리의 복제·붙여넣기(`addCloneObject`)는 강아지 복제와 6개 초과를 막고, 추가 직후에는 강아지를 다시 선택합니다. 채점 오류 중 인터프리터가 의도한 `MissionError`만 학생에게 보이고, 나머지는 미션 힌트로 대신합니다.
+- **오브젝트 추가:** 프로그래밍 수업에서만 `objectEditable`·`objectaddable`·`objectdeletable`을 켭니다. `objectaddable`은 `objectEditable`이 켜져 있어야 동작합니다. 엔트리 추가 버튼의 `openSpriteManager`를 `add-object-request`로 전달하면 수업 화면이 `ENTRY_SPRITES` 대화상자를 열고, 고른 그림으로 만든 모델을 `add-object`로 보냅니다. `removeObject`는 불러오는 중이 아니면 `entrybot` 삭제를 막습니다. 엔트리는 새 오브젝트를 목록 맨 앞에 넣으므로 파서는 강아지를 `id`로 찾고, 추가 오브젝트의 그림은 목록 파일과 일치할 때만 받아 다시 조립합니다. 오브젝트가 강아지뿐이면 키·정규화는 이전과 같습니다.
+- **정규화·복제 제약:** 원래 12종 블록이 자기 분기 조건에 맞지 않으면 일반 규칙으로 넘기지 않고 거부합니다(교사 작품 보기 오류 방지). 파서는 정규화가 한 번에 수렴하도록 이름을 자른 뒤 다시 다듬고, 엔트리가 음수로 뒤집은 크기는 부호를 유지합니다. 서버는 받은 원문 대신 자체 정규화본을 저장하고 `MAX_PROJECT_BYTES`(32,768)를 클라이언트와 공유합니다. 파서 결과의 `gradeKey`(강아지 코드만)는 이름 미션 실행 기록에, `key`(작품 전체)는 검증·제출 비교에 씁니다. 엔트리의 복제·붙여넣기(`addCloneObject`)는 강아지 복제와 6개 초과를 막고, 추가 직후에는 강아지를 다시 선택합니다. 채점 오류 중 인터프리터가 의도한 `MissionError`만 학생에게 보이고, 나머지는 미션 힌트로 대신합니다.
 - **채점 범위:** `missionBlockIssue`가 미션 신호로 시작하는 줄(값 블록·반복 안쪽 포함)에서 미션 밖 블록을 찾아 이름표로 안내하고, 서버 인터프리터는 그 뒤에만 실행합니다.
 
 ### 4.2 알고리즘 복습 연구소
@@ -228,7 +227,8 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 
 - **코드 구조:** `src/lib/classroom/review/`에 순수 엔진(샌드위치, 순서도 실행기, 추상화 데이터)을 두고, 화면 컴포넌트는 `src/components/student/review/`에 배치합니다.
 - **순서도 (`flowchart.tsx`):** 퍼즐 실습(3열), 예시 공방(2열), 자유 공방(4열). 임의 JS 실행 없이 순수 표현식 인터프리터(`flow-runner.mjs`)로 동작합니다.
-- **AI 엔드포인트 (`POST /api/classroom/ai`):** HMAC 기반 요청 검증, 학생별 사용량 제한(`csAiUsage/{uid}`: 60초 15회 / 1일 70회), 결과 TTL 캐시(24시간)를 적용합니다.
+- **AI 엔드포인트 (`POST /api/classroom/ai`):** HMAC 기반 요청 검증, 학생별 사용량 장부(`csAiUsage/{uid}`, 한도는 [PRD §4.3](PRD.md#43-선택-복습-수업-공통-정책)), 결과 TTL 캐시(24시간)를 적용합니다.
+- **실제 AI 품질 검사:** 유료인 실제 Solar 호출 검사는 필요한 변경·진단 범위를 먼저 정한 뒤 돌립니다. 기대한 판정이 나올 때까지 반복하지 않고, 운영 DB에 합성 계정·작품을 넣지 않습니다.
 
 ### 4.3 대시보드 및 교사 미리보기
 <a id="대시보드-파일럿"></a>
@@ -237,6 +237,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 
 - **반 선택 세션:** `SessionProvider`의 `useTeacherClass`는 탭 단위 `sessionStorage`로 선택 반을 관리하며 URL 쿼리(`?classId=...`)와 연동됩니다.
 - **교사 수업 미리보기 (`/teacher/preview/[id]`):** `LessonPreview`와 `usePreviewWork`는 실제 `LessonShell`을 `mode="preview"`로 렌더링하며, 학생 학습 컬렉션 쓰기를 엄격히 차단하고 컴포넌트 메모리에서만 동작합니다.
+- **읽기 최적화·손들기 중지 검사:** `tests/help-paused.spec.ts`, `tests/read-polling.spec.ts`로 손들기 중지·교사 수동 조회·권한·느린 응답 경합을 확인합니다. 손들기 활성 모드 검사(`help-requests`, `help-races`, 관련 UI 검사)는 보존하되 공유 설정이 false이면 명시적으로 생략하며 이를 통과로 집계하지 않습니다. 복구 시 설정을 true로 변경한 뒤 재빌드하여 활성 모드 검사를 실행합니다. `tests/read-usage.spec.ts`는 공개 수업 4개·학생 27명·담당 반 11개의 10분 가상 시간 요청 샘플이며 과금 실측이 아닙니다. 다른 Playwright 실행과 병렬로 돌릴 때는 `--output` 경로를 분리해야 합니다. 가상 시계와 서버 시계가 어긋나 활동 갱신 응답은 측정용 fixture로 분리하고 세션 비용은 별도 모형으로 계산합니다.
 
 ### 4.4 학교 시간표 연동 Fixture
 <a id="학교-시간표-연동"></a>

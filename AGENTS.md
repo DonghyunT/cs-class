@@ -23,7 +23,7 @@
 
 ## 아키텍처 & 수업 개발 규칙
 - **환경 분리:** 테스트 및 개발은 `demo-cs-class` 및 에뮬레이터(Auth 9099 / Firestore 8080)만 사용합니다.
-- **컴포넌트 구조:** 화면별 폴더에 둡니다. 학생 수업은 `src/components/student/`(복습 수업은 `student/review/`), 교사는 `teacher/`, 홈은 `home/`, 대시보드는 `dashboard/`, 우리 반 질문은 `community/`, 손들기는 `classroom/`, 탐색은 `explore/`, 설정은 `settings/`, 공통 UI는 `ui/`, 프로그래밍 프로토타입은 `prototype/`입니다. 앱 전체 틀(`app-shell`, 세션, 이동, 로그인)은 `src/components/` 바로 아래에 둡니다.
+- **컴포넌트 구조:** 화면별 폴더에 둡니다. 학생 수업은 `src/components/student/`(복습 수업은 `student/review/`), 교사는 `teacher/`, 홈은 `home/`, 대시보드는 `dashboard/`, 우리 반 질문은 `community/`, 손들기는 `classroom/`, 공개 수업 소개는 `explore/`, 설정은 `settings/`, 공통 UI는 `ui/`, 프로그래밍 프로토타입은 `prototype/`입니다. 앱 전체 틀(`app-shell`, 세션, 이동, 로그인)은 `src/components/` 바로 아래에 둡니다.
 - **수업 수동 저장:** 학생 작업은 반드시 공통 훅 [`useWork`](src/components/student/use-work.ts)를 사용합니다 (모범 코드: `src/components/student/review/flowchart.tsx`).
 - **신규 수업 추가:** 신규 수업 추가 시 [개발 안내의 수업 추가 체크리스트](docs/DEVELOPMENT.md#신규-수업-추가-및-선별-검증-연동-체크리스트) 4단계를 필수 준수합니다.
 - **구현 원칙:** 가장 단순한 구현을 우선하고, 외부 라이브러리·API는 공식 문서와 대조합니다. 같은 방법이 3회 연속 실패하면 가설을 다시 세웁니다.

@@ -307,6 +307,83 @@
       "origin": "completed-consulting-report-doc-slimming-20261013",
       "baseCommit": "ff2a1c0",
       "sha256": "2a2b6672d308f49e05be43b603f37ebd33f1f2ec3fe45011a1106addf8017d5a"
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-13-manual-save.md",
+      "archive": "docs/archive/cs-class/2026-10-18-completed-plans/2026-10-13-manual-save.md",
+      "origin": "completed-plan-archived-20261018",
+      "baseCommit": "de0bcb3",
+      "sha256": "80f23b7bcb531dbf4a61178d9b564300fb3e7773c77575c1ac990316fabdd172"
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-13-scoped-verification.md",
+      "archive": "docs/archive/cs-class/2026-10-18-completed-plans/2026-10-13-scoped-verification.md",
+      "origin": "completed-plan-archived-20261018",
+      "baseCommit": "de0bcb3",
+      "sha256": "64dda3d2ea364e2b7362fe3a8098dcbf18924a1271e16892fbfb2125a45b3108"
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-14-architecture-clarity.md",
+      "archive": "docs/archive/cs-class/2026-10-18-completed-plans/2026-10-14-architecture-clarity.md",
+      "origin": "completed-plan-archived-20261018",
+      "baseCommit": "de0bcb3",
+      "sha256": "74bd02de25d1e4edbb7a1f1b7f1711c3744895ff9b129b5fe62c6a5acfa36189"
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-14-firestore-read-optimization.md",
+      "archive": "docs/archive/cs-class/2026-10-18-completed-plans/2026-10-14-firestore-read-optimization.md",
+      "origin": "completed-plan-archived-20261018",
+      "baseCommit": "de0bcb3",
+      "sha256": "beb3cb6d7215a66da4f9c2147496114a3ef0da9eb2c04d42fc6885dc257e4794"
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-14-manual-refresh-help-pause.md",
+      "archive": "docs/archive/cs-class/2026-10-18-completed-plans/2026-10-14-manual-refresh-help-pause.md",
+      "origin": "completed-plan-archived-20261018",
+      "baseCommit": "de0bcb3",
+      "sha256": "3aa2047ed84557cc757c3e9dd31a0a6b335bd479eaea3752b05e2e90a64b80d0"
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-16-entry-full-palette.md",
+      "archive": "docs/archive/cs-class/2026-10-18-completed-plans/2026-10-16-entry-full-palette.md",
+      "origin": "completed-plan-archived-20261018",
+      "baseCommit": "de0bcb3",
+      "sha256": "fff333067c8280fdcf336888b668e9bf183cd38a18ab65c46d9820a15e64e734"
+    },
+    {
+      "source": "docs/reference/OPERATING_COST_ESTIMATE.md",
+      "archive": "docs/archive/cs-class/2026-10-18-completed-plans/OPERATING_COST_ESTIMATE.md",
+      "origin": "stale-reference-archived-20261018",
+      "baseCommit": "de0bcb3",
+      "sha256": "cad2a55e4783bac60f9f66ba8d93d9075a2ad94130a14c5540c9343cff4e2c04"
+    },
+    {
+      "source": "docs/reference/programming-13.md",
+      "archive": "docs/archive/cs-class/2026-10-18-completed-plans/programming-13.md",
+      "origin": "stale-reference-archived-20261018",
+      "baseCommit": "de0bcb3",
+      "sha256": "a9be461e0c2f96da2c71930b936f6ca5abb65ea518545e5c170f6b3c82674175"
+    },
+    {
+      "source": "docs/reference/algorithm-review-integration.md",
+      "archive": "docs/archive/cs-class/2026-10-18-completed-plans/algorithm-review-integration.md",
+      "origin": "stale-reference-archived-20261018",
+      "baseCommit": "de0bcb3",
+      "sha256": "f024d2f2be16ed14f1b8228e559bc371fadea52fe866a2f3dcc0ecc3a8ef1e30"
+    },
+    {
+      "source": "docs/HANDOFF.md",
+      "archive": "docs/archive/cs-class/2026-10-18-before-handoff-compact/HANDOFF.md",
+      "origin": "handoff-before-compact-20261018",
+      "baseCommit": "de0bcb3",
+      "sha256": "75a3466aa538eccb56aebda3aa5c72ed9777818b8d0aad43a89c4d514759b08d"
+    },
+    {
+      "source": "docs/HANDOFF.md",
+      "archive": "docs/archive/cs-class/2026-10-14-before-architecture-clarity/HANDOFF.md",
+      "origin": "handoff-before-architecture-clarity-20261014",
+      "baseCommit": "6c778dd",
+      "sha256": "4c2c907f918fdb13dbff0fe98a9fec359a95f396cb7885b070c482350a23552e"
     }
   ]
 }

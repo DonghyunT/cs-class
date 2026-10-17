@@ -1,8 +1,14 @@
 # 과거 기록 보관함
 
-목록 갱신: 2026-10-13. 각 원문의 보존 시점은 아래 기록을 따릅니다. 이 폴더는 역사 자료이며 현재 에이전트 지침·요구사항·작업 승인이 아닙니다. 현재 기준은 [프로젝트 안내](../../README.md)에서 확인합니다.
+목록 갱신: 2026-10-18. 각 원문의 보존 시점은 아래 기록을 따릅니다. 이 폴더는 역사 자료이며 현재 에이전트 지침·요구사항·작업 승인이 아닙니다. 현재 기준은 [프로젝트 안내](../../README.md)에서 확인합니다.
 
 ## 보관 기록
+
+- **[2026-10-18 완료 계획·낡은 참고 문서 원문](cs-class/2026-10-18-completed-plans/manifest.json):** `docs/superpowers/plans/`의 완료 계획 6개와 `docs/reference/`의 설명 문서 3개를 `git mv`로 옮겨 내용 그대로 보존했습니다. 지금도 유효한 사실은 현재 문서로 옮겼습니다([안내](cs-class/2026-10-18-completed-plans/README.md)).
+
+- **[2026-10-18 HANDOFF 압축 전 원문](cs-class/2026-10-18-before-handoff-compact/manifest.json):** main@de0bcb3의 HANDOFF를 Git blob(LF) 그대로 보존했습니다. PR #38~#44의 릴리스 세부와 10/14 검증 표를 포함합니다.
+
+- **[2026-10-14 구조 정리 전 인계 원문](cs-class/2026-10-14-before-architecture-clarity/manifest.json):** main@6c778dd의 HANDOFF를 보존했습니다(목록 추가는 2026-10-18).
 
 - **[2026-10-13 문서 다이어트 전 원문](cs-class/2026-10-13-before-doc-slimming/manifest.json):** 규칙 확정 및 문서 슬리밍 작업 착수 전의 AGENTS.md, DEVELOPMENT.md, README.md, PRD.md, DESIGN.md 5개를 Windows 작업 트리 바이트 그대로 보존했습니다.
 
@@ -16,7 +22,7 @@
 
 - **[2026-10-06 학생 화면 작업 마감 전 인계 원문](cs-class/2026-10-06-student-learning-close/manifest.json):** `codex/student-learning-readability`·앱 기준 `603b8ee`의 HANDOFF를 Windows 작업 트리 바이트 그대로 보존했습니다. 1~7차·사용 피드백·수업 전용 틀·7개 개념 배치의 판단/검사/화면과 이전 운영 이력을 포함합니다. 최신 원격·재개 순서·남은 실제200%/OS 입력기·8~12차는 [현재 HANDOFF](../HANDOFF.md)에 요약했습니다. 보관본의 로컬 전용·당시 권한 차단·미완료 표현은 현재 상태/승인이 아닙니다.
 
-- **[2026-10-05 세션 마감 전 인계·통합 원문](cs-class/2026-10-05-session-close/manifest.json):** 기준 main `9af5b9d`의 HANDOFF와 알고리즘 통합 참고 문서를 Windows 작업 트리 바이트 그대로 보존했습니다. 교실 UI·세 복습 공개·원작 실습 복원·서울 함수 배치의 단계별 검사/리뷰/배포와 과거 승인 대기 기록을 포함합니다. 최신 상태·다음 행동은 [HANDOFF](../HANDOFF.md), 원본 이식·실제 Solar 오판 근거는 [참고 자료](../reference/algorithm-review-integration.md)에 요약했습니다. 보관본의 승인·미완료 표현은 당시 상태이며 현재 작업 지시가 아닙니다.
+- **[2026-10-05 세션 마감 전 인계·통합 원문](cs-class/2026-10-05-session-close/manifest.json):** 기준 main `9af5b9d`의 HANDOFF와 알고리즘 통합 참고 문서를 Windows 작업 트리 바이트 그대로 보존했습니다. 교실 UI·세 복습 공개·원작 실습 복원·서울 함수 배치의 단계별 검사/리뷰/배포와 과거 승인 대기 기록을 포함합니다. 최신 상태·다음 행동은 [HANDOFF](../HANDOFF.md), 원본 이식·실제 Solar 오판 근거는 [참고 자료](cs-class/2026-10-18-completed-plans/algorithm-review-integration.md)에 요약했습니다. 보관본의 승인·미완료 표현은 당시 상태이며 현재 작업 지시가 아닙니다.
 
 - **[2026-10-05 UI 개선 전 인계 원문](cs-class/2026-10-05-before-ui-refinement/manifest.json):** 기준 커밋 `d619277`의 HANDOFF를 바이트 그대로 보존했습니다. 10/3~10/4 교사 화면·실제 수업·명부·시간표 릴리스와 검사·CI·배포 근거를 포함합니다. 현재 인계는 [HANDOFF](../HANDOFF.md)에 최신 결과와 남은 행동을 모으고, 과거 릴리스의 세부 반복 기록은 이 보관본에서 확인합니다.
 

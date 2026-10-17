@@ -1,0 +1,61 @@
+{
+  "archivedAt": "2026-10-18 Asia/Seoul",
+  "sourceCommit": "de0bcb312a9087a64cc6747fe6c24d2805cfa68b",
+  "files": [
+    {
+      "source": "docs/superpowers/plans/2026-10-13-manual-save.md",
+      "archived": "2026-10-13-manual-save.md",
+      "bytes": 26127,
+      "sha256": "80f23b7bcb531dbf4a61178d9b564300fb3e7773c77575c1ac990316fabdd172"
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-13-scoped-verification.md",
+      "archived": "2026-10-13-scoped-verification.md",
+      "bytes": 11958,
+      "sha256": "64dda3d2ea364e2b7362fe3a8098dcbf18924a1271e16892fbfb2125a45b3108"
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-14-architecture-clarity.md",
+      "archived": "2026-10-14-architecture-clarity.md",
+      "bytes": 12020,
+      "sha256": "74bd02de25d1e4edbb7a1f1b7f1711c3744895ff9b129b5fe62c6a5acfa36189"
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-14-firestore-read-optimization.md",
+      "archived": "2026-10-14-firestore-read-optimization.md",
+      "bytes": 13381,
+      "sha256": "beb3cb6d7215a66da4f9c2147496114a3ef0da9eb2c04d42fc6885dc257e4794"
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-14-manual-refresh-help-pause.md",
+      "archived": "2026-10-14-manual-refresh-help-pause.md",
+      "bytes": 7386,
+      "sha256": "3aa2047ed84557cc757c3e9dd31a0a6b335bd479eaea3752b05e2e90a64b80d0"
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-16-entry-full-palette.md",
+      "archived": "2026-10-16-entry-full-palette.md",
+      "bytes": 23663,
+      "sha256": "fff333067c8280fdcf336888b668e9bf183cd38a18ab65c46d9820a15e64e734"
+    },
+    {
+      "source": "docs/reference/OPERATING_COST_ESTIMATE.md",
+      "archived": "OPERATING_COST_ESTIMATE.md",
+      "bytes": 7876,
+      "sha256": "cad2a55e4783bac60f9f66ba8d93d9075a2ad94130a14c5540c9343cff4e2c04"
+    },
+    {
+      "source": "docs/reference/programming-13.md",
+      "archived": "programming-13.md",
+      "bytes": 12202,
+      "sha256": "a9be461e0c2f96da2c71930b936f6ca5abb65ea518545e5c170f6b3c82674175"
+    },
+    {
+      "source": "docs/reference/algorithm-review-integration.md",
+      "archived": "algorithm-review-integration.md",
+      "bytes": 6980,
+      "sha256": "f024d2f2be16ed14f1b8228e559bc371fadea52fe866a2f3dcc0ecc3a8ef1e30"
+    }
+  ],
+  "sourceRepresentation": "Moved with git mv; contents unchanged from the LF-normalized Git blobs at the source commit"
+}
