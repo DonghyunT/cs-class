@@ -42,7 +42,7 @@ export function buildNameProject(blocks: NameBlock[] = [{ id: "start", kind: "st
   return JSON.stringify(project);
 }
 
-// Only this pilot's native blocks enter its iframe. Keep editable literals,
+// Only the name mission's native blocks are accepted. Keep editable literals,
 // including empty fields; execution checks must not erase an unfinished draft.
 export function parseNameProject(raw: unknown): { project: Record<string, unknown>; key: string; threads: Node[][] } | null {
   if (typeof raw !== "string" || raw.length > 100_000) return null;
