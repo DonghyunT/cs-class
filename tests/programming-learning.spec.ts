@@ -1,3 +1,4 @@
+import { appendFileSync, mkdirSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { buildProgrammingProject } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
@@ -126,8 +127,15 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     await expect(dialog.getByText("이동 방향으로 10만큼 움직이기", { exact: false })).toBeVisible();
     expect(Math.round((await dialog.boundingBox())!.width)).toBe(860);
     const runToggle = dialog.getByRole("button", { name: "작업실에서 실행해 보기", exact: true });
+    const probeBefore = await dialog.evaluate((el) => JSON.stringify({ attr: el.getAttribute("data-workspace-open"), w: getComputedStyle(el).width, vw: innerWidth }));
     await runToggle.click();
     await expect(dialog.getByRole("button", { name: "작업실 닫기", exact: true })).toBeVisible();
+    const probe = () => dialog.evaluate((el) => { const s = getComputedStyle(el); return JSON.stringify({ t: Math.round(performance.now()), attr: el.getAttribute("data-workspace-open"), runner: el.querySelectorAll("section[aria-label$='실시간 실행 작업실']").length, hasMatch: el.matches(":has(section[aria-label$='실시간 실행 작업실'])"), cls: String(el.className).split(" ").filter((c: string) => c.includes("module")), w: s.width, mw: s.maxWidth, rect: Math.round(el.getBoundingClientRect().width), vw: innerWidth, dialogs: document.querySelectorAll("[role=dialog]").length, sheets: [...document.styleSheets].map((x) => x.href?.split("/").pop()), rules: [...document.styleSheets].flatMap((x) => { try { return [...x.cssRules].map((r) => r.cssText).filter((t) => t.includes("submissionDialog")); } catch { return ["?"]; } }) }); });
+    const states: string[] = [];
+    for (let i = 0; i < 12; i++) { states.push(await probe()); if (states.at(-1)!.includes('"rect":1220')) break; await page.waitForTimeout(500); }
+    const report = [new Date().toISOString(), probeBefore, ...states].join("\n");
+    console.log("[runner-width-probe]\n" + report);
+    mkdirSync("test-results", { recursive: true }); appendFileSync("test-results/runner-width-probe.txt", report + "\n\n");
     await expect.poll(async () => Math.round((await dialog.boundingBox())!.width)).toBe(1220);
     await expect(dialog.locator('iframe[title*="교사 실행 작업실"]')).toBeVisible();
     await expect(dialog.getByRole("button", { name: "무대 처음 위치로", exact: true })).toBeEnabled({ timeout: 20000 });
