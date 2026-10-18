@@ -158,7 +158,7 @@ cs-class/
 │     ├─ classroom/       # 도메인 타입, 진도 측정, 수업 메타데이터
 │     └─ server/          # 인증 장부, Firestore 서비스, Q&A 서버 로직
 ├─ tests/                 # Playwright E2E 검증 및 단위 테스트 스위트
-├─ public/entryjs/        # EntryJS 4.0.23 편집기 및 브라우저 정적 자산
+├─ public/entryjs/        # EntryJS 4.0.23 편집기 및 브라우저 정적 자산 (sprites/library: 엔트리 공식 오브젝트 묶음)
 ├─ scripts/               # 에뮬레이터 시드, 선별 검증기, 문서 검사 스크립트
 ├─ docs/                  # PRD, DESIGN, DEVELOPMENT, FIREBASE_SETUP, HANDOFF 핵심 문서
 │  ├─ plans/              # 진행 중인 작업 계획 (필요할 때 만들고, 끝나면 보관)

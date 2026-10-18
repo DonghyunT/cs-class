@@ -22,6 +22,6 @@ export function EntryLibraryPicker({ onPick }: { onPick: (sprite: LibrarySprite)
         {!shown.length && <li className={styles.libraryEmpty}>찾는 오브젝트가 없어요.</li>}
       </ul>
     </div>
-    <p className={styles.libraryCredit}>오브젝트 그림: 엔트리(네이버 커넥트재단), 교육용 무료 자료</p>
+    <p className={styles.libraryCredit}>오브젝트 그림: 엔트리(네이버 커넥트재단) · CC BY-NC 2.0 · 학교 수업용, 원본 그대로 사용</p>
   </div>;
 }
