@@ -4,11 +4,14 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 import { Check, CheckCircle2, Maximize2, Minimize2, Play, RotateCcw, Send, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ENTRY_SPRITES, MAX_ADDED_OBJECTS, MISSION_BLOCKS } from "@/lib/classroom/entry-palette";
+import { Toast } from "@base-ui/react/toast";
+import { ENTRY_SPRITES, MAX_ADDED_OBJECTS, MAX_FREE_OBJECTS, MISSION_BLOCKS } from "@/lib/classroom/entry-palette";
+import { SuccessToasts } from "@/components/ui/toast";
 import type { Lesson, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { buildEntryProject, parseEntryProject } from "@/lib/classroom/entry-project";
 import { practiceMatches } from "@/lib/classroom/progress";
-import { MAX_PROJECT_BYTES, entryObjectModel, missionBlockIssue, missionStarter, newAddedObject, parseProgrammingProject, type ProgrammingMission } from "@/lib/classroom/programming-entry";
+import { LOCKED_OBJECTS, MAX_PROJECT_BYTES, entryObjectModel, isFreeMission, missionBlockIssue, missionStarter, newAddedObject, parseProgrammingProject, type ProgrammingMission } from "@/lib/classroom/programming-entry";
+import { EntryLibraryPicker } from "./entry-library-picker";
 import { checkNameMission, type NameRun } from "@/lib/classroom/name-entry";
 import type { WorkController, LessonMode } from "./work-controller";
 import { useWorkspaceExpansion } from "./use-workspace-expansion";
@@ -54,6 +57,11 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   const currentRun = useRef<{ id: string; key: string } | null>(null);
   const startOnly = useRef(false);
   const [picking, setPicking] = useState(false);
+  // Dog-free lessons pick from the Entry library and warn, without undoing, when work leaves the mission's intent.
+  const free = !!mission && isFreeMission(mission.id);
+  const [toasts] = useState(() => Toast.createToastManager());
+  const lastIssue = useRef<string | null>(null);
+  const objectCount = (raw: unknown) => { const p = parseProgrammingProject(raw); return p ? p.added.length + (p.mainIndex >= 0 ? 1 : 0) : 0; };
   const [localFeedback, setLocalFeedback] = useState("");
   const [localFocus, setLocalFocus] = useState(0);
   const localFeedbackRef = useRef<HTMLParagraphElement>(null);
@@ -122,6 +130,11 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
           setRunNotice("작품 내용이 바뀌어 실행 확인을 다시 시작해요.");
         }
         editorProject.current = message.project;
+        if (free && next) {
+          const issue = missionBlockIssue(mission!.id, message.project);
+          if (issue && issue !== lastIssue.current) toasts.add({ title: issue, type: "warning", priority: "high" });
+          lastIssue.current = issue;
+        }
         update({ ...draft, entryProject: message.project, practiceOrder: next?.order ?? draft.practiceOrder });
         setError(!next ? "이번 미션의 블록과 입력값을 확인해 주세요. 읽지 못한 입력은 화면에 유지하고 있어요." : "bytes" in next && next.bytes > MAX_PROJECT_BYTES ? "작품이 저장 한도를 넘었어요. 쓰지 않는 블록이나 오브젝트를 지워 주세요." : "");
       } else if (message.type === "exported" && typeof message.project === "string" && pending.current && pending.current.id === message.id) {
@@ -160,17 +173,23 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       else if (message.type === "focus-return") document.getElementById(mission ? "entry-reset" : "entry-run")?.focus();
       else if (mission && message.type === "waiting") setResult((text) => text.endsWith(WAITING) ? text : `${text}${WAITING}`);
       else if (mission && message.type === "waiting-ended") setResult((text) => `${text.endsWith(WAITING) ? text.slice(0, -WAITING.length) : text} ${message.reason === "timeout" ? "15초가 지나 실행을 멈췄어요." : "실행을 멈췄어요."}`);
+      else if (free && message.type === "clone-blocked") setResult(`오브젝트는 ${MAX_FREE_OBJECTS}개까지 둘 수 있어요.`);
       else if (mission && message.type === "clone-blocked") setResult(message.reason === "main" ? "강아지는 복제할 수 없어요. ‘오브젝트 추가하기’로 새 오브젝트를 더해 주세요." : `오브젝트는 강아지 말고 ${MAX_ADDED_OBJECTS}개까지 추가할 수 있어요.`);
+      else if (free && message.type === "object-added" && typeof message.name === "string") setResult(`‘${message.name.slice(0, 20)}’을(를) 추가했어요. 오브젝트 목록에서 고른 오브젝트에 코드를 만들어요.`);
+      else if (free && message.type === "object-locked" && typeof message.name === "string") setResult(`‘${message.name.slice(0, 20)}’은(는) 이번 미션에 꼭 필요해서 지울 수 없어요.`);
+      else if (free && message.type === "last-object") setResult("무대에는 오브젝트가 하나 이상 있어야 해요. 새 오브젝트를 추가한 뒤 지워 주세요.");
+      else if (free && message.type === "picture-locked") setResult("모양은 목록에서 보고 고르기만 할 수 있어요. 다른 그림은 ‘오브젝트 추가하기’로 더해 주세요.");
       else if (mission && message.type === "object-added" && typeof message.name === "string") setResult(`‘${message.name.slice(0, 20)}’을(를) 추가했어요. 이 오브젝트의 코드를 만들려면 오브젝트 목록에서 고르세요. 검증은 강아지 코드로 해요.`);
       else if (mission && message.type === "main-object-locked") setResult("강아지는 미션 검증에 쓰여서 지울 수 없어요. 추가한 오브젝트만 지울 수 있어요.");
       else if (mission && message.type === "add-object-request" && !locked) {
-        if ((parseProgrammingProject(editorProject.current ?? draft.entryProject)?.added.length ?? 0) >= MAX_ADDED_OBJECTS) setResult(`오브젝트는 강아지 말고 ${MAX_ADDED_OBJECTS}개까지 추가할 수 있어요.`);
+        if (free && objectCount(editorProject.current ?? draft.entryProject) >= MAX_FREE_OBJECTS) setResult(`오브젝트는 ${MAX_FREE_OBJECTS}개까지 둘 수 있어요. 쓰지 않는 오브젝트를 지운 뒤 추가해 주세요.`);
+        else if (!free && (parseProgrammingProject(editorProject.current ?? draft.entryProject)?.added.length ?? 0) >= MAX_ADDED_OBJECTS) setResult(`오브젝트는 강아지 말고 ${MAX_ADDED_OBJECTS}개까지 추가할 수 있어요.`);
         else setPicking(true);
       }
     }
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
-  }, [draft, locked, update, mission, parse, program, mode, phase, preparing, actionsBlocked, onSave, asksQuestion]);
+  }, [draft, locked, update, mission, parse, program, mode, phase, preparing, actionsBlocked, onSave, asksQuestion, free, toasts]);
 
   useEffect(() => {
     if (!bootReady) return;
@@ -243,7 +262,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       </div>}
       <div className={styles.frameScroll} tabIndex={0} role="region" aria-label="엔트리 작업실 가로 이동" aria-describedby="entry-help" aria-busy={phase === "loading"}>
         {phase === "loading" && <p className={styles.loading} role="status">엔트리 작업실을 불러오는 중…</p>}
-        <iframe key={attempt} ref={frame} src={mission ? `/entryjs/workspace.html?exercise=programming&mission=${mission.id}${mission.variables ? "&vars=1" : ""}${mission.keyEvents ? "&keys=1" : ""}` : "/entryjs/workspace.html"} title={mission ? `${mission.title} 엔트리 작업실` : "엔트리봇 블록 편집기와 실행 무대"} sandbox="allow-scripts" className={styles.frame} inert={locked || preparing || phase !== "ready"} />
+        <iframe key={attempt} ref={frame} src={mission ? `/entryjs/workspace.html?exercise=programming&mission=${mission.id}${mission.variables ? "&vars=1" : ""}${mission.keyEvents ? "&keys=1" : ""}${free ? `&free=1&locked=${(LOCKED_OBJECTS[mission.id] ?? []).join(",")}` : ""}` : "/entryjs/workspace.html"} title={mission ? `${mission.title} 엔트리 작업실` : "엔트리봇 블록 편집기와 실행 무대"} sandbox="allow-scripts" className={styles.frame} inert={locked || preparing || phase !== "ready"} />
       </div>
       <p className={styles.result} role="status">{result}</p>
       {mission?.keyEvents && <div className={styles.keyPad} aria-label="방향키 실행">{[["38", "↑ 위"], ["37", "← 왼쪽"], ["40", "↓ 아래"], ["39", "→ 오른쪽"]].map(([key, label]) => <Button key={key} variant="outline" size="sm" disabled={!running || locked} onClick={() => send("key", { key })}>{label}</Button>)}</div>}
@@ -252,8 +271,16 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         <span><strong>검증</strong>{validation ? validation.passed ? "검증 통과" : "조건 보완 필요" : work.validation ? "다시 검증 필요" : "검증 전"}</span>
         <span><strong>{mode === "preview" ? "체험 제출" : "제출"}</strong>{submitted ? mode === "preview" ? "현재 작품 체험 제출 확인" : "현재 작품 제출 완료" : work.submission ? mode === "preview" ? "이전 체험 제출 유지 · 수정 중" : "이전 제출 유지 · 수정 중" : mode === "preview" ? "체험 제출 전" : "아직 제출 전"}</span>
       </div>
-      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} {mission ? "무대 아래 ‘시작하기’로 실행하고, ‘오브젝트 추가하기’로 공·별 같은 오브젝트를 더할 수 있어요. 검증은 강아지의 코드로만 해요." : ""} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 {mission ? "초기화" : "실행"} 버튼으로 돌아와요.</p></details>
-      {mission && <Dialog open={picking} onOpenChange={setPicking}><DialogContent className={styles.spriteDialog}><DialogHeader><DialogTitle>오브젝트 추가하기</DialogTitle><DialogDescription>무대에 더할 그림을 골라요. 강아지 말고 {MAX_ADDED_OBJECTS}개까지 추가할 수 있어요.</DialogDescription></DialogHeader>
+      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} {free ? "무대 아래 ‘시작하기’로 실행해요. ‘오브젝트 추가하기’로 엔트리 오브젝트와 배경을 더하고, 고른 오브젝트에 코드를 만들어요. 시작하기 코드는 한 오브젝트에만 두면 그 오브젝트의 코드로 검증해요. ‘모양’ 탭에서 오브젝트의 모양을 볼 수 있어요." : mission ? "무대 아래 ‘시작하기’로 실행하고, ‘오브젝트 추가하기’로 공·별 같은 오브젝트를 더할 수 있어요. 검증은 강아지의 코드로만 해요." : ""} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 {mission ? "초기화" : "실행"} 버튼으로 돌아와요.</p></details>
+      {free && <Dialog open={picking} onOpenChange={setPicking}><DialogContent className={styles.libraryDialog}><DialogHeader><DialogTitle>오브젝트 추가하기</DialogTitle><DialogDescription>분류를 고르거나 이름으로 찾아요. 오브젝트는 {MAX_FREE_OBJECTS}개까지 둘 수 있어요.</DialogDescription></DialogHeader>
+        <EntryLibraryPicker onPick={(sprite) => {
+          const added = newAddedObject(sprite.id, objectCount(editorProject.current ?? draft.entryProject), true);
+          setPicking(false);
+          if (added) send("add-object", { object: entryObjectModel(added), back: sprite.category === "background" });
+        }} />
+      </DialogContent></Dialog>}
+      {free && <SuccessToasts manager={toasts} label="미션 안내" />}
+      {mission && !free && <Dialog open={picking} onOpenChange={setPicking}><DialogContent className={styles.spriteDialog}><DialogHeader><DialogTitle>오브젝트 추가하기</DialogTitle><DialogDescription>무대에 더할 그림을 골라요. 강아지 말고 {MAX_ADDED_OBJECTS}개까지 추가할 수 있어요.</DialogDescription></DialogHeader>
         <ul className={styles.spriteList}>{ENTRY_SPRITES.map((sprite) => <li key={sprite.id}><button type="button" onClick={() => {
           const added = newAddedObject(sprite.id, parseProgrammingProject(editorProject.current ?? draft.entryProject)?.added.length ?? 0);
           setPicking(false);

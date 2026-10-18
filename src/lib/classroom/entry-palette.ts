@@ -1,6 +1,7 @@
 // The programming lesson's EntryJS palette. public/entryjs/workspace.js keeps a
 // copy because the sandboxed iframe cannot import this module; a logic test keeps
 // both lists equal. Labels follow EntryJS 4.0.23 ko.js wording with ( ) for inputs.
+import library from "./entry-library.json";
 export const ENTRY_PALETTE = [
   { category: "start", blocks: ["when_run_button_click", "when_some_key_pressed", "mouse_clicked", "mouse_click_cancled", "when_object_click", "when_object_click_canceled"] },
   { category: "flow", blocks: ["wait_second", "repeat_basic", "repeat_inf", "repeat_while_true", "stop_repeat", "continue_repeat", "_if", "if_else", "wait_until_true", "stop_object", "restart_project", "when_clone_start", "create_clone", "delete_clone", "remove_all_clones"] },
@@ -77,10 +78,22 @@ export const LESSON_SPRITES = [
   { id: "soil", name: "흙", file: "/entryjs/sprites/soil.png", width: 960, height: 540 },
 ] as const;
 export type EntrySprite = { id: string; name: string; file: string; width: number; height: number; pictures?: readonly { file: string; width: number; height: number }[] };
+// Official Entry objects bundled by scripts/fetch-entry-library.mjs for the dog-free lessons
+// (NAVER Connect Foundation, free for education with attribution).
+export const LIBRARY_CATEGORIES = [
+  ["entrybot", "엔트리봇"], ["people", "사람"], ["animal", "동물"], ["plant", "식물"], ["vehicle", "탈것"], ["building", "건물"],
+  ["food", "음식"], ["environment", "환경"], ["thing", "물건"], ["fantasy", "판타지"], ["interface", "인터페이스"], ["background", "배경"],
+] as const;
+export type LibrarySprite = EntrySprite & { category: (typeof LIBRARY_CATEGORIES)[number][0]; thumb: string };
+export const LIBRARY_SPRITES: readonly LibrarySprite[] = (library as Omit<LibrarySprite, "file" | "width" | "height">[]).map((s) => ({ ...s, ...s.pictures![0] }));
+// The dog-free lessons' starting object: the classic walking Entrybot.
+export const ENTRYBOT_SPRITE = "e557fe88b77e7209c34993968";
 // Every sprite a saved object may use, picker or lesson.
-export const TRUSTED_SPRITES: readonly EntrySprite[] = [...ENTRY_SPRITES, ...LESSON_SPRITES];
+export const TRUSTED_SPRITES: readonly EntrySprite[] = [...ENTRY_SPRITES, ...LESSON_SPRITES, ...LIBRARY_SPRITES];
 export const spritePictures = (sprite: EntrySprite) => sprite.pictures ?? [{ file: sprite.file, width: sprite.width, height: sprite.height }];
 export const MAX_ADDED_OBJECTS = 5;
+// Dog-free projects: every object is equal, up to this many.
+export const MAX_FREE_OBJECTS = 12;
 
 export const blockLabel = (type: string) => BLOCK_LABELS[type] ?? "기타 블록";
 // Mission blocks shown to students; literal inputs are left out.

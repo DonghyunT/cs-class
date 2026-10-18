@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { buildProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, missionStarter, parseProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
 import { db, headers, readyStudent, entryReset, entryStart } from "./emulator";
 
@@ -16,13 +16,19 @@ const compare = (left: EntryNode, op: string, right: EntryNode) => node("boolean
 const ifElse = (condition: EntryNode, yes: EntryNode[], no: EntryNode[]): EntryNode => ({ ...node("if_else", condition, null, null), statements: [yes, no] });
 const store = (name: string) => [ask(), node("set_variable", `cs-${name}`, answer(), null)];
 
+// Dog-free lessons start with the official Entrybot (`bot`); solutions are built on it.
+const onBot = (mission: string, threads: EntryNode[][]) => buildProgrammingProject(undefined, parseProgrammingProject(missionStarter(mission))!.added.map((o) => ({ ...o, threads })), -1);
 // Reference solutions a student could build from the mission hints.
 const solutions: Record<string, { project: string; runs: [string[], string][] }> = {
-  average: { project: buildProgrammingProject([[start(), ...store("A"), ...store("B"), speak(node("calc_basic", node("calc_basic", variable("A"), "PLUS", variable("B")), "DIVIDE", number("2")))]]), runs: [[["6", "4"], "5"]] },
-  pass: { project: buildProgrammingProject([[start(), ask("점수는?"), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [speak(text("합격"))], [speak(text("불합격"))])]]), runs: [[["60"], "합격"], [["59"], "불합격"]] },
-  freethrow: { project: buildProgrammingProject([[start(), ask("몇 개?"), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("8")), [speak(text("훌륭해요!"))], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak(text("잘했어요!"))], [speak(text("더 연습해 보자!"))])])]]), runs: [[["6"], "잘했어요!"]] },
-  escape: { project: buildProgrammingProject([[start(), ...store("A"), ...store("B"), ifElse(node("boolean_and_or", compare(variable("A"), "EQUAL", number("1")), "OR", compare(variable("B"), "EQUAL", number("1"))), [speak(text("탈출 성공!"))], [speak(text("탈출 실패"))])]]), runs: [[["0", "1"], "탈출 성공!"], [["0", "0"], "탈출 실패"]] },
+  average: { project: onBot("average", [[start(), ...store("A"), ...store("B"), speak(node("calc_basic", node("calc_basic", variable("A"), "PLUS", variable("B")), "DIVIDE", number("2")))]]), runs: [[["6", "4"], "5"]] },
+  pass: { project: onBot("pass", [[start(), ask("점수는?"), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [speak(text("합격"))], [speak(text("불합격"))])]]), runs: [[["60"], "합격"], [["59"], "불합격"]] },
+  freethrow: { project: onBot("freethrow", [[start(), ask("몇 개?"), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("8")), [speak(text("훌륭해요!"))], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak(text("잘했어요!"))], [speak(text("더 연습해 보자!"))])])]]), runs: [[["6"], "잘했어요!"]] },
+  escape: { project: onBot("escape", [[start(), ...store("A"), ...store("B"), ifElse(node("boolean_and_or", compare(variable("A"), "EQUAL", number("1")), "OR", compare(variable("B"), "EQUAL", number("1"))), [speak(text("탈출 성공!"))], [speak(text("탈출 실패"))])]]), runs: [[["0", "1"], "탈출 성공!"], [["0", "0"], "탈출 실패"]] },
 };
+
+// Work saved before the lessons dropped the dog keeps the dog and still runs and grades.
+solutions.legacy = { project: buildProgrammingProject([[start(), ask("점수는?"), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [speak(text("합격"))], [speak(text("불합격"))])]]), runs: [[["61"], "합격"]] };
+const missionOf = (key: string) => key === "legacy" ? "pass" : key;
 
 async function open(page: Page, mission?: string) {
   // Leave the previous editor first so it cannot save over the new fixture.
@@ -32,7 +38,7 @@ async function open(page: Page, mission?: string) {
   await db.collection("csClasses").doc("2-1").update({ currentLessonId: id, openedLessonIds: ["programming-13", id] });
   if (mission) {
     const work: Work = await (await page.request.get(endpoint)).json();
-    expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice", programming: { mission, projects: { [mission]: solutions[mission].project }, reflection: "" } } } })).status()).toBe(200);
+    expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice", programming: { mission: missionOf(mission), projects: { [missionOf(mission)]: solutions[mission].project }, reflection: "" } } } })).status()).toBe(200);
   }
   await page.goto(`/classroom/${id}?from=dashboard`);
 }
@@ -69,7 +75,7 @@ for (const mission of Object.keys(solutions)) {
     for (const [inputs, said] of solutions[mission].runs) {
       await entryStart(page).click();
       for (const value of inputs) {
-        const input = frame.getByLabel("강아지 질문 대답"); await expect(input).toBeVisible(); await input.fill(value); await input.press("Enter");
+        const input = frame.getByLabel("질문 대답", { exact: true }); await expect(input).toBeVisible(); await input.fill(value); await input.press("Enter");
       }
       await expect(page.getByRole("status").filter({ hasText: `마지막 말: ${said}` })).toBeVisible({ timeout: 10000 });
       await expect(entryStart(page)).toBeVisible();
@@ -77,7 +83,7 @@ for (const mission of Object.keys(solutions)) {
     await page.getByRole("button", { name: "조건 검증", exact: true }).click();
     await expect(page.locator("#practice-feedback")).toContainText("목표 조건을 확인했어요");
     await page.getByRole("button", { name: "작품 제출", exact: true }).click();
-    await expect.poll(async () => !!((await (await page.request.get(endpoint)).json()) as Work).missions?.[mission]?.submission).toBe(true);
+    await expect.poll(async () => !!((await (await page.request.get(endpoint)).json()) as Work).missions?.[missionOf(mission)]?.submission).toBe(true);
   });
 }
 
@@ -87,7 +93,7 @@ test("「프로그래밍의 기초」에 남은 평균 작품은 저장되지만
   await db.collection("csWork").doc(`student-20101__${old}`).delete();
   await db.collection("csClasses").doc("2-1").update({ currentLessonId: old, openedLessonIds: [old, id] });
   const work: Work = await (await page.request.get(oldEndpoint)).json();
-  const saved = await page.request.post(oldEndpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, programming: { mission: "average", projects: { average: solutions.average.project }, reflection: "" } } } });
+  const saved = await page.request.post(oldEndpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, programming: { mission: "average", projects: { average: solutions.legacy.project }, reflection: "" } } } });
   expect(saved.status()).toBe(200);
   const normalized = await saved.json() as Work;
   expect(normalized.draft.programming?.mission).toBe("name");

@@ -150,7 +150,8 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     };
   }
   function run(signal: string, inputs: string[]) {
-    const lines = p!.threads.filter((t) => signal === "click" ? t[0]?.type === "when_run_button_click" : t[0]?.type === "when_some_key_pressed" && t[0].params[1] === signal);
+    // A dog-free project runs the start line of whichever object owns it (missionBlockIssue keeps it to one object).
+    const lines = (p!.free ? p!.added.flatMap((o) => o.threads) : p!.threads).filter((t) => signal === "click" ? t[0]?.type === "when_run_button_click" : t[0]?.type === "when_some_key_pressed" && t[0].params[1] === signal);
     if (lines.length !== 1) throw new MissionError("시작 신호마다 한 줄의 코드를 연결해 주세요.");
     const m = machine(inputs);
     m.run(lines[0].slice(1), null);
@@ -161,7 +162,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     const tree = p!.added.find((o) => o.sprite === "tree-growth");
     if (!tree) throw new MissionError("나무 오브젝트가 없어요. ‘처음 작품으로’ 버튼으로 시작 작품을 다시 불러와 주세요.");
     const actorOf = (id: string, sprite: string, index = 0): Actor => ({ id, count: spritePictures(TRUSTED_SPRITES.find((item) => item.id === sprite)!).length, index, said: [] });
-    const cast = [{ actor: { id: "entrybot", count: 1, index: 0, said: [] } as Actor, threads: p!.threads }, ...p!.added.map((o) => ({ actor: actorOf(o.id, o.sprite, o.picture), threads: o.threads }))];
+    const cast = [...(p!.free ? [] : [{ actor: { id: "entrybot", count: 1, index: 0, said: [] } as Actor, threads: p!.threads }]), ...p!.added.map((o) => ({ actor: actorOf(o.id, o.sprite, o.picture), threads: o.threads }))];
     const grown = cast.find((c) => c.actor.id === tree.id)!.actor, last = grown.count - 1;
     const m = machine([], true);
     const fire = (event: string, only?: Actor) => { for (const c of cast) if (!only || c.actor === only) for (const t of c.threads) if (t[0]?.type === event) m.run(t.slice(1), c.actor); };
