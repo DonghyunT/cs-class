@@ -21,10 +21,12 @@ function treeSolution() {
   const code = [[node("mouse_clicked", null), node("change_variable", "cs-clicks", text("1"), null), ...["5", "10", "15", "20", "25"].map(grow)]];
   return buildProgrammingProject(undefined, starter.added.map((o) => o.id === "tree" ? { ...o, threads: code } : o), starter.mainIndex, true);
 }
+// Dog-free lessons start with the official Entrybot (`bot`); solutions are built on it.
+const onBot = (mission: string, threads: EntryNode[][]) => buildProgrammingProject(undefined, parseProgrammingProject(missionStarter(mission))!.added.map((o) => ({ ...o, threads })), -1);
 const solutions: Record<string, string> = {
-  square: buildProgrammingProject([[start(), ...draw(number("4"), node("angle", "90"), "100")]]),
-  polygon: buildProgrammingProject([[start(), node("ask_and_wait", text("변의 수는?"), null), ...draw(answer(), node("calc_basic", number("360"), "DIVIDE", answer()))]]),
-  safe: buildProgrammingProject([[start(), { ...node("repeat_while_true", compare(answer(), "EQUAL", number("1234")), "until", null), statements: [[node("ask_and_wait", text("비밀번호는?"), null)]] }, node("dialog", text("금고가 열렸어요!"), "speak", null)]]),
+  square: onBot("square", [[start(), ...draw(number("4"), node("angle", "90"), "100")]]),
+  polygon: onBot("polygon", [[start(), node("ask_and_wait", text("변의 수는?"), null), ...draw(answer(), node("calc_basic", number("360"), "DIVIDE", answer()))]]),
+  safe: onBot("safe", [[start(), { ...node("repeat_while_true", compare(answer(), "EQUAL", number("1234")), "until", null), statements: [[node("ask_and_wait", text("비밀번호는?"), null)]] }, node("dialog", text("금고가 열렸어요!"), "speak", null)]]),
   tree: treeSolution(),
 };
 
@@ -62,18 +64,18 @@ test("반복 수업은 공개되어 미션 네 개(필수 셋·도전 하나)를
 test("반복 수업 도형: 실제 엔트리에서 그린 뒤 제자리로 돌아오고 서버 검증·제출이 일치한다", async ({ page }) => {
   test.setTimeout(120000);
   await open(page, "square");
-  const before = await stageOf(page, "entrybot");
+  const before = await stageOf(page, "bot");
   await entryStart(page).click();
   await expect(entryStart(page)).toBeVisible({ timeout: 10000 });
-  const after = await stageOf(page, "entrybot");
+  const after = await stageOf(page, "bot");
   expect([after.x, after.y]).toEqual([before.x, before.y]);
   await validateAndSubmit(page, "square");
   const frame = await open(page, "polygon");
-  const start5 = await stageOf(page, "entrybot");
+  const start5 = await stageOf(page, "bot");
   await entryStart(page).click();
-  const input = frame.getByLabel("강아지 질문 대답"); await expect(input).toBeVisible(); await input.fill("5"); await input.press("Enter");
+  const input = frame.getByLabel("질문 대답", { exact: true }); await expect(input).toBeVisible(); await input.fill("5"); await input.press("Enter");
   await expect(entryStart(page)).toBeVisible({ timeout: 10000 });
-  const end5 = await stageOf(page, "entrybot");
+  const end5 = await stageOf(page, "bot");
   expect([end5.x, end5.y]).toEqual([start5.x, start5.y]);
   await validateAndSubmit(page, "polygon");
 });
@@ -84,7 +86,7 @@ test("반복 수업 금고: 맞힐 때까지 묻고, 다시 실행하면 처음�
   for (let run = 0; run < 2; run++) {
     await entryStart(page).click();
     for (const value of ["1111", "1234"]) {
-      const input = frame.getByLabel("강아지 질문 대답"); await expect(input).toBeVisible(); await input.fill(value); await input.press("Enter");
+      const input = frame.getByLabel("질문 대답", { exact: true }); await expect(input).toBeVisible(); await input.fill(value); await input.press("Enter");
     }
     await expect(page.getByRole("status").filter({ hasText: "마지막 말: 금고가 열렸어요!" })).toBeVisible({ timeout: 10000 });
     await expect(entryStart(page)).toBeVisible();
@@ -106,4 +108,28 @@ test("반복 수업 나무: 시작 작품의 나무가 실제 엔트리에서 �
   await entryStop(page).click();
   await expect(entryStart(page)).toBeVisible();
   await validateAndSubmit(page, "tree");
+});
+
+test("반복 수업 오브젝트: 분류형 창에서 연필을 더하고, 모양 탭을 보며, 나무·물뿌리개는 지울 수 없다", async ({ page }) => {
+  test.setTimeout(120000);
+  const frame = await open(page, "square");
+  const objectIds = () => page.frames().find((f) => f.url().includes("/entryjs/workspace.html"))!.evaluate(() => (window as unknown as { Entry: { container: { getAllObjects: () => { id: string }[] } } }).Entry.container.getAllObjects().map((o) => o.id));
+  expect(await objectIds()).toEqual(["bot"]);
+  await frame.getByText("오브젝트 추가하기").first().click();
+  const dialog = page.getByRole("dialog", { name: "오브젝트 추가하기" });
+  await expect(dialog.getByRole("button", { name: "배경", exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "물건", exact: true }).click();
+  await dialog.getByRole("button", { name: /^연필\(1\)/ }).click();
+  await expect(dialog).toBeHidden();
+  await expect.poll(objectIds).toHaveLength(2);
+  await expect(page.getByRole("status").filter({ hasText: "‘연필(1)’을(를) 추가했어요" })).toBeVisible();
+  // The shape tab lists shapes; the painter stays hidden.
+  await frame.locator("#entryPictureTab").click();
+  await expect(frame.locator(".entryPlaygroundPictureElement").first()).toBeVisible();
+  await expect(frame.locator(".entryPlaygroundPainter")).toBeHidden();
+  // The tree mission keeps its tree and watering can.
+  await open(page, "tree");
+  await page.frames().find((f) => f.url().includes("/entryjs/workspace.html"))!.evaluate(() => (window as unknown as { Entry: { container: { removeObject: (id: string) => void } } }).Entry.container.removeObject("tree"));
+  await expect(page.getByRole("status").filter({ hasText: "‘나무’은(는) 이번 미션에 꼭 필요해서 지울 수 없어요." })).toBeVisible();
+  expect(await objectIds()).toContain("tree");
 });

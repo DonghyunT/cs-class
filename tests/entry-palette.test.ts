@@ -396,3 +396,68 @@ test("나무 키우기는 클릭할 때만 한 단계씩 자라고 다 자라면
   const noTree = buildProgrammingProject(undefined, parseProgrammingProject(missionStarter("tree"))!.added.filter((o) => o.id !== "tree"), 1, true);
   expect(checkProgrammingMission("tree", noTree).message).toContain("나무 오브젝트가 없어요");
 });
+
+// Dog-free lessons (conditionals, loops) start with the official Entrybot and grade whichever object owns the start line.
+import library from "../src/lib/classroom/entry-library.json";
+import { ENTRYBOT_SPRITE, LIBRARY_CATEGORIES, MAX_FREE_OBJECTS } from "../src/lib/classroom/entry-palette";
+import { existsSync, statSync } from "node:fs";
+const freeProject = (objects: { sprite: string; threads?: EntryNode[][] }[]) => buildProgrammingProject(undefined, objects.map((o, i) => ({ id: `o${i}`, name: `오브젝트${i}`, sprite: o.sprite, rotateMethod: "free" as const, threads: o.threads ?? [], entity: { x: 0, y: 0, scaleX: 0.4, scaleY: 0.4, rotation: 0, direction: 90, visible: true } })), -1);
+const pen = library.find((s) => s.name === "연필(1)")!.id;
+
+test("조건·반복 수업은 강아지 없이 엔트리봇으로 시작하고, 기초 수업은 그대로 강아지로 시작한다", () => {
+  for (const id of ["average", "pass", "freethrow", "escape", "square", "polygon", "safe"]) {
+    const p = parseProgrammingProject(missionStarter(id))!;
+    expect(p.free, id).toBe(true);
+    expect(p.added.map((o) => o.sprite), id).toEqual([ENTRYBOT_SPRITE]);
+    expect(parseProgrammingProject(JSON.stringify(p.project))!.key, id).toBe(p.key);
+  }
+  expect(parseProgrammingProject(missionStarter("tree"))!.free).toBe(true);
+  for (const id of ["name", "multiply", "move", "keys"]) expect(parseProgrammingProject(missionStarter(id))!.free, id).toBe(false);
+});
+
+test("강아지 없는 작품은 시작 줄을 가진 한 오브젝트로 채점하고, 두 오브젝트에 나뉘면 안내하며 막는다", () => {
+  expect(checkProgrammingMission("square", freeProject([{ sprite: ENTRYBOT_SPRITE }, { sprite: pen, threads: [square()] }])).passed).toBe(true);
+  expect(checkProgrammingMission("square", freeProject([{ sprite: ENTRYBOT_SPRITE, threads: [square()] }])).passed).toBe(true);
+  const split = freeProject([{ sprite: ENTRYBOT_SPRITE, threads: [[start(), speak("안녕")]] }, { sprite: pen, threads: [square()] }]);
+  expect(missionBlockIssue("square", split)).toContain("한 오브젝트에만");
+  expect(checkProgrammingMission("square", split).passed).toBe(false);
+  // Decorations on other events are not graded.
+  const decorated = freeProject([{ sprite: ENTRYBOT_SPRITE, threads: [[node("when_object_click", null), speak("완성!")]] }, { sprite: pen, threads: [square()] }]);
+  expect(missionBlockIssue("square", decorated)).toBeNull();
+  expect(checkProgrammingMission("square", decorated).passed).toBe(true);
+  const pass = [start(), node("ask_and_wait", text("점수는?"), null), { ...node("if_else", compare(answer(), "GREATER_OR_EQUAL", number("60")), null, null), statements: [[speak("합격")], [speak("불합격")]] }];
+  expect(checkProgrammingMission("pass", freeProject([{ sprite: pen }, { sprite: ENTRYBOT_SPRITE, threads: [pass] }])).passed).toBe(true);
+  expect(checkProgrammingMission("pass", freeProject([{ sprite: pen }])).passed).toBe(false);
+});
+
+test("강아지 없는 작품은 오브젝트 수·그림을 검사하고 중복 모양은 한 번만 남긴다", () => {
+  expect(parseProgrammingProject(freeProject(Array.from({ length: MAX_FREE_OBJECTS }, () => ({ sprite: pen })))!)).not.toBeNull();
+  expect(parseProgrammingProject(freeProject(Array.from({ length: MAX_FREE_OBJECTS + 1 }, () => ({ sprite: pen })))!)).toBeNull();
+  const raw = JSON.parse(freeProject([{ sprite: ENTRYBOT_SPRITE }]));
+  raw.objects[0].sprite.pictures.push({ ...raw.objects[0].sprite.pictures[0], id: "copy" });
+  expect(parseProgrammingProject(JSON.stringify(raw))!.key).toBe(parseProgrammingProject(freeProject([{ sprite: ENTRYBOT_SPRITE }]))!.key);
+  raw.objects[0].sprite.pictures[0].fileurl = "https://example.com/x.png";
+  raw.objects[0].selectedPictureId = raw.objects[0].sprite.pictures[0].id;
+  // A lone object with an unknown picture is read as the dog, as before objects could be added; the picture is never kept.
+  expect(JSON.stringify(parseProgrammingProject(JSON.stringify(raw))!.project)).not.toContain("example.com");
+  expect(parseProgrammingProject(JSON.stringify(raw))!.free).toBe(false);
+  raw.objects.push(JSON.parse(freeProject([{ sprite: pen }])).objects[0]);
+  expect(parseProgrammingProject(JSON.stringify(raw))).toBeNull();
+  expect(parseProgrammingProject(exported([[start()]]))!.free).toBe(false);
+});
+
+test("엔트리 오브젝트 묶음은 파일·분류·크기가 맞고 위험한 SVG가 없다", () => {
+  const categories = new Set<string>(LIBRARY_CATEGORIES.map(([id]) => id));
+  expect(library.length).toBeGreaterThanOrEqual(200);
+  expect(library.some((s) => s.id === ENTRYBOT_SPRITE)).toBe(true);
+  for (const sprite of library) {
+    expect(categories.has(sprite.category), sprite.name).toBe(true);
+    expect(sprite.pictures.length, sprite.name).toBeLessThanOrEqual(10);
+    for (const file of [sprite.thumb, ...sprite.pictures.map((p) => p.file)]) {
+      const path = `public${file}`;
+      expect(existsSync(path), path).toBe(true);
+      expect(statSync(path).size, path).toBeLessThanOrEqual(2_000_000);
+      if (file.endsWith(".svg")) expect(readFileSync(path, "utf8"), path).not.toMatch(/<script|<foreignObject|\son\w+\s*=|javascript:/i);
+    }
+  }
+});

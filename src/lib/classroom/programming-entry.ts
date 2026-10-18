@@ -1,5 +1,5 @@
 import { buildNameProject } from "./name-entry";
-import { CONTAINER_BLOCKS, ENTRY_PALETTE, ENTRY_SPRITES, MAX_ADDED_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, TRUSTED_SPRITES, VALUE_BLOCKS, blockLabel, spritePictures } from "./entry-palette";
+import { CONTAINER_BLOCKS, ENTRYBOT_SPRITE, ENTRY_PALETTE, ENTRY_SPRITES, LIBRARY_SPRITES, MAX_ADDED_OBJECTS, MAX_FREE_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, TRUSTED_SPRITES, VALUE_BLOCKS, blockLabel, spritePictures } from "./entry-palette";
 
 // `variables` shows A·B on the stage; `keyEvents` keeps the run waiting for arrow keys;
 // `carryFrom` copies that mission's work the first time this one opens.
@@ -31,6 +31,11 @@ const LESSON_MISSIONS: Readonly<Record<string, { active: readonly string[]; reti
   conditionals: { active: ["average", "pass", "freethrow", "escape"] },
   loops: { active: ["square", "polygon", "tree", "safe"] },
 };
+// These lessons start without the dog: every object is equal and students pick from the Entry library.
+const FREE_MISSIONS: ReadonlySet<string> = new Set([...LESSON_MISSIONS.conditionals.active, ...LESSON_MISSIONS.loops.active]);
+export const isFreeMission = (id: string) => FREE_MISSIONS.has(id);
+// Starter objects the mission needs; they cannot be deleted.
+export const LOCKED_OBJECTS: Readonly<Record<string, readonly string[]>> = { tree: ["can", "tree"] };
 export const missionById = (id: string) => PROGRAMMING_MISSIONS.find((m) => m.id === id);
 export const missionsFor = (lessonId: string) => (LESSON_MISSIONS[lessonId]?.active ?? []).map((id) => missionById(id)!);
 export const requiredMissionsFor = (lessonId: string) => missionsFor(lessonId).filter((m) => !m.optional);
@@ -65,24 +70,29 @@ export function entryObjectModel(added: AddedObject): Record<string, unknown> {
 }
 
 // A new object from the sprite list, placed to the right of the dog and spread out.
-export function newAddedObject(spriteId: string, existing: number): AddedObject | null {
-  const sprite = ENTRY_SPRITES.find((item) => item.id === spriteId);
+// Dog-free lessons pick from the Entry library: objects get a similar size and backgrounds fill the stage.
+export function newAddedObject(spriteId: string, existing: number, free = false): AddedObject | null {
+  const sprite = free ? LIBRARY_SPRITES.find((item) => item.id === spriteId) : ENTRY_SPRITES.find((item) => item.id === spriteId);
   if (!sprite) return null;
   const id = `obj-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const background = "category" in sprite && sprite.category === "background";
+  const scale = !free ? 0.5 : background ? Math.max(480 / sprite.width, 270 / sprite.height) : Math.min(1, 120 / Math.max(sprite.width, sprite.height));
+  const size = Math.round(scale * 1000) / 1000;
   return { id, name: sprite.name, sprite: sprite.id, rotateMethod: "free", threads: [],
-    entity: { x: 100 + (existing % 3) * 50, y: 60 - Math.floor(existing / 3) * 80, scaleX: 0.5, scaleY: 0.5, rotation: 0, direction: 90, visible: true } };
+    entity: { x: background ? 0 : (free ? -120 : 100) + (existing % 3) * (free ? 120 : 50), y: background ? 0 : 60 - Math.floor(existing / 3) * 80, scaleX: size, scaleY: size, rotation: 0, direction: 90, visible: true } };
 }
 
-// The tree mission starts with the watering can, the growing tree and soil behind the dog.
 const placed = (id: string, sprite: string, name: string, entity: Partial<AddedObject["entity"]>): AddedObject => ({ id, name, sprite, rotateMethod: "free", threads: [], entity: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, direction: 90, visible: true, ...entity } });
-// A mission's first project: blank, or prepared objects for the tree mission.
+// A mission's first project: the dog, the Entrybot for dog-free lessons, or the tree mission's
+// watering can, growing tree and soil.
 export function missionStarter(missionId: string): string {
-  if (missionId !== "tree") return buildProgrammingProject();
-  return buildProgrammingProject(undefined, [
+  if (missionId === "tree") return buildProgrammingProject(undefined, [
     placed("can", "watering-can", "물뿌리개", { x: -150, y: 40, scaleX: 0.32, scaleY: 0.32 }),
     placed("tree", "tree-growth", "나무", { x: 110, y: -10, scaleX: 0.8, scaleY: 0.8 }),
     placed("soil", "soil", "흙", { scaleX: 0.5, scaleY: 0.5 }),
-  ], 2, true);
+  ], -1, true);
+  if (isFreeMission(missionId)) return buildProgrammingProject(undefined, [placed("bot", ENTRYBOT_SPRITE, "엔트리봇", { scaleX: 0.4, scaleY: 0.4 })], -1);
+  return buildProgrammingProject();
 }
 
 // Same per-mission limit the server enforces on the normalized project.
@@ -100,7 +110,9 @@ export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObj
   if (counter) p.variables.push({ id: COUNTER.id, name: COUNTER.name, variableType: "variable", value: 0, visible: true, x: -225, y: 125, object: null, isCloud: false, isRealTime: false });
   if (threads) p.objects[0].script = threads;
   // Entry lists objects front to back; added objects keep their saved order around the dog.
-  if (added.length) p.objects.splice(0, 1, ...added.slice(0, mainIndex).map(entryObjectModel), p.objects[0], ...added.slice(mainIndex).map(entryObjectModel));
+  // A negative mainIndex is a dog-free project.
+  if (mainIndex < 0) p.objects = added.map(entryObjectModel);
+  else if (added.length) p.objects.splice(0, 1, ...added.slice(0, mainIndex).map(entryObjectModel), p.objects[0], ...added.slice(mainIndex).map(entryObjectModel));
   return JSON.stringify(p);
 }
 
@@ -108,14 +120,21 @@ export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObj
 // literal inputs here; validity for execution is checked separately below.
 // `key` compares whole saved works (validation/submission). `gradeKey` covers only
 // the dog's code, which is all grading and the name mission's run records use.
-export function parseProgrammingProject(raw: unknown): { project: Record<string, unknown>; key: string; gradeKey: string; bytes: number; threads: EntryNode[][]; order: string[]; added: AddedObject[]; mainIndex: number } | null {
+export function parseProgrammingProject(raw: unknown): { project: Record<string, unknown>; key: string; gradeKey: string; bytes: number; threads: EntryNode[][]; order: string[]; added: AddedObject[]; mainIndex: number; free: boolean } | null {
   if (typeof raw !== "string" || raw.length > MAX_RAW_PROJECT_CHARS) return null;
   try {
     const p = JSON.parse(raw);
-    if (!object(p) || !Array.isArray(p.objects) || p.objects.length < 1 || p.objects.length > 1 + MAX_ADDED_OBJECTS || !p.objects.every(object)) return null;
-    // A single object is the dog, as before objects could be added. Otherwise find it by id.
-    const mainIndex = p.objects.length === 1 ? 0 : p.objects.findIndex((o: Record<string, unknown>) => o.id === "entrybot");
-    if (mainIndex < 0 || p.objects.filter((o: Record<string, unknown>) => o.id === "entrybot").length > 1) return null;
+    if (!object(p) || !Array.isArray(p.objects) || p.objects.length < 1 || p.objects.length > MAX_FREE_OBJECTS || !p.objects.every(object)) return null;
+    const shownFile = (o: Record<string, unknown>) => {
+      const pictures = object(o.sprite) && Array.isArray(o.sprite.pictures) ? o.sprite.pictures.filter(object) : [];
+      return (pictures.find((pic) => pic.id === o.selectedPictureId) ?? pictures[0])?.fileurl;
+    };
+    // A single object is the dog, as before objects could be added, unless it shows a trusted
+    // sprite. Otherwise find the dog by id; a project without it is dog-free (mainIndex -1).
+    const only = p.objects[0] as Record<string, unknown>;
+    const single = p.objects.length === 1 && only.id !== "entrybot" && !TRUSTED_SPRITES.some((item) => spritePictures(item).some((shape) => shape.file === shownFile(only)));
+    const mainIndex = single ? 0 : p.objects.findIndex((o: Record<string, unknown>) => o.id === "entrybot");
+    if ((mainIndex >= 0 && p.objects.length > 1 + MAX_ADDED_OBJECTS) || p.objects.filter((o: Record<string, unknown>) => o.id === "entrybot").length > 1) return null;
     let count = 0;
     const reporters = ["text", "number", "angle", "get_canvas_input_value", "get_variable", "combine_something", "calc_basic"];
     const fail = (): never => { throw Error(); };
@@ -158,7 +177,7 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
       if (!Array.isArray(script) || script.length > 16) throw Error();
       return script.map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return t.map((n) => clean(n, object(n) && reporters.includes(String(n.type)))); });
     };
-    const threads = scriptOf(p.objects[mainIndex]);
+    const threads = mainIndex < 0 ? [] : scriptOf(p.objects[mainIndex]);
     const ids = new Set<string>();
     const num = (v: unknown, min: number, max: number, fallback: number) => typeof v === "number" && Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : fallback;
     // Entry flips scaleX negative for vertical rotation; keep the sign and limit the size.
@@ -171,6 +190,8 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
       // Pictures are rebuilt from the trusted sprite list; no other image can be saved, and
       // every listed picture must belong to the same sprite.
       const sprite = TRUSTED_SPRITES.find((item) => spritePictures(item).some((shape) => shape.file === picture?.fileurl));
+      // Entry's picture tab can duplicate a shape; keep each shape once.
+      if (sprite) pictures.splice(0, pictures.length, ...pictures.filter((pic, i) => pictures.findIndex((other) => other.fileurl === pic.fileurl) === i));
       const files = sprite ? spritePictures(sprite).map((shape) => shape.file) : [];
       if (!sprite || pictures.length > files.length || !pictures.every((pic) => files.includes(String(pic.fileurl)))) throw Error();
       const shown = files.indexOf(String(picture!.fileurl));
@@ -190,9 +211,11 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     const counter = Array.isArray(p.variables) && p.variables.some((v: unknown) => object(v) && v.id === COUNTER.id);
     const project = JSON.parse(buildProgrammingProject(threads, added, mainIndex, counter));
     // Projects with only the dog keep the original key so saved checks still match.
-    const gradeKey = JSON.stringify(code(threads));
+    // Dog-free projects grade every object's code.
+    const free = mainIndex < 0;
+    const gradeKey = JSON.stringify(free ? added.map((o) => code(o.threads)) : code(threads));
     const key = added.length ? JSON.stringify({ main: code(threads), mainIndex, added: added.map((o) => ({ ...o, threads: code(o.threads) })), ...(counter ? { counter } : {}) }) : gradeKey;
-    return { project, threads, added, mainIndex, order: [...threads, ...added.flatMap((o) => o.threads)].flatMap(flat), key, gradeKey, bytes: projectBytes(project) };
+    return { project, threads, added, mainIndex, free, order: [...threads, ...added.flatMap((o) => o.threads)].flatMap(flat), key, gradeKey, bytes: projectBytes(project) };
   } catch { return null; }
 }
 
@@ -343,15 +366,19 @@ const OBJECT_EVENTS = ["when_run_button_click", "mouse_clicked", "when_object_cl
 export function missionBlockIssue(id: string, raw: unknown): string | null {
   const p = parseProgrammingProject(raw), allowed = MISSION_BLOCKS[id], mission = missionById(id);
   if (!p || !allowed) return null;
+  const starts = (t: EntryNode[]) => t[0]?.type === "when_run_button_click" || (!!mission?.keyEvents && t[0]?.type === "when_some_key_pressed" && ["37", "38", "39", "40"].includes(String(t[0].params[1])));
+  // Dog-free projects grade the start line of whichever object owns it, so it must be one object.
+  const owners = p.free && !mission?.objects ? p.added.filter((o) => o.threads.some(starts)) : [];
+  if (owners.length > 1) return `시작하기 코드가 ${owners.slice(0, 3).map((o) => `‘${o.name}’`).join(", ")}에 나뉘어 있어요. 이번 미션의 시작하기 코드는 한 오브젝트에만 두세요.`;
   const graded = mission?.objects
     ? [...p.threads, ...p.added.flatMap((o) => o.threads)].filter((t) => OBJECT_EVENTS.includes(t[0]?.type))
-    : p.threads.filter((t) => t[0]?.type === "when_run_button_click" || (mission?.keyEvents && t[0]?.type === "when_some_key_pressed" && ["37", "38", "39", "40"].includes(String(t[0].params[1]))));
+    : (p.free ? p.added.flatMap((o) => o.threads) : p.threads).filter(starts);
   const outside = (n: EntryNode): string | undefined => allowed.has(n.type) ? [...n.params.filter((v): v is EntryNode => object(v) && typeof v.type === "string"), ...(n.statements ?? []).flat()].map(outside).find(Boolean) : n.type;
   const type = graded.flat().map(outside).find(Boolean);
   if (type) {
     const instead = SIMILAR_BLOCKS[type];
     return instead && allowed.has(instead) ? `이번 미션은 ‘${blockLabel(type)}’ 대신 ‘${blockLabel(instead)}’ 블록으로 확인해요. 바꿔서 다시 검증해 주세요.` : `이번 미션은 기본 블록으로 확인해요. ‘${blockLabel(type)}’ 블록을 빼고 다시 검증해 주세요.`;
   }
-  const elsewhere = !mission?.objects && !graded.length && p.added.find((o) => o.threads.some((t) => t[0]?.type === "when_run_button_click"));
+  const elsewhere = !p.free && !mission?.objects && !graded.length && p.added.find((o) => o.threads.some((t) => t[0]?.type === "when_run_button_click"));
   return elsewhere ? `강아지가 아니라 ‘${elsewhere.name}’에 시작하기 줄이 있어요. 오브젝트 목록에서 강아지를 고른 뒤 코드를 만들어 주세요.` : null;
 }

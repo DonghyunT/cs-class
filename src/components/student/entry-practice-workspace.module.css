@@ -27,3 +27,18 @@
 .spriteList button:hover{background:#eef4ff;border-color:#8aaee9}
 .spriteList button:focus-visible{outline:3px solid #376fc8;outline-offset:2px}
 .spriteList img{width:56px;height:56px;object-fit:contain}
+.libraryDialog{max-width:min(860px,calc(100vw - 32px))}
+.library{display:grid;gap:12px}
+.librarySearch{width:100%;min-height:44px;padding:8px 12px;border:1px solid #c5d1e0;border-radius:10px;font-size:16px}
+.librarySearch:focus-visible{outline:3px solid #376fc8;outline-offset:2px}
+.libraryBody{display:grid;grid-template-columns:120px 1fr;gap:12px;max-height:min(60vh,520px)}
+.libraryTabs{display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+.libraryTabs button{min-height:40px;padding:6px 10px;border:1px solid transparent;border-radius:10px;background:#f3f6fa;font-size:15px;font-weight:650;color:#202b3a;text-align:left;cursor:pointer}
+.libraryTabs button[aria-pressed=true]{background:#376fc8;color:#fff}
+.libraryTabs button:focus-visible{outline:3px solid #376fc8;outline-offset:2px}
+.libraryBody .spriteList{overflow-y:auto;align-content:start;padding:2px}
+.libraryBody .spriteList button{min-height:118px;font-size:14px}
+.libraryBody .spriteList small{font-size:12px;font-weight:500;color:#526173}
+.libraryEmpty{grid-column:1/-1;padding:24px;color:#526173}
+.libraryCredit{margin:0;font-size:13px;color:#526173}
+@media (max-width:600px){.libraryBody{grid-template-columns:1fr;max-height:none}.libraryTabs{flex-direction:row;flex-wrap:wrap}.libraryBody .spriteList{max-height:50vh}}

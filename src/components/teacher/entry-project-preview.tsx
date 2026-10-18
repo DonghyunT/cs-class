@@ -256,15 +256,16 @@ export function EntryProjectPreview({
     ? (parsed.project.objects as { id?: string; entity?: { x?: number; y?: number } }[])
     : [];
   const mainEntity = rawObjects.find((item) => item.id === "entrybot")?.entity;
+  // Dog-free projects list only their own objects.
   const objects = [
-    {
+    ...(parsed.free ? [] : [{
       id: "entrybot",
       name: "강아지",
       icon: "/entryjs/name-dog.svg",
       x: Math.round(Number(mainEntity?.x ?? 0)) || 0,
       y: Math.round(Number(mainEntity?.y ?? 0)) || 0,
       threads: parsed.threads,
-    },
+    }]),
     ...parsed.added.map((item) => ({
       id: item.id,
       name: item.name,
@@ -339,7 +340,7 @@ export function EntryProjectPreview({
             <iframe
               key={attempt}
               ref={frameRef}
-              src={`/entryjs/workspace.html?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}`}
+              src={`/entryjs/workspace.html?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${parsed.free ? "&free=1" : ""}`}
               title={`${missionTitle} 교사 실행 작업실`}
               sandbox="allow-scripts"
               className={styles.entryRunnerFrame}

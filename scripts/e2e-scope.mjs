@@ -11,7 +11,11 @@ const ENTRY_SHARED = [
   /^scripts\/prepare-entryjs\.mjs$/,
   // The teacher runner boots the same iframe for every Entry lesson; its E2E check lives in programming-learning.
   /^src\/components\/teacher\/entry-project-preview\.tsx$/,
-  /^tests\/programming-learning\.spec\.ts$/
+  /^tests\/programming-learning\.spec\.ts$/,
+  // The bundled Entry object library and its picker.
+  /^src\/components\/student\/entry-library-picker\.tsx$/,
+  /^src\/lib\/classroom\/entry-library\.json$/,
+  /^scripts\/(?:fetch-entry-library\.mjs|entry-library-picks\.json)$/
 ];
 
 export const LESSON_MAPPINGS = {
