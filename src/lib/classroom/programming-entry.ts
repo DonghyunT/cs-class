@@ -1,17 +1,32 @@
 import { buildNameProject } from "./name-entry";
 import { CONTAINER_BLOCKS, ENTRY_PALETTE, ENTRY_SPRITES, MAX_ADDED_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, VALUE_BLOCKS, blockLabel, type EntrySprite } from "./entry-palette";
 
-export const programmingMissions = [
+// `variables` shows A·B on the stage; `keyEvents` keeps the run waiting for arrow keys;
+// `carryFrom` copies that mission's work the first time this one opens.
+export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; experiment: string; optional?: true; carryFrom?: string; variables?: true; keyEvents?: true };
+
+// Every mission across lessons, keyed by an id no other lesson reuses. Grading and
+// saved records look missions up here; lessons list theirs in LESSON_MISSIONS.
+export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "name", title: "강아지 이름 짓기", goal: "이름을 묻고, 입력한 이름을 말하게 해주세요.", hint: "질문 다음에 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 보세요.", experiment: "초코와 보리처럼 서로 다른 이름으로 두 번 실행해 보세요." },
-  { id: "multiply", title: "곱셈 계산기", goal: "두 수를 A와 B에 기억하고, 두 수의 곱을 말하게 해주세요.", hint: "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요.", experiment: "6과 4, 3과 7을 입력해 보세요. 입력을 바꾸면 결과도 달라지나요?" },
+  { id: "multiply", title: "곱셈 계산기", goal: "두 수를 A와 B에 기억하고, 두 수의 곱을 말하게 해주세요.", hint: "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요.", experiment: "6과 4, 3과 7을 입력해 보세요. 입력을 바꾸면 결과도 달라지나요?", variables: true },
   { id: "move", title: "시작 버튼으로 움직이기", goal: "시작하기 버튼을 누르면 강아지가 오른쪽으로 10만큼 움직이게 해주세요.", hint: "시작하기 아래에 이동 블록을 연결해 보세요. 오른쪽 방향은 90°예요.", experiment: "실행 → 중지 → 다시 실행해 보세요. 시작 위치와 이동 결과를 비교해요." },
-  { id: "keys", title: "방향키로 움직임 개선", goal: "네 방향키로 강아지를 각 방향으로 10만큼 움직이게 해주세요.", hint: "‘키를 눌렀을 때’ 아래에 방향을 정하고 움직여요. 위 0°·오른쪽 90°·아래 180°·왼쪽 270°예요.", experiment: "실행 후 무대를 클릭하고 네 방향키를 눌러 보세요." },
-  { id: "average", title: "도전 · 평균 계산기", goal: "두 수를 입력받아 (A + B) ÷ 2를 말하게 해주세요.", hint: "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요.", experiment: "6과 4의 평균은 5예요. -2와 5를 넣으면 어떻게 될까요?", optional: true },
-] as const;
-export type ProgrammingMission = (typeof programmingMissions)[number];
+  { id: "keys", title: "방향키로 움직임 개선", goal: "네 방향키로 강아지를 각 방향으로 10만큼 움직이게 해주세요.", hint: "‘키를 눌렀을 때’ 아래에 방향을 정하고 움직여요. 위 0°·오른쪽 90°·아래 180°·왼쪽 270°예요.", experiment: "실행 후 무대를 클릭하고 네 방향키를 눌러 보세요.", carryFrom: "move", keyEvents: true },
+  { id: "average", title: "도전 · 평균 계산기", goal: "두 수를 입력받아 (A + B) ÷ 2를 말하게 해주세요.", hint: "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요.", experiment: "6과 4의 평균은 5예요. -2와 5를 넣으면 어떻게 될까요?", optional: true, variables: true },
+];
+
+// `active` missions are shown and can be checked. `retired` ones only keep old saved work readable.
+const LESSON_MISSIONS: Readonly<Record<string, { active: readonly string[]; retired?: readonly string[] }>> = {
+  "programming-13": { active: ["name", "multiply", "move", "keys", "average"] },
+};
+export const missionById = (id: string) => PROGRAMMING_MISSIONS.find((m) => m.id === id);
+export const missionsFor = (lessonId: string) => (LESSON_MISSIONS[lessonId]?.active ?? []).map((id) => missionById(id)!);
+export const requiredMissionsFor = (lessonId: string) => missionsFor(lessonId).filter((m) => !m.optional);
+export const isLessonMission = (lessonId: string, id: string) => !!LESSON_MISSIONS[lessonId]?.active.includes(id);
+export const isKnownLessonMission = (lessonId: string, id: string) => isLessonMission(lessonId, id) || !!LESSON_MISSIONS[lessonId]?.retired?.includes(id);
+export const knownMissionCount = (lessonId: string) => (LESSON_MISSIONS[lessonId]?.active.length ?? 0) + (LESSON_MISSIONS[lessonId]?.retired?.length ?? 0);
 export type EntryNode = { id?: string; type: string; params: unknown[]; statements?: EntryNode[][]; x?: number; y?: number };
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
-export const missionById = (id: string) => programmingMissions.find((m) => m.id === id);
 
 // An object a student added from ENTRY_SPRITES. The dog (`entrybot`) is fixed.
 export type AddedObject = {
@@ -278,7 +293,7 @@ const SIMILAR_BLOCKS: Record<string, string> = { dialog: "dialog_time", move_x: 
 export function missionBlockIssue(id: string, raw: unknown): string | null {
   const p = parseProgrammingProject(raw), allowed = MISSION_BLOCKS[id];
   if (!p || !allowed) return null;
-  const graded = p.threads.filter((t) => t[0]?.type === "when_run_button_click" || (id === "keys" && t[0]?.type === "when_some_key_pressed" && ["37", "38", "39", "40"].includes(String(t[0].params[1]))));
+  const graded = p.threads.filter((t) => t[0]?.type === "when_run_button_click" || (missionById(id)?.keyEvents && t[0]?.type === "when_some_key_pressed" && ["37", "38", "39", "40"].includes(String(t[0].params[1]))));
   const outside = (n: EntryNode): string | undefined => allowed.has(n.type) ? [...n.params.filter((v): v is EntryNode => object(v) && typeof v.type === "string"), ...(n.statements ?? []).flat()].map(outside).find(Boolean) : n.type;
   const type = graded.flat().map(outside).find(Boolean);
   if (type) {
@@ -287,61 +302,4 @@ export function missionBlockIssue(id: string, raw: unknown): string | null {
   }
   const elsewhere = !graded.length && p.added.find((o) => o.threads.some((t) => t[0]?.type === "when_run_button_click"));
   return elsewhere ? `강아지가 아니라 ‘${elsewhere.name}’에 시작하기 줄이 있어요. 오브젝트 목록에서 강아지를 고른 뒤 코드를 만들어 주세요.` : null;
-}
-
-class MissionError extends Error {}
-
-// Deterministic interpreter for this lesson's bounded, straight-line blocks.
-// It never runs submitted JavaScript or accepts a client's claimed result.
-export function checkProgrammingMission(id: string, raw: unknown): { passed: boolean; message: string } {
-  const p = parseProgrammingProject(raw), mission = missionById(id);
-  const fail = (message: string) => ({ passed: false, message });
-  if (!p || !mission) return fail("작품을 읽지 못했어요. 입력한 블록은 유지하고 다시 확인해 주세요.");
-  const issue = missionBlockIssue(id, raw);
-  if (issue) return fail(issue);
-  function run(signal: string, inputs: string[]) {
-    const lines = p!.threads.filter((t) => signal === "click" ? t[0]?.type === "when_run_button_click" : t[0]?.type === "when_some_key_pressed" && t[0].params[1] === signal);
-    if (lines.length !== 1) throw new MissionError("시작 신호마다 한 줄의 코드를 연결해 주세요.");
-    type Value = { value: string | number; input: boolean; computed?: number };
-    const variables: Record<string, Value> = { "cs-A": { value: 0, input: false }, "cs-B": { value: 0, input: false } };
-    let answer = "", asks = 0, x = 0, y = 0, direction = 90, speech = "", speaksInput = false, speechComputed: number | undefined;
-    const number = (v: unknown) => { if (String(v).trim() === "" || !Number.isFinite(Number(v)) || Math.abs(Number(v)) > 1e6) throw new MissionError("실행할 숫자 입력을 확인해 주세요."); return Number(v); };
-    function evaluate(n: EntryNode): Value {
-      if (["text", "number", "angle"].includes(n.type)) return { value: n.params[0] as string | number, input: false };
-      if (n.type === "get_canvas_input_value") return { value: answer, input: asks > 0 };
-      if (n.type === "get_variable") return variables[String(n.params[0])];
-      const left = evaluate(n.params[n.type === "combine_something" ? 1 : 0] as EntryNode), right = evaluate(n.params[n.type === "combine_something" ? 3 : 2] as EntryNode);
-      if (n.type === "combine_something") return { value: String(left.value) + String(right.value), input: left.input || right.input, computed: left.computed === undefined ? right.computed : right.computed === undefined ? left.computed : undefined };
-      const a = number(left.value), b = number(right.value);
-      const result = n.params[1] === "PLUS" ? a + b : n.params[1] === "MINUS" ? a - b : n.params[1] === "MULTI" ? a * b : a / b;
-      return { value: number(result), input: left.input || right.input, computed: left.input || right.input ? result : undefined };
-    }
-    for (const n of lines[0].slice(1)) {
-      if (n.type === "ask_and_wait") { if (asks >= inputs.length) throw new MissionError("이번 목표에 필요한 질문을 차례로 연결해 주세요."); answer = inputs[asks++]; }
-      else if (n.type === "set_variable") variables[String(n.params[0])] = evaluate(n.params[1] as EntryNode);
-      else if (n.type === "dialog_time") { const value = evaluate(n.params[0] as EntryNode); const seconds = number(evaluate(n.params[1] as EntryNode).value); if (seconds < 0 || seconds > 10) throw new MissionError("말하기 시간은 0~10초로 정해 주세요."); if (n.params[2] === "speak") { speech = String(value.value); speaksInput = value.input; speechComputed = value.computed; } }
-      else if (n.type === "direction_absolute") direction = number(evaluate(n.params[0] as EntryNode).value);
-      else if (n.type === "move_direction") { const distance = number(evaluate(n.params[0] as EntryNode).value); x += Math.sin(direction * Math.PI / 180) * distance; y += Math.cos(direction * Math.PI / 180) * distance; }
-      else throw new MissionError("시작 블록은 맨 위에 두고 동작을 아래로 연결해 주세요.");
-    }
-    return { variables, asks, x, y, speech, speaksInput, speechComputed };
-  }
-  try {
-    let passed: boolean;
-    if (id === "name") passed = ["초코", "보리"].every((value) => { const r = run("click", [value]); return r.asks === 1 && r.speaksInput && r.speech.includes(value); });
-    else if (id === "multiply" || id === "average") passed = [[6, 4], [3, 7], [-2, 5], [0, 9]].every(([a, b]) => {
-      const r = run("click", [String(a), String(b)]), expected = id === "multiply" ? a * b : (a + b) / 2;
-      const values = r.speech.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
-      // A and B must hold the two inputs, in either order: asking for B first is also correct.
-      const stored = [Number(r.variables["cs-A"].value), Number(r.variables["cs-B"].value)];
-      const inOrder = stored[0] === a && stored[1] === b, swapped = stored[0] === b && stored[1] === a;
-      return r.asks === 2 && r.variables["cs-A"].input && r.variables["cs-B"].input && (inOrder || swapped) && r.speechComputed !== undefined && Math.abs(r.speechComputed - expected) < 0.0001 && values.some((v) => Math.abs(v - expected) < 0.0001);
-    });
-    else {
-      const move = (signal: string, x: number, y: number) => { const r = run(signal, []); return Math.abs(r.x - x) < 0.0001 && Math.abs(r.y - y) < 0.0001; };
-      // The keys mission grades only the four arrow keys; the carried-over start line is optional.
-      passed = id === "move" ? move("click", 10, 0) : [["38", 0, 10], ["39", 10, 0], ["40", 0, -10], ["37", -10, 0]].every(([key, x, y]) => move(String(key), Number(x), Number(y)));
-    }
-    return passed ? { passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." } : fail(mission.hint);
-  } catch (error) { return fail(error instanceof MissionError ? error.message : mission.hint); }
 }

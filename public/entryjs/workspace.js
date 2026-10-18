@@ -6,6 +6,9 @@ const params = new URLSearchParams(location.search);
 const programming = params.get("exercise") === "programming";
 const traced = programming;
 const mission = params.get("mission");
+// Mission flags from the lesson page: arrow-key events keep the run waiting; vars shows A·B.
+const keyMission = params.get("keys") === "1";
+const showVariables = params.get("vars") === "1";
 let disposed = false;
 // Copy of ENTRY_PALETTE in src/lib/classroom/entry-palette.ts. This sandboxed
 // script cannot import it; tests/entry-palette.test.ts keeps both lists equal.
@@ -107,7 +110,7 @@ try {
     };
   }
   EntryStatic.fontFamily = "sans-serif";
-  if (programming && mission === "keys" && Entry.block?.when_some_key_pressed?.def) Entry.block.when_some_key_pressed.def.params = [null, "38"];
+  if (programming && keyMission && Entry.block?.when_some_key_pressed?.def) Entry.block.when_some_key_pressed.def.params = [null, "38"];
   EntryStatic.getAllBlocks = () => programming ? PROGRAMMING_PALETTE : [
     { category: "start", blocks: ["when_run_button_click"] },
     { category: "moving", blocks: ["move_direction"] },
@@ -225,14 +228,14 @@ try {
       const speech = object?.entity.dialog?.message_?.replaceAll("\n", "");
       if (speech) lastSpeech = speech;
       const idle = Entry.container.getAllObjects().every((item) => item.script.executors.length === 0);
-      if (idle && !(programming && mission === "keys")) {
+      if (idle && !(programming && keyMission)) {
         if (!waitsForEvents) void stop("finished");
         else if (!reported) { result("finished"); reported = true; send("waiting"); }
       }
       if (monitor === null) return;
       if (traced) {
         const now = Date.now();
-        const waitingIdle = idle && (reported || (programming && mission === "keys"));
+        const waitingIdle = idle && (reported || (programming && keyMission));
         if (!awaitingAnswer && !waitingIdle) activeTime += now - lastTick;
         lastTick = now;
       }
@@ -254,7 +257,7 @@ try {
         if (disposed) return;
         Entry.clearProject();
         if (programming) for (const variable of message.project.variables ?? []) {
-          if (["cs-A", "cs-B"].includes(variable.id)) variable.visible = ["multiply", "average"].includes(mission);
+          if (["cs-A", "cs-B"].includes(variable.id)) variable.visible = showVariables;
         }
         Entry.loadProject(message.project);
         if (traced) Entry.playground.blockMenu.setMenu();

@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { Transaction } from "firebase-admin/firestore";
 import { RELEASED_LESSONS, findLesson } from "../classroom/catalog";
 import { emptyWork, practiceMatches } from "../classroom/progress";
-import { programmingProjectMatches } from "../classroom/programming-entry";
+import { isLessonMission, missionsFor, programmingProjectMatches } from "../classroom/programming-entry";
 import type { ClassSettings, StudentDashboard, TeacherDashboard, Work, WorkSummary } from "../classroom/types";
 import { randomUUID } from "node:crypto";
 import { basicReviewCheck } from "../classroom/review/project";
@@ -19,7 +19,10 @@ export function workRef(uid: string, lessonId: string) { return admin().db.colle
 export function toWork(data: StoredWork | undefined, lessonId: string): Work {
   const lesson = findLesson(lessonId)!;
   if (!data) return emptyWork(lesson);
-  return { lessonId: data.lessonId, revision: data.revision, draft: data.draft, conceptSolved: data.conceptSolved, conceptFeedback: data.conceptFeedback, quizSolved: data.quizSolved, quizRound: data.quizRound, quizRoundIds: data.quizRoundIds, quizRoundGraded: data.quizRoundGraded, quizFeedback: data.quizFeedback, validation: data.validation, submission: data.submission, updatedAt: data.updatedAt, ...(data.missions ? { missions: data.missions } : {}), ...(data.review ? { review: data.review } : {}), ...(data.aiReview ? { aiReview: data.aiReview } : {}) };
+  // A mission that left the lesson opens as the first current one; its saved project stays.
+  const programming = data.draft.programming;
+  const draft = programming && !isLessonMission(lessonId, programming.mission) ? { ...data.draft, programming: { ...programming, mission: missionsFor(lessonId)[0].id } } : data.draft;
+  return { lessonId: data.lessonId, revision: data.revision, draft, conceptSolved: data.conceptSolved, conceptFeedback: data.conceptFeedback, quizSolved: data.quizSolved, quizRound: data.quizRound, quizRoundIds: data.quizRoundIds, quizRoundGraded: data.quizRoundGraded, quizFeedback: data.quizFeedback, validation: data.validation, submission: data.submission, updatedAt: data.updatedAt, ...(data.missions ? { missions: data.missions } : {}), ...(data.review ? { review: data.review } : {}), ...(data.aiReview ? { aiReview: data.aiReview } : {}) };
 }
 export async function studentClass(tx: Transaction, account: Account) {
   requireCondition(account.role === "student" && account.classId, 403, "FORBIDDEN", "학생 계정으로 입장해 주세요.");
@@ -56,6 +59,9 @@ export async function mutateWork(lessonId: string, payload: unknown, actionReque
   const save = actionRequest ? null : z.object({ revision: revisionSchema, draft: draftSchema }).strict().parse(payload);
   const act = actionRequest ? z.object({ revision: revisionSchema, action: actionSchema }).strict().parse(payload) : null;
   if (save) save.draft = validateDraft(save.draft, lesson);
+  // Checked before the idempotent submit reply below, so a retired mission cannot be re-submitted.
+  const missionId = act && "missionId" in act.action ? act.action.missionId : undefined;
+  if (lesson.practice.type === "programming" && missionId) requireCondition(isLessonMission(lesson.id, missionId), 400, "MISSION_REQUIRED", "확인할 미션을 선택해 주세요.");
   return authorized(await identity(), async (tx, account) => {
     const classroom = await studentClass(tx, account);
     requireCondition(classroom.openedLessonIds.includes(lessonId), 403, "LESSON_CLOSED", "우리 반에 아직 열리지 않은 수업이에요.");
@@ -114,7 +120,7 @@ export async function teacherDashboard(classId?: string, lessonId?: string): Pro
   });
 }
 function workSummary(work: Work): WorkSummary {
-  const edited = work.draft.programming ? Object.entries(work.missions ?? {}).some(([id, record]) => record.submission && !programmingProjectMatches(work.draft.programming?.projects[id], record.submission.entryProject)) : work.draft.reviewProject?.type === "flowchart" ? Object.entries(work.missions ?? {}).some(([id, record]) => record.submission && !sameReviewProject(work.draft.reviewProject, record.submission.reviewProject, id)) : !!work.submission && !practiceMatches(work.draft, work.submission);
+  const edited = work.draft.programming ? Object.entries(work.missions ?? {}).some(([id, record]) => isLessonMission(work.lessonId, id) && record.submission && !programmingProjectMatches(work.draft.programming?.projects[id], record.submission.entryProject)) : work.draft.reviewProject?.type === "flowchart" ? Object.entries(work.missions ?? {}).some(([id, record]) => record.submission && !sameReviewProject(work.draft.reviewProject, record.submission.reviewProject, id)) : !!work.submission && !practiceMatches(work.draft, work.submission);
   const summary = { edited, validated: !!work.validation?.passed };
   const submission = (value: Work["submission"]) => value ? { id: value.id, submittedAt: value.submittedAt } : null;
   return { ...summary, lessonId: work.lessonId, revision: work.revision, conceptSolved: work.conceptSolved, quizSolved: work.quizSolved, updatedAt: work.updatedAt, submission: submission(work.submission), ...(work.missions ? { missions: Object.fromEntries(Object.entries(work.missions).map(([id, record]) => [id, { submission: submission(record.submission) }])) } : {}), ...(work.review ? { review: { id: work.review.id, status: work.review.status, requestedAt: work.review.requestedAt, ...(work.review.missionId ? { missionId: work.review.missionId } : {}) } } : {}) };

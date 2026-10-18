@@ -9,7 +9,7 @@ import type { Lesson, Question, Stage, Work, WorkAction, WorkDraft } from "@/lib
 import { LearningStatus } from "./progress-summary";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
 import { ProgrammingLearningStage } from "./programming-lesson";
-import { parseProgrammingProject, programmingMissions } from "@/lib/classroom/programming-entry";
+import { missionsFor, parseProgrammingProject } from "@/lib/classroom/programming-entry";
 import { isReviewType } from "@/lib/classroom/review/project";
 import { Sandwich } from "./review/sandwich";
 import { Abstraction } from "./review/abstraction";
@@ -34,7 +34,7 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
     <li><strong>이어갈 단계</strong>{stages.find((stage) => stage.id === draft.stage)?.label}</li>
     {lesson.concepts.map((concept, i) => <li key={concept.id}><strong>개념 {i + 1}</strong>{label(concept.question, draft.conceptAnswers[concept.id])}</li>)}
     {lesson.quiz.map((question, i) => <li key={question.id}><strong>퀴즈 {i + 1}</strong>{label(question, draft.quizAnswers[question.id])}</li>)}
-    {lesson.practice.type === "programming" && programmingMissions.map((mission) => <li key={mission.id}><strong>{mission.title}</strong>{draft.programming?.projects[mission.id] ? `${parseProgrammingProject(draft.programming.projects[mission.id])?.order.length ?? 0}개 블록` : "아직 시작하지 않았어요"}</li>)}
+    {lesson.practice.type === "programming" && missionsFor(lesson.id).map((mission) => <li key={mission.id}><strong>{mission.title}</strong>{draft.programming?.projects[mission.id] ? `${parseProgrammingProject(draft.programming.projects[mission.id])?.order.length ?? 0}개 블록` : "아직 시작하지 않았어요"}</li>)}
     {draft.reviewProject && <li><strong>복습 작품</strong>{draft.reviewProject.type === "sandwich" ? `${draft.reviewProject.commands.length}개 명령 · 작성 중: ${draft.reviewProject.input}` : draft.reviewProject.type === "abstraction" ? `${draft.reviewProject.current} → ${draft.reviewProject.goal}` : `${draft.reviewProject.nodes.length}개 기호 · ${draft.reviewProject.edges.length}개 연결`}</li>}
     <li><strong>{lesson.practice.type === "entryjs" ? "엔트리 블록" : "실습 순서"}</strong>{lesson.practice.type === "entryjs" ? `${draft.practiceOrder.length}개 블록 조립됨` : draft.practiceOrder.map((id) => lesson.practice.blocks.find((block) => block.id === id)?.label).filter(Boolean).join(" → ")}</li>
   </ul>;
@@ -103,7 +103,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
       action.type === "grade-quiz" ? programming ? "programming-quiz-result" : "quiz-round-result" :
       action.type === "retry-quiz" ? programming ? "programming-question" : "quiz-question-title" :
       reviewType ? "review-action-feedback" : action.type === "submit-practice" ? programming ?
-        programmingMissions.at(-1)?.id === controller.getDraft().programming?.mission ? "programming-mission-complete" : "programming-next-mission"
+        missionsFor(lesson.id).at(-1)?.id === controller.getDraft().programming?.mission ? "programming-mission-complete" : "programming-next-mission"
         : "submitted-heading" : "practice-feedback";
     // A later edit may make the old validation invisible; the stage heading remains a safe focus target.
     const changed = JSON.stringify(controller.getDraft()) !== JSON.stringify(controller.actionFailure?.before.draft);

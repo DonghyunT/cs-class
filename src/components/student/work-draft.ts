@@ -1,5 +1,5 @@
 import type { WorkDraft } from "@/lib/classroom/types";
-import { buildProgrammingProject, parseProgrammingProject, programmingMissions } from "@/lib/classroom/programming-entry";
+import { PROGRAMMING_MISSIONS, buildProgrammingProject, parseProgrammingProject } from "@/lib/classroom/programming-entry";
 import { parseEntryProject } from "@/lib/classroom/entry-project";
 const starter = buildProgrammingProject();
 
@@ -33,8 +33,8 @@ function content(draft: WorkDraft) {
   if (draft.programming) {
     const { projects, reflection } = draft.programming;
     // Visiting a mission or normalizing fixed Entry media is not an edit.
-    next.programming = { reflection, projects: Object.fromEntries(programmingMissions.map(({ id }) => {
-      const raw = projects[id] ?? (id === "keys" ? projects.move : undefined);
+    next.programming = { reflection, projects: Object.fromEntries(PROGRAMMING_MISSIONS.map(({ id, carryFrom }) => {
+      const raw = projects[id] ?? (carryFrom ? projects[carryFrom] : undefined);
       return [id, raw ? programmingContent(raw) : starterContent];
     })) };
   }
