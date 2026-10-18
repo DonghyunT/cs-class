@@ -16,11 +16,15 @@ import styles from "./programming-lesson.module.css";
 
 type Props = { lesson: Lesson; controller: WorkController; mode?: LessonMode; locked: boolean; runAction: (action: WorkAction, focusId: string) => Promise<void>; focus: (id: string) => void; next: (stage: WorkDraft["stage"]) => void; exportRef: RefObject<(() => Promise<string | null>) | null>; workspaceWide: boolean; practiceFocused: boolean; onWorkspaceWideChange: (wide: boolean) => void; saveLabel: string; conceptId: string; quizQuestionId: string; onConceptChange: (id: string) => void; onQuizQuestionChange: (id: string) => void; onEditorReady?: (ready: boolean) => void };
 
+// The first programming lesson keeps its hands-on concept and quiz screens; later lessons use the shared panels.
+export const hasCustomLearning = (lesson: Lesson) => lesson.id === "programming-13";
+
 export function ProgrammingLearningStage(props: Props) {
-  const { controller, locked } = props;
+  const { controller, locked, lesson } = props;
   const { draft } = controller;
+  if (draft.stage !== "practice" && !hasCustomLearning(lesson)) return null;
   return <section id={`panel-${draft.stage}`} role="tabpanel" aria-labelledby={`tab-${draft.stage}`} className={styles.panel}>
-    {draft.stage !== "quiz" && <h2 id={`stage-heading-${draft.stage}`} tabIndex={-1} className={styles.srOnly}>{draft.stage === "concept" ? "직접 실험하고 생각해요" : "네 가지 미션에 도전해요"}</h2>}
+    {draft.stage !== "quiz" && <h2 id={`stage-heading-${draft.stage}`} tabIndex={-1} className={styles.srOnly}>{draft.stage === "concept" ? "직접 실험하고 생각해요" : "실습 미션에 도전해요"}</h2>}
     {draft.stage === "concept" ? <ProgrammingConcept {...props} /> : draft.stage === "quiz" ? <ProgrammingQuiz {...props} /> : <ProgrammingPractice {...props} />}
     {draft.stage === "practice" && <div className={styles.reflection}><label htmlFor="programming-reflection">오늘 발견한 것을 한 줄로 남겨볼까요?</label><textarea id="programming-reflection" maxLength={500} disabled={locked} placeholder="예: 첫 대답을 A에 저장해야 두 번째 질문 뒤에도 남아요." value={draft.programming?.reflection ?? ""} onChange={(e) => { const current = controller.getDraft(); if (current.programming) controller.update({ ...current, programming: { ...current.programming, reflection: e.target.value } }); }} /><p>{props.mode === "preview" ? "이 창의 체험에만 남아요." : "내 작품과 함께 저장돼요. 다음 수업에도 이어갈 수 있어요."}</p></div>}
   </section>;

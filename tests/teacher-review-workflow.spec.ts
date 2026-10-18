@@ -48,7 +48,7 @@ function recentWork(lesson: Lesson, index: number): Work {
     work.submission = submittedAt === null ? null : submission(`main-${index}`, submittedAt);
     work.missions = { name: { validation: null, submission: submission("ignored-mission", 990_000) } };
   } else {
-    const missionIds = lesson.id === programming.id ? ["name", "average", "keys", "move", "unknown"] : ["1", "free", "3", "1", "guide"];
+    const missionIds = lesson.id === programming.id ? ["name", "multiply", "keys", "move", "unknown"] : ["1", "free", "3", "1", "guide"];
     work.missions = { [missionIds[index]]: { validation: null, submission: submission(`mission-${index}`, submittedAt ?? 990_000) } };
     if (index === 0) work.missions[lesson.id === programming.id ? "unknown" : "guide"] = { validation: null, submission: submission("ignored-latest", 990_000) };
     if (index === 2) work.missions[lesson.id === programming.id ? "multiply" : "2"] = { validation: null, submission: submission("earlier-known", 1000) };

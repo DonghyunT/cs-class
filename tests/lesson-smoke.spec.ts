@@ -6,7 +6,8 @@ const ALL_LESSON_IDS = [
   "review-sandwich",
   "review-flowchart",
   "review-abstraction",
-  "programming-13"
+  "programming-13",
+  "conditionals"
 ];
 
 function getSelectedLessonIds(): string[] {
@@ -96,6 +97,23 @@ test.describe("선별 수업 스모크 검증 (Lesson Smoke)", () => {
       await db.collection("csWork").doc("student-20101__programming-13").delete();
       const marker = `스모크 테스트 소감 ${Date.now()}`;
       await page.goto("/classroom/programming-13?from=lessons");
+      await page.getByRole("tab", { name: /실습/ }).click();
+
+      const textarea = page.getByRole("textbox", { name: "오늘 발견한 것을 한 줄로 남겨볼까요?" });
+      await textarea.fill(marker);
+      await saveDraft(page);
+
+      await page.reload();
+      await page.getByRole("tab", { name: /실습/ }).click();
+      await expect(page.getByRole("textbox", { name: "오늘 발견한 것을 한 줄로 남겨볼까요?" })).toHaveValue(marker);
+    });
+  }
+
+  if (selectedLessons.includes("conditionals")) {
+    test("조건 수업: 후기 입력 후 저장 및 새로고침 복원", async ({ page }) => {
+      await db.collection("csWork").doc("student-20101__conditionals").delete();
+      const marker = `조건 스모크 소감 ${Date.now()}`;
+      await page.goto("/classroom/conditionals?from=lessons");
       await page.getByRole("tab", { name: /실습/ }).click();
 
       const textarea = page.getByRole("textbox", { name: "오늘 발견한 것을 한 줄로 남겨볼까요?" });

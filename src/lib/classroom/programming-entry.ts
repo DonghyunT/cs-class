@@ -12,12 +12,18 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "multiply", title: "곱셈 계산기", goal: "두 수를 A와 B에 기억하고, 두 수의 곱을 말하게 해주세요.", hint: "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요.", experiment: "6과 4, 3과 7을 입력해 보세요. 입력을 바꾸면 결과도 달라지나요?", variables: true },
   { id: "move", title: "시작 버튼으로 움직이기", goal: "시작하기 버튼을 누르면 강아지가 오른쪽으로 10만큼 움직이게 해주세요.", hint: "시작하기 아래에 이동 블록을 연결해 보세요. 오른쪽 방향은 90°예요.", experiment: "실행 → 중지 → 다시 실행해 보세요. 시작 위치와 이동 결과를 비교해요." },
   { id: "keys", title: "방향키로 움직임 개선", goal: "네 방향키로 강아지를 각 방향으로 10만큼 움직이게 해주세요.", hint: "‘키를 눌렀을 때’ 아래에 방향을 정하고 움직여요. 위 0°·오른쪽 90°·아래 180°·왼쪽 270°예요.", experiment: "실행 후 무대를 클릭하고 네 방향키를 눌러 보세요.", carryFrom: "move", keyEvents: true },
-  { id: "average", title: "도전 · 평균 계산기", goal: "두 수를 입력받아 (A + B) ÷ 2를 말하게 해주세요.", hint: "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요.", experiment: "6과 4의 평균은 5예요. -2와 5를 넣으면 어떻게 될까요?", optional: true, variables: true },
+  // The average hint is pinned by tests/fixtures/entry-legacy-keys.json; keep its wording.
+  { id: "average", title: "평균 계산기", goal: "두 수를 A와 B에 기억하고, 두 수의 평균 (A + B) ÷ 2를 말하게 해주세요.", hint: "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요.", experiment: "6과 4의 평균은 5예요. -2와 5를 넣으면 어떻게 될까요?", variables: true },
+  { id: "pass", title: "시험 합격/불합격", goal: "점수를 묻고, 60점 이상이면 ‘합격’, 아니면 ‘불합격’을 말하게 해주세요.", hint: "‘만일 ( )(이)라면 / 아니면’에 (대답 ≥ 60)을 넣고, 위쪽에는 ‘합격’, 아래쪽에는 ‘불합격’ 말하기를 연결해요.", experiment: "59, 60, 100을 차례로 넣어 보세요. 60에서는 어떤 말이 나와야 할까요?" },
+  { id: "freethrow", title: "자유투 평가", goal: "자유투 성공 개수를 묻고, 8개 이상이면 ‘훌륭해요!’, 5개 이상이면 ‘잘했어요!’, 그보다 적으면 ‘더 연습해 보자!’를 말하게 해주세요.", hint: "‘아니면’ 안에 ‘만일 ( )(이)라면 / 아니면’을 한 번 더 넣어요. 큰 기준인 8부터 확인해요.", experiment: "9, 7, 4를 넣어 세 가지 말이 모두 나오는지 확인해 보세요." },
+  { id: "escape", title: "도전 · 방탈출", goal: "1번·2번 문제를 풀었으면 1, 못 풀었으면 0을 묻고 A·B에 저장한 뒤, 하나라도 풀었으면 ‘탈출 성공!’, 아니면 ‘탈출 실패’를 말하게 해주세요.", hint: "판단 블록의 ‘( ) 그리고/또는 ( )’를 ‘또는’으로 바꾸고, 양쪽에 (A = 1)과 (B = 1)을 넣어요.", experiment: "1과 0, 0과 1, 0과 0을 넣어 보세요. 언제 탈출할 수 있나요?", optional: true, variables: true },
 ];
 
 // `active` missions are shown and can be checked. `retired` ones only keep old saved work readable.
 const LESSON_MISSIONS: Readonly<Record<string, { active: readonly string[]; retired?: readonly string[] }>> = {
-  "programming-13": { active: ["name", "multiply", "move", "keys", "average"] },
+  // The average calculator moved to conditionals; earlier average work stays readable here.
+  "programming-13": { active: ["name", "multiply", "move", "keys"], retired: ["average"] },
+  conditionals: { active: ["average", "pass", "freethrow", "escape"] },
 };
 export const missionById = (id: string) => PROGRAMMING_MISSIONS.find((m) => m.id === id);
 export const missionsFor = (lessonId: string) => (LESSON_MISSIONS[lessonId]?.active ?? []).map((id) => missionById(id)!);

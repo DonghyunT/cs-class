@@ -21,14 +21,19 @@ export const CONTAINER_BLOCKS: Readonly<Record<string, number>> = { repeat_basic
 const START = ["when_run_button_click", "text", "number"];
 const NAME = [...START, "ask_and_wait", "dialog_time", "get_canvas_input_value", "combine_something"];
 const MOVE = [...START, "move_direction", "direction_absolute", "angle"];
+const CHOICE = [...NAME, "dialog", "_if", "if_else", "boolean_basic_operator", "boolean_and_or", "boolean_not", "True", "False", "calc_basic", "quotient_and_mod"];
 // The blocks each mission's server interpreter understands. Other palette blocks
 // are saved and shown, but a graded line that uses them is not validated.
 export const MISSION_BLOCKS: Readonly<Record<string, ReadonlySet<string>>> = {
   name: new Set(NAME),
   multiply: new Set([...NAME, "set_variable", "get_variable", "calc_basic"]),
-  average: new Set([...NAME, "set_variable", "get_variable", "calc_basic"]),
+  // In the conditionals lesson students also say the result with the plain ‘말하기’ block.
+  average: new Set([...NAME, "dialog", "set_variable", "get_variable", "calc_basic"]),
   move: new Set(MOVE),
   keys: new Set([...MOVE, "when_some_key_pressed"]),
+  pass: new Set(CHOICE),
+  freethrow: new Set(CHOICE),
+  escape: new Set([...CHOICE, "set_variable", "get_variable"]),
 };
 
 export const BLOCK_LABELS: Readonly<Record<string, string>> = {

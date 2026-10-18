@@ -8,7 +8,7 @@ import { practiceMatches, progressFor } from "@/lib/classroom/progress";
 import type { Lesson, Question, Stage, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { LearningStatus } from "./progress-summary";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
-import { ProgrammingLearningStage } from "./programming-lesson";
+import { ProgrammingLearningStage, hasCustomLearning } from "./programming-lesson";
 import { missionsFor, parseProgrammingProject } from "@/lib/classroom/programming-entry";
 import { isReviewType } from "@/lib/classroom/review/project";
 import { Sandwich } from "./review/sandwich";
@@ -99,9 +99,11 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     const action = controller.actionFailure?.action;
     if (!action || !await controller.recoverAction(resend)) return;
     const programming = lesson.practice.type === "programming";
-    const id = action.type === "check-concept" ? programming ? "concept-feedback" : `concept-feedback-${action.conceptId}` :
-      action.type === "grade-quiz" ? programming ? "programming-quiz-result" : "quiz-round-result" :
-      action.type === "retry-quiz" ? programming ? "programming-question" : "quiz-question-title" :
+    // Only the first programming lesson has its own concept and quiz screens.
+    const customLearning = programming && hasCustomLearning(lesson);
+    const id = action.type === "check-concept" ? customLearning ? "concept-feedback" : `concept-feedback-${action.conceptId}` :
+      action.type === "grade-quiz" ? customLearning ? "programming-quiz-result" : "quiz-round-result" :
+      action.type === "retry-quiz" ? customLearning ? "programming-question" : "quiz-question-title" :
       reviewType ? "review-action-feedback" : action.type === "submit-practice" ? programming ?
         missionsFor(lesson.id).at(-1)?.id === controller.getDraft().programming?.mission ? "programming-mission-complete" : "programming-next-mission"
         : "submitted-heading" : "practice-feedback";
@@ -147,9 +149,9 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
 
     {lesson.practice.type === "programming" && <ProgrammingLearningStage mode={mode} practiceFocused={practiceFocused} lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} conceptId={conceptId} quizQuestionId={quizQuestionId} onConceptChange={setConceptId} onQuizQuestionChange={setQuizQuestionId} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} onEditorReady={setNativeReady} />}
 
-    {lesson.practice.type !== "programming" && draft.stage === "concept" && <LessonConceptPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} conceptId={conceptId} experienceVersion={experienceVersion} onResetExperience={resetExperience} onSelectConcept={selectConcept} />}
+    {!(lesson.practice.type === "programming" && hasCustomLearning(lesson)) && draft.stage === "concept" && <LessonConceptPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} conceptId={conceptId} experienceVersion={experienceVersion} onResetExperience={resetExperience} onSelectConcept={selectConcept} />}
 
-    {lesson.practice.type !== "programming" && draft.stage === "quiz" && <LessonQuizPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} quizQuestionId={quizQuestionId} moveQuestion={moveQuestion} />}
+    {!(lesson.practice.type === "programming" && hasCustomLearning(lesson)) && draft.stage === "quiz" && <LessonQuizPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} quizQuestionId={quizQuestionId} moveQuestion={moveQuestion} />}
 
     {isReviewType(lesson.practice.type) && (draft.stage === "practice" || keepPractice) && <section id="panel-practice" hidden={draft.stage !== "practice"} role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 className={reviewStyles.srOnly} id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2>{lesson.practice.type === "sandwich" ? <Sandwich mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "abstraction" ? <Abstraction mode={mode} controller={controller} practiceFocused={practiceFocused} /> : <Flowchart mode={mode} controller={controller} practiceFocused={practiceFocused} />}</section>}
     {lesson.practice.type !== "programming" && !isReviewType(lesson.practice.type) && draft.stage === "practice" && (

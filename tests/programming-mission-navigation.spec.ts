@@ -9,12 +9,7 @@ const workRef = db.doc(`csWork/student-20101__${id}`), classRef = db.doc("csClas
 const node = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
 const number = (value: number) => node("number", String(value));
 const moveProject = buildProgrammingProject([[node("when_run_button_click", null), node("move_direction", number(10), null)]]);
-const averageProject = buildProgrammingProject([[
-  node("when_run_button_click", null),
-  node("ask_and_wait", node("text", "첫 수는?"), null), node("set_variable", "cs-A", node("get_canvas_input_value", null), null),
-  node("ask_and_wait", node("text", "둘째 수는?"), null), node("set_variable", "cs-B", node("get_canvas_input_value", null), null),
-  node("dialog_time", node("calc_basic", node("calc_basic", node("get_variable", "cs-A"), "PLUS", node("get_variable", "cs-B")), "DIVIDE", number(2)), number(0.2), "speak", null),
-]]);
+const keysProject = buildProgrammingProject([["38", 0], ["39", 90], ["40", 180], ["37", 270]].map(([key, angle]) => [node("when_some_key_pressed", null, String(key)), node("direction_absolute", node("angle", String(angle)), null), node("move_direction", number(10), null)]));
 let originalClass: DocumentData | undefined;
 
 test.beforeEach(async ({ page }) => {
@@ -30,7 +25,7 @@ test.afterEach(async ({ page }) => {
 });
 
 async function prepare(page: Page, mission = "move", submitted = false) {
-  const project = mission === "average" ? averageProject : moveProject;
+  const project = mission === "keys" ? keysProject : moveProject;
   const before: Work = await (await page.request.get(endpoint)).json();
   let response = await page.request.post(endpoint, { headers, data: { revision: before.revision, draft: { ...before.draft, stage: "practice", programming: { mission, projects: { [mission]: project }, reflection: "" } } } });
   expect(response.status()).toBe(200);
@@ -105,7 +100,7 @@ test("제출 응답의 최신 단계가 달라지면 사라진 다음 버튼 대
   await validate(page);
   await page.route(`**${endpoint}/action`, async route => {
     const response = await route.fetch(), submitted = await response.json() as Work;
-    const shifted = await page.request.post(endpoint, { headers, data: { revision: submitted.revision, draft: { ...submitted.draft, stage: "concept", programming: { ...submitted.draft.programming!, mission: "average", projects: { ...submitted.draft.programming!.projects, average: averageProject } } } } });
+    const shifted = await page.request.post(endpoint, { headers, data: { revision: submitted.revision, draft: { ...submitted.draft, stage: "concept", programming: { ...submitted.draft.programming!, mission: "keys", projects: { ...submitted.draft.programming!.projects, keys: keysProject } } } } });
     expect(shifted.status()).toBe(200);
     await route.fulfill({ response, json: await shifted.json() });
   }, { times: 1 });
@@ -162,14 +157,14 @@ for (const lost of [false, true]) {
   });
 }
 
-test("마지막 선택 미션 제출은 완료 안내에 초점을 두고 이전 미션으로 돌아갈 수 있다", async ({ page }) => {
-  await prepare(page, "average");
+test("마지막 미션 제출은 완료 안내에 초점을 두고 이전 미션으로 돌아갈 수 있다", async ({ page }) => {
+  await prepare(page, "keys");
   await validate(page);
   await page.getByRole("button", { name: "작품 제출", exact: true }).click();
   await expect(page.locator("#programming-mission-complete")).toBeFocused();
   await expect(page.locator("#programming-mission-complete")).toContainText("이 미션의 작품을 제출했어요");
   await expect(page.getByRole("button", { name: "다음 미션", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "이전 미션", exact: true }).click();
-  await expect(page.locator("#programming-mission-title")).toHaveText("방향키로 움직임 개선");
+  await expect(page.locator("#programming-mission-title")).toHaveText("시작 버튼으로 움직이기");
   await expect(page.locator("#programming-mission-title")).toBeFocused();
 });

@@ -253,3 +253,44 @@ test("저장할 때 다른 미션에 남은 엔트리 원문도 정규화해 서
   expect(parseProgrammingProject(name)!.key).toBe(parseProgrammingProject(bulky)!.key);
   expect(parseProgrammingProject(saved.programming!.projects.move)!.order).toEqual(["when_run_button_click", "move_direction"]);
 });
+
+// Selection missions: `if_else` keeps its two inner lists, comparisons follow EntryJS (numeric strings compare as numbers).
+const text = (v: string) => node("text", v);
+const compare = (left: EntryNode, op: string, right: EntryNode) => node("boolean_basic_operator", left, op, right);
+const ifElse = (condition: EntryNode, yes: EntryNode[], no: EntryNode[]): EntryNode => ({ ...node("if_else", condition, null, null), statements: [yes, no] });
+const speak = (v: string) => node("dialog", text(v), "speak", null);
+const passProgram = (op = "GREATER_OR_EQUAL", yes = "합격", no = "불합격") => [start(), ask(), ifElse(compare(answer(), op, number("60")), [speak(yes)], [speak(no)])];
+const freeThrow = (first = "8") => [start(), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number(first)), [speak("훌륭해요!")], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak("잘했어요!")], [speak("더 연습해 보자!")])])];
+const escapeProgram = (condition: EntryNode) => [start(), ask(), node("set_variable", "cs-A", answer(), null), ask(), node("set_variable", "cs-B", answer(), null), ifElse(condition, [speak("탈출 성공!")], [speak("탈출 실패")])];
+const solved = (id: string) => compare(node("get_variable", id), "EQUAL", number("1"));
+
+test("선택 구조 미션은 실제 내보내기 모양의 조건문을 실행해 정확한 말을 확인한다", () => {
+  expect(checkProgrammingMission("pass", exported([passProgram()]))).toEqual({ passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." });
+  // 60 is a pass; ‘불합격’ must not count as ‘합격’; constant answers fail.
+  expect(checkProgrammingMission("pass", exported([passProgram("GREATER")])).passed).toBe(false);
+  expect(checkProgrammingMission("pass", exported([passProgram("GREATER_OR_EQUAL", "불합격", "불합격")])).passed).toBe(false);
+  expect(checkProgrammingMission("pass", exported([[start(), ask(), speak("합격")]])).passed).toBe(false);
+  // Answers that only cover the shown inputs fail the unseen ones.
+  const shownOnly = [start(), ask(), ...[["59", "불합격"], ["60", "합격"], ["100", "합격"], ["0", "불합격"]].map(([v, word]) => ({ ...node("_if", compare(answer(), "EQUAL", number(v)), null), statements: [[speak(word)]] }))];
+  expect(checkProgrammingMission("pass", exported([shownOnly])).passed).toBe(false);
+  expect(checkProgrammingMission("pass", exported([[start(), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [node("dialog_time", text("합격!"), number("1"), "speak", null)], [speak("불합격")])]])).passed).toBe(true);
+  expect(checkProgrammingMission("freethrow", exported([freeThrow()])).passed).toBe(true);
+  expect(checkProgrammingMission("freethrow", exported([freeThrow("9")])).passed).toBe(false);
+});
+
+test("방탈출은 A·B에 저장한 값을 ‘또는’으로 판단해야 통과한다", () => {
+  const or = node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B"));
+  expect(checkProgrammingMission("escape", exported([escapeProgram(or)])).passed).toBe(true);
+  expect(checkProgrammingMission("escape", exported([escapeProgram(node("boolean_and_or", solved("cs-A"), "AND", solved("cs-B")))])).passed).toBe(false);
+  // Nested conditions give the right words but skip the ‘또는’ the mission practices.
+  const nested = [...escapeProgram(solved("cs-A")).slice(0, 5), ifElse(solved("cs-A"), [speak("탈출 성공!")], [ifElse(solved("cs-B"), [speak("탈출 성공!")], [speak("탈출 실패")])])];
+  expect(checkProgrammingMission("escape", exported([nested])).passed).toBe(false);
+  // A ‘또는’ that never looks at A·B does not count.
+  expect(checkProgrammingMission("escape", exported([escapeProgram(node("boolean_and_or", node("False", null), "OR", node("boolean_and_or", solved("cs-A"), "AND", node("True", null))))])).passed).toBe(false);
+});
+
+test("몫·나머지는 엔트리처럼 버림 나눗셈으로 계산하고, 미션 규칙이 없는 ID는 통과시키지 않는다", () => {
+  const mod = (a: string) => [start(), ask(), ifElse(compare(node("quotient_and_mod", null, answer(), null, number("2"), null, "MOD"), "EQUAL", number(a)), [speak("합격")], [speak("불합격")])];
+  expect(checkProgrammingMission("pass", exported([mod("0")])).passed).toBe(false);
+  expect(checkProgrammingMission("unknown", exported([passProgram()])).passed).toBe(false);
+});

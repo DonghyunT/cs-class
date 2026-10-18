@@ -94,6 +94,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 #### 1단계: 컴포넌트 분리 (`src/components/student/...`)
 - **컴포넌트 위치:** `src/components/student/<수업ID>.tsx` 또는 전용 하위 폴더(`review/<수업ID>.tsx`).
 - **공통 셸 구성:** [`LessonWorkspace`](../src/components/student/lesson-workspace.tsx) 또는 [`LessonEditor`](../src/components/student/lesson-editor.tsx)로 감싸 공통 헤더·진도율 바·저장 상태 배지 영역을 확보합니다.
+- **엔트리 수업:** 새 컴포넌트 없이 `practice.type: "programming"` 수업 정의(예: [`conditionals-lesson.ts`](../src/lib/classroom/conditionals-lesson.ts))를 만들면 공통 개념·퀴즈 화면과 엔트리 실습 화면을 씁니다. 미션은 `PROGRAMMING_MISSIONS`·`LESSON_MISSIONS`([§4.1](#41-entryjs-4023-실습-환경)의 수업별 미션), 미션별 허용 블록은 `MISSION_BLOCKS`, 채점 규칙은 `programming-grader.ts`에 함께 등록합니다. 규칙이 없는 미션은 통과하지 않습니다.
 
 #### 2단계: 저장 상태 연동 (`useWork`)
 - [`LessonWorkspace`의 `StudentWorkEditor`](../src/components/student/lesson-workspace.tsx)처럼 서버에서 받은 `initial: Work`와 로그인한 계정의 `uid`로 공통 훅 [`useWork`](../src/components/student/use-work.ts)를 초기화합니다:

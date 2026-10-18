@@ -6,7 +6,7 @@ import { ApiError, classroomApi } from "@/lib/classroom/client";
 import type { Lesson, Work } from "@/lib/classroom/types";
 import type { ReviewProject } from "@/lib/classroom/review/project";
 import { parseEntryProject, entryInstructionLabel } from "@/lib/classroom/entry-project";
-import { missionById } from "@/lib/classroom/programming-entry";
+import { isLessonMission, missionById } from "@/lib/classroom/programming-entry";
 import { replaySandwich } from "@/lib/classroom/review/sandwich-engine.mjs";
 import { missions } from "@/lib/classroom/review/flowchart-data.mjs";
 import { FlowDiagram } from "@/components/student/review/flow-diagram";
@@ -91,7 +91,7 @@ export function WorkDetails({ uid, lesson, expectedRequestId, onLock, onComplete
       }
     } finally { if (mounted.current && version === operation.current) { setSaving(false); const release = locked.current; locked.current = null; release?.(false); } }
   }
-  const submissions = work ? [...(work.submission ? [{ id: "main", title: lesson.practice.title, submission: work.submission }] : []), ...Object.entries(work.missions ?? {}).flatMap(([id, record]) => record.submission ? [{ id, title: lesson.practice.type === "flowchart" ? id === "free" ? "자유 작품" : missions.find(m => String(m.id) === id)?.title || id : missionById(id)?.title || id, submission: record.submission }] : [])] : [];
+  const submissions = work ? [...(work.submission ? [{ id: "main", title: lesson.practice.title, submission: work.submission }] : []), ...Object.entries(work.missions ?? {}).flatMap(([id, record]) => record.submission ? [{ id, title: lesson.practice.type === "flowchart" ? id === "free" ? "자유 작품" : missions.find(m => String(m.id) === id)?.title || id : `${missionById(id)?.title || id}${isLessonMission(lesson.id, id) ? "" : " · 이전 수업 기록"}`, submission: record.submission }] : [])] : [];
   return <>
     {(error || requestChanged) && <div role="alert">{requestChanged && <p>확인 요청이 바뀌었어요. 최신 요청을 열고 작품과 안내 내용을 다시 확인해 주세요.</p>}{error && <p>{error}</p>}<Button variant="outline" disabled={saving || loading} onClick={() => reload(requestChanged)}>{requestChanged ? "최신 요청 열기" : "다시 불러오기"}</Button></div>}
     {loading && <p role="status">작품 상세를 불러오고 있어요.</p>}

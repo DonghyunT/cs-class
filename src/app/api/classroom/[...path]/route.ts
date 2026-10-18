@@ -8,6 +8,7 @@ import { createQuestion, deleteQuestion, readCommunity, readQuestion, replyQuest
 import type { FailureOperation } from "@/lib/server/failure-log";
 import { CLASSROOM_HELP_ENABLED } from "@/lib/classroom/features";
 import { requireCondition } from "@/lib/server/errors";
+import { findLesson } from "@/lib/classroom/catalog";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -36,7 +37,8 @@ export async function POST(request: Request, context: Context) {
   try {
     const { path } = await context.params;
     requireCondition(path[0] !== "help" || CLASSROOM_HELP_ENABLED, 403, "HELP_DISABLED", "손들기는 잠시 사용하지 않아요.");
-    const input = await body(request, path.length === 2 && path[0] === "work" && (path[1] === "programming-13" || path[1].startsWith("review-")) ? 192000 : 32768);
+    // Entry lessons send every mission's project in one draft.
+    const input = await body(request, path.length === 2 && path[0] === "work" && (findLesson(path[1])?.practice.type === "programming" || path[1].startsWith("review-")) ? 192000 : 32768);
     if (path.length === 2 && path[0] === "community") { operation = "classroom.community.create"; return json(await createQuestion(path[1], input)); }
     if (path.length === 3 && path[0] === "community" && path[2] === "answers") { operation = "classroom.community.reply"; return json(await replyQuestion(path[1], input)); }
     if (path.length === 3 && path[0] === "community" && path[2] === "resolve") { operation = "classroom.community.resolve"; return json(await resolveQuestion(path[1], input)); }

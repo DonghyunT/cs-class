@@ -1,5 +1,16 @@
 import { isDocument } from "./ci-policy.mjs";
 
+// Files every Entry lesson runs on: the practice screen, interpreter, palette and iframe.
+const ENTRY_SHARED = [
+  /^src\/components\/student\/programming-(?:lesson\.tsx|lesson\.module\.css)$/,
+  /^src\/components\/student\/entry-practice-workspace(?:\.tsx|\.module\.css)$/,
+  /^src\/lib\/classroom\/(?:programming-entry|entry-palette)\.ts$/,
+  /^src\/lib\/server\/programming-grader\.ts$/,
+  /^tests\/(?:entry-palette\.test\.ts|entry-legacy-inputs\.ts|fixtures\/entry-legacy-keys\.json)$/,
+  /^public\/entryjs\/.+$/,
+  /^scripts\/prepare-entryjs\.mjs$/
+];
+
 export const LESSON_MAPPINGS = {
   "review-sandwich": {
     lessonId: "review-sandwich",
@@ -51,13 +62,9 @@ export const LESSON_MAPPINGS = {
   "programming-13": {
     lessonId: "programming-13",
     patterns: [
-      /^src\/components\/student\/programming-(?:lesson\.tsx|lesson\.module\.css|concept\.tsx|concept\.module\.css)$/,
-      /^src\/components\/student\/entry-practice-workspace(?:\.tsx|\.module\.css)$/,
-      /^src\/lib\/classroom\/(?:programming-entry|name-entry|entry-palette)\.ts$/,
-      /^src\/lib\/server\/programming-grader\.ts$/,
-      /^tests\/(?:entry-palette\.test\.ts|entry-legacy-inputs\.ts|fixtures\/entry-legacy-keys\.json)$/,
-      /^public\/entryjs\/.+$/,
-      /^scripts\/prepare-entryjs\.mjs$/
+      ...ENTRY_SHARED,
+      /^src\/components\/student\/programming-concept(?:\.tsx|\.module\.css)$/,
+      /^src\/lib\/classroom\/(?:programming-lesson|programming-data|name-entry)\.ts$/
     ],
     tests: [
       "tests/programming-classroom.spec.ts",
@@ -68,6 +75,17 @@ export const LESSON_MAPPINGS = {
       "tests/manual-save-entry.spec.ts",
       "tests/practice-focus.spec.ts",
       "tests/lesson-feedback-workspace.spec.ts"
+    ]
+  },
+  "conditionals": {
+    lessonId: "conditionals",
+    patterns: [
+      ...ENTRY_SHARED,
+      /^src\/lib\/classroom\/conditionals-(?:lesson|data)\.ts$/,
+      /^tests\/conditionals\.spec\.ts$/
+    ],
+    tests: [
+      "tests/conditionals.spec.ts"
     ]
   }
 };

@@ -107,7 +107,7 @@ test('교사 현재 반 업무가 개인 할 일보다 먼저이고 사람과 �
   await readyTeacher(page.request);
   const lesson = RELEASED_LESSONS.find((item) => item.id === 'programming-13')!;
   const work = emptyWork(lesson); work.updatedAt = 1000;
-  work.missions = Object.fromEntries(['name','multiply','average'].map((id) => [id, { validation: null, submission: { id, order: [], entryProject: buildProgrammingProject(), submittedAt: 1000 } }]));
+  work.missions = Object.fromEntries(['name','multiply','move'].map((id) => [id, { validation: null, submission: { id, order: [], entryProject: buildProgrammingProject(), submittedAt: 1000 } }]));
   await page.route('**/api/classroom/teacher?**', async (route) => {
     const response = await route.fetch(); const data = await response.json() as TeacherDashboard;
     await route.fulfill({ response, json: { ...data, lessons: RELEASED_LESSONS, selectedLessonId: lesson.id, classroom: { ...data.classroom, currentLessonId: lesson.id }, students: [{ uid: 'ui-dashboard', studentId: '20188', mustChangePassword: false, work }] } });
