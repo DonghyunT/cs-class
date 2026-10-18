@@ -16,6 +16,9 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "average", title: "평균 계산기", goal: "두 수를 A와 B에 기억하고, 두 수의 평균 (A + B) ÷ 2를 말하게 해주세요.", hint: "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요.", experiment: "6과 4의 평균은 5예요. -2와 5를 넣으면 어떻게 될까요?", variables: true },
   { id: "pass", title: "시험 합격/불합격", goal: "점수를 묻고, 60점 이상이면 ‘합격’, 아니면 ‘불합격’을 말하게 해주세요.", hint: "‘만일 ( )(이)라면 / 아니면’에 (대답 ≥ 60)을 넣고, 위쪽에는 ‘합격’, 아래쪽에는 ‘불합격’ 말하기를 연결해요.", experiment: "59, 60, 100을 차례로 넣어 보세요. 60에서는 어떤 말이 나와야 할까요?" },
   { id: "freethrow", title: "자유투 평가", goal: "자유투 성공 개수를 묻고, 8개 이상이면 ‘훌륭해요!’, 5개 이상이면 ‘잘했어요!’, 그보다 적으면 ‘더 연습해 보자!’를 말하게 해주세요.", hint: "‘아니면’ 안에 ‘만일 ( )(이)라면 / 아니면’을 한 번 더 넣어요. 큰 기준인 8부터 확인해요.", experiment: "9, 7, 4를 넣어 세 가지 말이 모두 나오는지 확인해 보세요." },
+  { id: "square", title: "정사각형 그리기", goal: "그리기를 시작한 뒤 ‘4번 반복하기’로 100만큼 움직이고 90°씩 회전해, 한 변이 100인 정사각형을 그려 주세요.", hint: "‘그리기 시작하기’를 반복 앞에 두고, 반복 안에 ‘이동 방향으로 100만큼 움직이기’와 ‘이동 방향을 90°만큼 회전하기’를 넣어요.", experiment: "반복 안에 ‘1초 기다리기’를 넣으면 그리는 과정을 천천히 볼 수 있어요." },
+  { id: "polygon", title: "정다각형 그리기", goal: "변의 수를 묻고, 대답만큼 반복하며 360 ÷ 대답만큼 회전해 정다각형을 그려 주세요.", hint: "반복 횟수 칸에 ‘대답’을 넣고, 회전 각도 칸에 (360 ÷ 대답) 계산 블록을 넣어요.", experiment: "3, 5, 6을 넣어 정삼각형·정오각형·정육각형이 그려지는지 보세요. 도형이 무대 밖으로 나가면 변의 길이를 줄여 보세요." },
+  { id: "safe", title: "도전 · 비밀번호 금고", goal: "대답이 1234가 될 때까지 비밀번호를 묻고, 맞히면 ‘금고가 열렸어요!’를 말하게 해주세요.", hint: "‘(대답 = 1234)이(가) 될 때까지 반복하기’ 안에 묻기 블록을 넣고, 반복 아래에 말하기를 연결해요.", experiment: "틀린 번호를 몇 번 넣은 뒤 1234를 넣어 보세요. 질문이 몇 번 나왔나요?", optional: true },
   { id: "escape", title: "도전 · 방탈출", goal: "1번·2번 문제를 풀었으면 1, 못 풀었으면 0을 묻고 A·B에 저장한 뒤, 하나라도 풀었으면 ‘탈출 성공!’, 아니면 ‘탈출 실패’를 말하게 해주세요.", hint: "판단 블록의 ‘( ) 그리고/또는 ( )’를 ‘또는’으로 바꾸고, 양쪽에 (A = 1)과 (B = 1)을 넣어요.", experiment: "1과 0, 0과 1, 0과 0을 넣어 보세요. 언제 탈출할 수 있나요?", optional: true, variables: true },
 ];
 
@@ -24,6 +27,8 @@ const LESSON_MISSIONS: Readonly<Record<string, { active: readonly string[]; reti
   // The average calculator moved to conditionals; earlier average work stays readable here.
   "programming-13": { active: ["name", "multiply", "move", "keys"], retired: ["average"] },
   conditionals: { active: ["average", "pass", "freethrow", "escape"] },
+  // shortcut: the tree mission joins this list with multi-picture objects in the next step.
+  loops: { active: ["square", "polygon", "safe"] },
 };
 export const missionById = (id: string) => PROGRAMMING_MISSIONS.find((m) => m.id === id);
 export const missionsFor = (lessonId: string) => (LESSON_MISSIONS[lessonId]?.active ?? []).map((id) => missionById(id)!);

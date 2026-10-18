@@ -3,6 +3,7 @@ import type { WorkDraft } from "../classroom/types";
 import { runnableEntryBlocks } from "../classroom/entry-project";
 import { concepts, questions } from "../classroom/programming-data";
 import { conditionalConcepts, conditionalQuestions } from "../classroom/conditionals-data";
+import { loopConcepts, loopQuestions } from "../classroom/loops-data";
 import { UNIT_QUIZ_DATA } from "./review-quiz.mjs";
 import { REVIEW_LESSONS } from "../classroom/review/lessons";
 
@@ -47,6 +48,13 @@ export const SOLUTIONS: Record<string, LessonSolution> = {
     conceptAnswers: Object.fromEntries(conditionalConcepts.map((c) => [c.id, String(c.correct)])),
     quizAnswers: Object.fromEntries(conditionalQuestions.map((q) => [q.id, String(q.correct)])),
     quizFeedback: Object.fromEntries(conditionalQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.hint }])),
+    practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
+  },
+  loops: {
+    lessonId: "loops",
+    conceptAnswers: Object.fromEntries(loopConcepts.map((c) => [c.id, String(c.correct)])),
+    quizAnswers: Object.fromEntries(loopQuestions.map((q) => [q.id, String(q.correct)])),
+    quizFeedback: Object.fromEntries(loopQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.hint }])),
     practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
   },
   "sequence-lab": {

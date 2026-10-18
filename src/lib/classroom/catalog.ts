@@ -2,6 +2,7 @@ import type { Lesson } from "./types";
 import { buildEntryProject } from "./entry-project";
 import { PROGRAMMING_LESSON } from "./programming-lesson";
 import { CONDITIONALS_LESSON } from "./conditionals-lesson";
+import { LOOPS_LESSON } from "./loops-lesson";
 import { REVIEW_LESSONS } from "./review/lessons";
 
 export const SAMPLE_LESSON: Lesson = {
@@ -225,7 +226,8 @@ export const ENTRY_BOT_LESSON: Lesson = {
   },
 };
 
-export const LESSONS: Lesson[] = [SAMPLE_LESSON, FLOWCHART_LESSON, ENTRY_BOT_LESSON, PROGRAMMING_LESSON, CONDITIONALS_LESSON, ...REVIEW_LESSONS];
+// LOOPS_LESSON is preview-only until its tree mission ships.
+export const LESSONS: Lesson[] = [SAMPLE_LESSON, FLOWCHART_LESSON, ENTRY_BOT_LESSON, PROGRAMMING_LESSON, CONDITIONALS_LESSON, LOOPS_LESSON, ...REVIEW_LESSONS];
 // Keep historical definitions readable; only completed lessons can be newly opened.
 export const RELEASED_LESSONS: Lesson[] = [PROGRAMMING_LESSON, CONDITIONALS_LESSON, ...REVIEW_LESSONS];
 

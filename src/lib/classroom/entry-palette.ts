@@ -21,6 +21,8 @@ export const CONTAINER_BLOCKS: Readonly<Record<string, number>> = { repeat_basic
 const START = ["when_run_button_click", "text", "number"];
 const NAME = [...START, "ask_and_wait", "dialog_time", "get_canvas_input_value", "combine_something"];
 const MOVE = [...START, "move_direction", "direction_absolute", "angle"];
+// Pen missions: waits and colours run in Entry but do not change the drawn path.
+const PEN = [...START, "start_drawing", "stop_drawing", "repeat_basic", "move_direction", "direction_relative", "rotate_relative", "direction_absolute", "angle", "locate_xy", "wait_second", "set_color", "set_thickness", "brush_erase_all", "color"];
 const CHOICE = [...NAME, "dialog", "_if", "if_else", "boolean_basic_operator", "boolean_and_or", "boolean_not", "True", "False", "calc_basic", "quotient_and_mod"];
 // The blocks each mission's server interpreter understands. Other palette blocks
 // are saved and shown, but a graded line that uses them is not validated.
@@ -34,6 +36,9 @@ export const MISSION_BLOCKS: Readonly<Record<string, ReadonlySet<string>>> = {
   pass: new Set(CHOICE),
   freethrow: new Set(CHOICE),
   escape: new Set([...CHOICE, "set_variable", "get_variable"]),
+  square: new Set(PEN),
+  polygon: new Set([...PEN, "ask_and_wait", "get_canvas_input_value", "calc_basic"]),
+  safe: new Set([...CHOICE, "repeat_while_true", "repeat_inf", "stop_repeat"]),
 };
 
 export const BLOCK_LABELS: Readonly<Record<string, string>> = {

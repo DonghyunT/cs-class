@@ -294,3 +294,42 @@ test("몫·나머지는 엔트리처럼 버림 나눗셈으로 계산하고, 미
   expect(checkProgrammingMission("pass", exported([mod("0")])).passed).toBe(false);
   expect(checkProgrammingMission("unknown", exported([passProgram()])).passed).toBe(false);
 });
+
+// Loop missions follow EntryJS movement (direction + rotation) and must draw inside a loop.
+const loopOf = (count: EntryNode, inner: EntryNode[]): EntryNode => ({ ...node("repeat_basic", count, null), statements: [inner] });
+const forward = (distance: EntryNode) => node("move_direction", distance, null);
+const turn = (angle: EntryNode, type = "direction_relative") => node(type, angle, null);
+const square = (type = "direction_relative") => [start(), node("start_drawing", null), loopOf(number("4"), [forward(number("100")), turn(node("angle", "90"), type), node("wait_second", number("1"), null)])];
+const polygon = (angle: EntryNode = node("calc_basic", number("360"), "DIVIDE", answer())) => [start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(answer(), [forward(number("60")), turn(angle)])];
+const until = (condition: EntryNode, mode = "until"): EntryNode => ({ ...node("repeat_while_true", condition, mode, null), statements: [[node("ask_and_wait", text("비밀번호는?"), null)]] });
+const forever = (inner: EntryNode[]): EntryNode => ({ ...node("repeat_inf", null, null), statements: [inner] });
+
+test("정사각형·정다각형은 반복 안에서 그린 닫힌 정다각형인지 확인한다", () => {
+  expect(checkProgrammingMission("square", exported([square()])).passed).toBe(true);
+  // ‘방향을 회전하기’ also turns the moving direction in EntryJS.
+  expect(checkProgrammingMission("square", exported([square("rotate_relative")])).passed).toBe(true);
+  // Four separate moves draw the square without the loop the mission practices.
+  const unrolled = [start(), node("start_drawing", null), ...Array.from({ length: 4 }, () => [forward(number("100")), turn(node("angle", "90"))]).flat()];
+  expect(checkProgrammingMission("square", exported([unrolled])).passed).toBe(false);
+  expect(checkProgrammingMission("square", exported([[start(), loopOf(number("4"), [forward(number("100")), turn(node("angle", "90"))])]])).passed).toBe(false);
+  expect(checkProgrammingMission("square", exported([[start(), node("start_drawing", null), loopOf(number("4"), [forward(number("80")), turn(node("angle", "90"))])]])).passed).toBe(false);
+  expect(checkProgrammingMission("polygon", exported([polygon()])).passed).toBe(true);
+  expect(checkProgrammingMission("polygon", exported([polygon(node("angle", "72"))])).passed).toBe(false);
+});
+
+test("비밀번호 금고는 맞힐 때까지 반복해 묻고, 반복은 예산 안에서만 돈다", () => {
+  const opened = speak("금고가 열렸어요!");
+  expect(checkProgrammingMission("safe", exported([[start(), until(compare(answer(), "EQUAL", number("1234"))), opened]])).passed).toBe(true);
+  // ‘인 동안’ with ≠ means the same; stopping a forever loop also works.
+  expect(checkProgrammingMission("safe", exported([[start(), until(compare(answer(), "NOT_EQUAL", number("1234")), "while"), opened]])).passed).toBe(true);
+  expect(checkProgrammingMission("safe", exported([[start(), forever([node("ask_and_wait", text("?"), null), { ...node("_if", compare(answer(), "EQUAL", number("1234")), null), statements: [[opened, node("stop_repeat", null)]] }])]])).passed).toBe(true);
+  // Asking a fixed number of times fails when the number of tries changes.
+  expect(checkProgrammingMission("safe", exported([[start(), node("ask_and_wait", text("?"), null), node("ask_and_wait", text("?"), null), opened]])).passed).toBe(false);
+  expect(checkProgrammingMission("safe", exported([[start(), forever([opened])]]))).toEqual({ passed: false, message: "말하기가 너무 많아요." });
+  expect(checkProgrammingMission("safe", exported([[start(), forever([])]]))).toEqual({ passed: false, message: "실행이 너무 길어요. 반복이나 조건을 다시 확인해 주세요." });
+  const nested = loopOf(number("1000"), [loopOf(number("1000"), [loopOf(number("1000"), [forward(number("1"))])])]);
+  const began = Date.now();
+  expect(checkProgrammingMission("square", exported([[start(), nested]])).passed).toBe(false);
+  expect(Date.now() - began).toBeLessThan(1000);
+  expect(checkProgrammingMission("square", exported([[start(), loopOf(number("1001"), [forward(number("1"))])]])).message).toBe("반복 횟수는 1000번까지만 확인해요.");
+});

@@ -2,9 +2,11 @@ import { missionBlockIssue, missionById, parseProgrammingProject, type EntryNode
 
 // Server-side grading. Kept out of the client bundle so fixed test inputs are not shipped to students.
 class MissionError extends Error {}
+// Thrown by ‘반복 중단하기’ and caught by the nearest loop.
+class StopRepeat extends Error {}
 
 // One run may evaluate at most this many blocks, keep this long a text and say this many lines.
-const MAX_STEPS = 20_000, MAX_TEXT = 500, MAX_SPEECH = 50;
+const MAX_STEPS = 20_000, MAX_TEXT = 500, MAX_SPEECH = 50, MAX_REPEAT = 1000, MAX_SEGMENTS = 200;
 // Speech is compared without spaces and closing marks, so ‘불합격’ never counts as ‘합격’.
 const spoken = (text: string) => text.replace(/[\s!.?~'"‘’“”]/g, "");
 
@@ -22,7 +24,10 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     type Value = { value: string | number | boolean; input: boolean; computed?: number };
     const variables: Record<string, Value> = { "cs-A": { value: 0, input: false }, "cs-B": { value: 0, input: false } };
     let answer = "", asks = 0, x = 0, y = 0, direction = 90, speech = "", speaksInput = false, speechComputed: number | undefined;
-    let steps = 0, speeches = 0, usedOr = false;
+    let steps = 0, speeches = 0, usedOr = false, rotation = 0, drawing = false, loopDepth = 0, asksInLoop = 0;
+    const sayings: string[] = [];
+    // Pen strokes, and whether each was drawn inside a loop.
+    let segments: { from: [number, number]; to: [number, number]; inLoop: boolean }[] = [];
     const step = () => { if (++steps > MAX_STEPS) throw new MissionError("실행이 너무 길어요. 반복이나 조건을 다시 확인해 주세요."); };
     const number = (v: unknown) => { if (String(v).trim() === "" || !Number.isFinite(Number(v)) || Math.abs(Number(v)) > 1e6) throw new MissionError("실행할 숫자 입력을 확인해 주세요."); return Number(v); };
     // EntryJS compares a non-empty numeric string as a number.
@@ -62,25 +67,67 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     }
     const say = (value: Value) => {
       if (++speeches > MAX_SPEECH) throw new MissionError("말하기가 너무 많아요.");
-      speech = String(value.value); speaksInput = value.input; speechComputed = value.computed;
+      speech = String(value.value); speaksInput = value.input; speechComputed = value.computed; sayings.push(speech);
     };
+    // EntryJS moves along direction + rotation and draws while the pen is down.
+    const goTo = (nextX: number, nextY: number) => {
+      if (drawing && (Math.abs(nextX - x) > 1e-9 || Math.abs(nextY - y) > 1e-9)) {
+        if (segments.length >= MAX_SEGMENTS) throw new MissionError("선을 너무 많이 그렸어요.");
+        segments.push({ from: [x, y], to: [nextX, nextY], inLoop: loopDepth > 0 });
+      }
+      x = nextX; y = nextY;
+    };
+    function loop(body: EntryNode[], next: () => boolean) {
+      loopDepth++;
+      try { while (next()) { step(); try { exec(body); } catch (error) { if (error instanceof StopRepeat) break; throw error; } } }
+      finally { loopDepth--; }
+    }
     function exec(list: EntryNode[]) {
       for (const n of list) {
         step();
-        if (n.type === "ask_and_wait") { if (asks >= inputs.length) throw new MissionError("이번 목표에 필요한 질문을 차례로 연결해 주세요."); answer = inputs[asks++]; }
+        if (n.type === "ask_and_wait") { if (asks >= inputs.length) throw new MissionError("이번 목표에 필요한 질문을 차례로 연결해 주세요."); answer = inputs[asks++]; if (loopDepth) asksInLoop++; }
         else if (n.type === "set_variable") variables[String(n.params[0])] = evaluate(n.params[1] as EntryNode);
         else if (n.type === "dialog_time") { const value = evaluate(n.params[0] as EntryNode); const seconds = number(evaluate(n.params[1] as EntryNode).value); if (seconds < 0 || seconds > 10) throw new MissionError("말하기 시간은 0~10초로 정해 주세요."); if (n.params[2] === "speak") say(value); }
         else if (n.type === "dialog") { const value = evaluate(n.params[0] as EntryNode); if (n.params[1] !== "think") say(value); }
         else if (n.type === "_if") { if (evaluate(n.params[0] as EntryNode).value) exec(n.statements?.[0] ?? []); }
         else if (n.type === "if_else") exec(n.statements?.[evaluate(n.params[0] as EntryNode).value ? 0 : 1] ?? []);
         else if (n.type === "direction_absolute") direction = number(evaluate(n.params[0] as EntryNode).value);
-        else if (n.type === "move_direction") { const distance = number(evaluate(n.params[0] as EntryNode).value); x += Math.sin(direction * Math.PI / 180) * distance; y += Math.cos(direction * Math.PI / 180) * distance; }
+        else if (n.type === "move_direction") { const distance = number(evaluate(n.params[0] as EntryNode).value), angle = (direction + rotation) * Math.PI / 180; goTo(x + Math.sin(angle) * distance, y + Math.cos(angle) * distance); }
+        else if (n.type === "direction_relative") direction += number(evaluate(n.params[0] as EntryNode).value);
+        else if (n.type === "rotate_relative") rotation += number(evaluate(n.params[0] as EntryNode).value);
+        else if (n.type === "locate_xy") goTo(number(evaluate(n.params[0] as EntryNode).value), number(evaluate(n.params[1] as EntryNode).value));
+        else if (n.type === "start_drawing" || n.type === "stop_drawing") drawing = n.type === "start_drawing";
+        else if (n.type === "brush_erase_all") segments = [];
+        else if (["wait_second", "set_color", "set_thickness"].includes(n.type)) continue;
+        else if (n.type === "repeat_basic") {
+          const count = number(evaluate(n.params[0] as EntryNode).value);
+          if (count < 0) throw new MissionError("반복 횟수는 0보다 작을 수 없어요.");
+          if (count > MAX_REPEAT) throw new MissionError(`반복 횟수는 ${MAX_REPEAT}번까지만 확인해요.`);
+          let left = Math.floor(count);
+          loop(n.statements?.[0] ?? [], () => left-- > 0);
+        }
+        // ‘될 때까지’ repeats while the condition is false; ‘인 동안’ while it is true.
+        else if (n.type === "repeat_while_true") loop(n.statements?.[0] ?? [], () => !!evaluate(n.params[0] as EntryNode).value !== (n.params[1] !== "while"));
+        // Only the step budget ends a loop without ‘반복 중단하기’.
+        else if (n.type === "repeat_inf") loop(n.statements?.[0] ?? [], () => true);
+        else if (n.type === "stop_repeat") { if (!loopDepth) throw new MissionError("‘반복 중단하기’는 반복 블록 안에 넣어 주세요."); throw new StopRepeat(); }
         else throw new MissionError("시작 블록은 맨 위에 두고 동작을 아래로 연결해 주세요.");
       }
     }
     exec(lines[0].slice(1));
-    return { variables, asks, x, y, speech, speaksInput, speechComputed, usedOr };
+    return { variables, asks, x, y, speech, speaksInput, speechComputed, usedOr, segments, asksInLoop, sayings };
   }
+  // A closed regular polygon with `sides` equal strokes, all drawn inside a loop.
+  const regular = (strokes: { from: [number, number]; to: [number, number]; inLoop: boolean }[], sides: number, length?: number) => {
+    if (strokes.length !== sides || !strokes.every((s) => s.inLoop)) return false;
+    const near = (a: [number, number], b: [number, number]) => Math.hypot(a[0] - b[0], a[1] - b[1]) < 0.5;
+    const lengths = strokes.map((s) => Math.hypot(s.to[0] - s.from[0], s.to[1] - s.from[1]));
+    const headings = strokes.map((s) => Math.atan2(s.to[0] - s.from[0], s.to[1] - s.from[1]) * 180 / Math.PI);
+    const turns = headings.map((h, i) => ((headings[(i + 1) % sides] - h) % 360 + 540) % 360 - 180);
+    return lengths.every((l) => l > 1 && Math.abs(l - lengths[0]) < 0.01 && (length === undefined || Math.abs(l - length) < 0.01))
+      && strokes.every((s, i) => near(s.to, strokes[(i + 1) % sides].from))
+      && turns.every((t) => Math.abs(t - turns[0]) < 0.5 && Math.abs(Math.abs(t) - 360 / sides) < 0.5);
+  };
   // Every case asks once and must say exactly the expected words.
   const says = (cases: [number, string][]) => cases.every(([input, expected]) => { const r = run("click", [String(input)]); return r.asks === 1 && spoken(r.speech) === spoken(expected); });
   try {
@@ -100,6 +147,13 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       const r = run("click", [String(a), String(b)]);
       const stored = [Number(r.variables["cs-A"].value), Number(r.variables["cs-B"].value)];
       return r.asks === 2 && (stored[0] === a && stored[1] === b || stored[0] === b && stored[1] === a) && r.usedOr && spoken(r.speech) === spoken(a || b ? "탈출 성공!" : "탈출 실패");
+    });
+    else if (id === "square") passed = regular(run("click", []).segments, 4, 100);
+    else if (id === "polygon") passed = [3, 5, 6, 4, 8].every((sides) => { const r = run("click", [String(sides)]); return r.asks === 1 && regular(r.segments, sides); });
+    // Ask in a loop until 1234 and say the opening line once, at the end.
+    else if (id === "safe") passed = [["1234"], ["1111", "1234"], ["0000", "9999", "4321", "1234"], ["5555", "1233", "4312", "2341", "1234"]].every((tries) => {
+      const r = run("click", tries), opened = r.sayings.filter((line) => spoken(line) === spoken("금고가 열렸어요!"));
+      return r.asks === tries.length && r.asksInLoop === tries.length && opened.length === 1 && spoken(r.speech) === spoken("금고가 열렸어요!");
     });
     else if (id === "move" || id === "keys") {
       const move = (signal: string, x: number, y: number) => { const r = run(signal, []); return Math.abs(r.x - x) < 0.0001 && Math.abs(r.y - y) < 0.0001; };

@@ -87,6 +87,17 @@ export const LESSON_MAPPINGS = {
     tests: [
       "tests/conditionals.spec.ts"
     ]
+  },
+  "loops": {
+    lessonId: "loops",
+    patterns: [
+      ...ENTRY_SHARED,
+      /^src\/lib\/classroom\/loops-(?:lesson|data)\.ts$/,
+      /^tests\/loops\.spec\.ts$/
+    ],
+    tests: [
+      "tests/loops.spec.ts"
+    ]
   }
 };
 
