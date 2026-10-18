@@ -20,7 +20,7 @@
 
 `audit/`·`tests/results/`의 209개 검사/운영 결과·캡처와 개인 식별정보가 포함된 설정·복구 도구·운영 문서 등 8개 파일을 제외했습니다. 원본 경로별 제외 사유는 manifest를 따릅니다. Git 전체 이력·다른 브랜치·Git 제외 로컬 원본·비밀 설정·Firebase DB·학생 명부/답안/성적은 수집하지 않았습니다. 이는 소스 대조용 참고본이며 전체 운영 자료의 복구 백업이 아닙니다.
 
-기존 [9/26 V1 보관본](../../README.md)과 `docs/archive/v1/` 원문은 보존합니다. 최신 `main`은 CS Class의 [기존 이식 기준](../../../docs/reference/algorithm-review-integration.md#원본과-이식-경계)과 같은 `bc8d51f`이며, 이번 참고본 추가로 현재 앱의 로직이나 이전 검증 결과를 바꾸지 않았습니다.
+9/26 V1 보관본(`archive/v1/`, `docs/archive/v1/`)은 2026-10-18에 삭제했습니다([복구 방법](../../README.md#삭제한-926-v1-보관본)). 최신 `main`은 CS Class의 [기존 이식 기준](../../../docs/archive/cs-class/2026-10-18-completed-plans/algorithm-review-integration.md#원본과-이식-경계)과 같은 `bc8d51f`이며, 이번 참고본 추가로 현재 앱의 로직이나 이전 검증 결과를 바꾸지 않았습니다.
 
 ## 사용과 확인 범위
 
