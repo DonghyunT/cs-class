@@ -54,6 +54,7 @@ export const LESSON_MAPPINGS = {
       /^src\/components\/student\/programming-(?:lesson\.tsx|lesson\.module\.css|concept\.tsx|concept\.module\.css)$/,
       /^src\/components\/student\/entry-practice-workspace(?:\.tsx|\.module\.css)$/,
       /^src\/lib\/classroom\/(?:programming-entry|name-entry|entry-palette)\.ts$/,
+      /^tests\/(?:entry-palette\.test\.ts|entry-legacy-inputs\.ts|fixtures\/entry-legacy-keys\.json)$/,
       /^public\/entryjs\/.+$/,
       /^scripts\/prepare-entryjs\.mjs$/
     ],
