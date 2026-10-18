@@ -172,6 +172,7 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 | 운영 도메인 | `cs-class-donghyunt.vercel.app`, Firebase Authentication 허용 목록에 등록 | 2026-09-28 사용자 승인으로 등록 |
 | Production 환경변수 | Firebase 웹 설정 3개·관리자 JSON·교사 허용 목록·초기/초기화 비밀번호 7개(Production 전용 Secret), `CRON_SECRET`, `UPSTAGE_API_KEY`·`CS_AI_COMMAND_SECRET`(Production 전용 Sensitive) | 2026-10-13판 문서 기록 |
 | 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-18, #44 병합에서 `app` 성공 2초 뒤 공개 |
+| 배포 보존 기간 | Build and Deployment의 Deployment Retention Policy 네 항목 모두 1주. Hobby 롤백은 직전 Production까지만 되므로 늘리지 않음 | 2026-10-18 대시보드 확인(Deployment Storage 4.97/10 GB) |
 | 시간표 Cron | Production 일일 예약 Enabled | 2026-10-13판 문서 기록 |
 | 결제·AI TTL | 결제 계정 연결, `csAiCache`·`csAiRequests`의 `expiresAt` TTL 인덱스 적용 | 2026-10-13판 문서 기록 |
 | 질문 인덱스 | `csQuestions`(`classId ASC / createdAt DESC`) READY | [10/10 보관 인계 원문](archive/cs-class/2026-10-10-before-consulting-release/HANDOFF.md) |
