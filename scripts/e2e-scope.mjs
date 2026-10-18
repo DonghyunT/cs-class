@@ -6,7 +6,7 @@ const ENTRY_SHARED = [
   /^src\/components\/student\/entry-practice-workspace(?:\.tsx|\.module\.css)$/,
   /^src\/lib\/classroom\/(?:programming-entry|entry-palette)\.ts$/,
   /^src\/lib\/server\/programming-grader\.ts$/,
-  /^tests\/(?:entry-palette\.test\.ts|entry-legacy-inputs\.ts|fixtures\/entry-legacy-keys\.json)$/,
+  /^tests\/(?:entry-palette\.test\.ts|entry-legacy-(?:inputs|objects)\.ts|fixtures\/entry-legacy-(?:keys|objects)\.json)$/,
   /^public\/entryjs\/.+$/,
   /^scripts\/prepare-entryjs\.mjs$/
 ];

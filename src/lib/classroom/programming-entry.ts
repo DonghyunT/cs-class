@@ -1,9 +1,10 @@
 import { buildNameProject } from "./name-entry";
-import { CONTAINER_BLOCKS, ENTRY_PALETTE, ENTRY_SPRITES, MAX_ADDED_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, VALUE_BLOCKS, blockLabel, type EntrySprite } from "./entry-palette";
+import { CONTAINER_BLOCKS, ENTRY_PALETTE, ENTRY_SPRITES, MAX_ADDED_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, TRUSTED_SPRITES, VALUE_BLOCKS, blockLabel, spritePictures } from "./entry-palette";
 
 // `variables` shows A·B on the stage; `keyEvents` keeps the run waiting for arrow keys;
 // `carryFrom` copies that mission's work the first time this one opens.
-export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; experiment: string; optional?: true; carryFrom?: string; variables?: true; keyEvents?: true };
+// `objects` missions grade every object's event code instead of only the dog's.
+export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; experiment: string; optional?: true; carryFrom?: string; variables?: true; keyEvents?: true; objects?: true };
 
 // Every mission across lessons, keyed by an id no other lesson reuses. Grading and
 // saved records look missions up here; lessons list theirs in LESSON_MISSIONS.
@@ -18,6 +19,7 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "freethrow", title: "자유투 평가", goal: "자유투 성공 개수를 묻고, 8개 이상이면 ‘훌륭해요!’, 5개 이상이면 ‘잘했어요!’, 그보다 적으면 ‘더 연습해 보자!’를 말하게 해주세요.", hint: "‘아니면’ 안에 ‘만일 ( )(이)라면 / 아니면’을 한 번 더 넣어요. 큰 기준인 8부터 확인해요.", experiment: "9, 7, 4를 넣어 세 가지 말이 모두 나오는지 확인해 보세요." },
   { id: "square", title: "정사각형 그리기", goal: "그리기를 시작한 뒤 ‘4번 반복하기’로 100만큼 움직이고 90°씩 회전해, 한 변이 100인 정사각형을 그려 주세요.", hint: "‘그리기 시작하기’를 반복 앞에 두고, 반복 안에 ‘이동 방향으로 100만큼 움직이기’와 ‘이동 방향을 90°만큼 회전하기’를 넣어요.", experiment: "반복 안에 ‘1초 기다리기’를 넣으면 그리는 과정을 천천히 볼 수 있어요." },
   { id: "polygon", title: "정다각형 그리기", goal: "변의 수를 묻고, 대답만큼 반복하며 360 ÷ 대답만큼 회전해 정다각형을 그려 주세요.", hint: "반복 횟수 칸에 ‘대답’을 넣고, 회전 각도 칸에 (360 ÷ 대답) 계산 블록을 넣어요.", experiment: "3, 5, 6을 넣어 정삼각형·정오각형·정육각형이 그려지는지 보세요. 도형이 무대 밖으로 나가면 변의 길이를 줄여 보세요." },
+  { id: "tree", title: "나무 키우기", goal: "무대를 클릭할 때마다 ‘클릭 수’를 1씩 늘리고, 클릭 수가 5, 10, 15, 20, 25가 될 때마다 나무를 다음 모양으로 바꿔 주세요. 다 자라면 나무가 ‘성공~!’을 말해요.", hint: "오브젝트 목록에서 나무를 고르고 ‘마우스를 클릭했을 때’ 아래에 ‘클릭 수에 1만큼 더하기’를 연결해요. 그 아래에 ‘만일 (클릭 수 = 5)(이)라면 → 다음 모양으로 바꾸기’를 5·10·15·20·25마다 하나씩 이어요.", experiment: "무대를 여러 번 클릭하며 클릭 수와 나무 모양이 함께 바뀌는지 보세요. 물뿌리개가 ‘계속 반복하기’로 마우스를 따라오게 만들어도 좋아요.", objects: true },
   { id: "safe", title: "도전 · 비밀번호 금고", goal: "대답이 1234가 될 때까지 비밀번호를 묻고, 맞히면 ‘금고가 열렸어요!’를 말하게 해주세요.", hint: "‘(대답 = 1234)이(가) 될 때까지 반복하기’ 안에 묻기 블록을 넣고, 반복 아래에 말하기를 연결해요.", experiment: "틀린 번호를 몇 번 넣은 뒤 1234를 넣어 보세요. 질문이 몇 번 나왔나요?", optional: true },
   { id: "escape", title: "도전 · 방탈출", goal: "1번·2번 문제를 풀었으면 1, 못 풀었으면 0을 묻고 A·B에 저장한 뒤, 하나라도 풀었으면 ‘탈출 성공!’, 아니면 ‘탈출 실패’를 말하게 해주세요.", hint: "판단 블록의 ‘( ) 그리고/또는 ( )’를 ‘또는’으로 바꾸고, 양쪽에 (A = 1)과 (B = 1)을 넣어요.", experiment: "1과 0, 0과 1, 0과 0을 넣어 보세요. 언제 탈출할 수 있나요?", optional: true, variables: true },
 ];
@@ -27,8 +29,7 @@ const LESSON_MISSIONS: Readonly<Record<string, { active: readonly string[]; reti
   // The average calculator moved to conditionals; earlier average work stays readable here.
   "programming-13": { active: ["name", "multiply", "move", "keys"], retired: ["average"] },
   conditionals: { active: ["average", "pass", "freethrow", "escape"] },
-  // shortcut: the tree mission joins this list with multi-picture objects in the next step.
-  loops: { active: ["square", "polygon", "safe"] },
+  loops: { active: ["square", "polygon", "tree", "safe"] },
 };
 export const missionById = (id: string) => PROGRAMMING_MISSIONS.find((m) => m.id === id);
 export const missionsFor = (lessonId: string) => (LESSON_MISSIONS[lessonId]?.active ?? []).map((id) => missionById(id)!);
@@ -39,20 +40,27 @@ export const knownMissionCount = (lessonId: string) => (LESSON_MISSIONS[lessonId
 export type EntryNode = { id?: string; type: string; params: unknown[]; statements?: EntryNode[][]; x?: number; y?: number };
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 
-// An object a student added from ENTRY_SPRITES. The dog (`entrybot`) is fixed.
+// An object added from the sprite list or a starter project. The dog (`entrybot`) is fixed.
+// `picture` is the shown shape's index; it is left out for the first shape so older keys stay the same.
 export type AddedObject = {
-  id: string; name: string; sprite: EntrySprite["id"]; rotateMethod: "free" | "vertical" | "none";
+  id: string; name: string; sprite: string; rotateMethod: "free" | "vertical" | "none";
   entity: { x: number; y: number; scaleX: number; scaleY: number; rotation: number; direction: number; visible: boolean };
   threads: EntryNode[][];
+  picture?: number;
 };
 
+// Shape ids are rebuilt from the object id: the first is `<id>-pic` as before, then `<id>-pic2`, ….
+export const pictureId = (objectId: string, index: number) => index ? `${objectId}-pic${index + 1}` : `${objectId}-pic`;
+
 export function entryObjectModel(added: AddedObject): Record<string, unknown> {
-  const sprite = ENTRY_SPRITES.find((item) => item.id === added.sprite)!;
-  const picture = { id: `${added.id}-pic`, name: sprite.name, imageType: "svg", fileurl: sprite.file, thumbUrl: sprite.file, dimension: { width: sprite.width, height: sprite.height } };
+  const sprite = TRUSTED_SPRITES.find((item) => item.id === added.sprite)!;
+  const shapes = spritePictures(sprite), several = shapes.length > 1;
+  const pictures = shapes.map((shape, i) => ({ id: pictureId(added.id, i), name: several ? `${sprite.name}_${i + 1}` : sprite.name, imageType: shape.file.endsWith(".png") ? "png" : "svg", fileurl: shape.file, thumbUrl: shape.file, dimension: { width: shape.width, height: shape.height } }));
+  const shown = shapes[added.picture ?? 0];
   return {
     id: added.id, name: added.name, script: added.threads, objectType: "sprite", rotateMethod: added.rotateMethod, scene: "scene1",
-    selectedPictureId: picture.id, lock: false, sprite: { sounds: [], pictures: [picture] },
-    entity: { ...added.entity, regX: sprite.width / 2, regY: sprite.height / 2, width: sprite.width, height: sprite.height },
+    selectedPictureId: pictures[added.picture ?? 0].id, lock: false, sprite: { sounds: [], pictures },
+    entity: { ...added.entity, regX: shown.width / 2, regY: shown.height / 2, width: shown.width, height: shown.height },
   };
 }
 
@@ -65,15 +73,31 @@ export function newAddedObject(spriteId: string, existing: number): AddedObject 
     entity: { x: 100 + (existing % 3) * 50, y: 60 - Math.floor(existing / 3) * 80, scaleX: 0.5, scaleY: 0.5, rotation: 0, direction: 90, visible: true } };
 }
 
+// The tree mission starts with the watering can, the growing tree and soil behind the dog.
+const placed = (id: string, sprite: string, name: string, entity: Partial<AddedObject["entity"]>): AddedObject => ({ id, name, sprite, rotateMethod: "free", threads: [], entity: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, direction: 90, visible: true, ...entity } });
+// A mission's first project: blank, or prepared objects for the tree mission.
+export function missionStarter(missionId: string): string {
+  if (missionId !== "tree") return buildProgrammingProject();
+  return buildProgrammingProject(undefined, [
+    placed("can", "watering-can", "물뿌리개", { x: -150, y: 40, scaleX: 0.32, scaleY: 0.32 }),
+    placed("tree", "tree-growth", "나무", { x: 110, y: -10, scaleX: 0.8, scaleY: 0.8 }),
+    placed("soil", "soil", "흙", { scaleX: 0.5, scaleY: 0.5 }),
+  ], 2, true);
+}
+
 // Same per-mission limit the server enforces on the normalized project.
 export const MAX_PROJECT_BYTES = 32_768;
 // Raw EntryJS exports carry ~600 bytes of metadata per block; the request schema accepts this much.
 export const MAX_RAW_PROJECT_CHARS = 250_000;
 const projectBytes = (project: unknown) => new TextEncoder().encode(JSON.stringify(project)).length;
 
-export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0): string {
+// The tree mission's ‘클릭 수’ variable, shown on the stage.
+export const COUNTER = { id: "cs-clicks", name: "클릭 수" } as const;
+
+export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0, counter = false): string {
   const p = JSON.parse(buildNameProject()!);
   p.variables.push(...["A", "B"].map((name, i) => ({ id: `cs-${name}`, name, variableType: "variable", value: 0, visible: false, x: -210, y: 130 - i * 30, object: null, isCloud: false, isRealTime: false })));
+  if (counter) p.variables.push({ id: COUNTER.id, name: COUNTER.name, variableType: "variable", value: 0, visible: true, x: -225, y: 125, object: null, isCloud: false, isRealTime: false });
   if (threads) p.objects[0].script = threads;
   // Entry lists objects front to back; added objects keep their saved order around the dog.
   if (added.length) p.objects.splice(0, 1, ...added.slice(0, mainIndex).map(entryObjectModel), p.objects[0], ...added.slice(mainIndex).map(entryObjectModel));
@@ -106,13 +130,13 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
       let statements: EntryNode[][] | undefined;
       if (expression && ["text", "number", "angle"].includes(type) && ["string", "number"].includes(typeof params[0]) && String(params[0]).length <= 180) next = [params[0]];
       else if (expression && type === "get_canvas_input_value") next = [null];
-      else if (expression && type === "get_variable" && ["cs-A", "cs-B"].includes(String(params[0]))) next = [params[0]];
+      else if (expression && type === "get_variable" && ["cs-A", "cs-B", COUNTER.id].includes(String(params[0]))) next = [params[0]];
       else if (expression && type === "combine_something") next = [null, expr(params[1]), null, expr(params[3]), null];
       else if (expression && type === "calc_basic" && ["PLUS", "MINUS", "MULTI", "DIVIDE"].includes(String(params[1]))) next = [expr(params[0]), params[1], expr(params[2])];
       else if (!expression && type === "when_run_button_click") next = [null];
       else if (!expression && type === "when_some_key_pressed" && /^\d{1,3}$/.test(String(params[1])) && Number(params[1]) <= 255) next = [null, String(params[1])];
       else if (!expression && type === "ask_and_wait") next = [expr(params[0]), null];
-      else if (!expression && type === "set_variable" && ["cs-A", "cs-B"].includes(String(params[0]))) next = [params[0], expr(params[1]), null];
+      else if (!expression && type === "set_variable" && ["cs-A", "cs-B", COUNTER.id].includes(String(params[0]))) next = [params[0], expr(params[1]), null];
       else if (!expression && ["move_direction", "direction_absolute"].includes(type)) next = [expr(params[0]), null];
       else if (!expression && type === "dialog_time" && ["speak", "think"].includes(String(params[2]))) next = [expr(params[0]), expr(params[1]), params[2], null];
       // The branches above keep the original lesson blocks' saved shape and keys.
@@ -144,24 +168,30 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
       ids.add(o.id);
       const pictures = object(o.sprite) && Array.isArray(o.sprite.pictures) ? o.sprite.pictures.filter(object) : [];
       const picture = pictures.find((pic) => pic.id === o.selectedPictureId) ?? pictures[0];
-      // Pictures are rebuilt from the lesson's sprite list; no other image can be saved.
-      const sprite = ENTRY_SPRITES.find((item) => item.file === picture?.fileurl);
-      if (!sprite) throw Error();
+      // Pictures are rebuilt from the trusted sprite list; no other image can be saved, and
+      // every listed picture must belong to the same sprite.
+      const sprite = TRUSTED_SPRITES.find((item) => spritePictures(item).some((shape) => shape.file === picture?.fileurl));
+      const files = sprite ? spritePictures(sprite).map((shape) => shape.file) : [];
+      if (!sprite || pictures.length > files.length || !pictures.every((pic) => files.includes(String(pic.fileurl)))) throw Error();
+      const shown = files.indexOf(String(picture!.fileurl));
       const e = object(o.entity) ? o.entity : {};
       return {
         id: o.id, name: typeof o.name === "string" && o.name.trim() ? o.name.trim().slice(0, 20).trim() : sprite.name, sprite: sprite.id,
         rotateMethod: o.rotateMethod === "vertical" || o.rotateMethod === "none" ? o.rotateMethod : "free",
         entity: { x: num(e.x, -1000, 1000, 0), y: num(e.y, -1000, 1000, 0), scaleX: scale(e.scaleX), scaleY: scale(e.scaleY), rotation: num(e.rotation, -3600, 3600, 0), direction: num(e.direction, -3600, 3600, 90), visible: e.visible !== false },
         threads: scriptOf(o),
+        ...(shown ? { picture: shown } : {}),
       };
     });
     const semantic = (n: EntryNode): unknown => ({ type: n.type, params: n.params.map((v) => object(v) && typeof v.type === "string" ? semantic(v as EntryNode) : v), ...(n.statements ? { statements: n.statements.map((t) => t.map(semantic)) } : {}) });
     const flat = (t: EntryNode[]): string[] => t.flatMap((n) => [n.type, ...(n.statements ?? []).flatMap(flat)]);
     const code = (list: EntryNode[][]) => list.map((t) => t.map(semantic));
-    const project = JSON.parse(buildProgrammingProject(threads, added, mainIndex));
+    // The click counter exists only in projects that started with it (the tree mission).
+    const counter = Array.isArray(p.variables) && p.variables.some((v: unknown) => object(v) && v.id === COUNTER.id);
+    const project = JSON.parse(buildProgrammingProject(threads, added, mainIndex, counter));
     // Projects with only the dog keep the original key so saved checks still match.
     const gradeKey = JSON.stringify(code(threads));
-    const key = added.length ? JSON.stringify({ main: code(threads), mainIndex, added: added.map((o) => ({ ...o, threads: code(o.threads) })) }) : gradeKey;
+    const key = added.length ? JSON.stringify({ main: code(threads), mainIndex, added: added.map((o) => ({ ...o, threads: code(o.threads) })), ...(counter ? { counter } : {}) }) : gradeKey;
     return { project, threads, added, mainIndex, order: [...threads, ...added.flatMap((o) => o.threads)].flatMap(flat), key, gradeKey, bytes: projectBytes(project) };
   } catch { return null; }
 }
@@ -201,6 +231,8 @@ const REPORTER_BLOCKS: ReadonlySet<string> = new Set([
   "get_canvas_input_value", "get_variable",
 ]);
 
+const variableName = (id: string) => id === COUNTER.id ? COUNTER.name : id.replace("cs-", "변수 ");
+
 export function formatEntryNode(node: EntryNode): string {
   const keyName = (v: unknown) => v === null || v === undefined ? "( )" : KEY_LABELS[String(v)] ?? `${v}번`;
   const val = (n: EntryNode, index: number): string => {
@@ -208,12 +240,14 @@ export function formatEntryNode(node: EntryNode): string {
     if (v === null || v === undefined) return "( )";
     if (object(v) && typeof v.type === "string") return expression(v as EntryNode);
     const s = String(v);
-    if (s.startsWith("cs-")) return s.replace("cs-", "변수 ");
+    if (s.startsWith("cs-")) return variableName(s);
     return DROPDOWN_LABELS[s] ?? s;
   };
   const expression = (n: EntryNode): string => {
     if (n.type === "get_canvas_input_value") return "대답";
-    if (n.type === "get_variable") return n.params[0] ? String(n.params[0]).replace("cs-", "변수 ") : "변수 값";
+    if (n.type === "get_variable") return n.params[0] ? variableName(String(n.params[0])) : "변수 값";
+    // Shape ids end in -pic (1st), -pic2, -pic3, …
+    if (n.type === "get_pictures") return n.params[0] ? `${Number(/-pic(\d*)$/.exec(String(n.params[0]))?.[1] || 1)}번` : "( )";
     if (n.type === "combine_something") return `${val(n, 1)} + ${val(n, 3)}`;
     if (n.type === "calc_basic") return `(${val(n, 0)} ${({ PLUS: "+", MINUS: "−", MULTI: "×", DIVIDE: "÷" })[n.params[1] as "PLUS"] ?? val(n, 1)} ${val(n, 2)})`;
     if (["text", "number", "angle", "color"].includes(n.type)) return String(n.params[0]);
@@ -246,7 +280,9 @@ export function formatEntryNode(node: EntryNode): string {
     if (n.type === "when_run_button_click") return "시작하기 버튼을 클릭했을 때";
     if (n.type === "when_some_key_pressed") return `${keyName(n.params[1])} 키를 눌렀을 때`;
     if (n.type === "ask_and_wait") return `${expression(n.params[0] as EntryNode)} · 묻고 대답 기다리기`;
-    if (n.type === "set_variable") return `${String(n.params[0]).replace("cs-", "변수 ")}에 ${expression(n.params[1] as EntryNode)} 저장하기`;
+    if (n.type === "set_variable") return `${variableName(String(n.params[0]))}에 ${expression(n.params[1] as EntryNode)} 저장하기`;
+    if (n.type === "change_to_next_shape") return n.params[0] === "prev" ? "이전 모양으로 바꾸기" : "다음 모양으로 바꾸기";
+    if (n.type === "change_to_some_shape") return `${val(n, 0)} 모양으로 바꾸기`;
     if (n.type === "dialog_time") return `${expression(n.params[0] as EntryNode)} · ${expression(n.params[1] as EntryNode)}초 동안 ${n.params[2] === "speak" ? "말하기" : "생각하기"}`;
     if (n.type === "direction_absolute") return `이동 방향을 ${expression(n.params[0] as EntryNode)}°로 정하기`;
     if (n.type === "move_direction") return `이동 방향으로 ${expression(n.params[0] as EntryNode)}만큼 움직이기`;
@@ -301,16 +337,21 @@ const SIMILAR_BLOCKS: Record<string, string> = { dialog: "dialog_time", move_x: 
 
 // Graded lines start with a signal this mission's interpreter runs. Loose blocks
 // and other event lines stay in the work but are not graded.
+// Events an object mission's grader fires on every object.
+const OBJECT_EVENTS = ["when_run_button_click", "mouse_clicked", "when_object_click"];
+
 export function missionBlockIssue(id: string, raw: unknown): string | null {
-  const p = parseProgrammingProject(raw), allowed = MISSION_BLOCKS[id];
+  const p = parseProgrammingProject(raw), allowed = MISSION_BLOCKS[id], mission = missionById(id);
   if (!p || !allowed) return null;
-  const graded = p.threads.filter((t) => t[0]?.type === "when_run_button_click" || (missionById(id)?.keyEvents && t[0]?.type === "when_some_key_pressed" && ["37", "38", "39", "40"].includes(String(t[0].params[1]))));
+  const graded = mission?.objects
+    ? [...p.threads, ...p.added.flatMap((o) => o.threads)].filter((t) => OBJECT_EVENTS.includes(t[0]?.type))
+    : p.threads.filter((t) => t[0]?.type === "when_run_button_click" || (mission?.keyEvents && t[0]?.type === "when_some_key_pressed" && ["37", "38", "39", "40"].includes(String(t[0].params[1]))));
   const outside = (n: EntryNode): string | undefined => allowed.has(n.type) ? [...n.params.filter((v): v is EntryNode => object(v) && typeof v.type === "string"), ...(n.statements ?? []).flat()].map(outside).find(Boolean) : n.type;
   const type = graded.flat().map(outside).find(Boolean);
   if (type) {
     const instead = SIMILAR_BLOCKS[type];
     return instead && allowed.has(instead) ? `이번 미션은 ‘${blockLabel(type)}’ 대신 ‘${blockLabel(instead)}’ 블록으로 확인해요. 바꿔서 다시 검증해 주세요.` : `이번 미션은 기본 블록으로 확인해요. ‘${blockLabel(type)}’ 블록을 빼고 다시 검증해 주세요.`;
   }
-  const elsewhere = !graded.length && p.added.find((o) => o.threads.some((t) => t[0]?.type === "when_run_button_click"));
+  const elsewhere = !mission?.objects && !graded.length && p.added.find((o) => o.threads.some((t) => t[0]?.type === "when_run_button_click"));
   return elsewhere ? `강아지가 아니라 ‘${elsewhere.name}’에 시작하기 줄이 있어요. 오브젝트 목록에서 강아지를 고른 뒤 코드를 만들어 주세요.` : null;
 }

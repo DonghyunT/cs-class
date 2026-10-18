@@ -8,7 +8,7 @@ import { ENTRY_SPRITES, MAX_ADDED_OBJECTS, MISSION_BLOCKS } from "@/lib/classroo
 import type { Lesson, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { buildEntryProject, parseEntryProject } from "@/lib/classroom/entry-project";
 import { practiceMatches } from "@/lib/classroom/progress";
-import { MAX_PROJECT_BYTES, buildProgrammingProject, entryObjectModel, missionBlockIssue, newAddedObject, parseProgrammingProject, type ProgrammingMission } from "@/lib/classroom/programming-entry";
+import { MAX_PROJECT_BYTES, entryObjectModel, missionBlockIssue, missionStarter, newAddedObject, parseProgrammingProject, type ProgrammingMission } from "@/lib/classroom/programming-entry";
 import { checkNameMission, type NameRun } from "@/lib/classroom/name-entry";
 import type { WorkController, LessonMode } from "./work-controller";
 import { useWorkspaceExpansion } from "./use-workspace-expansion";
@@ -239,7 +239,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       </div></div>
       {saveState === "failed" && <div className={styles.saveFailure}><span><strong>{mode === "preview" ? "체험" : "저장"}</strong>{saveLabel}</span><Button size="sm" variant="ghost" onClick={() => document.getElementById("work-save-error")?.focus()}>{mode === "preview" ? "체험 작품 오류 확인" : "저장 오류 확인"}</Button></div>}
       {(!program || error) && <div role="alert" className={styles.error}><p>{error || (mode === "preview" ? "체험 작품을 읽지 못했어요. 현재 내용은 유지돼요." : "저장된 작품을 읽지 못했어요. 기존 저장본은 유지돼요.")}</p>{phase === "failed" && program && <Button variant="outline" onClick={retry}>작업실 다시 불러오기</Button>}
-        {!program && <Button variant="outline" disabled={locked} onClick={() => { if (window.confirm(mode === "preview" ? "현재 체험 블록을 시작 블록 하나로 바꿀까요? 이 창의 이전 체험 제출은 유지돼요." : "현재 편집 중인 블록을 시작 블록 하나로 바꿀까요? 이전 제출본은 유지돼요.")) { const starter = mission ? buildProgrammingProject() : buildEntryProject(); update({ ...draft, entryProject: starter, practiceOrder: mission ? [] : ["when_run_button_click"] }); retry(); } }}>시작 블록으로 다시 만들기</Button>}
+        {!program && <Button variant="outline" disabled={locked} onClick={() => { if (window.confirm(mode === "preview" ? "현재 체험 블록을 시작 블록 하나로 바꿀까요? 이 창의 이전 체험 제출은 유지돼요." : "현재 편집 중인 블록을 시작 블록 하나로 바꿀까요? 이전 제출본은 유지돼요.")) { const starter = mission ? missionStarter(mission.id) : buildEntryProject(); update({ ...draft, entryProject: starter, practiceOrder: mission ? [] : ["when_run_button_click"] }); retry(); } }}>시작 블록으로 다시 만들기</Button>}
       </div>}
       <div className={styles.frameScroll} tabIndex={0} role="region" aria-label="엔트리 작업실 가로 이동" aria-describedby="entry-help" aria-busy={phase === "loading"}>
         {phase === "loading" && <p className={styles.loading} role="status">엔트리 작업실을 불러오는 중…</p>}

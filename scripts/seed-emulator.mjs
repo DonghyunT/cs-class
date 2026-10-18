@@ -11,7 +11,7 @@ for (let i = 1; i <= 11; i++) {
   const id = `2-${i}`;
   const opened = i === 1 || i === 10;
   const openedLessonIds = opened
-    ? ["programming-13", "conditionals", "review-sandwich", "review-flowchart", "review-abstraction"]
+    ? ["programming-13", "conditionals", "loops", "review-sandwich", "review-flowchart", "review-abstraction"]
     : [];
   await db.collection("csClasses").doc(id).set({ id, name: `2학년 ${i}반`, currentLessonId: opened ? "review-sandwich" : null, openedLessonIds, revision: 0 });
 }

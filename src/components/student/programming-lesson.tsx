@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ProgrammingConcept as ProgrammingConceptView } from "./programming-concept";
 import { concepts, questions } from "@/lib/classroom/programming-data";
 import { missionBlockLabels } from "@/lib/classroom/entry-palette";
-import { buildProgrammingProject, missionsFor } from "@/lib/classroom/programming-entry";
+import { missionStarter, missionsFor } from "@/lib/classroom/programming-entry";
 import { practiceMatches } from "@/lib/classroom/progress";
 import type { Lesson, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
@@ -90,7 +90,7 @@ function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exp
   // A mission that left this lesson (or an unknown id) opens the first one instead.
   const mission = missions.find((item) => item.id === draft.programming?.mission) ?? missions[0];
   const current = work.missions?.[mission.id] ?? { validation: null, submission: null };
-  const raw = draft.programming?.projects[mission.id] ?? buildProgrammingProject();
+  const raw = draft.programming?.projects[mission.id] ?? missionStarter(mission.id);
   const position = missions.indexOf(mission);
   const previousMission = missions[position - 1], nextMission = missions[position + 1];
   const submitted = practiceMatches({ ...draft, entryProject: raw, practiceOrder: [] }, current.submission);
@@ -110,7 +110,7 @@ function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exp
       if (!current.programming) return;
       const projects = { ...current.programming.projects };
       const carryFrom = missions.find((item) => item.id === id)?.carryFrom;
-      if (!projects[id]) projects[id] = carryFrom ? projects[carryFrom] ?? buildProgrammingProject() : buildProgrammingProject();
+      if (!projects[id]) projects[id] = carryFrom ? projects[carryFrom] ?? missionStarter(id) : missionStarter(id);
       update({ ...current, programming: { ...current.programming, mission: id, projects } });
       focus("programming-mission-title");
     } catch { /* captureDraft keeps the current editor and reports the failure. */ }

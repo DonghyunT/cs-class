@@ -1,4 +1,5 @@
-import { missionBlockIssue, missionById, parseProgrammingProject, type EntryNode } from "../classroom/programming-entry";
+import { spritePictures, TRUSTED_SPRITES } from "../classroom/entry-palette";
+import { COUNTER, missionBlockIssue, missionById, parseProgrammingProject, pictureId, type EntryNode } from "../classroom/programming-entry";
 
 // Server-side grading. Kept out of the client bundle so fixed test inputs are not shipped to students.
 class MissionError extends Error {}
@@ -7,6 +8,8 @@ class StopRepeat extends Error {}
 
 // One run may evaluate at most this many blocks, keep this long a text and say this many lines.
 const MAX_STEPS = 20_000, MAX_TEXT = 500, MAX_SPEECH = 50, MAX_REPEAT = 1000, MAX_SEGMENTS = 200;
+// Event missions watch each forever loop for this many passes after every click.
+const FRAMES = 4;
 // Speech is compared without spaces and closing marks, so ‘불합격’ never counts as ‘합격’.
 const spoken = (text: string) => text.replace(/[\s!.?~'"‘’“”]/g, "");
 
@@ -18,11 +21,14 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   if (!p || !mission) return fail("작품을 읽지 못했어요. 입력한 블록은 유지하고 다시 확인해 주세요.");
   const issue = missionBlockIssue(id, raw);
   if (issue) return fail(issue);
-  function run(signal: string, inputs: string[]) {
-    const lines = p!.threads.filter((t) => signal === "click" ? t[0]?.type === "when_run_button_click" : t[0]?.type === "when_some_key_pressed" && t[0].params[1] === signal);
-    if (lines.length !== 1) throw new MissionError("시작 신호마다 한 줄의 코드를 연결해 주세요.");
+  // An object running code: its shapes (by index) and what it said.
+  type Actor = { id: string; count: number; index: number; said: string[] };
+  // `observe` stops forever loops after a few passes and keeps them to rerun after events.
+  function machine(inputs: string[], observe = false) {
     type Value = { value: string | number | boolean; input: boolean; computed?: number };
-    const variables: Record<string, Value> = { "cs-A": { value: 0, input: false }, "cs-B": { value: 0, input: false } };
+    const variables: Record<string, Value> = { "cs-A": { value: 0, input: false }, "cs-B": { value: 0, input: false }, [COUNTER.id]: { value: 0, input: false } };
+    let actor: Actor | null = null;
+    const forevers: { body: EntryNode[]; actor: Actor | null }[] = [];
     let answer = "", asks = 0, x = 0, y = 0, direction = 90, speech = "", speaksInput = false, speechComputed: number | undefined;
     let steps = 0, speeches = 0, usedOr = false, rotation = 0, drawing = false, loopDepth = 0, asksInLoop = 0;
     const sayings: string[] = [];
@@ -39,6 +45,9 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       if (n.type === "True" || n.type === "False") return { value: n.type === "True", input: false };
       if (n.type === "get_canvas_input_value") return { value: answer, input: asks > 0 };
       if (n.type === "get_variable") return variables[String(n.params[0])];
+      if (n.type === "get_pictures") return { value: String(n.params[0] ?? ""), input: false };
+      // No mouse button is held between the simulated clicks.
+      if (n.type === "is_clicked") return { value: false, input: false };
       if (n.type === "boolean_not") return { value: !evaluate(n.params[1] as EntryNode).value, input: false };
       if (n.type === "quotient_and_mod") {
         const a = number(evaluate(n.params[1] as EntryNode).value), b = number(evaluate(n.params[3] as EntryNode).value);
@@ -67,7 +76,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     }
     const say = (value: Value) => {
       if (++speeches > MAX_SPEECH) throw new MissionError("말하기가 너무 많아요.");
-      speech = String(value.value); speaksInput = value.input; speechComputed = value.computed; sayings.push(speech);
+      speech = String(value.value); speaksInput = value.input; speechComputed = value.computed; sayings.push(speech); actor?.said.push(speech);
     };
     // EntryJS moves along direction + rotation and draws while the pen is down.
     const goTo = (nextX: number, nextY: number) => {
@@ -77,7 +86,8 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       }
       x = nextX; y = nextY;
     };
-    function loop(body: EntryNode[], next: () => boolean) {
+    function loop(body: EntryNode[], next: () => boolean, forever = false) {
+      if (forever && observe) { forevers.push({ body, actor }); let left = FRAMES; next = () => left-- > 0; }
       loopDepth++;
       try { while (next()) { step(); try { exec(body); } catch (error) { if (error instanceof StopRepeat) break; throw error; } } }
       finally { loopDepth--; }
@@ -109,13 +119,66 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         // ‘될 때까지’ repeats while the condition is false; ‘인 동안’ while it is true.
         else if (n.type === "repeat_while_true") loop(n.statements?.[0] ?? [], () => !!evaluate(n.params[0] as EntryNode).value !== (n.params[1] !== "while"));
         // Only the step budget ends a loop without ‘반복 중단하기’.
-        else if (n.type === "repeat_inf") loop(n.statements?.[0] ?? [], () => true);
+        else if (n.type === "repeat_inf") loop(n.statements?.[0] ?? [], () => true, true);
+        else if (n.type === "change_variable") {
+          const target = variables[String(n.params[0])];
+          if (!target) throw new MissionError("더할 변수를 골라 주세요.");
+          variables[String(n.params[0])] = { value: number(number(target.value) + number(evaluate(n.params[1] as EntryNode).value)), input: false };
+        }
+        else if (n.type === "change_to_next_shape" || n.type === "change_to_some_shape") {
+          if (!actor || actor.count < 2) throw new MissionError("모양이 여러 개인 오브젝트에서 모양을 바꿔 주세요.");
+          if (n.type === "change_to_next_shape") actor.index = (actor.index + (n.params[0] === "prev" ? actor.count - 1 : 1)) % actor.count;
+          else {
+            const picked = String(evaluate(n.params[0] as EntryNode).value), owner = actor;
+            const index = Array.from({ length: owner.count }, (_, i) => pictureId(owner.id, i)).indexOf(picked);
+            if (index < 0) throw new MissionError("이 오브젝트의 모양을 골라 주세요.");
+            actor.index = index;
+          }
+        }
+        // Following the mouse does not change what is graded.
+        else if (n.type === "locate") continue;
         else if (n.type === "stop_repeat") { if (!loopDepth) throw new MissionError("‘반복 중단하기’는 반복 블록 안에 넣어 주세요."); throw new StopRepeat(); }
         else throw new MissionError("시작 블록은 맨 위에 두고 동작을 아래로 연결해 주세요.");
       }
     }
-    exec(lines[0].slice(1));
-    return { variables, asks, x, y, speech, speaksInput, speechComputed, usedOr, segments, asksInLoop, sayings };
+    const result = () => ({ variables, asks, x, y, speech, speaksInput, speechComputed, usedOr, segments, asksInLoop, sayings });
+    return {
+      result, variables,
+      run(list: EntryNode[], who: Actor | null) { actor = who; exec(list); },
+      // One more watch of every forever loop, as frames passing on the stage.
+      frames() { for (const { body, actor: who } of [...forevers]) { actor = who; let left = FRAMES; loop(body, () => left-- > 0); } },
+    };
+  }
+  function run(signal: string, inputs: string[]) {
+    const lines = p!.threads.filter((t) => signal === "click" ? t[0]?.type === "when_run_button_click" : t[0]?.type === "when_some_key_pressed" && t[0].params[1] === signal);
+    if (lines.length !== 1) throw new MissionError("시작 신호마다 한 줄의 코드를 연결해 주세요.");
+    const m = machine(inputs);
+    m.run(lines[0].slice(1), null);
+    return m.result();
+  }
+  // The tree must grow one shape at a time with clicks, never on its own, and speak when grown.
+  function growTree() {
+    const tree = p!.added.find((o) => o.sprite === "tree-growth");
+    if (!tree) throw new MissionError("나무 오브젝트가 없어요. ‘처음 작품으로’ 버튼으로 시작 작품을 다시 불러와 주세요.");
+    const actorOf = (id: string, sprite: string, index = 0): Actor => ({ id, count: spritePictures(TRUSTED_SPRITES.find((item) => item.id === sprite)!).length, index, said: [] });
+    const cast = [{ actor: { id: "entrybot", count: 1, index: 0, said: [] } as Actor, threads: p!.threads }, ...p!.added.map((o) => ({ actor: actorOf(o.id, o.sprite, o.picture), threads: o.threads }))];
+    const grown = cast.find((c) => c.actor.id === tree.id)!.actor, last = grown.count - 1;
+    const m = machine([], true);
+    const fire = (event: string, only?: Actor) => { for (const c of cast) if (!only || c.actor === only) for (const t of c.threads) if (t[0]?.type === event) m.run(t.slice(1), c.actor); };
+    fire("when_run_button_click"); m.frames();
+    if (grown.index !== 0) return false;
+    let stage = 0;
+    for (let click = 1; click <= 30; click++) {
+      const before = grown.said.length;
+      fire("mouse_clicked"); fire("when_object_click", grown); m.frames();
+      const now: number = grown.index; m.frames();
+      if (grown.index !== now || Number(m.variables[COUNTER.id].value) !== click) return false;
+      if (now !== stage && now !== stage + 1) return false;
+      if (now < last && grown.said.length) return false;
+      if (now === last && stage < last && grown.said.length === before) return false;
+      stage = now;
+    }
+    return stage === last;
   }
   // A closed regular polygon with `sides` equal strokes, all drawn inside a loop.
   const regular = (strokes: { from: [number, number]; to: [number, number]; inLoop: boolean }[], sides: number, length?: number) => {
@@ -155,6 +218,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       const r = run("click", tries), opened = r.sayings.filter((line) => spoken(line) === spoken("금고가 열렸어요!"));
       return r.asks === tries.length && r.asksInLoop === tries.length && opened.length === 1 && spoken(r.speech) === spoken("금고가 열렸어요!");
     });
+    else if (id === "tree") passed = growTree();
     else if (id === "move" || id === "keys") {
       const move = (signal: string, x: number, y: number) => { const r = run(signal, []); return Math.abs(r.x - x) < 0.0001 && Math.abs(r.y - y) < 0.0001; };
       // The keys mission grades only the four arrow keys; the carried-over start line is optional.
