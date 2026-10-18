@@ -99,13 +99,15 @@ try {
     } });
   }
   // CanvasInput's keyup/cursor callbacks can redraw a field after it is hidden.
-  const renderInput = window.CanvasInput.prototype.render;
-  window.CanvasInput.prototype.render = function () {
-    if (this._isHidden) return this;
-    return renderInput.call(this);
-  };
+  const renderInput = window.CanvasInput?.prototype?.render;
+  if (typeof renderInput === "function") {
+    window.CanvasInput.prototype.render = function () {
+      if (this._isHidden) return this;
+      return renderInput.call(this);
+    };
+  }
   EntryStatic.fontFamily = "sans-serif";
-  if (programming && mission === "keys") Entry.block.when_some_key_pressed.def.params = [null, "38"];
+  if (programming && mission === "keys" && Entry.block?.when_some_key_pressed?.def) Entry.block.when_some_key_pressed.def.params = [null, "38"];
   EntryStatic.getAllBlocks = () => programming ? PROGRAMMING_PALETTE : [
     { category: "start", blocks: ["when_run_button_click"] },
     { category: "moving", blocks: ["move_direction"] },
@@ -126,53 +128,61 @@ try {
   });
   const wideStage = Entry.interfaceState.canvasWidth;
   if (traced) {
-    const ask = Entry.block.ask_and_wait.func;
-    Entry.block.ask_and_wait.func = function (entity, script) {
-      try {
-        const first = !script.isInit;
-        const input = Entry.container.inputValue;
-        const answered = script.isInit && input.complete && input.sprite === entity && Entry.stage.inputField?._isHidden;
-        // Only the dog's question and speech belong to the name mission's run record.
-        const own = entity.parent?.id === "entrybot";
-        if (!script.isInit && nameRun && own) { awaitingAnswer = true; nameRun.steps.push({ kind: "ask", value: String(script.getValue("VALUE", script)) }); }
-        if (answered && nameRun && own) { awaitingAnswer = false; nameRun.steps.push({ kind: "answer", value: String(Entry.container.getInputValue()) }); }
-        const result = ask.call(this, entity, script);
-        if (first) {
-          const field = Entry.stage.inputField;
-          field._hiddenInput.setAttribute("aria-label", programming && mission !== "name" ? "강아지 질문 대답" : "강아지 이름 대답");
-          field._hiddenInput.maxLength = 180;
-        }
-        return result;
-      } catch (error) { if (nameRun) nameRun.failed = true; throw error; }
-    };
-    const say = Entry.block.dialog_time.func;
-    Entry.block.dialog_time.func = function (entity, script) {
-      try {
-        const first = !script.isStart;
-        const result = say.call(this, entity, script);
-        if (first && nameRun && entity.parent?.id === "entrybot") nameRun.steps.push({ kind: "say", value: String(entity.dialog?.message_ ?? "") });
-        return result;
-      } catch (error) { if (nameRun) nameRun.failed = true; throw error; }
-    };
+    const ask = Entry.block?.ask_and_wait?.func;
+    if (typeof ask === "function") {
+      Entry.block.ask_and_wait.func = function (entity, script) {
+        try {
+          const first = !script.isInit;
+          const input = Entry.container.inputValue;
+          const answered = script.isInit && input.complete && input.sprite === entity && Entry.stage.inputField?._isHidden;
+          // Only the dog's question and speech belong to the name mission's run record.
+          const own = entity.parent?.id === "entrybot";
+          if (!script.isInit && nameRun && own) { awaitingAnswer = true; nameRun.steps.push({ kind: "ask", value: String(script.getValue("VALUE", script)) }); }
+          if (answered && nameRun && own) { awaitingAnswer = false; nameRun.steps.push({ kind: "answer", value: String(Entry.container.getInputValue()) }); }
+          const result = ask.call(this, entity, script);
+          if (first) {
+            const field = Entry.stage.inputField;
+            field._hiddenInput.setAttribute("aria-label", programming && mission !== "name" ? "강아지 질문 대답" : "강아지 이름 대답");
+            field._hiddenInput.maxLength = 180;
+          }
+          return result;
+        } catch (error) { if (nameRun) nameRun.failed = true; throw error; }
+      };
+    }
+    const say = Entry.block?.dialog_time?.func;
+    if (typeof say === "function") {
+      Entry.block.dialog_time.func = function (entity, script) {
+        try {
+          const first = !script.isStart;
+          const result = say.call(this, entity, script);
+          if (first && nameRun && entity.parent?.id === "entrybot") nameRun.steps.push({ kind: "say", value: String(entity.dialog?.message_ ?? "") });
+          return result;
+        } catch (error) { if (nameRun) nameRun.failed = true; throw error; }
+      };
+    }
   }
   if (programming) {
     // Grading reads the dog's code, so the dog cannot be deleted. Loading clears all objects.
-    const removeObject = Entry.container.removeObject;
-    Entry.container.removeObject = function (id, ...rest) {
-      if (!loading && (typeof id === "string" ? id : id?.id) === "entrybot") { send("main-object-locked"); return; }
-      const removed = removeObject.call(this, id, ...rest);
-      queueMicrotask(changed);
-      return removed;
-    };
+    const removeObject = Entry.container?.removeObject;
+    if (typeof removeObject === "function") {
+      Entry.container.removeObject = function (id, ...rest) {
+        if (!loading && (typeof id === "string" ? id : id?.id) === "entrybot") { send("main-object-locked"); return; }
+        const removed = removeObject.call(this, id, ...rest);
+        queueMicrotask(changed);
+        return removed;
+      };
+    }
     // Duplicate and paste skip the sprite list. The dog stays unique and the object limit holds.
-    const addCloneObject = Entry.container.addCloneObject;
-    Entry.container.addCloneObject = function (source, ...rest) {
-      if (source?.id === "entrybot") { send("clone-blocked", { reason: "main" }); return undefined; }
-      if (Entry.container.getAllObjects().length >= 6) { send("clone-blocked", { reason: "limit" }); return undefined; }
-      const clone = addCloneObject.call(this, source, ...rest);
-      queueMicrotask(changed);
-      return clone;
-    };
+    const addCloneObject = Entry.container?.addCloneObject;
+    if (typeof addCloneObject === "function") {
+      Entry.container.addCloneObject = function (source, ...rest) {
+        if (source?.id === "entrybot") { send("clone-blocked", { reason: "main" }); return undefined; }
+        if (Entry.container.getAllObjects().length >= 6) { send("clone-blocked", { reason: "limit" }); return undefined; }
+        const clone = addCloneObject.call(this, source, ...rest);
+        queueMicrotask(changed);
+        return clone;
+      };
+    }
     // Entry's add button only asks for a sprite; the lesson page shows its own sprite list.
     Entry.addEventListener("openSpriteManager", () => { if (!locked && !loading) send("add-object-request"); });
   }
@@ -187,6 +197,10 @@ try {
   if (traced) document.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && event.isComposing && event.target instanceof HTMLInputElement && event.target.classList.contains("entryCanvasHiddenInput")) event.stopImmediatePropagation();
   }, true);
+  const resetActiveTime = () => { if (traced && monitor !== null) { activeTime = 0; lastTick = Date.now(); } };
+  document.addEventListener("keydown", resetActiveTime, true);
+  document.addEventListener("mousedown", resetActiveTime, true);
+  document.addEventListener("touchstart", resetActiveTime, true);
   document.addEventListener("mouseup", () => queueMicrotask(changed));
   document.addEventListener("touchend", () => queueMicrotask(changed));
   Entry.addEventListener("run", () => {
@@ -207,7 +221,6 @@ try {
     send("running", { running: true });
     clearInterval(monitor);
     monitor = setInterval(() => {
-      if (traced) { const now = Date.now(); if (!awaitingAnswer) activeTime += now - lastTick; lastTick = now; }
       const object = Entry.container.getObject("entrybot");
       const speech = object?.entity.dialog?.message_?.replaceAll("\n", "");
       if (speech) lastSpeech = speech;
@@ -217,6 +230,12 @@ try {
         else if (!reported) { result("finished"); reported = true; send("waiting"); }
       }
       if (monitor === null) return;
+      if (traced) {
+        const now = Date.now();
+        const waitingIdle = idle && (reported || (programming && mission === "keys"));
+        if (!awaitingAnswer && !waitingIdle) activeTime += now - lastTick;
+        lastTick = now;
+      }
       if ((traced ? activeTime : Date.now() - startedAt) >= 15000) void stop("timeout");
     }, 100);
   });
@@ -285,6 +304,7 @@ try {
         changed();
         Entry.engine.toggleRun();
       } else if (message.type === "key" && programming && !locked && Entry.engine.isState("run") && ["37", "38", "39", "40"].includes(message.key)) {
+        resetActiveTime();
         Entry.container.mapEntityIncludeCloneOnScene(Entry.engine.raiseKeyEvent, ["keyPress", Number(message.key)]);
       } else if (message.type === "stop" || message.type === "reset-stage") {
         await stop("stopped");
