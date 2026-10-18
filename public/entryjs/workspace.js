@@ -9,6 +9,19 @@ const mission = params.get("mission");
 // Mission flags from the lesson page: arrow-key events keep the run waiting; vars shows A·B.
 const keyMission = params.get("keys") === "1";
 const showVariables = params.get("vars") === "1";
+// Dog-free lessons: every object is equal, a few starter objects stay, shapes can be viewed.
+const free = programming && params.get("free") === "1";
+const lockedIds = (params.get("locked") ?? "").split(",").filter(Boolean);
+const maxObjects = free ? 12 : 6;
+// The dog when there is one, otherwise the object being edited.
+const mainObject = () => Entry.container.getObject("entrybot") ?? Entry.playground?.object ?? Entry.container.getAllObjects()[0];
+const speechNow = () => {
+  for (const object of free ? Entry.container.getAllObjects() : [Entry.container.getObject("entrybot")]) {
+    const message = object?.entity.dialog?.message_?.replaceAll("\n", "");
+    if (message) return message;
+  }
+  return "";
+};
 let disposed = false;
 // Copy of ENTRY_PALETTE in src/lib/classroom/entry-palette.ts. This sandboxed
 // script cannot import it; tests/entry-palette.test.ts keeps both lists equal.
@@ -64,9 +77,9 @@ function changed() {
 }
 
 function result(reason) {
-  const entity = Entry.container.getObject("entrybot")?.entity;
+  const entity = mainObject()?.entity;
   if (!entity) return;
-  const speech = entity.dialog?.message_?.replaceAll("\n", "") ?? "";
+  const speech = speechNow();
   if (speech) lastSpeech = speech;
   send("result", { x: entity.getX(), y: entity.getY(), speech: lastSpeech, reason });
   if (traced && nameRun) { send("name-run", { run: { ...nameRun, reason: nameRun.failed ? "error" : reason } }); nameRun = null; }
@@ -121,7 +134,7 @@ try {
     type: "workspace", libDir: "/entryjs/vendor", entryDir: "/entry",
     // The programming lesson lets students add objects from the lesson's own sprites.
     projectsaveable: false, objectEditable: programming, objectaddable: programming,
-    objectdeletable: programming, pictureeditable: false, soundeditable: false,
+    objectdeletable: programming, pictureeditable: free, soundeditable: false,
     sceneEditable: false, variableEnable: false, listEnable: false,
     functionEnable: false, messageEnable: false, hardwareEnable: false,
     aiLearningEnable: false, aiUtilizeDisable: true, expansionDisable: true,
@@ -145,7 +158,7 @@ try {
           const result = ask.call(this, entity, script);
           if (first) {
             const field = Entry.stage.inputField;
-            field._hiddenInput.setAttribute("aria-label", programming && mission !== "name" ? "강아지 질문 대답" : "강아지 이름 대답");
+            field._hiddenInput.setAttribute("aria-label", free ? "질문 대답" : programming && mission !== "name" ? "강아지 질문 대답" : "강아지 이름 대답");
             field._hiddenInput.maxLength = 180;
           }
           return result;
@@ -169,7 +182,10 @@ try {
     const removeObject = Entry.container?.removeObject;
     if (typeof removeObject === "function") {
       Entry.container.removeObject = function (id, ...rest) {
-        if (!loading && (typeof id === "string" ? id : id?.id) === "entrybot") { send("main-object-locked"); return; }
+        const target = typeof id === "string" ? id : id?.id;
+        if (!loading && target === "entrybot") { send("main-object-locked"); return; }
+        if (!loading && free && lockedIds.includes(target)) { send("object-locked", { name: String(Entry.container.getObject(target)?.name ?? "") }); return; }
+        if (!loading && free && Entry.container.getAllObjects().length <= 1) { send("last-object"); return; }
         const removed = removeObject.call(this, id, ...rest);
         queueMicrotask(changed);
         return removed;
@@ -180,7 +196,7 @@ try {
     if (typeof addCloneObject === "function") {
       Entry.container.addCloneObject = function (source, ...rest) {
         if (source?.id === "entrybot") { send("clone-blocked", { reason: "main" }); return undefined; }
-        if (Entry.container.getAllObjects().length >= 6) { send("clone-blocked", { reason: "limit" }); return undefined; }
+        if (Entry.container.getAllObjects().length >= maxObjects) { send("clone-blocked", { reason: "limit" }); return undefined; }
         const clone = addCloneObject.call(this, source, ...rest);
         queueMicrotask(changed);
         return clone;
@@ -188,6 +204,13 @@ try {
     }
     // Entry's add button only asks for a sprite; the lesson page shows its own sprite list.
     Entry.addEventListener("openSpriteManager", () => { if (!locked && !loading) send("add-object-request"); });
+    if (free) {
+      // Shapes come from the bundled Entry library and are rebuilt on save, so they can only be viewed and picked.
+      Entry.addEventListener("openPictureManager", () => send("picture-locked"));
+      for (const name of ["clonePicture", "_removePicture"]) {
+        if (typeof Entry.playground?.[name] === "function") Entry.playground[name] = () => send("picture-locked");
+      }
+    }
   }
   Entry.creationChangedEvent.attach(window, () => queueMicrotask(changed));
   document.addEventListener("input", (event) => {
@@ -224,8 +247,7 @@ try {
     send("running", { running: true });
     clearInterval(monitor);
     monitor = setInterval(() => {
-      const object = Entry.container.getObject("entrybot");
-      const speech = object?.entity.dialog?.message_?.replaceAll("\n", "");
+      const speech = speechNow();
       if (speech) lastSpeech = speech;
       const idle = Entry.container.getAllObjects().every((item) => item.script.executors.length === 0);
       if (idle && !(programming && keyMission)) {
@@ -268,8 +290,9 @@ try {
         // This Entry version aligns freshly created threads on load. Restore authored
         // anchors after that redraw; imported projects without anchors keep its layout.
         // Added objects come first in Entry's list; the dog is found by id and shown first.
-        Entry.container.selectObject("entrybot");
-        const script = (message.project.objects.find((object) => object.id === "entrybot") ?? message.project.objects[0]).script;
+        const shown = message.project.objects.find((object) => object.id === "entrybot") ?? message.project.objects[0];
+        Entry.container.selectObject(shown.id);
+        const script = shown.script;
         const threads = typeof script === "string" ? JSON.parse(script) : script;
         const board = Entry.getMainWS().board;
         board.code.getThreads().forEach((thread, index) => {
@@ -278,7 +301,7 @@ try {
         });
         board.scroller.resizeScrollBar();
         // loadProject returns before the stage image has finished loading.
-        const stageObject = Entry.container.getObject("entrybot").entity.object;
+        const stageObject = Entry.container.getObject(shown.id).entity.object;
         if (stageObject.image instanceof HTMLImageElement) await stageObject.image.decode();
         if (disposed) return;
         if (!stageObject.getTransformedBounds()) throw new Error("Stage picture is not ready");
@@ -288,9 +311,10 @@ try {
         send("loaded");
       } else if (message.type === "add-object" && programming && !locked && !loading && message.object && typeof message.object.id === "string") {
         await stop("stopped");
-        Entry.container.addObject(message.object, 0);
-        // Keep the dog selected: its code is the graded code.
-        Entry.container.selectObject("entrybot");
+        // Backgrounds go behind every object.
+        Entry.container.addObject(message.object, message.back === true ? Entry.container.getAllObjects().length : 0);
+        // Keep the dog selected: its code is the graded code. Dog-free lessons select the new object.
+        Entry.container.selectObject(free ? message.object.id : "entrybot");
         changed();
         send("object-added", { name: String(message.object.name ?? "") });
       } else if (message.type === "lock") {
@@ -312,8 +336,8 @@ try {
       } else if (message.type === "stop" || message.type === "reset-stage") {
         await stop("stopped");
         if (message.type === "reset-stage") {
-          const entity = Entry.container.getObject("entrybot").entity;
-          entity.setX(0); entity.setY(0);
+          const entity = Entry.container.getObject("entrybot")?.entity;
+          if (entity) { entity.setX(0); entity.setY(0); }
           send("result", { x: 0, y: 0, speech: "", reason: "reset" });
         }
       }
