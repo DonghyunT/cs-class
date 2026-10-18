@@ -130,6 +130,7 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     await expect(dialog.getByRole("button", { name: "작업실 닫기", exact: true })).toBeVisible();
     await expect.poll(async () => Math.round((await dialog.boundingBox())!.width)).toBe(1220);
     await expect(dialog.locator('iframe[title*="교사 실행 작업실"]')).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "무대 처음 위치로", exact: true })).toBeEnabled({ timeout: 20000 });
     await page.keyboard.press("Escape");
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('iframe[title*="교사 실행 작업실"]')).toHaveCount(0);
