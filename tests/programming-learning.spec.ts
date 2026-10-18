@@ -117,10 +117,24 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     for (const type of ["validate-practice", "submit-practice"]) { const work: Work = await response.json(); response = await page.request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type, missionId: "move" } } }); expect(response.status()).toBe(200); }
     await readyTeacher(page.request);
     await page.goto(`/teacher/students?classId=2-1&lessonId=${id}`);
+    await page.setViewportSize({ width: 1440, height: 900 });
     const open = page.getByRole("button", { name: "20101 제출 작품 보기", exact: true }); await open.click();
     const dialog = page.getByRole("dialog", { name: "20101 학생의 제출 작품", exact: true });
     await expect(dialog.locator("details")).toHaveCount(1);
+    await expect(dialog.getByRole("group", { name: "오브젝트 요약" })).toContainText("강아지");
+    await expect(dialog.getByText("시작 묶음 1", { exact: true })).toBeVisible();
     await expect(dialog.getByText("이동 방향으로 10만큼 움직이기", { exact: false })).toBeVisible();
+    expect(Math.round((await dialog.boundingBox())!.width)).toBe(860);
+    const runToggle = dialog.getByRole("button", { name: "작업실에서 실행해 보기", exact: true });
+    await runToggle.click();
+    await expect(dialog.getByRole("button", { name: "작업실 닫기", exact: true })).toBeVisible();
+    await expect.poll(async () => Math.round((await dialog.boundingBox())!.width)).toBe(1220);
+    await expect(dialog.locator('iframe[title*="교사 실행 작업실"]')).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('iframe[title*="교사 실행 작업실"]')).toHaveCount(0);
+    await expect(runToggle).toBeFocused();
+    await expect.poll(async () => Math.round((await dialog.boundingBox())!.width)).toBe(860);
     await dialog.locator("summary").click();
     await expect(dialog.getByText("이동 방향으로 10만큼 움직이기", { exact: false })).toBeHidden();
     await dialog.locator("summary").click();

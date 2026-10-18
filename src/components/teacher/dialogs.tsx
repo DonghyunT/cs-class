@@ -96,11 +96,13 @@ export function SubmissionViewer({ student, lesson, onLock, onComplete, onClose,
   student: StudentRow; lesson: Lesson; onLock: (value: boolean) => void; onComplete: () => void; onClose: () => void; finalFocus: () => HTMLElement | null | false;
 }) {
   const [saving, setSaving] = useState(false);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const busy = useRef(false);
+  const closeWorkspaceRef = useRef<(() => void) | null>(null);
   function lock(value: boolean) { busy.current = value; setSaving(value); onLock(value); }
   return <Dialog open onOpenChange={(next) => { if (!next && !busy.current) onClose(); }}>
-    <DialogContent className={styles.dialog} showCloseButton={!saving} finalFocus={finalFocus}><DialogHeader><DialogTitle>{student.studentId} 학생의 제출 작품</DialogTitle><DialogDescription>{lesson.title} · {lesson.practice.title}</DialogDescription></DialogHeader>
-      <WorkDetails uid={student.uid} lesson={lesson} expectedRequestId={student.work?.review?.id} onLock={lock} onComplete={onComplete} />
+    <DialogContent className={`${styles.dialog} ${styles.submissionDialog}`} data-workspace-open={workspaceOpen ? "true" : "false"} showCloseButton={!saving} finalFocus={finalFocus}><DialogHeader><DialogTitle>{student.studentId} 학생의 제출 작품</DialogTitle><DialogDescription>{lesson.title} · {lesson.practice.title}</DialogDescription></DialogHeader>
+      <WorkDetails uid={student.uid} lesson={lesson} expectedRequestId={student.work?.review?.id} onLock={lock} onComplete={onComplete} onWorkspaceOpenChange={setWorkspaceOpen} registerCloseWorkspace={(close) => { closeWorkspaceRef.current = close; }} />
     </DialogContent>
   </Dialog>;
 }

@@ -5,7 +5,7 @@ import legacyKeys from "./fixtures/entry-legacy-keys.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { readEntryDraft } from "../src/components/student/read-editor-draft";
 import { ENTRY_PALETTE } from "../src/lib/classroom/entry-palette";
-import { buildProgrammingProject, checkProgrammingMission, entryObjectModel, missionBlockIssue, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, checkProgrammingMission, entryBlockCategory, entryObjectModel, formatEntryNode, missionBlockIssue, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { emptyWork } from "../src/lib/classroom/progress";
 import type { WorkDraft } from "../src/lib/classroom/types";
@@ -117,16 +117,37 @@ test("반복 안쪽만 바꿔도 저장 비교와 미저장 판정이 바뀜을 
   expect(sameWorkContent(draft(before), draft(before))).toBe(true);
 });
 
-test("교사 작품 보기는 팔레트 블록 이름과 반복 안쪽을 들여 보여 준다", () => {
-  expect(programmingProjectLines(exported(rich)).slice(0, 7)).toEqual([
+test("교사 작품 보기는 팔레트 블록 입력값과 반복 안쪽을 들여 보여 준다", () => {
+  expect(programmingProjectLines(exported(rich))).toEqual([
     "시작하기 버튼을 클릭했을 때",
-    "( )번 반복하기",
+    "2번 반복하기",
     "└ 이동 방향으로 5만큼 움직이기",
-    "└ 만일 ( )(이)라면 / 아니면",
-    "  └ 그리기 색 정하기",
+    "└ 만일 참(이)라면 / 아니면",
+    "  └ 그리기 색을 #FF0000(으)로 정하기",
     "  아니면",
-    "( )이(가) 될 때까지 기다리기",
+    "(10 = 10)이(가) 될 때까지 기다리기",
+    "( ) 위치로 이동하기",
+    "변수에 10만큼 더하기",
+    "오브젝트를 클릭했을 때",
+    "복제본 만들기",
+    "0부터 10 사이의 무작위 수 · 아직 연결하지 않은 블록",
   ]);
+  expect(formatEntryNode(node("locate", "mouse", null))).toBe("마우스 포인터 위치로 이동하기");
+  expect(formatEntryNode(node("add_effect_amount", "color", number("10"), null))).toBe("색깔 효과를 10만큼 주기");
+  expect(formatEntryNode(node("move_xy_time", number("2"), number("10"), number("-20"), null))).toBe("2초 동안 x: 10 y: -20만큼 움직이기");
+  expect(formatEntryNode(node("locate_xy", number("50"), number("80"), null))).toBe("x: 50 y: 80 위치로 이동하기");
+  expect(formatEntryNode(node("dialog", node("text", "반가워"), "think", null))).toBe("반가워을(를) 생각하기");
+  expect(formatEntryNode(node("change_variable", "cs-A", number("5"), null))).toBe("변수 A에 5만큼 더하기");
+  expect(formatEntryNode(node("quotient_and_mod", null, number("10"), null, number("3"), null, "MOD"))).toBe("10 / 3의 나머지 · 아직 연결하지 않은 블록");
+  expect(formatEntryNode(node("calc_operation", null, number("9"), null, "root"))).toBe("9의 제곱근 · 아직 연결하지 않은 블록");
+  expect(formatEntryNode(node("boolean_basic_operator", number("3"), "LESS", number("5")))).toBe("(3 < 5) · 아직 연결하지 않은 블록");
+  expect(formatEntryNode(node("boolean_basic_operator", number("3"), "LESS_OR_EQUAL", number("5")))).toBe("(3 ≤ 5) · 아직 연결하지 않은 블록");
+  expect(formatEntryNode(node("change_object_index", "FORWARD", null))).toBe("앞으로 보내기");
+  expect(formatEntryNode(node("is_type", node("text", "가나다"), null, "ko"))).toBe("가나다이(가) 한글인가? · 아직 연결하지 않은 블록");
+  expect(formatEntryNode(node("stop_object", "thisThread", null))).toBe("이 코드 멈추기");
+  expect(entryBlockCategory("when_run_button_click")).toBe("start");
+  expect(entryBlockCategory("repeat_basic")).toBe("flow");
+  expect(entryBlockCategory("set_variable")).toBe("variable");
 });
 
 // Entry puts a newly added object first in its list, so the dog is not always objects[0].
@@ -149,7 +170,7 @@ test("추가한 오브젝트는 순서·이름·위치·코드를 저장하고 �
   expect(programmingProjectMatches(raw, withObjects([multiply()], [ball([[start(), node("move_x", number("30"), null)]], { name: "축구공", entity: { ...ball().entity, x: 151 } })]))).toBe(false);
   const draft = (value: string): WorkDraft => ({ ...emptyWork(PROGRAMMING_LESSON).draft, programming: { mission: "multiply", projects: { multiply: value }, reflection: "" } });
   expect(sameWorkContent(draft(raw), draft(withObjects([multiply()], [ball([[start(), node("move_x", number("30"), null)]], { name: "축구공", entity: { ...ball().entity, x: 160 } })])))).toBe(false);
-  expect(programmingProjectLines(raw).slice(-2)).toEqual(["[축구공] 시작하기 버튼을 클릭했을 때", "[축구공] x 좌표를 ( )만큼 바꾸기"]);
+  expect(programmingProjectLines(raw).slice(-2)).toEqual(["[축구공] 시작하기 버튼을 클릭했을 때", "[축구공] x 좌표를 30만큼 바꾸기"]);
 });
 
 test("허용 밖 그림·중복 id·강아지 없음·오브젝트 수 초과는 읽지 않는다", () => {

@@ -1,5 +1,5 @@
 import { buildNameProject } from "./name-entry";
-import { CONTAINER_BLOCKS, ENTRY_SPRITES, MAX_ADDED_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, VALUE_BLOCKS, blockLabel, type EntrySprite } from "./entry-palette";
+import { CONTAINER_BLOCKS, ENTRY_PALETTE, ENTRY_SPRITES, MAX_ADDED_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, VALUE_BLOCKS, blockLabel, type EntrySprite } from "./entry-palette";
 
 export const programmingMissions = [
   { id: "name", title: "강아지 이름 짓기", goal: "이름을 묻고, 입력한 이름을 말하게 해주세요.", hint: "질문 다음에 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 보세요.", experiment: "초코와 보리처럼 서로 다른 이름으로 두 번 실행해 보세요." },
@@ -145,23 +145,120 @@ export function programmingProjectMatches(a: unknown, b: unknown) {
   return !!current && !!saved && current.key === saved.key;
 }
 
-export function programmingProjectLines(raw: unknown): string[] {
-  const expression = (n: EntryNode): string => n.type === "get_canvas_input_value" ? "대답" : n.type === "get_variable" ? String(n.params[0]).replace("cs-", "변수 ") : n.type === "combine_something" ? `${expression(n.params[1] as EntryNode)} + ${expression(n.params[3] as EntryNode)}` : n.type === "calc_basic" ? `(${expression(n.params[0] as EntryNode)} ${({ PLUS: "+", MINUS: "−", MULTI: "×", DIVIDE: "÷" })[n.params[1] as "PLUS"]} ${expression(n.params[2] as EntryNode)})` : ["text", "number", "angle", "color"].includes(n.type) ? String(n.params[0]) : blockLabel(n.type);
-  const line = (n: EntryNode) => {
+const BLOCK_CATEGORY: Readonly<Record<string, string>> = Object.fromEntries(
+  ENTRY_PALETTE.flatMap((group) => group.blocks.map((block) => [block, group.category])),
+);
+export const entryBlockCategory = (type: string): string => BLOCK_CATEGORY[type] ?? (VALUE_BLOCKS.has(type) ? "calc" : "flow");
+
+const DROPDOWN_LABELS: Readonly<Record<string, string>> = {
+  color: "색깔", brightness: "밝기", transparency: "투명도",
+  WIDTH: "가로", HEIGHT: "세로", width: "가로", height: "세로",
+  speak: "말하기", think: "생각하기",
+  START: "시작", STOP: "정지", RESET: "초기화", SHOW: "보이기", HIDE: "숨기기",
+  self: "자신", entrybot: "강아지", mouse: "마우스 포인터", wall: "벽", edge: "화면 끝", all: "모든 코드",
+  thisThread: "이 코드", thisOnly: "이 오브젝트의 다른 코드", otherThread: "다른 오브젝트의 코드",
+  FRONT: "맨 앞", FORWARD: "앞으로", BACKWARD: "뒤로", BACK: "맨 뒤",
+  QUOTIENT: "몫", MOD: "나머지",
+  square: "제곱", root: "제곱근", sin: "사인", cos: "코사인", tan: "탄젠트", abs: "절댓값", floor: "버림", ceil: "올림", round: "반올림",
+  toUpperCase: "대문자", toLowerCase: "소문자", toUpper: "대문자", toLower: "소문자",
+  YEAR: "연도", MONTH: "월", DAY: "일", HOUR: "시", MINUTE: "분", SECOND: "초",
+  number: "숫자", string: "문자", en: "영문", ko: "한글",
+};
+const KEY_LABELS: Readonly<Record<string, string>> = { "37": "왼쪽", "38": "위쪽", "39": "오른쪽", "40": "아래쪽", "32": "스페이스", "13": "엔터" };
+const COMPARE_LABELS: Readonly<Record<string, string>> = {
+  EQUAL: "=", NOT_EQUAL: "≠", GREATER: ">", LESS: "<", SMALLER: "<", GREATER_OR_EQUAL: "≥", LESS_OR_EQUAL: "≤", SMALLER_OR_EQUAL: "≤",
+};
+const REPORTER_BLOCKS: ReadonlySet<string> = new Set([
+  ...VALUE_BLOCKS,
+  ...ENTRY_PALETTE.find((g) => g.category === "judgement")!.blocks,
+  ...ENTRY_PALETTE.find((g) => g.category === "calc")!.blocks.filter((b) => !["choose_project_timer_action", "set_visible_project_timer"].includes(b)),
+  "get_canvas_input_value", "get_variable",
+]);
+
+export function formatEntryNode(node: EntryNode): string {
+  const keyName = (v: unknown) => v === null || v === undefined ? "( )" : KEY_LABELS[String(v)] ?? `${v}번`;
+  const val = (n: EntryNode, index: number): string => {
+    const v = n.params[index];
+    if (v === null || v === undefined) return "( )";
+    if (object(v) && typeof v.type === "string") return expression(v as EntryNode);
+    const s = String(v);
+    if (s.startsWith("cs-")) return s.replace("cs-", "변수 ");
+    return DROPDOWN_LABELS[s] ?? s;
+  };
+  const expression = (n: EntryNode): string => {
+    if (n.type === "get_canvas_input_value") return "대답";
+    if (n.type === "get_variable") return n.params[0] ? String(n.params[0]).replace("cs-", "변수 ") : "변수 값";
+    if (n.type === "combine_something") return `${val(n, 1)} + ${val(n, 3)}`;
+    if (n.type === "calc_basic") return `(${val(n, 0)} ${({ PLUS: "+", MINUS: "−", MULTI: "×", DIVIDE: "÷" })[n.params[1] as "PLUS"] ?? val(n, 1)} ${val(n, 2)})`;
+    if (["text", "number", "angle", "color"].includes(n.type)) return String(n.params[0]);
+    if (n.type === "True") return "참";
+    if (n.type === "False") return "거짓";
+    if (n.type === "boolean_basic_operator") return `(${val(n, 0)} ${COMPARE_LABELS[String(n.params[1])] ?? val(n, 1)} ${val(n, 2)})`;
+    if (n.type === "boolean_and_or") return `(${val(n, 0)} ${n.params[1] === "OR" ? "또는" : "그리고"} ${val(n, 2)})`;
+    if (n.type === "boolean_not") return `${val(n, 1)}(이)가 아니다`;
+    if (n.type === "is_press_some_key") return `${keyName(n.params[0])} 키가 눌러져 있는가?`;
+    if (n.type === "reach_something") return `${val(n, 1)}에 닿았는가?`;
+    if (n.type === "is_type") return `${val(n, 0)}이(가) ${val(n, 2)}인가?`;
+    if (n.type === "calc_rand") return `${val(n, 1)}부터 ${val(n, 3)} 사이의 무작위 수`;
+    if (n.type === "coordinate_mouse") return `마우스 ${val(n, 1)} 좌표`;
+    if (n.type === "coordinate_object") return n.params[1] ? `${val(n, 1)}의 ${val(n, 3)}` : "오브젝트의 좌표·값";
+    if (n.type === "quotient_and_mod") return `${val(n, 1)} / ${val(n, 3)}의 ${val(n, 5)}`;
+    if (n.type === "calc_operation") return `${val(n, 1)}의 ${val(n, 3)}`;
+    if (n.type === "get_date") return `현재 ${val(n, 1)}`;
+    if (n.type === "distance_something") return `${val(n, 1)}까지의 거리`;
+    if (n.type === "length_of_string") return `${val(n, 1)}의 글자 수`;
+    if (n.type === "count_match_string") return `${val(n, 0)}에서 ${val(n, 2)}의 개수`;
+    if (n.type === "char_at") return `${val(n, 1)}의 ${val(n, 3)}번째 글자`;
+    if (n.type === "substring") return `${val(n, 1)}의 ${val(n, 3)}~${val(n, 5)}번째 글자`;
+    if (n.type === "index_of_string") return `${val(n, 1)}에서 ${val(n, 3)}의 위치`;
+    if (n.type === "replace_string") return `${val(n, 1)}의 ${val(n, 3)}을(를) ${val(n, 5)}(으)로 바꾸기`;
+    if (n.type === "reverse_of_string") return `${val(n, 1)} 뒤집기`;
+    if (n.type === "change_string_case") return `${val(n, 1)}의 ${val(n, 3)} 바꾸기`;
+    return blockLabel(n.type);
+  };
+  const line = (n: EntryNode): string => {
     if (n.type === "when_run_button_click") return "시작하기 버튼을 클릭했을 때";
-    if (n.type === "when_some_key_pressed") return `${({ "37": "왼쪽", "38": "위쪽", "39": "오른쪽", "40": "아래쪽" })[n.params[1] as "37"] ?? `${n.params[1]}번`} 키를 눌렀을 때`;
+    if (n.type === "when_some_key_pressed") return `${keyName(n.params[1])} 키를 눌렀을 때`;
     if (n.type === "ask_and_wait") return `${expression(n.params[0] as EntryNode)} · 묻고 대답 기다리기`;
     if (n.type === "set_variable") return `${String(n.params[0]).replace("cs-", "변수 ")}에 ${expression(n.params[1] as EntryNode)} 저장하기`;
     if (n.type === "dialog_time") return `${expression(n.params[0] as EntryNode)} · ${expression(n.params[1] as EntryNode)}초 동안 ${n.params[2] === "speak" ? "말하기" : "생각하기"}`;
     if (n.type === "direction_absolute") return `이동 방향을 ${expression(n.params[0] as EntryNode)}°로 정하기`;
     if (n.type === "move_direction") return `이동 방향으로 ${expression(n.params[0] as EntryNode)}만큼 움직이기`;
-    if (["text", "number", "angle", "get_canvas_input_value", "get_variable", "combine_something", "calc_basic"].includes(n.type)) return `${expression(n)} · 아직 연결하지 않은 블록`;
-    return blockLabel(n.type);
+    if (REPORTER_BLOCKS.has(n.type)) return `${expression(n)} · 아직 연결하지 않은 블록`;
+    if (n.type === "repeat_while_true") return `${val(n, 0)}${n.params[1] === "while" ? "인 동안" : "이(가) 될 때까지"} 반복하기`;
+    if (n.type === "stop_object") return n.params[0] ? `${val(n, 0)} 멈추기` : "코드 멈추기";
+    if (n.type === "create_clone") return n.params[0] && n.params[0] !== "self" ? `${val(n, 0)}의 복제본 만들기` : "복제본 만들기";
+    if (n.type === "move_xy_time") return `${val(n, 0)}초 동안 x: ${val(n, 1)} y: ${val(n, 2)}만큼 움직이기`;
+    if (n.type === "locate_xy") return `x: ${val(n, 0)} y: ${val(n, 1)} 위치로 이동하기`;
+    if (n.type === "locate_xy_time") return `${val(n, 0)}초 동안 x: ${val(n, 1)} y: ${val(n, 2)} 위치로 이동하기`;
+    if (n.type === "locate") return `${val(n, 0)} 위치로 이동하기`;
+    if (n.type === "locate_object_time") return `${val(n, 0)}초 동안 ${val(n, 1)} 위치로 이동하기`;
+    if (n.type === "rotate_by_time") return `${val(n, 0)}초 동안 방향을 ${val(n, 1)}만큼 회전하기`;
+    if (n.type === "direction_relative_duration") return `${val(n, 0)}초 동안 이동 방향을 ${val(n, 1)}만큼 회전하기`;
+    if (n.type === "see_angle_object") return `${val(n, 0)} 쪽 바라보기`;
+    if (n.type === "move_to_angle") return `${val(n, 0)} 방향으로 ${val(n, 1)}만큼 움직이기`;
+    if (n.type === "dialog") return `${val(n, 0)}을(를) ${n.params[1] === "think" ? "생각하기" : "말하기"}`;
+    if (n.type === "add_effect_amount") return `${val(n, 0)} 효과를 ${val(n, 1)}만큼 주기`;
+    if (n.type === "change_effect_amount") return `${val(n, 0)} 효과를 ${val(n, 1)}(으)로 정하기`;
+    if (n.type === "stretch_scale_size") return `${val(n, 0)} 크기를 ${val(n, 1)}만큼 늘이기`;
+    if (n.type === "change_object_index") return n.params[0] ? `${val(n, 0)} 보내기` : "앞뒤 순서 바꾸기";
+    if (n.type === "set_color") return n.params[0] !== null && n.params[0] !== undefined ? `그리기 색을 ${val(n, 0)}(으)로 정하기` : "그리기 색 정하기";
+    if (n.type === "set_fill_color") return n.params[0] !== null && n.params[0] !== undefined ? `채우기 색을 ${val(n, 0)}(으)로 정하기` : "채우기 색 정하기";
+    if (n.type === "change_variable") return `${n.params[0] ? val(n, 0) : "변수"}에 ${val(n, 1)}만큼 더하기`;
+    if (n.type === "show_variable") return `${n.params[0] ? val(n, 0) : "변수"} 보이기`;
+    if (n.type === "hide_variable") return `${n.params[0] ? val(n, 0) : "변수"} 숨기기`;
+    if (n.type === "choose_project_timer_action" || n.type === "set_visible_project_timer") return n.params[1] ? `초시계 ${val(n, 1)}` : blockLabel(n.type);
+    if (n.type === "set_visible_answer") return n.params[0] ? `대답 ${val(n, 0)}` : blockLabel(n.type);
+    const label = blockLabel(n.type);
+    return label.includes("( )") ? label.replace("( )", val(n, 0)) : label;
   };
+  try { return line(node); } catch { return "읽지 못한 블록"; }
+}
+
+export function programmingProjectLines(raw: unknown): string[] {
   // Inner blocks of repeat/if are listed under their block with └.
-  const safeLine = (n: EntryNode) => { try { return line(n); } catch { return "읽지 못한 블록"; } };
   const lines = (thread: EntryNode[], depth: number): string[] => thread.flatMap((n) => [
-    `${depth ? `${"  ".repeat(depth - 1)}└ ` : ""}${safeLine(n)}`,
+    `${depth ? `${"  ".repeat(depth - 1)}└ ` : ""}${formatEntryNode(n)}`,
     ...(n.statements ?? []).flatMap((inner, i) => [...(i ? [`${"  ".repeat(depth)}아니면`] : []), ...lines(inner, depth + 1)]),
   ]);
   const parsed = parseProgrammingProject(raw);
