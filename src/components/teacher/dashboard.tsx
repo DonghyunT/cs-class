@@ -17,7 +17,7 @@ import { SuccessToasts } from "@/components/ui/toast";
 import { classroomApi } from "@/lib/classroom/client";
 import { CLASSROOM_HELP_ENABLED } from "@/lib/classroom/features";
 import { progressFor, STATUS_LABELS, submissionCountFor } from "@/lib/classroom/progress";
-import { programmingMissions } from "@/lib/classroom/programming-entry";
+import { missionsFor, requiredMissionsFor } from "@/lib/classroom/programming-entry";
 import type { ClassSettings, Lesson, Progress, Stage, StudentRow, TeacherDashboard, WorkSummary } from "@/lib/classroom/types";
 import { ManageLessons, ResetPassword, SubmissionViewer } from "./dialogs";
 import { dateLabel, problemMessage } from "./presentation";
@@ -153,7 +153,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
       <span className={styles.role}><ShieldCheck size={16} aria-hidden="true" />{instructor ? "강사 · 담당 반 관리" : "교사 · 수업 관리"}</span>
     </div>
     <TeacherToolbar classId={selectedClassId ?? data?.classroom.id} classrooms={data?.classrooms ?? []} onClassChange={selectClass} onRefresh={() => { setFetching(true); void load(); }} refreshing={fetching} updatedAt={active ? updatedAt : null}>
-      {view === "classes" && active && <Button variant="outline" nativeButton={false} render={<Link href={`/teacher/preview/programming-13?classId=${encodeURIComponent(active.classroom.id)}`} />}>수업 미리보기</Button>}
+      {view === "classes" && active && <Button variant="outline" nativeButton={false} render={<Link href={`/teacher/preview/${active.selectedLessonId ?? "programming-13"}?classId=${encodeURIComponent(active.classroom.id)}`} />}>수업 미리보기</Button>}
       {view === "classes" && active && <ManageLessons key={active.classroom.id} classroom={active.classroom} lessons={active.lessons} onSaved={updateSettings} onLock={lockMutation} onRefresh={load} initialOpen={manageRequested} onClosed={() => setUrlConditions({ manage: null })} />}
     </TeacherToolbar>
     {error && <div className={styles.error} role="alert"><p>{error}</p><Button variant="outline" disabled={fetching} onClick={() => { setFetching(true); void load(); }}>다시 불러오기</Button>{active && <span>마지막으로 확인한 기록을 표시하고 있어요.</span>}</div>}
@@ -241,11 +241,11 @@ function TeacherStudentRow({ student, lesson, layout, onOpen }: { student: Stude
 
 function practiceLabel(lesson: Lesson, work: WorkSummary | null) {
   if (lesson.practice.type === "programming") {
-    const required = programmingMissions.filter((mission) => !("optional" in mission));
+    const required = requiredMissionsFor(lesson.id);
     const submitted = required.filter((mission) => work?.missions?.[mission.id]?.submission).length;
     const edited = work?.edited;
-    const challenge = work?.missions?.average?.submission;
-    return `기본 ${submitted}/4 제출${challenge ? " · 도전 제출" : ""}${edited ? " · 수정 중" : ""}`;
+    const challenge = missionsFor(lesson.id).some((mission) => mission.optional && work?.missions?.[mission.id]?.submission);
+    return `기본 ${submitted}/${required.length} 제출${challenge ? " · 도전 제출" : ""}${edited ? " · 수정 중" : ""}`;
   }
   if (work?.submission) return work.edited ? "제출 완료 · 수정 중" : "제출 완료";
   if (lesson.practice.type === "flowchart") return `${Object.values(work?.missions ?? {}).filter(record => record.submission).length}/4 작품 제출${work?.review?.status === "pending" ? " · 확인 대기" : ""}`;

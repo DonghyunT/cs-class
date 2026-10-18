@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Lesson, Work, WorkAction } from "../classroom/types";
 import { parseEntryProject } from "../classroom/entry-project";
-import { MAX_PROJECT_BYTES, MAX_RAW_PROJECT_CHARS, checkProgrammingMission, missionById, parseProgrammingProject, programmingProjectMatches } from "../classroom/programming-entry";
+import { MAX_PROJECT_BYTES, MAX_RAW_PROJECT_CHARS, isKnownLessonMission, isLessonMission, knownMissionCount, missionsFor, parseProgrammingProject, programmingProjectMatches } from "../classroom/programming-entry";
+import { checkProgrammingMission } from "./programming-grader";
 import { practiceMatches } from "../classroom/progress";
 import { requireCondition } from "./errors";
 import { getLessonSolution } from "./solutions";
@@ -47,10 +48,12 @@ export function validateDraft(draft: z.infer<typeof draftSchema>, lesson: Lesson
   }
   requireCondition(!draft.reviewProject, 400, "INVALID_PROJECT", "이 수업의 작품 형식을 확인해 주세요.");
   if (lesson.practice.type === "programming") {
-    requireCondition(draft.programming && missionById(draft.programming.mission) && Object.keys(draft.programming.projects).length <= 5 && Object.entries(draft.programming.projects).every(([id, raw]) => missionById(id) && parseProgrammingProject(raw)), 400, "INVALID_PROJECT", "미션의 작품과 입력값을 확인해 주세요.");
+    // Saves keep work from retired missions; only checking and submitting require a current mission.
+    requireCondition(draft.programming && Object.keys(draft.programming.projects).length <= knownMissionCount(lesson.id) && Object.entries(draft.programming.projects).every(([id, raw]) => isKnownLessonMission(lesson.id, id) && parseProgrammingProject(raw)), 400, "INVALID_PROJECT", "미션의 작품과 입력값을 확인해 주세요.");
     // Store the server's own normalization, never the client's raw extra fields.
     const projects = Object.fromEntries(Object.entries(draft.programming!.projects).map(([id, raw]) => [id, JSON.stringify(parseProgrammingProject(raw)!.project)]));
-    const normalized = { ...draft, programming: { ...draft.programming!, projects }, entryProject: null, practiceOrder: [] };
+    const mission = isLessonMission(lesson.id, draft.programming!.mission) ? draft.programming!.mission : missionsFor(lesson.id)[0].id;
+    const normalized = { ...draft, programming: { ...draft.programming!, mission, projects }, entryProject: null, practiceOrder: [] };
     requireCondition(Object.values(projects).every((project) => Buffer.byteLength(project, "utf8") <= MAX_PROJECT_BYTES) && Buffer.byteLength(JSON.stringify(normalized), "utf8") <= 120000, 400, "PROJECT_TOO_LARGE", "작품이 저장 한도를 넘었어요. 현재 블록을 보존하고 필요한 블록만 남겨 다시 시도해 주세요.");
     return normalized;
   }
@@ -103,7 +106,7 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
   if (action.type === "validate-practice" || action.type === "submit-practice") {
     if (lesson.practice.type === "programming") {
       const id = action.missionId;
-      requireCondition(id && missionById(id), 400, "MISSION_REQUIRED", "확인할 미션을 선택해 주세요.");
+      requireCondition(id && isLessonMission(lesson.id, id), 400, "MISSION_REQUIRED", "확인할 미션을 선택해 주세요.");
       const project = next.draft.programming?.projects[id];
       requireCondition(project && parseProgrammingProject(project), 400, "INVALID_PROJECT", "현재 작품을 확인해 주세요.");
       const checked = checkProgrammingMission(id, project);

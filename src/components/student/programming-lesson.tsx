@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ProgrammingConcept as ProgrammingConceptView } from "./programming-concept";
 import { concepts, questions } from "@/lib/classroom/programming-data";
 import { missionBlockLabels } from "@/lib/classroom/entry-palette";
-import { buildProgrammingProject, missionById, programmingMissions } from "@/lib/classroom/programming-entry";
+import { buildProgrammingProject, missionsFor } from "@/lib/classroom/programming-entry";
 import { practiceMatches } from "@/lib/classroom/progress";
 import type { Lesson, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
@@ -82,11 +82,13 @@ function ProgrammingQuiz({ lesson, controller, locked, runAction, next, focus, q
 function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exportRef, workspaceWide, practiceFocused, onWorkspaceWideChange, saveLabel, mode = "student", onEditorReady }: Props) {
   const { work, draft, update } = controller;
   const [switching, setSwitching] = useState(false);
-  const mission = missionById(draft.programming?.mission ?? "name")!;
+  const missions = missionsFor(lesson.id);
+  // A mission that left this lesson (or an unknown id) opens the first one instead.
+  const mission = missions.find((item) => item.id === draft.programming?.mission) ?? missions[0];
   const current = work.missions?.[mission.id] ?? { validation: null, submission: null };
   const raw = draft.programming?.projects[mission.id] ?? buildProgrammingProject();
-  const position = programmingMissions.findIndex((item) => item.id === mission.id);
-  const previousMission = programmingMissions[position - 1], nextMission = programmingMissions[position + 1];
+  const position = missions.indexOf(mission);
+  const previousMission = missions[position - 1], nextMission = missions[position + 1];
   const submitted = practiceMatches({ ...draft, entryProject: raw, practiceOrder: [] }, current.submission);
   const moveMessage = submitted
     ? nextMission ? `${mode === "preview" ? "체험 제출 확인" : "제출 완료"}! 다음 미션에도 도전해 보세요.`
@@ -103,18 +105,19 @@ function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exp
       const current = controller.getDraft();
       if (!current.programming) return;
       const projects = { ...current.programming.projects };
-      if (!projects[id]) projects[id] = id === "keys" ? projects.move ?? buildProgrammingProject() : buildProgrammingProject();
+      const carryFrom = missions.find((item) => item.id === id)?.carryFrom;
+      if (!projects[id]) projects[id] = carryFrom ? projects[carryFrom] ?? buildProgrammingProject() : buildProgrammingProject();
       update({ ...current, programming: { ...current.programming, mission: id, projects } });
       focus("programming-mission-title");
     } catch { /* captureDraft keeps the current editor and reports the failure. */ }
     finally { setSwitching(false); }
   }
   return <div className={styles.practice} data-practice-focused={practiceFocused}>
-    <PracticeGuidance focused={practiceFocused} label="미션 바꾸기"><nav className={styles.missions} aria-label="실습 미션">{programmingMissions.map((m, i) => <button key={m.id} type="button" aria-current={m.id === mission.id ? "step" : undefined} disabled={locked || switching || controller.capturing || controller.actionBlocked} onClick={() => void select(m.id)}><span>{work.missions?.[m.id]?.submission ? <Check size={17} /> : "optional" in m ? "＋" : `0${i + 1}`}</span><strong>{m.title}</strong><small>{work.missions?.[m.id]?.submission ? mode === "preview" ? "체험 제출 확인" : "제출 완료" : "optional" in m ? "선택 도전" : m.id === "keys" ? "앞 작품에 추가" : "독립 작품"}</small></button>)}</nav></PracticeGuidance>
+    <PracticeGuidance focused={practiceFocused} label="미션 바꾸기"><nav className={styles.missions} aria-label="실습 미션">{missions.map((m, i) => <button key={m.id} type="button" aria-current={m.id === mission.id ? "step" : undefined} disabled={locked || switching || controller.capturing || controller.actionBlocked} onClick={() => void select(m.id)}><span>{work.missions?.[m.id]?.submission ? <Check size={17} /> : m.optional ? "＋" : `0${i + 1}`}</span><strong>{m.title}</strong><small>{work.missions?.[m.id]?.submission ? mode === "preview" ? "체험 제출 확인" : "제출 완료" : m.optional ? "선택 도전" : m.carryFrom ? "앞 작품에 추가" : "독립 작품"}</small></button>)}</nav></PracticeGuidance>
     <div className={styles.practiceLayout}>
       <aside className={styles.missionBrief} aria-labelledby="programming-mission-title">
-        <div className={styles.heading}><div><span>{"optional" in mission ? "선택 도전 · 기본 완료 조건에 포함되지 않아요" : `MISSION 0${programmingMissions.findIndex((m) => m.id === mission.id) + 1}`}</span><h3 id="programming-mission-title" tabIndex={-1}>{mission.title}</h3><p>{mission.goal}</p></div></div>
-        {mission.id === "keys" && <p className={styles.carry}>앞 미션의 작품이 있으면 처음 시작할 때 가져와요. 아직 없다면 시작 블록에서 만들 수 있어요. {mode === "preview" ? "각 미션의 작품과 체험 제출은 이 창에서 따로 유지돼요." : "각 미션의 저장본과 제출본은 따로 유지돼요."}</p>}
+        <div className={styles.heading}><div><span>{mission.optional ? "선택 도전 · 기본 완료 조건에 포함되지 않아요" : `MISSION 0${position + 1}`}</span><h3 id="programming-mission-title" tabIndex={-1}>{mission.title}</h3><p>{mission.goal}</p></div></div>
+        {mission.carryFrom && <p className={styles.carry}>앞 미션의 작품이 있으면 처음 시작할 때 가져와요. 아직 없다면 시작 블록에서 만들 수 있어요. {mode === "preview" ? "각 미션의 작품과 체험 제출은 이 창에서 따로 유지돼요." : "각 미션의 저장본과 제출본은 따로 유지돼요."}</p>}
         <PracticeGuidance focused={practiceFocused} label="실험·블록 연결 힌트"><div className={styles.experiment}><h4><Lightbulb size={17} aria-hidden="true" />먼저 해볼 작은 실험</h4><p>{mission.experiment}</p></div>
         <details key={mission.id} className={styles.hint}><summary>블록 연결 힌트</summary><p>{mission.hint}</p><p>검증에 쓰는 블록: {missionBlockLabels(mission.id).join(" · ")}. 다른 블록도 자유롭게 써 볼 수 있지만, 검증할 때는 시작 블록 아래에 이 블록만 연결해 주세요.</p></details></PracticeGuidance>
       </aside>

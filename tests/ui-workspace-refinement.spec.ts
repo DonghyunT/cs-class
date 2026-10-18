@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { buildEntryProject, parseEntryProject } from "../src/lib/classroom/entry-project";
-import { buildProgrammingProject, parseProgrammingProject, programmingMissions } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, parseProgrammingProject, missionsFor } from "../src/lib/classroom/programming-entry";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { emptyWork } from "../src/lib/classroom/progress";
 import { resumeLabelFor } from "../src/lib/classroom/lesson-navigation";
@@ -56,7 +56,7 @@ async function expectEntryFallback(page: Page) {
 test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업실 상단·키보드·모바일 배치를 유지", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1544, height: 712 });
   await enter(page, "programming-13");
-  const mission = programmingMissions[0];
+  const mission = missionsFor("programming-13")[0];
   const guidance = page.getByRole("complementary", { name: mission.title, exact: true });
   const editor = page.getByRole("region", { name: "엔트리 블록 코딩 작업", exact: true });
   const missions = page.getByRole("navigation", { name: "실습 미션", exact: true });
@@ -240,7 +240,7 @@ test("workspace-availability: 실제 셸 경계·로딩 중 초점·입력·실�
   await reflection.fill("폭을 바꿔도 입력을 이어가요");
   await reflection.press("Control+s");
   await expect.poll(async () => ((await (await page.request.get(endpoint)).json()) as Work).draft.programming?.reflection).toBe("폭을 바꿔도 입력을 이어가요");
-  const guidance = page.getByRole("complementary", { name: programmingMissions[0].title, exact: true });
+  const guidance = page.getByRole("complementary", { name: missionsFor("programming-13")[0].title, exact: true });
   for (const width of [1339, 1340, 1339]) {
     await page.setViewportSize({ width, height: 720 });
     // Compare both boxes before the focused iframe's scroll position can change.

@@ -54,6 +54,7 @@ export const LESSON_MAPPINGS = {
       /^src\/components\/student\/programming-(?:lesson\.tsx|lesson\.module\.css|concept\.tsx|concept\.module\.css)$/,
       /^src\/components\/student\/entry-practice-workspace(?:\.tsx|\.module\.css)$/,
       /^src\/lib\/classroom\/(?:programming-entry|name-entry|entry-palette)\.ts$/,
+      /^src\/lib\/server\/programming-grader\.ts$/,
       /^tests\/(?:entry-palette\.test\.ts|entry-legacy-inputs\.ts|fixtures\/entry-legacy-keys\.json)$/,
       /^public\/entryjs\/.+$/,
       /^scripts\/prepare-entryjs\.mjs$/
@@ -71,15 +72,15 @@ export const LESSON_MAPPINGS = {
   }
 };
 
-export function matchLesson(file) {
+// Shared files (the Entry interpreter, palette, iframe) belong to every lesson that lists them.
+export function matchLessons(file) {
   // Normalize Windows backslashes to POSIX
   const normalized = file.replaceAll("\\", "/");
-  for (const mapping of Object.values(LESSON_MAPPINGS)) {
-    if (mapping.patterns.some(pattern => pattern.test(normalized))) {
-      return mapping.lessonId;
-    }
-  }
-  return null;
+  return Object.values(LESSON_MAPPINGS).filter(mapping => mapping.patterns.some(pattern => pattern.test(normalized))).map(mapping => mapping.lessonId);
+}
+
+export function matchLesson(file) {
+  return matchLessons(file)[0] ?? null;
 }
 
 export function selectE2E(files) {
@@ -101,9 +102,9 @@ export function selectE2E(files) {
   let unmapped = null;
 
   for (const file of codeFiles) {
-    const lesson = matchLesson(file);
-    if (lesson) {
-      matchedLessons.add(lesson);
+    const lessons = matchLessons(file);
+    if (lessons.length) {
+      lessons.forEach(lesson => matchedLessons.add(lesson));
     } else {
       unmapped = file;
       break;

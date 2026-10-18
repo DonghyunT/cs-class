@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { findLesson } from "../classroom/catalog";
 import { emptyWork } from "../classroom/progress";
-import { missionById } from "../classroom/programming-entry";
+import { isKnownLessonMission, knownMissionCount } from "../classroom/programming-entry";
 import { isReviewType, reviewMissionIds, reviewProjectSchema } from "../classroom/review/project";
 import type { Lesson, Submission, ValidationResult, Work } from "../classroom/types";
 import { authorized, identity } from "./auth";
@@ -61,7 +61,7 @@ function validateSnapshot(snapshot: ValidationResult | Submission | null, lesson
   if (!snapshot) return;
   const draft = emptyWork(lesson).draft;
   if (lesson.practice.type === "programming") {
-    requireCondition(missionId && missionById(missionId) && typeof snapshot.entryProject === "string" && !snapshot.order.length && !snapshot.reviewProject, 400, "INVALID_PROJECT", "이전 미션의 작품 형식을 확인해 주세요.");
+    requireCondition(missionId && isKnownLessonMission(lesson.id, missionId) && typeof snapshot.entryProject === "string" && !snapshot.order.length && !snapshot.reviewProject, 400, "INVALID_PROJECT", "이전 미션의 작품 형식을 확인해 주세요.");
     draft.programming = { mission: missionId, projects: { [missionId]: snapshot.entryProject }, reflection: "" };
   } else if (isReviewType(lesson.practice.type)) {
     const project = snapshot.reviewProject;
@@ -91,9 +91,9 @@ function validateWork(work: Work, lesson: Lesson) {
   requireCondition(multipleMissions ? !work.validation && !work.submission : !work.missions, 400, "INVALID_WORK", "수업의 실습 기록 형식을 확인해 주세요.");
   if (multipleMissions) {
     const entries = Object.entries(work.missions ?? {});
-    requireCondition(entries.length <= (lesson.practice.type === "programming" ? 5 : 4), 400, "INVALID_MISSION", "미션 기록을 확인해 주세요.");
+    requireCondition(entries.length <= (lesson.practice.type === "programming" ? knownMissionCount(lesson.id) : 4), 400, "INVALID_MISSION", "미션 기록을 확인해 주세요.");
     for (const [id, mission] of entries) {
-      requireCondition(lesson.practice.type === "programming" ? missionById(id) : reviewMissionIds.includes(id), 400, "INVALID_MISSION", "미션 기록을 확인해 주세요.");
+      requireCondition(lesson.practice.type === "programming" ? isKnownLessonMission(lesson.id, id) : reviewMissionIds.includes(id), 400, "INVALID_MISSION", "미션 기록을 확인해 주세요.");
       validateSnapshot(mission.validation, lesson, id); validateSnapshot(mission.submission, lesson, id);
     }
   } else {

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
 import { LESSONS, RELEASED_LESSONS } from "../src/lib/classroom/catalog";
-import { buildProgrammingProject, programmingMissions } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, missionsFor } from "../src/lib/classroom/programming-entry";
 import { emptyWork, progressFor, submissionCountFor } from "../src/lib/classroom/progress";
 import type { StudentRow, TeacherDashboard, Work } from "../src/lib/classroom/types";
 import { localOnly, readyTeacher } from "./emulator";
@@ -133,7 +133,7 @@ test("알려진 최근 작품만 집계하며 선택 도전과 수정 중 제출
   expect(submissionCountFor(ordinary, rows[1].work)).toBe(0);
   unknown.submission = { id: "ordinary", order: [], submittedAt: 1000 };
   expect(submissionCountFor(ordinary, unknown)).toBe(1);
-  expect(programmingMissions).toHaveLength(5);
+  expect(missionsFor("programming-13")).toHaveLength(5);
 });
 
 test("교사 집계·진행 필터·검색 복구는 부분 제출과 선택 도전을 정확히 표시", async ({ page }) => {

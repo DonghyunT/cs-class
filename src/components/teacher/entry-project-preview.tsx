@@ -7,6 +7,7 @@ import { ENTRY_PALETTE, ENTRY_SPRITES } from "@/lib/classroom/entry-palette";
 import {
   entryBlockCategory,
   formatEntryNode,
+  missionById,
   parseProgrammingProject,
   programmingProjectLines,
   type EntryNode,
@@ -170,7 +171,7 @@ export function EntryProjectPreview({
         if (message.running) {
           const hasAsk = parsed?.order.includes("ask_and_wait");
           const hasKeys =
-            missionId === "keys" ||
+            !!missionById(missionId)?.keyEvents ||
             parsed?.order.some((type) => type === "when_some_key_pressed" || type === "is_press_some_key");
           setResult(
             hasAsk
@@ -274,7 +275,7 @@ export function EntryProjectPreview({
     })),
   ];
   const usesKeys =
-    missionId === "keys" ||
+    !!missionById(missionId)?.keyEvents ||
     parsed.order.some((type) => type === "when_some_key_pressed" || type === "is_press_some_key");
 
   return (
@@ -338,7 +339,7 @@ export function EntryProjectPreview({
             <iframe
               key={attempt}
               ref={frameRef}
-              src={`/entryjs/workspace.html?exercise=programming&mission=${encodeURIComponent(missionId)}`}
+              src={`/entryjs/workspace.html?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}`}
               title={`${missionTitle} 교사 실행 작업실`}
               sandbox="allow-scripts"
               className={styles.entryRunnerFrame}

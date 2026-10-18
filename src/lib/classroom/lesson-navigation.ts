@@ -1,4 +1,4 @@
-import { programmingMissions } from "./programming-entry";
+import { missionById } from "./programming-entry";
 import { progressFor } from "./progress";
 import type { Lesson, Work } from "./types";
 
@@ -13,7 +13,7 @@ export function resumeLabelFor(lesson: Lesson, work?: Work | null) {
   if (progressFor(lesson, work).status === "completed") return "필수 활동 완료 · 복습하기";
   if (work.draft.stage === "practice") {
     const title = lesson.practice.type === "programming"
-      ? programmingMissions.find((mission) => mission.id === work.draft.programming?.mission)?.title ?? lesson.practice.title
+      ? missionById(work.draft.programming?.mission ?? "")?.title ?? lesson.practice.title
       : lesson.practice.title;
     return `실습 · ${title}`;
   }

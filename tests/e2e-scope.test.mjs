@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { selectE2E, matchLesson } from "../scripts/e2e-scope.mjs";
+import { selectE2E, matchLesson, matchLessons } from "../scripts/e2e-scope.mjs";
 
 function runRunner({ plan, planFile = "plan.json", args = [], event = "push", setup } = {}) {
   const directory = mkdtempSync(path.join(tmpdir(), "cs-class-e2e-plan-"));
@@ -56,6 +56,9 @@ test("matchLesson matches lesson specific files accurately", () => {
   assert.equal(matchLesson("public/entryjs/workspace.js"), "programming-13");
   assert.equal(matchLesson("tests/entry-palette.test.ts"), "programming-13");
   assert.equal(matchLesson("tests/fixtures/entry-legacy-keys.json"), "programming-13");
+  assert.equal(matchLesson("src/lib/server/programming-grader.ts"), "programming-13");
+  assert.deepEqual(matchLessons("src\\lib\\classroom\\programming-entry.ts"), ["programming-13"]);
+  assert.deepEqual(matchLessons("src/components/student/use-work.ts"), []);
   assert.equal(matchLesson("src/components/student/use-work.ts"), null);
   assert.equal(matchLesson("src/components/student/lesson-editor.tsx"), null);
 });

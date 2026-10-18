@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
-import { buildProgrammingProject, checkProgrammingMission, newAddedObject, parseProgrammingProject, programmingProjectMatches, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, newAddedObject, parseProgrammingProject, programmingProjectMatches, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { checkProgrammingMission } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { emptyWork, progressFor } from "../src/lib/classroom/progress";
 import { questions } from "../src/lib/classroom/programming-data";
@@ -397,7 +398,7 @@ test("곱셈·평균 실제 실행 · 변수 팔레트 · 이동 이어 만들�
   await expect.poll(async () => parseProgrammingProject((await stored(page)).draft.programming!.projects.move)?.order).toEqual(["when_run_button_click", "move_direction"]);
   const moveBefore = (await stored(page)).draft.programming!.projects.move;
   await page.getByRole("button", { name: /방향키로 움직임 개선/ }).click();
-  await page.locator('iframe[src$="mission=keys"]').scrollIntoViewIfNeeded();
+  await page.locator('iframe[src*="mission=keys&"]').scrollIntoViewIfNeeded();
   await expect(entryStart(page)).toBeVisible();
   const displayedScript = await frame.locator("body").evaluate(() => (window as unknown as { Entry: { container: { getObject: (id: string) => { getScriptText: () => string } } } }).Entry.container.getObject("entrybot").getScriptText());
   expect(programmingProjectMatches(JSON.stringify({ objects: [{ script: displayedScript }] }), moveBefore)).toBe(true);

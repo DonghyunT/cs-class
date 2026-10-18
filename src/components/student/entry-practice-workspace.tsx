@@ -241,10 +241,10 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       </div>}
       <div className={styles.frameScroll} tabIndex={0} role="region" aria-label="엔트리 작업실 가로 이동" aria-describedby="entry-help" aria-busy={phase === "loading"}>
         {phase === "loading" && <p className={styles.loading} role="status">엔트리 작업실을 불러오는 중…</p>}
-        <iframe key={attempt} ref={frame} src={mission ? `/entryjs/workspace.html?exercise=programming&mission=${mission.id}` : "/entryjs/workspace.html"} title={mission ? `${mission.title} 엔트리 작업실` : "엔트리봇 블록 편집기와 실행 무대"} sandbox="allow-scripts" className={styles.frame} inert={locked || preparing || phase !== "ready"} />
+        <iframe key={attempt} ref={frame} src={mission ? `/entryjs/workspace.html?exercise=programming&mission=${mission.id}${mission.variables ? "&vars=1" : ""}${mission.keyEvents ? "&keys=1" : ""}` : "/entryjs/workspace.html"} title={mission ? `${mission.title} 엔트리 작업실` : "엔트리봇 블록 편집기와 실행 무대"} sandbox="allow-scripts" className={styles.frame} inert={locked || preparing || phase !== "ready"} />
       </div>
       <p className={styles.result} role="status">{result}</p>
-      {mission?.id === "keys" && <div className={styles.keyPad} aria-label="방향키 실행">{[["38", "↑ 위"], ["37", "← 왼쪽"], ["40", "↓ 아래"], ["39", "→ 오른쪽"]].map(([key, label]) => <Button key={key} variant="outline" size="sm" disabled={!running || locked} onClick={() => send("key", { key })}>{label}</Button>)}</div>}
+      {mission?.keyEvents && <div className={styles.keyPad} aria-label="방향키 실행">{[["38", "↑ 위"], ["37", "← 왼쪽"], ["40", "↓ 아래"], ["39", "→ 오른쪽"]].map(([key, label]) => <Button key={key} variant="outline" size="sm" disabled={!running || locked} onClick={() => send("key", { key })}>{label}</Button>)}</div>}
       <div className={styles.workStates} role="group" aria-label={mode === "preview" ? "체험 작품·검증·제출 상태" : "작품 저장·검증·제출 상태"}>
         <span role="status" aria-atomic="true" data-save-state={saveState}><strong>{mode === "preview" ? "체험" : "저장"}</strong>{saveLabel}</span>
         <span><strong>검증</strong>{validation ? validation.passed ? "검증 통과" : "조건 보완 필요" : work.validation ? "다시 검증 필요" : "검증 전"}</span>
