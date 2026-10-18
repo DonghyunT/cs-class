@@ -127,6 +127,8 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     expect(Math.round((await dialog.boundingBox())!.width)).toBe(860);
     const runToggle = dialog.getByRole("button", { name: "작업실에서 실행해 보기", exact: true });
     await runToggle.click();
+    // A width transition stays pending (still 860) while the Entry iframe boots on a slow runner.
+    expect(await dialog.evaluate((el) => el.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => (a as CSSTransition).transitionProperty))).toEqual([]);
     await expect(dialog.getByRole("button", { name: "작업실 닫기", exact: true })).toBeVisible();
     await expect.poll(async () => Math.round((await dialog.boundingBox())!.width)).toBe(1220);
     await expect(dialog.locator('iframe[title*="교사 실행 작업실"]')).toBeVisible();
