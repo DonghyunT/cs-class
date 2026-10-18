@@ -98,3 +98,4 @@ test("「프로그래밍의 기초」에 남은 평균 작품은 저장되지만
   await db.doc(`csWork/student-20101__${old}`).update({ "draft.programming.mission": "average" });
   expect(((await (await page.request.get(oldEndpoint)).json()) as Work).draft.programming?.mission).toBe("name");
 });
+// debug: select conditionals E2E
