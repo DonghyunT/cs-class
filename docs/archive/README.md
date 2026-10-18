@@ -40,7 +40,7 @@
 
 - **[2026-09-29 문서 역할 정리 전 원문](cs-class/2026-09-29-before-doc-roles/manifest.json):** BUILD_BRIEF·PRD·DESIGN·HANDOFF·DEVELOPMENT·FIREBASE_SETUP 6개를 정리 직전 작업 트리의 바이트 그대로 보존했습니다. [완료한 1차 구현 지시문](cs-class/2026-09-29-before-doc-roles/BUILD_BRIEF.md)은 현재 문서에서 제외했고, [당시 인수인계](cs-class/2026-09-29-before-doc-roles/HANDOFF.md)는 9월 28~29일 PR·배포·화면·검증 기록을 보존합니다. 당시 기준 커밋은 `e0a4eff`, 작업 브랜치는 `codex/trim-styles-teacher-modules`이며 HANDOFF에는 미커밋 스타일 정리 기록도 포함됩니다. 현재 정책·실행 절차는 각 담당 문서에, 최신 상태는 [HANDOFF](../HANDOFF.md)에 있습니다. 보존본의 링크는 당시 `docs/` 위치 기준이며 과거 승인은 현재 승인이 아닙니다.
 
-- **[V1 기록](v1/README.md):** 포크 기준 커밋 98781bd에서 추출한 원래 README입니다. 핵심 기록은 [과거 헌법](v1/AGENTS-v1-historical.md), [교육 철학](v1/INTENT.md), [PRD](v1/PRD.md), [인수인계](v1/docs/HANDOFF.md), [배포](v1/docs/DEPLOYMENT.md)입니다. v1/docs/에는 평가·운영·검토 기록, v1/audit/에는 과거 감사 문서가 있습니다.
+- **V1 기록(삭제):** 포크 기준 커밋 98781bd에서 추출한 V1 문서 `v1/`은 2026-10-18에 삭제했습니다. 같은 문서의 최신판은 [algorithm-studio 참고본](../../archive/algorithm-studio/2026-10-12-bc8d51f/README.md)에 있고, 원문은 `git checkout b053c2e -- docs/archive/v1`로 되살립니다([안내](../../archive/README.md#삭제한-926-v1-보관본)).
 - **[CS Class 개편 직전 기록](cs-class/2026-09-26-before-refresh/README.md):** 9월 25일 초기 시안과 9월 26일 대화 메모를 포함하는 작업 트리 원문입니다. V1 기록과 혼동하지 않습니다. [이전 협업 규칙](cs-class/2026-09-26-before-refresh/AGENTS-inherited-historical.md), [이전 PRD](cs-class/2026-09-26-before-refresh/PRD.md), [이전 디자인](cs-class/2026-09-26-before-refresh/docs/DESIGN.md)도 보존했습니다.
 
 - **[2026-09-27 통합 전 문서](cs-class/2026-09-27-before-consolidation/README.md):** 통합 직전 문서 9개의 원문입니다. [보존 목록](cs-class/2026-09-27-before-consolidation/manifest.json)에 원래 경로와 SHA-256을 기록했습니다. 이전 AGENTS는 `AGENTS-historical.md`로 보관하며, 본문의 현재 상태·지침·링크는 당시 기준입니다.
