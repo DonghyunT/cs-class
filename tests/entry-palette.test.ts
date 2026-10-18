@@ -99,6 +99,10 @@ test("팔레트 밖 블록·안쪽 목록 수·상한을 어기면 읽지 않는
 
 test("채점 줄의 미션 밖 블록은 이름으로 안내하고 떨어진 블록·다른 이벤트는 무시한다", () => {
   expect(checkProgrammingMission("multiply", project([multiply()])).passed).toBe(true);
+  const bFirst = multiply(); [bFirst[2].params[0], bFirst[4].params[0]] = ["cs-B", "cs-A"];
+  expect(checkProgrammingMission("multiply", project([bFirst])).passed).toBe(true);
+  const sameTwice = multiply(); sameTwice[2].params[0] = "cs-B";
+  expect(checkProgrammingMission("multiply", project([sameTwice])).passed).toBe(false);
   const loose = project([multiply(), [node("wait_second", number("2"), null)], [node("when_object_click", null), node("move_x", number("10"), null)], [node("calc_rand", null, number("0"), null, number("10"), null)]]);
   expect(checkProgrammingMission("multiply", loose).passed).toBe(true);
   expect(checkProgrammingMission("multiply", project([multiply([node("wait_second", number("2"), null)])]))).toEqual({ passed: false, message: "이번 미션은 기본 블록으로 확인해요. ‘( )초 기다리기’ 블록을 빼고 다시 검증해 주세요." });
@@ -106,6 +110,9 @@ test("채점 줄의 미션 밖 블록은 이름으로 안내하고 떨어진 블
   expect(checkProgrammingMission("name", project([[start(), node("dialog_time", node("calc_rand", null, number("0"), null, number("10"), null), number("1"), "speak", null)]])).message).toContain("‘( )부터 ( ) 사이의 무작위 수’");
   const otherKey = project([[start(), node("direction_absolute", node("angle", "90"), null), node("move_direction", number("10"), null)], [node("when_some_key_pressed", null, "81"), node("wait_second", number("1"), null)]]);
   expect(missionBlockIssue("keys", otherKey)).toBeNull();
+  const arrows = [["38", "0"], ["39", "90"], ["40", "180"], ["37", "270"]].map(([key, angle]) => [node("when_some_key_pressed", null, key), node("direction_absolute", node("angle", angle), null), node("move_direction", number("10"), null)]);
+  expect(checkProgrammingMission("keys", project(arrows)).passed).toBe(true);
+  expect(checkProgrammingMission("keys", project(arrows.slice(1))).passed).toBe(false);
 });
 
 test("반복 안쪽만 바꿔도 저장 비교와 미저장 판정이 바뀜을 알아챈다", () => {
