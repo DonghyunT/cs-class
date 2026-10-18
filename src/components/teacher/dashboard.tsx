@@ -214,7 +214,8 @@ function TeacherStudentRow({ student, lesson, layout, onOpen }: { student: Stude
   const progress = lesson && lesson.mode !== "review" ? progressFor(lesson, student.work) : null;
   const lastActiveAt = student.lastActiveAt ?? student.work?.updatedAt;
   const detailId = `student-detail-${student.uid}`;
-  const available = !!lesson && submissionCountFor(lesson, student.work) > 0 || student.work?.review?.status === "pending";
+  // Work from a mission that left the lesson is not counted but can still be opened.
+  const available = !!lesson && (submissionCountFor(lesson, student.work) > 0 || Object.values(student.work?.missions ?? {}).some((record) => record.submission)) || student.work?.review?.status === "pending";
   useEffect(() => {
     const media = window.matchMedia("(max-width: 1180px)");
     const onResize = () => {

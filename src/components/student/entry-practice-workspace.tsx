@@ -4,11 +4,11 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 import { Check, CheckCircle2, Maximize2, Minimize2, Play, RotateCcw, Send, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ENTRY_SPRITES, MAX_ADDED_OBJECTS } from "@/lib/classroom/entry-palette";
+import { ENTRY_SPRITES, MAX_ADDED_OBJECTS, MISSION_BLOCKS } from "@/lib/classroom/entry-palette";
 import type { Lesson, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { buildEntryProject, parseEntryProject } from "@/lib/classroom/entry-project";
 import { practiceMatches } from "@/lib/classroom/progress";
-import { MAX_PROJECT_BYTES, buildProgrammingProject, entryObjectModel, missionBlockIssue, newAddedObject, parseProgrammingProject, type ProgrammingMission } from "@/lib/classroom/programming-entry";
+import { MAX_PROJECT_BYTES, entryObjectModel, missionBlockIssue, missionStarter, newAddedObject, parseProgrammingProject, type ProgrammingMission } from "@/lib/classroom/programming-entry";
 import { checkNameMission, type NameRun } from "@/lib/classroom/name-entry";
 import type { WorkController, LessonMode } from "./work-controller";
 import { useWorkspaceExpansion } from "./use-workspace-expansion";
@@ -66,6 +66,8 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   }, [workspaceWide]);
   function setWide(wide: boolean) { manualViewFocus.current = true; onWorkspaceWideChange(wide); }
   const parse = mission ? parseProgrammingProject : parseEntryProject;
+  // Missions that ask questions report what the dog said instead of where it moved.
+  const asksQuestion = !!mission && !!MISSION_BLOCKS[mission.id]?.has("ask_and_wait");
   const program = parse(draft.entryProject);
   const validation = practiceMatches(draft, work.validation) ? work.validation : null;
   const submitted = practiceMatches(draft, work.submission);
@@ -150,9 +152,9 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       } else if (message.type === "result" && typeof message.x === "number" && Number.isFinite(message.x) && typeof message.y === "number" && Number.isFinite(message.y) && typeof message.speech === "string") {
         const finish = message.reason === "timeout" ? "15초가 지나 실행을 멈췄어요." : message.reason === "reset" ? "무대를 처음 위치로 돌렸어요." : message.reason === "finished" ? "실행을 마쳤어요." : "실행을 멈췄어요.";
         if (message.reason === "finished" && startOnly.current) {
-          const nextBlock = mission?.id === "name" ? "질문 블록" : mission?.id === "multiply" || mission?.id === "average" ? "두 수를 묻고 변수에 대답을 저장하는 블록" : "이동 블록";
+          const nextBlock = mission?.id === "name" ? "질문 블록" : mission?.variables ? "두 수를 묻고 변수에 대답을 저장하는 블록" : asksQuestion ? "질문 블록과 ‘만일’ 블록" : "이동 블록";
           setResult(`시작 신호가 준비됐어요. 시작하기 아래에 ${nextBlock}을 연결해 보세요.`);
-        } else if (mission && ["name", "multiply", "average"].includes(mission.id)) setResult(`${finish} 마지막 말: ${message.speech.slice(0, 80) || "아직 없음"}`);
+        } else if (asksQuestion) setResult(`${finish} 마지막 말: ${message.speech.slice(0, 80) || "아직 없음"}`);
         else setResult(`${finish} 현재 위치 X ${Math.round(message.x * 100) / 100} · Y ${Math.round(message.y * 100) / 100}${message.speech ? ` · 마지막 말: ${message.speech.slice(0, 80)}` : ""}`);
       } else if (message.type === "error") { window.clearTimeout(bootTimer.current); setPhase("failed"); setError("작업실을 불러오지 못했어요. 입력한 작품은 이 화면에 유지하고 있어요."); }
       else if (message.type === "focus-return") document.getElementById(mission ? "entry-reset" : "entry-run")?.focus();
@@ -168,7 +170,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
     }
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
-  }, [draft, locked, update, mission, parse, program, mode, phase, preparing, actionsBlocked, onSave]);
+  }, [draft, locked, update, mission, parse, program, mode, phase, preparing, actionsBlocked, onSave, asksQuestion]);
 
   useEffect(() => {
     if (!bootReady) return;
@@ -237,7 +239,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       </div></div>
       {saveState === "failed" && <div className={styles.saveFailure}><span><strong>{mode === "preview" ? "체험" : "저장"}</strong>{saveLabel}</span><Button size="sm" variant="ghost" onClick={() => document.getElementById("work-save-error")?.focus()}>{mode === "preview" ? "체험 작품 오류 확인" : "저장 오류 확인"}</Button></div>}
       {(!program || error) && <div role="alert" className={styles.error}><p>{error || (mode === "preview" ? "체험 작품을 읽지 못했어요. 현재 내용은 유지돼요." : "저장된 작품을 읽지 못했어요. 기존 저장본은 유지돼요.")}</p>{phase === "failed" && program && <Button variant="outline" onClick={retry}>작업실 다시 불러오기</Button>}
-        {!program && <Button variant="outline" disabled={locked} onClick={() => { if (window.confirm(mode === "preview" ? "현재 체험 블록을 시작 블록 하나로 바꿀까요? 이 창의 이전 체험 제출은 유지돼요." : "현재 편집 중인 블록을 시작 블록 하나로 바꿀까요? 이전 제출본은 유지돼요.")) { const starter = mission ? buildProgrammingProject() : buildEntryProject(); update({ ...draft, entryProject: starter, practiceOrder: mission ? [] : ["when_run_button_click"] }); retry(); } }}>시작 블록으로 다시 만들기</Button>}
+        {!program && <Button variant="outline" disabled={locked} onClick={() => { if (window.confirm(mode === "preview" ? "현재 체험 블록을 시작 블록 하나로 바꿀까요? 이 창의 이전 체험 제출은 유지돼요." : "현재 편집 중인 블록을 시작 블록 하나로 바꿀까요? 이전 제출본은 유지돼요.")) { const starter = mission ? missionStarter(mission.id) : buildEntryProject(); update({ ...draft, entryProject: starter, practiceOrder: mission ? [] : ["when_run_button_click"] }); retry(); } }}>시작 블록으로 다시 만들기</Button>}
       </div>}
       <div className={styles.frameScroll} tabIndex={0} role="region" aria-label="엔트리 작업실 가로 이동" aria-describedby="entry-help" aria-busy={phase === "loading"}>
         {phase === "loading" && <p className={styles.loading} role="status">엔트리 작업실을 불러오는 중…</p>}

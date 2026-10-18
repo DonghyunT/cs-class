@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Play, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ENTRY_PALETTE, ENTRY_SPRITES } from "@/lib/classroom/entry-palette";
+import { ENTRY_PALETTE, TRUSTED_SPRITES } from "@/lib/classroom/entry-palette";
 import {
   entryBlockCategory,
   formatEntryNode,
@@ -268,7 +268,7 @@ export function EntryProjectPreview({
     ...parsed.added.map((item) => ({
       id: item.id,
       name: item.name,
-      icon: ENTRY_SPRITES.find((sprite) => sprite.id === item.sprite)?.file ?? "/entryjs/sprites/ball.svg",
+      icon: TRUSTED_SPRITES.find((sprite) => sprite.id === item.sprite)?.file ?? "/entryjs/sprites/ball.svg",
       x: Math.round(item.entity.x) || 0,
       y: Math.round(item.entity.y) || 0,
       threads: item.threads,

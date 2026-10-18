@@ -13,6 +13,7 @@ function classroomRows(checkedAt: number): StudentRow[] {
     const lastActiveAt = index === 0 ? checkedAt - 30_000 : index === 9 ? checkedAt - 90_000 : index === 18 ? checkedAt - 119_999 : index === 1 ? checkedAt - 120_000 : index === 2 ? checkedAt - 120_001 : null;
     const student = { uid: `connected-ui-${index}`, studentId: `241${String(index + 1).padStart(2, "0")}`, nickname: `검증 학생 ${index + 1}`, mustChangePassword: false, lastActiveAt };
     if (index < 9) return { ...student, work: null };
+    // Average moved to another lesson; an old average submission here is not counted.
     const missions = index === 17 ? [...requiredMissions, "average"] : requiredMissions;
     return { ...student, work: { lessonId: lesson.id, revision: 0, updatedAt: checkedAt - 90_000, conceptSolved: lesson.concepts.map(item => item.id), quizSolved: index >= 18 ? lesson.quiz.map(item => item.id) : [], missions: Object.fromEntries(missions.map(id => [id, { submission: { id: `connected-${index}-${id}`, submittedAt: checkedAt - 90_000 } }])), submission: null, edited: false, validated: true } };
   });
@@ -69,7 +70,7 @@ test("반 전체 진도는 필수 활동 합산이며 선택 도전·최근 활�
   }
   const colors = await actions.getByRole("progressbar").locator("i").evaluateAll(elements => elements.map(element => getComputedStyle(element).backgroundColor));
   expect(new Set(colors).size).toBe(3);
-  await expect(actions).toContainText("등록 학생 27명 · 제출 학생 18명 · 저장된 제출 작품 73개");
+  await expect(actions).toContainText("등록 학생 27명 · 제출 학생 18명 · 저장된 제출 작품 72개");
 
   let release!: () => void;
   const waiting = new Promise<void>(resolve => { release = resolve; });

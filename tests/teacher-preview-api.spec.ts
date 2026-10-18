@@ -41,14 +41,14 @@ async function learningRecords() {
 }
 test.beforeEach(async ({ request }) => { await localOnly(request); });
 
-test("preview-api: 5개 프로그래밍 미션 판정·제출과 초안 정규화는 학생 저장을 만들지 않는다", async ({ request }) => {
+test("preview-api: 프로그래밍 미션 판정·제출과 초안 정규화는 학생 저장을 만들지 않는다", async ({ request }) => {
   await readyTeacher(request);
   const before = await learningRecords();
   let work = emptyWork(lesson("programming-13"));
   work.draft.programming = { mission: "name", projects, reflection: "합성 체험" };
   work.draft.entryProject = "legacy-normalization-sentinel";
   work.draft.practiceOrder = ["legacy-normalization-sentinel"];
-  for (const id of Object.keys(projects)) {
+  for (const id of ["name", "multiply", "move", "keys"]) {
     work = await evaluate(request, work, { type: "validate-practice", missionId: id });
     expect(work.draft.entryProject).toBeNull();
     expect(work.draft.practiceOrder).toEqual([]);
@@ -56,6 +56,12 @@ test("preview-api: 5개 프로그래밍 미션 판정·제출과 초안 정규�
     work = await evaluate(request, work, { type: "submit-practice", missionId: id });
     expect(work.missions?.[id].submission?.entryProject).toBe(projects[id as keyof typeof projects]);
   }
+  // The moved average calculator is kept in the draft but only checked in its new lesson.
+  expect((await request.post(endpoint("programming-13"), { headers, data: payload(work, { type: "validate-practice", missionId: "average" }) })).status()).toBe(400);
+  let moved = emptyWork(lesson("conditionals"));
+  moved.draft.programming = { mission: "average", projects: { average: projects.average }, reflection: "" };
+  moved = await evaluate(request, moved, { type: "validate-practice", missionId: "average" });
+  expect(moved.missions?.average.validation?.passed).toBe(true);
   let entry = emptyWork(lesson("entry-bot-lab"));
   entry.draft.entryProject = buildEntryProject(["when_run_button_click", "move_direction", "dialog_time"]);
   entry.draft.practiceOrder = ["legacy-normalization-sentinel"];

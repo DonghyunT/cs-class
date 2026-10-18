@@ -138,9 +138,12 @@ test("운영 수업 API · 미션별 검증/제출 · 재시도 · 수정 뒤 �
   const act = async (action: WorkAction) => { const r = await request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action } }); expect(r.status()).toBe(200); work = await r.json(); };
   expect((await request.post(`${endpoint}/action`, { headers, data: { revision: 0, action: { type: "validate-practice" } } })).status()).toBe(400);
   work.draft.programming!.projects = { name: nameProject, multiply: math(), move: moveProject, keys: keysProject, average: math(true) }; await save();
-  for (const missionId of ["name", "multiply", "move", "keys", "average"]) {
+  for (const missionId of ["name", "multiply", "move", "keys"]) {
     await act({ type: "validate-practice", missionId }); await act({ type: "submit-practice", missionId });
   }
+  // The average calculator moved to another lesson: its saved project is kept, but it cannot be checked here.
+  expect(work.draft.programming!.projects.average).toBeTruthy();
+  for (const type of ["validate-practice", "submit-practice"] as const) expect((await request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type, missionId: "average" } } })).status()).toBe(400);
   expect(progressFor(PROGRAMMING_LESSON, work).practice).toEqual({ completed: 4, total: 4, percent: 100 });
   const submissions = structuredClone(work.missions);
   const revision = work.revision;
@@ -370,7 +373,7 @@ test("실제 팔레트 이름 조립 · 서로 다른 두 입력 · 검증/제�
   expect(errors).toEqual([]);
 });
 
-test("곱셈·평균 실제 실행 · 변수 팔레트 · 이동 이어 만들기 · 방향키 · 미완성 복원", async ({ page }, info) => {
+test("곱셈 실제 실행 · 변수 팔레트 · 이동 이어 만들기 · 방향키 · 미완성 복원", async ({ page }, info) => {
   test.setTimeout(90000);
   const errors: string[] = []; page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
@@ -381,13 +384,8 @@ test("곱셈·평균 실제 실행 · 변수 팔레트 · 이동 이어 만들�
   for (const value of ["6", "4"]) { const input = frame.getByLabel("강아지 질문 대답"); await expect(input).toBeVisible(); await input.fill(value); await input.press("Enter"); if (value === "6") await expect(input).toHaveValue(""); }
   await expect(page.getByRole("status").filter({ hasText: "마지막 말: 24" })).toBeVisible();
   await page.getByRole("link", { name: "수업 나가기", exact: true }).click(); await expect(page).toHaveURL(/\/student$/);
-  const averageWork = await stored(page); averageWork.draft.programming!.mission = "average"; averageWork.draft.programming!.projects.average = math(true);
-  expect((await page.request.post(endpoint, { headers, data: { revision: averageWork.revision, draft: averageWork.draft } })).status()).toBe(200);
   await page.goto(`/classroom/${id}?from=dashboard`); await page.locator("iframe").scrollIntoViewIfNeeded();
   await expect(entryStart(page)).toBeVisible();
-  await entryStart(page).click();
-  for (const value of ["6", "4"]) { const input = frame.getByLabel("강아지 질문 대답"); await expect(input).toBeVisible(); await input.fill(value); await input.press("Enter"); if (value === "6") await expect(input).toHaveValue(""); }
-  await expect(page.getByRole("status").filter({ hasText: "마지막 말: 5" })).toBeVisible();
   await page.getByRole("button", { name: /시작 버튼으로 움직이기/ }).click();
   await page.locator('iframe[src$="mission=move"]').scrollIntoViewIfNeeded();
   frame = page.frameLocator("iframe");

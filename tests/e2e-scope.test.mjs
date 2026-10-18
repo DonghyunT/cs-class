@@ -57,7 +57,9 @@ test("matchLesson matches lesson specific files accurately", () => {
   assert.equal(matchLesson("tests/entry-palette.test.ts"), "programming-13");
   assert.equal(matchLesson("tests/fixtures/entry-legacy-keys.json"), "programming-13");
   assert.equal(matchLesson("src/lib/server/programming-grader.ts"), "programming-13");
-  assert.deepEqual(matchLessons("src\\lib\\classroom\\programming-entry.ts"), ["programming-13"]);
+  assert.deepEqual(matchLessons("src\\lib\\classroom\\programming-entry.ts"), ["programming-13", "conditionals", "loops"]);
+  assert.deepEqual(matchLessons("src/lib/classroom/conditionals-data.ts"), ["conditionals"]);
+  assert.deepEqual(matchLessons("src/components/student/programming-concept.tsx"), ["programming-13"]);
   assert.deepEqual(matchLessons("src/components/student/use-work.ts"), []);
   assert.equal(matchLesson("src/components/student/use-work.ts"), null);
   assert.equal(matchLesson("src/components/student/lesson-editor.tsx"), null);
@@ -88,9 +90,11 @@ test("selectE2E classifies single lesson changes as affected", () => {
   assert.ok(flowchart.testFiles.includes("tests/review-flowchart.spec.ts"));
   assert.ok(flowchart.testFiles.includes("tests/review-practice-ui.spec.ts"));
 
+  // The shared Entry practice screen selects every Entry lesson's tests.
   const programming = selectE2E(["src/components/student/programming-lesson.tsx"]);
   assert.equal(programming.mode, "affected");
-  assert.deepEqual(programming.lessonIds, ["programming-13"]);
+  assert.deepEqual(programming.lessonIds, ["conditionals", "loops", "programming-13"]);
+  assert.ok(programming.testFiles.includes("tests/conditionals.spec.ts"));
   assert.ok(programming.testFiles.includes("tests/programming-classroom.spec.ts"));
   assert.ok(programming.testFiles.includes("tests/entryjs-ui.spec.ts"));
 });

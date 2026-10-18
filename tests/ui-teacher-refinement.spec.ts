@@ -123,9 +123,10 @@ test("열린 수업이 없어도 닉네임 검색과 비밀번호 조건은 AND�
   for (const key of ["q", "studentId", "password", "review"]) expect(new URL(page.url()).searchParams.has(key)).toBe(false);
 });
 
-test("알려진 최근 작품만 집계하며 선택 도전과 수정 중 제출본은 기본 완료와 분리", () => {
-  expect(rows.map((row) => submissionCountFor(lesson, row.work))).toEqual([0, 1, 3, 4, 1, 1]);
-  expect(rows.filter((row) => submissionCountFor(lesson, row.work) > 0)).toHaveLength(5);
+test("알려진 최근 작품만 집계하며 다른 수업으로 옮긴 미션과 수정 중 제출본은 기본 완료와 분리", () => {
+  // 20185 only submitted the average calculator, which moved to the conditionals lesson.
+  expect(rows.map((row) => submissionCountFor(lesson, row.work))).toEqual([0, 1, 3, 4, 0, 1]);
+  expect(rows.filter((row) => submissionCountFor(lesson, row.work) > 0)).toHaveLength(4);
   expect(rows.map((row) => progressFor(lesson, row.work).practice.completed)).toEqual([0, 1, 3, 4, 0, 1]);
   const unknown = workWith(["unknown"]);
   expect(submissionCountFor(lesson, unknown)).toBe(0);
@@ -133,21 +134,21 @@ test("알려진 최근 작품만 집계하며 선택 도전과 수정 중 제출
   expect(submissionCountFor(ordinary, rows[1].work)).toBe(0);
   unknown.submission = { id: "ordinary", order: [], submittedAt: 1000 };
   expect(submissionCountFor(ordinary, unknown)).toBe(1);
-  expect(missionsFor("programming-13")).toHaveLength(5);
+  expect(missionsFor("programming-13")).toHaveLength(4);
 });
 
-test("교사 집계·진행 필터·검색 복구는 부분 제출과 선택 도전을 정확히 표시", async ({ page }) => {
+test("교사 집계·진행 필터·검색 복구는 부분 제출과 이전 수업 기록을 정확히 표시", async ({ page }) => {
   await syntheticRows(page);
   const summary = page.locator('[class*="summary"]');
   await expect(summary).toContainText("수업 완료1명");
-  await expect(summary).toContainText("실습 제출5명");
+  await expect(summary).toContainText("실습 제출4명");
   await expect(page.getByRole("combobox", { name: "제출 상태", exact: true })).toHaveCount(0);
   await expect(page.locator("tbody tr").filter({ hasText: "20186" })).toContainText("수정 중");
   const challenge = page.locator("tbody tr").filter({ hasText: "20185" });
   await expect(challenge.getByRole("progressbar", { name: "20185 실습 진도", exact: true })).toHaveAttribute("aria-valuenow", "0");
   await expect(challenge.getByRole("button", { name: "20185 제출 작품 보기", exact: true })).toBeEnabled();
   await challenge.getByRole("button", { name: "20185 상세 보기", exact: true }).click();
-  await expect(challenge.getByText("기본 0/4 제출 · 도전 제출", { exact: true })).toBeVisible();
+  await expect(challenge.getByText("기본 0/4 제출", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "20181 제출 작품 보기", exact: true })).toBeDisabled();
   await filter(page, "진행 상태", "완료");
   await expect(page.locator("tbody tr")).toHaveCount(1);

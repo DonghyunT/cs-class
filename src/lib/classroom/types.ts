@@ -23,6 +23,8 @@ export interface ClassSettings {
 export interface Question {
   id: string;
   prompt: string;
+  // Code lines shown with a quiz question, for reading a program before answering.
+  scene?: string[];
   options: { id: string; label: string }[];
   hint: string;
 }

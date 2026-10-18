@@ -36,11 +36,11 @@ test("수업 관리: 이번 수업과 열린 수업 전체·미지정·빈 반·
   await expect(manage).toBeVisible();
   await expect(manage.locator("..").getByRole("button", { name: "수업 새로고침", exact: true })).toBeVisible();
   await expect(current.getByRole("heading", { level: 2 })).toHaveText(RELEASED_LESSONS[0].title);
-  await expect(current.getByText("열린 수업 4개 · 기존 수업은 계속 복습할 수 있어요.", { exact: true })).toBeVisible();
+  await expect(current.getByText(`열린 수업 ${RELEASED_LESSONS.length}개 · 기존 수업은 계속 복습할 수 있어요.`, { exact: true })).toBeVisible();
   const preparation = page.getByRole("table", { name: "담당 반 수업 준비", exact: true });
   const classRow = preparation.getByRole("rowheader", { name: "2학년 1반", exact: true }).locator("..");
   await expect(classRow.getByRole("cell").nth(0)).toHaveText(RELEASED_LESSONS[0].title);
-  await expect(classRow.getByRole("cell").nth(1)).toHaveText("4개");
+  await expect(classRow.getByRole("cell").nth(1)).toHaveText(`${RELEASED_LESSONS.length}개`);
   await expect(opened.getByRole("listitem")).toHaveCount(RELEASED_LESSONS.length);
   for (const lesson of RELEASED_LESSONS) {
     const item = opened.getByRole("listitem").filter({ has: page.getByRole("heading", { level: 3, name: lesson.title, exact: true }) });

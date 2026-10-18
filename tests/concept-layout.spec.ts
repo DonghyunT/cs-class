@@ -31,7 +31,8 @@ test("모든 수업 개념은 같은 목록·본문 배치로 읽고 좁은 창�
   for (const lesson of LESSONS) {
     await enter(page, lesson.id);
     const nav = page.getByRole("navigation", { name: "개념 목록" });
-    const title = page.locator(lesson.practice.type === "programming" ? "#concept-title" : `#concept-title-${lesson.concepts[0].id}`);
+    // Only the first programming lesson has its own concept screen; later ones use the shared panel.
+    const title = page.locator(lesson.id === "programming-13" ? "#concept-title" : `#concept-title-${lesson.concepts[0].id}`);
     for (const width of [1440, 821, 760, 390, 320]) {
       await page.setViewportSize({ width, height: 900 });
       const [list, heading] = await Promise.all([nav.boundingBox(), title.locator("..").boundingBox()]);

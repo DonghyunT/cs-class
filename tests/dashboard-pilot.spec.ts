@@ -44,7 +44,7 @@ test("반 일정 API: 숨긴 수업의 기존 연결 보존·정식 선택 목�
     await classroom.set({ id: "2-1", name: "2학년 1반", revision: 0, currentLessonId: current.lessonId, openedLessonIds: [legacyLessonId, "flowchart-lab", ...RELEASED_LESSONS.map(lesson => lesson.id)] });
     await schedule.set({ revision: 7, items: [legacy, current] });
     const listed = await (await request.get("/api/classroom/schedule?classId=2-1")).json();
-    expect(listed.lessons).toHaveLength(4);
+    expect(listed.lessons).toHaveLength(RELEASED_LESSONS.length);
     expect(listed.lessons).toEqual(RELEASED_LESSONS.map(({ id, title }) => ({ id, title })));
     expect(listed.items).toEqual([legacy, current]);
 
@@ -452,7 +452,8 @@ test("학생·교사 실제 배치: 7개 너비·키보드·모바일·빈 상�
       const filters = page.getByRole("group", { name: "열린 수업 필터", exact: true });
       await filters.getByRole("button", { name: "완료", exact: true }).click(); await expect(page.getByRole("heading", { name: "프로그래밍의 기초", exact: true })).toHaveCount(0);
       await filters.getByRole("button", { name: "미완료", exact: true }).click(); await expect(page.getByRole("heading", { name: "프로그래밍의 기초", exact: true })).toBeVisible();
-      await page.getByRole("button", { name: "이어하기", exact: true }).click(); await expect(page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true })).toBeChecked();
+      // Other open Entry lessons may also be in progress; resume this lesson's card.
+      await page.getByRole("button", { name: "이어하기", exact: true }).and(page.getByTitle("프로그래밍의 기초 · 이어하기")).click(); await expect(page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true })).toBeChecked();
     } else {
       await page.getByRole("link", { name: /학습 현황.*등록 학생/ }).click();
       await expect(page.getByRole("heading", { name: "학생별 학습 현황", exact: true })).toBeVisible();

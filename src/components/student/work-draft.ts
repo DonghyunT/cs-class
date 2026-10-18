@@ -1,7 +1,6 @@
 import type { WorkDraft } from "@/lib/classroom/types";
-import { PROGRAMMING_MISSIONS, buildProgrammingProject, parseProgrammingProject } from "@/lib/classroom/programming-entry";
+import { PROGRAMMING_MISSIONS, missionStarter, parseProgrammingProject } from "@/lib/classroom/programming-entry";
 import { parseEntryProject } from "@/lib/classroom/entry-project";
-const starter = buildProgrammingProject();
 
 type ContentNode = { type: string; params: unknown[]; statements?: ContentNode[][]; x?: number; y?: number };
 function scriptContent(threads: ContentNode[][]) {
@@ -25,7 +24,8 @@ function entryContent(raw: string) {
   // Keep literal editing values, including "", rather than the execution parser's numeric coercion.
   return scriptContent(typeof script === "string" ? JSON.parse(script) : script);
 }
-const starterContent = programmingContent(starter);
+// Opening a mission shows its starter project; that alone is not an edit.
+const starterContent = Object.fromEntries(PROGRAMMING_MISSIONS.map(({ id }) => [id, programmingContent(missionStarter(id))]));
 
 function content(draft: WorkDraft) {
   const next: Record<string, unknown> = { ...draft }; delete next.stage;
@@ -35,7 +35,7 @@ function content(draft: WorkDraft) {
     // Visiting a mission or normalizing fixed Entry media is not an edit.
     next.programming = { reflection, projects: Object.fromEntries(PROGRAMMING_MISSIONS.map(({ id, carryFrom }) => {
       const raw = projects[id] ?? (carryFrom ? projects[carryFrom] : undefined);
-      return [id, raw ? programmingContent(raw) : starterContent];
+      return [id, raw ? programmingContent(raw) : starterContent[id]];
     })) };
   }
   const project = draft.reviewProject;

@@ -253,3 +253,146 @@ test("저장할 때 다른 미션에 남은 엔트리 원문도 정규화해 서
   expect(parseProgrammingProject(name)!.key).toBe(parseProgrammingProject(bulky)!.key);
   expect(parseProgrammingProject(saved.programming!.projects.move)!.order).toEqual(["when_run_button_click", "move_direction"]);
 });
+
+// Selection missions: `if_else` keeps its two inner lists, comparisons follow EntryJS (numeric strings compare as numbers).
+const text = (v: string) => node("text", v);
+const compare = (left: EntryNode, op: string, right: EntryNode) => node("boolean_basic_operator", left, op, right);
+const ifElse = (condition: EntryNode, yes: EntryNode[], no: EntryNode[]): EntryNode => ({ ...node("if_else", condition, null, null), statements: [yes, no] });
+const speak = (v: string) => node("dialog", text(v), "speak", null);
+const passProgram = (op = "GREATER_OR_EQUAL", yes = "합격", no = "불합격") => [start(), ask(), ifElse(compare(answer(), op, number("60")), [speak(yes)], [speak(no)])];
+const freeThrow = (first = "8") => [start(), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number(first)), [speak("훌륭해요!")], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak("잘했어요!")], [speak("더 연습해 보자!")])])];
+const escapeProgram = (condition: EntryNode) => [start(), ask(), node("set_variable", "cs-A", answer(), null), ask(), node("set_variable", "cs-B", answer(), null), ifElse(condition, [speak("탈출 성공!")], [speak("탈출 실패")])];
+const solved = (id: string) => compare(node("get_variable", id), "EQUAL", number("1"));
+
+test("선택 구조 미션은 실제 내보내기 모양의 조건문을 실행해 정확한 말을 확인한다", () => {
+  expect(checkProgrammingMission("pass", exported([passProgram()]))).toEqual({ passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." });
+  // 60 is a pass; ‘불합격’ must not count as ‘합격’; constant answers fail.
+  expect(checkProgrammingMission("pass", exported([passProgram("GREATER")])).passed).toBe(false);
+  expect(checkProgrammingMission("pass", exported([passProgram("GREATER_OR_EQUAL", "불합격", "불합격")])).passed).toBe(false);
+  expect(checkProgrammingMission("pass", exported([[start(), ask(), speak("합격")]])).passed).toBe(false);
+  // Answers that only cover the shown inputs fail the unseen ones.
+  const shownOnly = [start(), ask(), ...[["59", "불합격"], ["60", "합격"], ["100", "합격"], ["0", "불합격"]].map(([v, word]) => ({ ...node("_if", compare(answer(), "EQUAL", number(v)), null), statements: [[speak(word)]] }))];
+  expect(checkProgrammingMission("pass", exported([shownOnly])).passed).toBe(false);
+  expect(checkProgrammingMission("pass", exported([[start(), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [node("dialog_time", text("합격!"), number("1"), "speak", null)], [speak("불합격")])]])).passed).toBe(true);
+  expect(checkProgrammingMission("freethrow", exported([freeThrow()])).passed).toBe(true);
+  expect(checkProgrammingMission("freethrow", exported([freeThrow("9")])).passed).toBe(false);
+});
+
+test("방탈출은 A·B에 저장한 값을 ‘또는’으로 판단해야 통과한다", () => {
+  const or = node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B"));
+  expect(checkProgrammingMission("escape", exported([escapeProgram(or)])).passed).toBe(true);
+  expect(checkProgrammingMission("escape", exported([escapeProgram(node("boolean_and_or", solved("cs-A"), "AND", solved("cs-B")))])).passed).toBe(false);
+  // Nested conditions give the right words but skip the ‘또는’ the mission practices.
+  const nested = [...escapeProgram(solved("cs-A")).slice(0, 5), ifElse(solved("cs-A"), [speak("탈출 성공!")], [ifElse(solved("cs-B"), [speak("탈출 성공!")], [speak("탈출 실패")])])];
+  expect(checkProgrammingMission("escape", exported([nested])).passed).toBe(false);
+  // A ‘또는’ that never looks at A·B does not count.
+  expect(checkProgrammingMission("escape", exported([escapeProgram(node("boolean_and_or", node("False", null), "OR", node("boolean_and_or", solved("cs-A"), "AND", node("True", null))))])).passed).toBe(false);
+});
+
+test("몫·나머지는 엔트리처럼 버림 나눗셈으로 계산하고, 미션 규칙이 없는 ID는 통과시키지 않는다", () => {
+  const mod = (a: string) => [start(), ask(), ifElse(compare(node("quotient_and_mod", null, answer(), null, number("2"), null, "MOD"), "EQUAL", number(a)), [speak("합격")], [speak("불합격")])];
+  expect(checkProgrammingMission("pass", exported([mod("0")])).passed).toBe(false);
+  expect(checkProgrammingMission("unknown", exported([passProgram()])).passed).toBe(false);
+});
+
+// Loop missions follow EntryJS movement (direction + rotation) and must draw inside a loop.
+const loopOf = (count: EntryNode, inner: EntryNode[]): EntryNode => ({ ...node("repeat_basic", count, null), statements: [inner] });
+const forward = (distance: EntryNode) => node("move_direction", distance, null);
+const turn = (angle: EntryNode, type = "direction_relative") => node(type, angle, null);
+const square = (type = "direction_relative") => [start(), node("start_drawing", null), loopOf(number("4"), [forward(number("100")), turn(node("angle", "90"), type), node("wait_second", number("1"), null)])];
+const polygon = (angle: EntryNode = node("calc_basic", number("360"), "DIVIDE", answer())) => [start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(answer(), [forward(number("60")), turn(angle)])];
+const until = (condition: EntryNode, mode = "until"): EntryNode => ({ ...node("repeat_while_true", condition, mode, null), statements: [[node("ask_and_wait", text("비밀번호는?"), null)]] });
+const forever = (inner: EntryNode[]): EntryNode => ({ ...node("repeat_inf", null, null), statements: [inner] });
+
+test("정사각형·정다각형은 반복 안에서 그린 닫힌 정다각형인지 확인한다", () => {
+  expect(checkProgrammingMission("square", exported([square()])).passed).toBe(true);
+  // ‘방향을 회전하기’ also turns the moving direction in EntryJS.
+  expect(checkProgrammingMission("square", exported([square("rotate_relative")])).passed).toBe(true);
+  // Four separate moves draw the square without the loop the mission practices.
+  const unrolled = [start(), node("start_drawing", null), ...Array.from({ length: 4 }, () => [forward(number("100")), turn(node("angle", "90"))]).flat()];
+  expect(checkProgrammingMission("square", exported([unrolled])).passed).toBe(false);
+  expect(checkProgrammingMission("square", exported([[start(), loopOf(number("4"), [forward(number("100")), turn(node("angle", "90"))])]])).passed).toBe(false);
+  expect(checkProgrammingMission("square", exported([[start(), node("start_drawing", null), loopOf(number("4"), [forward(number("80")), turn(node("angle", "90"))])]])).passed).toBe(false);
+  expect(checkProgrammingMission("polygon", exported([polygon()])).passed).toBe(true);
+  expect(checkProgrammingMission("polygon", exported([polygon(node("angle", "72"))])).passed).toBe(false);
+});
+
+test("비밀번호 금고는 맞힐 때까지 반복해 묻고, 반복은 예산 안에서만 돈다", () => {
+  const opened = speak("금고가 열렸어요!");
+  expect(checkProgrammingMission("safe", exported([[start(), until(compare(answer(), "EQUAL", number("1234"))), opened]])).passed).toBe(true);
+  // ‘인 동안’ with ≠ means the same; stopping a forever loop also works.
+  expect(checkProgrammingMission("safe", exported([[start(), until(compare(answer(), "NOT_EQUAL", number("1234")), "while"), opened]])).passed).toBe(true);
+  expect(checkProgrammingMission("safe", exported([[start(), forever([node("ask_and_wait", text("?"), null), { ...node("_if", compare(answer(), "EQUAL", number("1234")), null), statements: [[opened, node("stop_repeat", null)]] }])]])).passed).toBe(true);
+  // Asking a fixed number of times fails when the number of tries changes.
+  expect(checkProgrammingMission("safe", exported([[start(), node("ask_and_wait", text("?"), null), node("ask_and_wait", text("?"), null), opened]])).passed).toBe(false);
+  expect(checkProgrammingMission("safe", exported([[start(), forever([opened])]]))).toEqual({ passed: false, message: "말하기가 너무 많아요." });
+  expect(checkProgrammingMission("safe", exported([[start(), forever([])]]))).toEqual({ passed: false, message: "실행이 너무 길어요. 반복이나 조건을 다시 확인해 주세요." });
+  const nested = loopOf(number("1000"), [loopOf(number("1000"), [loopOf(number("1000"), [forward(number("1"))])])]);
+  const began = Date.now();
+  expect(checkProgrammingMission("square", exported([[start(), nested]])).passed).toBe(false);
+  expect(Date.now() - began).toBeLessThan(1000);
+  expect(checkProgrammingMission("square", exported([[start(), loopOf(number("1001"), [forward(number("1"))])]])).message).toBe("반복 횟수는 1000번까지만 확인해요.");
+});
+
+// Objects added before shapes existed keep their saved keys and normalized projects.
+import legacyObjects from "./fixtures/entry-legacy-objects.json";
+import { LEGACY_OBJECT_INPUTS } from "./entry-legacy-objects";
+import { missionStarter } from "../src/lib/classroom/programming-entry";
+
+test("모양 기능 전에 오브젝트를 추가한 작품은 키·정규화·교사 문장이 그대로다", () => {
+  const frozen: Record<string, { key: string; project: string; lines: string[] }> = legacyObjects;
+  expect(Object.keys(LEGACY_OBJECT_INPUTS).sort()).toEqual(Object.keys(frozen).sort());
+  for (const [id, raw] of Object.entries(LEGACY_OBJECT_INPUTS)) {
+    const parsed = parseProgrammingProject(raw)!;
+    expect(parsed.key, id).toBe(frozen[id].key);
+    expect(JSON.stringify(parsed.project), id).toBe(frozen[id].project);
+    expect(programmingProjectLines(raw), id).toEqual(frozen[id].lines);
+  }
+});
+
+// Tree mission: the starter's tree grows one shape per five clicks, like the official material.
+const grow = (count: string) => ({ ...node("_if", compare(node("get_variable", "cs-clicks"), "EQUAL", number(count)), null), statements: [[node("change_to_next_shape", "next", null), ...(count === "25" ? [speak("성공~!")] : [])]] });
+const treeCode = (body: EntryNode[], event = "mouse_clicked") => [[node(event, null), node("change_variable", "cs-clicks", text("1"), null), ...body]];
+const withTree = (threads: EntryNode[][], canThreads: EntryNode[][] = []) => {
+  const p = parseProgrammingProject(missionStarter("tree"))!;
+  return buildProgrammingProject(undefined, p.added.map((o) => o.id === "tree" ? { ...o, threads } : o.id === "can" ? { ...o, threads: canThreads } : o), p.mainIndex, true);
+};
+
+test("나무 키우기 시작 작품은 모양 6개·물뿌리개·클릭 수 변수를 갖고 다시 읽어도 같다", () => {
+  const p = parseProgrammingProject(missionStarter("tree"))!;
+  expect(p.added.map((o) => [o.id, o.sprite])).toEqual([["can", "watering-can"], ["tree", "tree-growth"], ["soil", "soil"]]);
+  const tree = (p.project.objects as { id: string; sprite: { pictures: { id: string; fileurl: string }[] } }[]).find((o) => o.id === "tree")!;
+  expect(tree.sprite.pictures.map((pic) => pic.id)).toEqual(["tree-pic", "tree-pic2", "tree-pic3", "tree-pic4", "tree-pic5", "tree-pic6"]);
+  expect((p.project.variables as { id: string }[]).map((v) => v.id)).toContain("cs-clicks");
+  expect(parseProgrammingProject(JSON.stringify(p.project))!.key).toBe(p.key);
+  // A picture from another sprite or outside the list is refused; the shown shape is kept.
+  const forged = structuredClone(p.project) as { objects: { id: string; selectedPictureId: string; sprite: { pictures: { fileurl: string }[] } }[] };
+  forged.objects.find((o) => o.id === "tree")!.sprite.pictures[1].fileurl = "/entryjs/sprites/watering-can-1.png";
+  expect(parseProgrammingProject(JSON.stringify(forged))).toBeNull();
+  const shown = structuredClone(p.project) as typeof forged;
+  shown.objects.find((o) => o.id === "tree")!.selectedPictureId = "tree-pic3";
+  expect(parseProgrammingProject(JSON.stringify(shown))!.added.find((o) => o.id === "tree")!.picture).toBe(2);
+  expect(programmingProjectLines(withTree(treeCode([grow("5")])))).toContain("[나무] └ 다음 모양으로 바꾸기");
+});
+
+test("나무 키우기는 클릭할 때만 한 단계씩 자라고 다 자라면 말해야 통과한다", () => {
+  const correct = treeCode(["5", "10", "15", "20", "25"].map(grow));
+  expect(checkProgrammingMission("tree", withTree(correct))).toEqual({ passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." });
+  // Clicking the tree itself also counts; the watering can may follow the mouse in a forever loop.
+  const follow = [[start(), { ...node("repeat_inf", null, null), statements: [[node("locate", "mouse", null), { ...node("if_else", node("is_clicked", null), null, null), statements: [[node("change_to_some_shape", node("get_pictures", "can-pic"), null)], [node("change_to_some_shape", node("get_pictures", "can-pic2"), null)]] }]] }]];
+  expect(checkProgrammingMission("tree", withTree(treeCode(["5", "10", "15", "20", "25"].map(grow), "when_object_click"), follow)).passed).toBe(true);
+  // A forever loop that picks the shape from the count is fine too.
+  const watch = [[start(), { ...node("repeat_inf", null, null), statements: [[...[["25", "tree-pic6"], ["20", "tree-pic5"], ["15", "tree-pic4"], ["10", "tree-pic3"], ["5", "tree-pic2"]].reduceRight<EntryNode[]>((rest, [count, pic]) => [{ ...node("if_else", compare(node("get_variable", "cs-clicks"), "GREATER_OR_EQUAL", number(count)), null, null), statements: [[node("change_to_some_shape", node("get_pictures", pic), null), ...(count === "25" ? [{ ...node("_if", compare(node("get_variable", "cs-clicks"), "EQUAL", number("25")), null), statements: [[speak("다 자랐어요!")]] }] : [])], rest] }], [])]] }], [node("mouse_clicked", null), node("change_variable", "cs-clicks", text("1"), null)]];
+  expect(checkProgrammingMission("tree", withTree(watch)).passed).toBe(true);
+  // Growing on every click, skipping a stage, growing without clicks or never speaking all fail.
+  expect(checkProgrammingMission("tree", withTree(treeCode([node("change_to_next_shape", "next", null)]))).passed).toBe(false);
+  expect(checkProgrammingMission("tree", withTree(treeCode(["5", "15", "20", "25"].map(grow)))).passed).toBe(false);
+  expect(checkProgrammingMission("tree", withTree([[start(), { ...node("repeat_inf", null, null), statements: [[node("change_to_next_shape", "next", null)]] }]])).passed).toBe(false);
+  // Grown but silent.
+  const silent = treeCode(["5", "10", "15", "20", "25"].map((count) => ({ ...grow(count), statements: [[node("change_to_next_shape", "next", null)]] })));
+  expect(checkProgrammingMission("tree", withTree(silent)).passed).toBe(false);
+  // Changing to another object's shape is refused with a message.
+  expect(checkProgrammingMission("tree", withTree(treeCode([node("change_to_some_shape", node("get_pictures", "can-pic2"), null)]))).message).toBe("이 오브젝트의 모양을 골라 주세요.");
+  const noTree = buildProgrammingProject(undefined, parseProgrammingProject(missionStarter("tree"))!.added.filter((o) => o.id !== "tree"), 1, true);
+  expect(checkProgrammingMission("tree", noTree).message).toContain("나무 오브젝트가 없어요");
+});
