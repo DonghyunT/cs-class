@@ -5,7 +5,7 @@ export const programmingMissions = [
   { id: "name", title: "강아지 이름 짓기", goal: "이름을 묻고, 입력한 이름을 말하게 해주세요.", hint: "질문 다음에 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 보세요.", experiment: "초코와 보리처럼 서로 다른 이름으로 두 번 실행해 보세요." },
   { id: "multiply", title: "곱셈 계산기", goal: "두 수를 A와 B에 기억하고, 두 수의 곱을 말하게 해주세요.", hint: "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요.", experiment: "6과 4, 3과 7을 입력해 보세요. 입력을 바꾸면 결과도 달라지나요?" },
   { id: "move", title: "시작 버튼으로 움직이기", goal: "시작하기 버튼을 누르면 강아지가 오른쪽으로 10만큼 움직이게 해주세요.", hint: "시작하기 아래에 이동 블록을 연결해 보세요. 오른쪽 방향은 90°예요.", experiment: "실행 → 중지 → 다시 실행해 보세요. 시작 위치와 이동 결과를 비교해요." },
-  { id: "keys", title: "방향키로 움직임 개선", goal: "앞 작품에 코드를 더해, 네 방향키로 강아지를 각 방향으로 10만큼 움직이게 해주세요.", hint: "‘키를 눌렀을 때’ 아래에 방향을 정하고 움직여요. 위 0°·오른쪽 90°·아래 180°·왼쪽 270°예요.", experiment: "실행 후 무대를 클릭하고 네 방향키를 눌러 보세요. 기존 시작 버튼의 움직임도 남겨주세요." },
+  { id: "keys", title: "방향키로 움직임 개선", goal: "네 방향키로 강아지를 각 방향으로 10만큼 움직이게 해주세요.", hint: "‘키를 눌렀을 때’ 아래에 방향을 정하고 움직여요. 위 0°·오른쪽 90°·아래 180°·왼쪽 270°예요.", experiment: "실행 후 무대를 클릭하고 네 방향키를 눌러 보세요." },
   { id: "average", title: "도전 · 평균 계산기", goal: "두 수를 입력받아 (A + B) ÷ 2를 말하게 해주세요.", hint: "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요.", experiment: "6과 4의 평균은 5예요. -2와 5를 넣으면 어떻게 될까요?", optional: true },
 ] as const;
 export type ProgrammingMission = (typeof programmingMissions)[number];
@@ -332,11 +332,15 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     else if (id === "multiply" || id === "average") passed = [[6, 4], [3, 7], [-2, 5], [0, 9]].every(([a, b]) => {
       const r = run("click", [String(a), String(b)]), expected = id === "multiply" ? a * b : (a + b) / 2;
       const values = r.speech.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
-      return r.asks === 2 && r.variables["cs-A"].input && r.variables["cs-B"].input && Number(r.variables["cs-A"].value) === a && Number(r.variables["cs-B"].value) === b && r.speechComputed !== undefined && Math.abs(r.speechComputed - expected) < 0.0001 && values.some((v) => Math.abs(v - expected) < 0.0001);
+      // A and B must hold the two inputs, in either order: asking for B first is also correct.
+      const stored = [Number(r.variables["cs-A"].value), Number(r.variables["cs-B"].value)];
+      const inOrder = stored[0] === a && stored[1] === b, swapped = stored[0] === b && stored[1] === a;
+      return r.asks === 2 && r.variables["cs-A"].input && r.variables["cs-B"].input && (inOrder || swapped) && r.speechComputed !== undefined && Math.abs(r.speechComputed - expected) < 0.0001 && values.some((v) => Math.abs(v - expected) < 0.0001);
     });
     else {
       const move = (signal: string, x: number, y: number) => { const r = run(signal, []); return Math.abs(r.x - x) < 0.0001 && Math.abs(r.y - y) < 0.0001; };
-      passed = move("click", 10, 0) && (id === "move" || [["38", 0, 10], ["39", 10, 0], ["40", 0, -10], ["37", -10, 0]].every(([key, x, y]) => move(String(key), Number(x), Number(y))));
+      // The keys mission grades only the four arrow keys; the carried-over start line is optional.
+      passed = id === "move" ? move("click", 10, 0) : [["38", 0, 10], ["39", 10, 0], ["40", 0, -10], ["37", -10, 0]].every(([key, x, y]) => move(String(key), Number(x), Number(y)));
     }
     return passed ? { passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." } : fail(mission.hint);
   } catch (error) { return fail(error instanceof MissionError ? error.message : mission.hint); }
