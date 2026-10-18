@@ -43,6 +43,7 @@
 | **Stage Concept** | `#376FC8` | [`activity-progress-ring.module.css`](../src/components/student/activity-progress-ring.module.css)의 `.concept`; 트랙 `#DCE6F5` |
 | **Stage Quiz** | `#8860BA` | 같은 파일의 `.quiz`; 트랙 `#E8DEF4` |
 | **Stage Practice** | `#268673` | 같은 파일의 `.practice`; 트랙 `#D9EBE5` |
+| **Entry Block Categories** | `#16A34A` 외 7종 | [`teacher.module.css`](../src/components/teacher/teacher.module.css)의 `.entryBlockPill[data-category]` 좌측 강조선·배지 색상(시작 `#16A34A`, 흐름 `#0284C7`, 움직임 `#7C3AED`, 생김새 `#E11D48`, 붓 `#EA580C`, 판단 `#2563EB`, 계산 `#D97706`, 자료 `#C026D3`) |
 
 - **액센트 규칙:** 주요 조작(CTA)은 `Clear Blue`, 키보드 포커스 테두리는 `Focus Ring`으로 일관되게 전달하며, 중요한 동작의 위계가 명확히 드러나도록 구성합니다.
 - **접근성 대비:** 명암비 기준은 [§6](#6-접근성-및-ui-가이드라인-accessibility--best-practices)을 따릅니다.
@@ -154,6 +155,10 @@
 - **다가오는 일정 패널:** 학생은 `전체 보기`, 교사는 `일정 관리` 링크로 반 일정 화면에 들어갑니다.
 - **내 할 일 (체크리스트):** 체크박스와 텍스트 행이 1개 단위를 이룹니다. 완료 시 취소선과 옅은 텍스트로 전환됩니다. Enter 추가/편집, Esc 취소의 키보드 접근성 제공.
 - **일정 및 미니 달력:** 일요일부터 토요일 순(`일 월 화 수 목 금 토`)으로 표시하고 일요일은 `#B44C43`, 토요일은 `#4F6B9A` 글자색을 씁니다(오늘·일정 있는 날 강조가 우선). 오늘 날짜와 일정이 존재하는 날을 강조 표시하며, 다가오는 일정 최대 5개를 날짜순으로 카드에 정돈합니다. 지난 일정은 native `<details>`로 접어둡니다.
+- **교사 제출 작품 대화상자 (`SubmissionViewer` · `EntryProjectPreview`):**
+  - **대화상자 폭 기준:** 일반 관리 모달은 `min(560px, calc(100vw - 32px))`, 제출 작품 모달 기본 상태는 `min(860px, calc(100vw - 32px))`입니다. 인라인 작업실을 열면 전환 애니메이션 없이 동일 레이아웃 프레임에서 즉시 `min(1220px, calc(100vw - 32px))`로 넓어집니다(`[data-workspace-open="true"]`, `:has(.entryRunner)`).
+  - **프로그래밍 작품 시각화:** 상단에 오브젝트 요약 칩(아이콘·이름·초기 좌표 `X/Y`·시작 묶음 수)과 `작업실에서 실행해 보기` / `작업실 닫기` 토글 버튼을 배치합니다. 본문에는 오브젝트별 `시작 묶음 N`(또는 `블록 묶음 N`) 카드 그리드와 8대 카테고리 색상 알약 블록(`entryBlockPill`), 조건·반복 중첩 분기(`entryBranches`, `아니면` 구분선 포함)를 표시하며, 파싱할 수 없는 구형 데이터는 번호 매김 목록(`<ol>`)으로 안전하게 폴백합니다.
+  - **인라인 실행 작업실 및 2단계 `Escape` 포커스 복구:** 한 번에 하나의 미션 작업실만 열리며(격리 iframe 가로 스크롤 영역 `min-width: 760px`, 높이 `620px`), 작업실이 열린 상태에서 `Escape`를 누르면 작업실만 먼저 닫히고 토글 버튼으로 초점이 돌아갑니다. 작업실이 닫힌 상태에서 `Escape`를 다시 누르면 대화상자가 닫히고 원래 누른 학생 행 버튼으로 초점이 복구됩니다.
 
 ### 4.5 로그인 화면과 공통 시각 기준
 <a id="확정된-공통-기준"></a>
