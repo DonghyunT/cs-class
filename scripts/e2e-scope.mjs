@@ -8,7 +8,10 @@ const ENTRY_SHARED = [
   /^src\/lib\/server\/programming-grader\.ts$/,
   /^tests\/(?:entry-palette\.test\.ts|entry-legacy-(?:inputs|objects)\.ts|fixtures\/entry-legacy-(?:keys|objects)\.json)$/,
   /^public\/entryjs\/.+$/,
-  /^scripts\/prepare-entryjs\.mjs$/
+  /^scripts\/prepare-entryjs\.mjs$/,
+  // The teacher runner boots the same iframe for every Entry lesson; its E2E check lives in programming-learning.
+  /^src\/components\/teacher\/entry-project-preview\.tsx$/,
+  /^tests\/programming-learning\.spec\.ts$/
 ];
 
 export const LESSON_MAPPINGS = {
