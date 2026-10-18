@@ -6,10 +6,11 @@ import { ApiError, classroomApi } from "@/lib/classroom/client";
 import type { Lesson, Work } from "@/lib/classroom/types";
 import type { ReviewProject } from "@/lib/classroom/review/project";
 import { parseEntryProject, entryInstructionLabel } from "@/lib/classroom/entry-project";
-import { programmingMissions, programmingProjectLines } from "@/lib/classroom/programming-entry";
+import { programmingMissions } from "@/lib/classroom/programming-entry";
 import { replaySandwich } from "@/lib/classroom/review/sandwich-engine.mjs";
 import { missions } from "@/lib/classroom/review/flowchart-data.mjs";
 import { FlowDiagram } from "@/components/student/review/flow-diagram";
+import { EntryProjectPreview } from "./entry-project-preview";
 import { dateLabel, problemMessage } from "./presentation";
 import styles from "./teacher.module.css";
 
@@ -25,12 +26,14 @@ export function ReviewProjectPreview({ project }: { project: ReviewProject }) {
   }
   return <><p>현재: {project.current} / 목표: {project.goal}</p><p>조건: {project.conditions.join(" / ")}</p><h4>기획서</h4><ol>{project.cards.map(card => <li key={card.id}>{card.text}{card.type !== "sequence" && ` · 예: ${card.yes} / 아니오: ${card.no}`}</li>)}</ol><h4>실제 기호와 연결</h4><FlowDiagram nodes={project.nodes} edges={project.edges} /><ol>{project.nodes.map(node => <li key={node.id}>{node.shape} · {node.text}<ul>{project.edges.filter(edge => edge.from === node.id).map((edge, i) => <li key={i}>{edge.label || "다음"} → {project.nodes.find(n => n.id === edge.to)?.text}</li>)}</ul></li>)}</ol></>;
 }
-export function WorkDetails({ uid, lesson, expectedRequestId, onLock, onComplete }: {
+export function WorkDetails({ uid, lesson, expectedRequestId, onLock, onComplete, onWorkspaceOpenChange, registerCloseWorkspace }: {
   uid: string; lesson: Lesson; expectedRequestId?: string; onLock: (value: boolean) => void; onComplete: () => void;
+  onWorkspaceOpenChange?: (open: boolean) => void; registerCloseWorkspace?: (close: (() => void) | null) => void;
 }) {
   const { session } = useSession();
   const [work, setWork] = useState<Work | null>(null), [error, setError] = useState(""), [attempt, setAttempt] = useState(0), [saving, setSaving] = useState(false), [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true), [requestChanged, setRequestChanged] = useState(false);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const requestId = useRef(expectedRequestId);
   const acceptLatest = useRef(false);
   const mounted = useRef(false);
@@ -42,6 +45,10 @@ export function WorkDetails({ uid, lesson, expectedRequestId, onLock, onComplete
     mounted.current = true;
     return () => { mounted.current = false; operation.current += 1; const release = locked.current; locked.current = null; release?.(false); };
   }, [lesson.id, uid]);
+  useEffect(() => {
+    onWorkspaceOpenChange?.(activeRunId !== null);
+    return () => onWorkspaceOpenChange?.(false);
+  }, [activeRunId, onWorkspaceOpenChange]);
   useEffect(() => {
     let active = true;
     const adoptRequest = acceptLatest.current;
@@ -61,6 +68,7 @@ export function WorkDetails({ uid, lesson, expectedRequestId, onLock, onComplete
     if (locked.current || loading) return;
     acceptLatest.current = latestRequest;
     focusHeading.current = true;
+    setActiveRunId(null);
     setLoading(true); setAttempt(value => value + 1);
   }
   async function decide(decision: "approve" | "changes") {
@@ -87,7 +95,7 @@ export function WorkDetails({ uid, lesson, expectedRequestId, onLock, onComplete
     {(error || requestChanged) && <div role="alert">{requestChanged && <p>확인 요청이 바뀌었어요. 최신 요청을 열고 작품과 안내 내용을 다시 확인해 주세요.</p>}{error && <p>{error}</p>}<Button variant="outline" disabled={saving || loading} onClick={() => reload(requestChanged)}>{requestChanged ? "최신 요청 열기" : "다시 불러오기"}</Button></div>}
     {loading && <p role="status">작품 상세를 불러오고 있어요.</p>}
     {work?.review && <section><h3 ref={heading} tabIndex={-1}>{work.review.status === "pending" ? "선생님 확인 요청" : work.review.status === "approved" ? "승인한 요청" : work.review.status === "changes" ? "수정 안내" : "대체된 요청"}</h3><p>{dateLabel(work.review.requestedAt)} 요청 · {work.review.message}</p><ReviewProjectPreview project={work.review.project} />{work.review.status === "pending" && <><label className={styles.dialogField}>학생에게 안내<textarea aria-label="학생에게 안내" value={message} maxLength={1000} disabled={saving || loading} onChange={event => setMessage(event.target.value)} /></label><div className="flex flex-wrap gap-2"><Button disabled={saving || loading || requestChanged} onClick={() => void decide("approve")}>요청본 승인</Button><Button variant="outline" disabled={saving || loading || requestChanged || !message.trim()} onClick={() => void decide("changes")}>수정 안내 보내기</Button></div><p>학생의 현재 수정본은 유지하고 요청 당시 작품을 처리해요.</p></>}</section>}
-    {submissions.map(({ id, title, submission }) => <details key={id} open={submissions.length === 1}><summary>{title} · {dateLabel(submission.submittedAt)} 제출</summary>{submission.reviewProject ? <ReviewProjectPreview project={submission.reviewProject} /> : <ol className={styles.submission}>{(lesson.practice.type === "programming" ? programmingProjectLines(submission.entryProject) : submission.entryProject ? parseEntryProject(submission.entryProject)?.threads.flat().map(entryInstructionLabel) ?? [] : submission.order.map(id => lesson.practice.blocks.find(block => block.id === id)?.label || id)).map((line, i) => <li key={i}><span>{i + 1}</span>{line}</li>)}</ol>}</details>)}
+    {submissions.map(({ id, title, submission }) => <details key={id} open={submissions.length === 1} onToggle={event => { if (!event.currentTarget.open && activeRunId === id) setActiveRunId(null); }}><summary>{title} · {dateLabel(submission.submittedAt)} 제출</summary>{submission.reviewProject ? <ReviewProjectPreview project={submission.reviewProject} /> : lesson.practice.type === "programming" && submission.entryProject ? <EntryProjectPreview missionId={id} missionTitle={title} entryProject={submission.entryProject} workspaceOpen={activeRunId === id} onWorkspaceOpenChange={open => setActiveRunId(open ? id : null)} registerClose={activeRunId === id ? registerCloseWorkspace : undefined} /> : <ol className={styles.submission}>{(submission.entryProject ? parseEntryProject(submission.entryProject)?.threads.flat().map(entryInstructionLabel) ?? [] : submission.order.map(id => lesson.practice.blocks.find(block => block.id === id)?.label || id)).map((line, i) => <li key={i}><span>{i + 1}</span>{line}</li>)}</ol>}</details>)}
     {!!submissions.length && <p className={styles.dialogNote}>서버에 저장된 최근 제출본이에요. 학생이 수정 중인 내용은 다시 제출하기 전까지 여기에 반영되지 않아요.</p>}
   </>;
 }
