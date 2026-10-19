@@ -52,7 +52,7 @@ export async function POST(request: Request, context: Context) {
     if (path.length === 2 && path[0] === "schedule" && /^2-(?:[1-9]|1[01])$/.test(path[1])) { operation = "classroom.schedule.save"; return json(await saveSchedule(path[1], input)); }
     if (path.length === 2 && path[0] === "timetable" && /^2-(?:[1-9]|1[01])$/.test(path[1])) { operation = "classroom.timetable.refresh"; return json(await refreshScheduleTimetable(path[1], input)); }
     if (path.length === 2 && path[0] === "classes") { operation = "classroom.classes.update"; return json(await updateClass(path[1], input)); }
-    if (path.length === 3 && path[0] === "students" && path[2] === "reset" && /^[a-zA-Z0-9_-]{1,128}$/.test(path[1])) { operation = "classroom.student.password.reset"; return json(await resetStudentPassword(path[1])); }
+    if (path.length === 3 && path[0] === "students" && path[2] === "reset" && /^[a-zA-Z0-9_-]{1,128}$/.test(path[1])) { operation = "classroom.student.password.reset"; return json(await resetStudentPassword(path[1], input)); }
     if (path.length === 2 && path[0] === "work") { operation = "classroom.work.save"; return json(await mutateWork(path[1], input, false)); }
     if (path.length === 3 && path[0] === "work" && path[2] === "action") { operation = "classroom.work.action"; return json(await mutateWork(path[1], input, true)); }
     return failureResponse({ code: "NOT_FOUND", message: "찾을 수 없는 요청입니다." }, 404, { operation });

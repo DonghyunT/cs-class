@@ -341,3 +341,40 @@ test("27명 기본 목록은 작은 행과 3색 막대를 유지하며 두 보�
   await page.reload();
   await expect(view.getByRole("button", { name: "목록 보기", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
+
+test("임시 비밀번호 일괄 발급은 미설정 학생만 고르고 최근 접속 학생은 기본 제외하며 값은 숨김으로 보여 줌", async ({ page }) => {
+  const students = rows.map((row, index) => ({ ...row, mustChangePassword: index < 3, lastActiveAt: index === 1 ? Date.now() : null }));
+  const bodies: { uid: string; body: unknown }[] = [];
+  await page.route("**/api/classroom/students/*/reset", async route => {
+    const uid = new URL(route.request().url()).pathname.split("/")[4];
+    bodies.push({ uid, body: route.request().postDataJSON() });
+    await route.fulfill(uid === "ui-teacher-2" ? { status: 409, json: { code: "ALREADY_ACTIVE", message: "이미 비밀번호를 정했거나 접속 중이라 건너뛰었어요." } } : { json: { password: `temp-${uid}`, expiresAt: Date.now() + 30 * 60_000 } });
+  });
+  await syntheticRows(page, "normal", students);
+  await page.getByRole("button", { name: "임시 비밀번호 한꺼번에 발급", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("checkbox")).toHaveCount(3);
+  await expect(dialog.getByRole("checkbox", { name: /20182/ })).not.toBeChecked();
+  await dialog.getByRole("button", { name: "2명 발급하기", exact: true }).click();
+  await expect(dialog.getByRole("status")).toContainText("1명 발급 · 1명 건너뜀");
+  expect(bodies).toEqual([{ uid: "ui-teacher-0", body: { pendingOnly: true } }, { uid: "ui-teacher-2", body: { pendingOnly: true } }]);
+  await expect(dialog).not.toContainText("temp-ui-teacher-0");
+  await expect(dialog).toContainText("건너뛰었어요");
+  await dialog.getByRole("button", { name: "비밀번호 보이기", exact: true }).click();
+  await expect(dialog).toContainText("temp-ui-teacher-0");
+  await page.emulateMedia({ media: "print" });
+  await expect(page.getByText("2학년 1반 · 20181", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "학생별 학습 현황", exact: true })).toBeHidden();
+  await page.emulateMedia({ media: "screen" });
+  await dialog.getByRole("button", { name: "전달 완료", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText("temp-ui-teacher-0")).toHaveCount(0);
+  await expect(page.getByText("1명에게 임시 비밀번호를 발급했어요.", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "임시 비밀번호 한꺼번에 발급", exact: true }).click();
+  await expect(dialog.getByRole("checkbox", { name: /20181/ })).not.toBeChecked();
+  await expect(dialog.getByRole("checkbox", { name: /20181/ })).toHaveAccessibleName(/발급됨/);
+  await expect(dialog.getByRole("button", { name: "1명 발급하기", exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "취소", exact: true }).click();
+  await page.emulateMedia({ media: "print" });
+  await expect(page.getByRole("heading", { name: "학생별 학습 현황", exact: true })).toBeVisible();
+});

@@ -249,7 +249,9 @@ async function releaseLock(path: string, lock: string) {
   const { db } = admin(); const ref = db.doc(path);
   await db.runTransaction(async (tx) => { if ((await tx.get(ref)).data()?.authBusy === lock) tx.update(ref, { authBusy: null, authBusyAt: null }); });
 }
-export async function resetStudentPassword(uid: string) {
+export async function resetStudentPassword(uid: string, input: unknown = {}) {
+  const options = input && typeof input === "object" && !Array.isArray(input) ? input as Record<string, unknown> : null;
+  requireCondition(options && Object.keys(options).every(key => key === "pendingOnly") && (options.pendingOnly === undefined || options.pendingOnly === true), 400, "INVALID_RESET", "초기화 요청 형식을 확인해 주세요.");
   const who = await identity(); const { db, auth } = admin(); const credential = createTemporaryPassword();
   const ref = db.collection("csAccounts").doc(uid); const lock = randomBytes(16).toString("hex");
   await authorized(who, async (tx, staff) => {
@@ -257,6 +259,8 @@ export async function resetStudentPassword(uid: string) {
     const student = (await tx.get(ref)).data() as Account | undefined;
     requireCondition(student?.role === "student" && student.classId && staff.classIds.includes(student.classId), 403, "FORBIDDEN", "담당 반의 학생만 관리할 수 있어요.");
     requireCondition(!student.authBusy, 409, "ACCOUNT_BUSY", "이미 계정 정보를 변경하고 있어요.");
+    // 일괄 발급은 아직 자기 비밀번호를 정하지 않았고 지금 접속 중이 아닌 학생만 바꿔요.
+    requireCondition(!options.pendingOnly || (student.mustChangePassword && !(student.session && Date.now() - student.session.lastActivityAt < timeoutFor("student"))), 409, "ALREADY_ACTIVE", "이미 비밀번호를 정했거나 접속 중이라 건너뛰었어요.");
     tx.update(ref, { authBusy: lock, authBusyAt: Date.now() });
   });
   try { await auth.updateUser(uid, { password: credential.providerPassword }); }

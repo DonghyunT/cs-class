@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Settings2 } from "lucide-react";
 import { useSession } from "@/components/session-provider";
 import { Button } from "@/components/ui/button";
@@ -152,4 +153,51 @@ export function ResetPassword({ student, onLock, onComplete, onClose, finalFocus
       <DialogFooter><Button onClick={closeResult}>전달 완료</Button></DialogFooter>
     </DialogContent>
   </Dialog></>;
+}
+
+type Issued = { uid: string; studentId: string; password?: string; expiresAt?: number; error?: string };
+const RECENT_MS = 10 * 60_000;
+
+export function BulkIssuePasswords({ classroomName, students, checkedAt, onLock, onComplete, onClose }: {
+  classroomName: string; students: StudentRow[]; checkedAt: number; onLock: (value: boolean) => void; onComplete: (issued: { uid: string; expiresAt: number }[]) => void; onClose: () => void;
+}) {
+  const { session } = useSession();
+  const candidates = students.filter(student => student.mustChangePassword).sort((a, b) => a.studentId.localeCompare(b.studentId));
+  // 최근 접속했거나 아직 쓸 수 있는 임시값을 받은 학생은 기본으로 빼서 이미 준 쪽지를 무효로 만들지 않아요.
+  const fresh = (student: StudentRow) => (!student.lastActiveAt || checkedAt - student.lastActiveAt >= RECENT_MS) && !(student.temporaryExpiresAt && student.temporaryExpiresAt > checkedAt);
+  const [selected, setSelected] = useState(() => new Set(candidates.filter(fresh).map(student => student.uid)));
+  const [results, setResults] = useState<Issued[] | null>(null);
+  const [running, setRunning] = useState(false);
+  const [shown, setShown] = useState(false);
+  const busy = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; if (busy.current) onLock(false); }; }, [onLock]);
+  async function issue() {
+    if (busy.current || !selected.size) return;
+    busy.current = true; setRunning(true); setResults([]); onLock(true);
+    const issued: Issued[] = [];
+    // 한 명씩 차례로 발급해 Firebase 계정 변경 한도를 넘지 않게 해요.
+    for (const student of candidates.filter(item => selected.has(item.uid))) {
+      if (!mounted.current) return;
+      try { issued.push({ uid: student.uid, studentId: student.studentId, ...await classroomApi.resetPassword(student.uid, session?.uid, true) }); }
+      catch (problem) { issued.push({ uid: student.uid, studentId: student.studentId, error: problemMessage(problem) }); }
+      setResults([...issued]);
+    }
+    busy.current = false; onLock(false);
+    if (!mounted.current) return;
+    setRunning(false);
+    onComplete(issued.flatMap(item => item.expiresAt ? [{ uid: item.uid, expiresAt: item.expiresAt }] : []));
+  }
+  const done = results?.filter(item => item.password) ?? [];
+  const expiry = (time: number) => new Date(time).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Seoul" });
+  return <Dialog open disablePointerDismissal={!!results} onOpenChange={(next) => { if (!next && !busy.current) onClose(); }}>
+    <DialogContent className={styles.dialog} showCloseButton={!running}>
+      <DialogHeader><DialogTitle>{classroomName} 임시 비밀번호 한꺼번에 발급</DialogTitle><DialogDescription>{results ? "학생마다 자기 값만 전달해 주세요. 이 창을 닫으면 다시 표시하지 않아요." : "아직 자기 비밀번호를 정하지 않은 학생만 보여요. 오지 않은 학생이나 없는 번호는 체크를 빼 주세요. 이미 받은 임시값이 남아 있는 학생은 기본으로 빠져 있어요. 프로젝터를 끄고 진행해 주세요."}</DialogDescription></DialogHeader>
+      {!results ? candidates.length ? <fieldset className={styles.bulkPick}><legend className="sr-only">발급할 학생</legend>{candidates.map(student => <label key={student.uid}><input type="checkbox" checked={selected.has(student.uid)} onChange={event => setSelected(previous => { const next = new Set(previous); if (event.target.checked) next.add(student.uid); else next.delete(student.uid); return next; })} />{student.studentId}{student.lastActiveAt && checkedAt - student.lastActiveAt < RECENT_MS ? <small>최근 접속</small> : student.temporaryExpiresAt && student.temporaryExpiresAt > checkedAt ? <small>{expiry(student.temporaryExpiresAt)}까지 발급됨</small> : null}</label>)}</fieldset> : <p className={styles.dialogNote}>비밀번호를 새로 정해야 하는 학생이 없어요.</p>
+        : <><p role="status" className={styles.dialogNote}>{running ? `발급 중 ${results.length}/${selected.size}명` : `${done.length}명 발급 · ${results.length - done.length}명 건너뜀`}{done[0]?.expiresAt && ` · ${expiry(done[0].expiresAt)}까지 사용 가능`}</p>
+          <div className={styles.bulkScroll}><table className={styles.bulkResult}><thead><tr><th scope="col">학번</th><th scope="col">임시 비밀번호</th></tr></thead><tbody>{results.map(item => <tr key={item.uid}><th scope="row">{item.studentId}</th><td>{item.password ? <code>{shown ? item.password : "••••••••"}</code> : <span className={styles.dialogError}>{item.error}</span>}</td></tr>)}</tbody></table></div>
+          {done.length > 0 && createPortal(<div className={styles.printSlips} aria-hidden="true">{done.map(item => <div key={item.uid}><strong>{classroomName} · {item.studentId}</strong><code>{item.password}</code><small>{expiry(item.expiresAt!)}까지 · 처음 로그인하면 내 비밀번호로 바꿔요.</small></div>)}</div>, document.body)}</>}
+      <DialogFooter>{!results ? <><Button variant="outline" onClick={onClose}>취소</Button><Button disabled={!selected.size} onClick={() => void issue()}>{selected.size}명 발급하기</Button></> : <><Button variant="outline" disabled={running || !done.length} aria-pressed={shown} onClick={() => setShown(value => !value)}>{shown ? "비밀번호 숨기기" : "비밀번호 보이기"}</Button><Button variant="outline" disabled={running || !done.length} onClick={() => window.print()}>쪽지 인쇄</Button><Button disabled={running} onClick={onClose}>전달 완료</Button></>}</DialogFooter>
+    </DialogContent>
+  </Dialog>;
 }
