@@ -1,6 +1,6 @@
 # Firebase·Vercel 운영 설정과 배포
 
-갱신: 2026-10-18(Asia/Seoul). 운영 Firebase·Vercel의 설정·배포·복구 절차입니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다. 지금 설정이 어떤 상태인지는 끝의 [운영 환경 현황](#운영-환경-현황)에 모읍니다.
+갱신: 2026-10-19(Asia/Seoul). 운영 Firebase·Vercel의 설정·배포·복구 절차입니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다. 지금 설정이 어떤 상태인지는 끝의 [운영 환경 현황](#운영-환경-현황)에 모읍니다.
 
 ## 연결 기준
 
@@ -56,7 +56,7 @@ Preview와 Production 양쪽에 일반 설정 `NODE_OPTIONS=--experimental-requi
 
 ### CI와 운영 공개
 
-main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Deployment Checks에 GitHub `app` 검사를 Production 조건으로 연결하며, 성공 전에는 새 배포를 운영 도메인에 연결하지 않습니다. 실패·취소·대기는 기존 운영 버전을 유지합니다. 이 설정은 Vercel 대시보드에서만 바꿀 수 있어 코드나 문서만으로는 현재 상태를 알 수 없습니다. 빌드 READY와 운영 별칭 연결을 구분합니다. 게이트의 연결 상태는 [운영 환경 현황](#운영-환경-현황)에 두며, 게이트를 추가·제거하면 같은 작업에서 이 절과 현황 표를 함께 고칩니다.
+main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Deployment Checks에 GitHub `app` 검사를 Production 조건으로 연결하며, 성공 전에는 새 배포를 운영 도메인에 연결하지 않습니다. 실패·취소·대기는 기존 운영 버전을 유지합니다. 불안정한 검사 때문에 `app`이 실패하면 Production 배포가 `failure`로 표시되며, 실패한 단계만 재실행(`gh run rerun <run-id> --failed`)해 성공하면 같은 SHA가 운영에 반영됩니다(2026-10-19 확인). 이 설정은 Vercel 대시보드에서만 바꿀 수 있어 코드나 문서만으로는 현재 상태를 알 수 없습니다. 빌드 READY와 운영 별칭 연결을 구분합니다. 게이트의 연결 상태는 [운영 환경 현황](#운영-환경-현황)에 두며, 게이트를 추가·제거하면 같은 작업에서 이 절과 현황 표를 함께 고칩니다.
 
 자동 `app` 검사는 정책·단위·정적 검사·빌드와 선별/공통 스모크이며, 전체 E2E는 승인된 `workflow_dispatch` 수동 실행으로만 수행합니다. 배포 검사 통과를 전체 E2E 통과로 바꾸어 기록하지 않습니다. 범위는 [개발 안내의 검증 매트릭스](DEVELOPMENT.md#검증)를 따릅니다. 자동 `app`은 수 분 단위로 끝나는 선별/스모크 범위이며 실제 시간은 실행별 기록을 따릅니다.
 
@@ -171,7 +171,7 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 | 서버 함수 지역 | Vercel `cs-class` Production 배포가 `icn1`(서울) | 2026-10-18, #44 배포 정보 |
 | 운영 도메인 | `cs-class-donghyunt.vercel.app`, Firebase Authentication 허용 목록에 등록 | 2026-09-28 사용자 승인으로 등록 |
 | Production 환경변수 | Firebase 웹 설정 3개·관리자 JSON·교사 허용 목록·초기/초기화 비밀번호 7개(Production 전용 Secret), `CRON_SECRET`, `UPSTAGE_API_KEY`·`CS_AI_COMMAND_SECRET`(Production 전용 Sensitive) | 2026-10-13판 문서 기록 |
-| 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-18, #44 병합에서 `app` 성공 2초 뒤 공개 |
+| 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-18, #44 병합에서 `app` 성공 2초 뒤 공개. 2026-10-19 `app` 실패(`90659bc`)는 Production을 막았고 실패 단계 재실행 성공 뒤 반영 |
 | 배포 보존 기간 | Build and Deployment의 Deployment Retention Policy 네 항목 모두 1주. Hobby 롤백은 직전 Production까지만 되므로 늘리지 않음 | 2026-10-18 대시보드 확인(Deployment Storage 4.97/10 GB) |
 | 시간표 Cron | Production 일일 예약 Enabled | 2026-10-13판 문서 기록 |
 | 결제·AI TTL | 결제 계정 연결, `csAiCache`·`csAiRequests`의 `expiresAt` TTL 인덱스 적용 | 2026-10-13판 문서 기록 |

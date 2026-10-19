@@ -43,7 +43,7 @@
 | **Stage Concept** | `#376FC8` | [`activity-progress-ring.module.css`](../src/components/student/activity-progress-ring.module.css)의 `.concept`; 트랙 `#DCE6F5` |
 | **Stage Quiz** | `#8860BA` | 같은 파일의 `.quiz`; 트랙 `#E8DEF4` |
 | **Stage Practice** | `#268673` | 같은 파일의 `.practice`; 트랙 `#D9EBE5` |
-| **Entry Block Categories** | `#16A34A` 외 7종 | [`teacher.module.css`](../src/components/teacher/teacher.module.css)의 `.entryBlockPill[data-category]` 좌측 강조선·배지 색상(시작 `#16A34A`, 흐름 `#0284C7`, 움직임 `#7C3AED`, 생김새 `#E11D48`, 붓 `#EA580C`, 판단 `#2563EB`, 계산 `#D97706`, 자료 `#C026D3`) |
+| **Entry Block Categories** | `#16A34A` 외 7종 | [`teacher.module.css`](../src/components/teacher/teacher.module.css)의 `.entryBlockPill[data-category]` 좌측 강조선·배지 색상(개념 그림의 블록 모양 `concept-visual.module.css`도 흐름·움직임·붓·생김새에 같은 색을 씀. 시작 `#16A34A`, 흐름 `#0284C7`, 움직임 `#7C3AED`, 생김새 `#E11D48`, 붓 `#EA580C`, 판단 `#2563EB`, 계산 `#D97706`, 자료 `#C026D3`) |
 
 - **액센트 규칙:** 주요 조작(CTA)은 `Clear Blue`, 키보드 포커스 테두리는 `Focus Ring`으로 일관되게 전달하며, 중요한 동작의 위계가 명확히 드러나도록 구성합니다.
 - **접근성 대비:** 명암비 기준은 [§6](#6-접근성-및-ui-가이드라인-accessibility--best-practices)을 따릅니다.
