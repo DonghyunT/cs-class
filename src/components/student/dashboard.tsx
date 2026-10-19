@@ -24,10 +24,11 @@ export function StudentDashboardView() {
   const [layout, setLayout] = useState<"list" | "grid">("list");
   const alive = useRef(true);
   const fetching = useRef(false);
+  const fetchedAt = useRef(0);
   const refresh = useCallback(async (requested = false) => {
     if (requested) setRefreshing(true);
     if (fetching.current) return;
-    fetching.current = true;
+    fetching.current = true; fetchedAt.current = Date.now();
     try { const result = await classroomApi.student(); if (alive.current) { setData(result); setError(""); } }
     catch (problem) { if (alive.current) setError(problem instanceof Error ? problem.message : "수업을 불러오지 못했어요."); }
     finally { fetching.current = false; if (alive.current) { setLoading(false); setRefreshing(false); } }
@@ -37,8 +38,9 @@ export function StudentDashboardView() {
     queueMicrotask(() => { if (alive.current) void refresh(); });
     const visibleRefresh = () => { if (document.visibilityState === "visible") void refresh(); };
     const timer = window.setInterval(visibleRefresh, 30_000);
-    window.addEventListener("focus", visibleRefresh);
-    return () => { alive.current = false; clearInterval(timer); window.removeEventListener("focus", visibleRefresh); };
+    const focused = () => { if (Date.now() - fetchedAt.current >= 30_000) visibleRefresh(); };
+    window.addEventListener("focus", focused);
+    return () => { alive.current = false; clearInterval(timer); window.removeEventListener("focus", focused); };
   }, [refresh]);
   if (loading) return <div className={styles.dashboard} aria-busy="true">
     <div className={styles.lessonLoadingHeader} aria-hidden="true"><Skeleton /><Skeleton /></div>

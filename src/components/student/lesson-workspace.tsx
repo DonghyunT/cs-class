@@ -23,17 +23,18 @@ export function LessonWorkspace({ lesson, uid, returnOrigin, workspaceWide, prac
   }, [attempt, lesson.id]);
   useEffect(() => {
     let cancelled = false;
-    let fetching = false;
+    let fetching = false, fetchedAt = 0;
     const refresh = async () => {
       if (fetching || document.visibilityState !== "visible") return;
-      fetching = true;
+      fetching = true; fetchedAt = Date.now();
       try { const value = await classroomApi.studentClassroom(); if (!cancelled) setDashboard(value); }
       catch { /* Work requests show actionable errors; a failed announcement refresh does not replace an editor. */ }
       finally { fetching = false; }
     };
     void refresh();
     const timer = setInterval(() => { void refresh(); }, 30_000);
-    const focused = () => { void refresh(); };
+    // Returning from the Entry iframe also fires focus; the 30-second poll bounds the delay.
+    const focused = () => { if (Date.now() - fetchedAt >= 30_000) void refresh(); };
     window.addEventListener("focus", focused);
     return () => { cancelled = true; clearInterval(timer); window.removeEventListener("focus", focused); };
   }, []);

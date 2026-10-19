@@ -24,6 +24,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true); const [configured, setConfigured] = useState(true);
   const [error, setError] = useState(""); const [remaining, setRemaining] = useState<number | null>(null);
   const activity = useRef(0); const lastSent = useRef(0); const busy = useRef(false);
+  const checked = useRef(0); // Last time the server confirmed this session (session read or activity touch).
   const generation = useRef(0);
   const [selectedClass, setSelectedClass] = useState<{ uid: string; classId: string } | null>(null);
   const applySession = useCallback((value: Session, restoreClass: boolean) => {
@@ -50,6 +51,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (value.session && (!current.current || value.session.uid === current.current.uid)) {
         if (!current.current) applySession(value.session, true);
         else { current.current = value.session; setSession(value.session); activity.current = Math.max(activity.current, value.session.lastActivityAt); }
+        checked.current = Date.now();
       } else clear(value.reason === "SESSION_REPLACED" ? "다른 곳에서 로그인되었거나 계정이 초기화되어 로그아웃됐어요." : value.reason === "SESSION_EXPIRED" ? "오랫동안 사용하지 않아 로그아웃됐어요." : "");
     } catch (problem) { if (started === generation.current) setError(problem instanceof Error ? problem.message : "접속을 확인하지 못했어요."); }
     finally { if (started === generation.current) setLoading(false); }
@@ -83,12 +85,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (activity.current > lastSent.current && now - lastSent.current >= 30_000 && now - activity.current < 60_000) {
         busy.current = true;
         const started = generation.current;
-        try { const touched = await classroomApi.touch(Math.max(0, now - activity.current)); if (started === generation.current) { lastSent.current = touched.session.lastActivityAt; current.current = touched.session; } }
+        try { const touched = await classroomApi.touch(Math.max(0, now - activity.current)); if (started === generation.current) { lastSent.current = touched.session.lastActivityAt; current.current = touched.session; setSession(touched.session); checked.current = Date.now(); } }
         catch { /* A later interaction retries; 401 is handled by the central event. */ }
         finally { busy.current = false; }
-      } else if (++tick % 30 === 0 && document.visibilityState === "visible") { busy.current = true; try { await refresh(); } finally { busy.current = false; } }
+      } else if (++tick % 30 === 0 && document.visibilityState === "visible" && now - checked.current >= 30_000) { busy.current = true; try { await refresh(); } finally { busy.current = false; } }
     }, 1000);
-    const onFocus = () => { void refresh(); }; window.addEventListener("focus", onFocus);
+    const onFocus = () => { if (Date.now() - checked.current >= 30_000) void refresh(); }; window.addEventListener("focus", onFocus);
     return () => { window.clearInterval(timer); channel?.close(); events.forEach((name) => window.removeEventListener(name, onActivity, true)); window.removeEventListener("focus", onFocus); };
   }, [sessionUid, clear, refresh]); // Session timing lives in refs; no listener churn on polling.
   async function extend() { const started = generation.current; try { const result = await classroomApi.touch(); if (started === generation.current) { applySession(result.session, true); setRemaining(null); } } catch (problem) { if (started === generation.current) setError(problem instanceof Error ? problem.message : "접속을 연장하지 못했어요."); } }
