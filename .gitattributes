@@ -16,3 +16,5 @@ docs/reference/ui-component-lab/** -text whitespace=cr-at-eol,-blank-at-eol,-bla
 src/app/fonts/OFL.txt -text whitespace=cr-at-eol,-blank-at-eol
 # Official Entry object files stay as downloaded from playentry.org.
 public/entryjs/sprites/library/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+# Keep the published game identical to its byte-preserved offline artifact.
+public/festival-romance.html -text

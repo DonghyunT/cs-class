@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f7f1e7"><title>내일, 축제에서 만나 · 정보와 프로그래밍</title><style>/* STYLES */</style></head>
+<body>
+<main class="stage" id="stage" aria-label="내일, 축제에서 만나">
+  <div class="scenery" aria-hidden="true"></div>
+  <header class="topbar">
+    <button class="brand" id="home-button" aria-label="처음 화면"><span class="brand-mark" aria-hidden="true">✦</span><span>내일, 축제에서 만나<small>정보 · 프로그래밍</small></span></button>
+    <div class="header-tools"><span class="chapter-indicator" id="chapter-indicator">하나의 이야기, 세 번의 수업</span><fieldset class="variant-picker"><legend class="sr-only">하루 캐릭터 버전</legend><label><input type="radio" name="variant" value="boy" checked><span>남학생</span></label><label><input type="radio" name="variant" value="girl"><span>여학생</span></label></fieldset><button class="tool-button" id="settings-button">설정</button><button class="tool-button fullscreen-button" id="fullscreen" aria-label="전체 화면"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 9V4h5m6 0h5v5M4 15v5h5m6 0h5v-5"/></svg></button></div>
+  </header>
+  <section id="title-view" class="title-view" aria-label="타이틀과 챕터 선택">
+    <div class="title-copy"><p class="eyebrow">A LITTLE STORY ABOUT TOMORROW</p><h1>내일,<br>축제에서 <span>만나</span></h1><p class="title-intro">평범했던 내일이,<br>조금 달라질 것 같은 예감.</p><div id="chapter-list" class="chapter-list"></div><button id="resume-button" class="resume-button" hidden>지난 장면 이어서 보기</button><p class="title-guide">한 차시, 한 챕터. 이야기로 배우고, 직접 만들어 보세요.</p></div>
+    <div class="title-character character" role="img" aria-label="교표가 달린 크림색 카디건을 입은 하루"></div><div class="title-quote"><span>하루</span><p>“내일, 같이 다닐래?”</p></div>
+  </section>
+  <section id="scene-view" class="scene-view" aria-label="수업 장면" hidden><div id="scene-content"></div></section>
+  <footer class="bottom-bar"><div class="scene-progress"><span id="progress-text">이야기의 시작을 골라 보세요.</span><small id="timing-text">개념 수업 10~15분 + 사이트 실습</small></div><div class="navigation"><button id="previous-button" class="nav-button" disabled aria-label="이전 장면">← 이전</button><button id="contents-button" class="nav-button">목차</button><button id="next-button" class="nav-button next-button" disabled>다음 →</button></div><div class="teaching-tools"><button id="reset-button" class="nav-button" disabled>장면 초기화</button><button id="teacher-button" class="nav-button" disabled>교사 메모</button></div></footer>
+  <dialog id="contents-dialog" class="contents-dialog"><div class="dialog-heading"><div><p class="eyebrow">CHAPTERS & SCENES</p><h2>오늘의 장면을 골라 보세요</h2></div><button class="close-dialog" data-close="contents-dialog" aria-label="목차 닫기">닫기 ×</button></div><div id="contents-list"></div><p class="dialog-footnote">모든 챕터를 바로 열 수 있습니다. ‘선택 활동’도 목차에서 언제든 확인할 수 있습니다.</p></dialog>
+  <dialog id="settings-dialog" class="settings-dialog"><div class="dialog-heading"><h2>수업 설정</h2><button class="close-dialog" data-close="settings-dialog" aria-label="설정 닫기">닫기 ×</button></div><form id="settings-form"><label class="form-field">이야기 속 내 이름<input id="story-name" maxlength="12" autocomplete="off" placeholder="여울"><small>실제 학생 이름을 입력할 필요는 없습니다. 기본 이름은 ‘여울’입니다.</small></label><label class="checkbox-line"><input type="checkbox" id="short-mode"><span>간결한 대화로 진행<small>도입·후속 대사를 짧게 봅니다. 기본 진행은 차시별 중심 활동 3개이며, 확장은 목차에서 엽니다.</small></span></label><label class="form-field">복습·실습 사이트 주소 <span class="optional-label">선택</span><input id="site-url" type="url" placeholder="https://…" autocomplete="off"><small>비워 두면 사용 중인 사이트 탭으로 전환하도록 안내합니다.</small></label><p class="form-feedback" id="settings-feedback" role="status"></p><div class="settings-actions"><button type="button" id="clear-memory" class="text-button">이 기기의 기억 지우기</button><button type="submit" class="primary-button">설정 적용</button></div></form></dialog>
+  <dialog id="notes-dialog" class="notes-dialog"><div class="dialog-heading"><div><p class="eyebrow" id="note-scene"></p><h2>교사 메모</h2></div><button class="close-dialog" data-close="notes-dialog" aria-label="교사 메모 닫기">닫기 ×</button></div><div id="notes-content"></div></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</main>
+<script>/* DATA */</script><script>/* MODELS */</script><script>/* STATE */</script><script>/* EXPERIMENTS */</script><script>/* APP */</script>
+</body></html>

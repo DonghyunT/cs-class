@@ -136,6 +136,8 @@ npm run dev:emulator
 
 ---
 
+교사가 투사하는 3차시 개념 수업 자료는 [내일, 축제에서 만나](teaching-materials/festival-romance/README.md)를 참고하세요. 독립 HTML 완성본과 수정 소스가 함께 있습니다.
+
 ## 6. 저장소 구조 (Directory Structure)
 
 ```text
