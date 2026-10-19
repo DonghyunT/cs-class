@@ -24,7 +24,7 @@ module.exports = {
           "speaker": "하루",
           "role": "haru",
           "text": "이게 빛그림 점등식이야. 마지막 공연이 끝나면 이 조명들이 같이 켜져.",
-          "expression": 2
+          "expression": 0
         },
         {
           "speaker": "나",
@@ -36,7 +36,7 @@ module.exports = {
           "speaker": "하루",
           "role": "haru",
           "text": "응. 앱에서 깜빡임을 시험하고, 우리가 만든 도형 배치도를 진행팀에 보내면 돼.",
-          "expression": 2
+          "expression": 0
         },
         {
           "speaker": "나",
@@ -48,7 +48,7 @@ module.exports = {
           "speaker": "하루",
           "role": "haru",
           "text": "그래서 너랑 같이 하고 싶었어. 우선 불이 제대로 켜지는지부터 봐줄래?",
-          "expression": 2
+          "expression": 0
         }
       ],
       "shortLines": [
@@ -68,7 +68,7 @@ module.exports = {
           "speaker": "하루",
           "role": "haru",
           "text": "그래서 너랑 같이 하고 싶었어. 우선 불이 제대로 켜지는지부터 봐줄래?",
-          "expression": 2
+          "expression": 0
         }
       ],
       "teacher": {
@@ -110,7 +110,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "조명 배치를 정하기 전에 켜졌다 꺼지는 동작부터 시험해야 해.",
-            "expression": 2
+            "expression": 0
           },
           {
             "speaker": "나",
@@ -122,7 +122,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "우리가 알아보기 좋게 세어 보자. 몇 번 반복할래?",
-            "expression": 2
+            "expression": 0
           }
         ],
         "shortIntro": [
@@ -130,7 +130,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "점등식에 쓸 조명이 켜졌다 꺼지는지 시험하자. 몇 번 반복할까?",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
@@ -161,7 +161,7 @@ module.exports = {
             {
               "speaker": "하루",
               "text": "{{times}}번 잘 깜빡였네. 이제 조명 놓을 모양도 같이 정해 보자.",
-              "expression": 2
+              "expression": 0
             }
           ]
         }
@@ -189,7 +189,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "시험은 잘 됐네. 이제 우리가 맡은 자리의 모양을 정하면 돼.",
-            "expression": 2
+            "expression": 0
           },
           {
             "speaker": "나",
@@ -201,7 +201,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "응. 그래서 하나는 남겨 뒀어. 너는 어떤 모양이 좋아?",
-            "expression": 2
+            "expression": 1
           }
         ],
         "shortIntro": [
@@ -209,7 +209,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "이제 함께 채울 조명 자리의 모양을 고르자. 어떤 모양이 좋아?",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
@@ -239,25 +239,28 @@ module.exports = {
           "triangle": [
             {
               "speaker": "하루",
+              "role": "haru",
               "text": "삼각형 조명은 처음 만들어 봤어. 생각보다 예쁘다.",
               "expression": 2
             },
             {
               "speaker": "나",
+              "role": "me",
               "text": "다른 조명 옆에 놓으면 잘 어울리겠다.",
-              "expression": 1
+              "expression": 0
             },
             {
               "speaker": "하루",
+              "role": "haru",
               "text": "응. 그 자리는 너랑 같이 만든 걸 놓고 싶었어.",
-              "expression": 2
+              "expression": 1
             }
           ],
           "square": [
             {
               "speaker": "하루",
               "role": "haru",
-              "text": "사각형 조명도 예쁘다. 다른 조명 옆에 놓으면 잘 어울리겠어.",
+              "text": "사각형 조명은 반듯해서 멀리서도 잘 보이겠다.",
               "expression": 2
             },
             {
@@ -265,17 +268,31 @@ module.exports = {
               "role": "me",
               "text": "좋아. 우리 둘 다 잘 보이는 쪽에 놓자.",
               "expression": 0
+            },
+            {
+              "speaker": "하루",
+              "role": "haru",
+              "text": "응. 네가 고른 모양으로 같이 채우니까 더 마음에 들어.",
+              "expression": 1
             }
           ],
           "hexagon": [
             {
               "speaker": "하루",
-              "text": "육각형 조명도 예쁘네. 우리 둘 다 눈에 잘 보이는 쪽에 놓자.",
+              "role": "haru",
+              "text": "육각형 조명은 작은 별 같네. 다른 조명 사이에서도 눈에 띄겠다.",
               "expression": 2
             },
             {
               "speaker": "나",
-              "text": "좋아. 공연 시작하면 같이 보러 오자.",
+              "role": "me",
+              "text": "공연 시작하면 우리가 만든 것부터 찾아보자.",
+              "expression": 0
+            },
+            {
+              "speaker": "하루",
+              "role": "haru",
+              "text": "좋아. 이 모양 보면 너랑 같이 만든 게 생각날 것 같아.",
               "expression": 1
             }
           ]
@@ -310,7 +327,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "점등식 기다리는 동안 이거 한번 열어 봐. 조명 준비하면서 같이 써 뒀어.",
-            "expression": 2
+            "expression": 1
           },
           {
             "speaker": "나",
@@ -322,7 +339,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "정문에서 만나기로 한 시각이야. 숫자 네 자리로 넣으면 돼.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "shortIntro": [
@@ -330,13 +347,17 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "점등식을 기다리는 동안 축제앱의 디지털 카드를 열어 봐. 암호는 정문에서 만나기로 한 시각이야.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
           {
             "key": "open-card",
-            "label": "안내를 보고 약속 시각으로 카드를 연다"
+            "label": "나한테 쓴 카드야? 열어 볼게."
+          },
+          {
+            "key": "playful",
+            "label": "암호까지 걸다니, 준비 많이 했네."
           }
         ],
         "responses": {
@@ -345,7 +366,7 @@ module.exports = {
               "speaker": "하루",
               "role": "haru",
               "text": "카드 읽었어? 오늘 같이 와 줘서 고맙다고 말하고 싶었어.",
-              "expression": 2
+              "expression": 1
             },
             {
               "speaker": "나",
@@ -357,7 +378,25 @@ module.exports = {
               "speaker": "하루",
               "role": "haru",
               "text": "그럼 우리 조명 켜지는 것도 같이 보자. 마지막 공연이 끝나면 곧 켜질 거야.",
-              "expression": 2
+              "expression": 0
+            }
+          ]
+        },
+        "choiceReplies": {
+          "open-card": [
+            {
+              "speaker": "하루",
+              "role": "haru",
+              "text": "응. 네가 제일 먼저 봤으면 했어.",
+              "expression": 1
+            }
+          ],
+          "playful": [
+            {
+              "speaker": "하루",
+              "role": "haru",
+              "text": "조금 쑥스러워서 잠가 뒀지. 결국 보여 줄 거면서.",
+              "expression": 1
             }
           ]
         }
@@ -365,7 +404,7 @@ module.exports = {
       "teacher": {
         "ask": "약속 시각을 네 자리로 입력할 때 첫 답이 틀리고 다음 답이 맞으면 질문은 몇 번 나올까요?",
         "answer": "예를 들어 17:00은 1700으로 입력합니다. 오답 뒤 정답을 입력하면 두 번 묻고, 조건이 참이면 반복을 멈춥니다.",
-        "watch": "‘될 때까지’는 조건을 먼저 확인하며 거짓인 동안 반복합니다. 조건이 참일 때 계속하는 while과 구분합니다.",
+        "watch": "‘될 때까지’는 조건을 먼저 확인하고 거짓인 동안 반복합니다. 이 예는 ‘대답 ≠ 암호’인 동안 반복하는 while과 같은 흐름이며, 대답이 암호와 같아지면 멈춥니다.",
         "short": "힌트를 확인하고 틀린 값 뒤에 약속 시각을 입력해 카드를 엽니다."
       },
       "observe": "조건이 거짓이면 다시 입력을 묻고, 약속 시각과 같아져 참이 되면 반복이 끝나는지 확인합니다.",
@@ -384,14 +423,14 @@ module.exports = {
           {
             "speaker": "하루",
             "text": "공연 동안은 조명이 계속 깜빡이게 하자. 잠깐 시험하고 멈춰 볼까?",
-            "expression": 2
+            "expression": 0
           }
         ],
         "shortIntro": [
           {
             "speaker": "하루",
             "text": "공연 동안은 조명이 계속 깜빡이게 하자. 잠깐 시험하고 멈춰 볼까?",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
@@ -405,7 +444,7 @@ module.exports = {
             {
               "speaker": "하루",
               "text": "조명은 잘 들어오네. 시험은 여기까지 하고 이제 공연 준비하자.",
-              "expression": 2
+              "expression": 0
             }
           ]
         }
@@ -433,14 +472,14 @@ module.exports = {
           {
             "speaker": "하루",
             "text": "이제 마지막 준비 확인만 하면 돼. 우리가 만든 {{shapeName}} 조명도 넣어 뒀어.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "shortIntro": [
           {
             "speaker": "하루",
             "text": "이제 마지막 준비 확인만 하면 돼. 우리가 만든 {{shapeName}} 조명도 넣어 뒀어.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
@@ -454,7 +493,7 @@ module.exports = {
             {
               "speaker": "하루",
               "text": "이제 {{shapeName}} 조명까지 준비 끝났네. 같이 켜 보자.",
-              "expression": 2
+              "expression": 0
             }
           ]
         }
@@ -486,24 +525,27 @@ module.exports = {
         },
         {
           "speaker": "하루",
-          "text": "아까 안내판에 내가 12분 전에 왔다고 나왔잖아. 학교에는 그보다 더 일찍 왔어.",
+          "role": "haru",
+          "text": "저기 있다. 우리가 고른 {{shapeName}}. 같이 만드니까 내 것만 켜졌을 때보다 더 좋네.",
           "expression": 2
         },
         {
           "speaker": "하루",
-          "text": "네가 먼저 와 있으면 혼자 기다릴 수도 있으니까. 나도 빨리 나오고 싶었고.",
-          "expression": 2
+          "role": "haru",
+          "text": "아까 정문에 도착했다고 메시지 보냈잖아. 네가 먼저 와서 혼자 기다릴까 봐, 준비팀 일 끝나자마자 갔어.",
+          "expression": 1
         },
         {
           "speaker": "내 생각",
-          "text": "하루가 일찍 나온 게 괜히 기분 좋았다. 내일은 내가 먼저 기다려도 좋겠다고 생각했다.",
-          "expression": 1,
-          "role": "narration"
+          "role": "narration",
+          "text": "정문에서 보았던 접힌 지도를 떠올렸다. 다음에는 내가 먼저 기다려도 좋겠다고 생각했다.",
+          "expression": 0
         },
         {
           "speaker": "하루",
+          "role": "haru",
           "text": "오늘 같이 다녀서 좋았어. 내일도 같이 하교할래?",
-          "expression": 2
+          "expression": 1
         }
       ],
       "shortLines": [
@@ -515,13 +557,15 @@ module.exports = {
         },
         {
           "speaker": "하루",
-          "text": "사실 학교에는 더 일찍 와 있었어. 네가 먼저 와서 기다릴 수도 있으니까.",
-          "expression": 2
+          "role": "haru",
+          "text": "아까 정문에 도착했다고 메시지 보냈잖아. 네가 먼저 와서 혼자 기다릴까 봐, 준비팀 일 끝나자마자 갔어.",
+          "expression": 1
         },
         {
           "speaker": "하루",
+          "role": "haru",
           "text": "오늘 같이 다녀서 좋았어. 내일도 같이 하교할래?",
-          "expression": 2
+          "expression": 1
         }
       ],
       "choices": [
@@ -533,14 +577,14 @@ module.exports = {
           {
             "speaker": "하루",
             "text": "좋아. 내일 수업 끝나고 연락할게.",
-            "expression": 2
+            "expression": 1
           }
         ],
         [
           {
             "speaker": "하루",
             "text": "그럼 내일은 내가 너 찾으러 갈게. 정문에서 보자.",
-            "expression": 2
+            "expression": 5
           }
         ]
       ],
@@ -569,8 +613,8 @@ module.exports = {
           "조건을 먼저 확인하고, 참이 되면 멈춰요."
         ],
         [
-          "변수와 조건",
-          "횟수를 기억하고, 값에 따라 모양을 바꿀 수 있어요."
+          "도형과 회전각",
+          "정다각형의 회전각은 360°를 변의 수로 나눠 구해요."
         ]
       ],
       "extra": "한 바퀴 360° ÷ 변의 수 = 한 번의 회전각. 계속 반복은 멈추는 명령이나 프로그램 정지가 필요해요.",

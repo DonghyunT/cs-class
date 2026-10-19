@@ -30,25 +30,7 @@ module.exports = {
           "speaker": "하루",
           "role": "haru",
           "text": "내일 축제 누구랑 가? 아직 안 정했으면 나랑 같이 다닐래?",
-          "expression": 2
-        },
-        {
-          "speaker": "나",
-          "role": "me",
-          "text": "아직 안 정했어. 너는 가 보고 싶은 데 있어?",
-          "expression": 0
-        },
-        {
-          "speaker": "하루",
-          "role": "haru",
-          "text": "사진 부스도 가고 싶고 공연도 보고 싶어. 같이 고르면 더 재밌을 것 같아서.",
-          "expression": 2
-        },
-        {
-          "speaker": "내 생각",
-          "role": "narration",
-          "text": "내일 시간표를 다시 열었다. 혼자 구경할 때는 그냥 지나쳤던 부스들이 눈에 들어왔다.",
-          "expression": 0
+          "expression": 1
         }
       ],
       "shortLines": [
@@ -61,23 +43,63 @@ module.exports = {
         {
           "speaker": "하루",
           "role": "haru",
-          "text": "사진 부스도 가고 싶고 공연도 보고 싶어. 같이 고르면 더 재밌을 것 같아서.",
-          "expression": 2
-        },
-        {
-          "speaker": "내 생각",
-          "role": "narration",
-          "text": "내일 시간표를 다시 열었다. 혼자 구경할 때는 그냥 지나쳤던 부스들이 눈에 들어왔다.",
-          "expression": 0
+          "text": "내일 축제 누구랑 가? 아직 안 정했으면 나랑 같이 다닐래?",
+          "expression": 1
         }
       ],
       "teacher": {
         "ask": "하루에게 어떤 말로 답하고 싶은지 자유롭게 생각해 볼까요?",
-        "answer": "말투에는 정답이 없습니다. 뒤의 활동에서 고른 답장이 실제로 전송되는 흐름을 확인합니다.",
+        "answer": "이 장면의 답은 이야기 선택이며 말투에 정답은 없습니다. 뒤의 전송 활동에서는 별도의 준비 완료 답장을 고르고, 전송 버튼을 눌러야 그 초안이 실제로 발송됩니다.",
         "watch": "학생의 실제 연애 경험이나 특정 친구를 이야기하게 하지 않습니다.",
-        "short": "초대 메시지를 읽고 다음 장면으로 이동합니다."
+        "short": "하루의 초대를 읽고 두 말투 중 하나로 답합니다. 어느 답도 같은 이야기로 이어집니다."
       },
-      "channel": "축제앱 · 하루와 채팅"
+      "channel": "축제앱 · 하루와 채팅",
+      "choices": [
+        "좋아. 나도 너랑 같이 가고 싶어.",
+        "좋아. 대신 길 안내는 네가 맡아."
+      ],
+      "choiceReplies": [
+        [
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "진짜? 물어보길 잘했다. 사진 부스도 가고 싶고 공연도 보고 싶어.",
+            "expression": 3
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "같이 고르면 더 재밌을 것 같아서.",
+            "expression": 1
+          },
+          {
+            "speaker": "내 생각",
+            "role": "narration",
+            "text": "내일 시간표를 다시 열었다. 혼자 볼 때는 지나쳤던 부스들이 눈에 들어왔다.",
+            "expression": 0
+          }
+        ],
+        [
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "맡겨 둬. 길 잃으면 같이 헤매는 걸로.",
+            "expression": 5
+          },
+          {
+            "speaker": "나",
+            "role": "me",
+            "text": "그건 길 안내가 아닌데?",
+            "expression": 0
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "농담이야. 사진 부스도 가고 공연도 보자. 같이 고르면 더 재밌을 것 같아서.",
+            "expression": 2
+          }
+        ]
+      ]
     },
     {
       "id": "ch1-2",
@@ -99,7 +121,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "같은 초대 문장을 블록과 글자로 표현하면 실행 결과도 같을까?",
-            "expression": 2
+            "expression": 0
           }
         ],
         "shortIntro": [
@@ -113,7 +135,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "같은 초대 문장을 블록과 글자로 표현하면 실행 결과도 같을까?",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
@@ -128,7 +150,7 @@ module.exports = {
               "speaker": "하루",
               "role": "haru",
               "text": "두 표현 모두 같은 초대 문장을 보여 주네. 그럼 초대장도 만들어 보자.",
-              "expression": 2
+              "expression": 0
             }
           ]
         }
@@ -157,7 +179,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "축제앱에서 같이 갈 사람에게 초대장을 보낼 수 있대. 링크 하나 보낼게.",
-            "expression": 2
+            "expression": 0
           },
           {
             "speaker": "축제앱",
@@ -175,7 +197,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "응. 채팅은 여기서 하고, 초대장은 앱 안의 초대장 메뉴에서 받으면 돼.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "shortIntro": [
@@ -189,7 +211,11 @@ module.exports = {
         "options": [
           {
             "key": "create",
-            "label": "이름을 넣어 초대장을 만든다"
+            "label": "내 이름이 들어간 초대장, 받아 볼게."
+          },
+          {
+            "key": "tease",
+            "label": "초대장까지? 제대로 준비했네."
           }
         ],
         "responses": {
@@ -198,13 +224,31 @@ module.exports = {
               "speaker": "하루",
               "role": "haru",
               "text": "{{ticketName}} 이름으로 잘 나왔네. 내일 입구에서 보여 주면 돼.",
-              "expression": 2
+              "expression": 0
             },
             {
               "speaker": "나",
               "role": "me",
               "text": "저장했어. 내일 챙겨 갈게.",
               "expression": 0
+            }
+          ]
+        },
+        "choiceReplies": {
+          "create": [
+            {
+              "speaker": "하루",
+              "role": "haru",
+              "text": "이름이 들어가니까 이제 진짜 우리 약속 같네.",
+              "expression": 1
+            }
+          ],
+          "tease": [
+            {
+              "speaker": "하루",
+              "role": "haru",
+              "text": "첫 초대인데, 조금 신경 썼지.",
+              "expression": 5
             }
           ]
         }
@@ -232,7 +276,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "나는 준비팀 일이 네 시쯤 끝나. 조금 일찍 만나서 부스를 둘러봐도 좋고.",
-            "expression": 2
+            "expression": 0
           },
           {
             "speaker": "나",
@@ -244,13 +288,13 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "마지막에 운동장에서 빛그림 점등식을 해. 조명 위치 정하는 걸 맡았어.",
-            "expression": 2
+            "expression": 0
           },
           {
             "speaker": "하루",
             "role": "haru",
             "text": "같이 구경할 시간은 충분해. 앱에 적힌 기본 시각을 우리 만날 시각으로 바꿔 두자.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "shortIntro": [
@@ -258,7 +302,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "준비팀 일은 네 시쯤 끝나. 앱의 기본 시각을 우리 만날 시각으로 바꿔 두자.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
@@ -283,7 +327,7 @@ module.exports = {
               "speaker": "하루",
               "role": "haru",
               "text": "그럼 {{meetingTime}}에 정문에서 만나자. 늦어질 것 같으면 연락해 줘.",
-              "expression": 2
+              "expression": 0
             },
             {
               "speaker": "나",
@@ -317,14 +361,14 @@ module.exports = {
           {
             "speaker": "하루",
             "text": "초대장 앱에서 이름을 묻고 장소도 물어보네. 두 대답이 어디에 남는지 확인해 보자.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "shortIntro": [
           {
             "speaker": "하루",
             "text": "초대장 앱에서 이름을 묻고 장소도 물어보네. 두 대답이 어디에 남는지 확인해 보자.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
@@ -338,7 +382,7 @@ module.exports = {
             {
               "speaker": "하루",
               "text": "이름과 장소를 따로 저장해 두면 약속을 다시 확인하기 편하겠다.",
-              "expression": 2
+              "expression": 0
             }
           ]
         }
@@ -365,19 +409,19 @@ module.exports = {
           {
             "speaker": "내 생각",
             "role": "narration",
-            "text": "초대장에는 내 이름과 약속 시각이 들어갔다. 채팅창으로 돌아오니 하루의 메시지가 하나 더 와 있었다.",
+            "text": "초대장을 받고 시각도 정했다. 채팅창으로 돌아오니 하루가 내일 준비할 것을 보내 놓았다.",
             "expression": 0
           },
           {
             "speaker": "하루",
             "role": "haru",
-            "text": "내일 뭐부터 할지 생각해 둘게. 같이 간다고 해 줘서 고마워.",
-            "expression": 2
+            "text": "편한 신발 신고 와. 여기저기 많이 걷게 될 것 같아.",
+            "expression": 0
           },
           {
             "speaker": "내 생각",
             "role": "narration",
-            "text": "할 말은 정했는데 전송 버튼 앞에서 잠깐 손이 멈췄다. 어떤 말투로 답할까?",
+            "text": "내일 준비는 끝났다. 이제 마지막 답장만 보내면 된다.",
             "expression": 0
           }
         ],
@@ -385,23 +429,23 @@ module.exports = {
           {
             "speaker": "하루",
             "role": "haru",
-            "text": "내일 같이 간다고 해 줘서 고마워. 만나서 뭐부터 할지 생각해 둘게.",
-            "expression": 2
+            "text": "내일 편한 신발 신고 와. 많이 걷게 될 것 같아. 준비됐으면 답장 줘.",
+            "expression": 0
           }
         ],
         "options": [
           {
             "key": "casual",
-            "label": "좋아, 정문에서 보자!",
+            "label": "준비 완료! 시간 맞춰 갈게.",
             "params": {
-              "text": "좋아, 정문에서 보자!"
+              "text": "준비 완료! 시간 맞춰 갈게."
             }
           },
           {
             "key": "warm",
-            "label": "응. 나도 같이 가고 싶었어.",
+            "label": "초대장 챙겼어. 내일 기대할게.",
             "params": {
-              "text": "응. 나도 같이 가고 싶었어."
+              "text": "초대장 챙겼어. 내일 기대할게."
             }
           }
         ],
@@ -409,25 +453,29 @@ module.exports = {
           "casual": [
             {
               "speaker": "하루",
-              "text": "좋아. 내일 정문에서 기다릴게. 늦을 것 같으면 연락해 줘.",
-              "expression": 2
+              "role": "haru",
+              "text": "좋아. 내일 정문에서 보자. 길 안내도 준비해 둘게.",
+              "expression": 5
             },
             {
               "speaker": "나",
-              "text": "알겠어. 늦어질 것 같으면 미리 연락할게.",
-              "expression": 1
+              "role": "me",
+              "text": "알겠어. 나도 가 보고 싶은 부스 찾아볼게.",
+              "expression": 0
             }
           ],
           "warm": [
             {
               "speaker": "하루",
-              "text": "잘됐다. 너한테 먼저 물어보길 잘했네. 내일 정문에서 만나자.",
-              "expression": 2
+              "role": "haru",
+              "text": "나도 기대돼. 내일 정문에서 만나자.",
+              "expression": 1
             },
             {
               "speaker": "나",
-              "text": "나도 가 보고 싶은 부스 찾아볼게. 내일 같이 고르자.",
-              "expression": 1
+              "role": "me",
+              "text": "응. 잘 자. 내일 보자.",
+              "expression": 0
             }
           ]
         }
@@ -471,7 +519,7 @@ module.exports = {
           "speaker": "하루",
           "role": "haru",
           "text": "앱으로 초대장도 보냈고 시간도 정했네. 내일 {{meetingTime}}에 정문에서 보자.",
-          "expression": 2
+          "expression": 0
         },
         {
           "speaker": "나",
@@ -483,7 +531,7 @@ module.exports = {
           "speaker": "하루",
           "role": "haru",
           "text": "그럼. 내가 만든 조명도 있는데 한 자리가 아직 비어 있어. 내일 같이 골라 줬으면 좋겠어.",
-          "expression": 2
+          "expression": 0
         },
         {
           "speaker": "내 생각",
@@ -497,13 +545,13 @@ module.exports = {
           "speaker": "하루",
           "role": "haru",
           "text": "앱으로 초대장도 보냈고 시간도 정했네. 내일 {{meetingTime}}에 정문에서 보자.",
-          "expression": 2
+          "expression": 0
         },
         {
           "speaker": "하루",
           "role": "haru",
           "text": "그럼. 내가 만든 조명도 있는데 한 자리가 아직 비어 있어. 내일 같이 골라 줬으면 좋겠어.",
-          "expression": 2
+          "expression": 0
         },
         {
           "speaker": "내 생각",
@@ -514,7 +562,7 @@ module.exports = {
       ],
       "teacher": {
         "ask": "답장 선택과 실제 전송 사건 중 어떤 행동이 메시지를 보냈나요?",
-        "answer": "학생이 고른 문장이 전송 버튼을 누른 사건으로 실행되었습니다. 두 말투 모두 같은 만남으로 이어집니다.",
+        "answer": "ch1-6에서 별도로 고른 준비 완료 답장이 전송 버튼 사건으로 발송되었습니다. 첫 장면의 이야기 선택과 구분하며, 두 말투 모두 같은 만남으로 이어집니다.",
         "watch": "학생의 답장 말투에 정답이나 점수가 붙지 않습니다.",
         "short": "전날 밤의 약속을 확인하고 이 차시를 정리합니다. 다음 날은 2차시에서 시작합니다."
       },
@@ -541,7 +589,7 @@ module.exports = {
         ]
       ],
       "extra": "프로그래밍 언어로 명령을 표현해 프로그램을 만들고, 실행하며 고치는 과정이 프로그래밍입니다.",
-      "mission": "사이트에서 이름·계산·움직임 미션을 복습하고 실습해 보세요.",
+      "mission": "여기서 잠깐 멈춰 사이트 실습을 하거나, 아래 버튼으로 축제날 이야기를 이어 가세요.",
       "teacher": {
         "ask": "입력한 이름을 초대장에 넣고, 약속 시각을 기억하게 하려면 무엇을 사용하면 될까요?",
         "answer": "이름을 입력받아 문장에 넣고, 약속 시각은 변수에 저장해 다시 사용할 수 있습니다.",

@@ -15,3 +15,9 @@ test('운영 안내와 수정 가능한 소스가 있다',()=>{
   const readme=fs.readFileSync(path.join(root,'README.md'),'utf8');assert.ok(readme.includes('27개 장면'));
   assert.ok(fs.existsSync(path.join(root,'src/app.js')));
 });
+
+test('웹 공개 파일은 내려받는 오프라인 완성본과 같다',()=>{
+ const published=path.resolve(root,'../../public/festival-romance.html');
+ assert.ok(fs.existsSync(published));
+ assert.equal(fs.readFileSync(published,'utf8'),html);
+});

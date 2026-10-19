@@ -17,32 +17,32 @@ module.exports = {
         {
           "speaker": "내 생각",
           "role": "narration",
-          "text": "약속한 {{meetingTime}}보다 조금 일찍 정문에 도착했다. 하루는 이미 안내판 옆에 서 있었다.",
+          "text": "약속한 {{meetingTime}}보다 조금 일찍 정문에 도착했다. 하루는 안내판 옆에서 손을 흔들었다.",
           "expression": 0
         },
         {
           "speaker": "하루",
           "role": "haru",
           "text": "나도 방금 왔어. 안내판 보고 있던 참이야.",
-          "expression": 2
+          "expression": 0
         },
         {
-          "speaker": "축제 안내판",
+          "speaker": "축제앱",
           "role": "system",
-          "text": "하루 님 입장: 12분 전.",
-          "expression": 1
+          "text": "하루 · 12분 전: 정문 도착! 서두르지 말고 천천히 와.",
+          "expression": 0
         },
         {
           "speaker": "나",
           "role": "me",
-          "text": "생각보다 안내판을 오래 봤네?",
+          "text": "방금이라기엔 메시지가 12분 전인데?",
           "expression": 0
         },
         {
           "speaker": "하루",
           "role": "haru",
           "text": "갈 만한 곳이 많더라고. 너 오면 같이 고르려고 기다렸어.",
-          "expression": 2
+          "expression": 1
         },
         {
           "speaker": "내 생각",
@@ -55,33 +55,39 @@ module.exports = {
         {
           "speaker": "내 생각",
           "role": "narration",
-          "text": "약속한 {{meetingTime}}보다 조금 일찍 정문에 도착했다. 하루는 이미 안내판 옆에 서 있었다.",
+          "text": "약속한 {{meetingTime}}보다 조금 일찍 정문에 도착했다. 하루는 안내판 옆에서 손을 흔들었다.",
           "expression": 0
         },
         {
           "speaker": "하루",
           "role": "haru",
           "text": "나도 방금 왔어. 안내판 보고 있던 참이야.",
-          "expression": 2
+          "expression": 0
         },
         {
-          "speaker": "축제 안내판",
+          "speaker": "축제앱",
           "role": "system",
-          "text": "하루 님 입장: 12분 전.",
-          "expression": 1
+          "text": "하루 · 12분 전: 정문 도착! 서두르지 말고 천천히 와.",
+          "expression": 0
+        },
+        {
+          "speaker": "나",
+          "role": "me",
+          "text": "방금이라기엔 메시지가 12분 전인데?",
+          "expression": 0
         },
         {
           "speaker": "하루",
           "role": "haru",
           "text": "갈 만한 곳이 많더라고. 너 오면 같이 고르려고 기다렸어.",
-          "expression": 2
+          "expression": 1
         }
       ],
       "teacher": {
-        "ask": "안내판은 어떤 값을 저장했다가 화면에 보여 준 걸까요?",
-        "answer": "입장 시각처럼 저장된 값을 처리해 출력한 장면으로 연결합니다.",
-        "watch": "이 장면은 저장된 값과 출력의 예시입니다. 하루의 말이 조건문의 정답은 아닙니다.",
-        "short": "안내판과 하루의 대사를 읽고 부스 선택으로 넘어갑니다."
+        "ask": "앱은 어떤 자료를 기억했다가 화면에 보여 준 걸까요?",
+        "answer": "메시지와 보낸 시각을 저장했다가 화면에 출력했습니다. 이전 차시의 저장과 출력에 연결합니다.",
+        "watch": "도착 메시지는 하루가 나에게 보낸 개인 채팅입니다. 공개 안내판이 개인의 입장 시각을 보여 주는 설정이 아닙니다.",
+        "short": "개인 채팅의 도착 메시지를 보고 하루가 먼저 기다렸음을 확인합니다."
       },
       "channel": "축제 현장 · 함께 다니는 중"
     },
@@ -113,10 +119,16 @@ module.exports = {
       "flow": {
         "intro": [
           {
+            "speaker": "축제앱",
+            "role": "system",
+            "text": "내 입장권 · 축제 참여 선물 6장. 부스에서는 보유 수를 확인하며 표를 차감하지 않습니다.",
+            "expression": 0
+          },
+          {
             "speaker": "하루",
             "role": "haru",
             "text": "사진 부스가 저쪽이고 게임 부스는 그 옆이래.",
-            "expression": 2
+            "expression": 0
           },
           {
             "speaker": "나",
@@ -128,7 +140,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "네가 좋아할 만한 것도 찾아봤어. 먼저 어디 가고 싶어?",
-            "expression": 2
+            "expression": 1
           },
           {
             "speaker": "내 생각",
@@ -139,10 +151,16 @@ module.exports = {
         ],
         "shortIntro": [
           {
+            "speaker": "축제앱",
+            "role": "system",
+            "text": "내 입장권 · 축제 참여 선물 6장. 부스에서는 보유 수를 확인하며 표를 차감하지 않습니다.",
+            "expression": 0
+          },
+          {
             "speaker": "하루",
             "role": "haru",
             "text": "어느 부스부터 갈까? 필요한 입장권 수와 운영 시작 여부를 함께 확인하자.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
@@ -168,8 +186,8 @@ module.exports = {
             {
               "speaker": "하루",
               "role": "haru",
-              "text": "{{boothName}}에 들어갈 수 있대. 같이 들어가자. 네가 먼저 해 볼래?",
-              "expression": 2
+              "text": "오, {{boothName}}에 들어갈 수 있대. 같이 들어가자. 네가 먼저 해 볼래?",
+              "expression": 3
             },
             {
               "speaker": "나",
@@ -183,7 +201,7 @@ module.exports = {
               "speaker": "하루",
               "role": "haru",
               "text": "{{boothName}}에 가려면 표가 더 필요하네. 다른 곳을 먼저 둘러보다가 다시 오자.",
-              "expression": 2
+              "expression": 4
             },
             {
               "speaker": "나",
@@ -197,12 +215,26 @@ module.exports = {
               "speaker": "하루",
               "role": "haru",
               "text": "{{boothName}}은 아직 운영 전이네. 시간 좀 남았으니까 주변을 먼저 둘러볼까?",
-              "expression": 2
+              "expression": 4
             },
             {
               "speaker": "나",
               "role": "me",
               "text": "좋아. 문 열면 다시 와 보자.",
+              "expression": 0
+            }
+          ],
+          "both-blocked": [
+            {
+              "speaker": "하루",
+              "role": "haru",
+              "text": "입장권도 부족하고, 아직 문도 안 열렸네. 다른 곳부터 둘러보자.",
+              "expression": 4
+            },
+            {
+              "speaker": "나",
+              "role": "me",
+              "text": "응. 두 조건이 다 맞으면 그때 다시 오자.",
               "expression": 0
             }
           ]
@@ -230,14 +262,14 @@ module.exports = {
           {
             "speaker": "하루",
             "text": "{{boothName}}에 들어가려면 입장권 기준을 채우고 운영도 시작해야 한대. 두 가지를 같이 확인해 보자.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "shortIntro": [
           {
             "speaker": "하루",
             "text": "{{boothName}}에 들어가려면 입장권 기준을 채우고 운영도 시작해야 한대. 두 가지를 같이 확인해 보자.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
@@ -251,14 +283,14 @@ module.exports = {
             {
               "speaker": "하루",
               "text": "{{boothName}}도 준비됐네. 같이 들어가자. 네가 먼저 해 볼래?",
-              "expression": 2
+              "expression": 0
             }
           ],
           "wait": [
             {
               "speaker": "하루",
               "text": "{{boothName}}에 지금은 들어갈 수 없나 봐. 그동안 다른 곳을 둘러보자.",
-              "expression": 2
+              "expression": 0
             }
           ]
         }
@@ -286,14 +318,14 @@ module.exports = {
           {
             "speaker": "하루",
             "text": "비가 올 것 같은데 우산 챙겼어? 실내 통로도 있는지 확인해 보자.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "shortIntro": [
           {
             "speaker": "하루",
             "text": "비가 올 것 같은데 우산 챙겼어? 실내 통로도 있는지 확인해 보자.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
@@ -307,7 +339,7 @@ module.exports = {
             {
               "speaker": "하루",
               "text": "움직이기 전에 지도도 보자. 비가 와도 다닐 길이 있는지 확인하게.",
-              "expression": 2
+              "expression": 0
             }
           ]
         }
@@ -342,7 +374,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "비가 올 것 같은데. 우산 챙겼어?",
-            "expression": 2
+            "expression": 4
           },
           {
             "speaker": "나",
@@ -354,7 +386,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "여기 실내 통로도 있대. 비가 오는지, 피할 방법이 있는지 같이 보고 정하자.",
-            "expression": 2
+            "expression": 4
           }
         ],
         "shortIntro": [
@@ -362,13 +394,17 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "비가 오는지, 우산이나 실내 통로가 있는지 보고 다음 길을 정하자.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
           {
             "key": "choose-route",
-            "label": "현재 날씨에 맞는 길을 확인한다"
+            "label": "우산 없이도 갈 수 있는 길부터 보자."
+          },
+          {
+            "key": "take-time",
+            "label": "조금 기다려도 괜찮아. 날씨부터 보자."
           }
         ],
         "responses": {
@@ -377,7 +413,7 @@ module.exports = {
               "speaker": "하루",
               "role": "haru",
               "text": "실내로 가자. 저 통로 끝에 부스가 더 있대.",
-              "expression": 2
+              "expression": 0
             },
             {
               "speaker": "나",
@@ -391,7 +427,7 @@ module.exports = {
               "speaker": "하루",
               "role": "haru",
               "text": "비가 안 오니까 야외 공연부터 보자. 아직 앞자리가 비어 있어.",
-              "expression": 2
+              "expression": 0
             },
             {
               "speaker": "나",
@@ -405,13 +441,31 @@ module.exports = {
               "speaker": "하루",
               "role": "haru",
               "text": "비를 피해서 갈 방법이 없네. 조금 기다렸다 가자.",
-              "expression": 2
+              "expression": 0
             },
             {
               "speaker": "나",
               "role": "me",
               "text": "괜찮아. 여기 앉아서 다음에 갈 곳 골라도 되겠다.",
               "expression": 0
+            }
+          ]
+        },
+        "choiceReplies": {
+          "choose-route": [
+            {
+              "speaker": "하루",
+              "role": "haru",
+              "text": "같이 방법 찾으니까 한결 낫다. 혼자였으면 그냥 돌아갔을지도 몰라.",
+              "expression": 0
+            }
+          ],
+          "take-time": [
+            {
+              "speaker": "하루",
+              "role": "haru",
+              "text": "서두를 필요 없지. 너랑 같이 고르면 되니까.",
+              "expression": 1
             }
           ]
         }
@@ -445,7 +499,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "이거 그냥 주머니에 넣어 뒀는데, 기념품이랑 바꿀 수 있대.",
-            "expression": 2
+            "expression": 0
           },
           {
             "speaker": "나",
@@ -457,7 +511,7 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "키링이랑 별 스티커. 오늘 같이 다닌 기념으로 하나 남기면 좋겠다.",
-            "expression": 2
+            "expression": 0
           }
         ],
         "shortIntro": [
@@ -465,13 +519,17 @@ module.exports = {
             "speaker": "하루",
             "role": "haru",
             "text": "부스에서 받은 기념품 교환권으로 오늘 기념품 하나 남기자. 무엇을 받을 수 있을까?",
-            "expression": 2
+            "expression": 0
           }
         ],
         "options": [
           {
             "key": "exchange",
-            "label": "기념품 교환권 수로 기념품을 확인한다"
+            "label": "오늘 기념으로 하나 챙기자."
+          },
+          {
+            "key": "small-is-fine",
+            "label": "작아도 좋아. 같이 다닌 기념이니까."
           }
         ],
         "responses": {
@@ -503,6 +561,24 @@ module.exports = {
               "expression": 2
             }
           ]
+        },
+        "choiceReplies": {
+          "exchange": [
+            {
+              "speaker": "하루",
+              "role": "haru",
+              "text": "이걸 보면 오늘 생각나겠다.",
+              "expression": 2
+            }
+          ],
+          "small-is-fine": [
+            {
+              "speaker": "하루",
+              "role": "haru",
+              "text": "그러게. 어떤 걸 받아도 우리한텐 오늘 기념이네.",
+              "expression": 1
+            }
+          ]
         }
       },
       "teacher": {
@@ -532,7 +608,7 @@ module.exports = {
           "speaker": "하루",
           "role": "haru",
           "text": "이따 운동장에도 같이 가자. 어제 말한 빛그림 점등식을 준비해야 하거든.",
-          "expression": 2
+          "expression": 0
         },
         {
           "speaker": "나",
@@ -544,7 +620,7 @@ module.exports = {
           "speaker": "하루",
           "role": "haru",
           "text": "응. 준비팀이 앱에서 불빛 움직임을 미리 보고 조명 위치를 정해. 마지막에 내가 맡은 자리 하나를 너랑 같이 채우고 싶었어.",
-          "expression": 2
+          "expression": 0
         },
         {
           "speaker": "나",
@@ -556,7 +632,7 @@ module.exports = {
           "speaker": "하루",
           "role": "haru",
           "text": "같이 고르려고 기다린 거야. 공연 끝나기 전에 가 보자.",
-          "expression": 2
+          "expression": 0
         }
       ],
       "shortLines": [
@@ -576,7 +652,7 @@ module.exports = {
           "speaker": "하루",
           "role": "haru",
           "text": "같이 고르려고 기다린 거야. 공연 끝나기 전에 가 보자.",
-          "expression": 2
+          "expression": 0
         }
       ],
       "teacher": {
@@ -608,7 +684,7 @@ module.exports = {
         ]
       ],
       "extra": "순차: 차례대로 실행 / 선택: 조건에 따라 실행 / 반복: 같은 명령을 여러 번 실행",
-      "mission": "사이트에서 평균 계산과 조건에 따른 판정 미션을 직접 만들어 보세요.",
+      "mission": "여기서 조건 미션을 실습하거나, 아래 버튼으로 하루와 점등식 준비를 이어 가세요.",
       "teacher": {
         "ask": "보유 수가 기준과 정확히 같을 때도 포함하려면 어떤 비교를 써야 할까요?",
         "answer": "‘크거나 같다(≥)’ 또는 ‘작거나 같다(≤)’처럼 같은 값을 포함하는 비교를 사용합니다.",
