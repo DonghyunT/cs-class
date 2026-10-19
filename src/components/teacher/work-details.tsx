@@ -52,11 +52,10 @@ export function WorkDetails({ uid, lesson, expectedRequestId, adoptLatestRequest
   useEffect(() => () => onWorkspaceOpenChange?.(false), [onWorkspaceOpenChange]);
   useEffect(() => {
     let active = true;
-    const adoptRequest = acceptLatest.current;
-    acceptLatest.current = false;
     void classroomApi.detail(uid, lesson.id).then(value => {
       if (!active) return;
-      if (adoptRequest) requestId.current = value.review?.id;
+      // 취소된 첫 조회(StrictMode)가 최신 요청 채택 표시를 지우지 않도록 결과를 받을 때 소비해요.
+      if (acceptLatest.current) { acceptLatest.current = false; requestId.current = value.review?.id; }
       setRequestChanged(value.review?.id !== requestId.current);
       setWork(value); setError("");
     }).catch(problem => { if (active) setError(problemMessage(problem)); }).finally(() => { if (active) setLoading(false); });

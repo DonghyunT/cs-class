@@ -105,7 +105,7 @@ export function SubmissionViewer({ student, lesson, lessons, onLock, onComplete,
     <DialogContent className={`${styles.dialog} ${styles.submissionDialog}`} data-workspace-open={workspaceOpen ? "true" : "false"} showCloseButton={!saving} finalFocus={finalFocus}><DialogHeader><DialogTitle>{student.studentId} 학생의 제출 작품</DialogTitle><DialogDescription>{viewed.title} · {viewed.practice.title}</DialogDescription></DialogHeader>
       {lessons.length > 1 && <label className={styles.submissionLessonPicker}>볼 수업<Select label="볼 수업" value={viewed.id} disabled={saving} onValueChange={(value) => { const next = lessons.find(item => item.id === value); if (next && !busy.current) setViewed(next); }} options={lessons.map(item => ({ value: item.id, label: item.title }))} /></label>}
       {/* 다른 수업은 그 학생의 작품 문서 하나만 열 때 읽고, 확인 요청은 서버의 최신 요청을 기준으로 해요. */}
-      <WorkDetails key={viewed.id} uid={student.uid} lesson={viewed} expectedRequestId={viewed.id === lesson.id ? student.work?.review?.id : undefined} adoptLatestRequest={viewed.id !== lesson.id} onLock={lock} onComplete={onComplete} onWorkspaceOpenChange={setWorkspaceOpen} registerCloseWorkspace={(close) => { closeWorkspaceRef.current = close; }} />
+      <WorkDetails key={viewed.id} uid={student.uid} lesson={viewed} expectedRequestId={viewed.id === lesson.id ? student.work?.review?.id : undefined} adoptLatestRequest={viewed.id !== lesson.id} onLock={lock} onComplete={viewed.id === lesson.id ? onComplete : () => undefined} onWorkspaceOpenChange={setWorkspaceOpen} registerCloseWorkspace={(close) => { closeWorkspaceRef.current = close; }} />
     </DialogContent>
   </Dialog>;
 }

@@ -254,5 +254,5 @@
 .submissionItem > summary:focus-visible { outline: 3px solid #376fc8; outline-offset: 3px; border-radius: 6px; }
 .submissionLessonPicker { display: grid; gap: 6px; max-width: 360px; font-size: 13px; font-weight: 650; color: #526173; }
 .submissionItem > summary::-webkit-details-marker { display: none; }
-.submissionItem > summary::before { content: "▸"; width: 14px; color: #376fc8; }
-.submissionItem[open] > summary::before { content: "▾"; }
+.submissionItem > summary::before { content: "▸" / ""; width: 14px; color: #376fc8; }
+.submissionItem[open] > summary::before { content: "▾" / ""; }

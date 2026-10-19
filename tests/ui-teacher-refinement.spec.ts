@@ -346,6 +346,8 @@ test("제출 작품 창에서 다른 열린 수업을 고르면 그 학생의 �
   const requested: string[] = [];
   page.on("request", request => { const match = request.url().match(/students\/ui-teacher-2\/work\/([^/?]+)/); if (match) requested.push(match[1]); });
   await syntheticRows(page);
+  const pending = { id: "other-lesson-request", status: "pending", message: "다른 수업 확인 요청", requestedAt: 2000, project: { type: "abstraction", current: "", goal: "", conditions: [], core: [], noise: [], plans: [] } };
+  await page.route("**/api/classroom/students/ui-teacher-2/work/conditionals**", route => route.fulfill({ json: { ...rows[2].work, review: pending } }));
   await page.getByRole("button", { name: "20183 제출 작품 보기", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "20183 학생의 제출 작품", exact: true });
   await expect(dialog.locator("details")).toHaveCount(3);
@@ -357,4 +359,5 @@ test("제출 작품 창에서 다른 열린 수업을 고르면 그 학생의 �
   await expect(dialog).toContainText("조건에 따라 달라지는 프로그램 · ");
   await expect.poll(() => [...new Set(requested)]).toEqual([lesson.id, "conditionals"]);
   await expect(dialog.getByRole("alert")).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "요청본 승인", exact: true })).toBeEnabled();
 });
