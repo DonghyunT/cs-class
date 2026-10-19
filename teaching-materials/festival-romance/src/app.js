@@ -32,7 +32,8 @@
   const render=()=>{const item=lines[line],last=line===lines.length-1;const voice=item.role||(item.speaker==='나'?'me':item.speaker==='하루'?'haru':item.speaker==='내 생각'?'narration':'system');$('stage').dataset.voice=voice;const label=voice==='me'?`${state.nickname} · 나`:item.speaker;$('speaker').textContent=label;document.querySelector('.dialogue-box').setAttribute('aria-label',label+'의 말');$('dialogue-text').textContent=interpolate(item.text);$('line-progress').textContent=`${line+1} / ${lines.length}`;document.querySelector('.story-character').style.backgroundPosition=`${(item.expression||0)*50}% 0%`;
    $('next-line').hidden=last&&options.length>0;$('next-line').textContent=last?finishLabel:'대사 계속 →';$('story-choices').hidden=!(last&&options.length);
    if(last&&options.length){$('story-choices').innerHTML=options.map((o,i)=>`<button data-flow-choice="${escape(o.key||String(i))}">${escape(interpolate(o.label))}</button>`).join('');$('story-choices').querySelectorAll('button').forEach((b,i)=>b.onclick=()=>onChoice(options[i]));}
-   setForward(last?(options.length?'답을 골라 주세요':finishLabel):'대사 계속 →',advanceLine,last&&options.length>0);
+   const single=last&&options.length===1;// a lone option is a continue step, not a question
+   setForward(last?(options.length>1?'답을 골라 주세요':finishLabel):'대사 계속 →',single?()=>onChoice(options[0]):advanceLine,last&&options.length>1);
   };
   advanceLine=()=>{if(line<lines.length-1){line++;render();}else if(!options.length)onFinish();};$('next-line').onclick=()=>advanceLine?.();render();applyCharacter();focusHeading();
  }

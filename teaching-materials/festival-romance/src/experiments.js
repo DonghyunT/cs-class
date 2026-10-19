@@ -8,7 +8,8 @@
   const renderers={};
   function render(type,root,ctx){
     root.dataset.experiment=type;
-    const $=id=>root.querySelector('#'+id),M=ctx.models;
+    // The layout, not just root: #result and the prediction card live in the companion column.
+    const $=id=>(root.closest('.lesson-layout')||root).querySelector('#'+id),M=ctx.models;
     const show=(html,outcome={})=>{(root.closest('.lesson-layout')||root).querySelectorAll('[data-prediction] button').forEach(b=>b.disabled=true);const predicted=root.dataset.prediction;$('result').innerHTML=(predicted?`<div class="prediction-recall">우리의 예상: ${escape(predicted)}<br>실행 결과와 비교해 보세요.</div>`:'')+html;$('result').hidden=false;if(outcome.valid!==false)ctx.complete(outcome);else ctx.invalidate();$('result').scrollIntoView({block:'nearest',behavior:'auto'});};
     const hide=(clearPrediction=true)=>{(root.closest('.lesson-layout')||root).querySelectorAll('[data-prediction] button').forEach(b=>b.disabled=false);if($('result'))$('result').hidden=true;ctx.invalidate();if(clearPrediction){delete root.dataset.prediction;(root.closest('.lesson-layout')||root).querySelectorAll('[data-prediction] button').forEach(b=>b.setAttribute('aria-pressed','false'));}};
     const read=(id,min=0,max=10)=>{const n=M.boundedInteger($(id).value,min,max);if(n===null){ctx.notify(`${min}~${max} 사이의 정수를 입력해 주세요.`);$(id).focus();}return n;};
@@ -19,6 +20,7 @@
     const question=root.querySelector('.prediction-question');if(question)question.textContent=questions[type]||'어떤 결과가 나올까요?';
     (root.closest('.lesson-layout')||root).querySelectorAll('[data-prediction] button').forEach(b=>b.addEventListener('click',()=>{b.parentElement.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));root.dataset.prediction=b.textContent;}));
     const forecast=root.querySelector('[data-prediction]'),companion=root.closest('.lesson-layout')?.querySelector('.lesson-companion');if(forecast&&companion){forecast.classList.add('prediction-side');companion.querySelector('.companion-note').hidden=true;companion.append(forecast);}
+    const outcome=root.querySelector('#result');if(outcome&&companion)companion.append(outcome);
   }
   renderers.terms=({root,$,show,hide})=>{
     root.innerHTML=`<div class="two-columns"><div class="board"><h3>같은 초대, 다른 표현</h3><div class="prediction"><button id="blocks" aria-pressed="true">블록 표현</button><button id="text" aria-pressed="false">텍스트 표현</button></div><pre class="block-code" id="language-code">시작하기 버튼을 눌렀을 때\n  “내일 축제 같이 다닐래?” 말하기</pre></div><div class="board"><h3>실행하면?</h3>${prediction(['같은 문장','다른 문장'])}${button('run','실행해 보기',true)}${result()}</div></div><div class="terms-grid"><div class="term-card"><strong>프로그래밍 언어</strong><p>컴퓨터가 할 일을 표현하는 약속</p></div><div class="term-card"><strong>프로그램</strong><p>할 일을 적어 놓은 명령의 모음</p></div><div class="term-card"><strong>프로그래밍</strong><p>생각하고 만들고 실행하며 고치는 과정</p></div></div>`;
