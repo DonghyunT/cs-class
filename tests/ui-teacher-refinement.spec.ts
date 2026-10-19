@@ -341,3 +341,20 @@ test("27명 기본 목록은 작은 행과 3색 막대를 유지하며 두 보�
   await page.reload();
   await expect(view.getByRole("button", { name: "목록 보기", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
+
+test("제출 작품 창에서 다른 열린 수업을 고르면 그 학생의 그 수업 작품만 다시 읽고 최근 제출본을 펼침", async ({ page }) => {
+  const requested: string[] = [];
+  page.on("request", request => { const match = request.url().match(/students\/ui-teacher-2\/work\/([^/?]+)/); if (match) requested.push(match[1]); });
+  await syntheticRows(page);
+  await page.getByRole("button", { name: "20183 제출 작품 보기", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "20183 학생의 제출 작품", exact: true });
+  await expect(dialog.locator("details")).toHaveCount(3);
+  await expect(dialog.locator("details[open]")).toHaveCount(1);
+  // 개발 서버의 StrictMode는 같은 조회를 두 번 할 수 있어 수업 종류만 비교해요.
+  await expect.poll(() => [...new Set(requested)]).toEqual([lesson.id]);
+  await dialog.getByRole("combobox", { name: "볼 수업", exact: true }).click();
+  await page.getByRole("option", { name: "조건에 따라 달라지는 프로그램", exact: true }).click();
+  await expect(dialog).toContainText("조건에 따라 달라지는 프로그램 · ");
+  await expect.poll(() => [...new Set(requested)]).toEqual([lesson.id, "conditionals"]);
+  await expect(dialog.getByRole("alert")).toHaveCount(0);
+});

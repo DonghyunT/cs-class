@@ -60,7 +60,8 @@
 .textButton { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; border: 0; color: #526173; background: transparent; cursor: pointer; }
 .sectionHeading > a, .eventList a { display: inline-flex; gap: 6px; align-items: center; color: #2e5fab; font-size: 13px; min-height: 44px; }
 .empty { padding: 18px 0; color: #526173; font-size: 14px; line-height: 1.85; word-break: keep-all; margin: 0; }
-.recentHeading { margin:16px 0 0; font-size:14px; font-weight:650; color:#526173; }
+.recentHeading { margin:20px 0 4px; font-size:15px; font-weight:700; color:#202b3a; }
+.cardLesson { display:flex; align-items:center; gap:6px; margin:0 0 12px; color:#2e5fab; font-size:14px; font-weight:650; overflow-wrap:anywhere; }
 .todoList, .actionList, .eventList { list-style: none; margin: 0; padding: 0; }
 .todoList > li { display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 6px 4px; border-bottom: 1px solid #edf0f5; border-radius: 10px; }
 .todoList > li:hover { background: #f8f6fd; }
@@ -86,7 +87,12 @@
 .actionList li + li, .eventList li + li { border-top: 1px solid #e3e8ef; }
 .actionList a { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 68px; padding: 12px 8px; border-radius: 12px; color: #202b3a; }
 .actionList a:hover { color: #376fc8; background: #f4f8ff; }
-.actionList a > span { overflow-wrap: anywhere; }
+.actionList a > span:not(.avatar) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.actionList b, .actionList strong { color: #202b3a; font-weight: 700; font-variant-numeric: tabular-nums; }
+.actionList a > span > b { font-size: 17px; }
+.actionList a[data-pending] { margin: 4px 0; background: var(--warm-surface); border: 1px solid var(--warm-border); color: var(--warm-foreground); }
+.actionList a[data-pending] b, .actionList a[data-pending] small { color: var(--warm-foreground); }
+.actionList .avatar { display: inline-flex; flex: none; width: 32px; height: 32px; border-radius: 10px; align-items: center; justify-content: center; background: #eaf2ff; font-size: 13px; font-weight: 650; color: #2e5fab; }
 .actionList small { display: block; font-size: 13px; color: #526173; margin-top: 4px; }
 .actionList svg { flex-shrink: 0; color: #376fc8; box-sizing: content-box; padding: 8px; border-radius: 10px; background: #eaf2ff; }
 .eventList > li { display: flex; gap: 16px; align-items: start; padding: 18px 0; }
@@ -153,3 +159,4 @@
 .scheduleHistory { margin: 14px 0 20px; border-top: 1px solid #edf0f5; }
 .scheduleHistory > summary { min-height: 44px; padding: 10px 4px; cursor: pointer; font-weight: 650; color: #526173; }
 .scheduleHistory > summary:focus-visible { outline: 3px solid #376fc8; outline-offset: 3px; border-radius: 4px; }
+.actionList a[data-pending] svg { color: var(--warm-foreground); background: #fff; }

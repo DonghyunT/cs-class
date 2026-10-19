@@ -197,7 +197,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
         <div className={styles.listFooter}><span>{lesson?.mode === "review" ? "선택 복습은 수업 완료율에 포함하지 않아요." : "상세 보기에서 완료 개수와 실습 제출 상태를 확인할 수 있어요."}</span><span>비밀번호 초기화 후에도 학습 기록은 유지돼요.</span></div>
       </section>}
     </>}
-    {studentDialog?.kind === "submission" && studentDialog.lesson && <SubmissionViewer student={studentDialog.student} lesson={studentDialog.lesson} onLock={lockMutation} onComplete={refreshOpenedStudent} onClose={() => setStudentDialog(null)} finalFocus={finalDialogFocus} />}
+    {studentDialog?.kind === "submission" && studentDialog.lesson && <SubmissionViewer student={studentDialog.student} lesson={studentDialog.lesson} lessons={openedLessons} onLock={lockMutation} onComplete={refreshOpenedStudent} onClose={() => setStudentDialog(null)} finalFocus={finalDialogFocus} />}
     {studentDialog?.kind === "reset" && <ResetPassword student={studentDialog.student} onLock={lockMutation} onComplete={resetOpenedStudent} onClose={() => setStudentDialog(null)} finalFocus={finalDialogFocus} />}
   </div>;
 }
