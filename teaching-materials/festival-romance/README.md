@@ -46,7 +46,7 @@
 
 입력이나 규칙을 바꾸면 이전 결과가 무효화되어 다시 실행해야 합니다. 예측을 골랐다면 결과와 함께 남겨 비교합니다. 실행 후에는 예측을 잠그고 새 실험 때 다시 고릅니다.
 
-반복과 도형은 **명령 한 줄씩** 실행할 수 있습니다. 도형의 이동·회전은 각각 한 단계입니다. 조명의 켜짐·꺼짐과 완료 횟수 ✓를 구분해서 보여 주세요. 목차·메모·설정을 열면 자동 실행이 잠시 멈추고 닫으면 이어집니다. 운영체제의 동작 줄이기 설정에서는 전체 실행이 즉시 완료될 수 있으므로 한 줄씩 실행을 쓰면 됩니다.
+반복과 도형은 **명령 한 줄씩** 실행할 수 있습니다. 도형의 이동·회전은 각각 한 단계입니다. 조명의 켜짐·꺼짐과 완료 횟수 ✓를 구분해서 보여 주세요. 목차·메모·설정을 열면 자동 실행이 잠시 멈추고 닫으면 이어집니다. 전체 실행은 명령마다 0.4초 간격으로 이어집니다. 운영체제의 동작 줄이기 설정에서는 0.7초 간격으로 진행하며 전구의 밝기를 고정하고 명령 강조·상태 문구·완료 횟수로 과정을 보여 줍니다. 일시 정지 뒤 실행하면 다음 명령부터 이어지고, 완료 후 다시 실행하면 처음부터 시작합니다.
 
 작은 화면에서는 내용 영역을 스크롤할 수 있습니다. 발표에는 가로 화면을 권합니다.
 
@@ -82,12 +82,15 @@ node teaching-materials/festival-romance/build.cjs
 node --test teaching-materials/festival-romance/tests/*.test.cjs
 ```
 
-`src/chapters/ch1.cjs`~`ch3.cjs`는 대본·선택·교사 메모, `src/experiments.js`는 활동, `src/models.js`는 개념 계산, `src/state.js`는 이름·책갈피·응답 결합, `src/styles.css`는 화면입니다. `assets/`의 배경 3개와 v6 캐릭터 2개(1536×2048, 3열×2행)를 빌드 시 HTML에 넣습니다. 수정 후 dist와 public의 HTML을 다시 생성해 함께 커밋합니다.
+`src/chapters/ch1.cjs`~`ch3.cjs`는 대본·선택·교사 메모, `src/experiments.js`는 활동, `src/models.js`는 개념 계산, `src/state.js`는 이름·책갈피·응답 결합, `src/styles.css`는 화면입니다. `assets/`의 배경 3개와 v6 캐릭터 2개(1536×2048, 3열×2행), 축제앱 휴대폰 그림을 빌드 시 HTML에 넣습니다. 수정 후 dist와 public의 HTML을 다시 생성해 함께 커밋합니다.
 
 브라우저 검사는 루트 의존성의 `@playwright/test`와 설치된 Chrome을 사용합니다. 루트 `npm ci`가 이미 된 PC에서:
 
 ```powershell
 node teaching-materials/festival-romance/qa/browser.cjs
+node teaching-materials/festival-romance/qa/playback-app.cjs
 ```
 
-Chrome 경로가 다르면 `FESTIVAL_BROWSER` 환경변수로 실행 파일을 지정합니다. 검사의 캡처·결과는 Git 제외 `qa-results/`에 생성합니다. 이 검사는 독립 file URL과 자체 임시 브라우저만 사용합니다. 최종 확인 결과는 `qa/verified-report.json`과 검수 기록을 참고하세요. 다음 작업 문맥은 [HANDOFF.md](HANDOFF.md)에 있습니다.
+Chrome 경로가 다르면 `FESTIVAL_BROWSER` 환경변수로 실행 파일을 지정합니다. 검사의 캡처·결과는 Git 제외 `qa-results/`에 생성합니다. 이 검사는 독립 file URL과 자체 임시 브라우저만 사용합니다. 자동 실행·일시 정지·앱 화면 검사는 제어 시계로 각 명령을 따로 확인합니다. 최종 확인 결과는 `qa/verified-report.json`, `qa/verified-playback-app-report.json`과 검수 기록을 참고하세요. 다음 작업 문맥은 [HANDOFF.md](HANDOFF.md)에 있습니다.
+
+앱 알림과 하루와의 채팅은 전용 휴대폰 그림·축제앱 머리글·파란 메시지 틀로 표시합니다. 현장 대화와 내 생각은 기존 대화 틀을 사용합니다. 초대장·약속 관리·답장·디지털 카드 활동에도 앱 기능 이름을 표시합니다. 문구는 이미지에 굽지 않고 HTML로 표시합니다.

@@ -1,0 +1,16 @@
+{
+  "status": "pass",
+  "checks": [
+    "reduce: 조명 3·4·6회 명령별 진행·마지막 완료·일시 정지 후 재개·완료 후 새 실행",
+    "reduce: 세 도형 이동→회전→완성 과정·일시 정지 후 재개·완료 후 새 실행",
+    "reduce: 잘못된 각도·모달 보류·정지·입력 변경·장면 이탈 정리",
+    "앱 알림·채팅 전용 이미지와 HTML 문구·내 생각/현장 대화 구분·390px",
+    "no-preference: 조명 3·4·6회 명령별 진행·마지막 완료·일시 정지 후 재개·완료 후 새 실행",
+    "no-preference: 세 도형 이동→회전→완성 과정·일시 정지 후 재개·완료 후 새 실행",
+    "no-preference: 잘못된 각도·모달 보류·정지·입력 변경·장면 이탈 정리"
+  ],
+  "errors": [],
+  "remoteRequests": 0,
+  "clock": "Playwright controlled clock; real scheduled intervals advanced one command at a time",
+  "at": "2026-10-19T11:09:12.718Z"
+}

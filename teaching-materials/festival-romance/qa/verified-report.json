@@ -21,21 +21,14 @@
   ],
   "errors": [],
   "remoteRequests": 0,
-  "at": "2026-10-19T10:36:41.493Z",
-  "focusedChecks": [
-    {
-      "check": "390px 도입 카드가 캐릭터보다 앞에 표시",
-      "status": "pass",
-      "review": "UX 리뷰어가 수정 후 화면을 확인"
-    }
-  ],
+  "at": "2026-10-19T11:10:30.465Z",
   "publicHttp": {
     "status": 200,
     "contentType": "text/html; charset=UTF-8",
-    "bytes": 15361622,
-    "sha256": "be6f104706dc8bf5b0e9419e0f3d82a1670272cd5b8c0ab55d0582c8611433b3",
+    "bytes": 15470856,
+    "sha256": "8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c430b5",
     "identicalToOffline": true,
     "environment": "local Next Production 127.0.0.1:3102",
-    "at": "2026-10-19T10:42:03.998Z"
+    "at": "2026-10-19T11:11:05.058Z"
   }
 }

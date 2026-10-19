@@ -7,7 +7,7 @@ const source = path.join(__dirname, 'src');
 const assetPath = path.join(__dirname, 'assets');
 const read = file => fs.readFileSync(path.join(source,file),'utf8');
 const image = file => `data:image/png;base64,${fs.readFileSync(path.join(assetPath,file)).toString('base64')}`;
-const assets = {background:image('festival-courtyard-preview.png'),night:image('night-study.png'),dusk:image('twilight-field.png'),boy:image('haru-boy-v6.png'),girl:image('haru-girl-v6.png')};
+const assets = {background:image('festival-courtyard-preview.png'),night:image('night-study.png'),dusk:image('twilight-field.png'),boy:image('haru-boy-v6.png'),girl:image('haru-girl-v6.png'),app:image('festival-app-phone.png')};
 const chapters=[1,2,3].map(n=>require(path.join(source,'chapters',`ch${n}.cjs`)));
 const safeJson=value=>JSON.stringify(value).replace(/</g,'\\u003c');
 let html=read('shell.html');
