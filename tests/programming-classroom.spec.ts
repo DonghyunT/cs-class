@@ -373,7 +373,7 @@ test("실제 팔레트 이름 조립 · 서로 다른 두 입력 · 검증/제�
   expect(errors).toEqual([]);
 });
 
-test("곱셈 실제 실행 · 변수 팔레트 · 이동 이어 만들기 · 방향키 · 미완성 복원", async ({ page }, info) => {
+test("곱셈 실제 실행 · 변수 팔레트 · 이동과 독립한 방향키 · 미완성 복원", async ({ page }, info) => {
   test.setTimeout(90000);
   const errors: string[] = []; page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
@@ -399,7 +399,8 @@ test("곱셈 실제 실행 · 변수 팔레트 · 이동 이어 만들기 · 방
   await page.locator('iframe[src*="mission=keys&"]').scrollIntoViewIfNeeded();
   await expect(entryStart(page)).toBeVisible();
   const displayedScript = await frame.locator("body").evaluate(() => (window as unknown as { Entry: { container: { getObject: (id: string) => { getScriptText: () => string } } } }).Entry.container.getObject("entrybot").getScriptText());
-  expect(programmingProjectMatches(JSON.stringify({ objects: [{ script: displayedScript }] }), moveBefore)).toBe(true);
+  // The keys mission is its own work: it no longer copies the move mission's code.
+  expect(programmingProjectMatches(JSON.stringify({ objects: [{ script: displayedScript }] }), moveBefore)).toBe(false);
   expect((await stored(page)).draft.programming!.projects.move).toBe(moveBefore);
   await frame.getByText("시작", { exact: true }).click();
   await expect(frame.locator("#entryWorkspaceBlockMenu g.block").filter({ hasText: "키를 눌렀을 때" }).first()).toContainText("위쪽");

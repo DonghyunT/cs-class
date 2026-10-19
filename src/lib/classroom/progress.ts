@@ -1,5 +1,5 @@
 import { parseEntryProject } from "./entry-project";
-import { buildProgrammingProject, missionsFor, programmingProjectMatches, requiredMissionsFor } from "./programming-entry";
+import { missionStarter, missionsFor, programmingProjectMatches, requiredMissionsFor } from "./programming-entry";
 import type { Lesson, Progress, ValidationResult, Work, WorkDraft, WorkSummary } from "./types";
 import { initialReviewProject, isReviewType, sameReviewProject, reviewMissionIds } from "./review/project";
 
@@ -22,7 +22,7 @@ export function emptyWork(lesson: Lesson): Work {
       quizAnswers: {},
       practiceOrder: lesson.practice.type === "entryjs" ? parseEntryProject(lesson.practice.defaultProject)?.order ?? [] : lesson.practice.blocks.map((block) => block.id),
       entryProject: lesson.practice.defaultProject ?? null,
-      ...(lesson.practice.type === "programming" ? { programming: { mission: missionsFor(lesson.id)[0].id, projects: { [missionsFor(lesson.id)[0].id]: buildProgrammingProject() }, reflection: "" } } : {}),
+      ...(lesson.practice.type === "programming" ? { programming: { mission: missionsFor(lesson.id)[0].id, projects: { [missionsFor(lesson.id)[0].id]: missionStarter(missionsFor(lesson.id)[0].id) }, reflection: "" } } : {}),
       ...(isReviewType(lesson.practice.type) ? { reviewProject: initialReviewProject(lesson.practice.type!) } : {}),
     },
     conceptSolved: [], conceptFeedback: {}, quizSolved: [], quizRound: 1,

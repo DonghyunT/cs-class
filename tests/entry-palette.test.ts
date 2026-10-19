@@ -8,8 +8,16 @@ import { ENTRY_PALETTE } from "../src/lib/classroom/entry-palette";
 import { buildProgrammingProject, entryBlockCategory, entryObjectModel, formatEntryNode, missionBlockIssue, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
+import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
+import { LOOPS_LESSON } from "../src/lib/classroom/loops-lesson";
 import { emptyWork } from "../src/lib/classroom/progress";
 import type { WorkDraft } from "../src/lib/classroom/types";
+
+test("처음 여는 수업의 첫 미션 작품은 수업 유형에 맞는 시작 작품이다", () => {
+  const first = (lesson: Parameters<typeof emptyWork>[0]) => { const { mission, projects } = emptyWork(lesson).draft.programming!; return parseProgrammingProject(projects[mission])!; };
+  expect(first(PROGRAMMING_LESSON).free).toBe(false);
+  for (const lesson of [CONDITIONALS_LESSON, LOOPS_LESSON]) expect(first(lesson).free, lesson.id).toBe(true);
+});
 
 const legacy: Record<string, { key: string | null; order: string[] | null; project: string | null; lines: string[]; checks: Record<string, { passed: boolean; message: string }> }> = legacyKeys;
 

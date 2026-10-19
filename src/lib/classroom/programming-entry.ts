@@ -1,10 +1,9 @@
 import { buildNameProject } from "./name-entry";
 import { CONTAINER_BLOCKS, ENTRYBOT_SPRITE, ENTRY_PALETTE, ENTRY_SPRITES, LIBRARY_SPRITES, MAX_ADDED_OBJECTS, MAX_FREE_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, TRUSTED_SPRITES, VALUE_BLOCKS, blockLabel, spritePictures } from "./entry-palette";
 
-// `variables` shows A·B on the stage; `keyEvents` keeps the run waiting for arrow keys;
-// `carryFrom` copies that mission's work the first time this one opens.
+// `variables` shows A·B on the stage; `keyEvents` keeps the run waiting for arrow keys.
 // `objects` missions grade every object's event code instead of only the dog's.
-export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; experiment: string; optional?: true; carryFrom?: string; variables?: true; keyEvents?: true; objects?: true };
+export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; experiment: string; optional?: true; variables?: true; keyEvents?: true; objects?: true };
 
 // Every mission across lessons, keyed by an id no other lesson reuses. Grading and
 // saved records look missions up here; lessons list theirs in LESSON_MISSIONS.
@@ -12,7 +11,7 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "name", title: "강아지 이름 짓기", goal: "이름을 묻고, 입력한 이름을 말하게 해주세요.", hint: "질문 다음에 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 보세요.", experiment: "초코와 보리처럼 서로 다른 이름으로 두 번 실행해 보세요." },
   { id: "multiply", title: "곱셈 계산기", goal: "두 수를 A와 B에 기억하고, 두 수의 곱을 말하게 해주세요.", hint: "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요.", experiment: "6과 4, 3과 7을 입력해 보세요. 입력을 바꾸면 결과도 달라지나요?", variables: true },
   { id: "move", title: "시작 버튼으로 움직이기", goal: "시작하기 버튼을 누르면 강아지가 오른쪽으로 10만큼 움직이게 해주세요.", hint: "시작하기 아래에 이동 블록을 연결해 보세요. 오른쪽 방향은 90°예요.", experiment: "실행 → 중지 → 다시 실행해 보세요. 시작 위치와 이동 결과를 비교해요." },
-  { id: "keys", title: "방향키로 움직임 개선", goal: "네 방향키로 강아지를 각 방향으로 10만큼 움직이게 해주세요.", hint: "‘키를 눌렀을 때’ 아래에 방향을 정하고 움직여요. 위 0°·오른쪽 90°·아래 180°·왼쪽 270°예요.", experiment: "실행 후 무대를 클릭하고 네 방향키를 눌러 보세요.", carryFrom: "move", keyEvents: true },
+  { id: "keys", title: "방향키로 움직임 개선", goal: "네 방향키로 강아지를 각 방향으로 10만큼 움직이게 해주세요.", hint: "‘키를 눌렀을 때’ 아래에 방향을 정하고 움직여요. 위 0°·오른쪽 90°·아래 180°·왼쪽 270°예요.", experiment: "실행 후 무대를 클릭하고 네 방향키를 눌러 보세요.", keyEvents: true },
   // The average hint is pinned by tests/fixtures/entry-legacy-keys.json; keep its wording.
   { id: "average", title: "평균 계산기", goal: "두 수를 A와 B에 기억하고, 두 수의 평균 (A + B) ÷ 2를 말하게 해주세요.", hint: "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요.", experiment: "6과 4의 평균은 5예요. -2와 5를 넣으면 어떻게 될까요?", variables: true },
   { id: "pass", title: "시험 합격/불합격", goal: "점수를 묻고, 60점 이상이면 ‘합격’, 아니면 ‘불합격’을 말하게 해주세요.", hint: "‘만일 ( )(이)라면 / 아니면’에 (대답 ≥ 60)을 넣고, 위쪽에는 ‘합격’, 아래쪽에는 ‘불합격’ 말하기를 연결해요.", experiment: "59, 60, 100을 차례로 넣어 보세요. 60에서는 어떤 말이 나와야 할까요?" },

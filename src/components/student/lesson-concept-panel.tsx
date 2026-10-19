@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Check, Lightbulb, RotateCcw } from "lucide-react
 import { Button } from "@/components/ui/button";
 import type { Lesson, Question, Stage, WorkAction } from "@/lib/classroom/types";
 import type { LessonMode, WorkController } from "./work-controller";
+import { ConceptVisual } from "./concept-visual";
 import { ReviewConcepts } from "./review/concepts";
 import styles from "./student.module.css";
 import conceptStyles from "@/components/ui/concept-layout.module.css";
@@ -51,7 +52,7 @@ export function LessonConceptPanel({ lesson, controller, mode, locked, actionLoc
     const solved = work.conceptSolved.includes(concept.id);
     const feedback = work.conceptFeedback[concept.id];
     const feedbackCurrent = draft.conceptAnswers[concept.id] === work.draft.conceptAnswers[concept.id];
-    return <article key={concept.id} id={`concept-${concept.id}`}><header className={conceptStyles.heading}><div className={conceptStyles.meta}><span className={conceptStyles.eyebrow}>CONCEPT {String(index + 1).padStart(2, "0")} / {String(lesson.concepts.length).padStart(2, "0")}</span>{solved && <span className={styles.solved}><Check size={15} aria-hidden="true" />완료</span>}</div><h3 id={`concept-title-${concept.id}`} tabIndex={-1}>{concept.title}</h3><p className={styles.explanation}>{concept.explanation}</p></header><div className={conceptStyles.surface}><div className={styles.example}><span>예를 들어 볼까요?</span><p>{concept.example}</p></div>
+    return <article key={concept.id} id={`concept-${concept.id}`}><header className={conceptStyles.heading}><div className={conceptStyles.meta}><span className={conceptStyles.eyebrow}>CONCEPT {String(index + 1).padStart(2, "0")} / {String(lesson.concepts.length).padStart(2, "0")}</span>{solved && <span className={styles.solved}><Check size={15} aria-hidden="true" />완료</span>}</div><h3 id={`concept-title-${concept.id}`} tabIndex={-1}>{concept.title}</h3><p className={styles.explanation}>{concept.explanation}</p></header><div className={conceptStyles.surface}><ConceptVisual conceptId={concept.id} /><div className={styles.example}><span>예를 들어 볼까요?</span><p>{concept.example}</p></div>
       {reviewType && <div className={styles.experienceBlock} data-concept-experience><header className={styles.experienceHeading}><strong>개념 체험</strong><Button id="concept-experience-reset" variant="ghost" aria-label="체험 초기화" title="체험값만 초기화 · 답안과 완료 기록 유지" onClick={onResetExperience}><RotateCcw size={16} aria-hidden="true" />초기화</Button></header><ReviewConcepts key={`${concept.id}-${experienceVersion}`} type={reviewType} conceptId={concept.id} mode={mode} /></div>}
       </div><div className={`${styles.checkArea} ${conceptStyles.check}`}><AnswerChoices question={concept.question} answer={draft.conceptAnswers[concept.id]} disabled={locked || solved} onChange={(answer) => update({ ...draft, conceptAnswers: { ...draft.conceptAnswers, [concept.id]: answer } })} /><Hint hint={concept.question.hint} />
         {feedback && feedbackCurrent && <p id={`concept-feedback-${concept.id}`} tabIndex={-1} role="status" className={feedback.correct ? styles.feedbackGood : styles.feedbackRetry}>{feedback.correct && <Check size={16} />}{feedback.message}</p>}

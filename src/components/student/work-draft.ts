@@ -33,8 +33,8 @@ function content(draft: WorkDraft) {
   if (draft.programming) {
     const { projects, reflection } = draft.programming;
     // Visiting a mission or normalizing fixed Entry media is not an edit.
-    next.programming = { reflection, projects: Object.fromEntries(PROGRAMMING_MISSIONS.map(({ id, carryFrom }) => {
-      const raw = projects[id] ?? (carryFrom ? projects[carryFrom] : undefined);
+    next.programming = { reflection, projects: Object.fromEntries(PROGRAMMING_MISSIONS.map(({ id }) => {
+      const raw = projects[id];
       return [id, raw ? programmingContent(raw) : starterContent[id]];
     })) };
   }

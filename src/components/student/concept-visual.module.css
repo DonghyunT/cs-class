@@ -1,0 +1,25 @@
+.visual { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 18px; margin: 0 0 20px; padding: 22px 20px; border: 1px solid #dfe8f6; border-radius: 16px; background: linear-gradient(135deg, #f4f8ff 0%, #f7f4ff 100%); }
+.visual svg { max-width: 100%; height: auto; flex-shrink: 0; }
+.wide { width: min(100%, 360px); }
+.row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.card { display: grid; justify-items: center; align-content: start; gap: 10px; min-width: 132px; padding: 14px 16px; border: 1px solid #dce5f2; border-radius: 14px; background: #fff; }
+.card > strong { font-size: 16px; font-weight: 700; color: #28548e; }
+.card > span, .card > small { font-size: 14px; color: #526173; }
+.tile { display: inline-grid; place-items: center; min-width: 46px; min-height: 46px; padding: 0 12px; border: 2px solid #c4d5f2; border-radius: 12px; background: #fff; color: #2e5fab; font-size: 20px; font-weight: 700; line-height: 1.2; }
+.tile small { font-size: 14px; font-weight: 500; color: #526173; }
+.tile[data-tone="true"] { border-color: #9fd3c3; background: #e4f4ee; color: #1d6b5a; }
+.tile[data-tone="false"] { border-color: #efb3b3; background: #fdecec; color: #a03a3a; }
+.tile[data-tone="purple"] { border-color: #cdbbe6; background: #f1eafa; color: #6d47a3; }
+.op { font-size: 22px; font-weight: 700; color: #7a8aa6; }
+.block { padding: 7px 14px; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 650; white-space: nowrap; }
+.block[data-kind="flow"] { background: #0284c7; }
+.block[data-kind="motion"] { background: #7c3aed; }
+.block[data-kind="brush"] { background: #ea580c; }
+.block[data-kind="look"] { background: #e11d48; }
+.nest { display: grid; gap: 8px; padding: 10px; border-radius: 14px; background: #0284c7; color: #fff; font-size: 15px; font-weight: 650; text-align: left; }
+.nest > div:first-child { padding: 2px 6px; }
+.nest .inner { display: grid; gap: 8px; padding: 10px; border-radius: 10px; background: rgba(255, 255, 255, .92); color: #0c5a85; }
+.inner em { font-style: normal; font-size: 14px; font-weight: 700; color: #0c5a85; }
+.tree { display: grid; justify-items: center; gap: 2px; }
+.tree small { font-size: 14px; font-weight: 700; color: #1d6b5a; }
+@media (max-width: 600px) { .visual { padding: 16px 12px; } .card { min-width: 0; flex: 1 1 130px; } }
