@@ -120,7 +120,6 @@ function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exp
     <div className={styles.practiceLayout}>
       <aside className={styles.missionBrief} aria-labelledby="programming-mission-title">
         <div className={styles.heading}><div><span>{mission.optional ? "선택 도전 · 기본 완료 조건에 포함되지 않아요" : `MISSION 0${position + 1}`}</span><h3 id="programming-mission-title" tabIndex={-1}>{mission.title}</h3><p>{mission.goal}</p></div></div>
-        
         <PracticeGuidance focused={practiceFocused} label="실험·블록 연결 힌트"><div className={styles.experiment}><h4><Lightbulb size={17} aria-hidden="true" />먼저 해볼 작은 실험</h4><p>{mission.experiment}</p></div>
         <details key={mission.id} className={styles.hint}><summary>블록 연결 힌트</summary><p>{mission.hint}</p><p>검증에 쓰는 블록: {missionBlockLabels(mission.id).join(" · ")}. 다른 블록도 자유롭게 써 볼 수 있지만, 검증할 때는 시작 블록 아래에 이 블록만 연결해 주세요.</p></details></PracticeGuidance>
       </aside>
