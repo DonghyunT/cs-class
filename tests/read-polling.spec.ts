@@ -48,6 +48,44 @@ test("학생 수업 안내는 전체 작품 대신 반 설정을 30초마다 조
   expect(fullReads).toBe(0);
 });
 
+test("창 포커스 재조회는 30초 안에서는 생략하고, 활동 기록 직후에는 세션을 다시 읽지 않는다", async ({ page }) => {
+  await readyStudent(page.request);
+  const session = (await (await page.request.get("/api/auth/session")).json()).session;
+  await page.clock.install();
+  let classReads = 0, sessionReads = 0, touches = 0;
+  page.on("request", request => {
+    const path = new URL(request.url()).pathname;
+    if (path === "/api/classroom/student/class") classReads++;
+    if (path === "/api/auth/session") sessionReads++;
+  });
+  // The server clock is real; answer activity on the virtual clock so it is sent once per 30 seconds.
+  await page.route("**/api/auth/activity", async route => { touches++; await route.fulfill({ json: { session: { ...session, lastActivityAt: await page.evaluate(() => Date.now()) } } }); });
+  await page.goto(`/classroom/${lessonId}`);
+  await expect(page.getByRole("button", { name: "저장", exact: true })).toBeVisible();
+  await painted(page);
+  const focus = () => page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  const initial = { classReads, sessionReads };
+  // Returning from the Entry iframe or another window within 30 seconds reuses the last check.
+  await focus(); await focus(); await painted(page);
+  expect({ classReads, sessionReads }).toEqual(initial);
+  // An activity touch already confirms the session, so the 30-second session read is skipped.
+  for (let i = 0; i < 4; i++) { await page.locator("h1").first().click(); await tick(page, 30_000); }
+  await expect.poll(() => touches).toBeGreaterThanOrEqual(3);
+  expect(sessionReads).toBeLessThanOrEqual(initial.sessionReads + 1);
+  await expect.poll(() => classReads).toBe(initial.classReads + 4);
+  // After a hidden stretch longer than 30 seconds, focus checks both again right away.
+  await page.evaluate(() => Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" }));
+  await tick(page, 60_000);
+  const hidden = { classReads, sessionReads };
+  await page.evaluate(() => { Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" }); });
+  // Back-to-back focus events while the first check is in flight send one request each.
+  await page.evaluate(() => { window.dispatchEvent(new Event("focus")); window.dispatchEvent(new Event("focus")); });
+  await expect.poll(() => classReads).toBe(hidden.classReads + 1);
+  await expect.poll(() => sessionReads).toBe(hidden.sessionReads + 1);
+  await page.waitForTimeout(500);
+  expect({ classReads, sessionReads }).toEqual({ classReads: hidden.classReads + 1, sessionReads: hidden.sessionReads + 1 });
+});
+
 test("학생 손들기는 평상시 60초·대기 중 30초이며 상태 전환 직후 재조회하지 않는다", async ({ page }) => {
   test.skip(!CLASSROOM_HELP_ENABLED, "손들기 활성 모드 검사 보존");
   await readyStudent(page.request);
