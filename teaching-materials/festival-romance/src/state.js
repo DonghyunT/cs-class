@@ -1,0 +1,14 @@
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.FestivalState=api;})(globalThis,function(){
+  'use strict';const KEY='festival-romance.bookmark.v1';
+  function normalizeNickname(raw){return Array.from(typeof raw==='string'?raw.trim():'').slice(0,12).join('')||'여울';}
+  function vocative(name){const n=normalizeNickname(name),last=n.charCodeAt(n.length-1);return last>=0xAC00&&last<=0xD7A3?n+((last-0xAC00)%28?'아':'야'):n;}
+  function storyValues(value={}){return {ticketName:normalizeNickname(value.ticketName),meetingTime:value.meetingTime==='16:00'?'16:00':'17:00',replyKey:value.replyKey==='warm'?'warm':'casual',booth:value.booth==='game'?'game':'photo',boothAllowed:value.boothAllowed!==false,boothOpen:Boolean(value.boothOpen),route:['outdoor','wait'].includes(value.route)?value.route:'indoor',prize:['large','small','sticker'].includes(value.prize)?value.prize:'small',polygon:[3,4,6].includes(value.polygon)?value.polygon:4};}
+  function createStoryState(){return {nickname:'여울',variant:'boy',chapterId:null,sceneId:null,shortMode:false,siteUrl:'',story:storyValues()};}
+  function applyIdentity(state,raw){const name=normalizeNickname(raw);state.nickname=name;state.story={...state.story,ticketName:name};return name;}
+  function sanitizedBookmark(value,validSceneIds){if(!value||typeof value!=='object'||![1,2,3].includes(value.chapterId)||typeof value.sceneId!=='string'||!value.sceneId.startsWith(`ch${value.chapterId}-`)||!validSceneIds.includes(value.sceneId))return null;return {nickname:normalizeNickname(value.nickname),variant:value.variant==='girl'?'girl':'boy',chapterId:value.chapterId,sceneId:value.sceneId,shortMode:Boolean(value.shortMode),siteUrl:normalizeSiteUrl(value.siteUrl),story:storyValues(value.story&&typeof value.story==='object'?value.story:{})};}
+  function normalizeSiteUrl(raw){if(typeof raw!=='string'||!raw.trim())return '';try{const url=new URL(raw.trim());return ['http:','https:'].includes(url.protocol)?url.href:'';}catch{return '';}}
+  function readBookmark(storage,validSceneIds){try{return sanitizedBookmark(JSON.parse(storage.getItem(KEY)),validSceneIds);}catch{return null;}}
+  function saveBookmark(storage,bookmark){try{const value={nickname:normalizeNickname(bookmark.nickname),variant:bookmark.variant==='girl'?'girl':'boy',chapterId:bookmark.chapterId,sceneId:bookmark.sceneId,shortMode:Boolean(bookmark.shortMode),siteUrl:normalizeSiteUrl(bookmark.siteUrl),story:storyValues(bookmark.story)};storage.setItem(KEY,JSON.stringify(value));return true;}catch{return false;}}
+  function clearBookmark(storage){try{storage.removeItem(KEY);return true;}catch{return false;}}
+  return {KEY,normalizeNickname,vocative,createStoryState,applyIdentity,storyValues,readBookmark,saveBookmark,clearBookmark,normalizeSiteUrl};
+});
