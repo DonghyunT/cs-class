@@ -18,6 +18,7 @@ import type { Session, StudentDashboard, TeacherDashboard } from "@/lib/classroo
 import { TodoList } from "./todos";
 import { ScheduleList } from "./schedule";
 import { LoadingList } from "./loading-list";
+import { dateLabel } from "@/components/teacher/presentation";
 import { LearningOverview, StudentLessonProgress } from "@/components/student/learning-overview";
 import styles from "./dashboard.module.css";
 
@@ -81,19 +82,20 @@ function Dashboard({ session, teacher, explicitClassId }: { session: Session; te
     <div className={styles.columns}><div className={styles.mainColumn}>{!teacher && <><StudentLessonProgress data={student} loading={loading && !error} /><TodoList uid={session.uid} /></>}{teacher && <section className={`${styles.panel} ${styles.actionsPanel}`} aria-labelledby="actions-heading"><div className={styles.sectionHeading}><div className={styles.sectionTitle}><span className={`${styles.titleIcon} ${styles.actionIcon}`}><ListChecks size={19} aria-hidden="true" /></span><h2 id="actions-heading">교사가 확인할 일</h2></div><Link href={`/teacher/students${classId ? `?classId=${classId}` : ""}`}>학생 현황<ArrowRight size={15} aria-hidden="true" /></Link></div>
       {loading && !active && !error && <LoadingList label="담당 반의 기록을 불러오고 있어요." />}
         {!session.classIds.length && <p className={styles.empty}>아직 담당 반이 없어요. 개인 할 일은 사용할 수 있어요.</p>}
+        {staff && staffLesson && <p className={styles.cardLesson}><BookOpen size={16} aria-hidden="true" />{staffLesson.title}</p>}
         {staff && staffLesson && <ClassProgress lesson={staffLesson} students={staff.students} checkedAt={updatedAt ?? 0} stagesOnly />}
         {staff && <>
           <ul className={styles.actionList}>
-            <li><Link href={`/teacher/students?classId=${staff.classroom.id}${staff.selectedLessonId ? `&lessonId=${staff.selectedLessonId}` : ""}`}><span>{staffLesson?.title ?? "담당 반"} 학습 현황<small>등록 학생 {staff.students.length}명{staffLesson && ` · 제출 학생 ${submitted.length}명 · 저장된 제출 작품 ${submissionCount}개`}</small></span><ArrowRight size={17} aria-hidden="true" /></Link></li>
-            {staffLesson && <li><Link href={`/teacher/students?classId=${staff.classroom.id}&lessonId=${staffLesson.id}&review=pending`}><span>{staffLesson.title} · 확인 요청 {pending}명</span><ArrowRight size={17} aria-hidden="true" /></Link></li>}
+            {staffLesson && <li><Link data-pending={pending > 0 || undefined} aria-label={`${staffLesson.title} · 확인 요청 ${pending}명`} href={`/teacher/students?classId=${staff.classroom.id}&lessonId=${staffLesson.id}&review=pending`}><span>확인 요청 <b>{pending}명</b><small>{pending > 0 ? "학생이 선생님 확인을 기다리고 있어요." : "기다리는 확인 요청이 없어요."}</small></span><ArrowRight size={17} aria-hidden="true" /></Link></li>}
+            <li><Link href={`/teacher/students?classId=${staff.classroom.id}${staff.selectedLessonId ? `&lessonId=${staff.selectedLessonId}` : ""}`}><span>학생별 학습 현황<small>등록 학생 <b>{staff.students.length}명</b>{staffLesson && <> · 제출 학생 <b>{submitted.length}명</b> · 저장된 제출 작품 <b>{submissionCount}개</b></>}</small></span><ArrowRight size={17} aria-hidden="true" /></Link></li>
           </ul>
           {submitted.length > 0 && <>
             <h3 className={styles.recentHeading}>최근 제출 학생</h3>
-            <ul className={styles.actionList} aria-label="최근 제출 학생">{submitted.slice(0, 3).map((item) => <li key={item.uid}><Link href={`/teacher/students?classId=${staff.classroom.id}&lessonId=${staff.selectedLessonId}&studentId=${item.studentId}`}><span>{item.studentId} 제출 작품 보기<small>{staffLesson?.title} · 제출된 작품</small></span><ArrowRight size={17} aria-hidden="true" /></Link></li>)}</ul>
+            <ul className={styles.actionList} aria-label="최근 제출 학생">{submitted.slice(0, 3).map((item) => <li key={item.uid}><Link href={`/teacher/students?classId=${staff.classroom.id}&lessonId=${staff.selectedLessonId}&studentId=${item.studentId}`}><span className={styles.avatar} aria-hidden="true">{Number(item.studentId.slice(-2))}</span><span><strong>{item.studentId}</strong> 제출 작품 보기<small>작품 {staffLesson ? submissionCountFor(staffLesson, item.work) : 0}개 · {staffLesson && dateLabel(latestSubmissionAtFor(staffLesson, item.work))} 제출</small></span><ArrowRight size={17} aria-hidden="true" /></Link></li>)}</ul>
+            <p className={styles.muted}>작품을 열어 본 여부는 기록하지 않아요.</p>
           </>}
         </>}
-        {staff && !submitted.length && <p className={styles.muted}>아직 이 수업에 저장된 제출 작품이 없어요.</p>}
-        <p className={styles.muted}>작품을 열어 본 여부는 기록하지 않아요.</p>
+        {staff && staffLesson && !submitted.length && <p className={styles.muted}>아직 이 수업에 저장된 제출 작품이 없어요.</p>}
       {!active && session.classIds.length > 0 && <p className={styles.muted}>수업 기록을 확인하면 다음 행동이 보여요.</p>}
     </section>}{teacher && CLASSROOM_HELP_ENABLED && classId && <HelpRequests key={classId} classId={classId} onStatusChange={setHelpStatus} />}{teacher && <TodoList uid={session.uid} />}</div><div className={styles.sideColumn}>{classId ? <ScheduleList key={classId} uid={session.uid} teacher={teacher} classId={classId} summary /> : <section className={styles.panel}><h2>다가오는 일정</h2><p className={styles.empty}>담당 반이 연결되면 일정을 확인할 수 있어요.</p></section>}<p className={styles.footnote}>일정은 수업을 준비하는 안내예요.<br />학습과 제출 상태는 수업 기록에서 확인해요.</p></div></div>
     <Link className={styles.allLessons} href={teacher ? `/teacher/classes${classId ? `?classId=${encodeURIComponent(classId)}` : ""}` : `${home}/lessons`}>{teacher ? "담당 반 수업 관리" : "다른 수업도 이어갈 수 있어요. 열린 수업 보기"}<ArrowRight size={16} aria-hidden="true" /></Link>

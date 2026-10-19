@@ -245,3 +245,14 @@
   .dialog [data-slot="dialog-footer"], .dialog [data-slot="alert-dialog-footer"] { margin: 0 -20px -20px; padding: 16px 20px; }
   .entryThreads { grid-template-columns: minmax(0, 1fr); }
 }
+
+.submissionItem { margin: 0; border: 1px solid #e3e8ef; border-radius: 14px; padding: 0 14px; }
+.submissionItem[open] { border-color: #c9daf4; padding-bottom: 14px; }
+.submissionItem > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; list-style: none; min-height: 52px; padding: 14px 0; cursor: pointer; font-size: 16px; }
+.submissionItem > summary strong { font-weight: 650; color: #202b3a; overflow-wrap: anywhere; }
+.submissionItem > summary small { color: #526173; font-size: 13px; white-space: nowrap; }
+.submissionItem > summary:focus-visible { outline: 3px solid #376fc8; outline-offset: 3px; border-radius: 6px; }
+.submissionLessonPicker { display: grid; gap: 6px; max-width: 360px; font-size: 13px; font-weight: 650; color: #526173; }
+.submissionItem > summary::-webkit-details-marker { display: none; }
+.submissionItem > summary::before { content: "▸" / ""; width: 14px; color: #376fc8; }
+.submissionItem[open] > summary::before { content: "▾" / ""; }
