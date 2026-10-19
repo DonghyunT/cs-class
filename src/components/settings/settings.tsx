@@ -37,8 +37,10 @@ function Settings({ session }: { session: Session }) {
   const alive = useRef(true);
   // 브라우저가 현재 비밀번호만 자동 입력한 상태는 작성 중인 변경으로 보지 않아요.
   const dirty = nickname !== savedNickname || Boolean(password || confirmation);
-  const pending = useRef({ dirty, busy });
-  useEffect(() => { pending.current = { dirty, busy }; }, [dirty, busy]);
+  const pending = useRef({ dirty });
+  useEffect(() => { pending.current = { dirty }; }, [dirty]);
+  // 이동 보호는 저장 요청이 서버로 가는 동안만 막고, 입력 잠금(busy)은 세션을 다시 읽을 때까지 유지해요.
+  const sending = useRef(false);
   const accountLabel = [session.studentId && `학번 ${session.studentId}`, session.classId && `${session.classId.split("-")[0]}학년 ${session.classId.split("-")[1]}반`].filter(Boolean).join(" · ");
   useEffect(() => {
     alive.current = true;
@@ -53,9 +55,9 @@ function Settings({ session }: { session: Session }) {
     return () => { active = false; };
   }, [session.uid, attempt]);
   useEffect(() => register({
-    isDirty: () => pending.current.dirty || Boolean(pending.current.busy),
+    isDirty: () => pending.current.dirty || sending.current,
     flush: async () => {
-      if (!pending.current.dirty && !pending.current.busy) return true;
+      if (!pending.current.dirty && !sending.current) return true;
       setGuardError("변경한 내용을 저장하거나 입력을 되돌린 뒤 이동해 주세요.");
       return false;
     },
@@ -66,16 +68,17 @@ function Settings({ session }: { session: Session }) {
     if (busy || !profile) return;
     const value = nickname.trim();
     if (value.length > 20 || /\p{Cc}/u.test(nickname)) { setNicknameError("닉네임은 20자 이내로 입력해 주세요. 줄바꿈과 제어 문자는 사용할 수 없어요."); return; }
-    setBusy("nickname"); setNicknameError(""); setNicknameStatus("");
+    setBusy("nickname"); setNicknameError(""); setNicknameStatus(""); sending.current = true;
     try {
       const result = await api<{ session: Session }>("auth/profile", { nickname: value }, "POST", session.uid);
+      sending.current = false;
       if (!alive.current) return;
       const saved = result.session.nickname ?? "";
       setNickname(saved); setSavedNickname(saved); setProfile({ ...profile, nickname: saved, session: result.session });
       setNicknameStatus("닉네임을 저장했어요."); setGuardError("");
       await refresh();
     } catch (error) { if (alive.current) setNicknameError(error instanceof Error ? error.message : "닉네임을 저장하지 못했어요."); }
-    finally { if (alive.current) setBusy(null); }
+    finally { sending.current = false; if (alive.current) setBusy(null); }
   }
   async function savePassword(event: FormEvent) {
     event.preventDefault();
@@ -83,15 +86,16 @@ function Settings({ session }: { session: Session }) {
     if (!currentPassword) { setPasswordError("현재 비밀번호를 입력해 주세요."); return; }
     if (password.length < 8 || password.length > 128 || !/[a-zA-Z]/.test(password) || !/\d/.test(password)) { setPasswordError("영문과 숫자를 포함해 8자 이상으로 만들어 주세요."); return; }
     if (password !== confirmation) { setPasswordError("새 비밀번호 확인이 일치하지 않아요."); return; }
-    setBusy("password"); setPasswordError(""); setPasswordStatus("");
+    setBusy("password"); setPasswordError(""); setPasswordStatus(""); sending.current = true;
     try {
       await api<{ session: Session }>("auth/password-self", { currentPassword, password }, "POST", session.uid);
+      sending.current = false;
       if (!alive.current) return;
       setCurrentPassword(""); setPassword(""); setConfirmation(""); setGuardError("");
       setPasswordStatus("비밀번호를 변경했어요. 학습 기록과 현재 접속은 유지돼요.");
       await refresh();
     } catch (error) { if (alive.current) setPasswordError(error instanceof Error ? error.message : "비밀번호를 변경하지 못했어요."); }
-    finally { if (alive.current) setBusy(null); }
+    finally { sending.current = false; if (alive.current) setBusy(null); }
   }
   return <div className={styles.page}>
     <header className={styles.heading}><span>{session.role === "student" ? "학생" : session.role === "instructor" ? "관리자" : "선생님"} 설정</span><h1>내 계정을 관리해요.</h1><p>{accountLabel && `${accountLabel} · `}닉네임과 비밀번호를 관리할 수 있어요. 계정과 학습 기록은 그대로 유지돼요.</p></header>
