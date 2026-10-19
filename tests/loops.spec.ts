@@ -127,6 +127,12 @@ test("반복 수업 오브젝트: 분류형 창에서 연필을 더하고, 모�
   await frame.locator("#entryPictureTab").click();
   await expect(frame.locator(".entryPlaygroundPictureElement").first()).toBeVisible();
   await expect(frame.locator(".entryPlaygroundPainter")).toBeHidden();
+  // ‘새로 그리기’ would add a blank shape the project cannot load, so it only explains why it is locked.
+  const shapes = await frame.locator(".entryPlaygroundPictureElement").count();
+  await frame.getByText("새로 그리기", { exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "모양은 목록에서 보고 고르기만 할 수 있어요." })).toBeVisible();
+  await expect(frame.locator(".entryPlaygroundPictureElement")).toHaveCount(shapes);
+  await expect(page.getByRole("alert").filter({ hasText: "읽지 못한" })).toHaveCount(0);
   // The tree mission keeps its tree and watering can.
   await open(page, "tree");
   await page.frames().find((f) => f.url().includes("/entryjs/workspace.html"))!.evaluate(() => (window as unknown as { Entry: { container: { removeObject: (id: string) => void } } }).Entry.container.removeObject("tree"));

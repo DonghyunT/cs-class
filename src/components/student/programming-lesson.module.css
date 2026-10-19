@@ -40,6 +40,7 @@
 .missionBrief,.workArea{min-width:0}
 .missionBrief{display:grid;gap:16px;padding:18px;border:1px solid #dce3ed;border-radius:18px;background:#fff;word-break:keep-all;overflow-wrap:anywhere}
 .practice .missionBrief .heading,.practice .missionBrief .hint{margin:0}
+.practice .missionBrief .experiment{margin-bottom:12px}.hintBlocks{padding:0}.practice .missionBrief .hint .hintBlocks summary::before{content:"＋"}.practice .missionBrief .hint .hintBlocks[open] summary::before{content:"−"}.hintBlocks ul{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}.hintBlocks li{padding:3px 10px;border-radius:999px;background:#eaf1ff;color:#28548e;font-size:14px;line-height:1.6}
 .experiment{padding:14px;border:1px solid #e3dfcc;border-radius:12px;background:#fffaf0;color:#65583b}
 .experiment h4{display:flex;align-items:center;gap:8px;margin:0;font-size:14px;line-height:1.7;font-weight:650}
 .experiment h4 svg{flex-shrink:0}

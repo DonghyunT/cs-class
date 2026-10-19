@@ -210,6 +210,8 @@ try {
       for (const name of ["clonePicture", "_removePicture"]) {
         if (typeof Entry.playground?.[name] === "function") Entry.playground[name] = () => send("picture-locked");
       }
+      // ‘새로 그리기’ adds a blank 1×1 shape directly, skipping the picture manager; it is not in the trusted list, so the project would stop loading.
+      if (typeof Entry.playground?.painter?.newPicture === "function") Entry.playground.painter.newPicture = () => send("picture-locked");
     }
   }
   Entry.creationChangedEvent.attach(window, () => queueMicrotask(changed));
