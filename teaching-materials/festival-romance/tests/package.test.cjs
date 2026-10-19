@@ -20,4 +20,7 @@ test('웹 공개 파일은 내려받는 오프라인 완성본과 같다',()=>{
  const published=path.resolve(root,'../../public/festival-romance.html');
  assert.ok(fs.existsSync(published));
  assert.equal(fs.readFileSync(published,'utf8'),html);
+ const manifest=JSON.parse(fs.readFileSync(path.join(root,'qa/build-manifest.json'),'utf8'));
+ assert.equal(manifest.bytes,Buffer.byteLength(html));
+ assert.equal(manifest.sha256,require('node:crypto').createHash('sha256').update(html).digest('hex'));
 });

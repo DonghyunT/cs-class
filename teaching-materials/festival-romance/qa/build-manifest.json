@@ -1,13 +1,7 @@
 {
   "html": "festival-romance.html",
-  "bytes": 14951478,
-  "sha256": "8fb2fac4ad6f26d23865f99bd217540b19746b6d567f324f70c9f2e435d3801c",
-  "portableBuildMatches": true,
-  "unitTests": 21,
-  "browserCheckGroups": 11,
-  "repositoryPolicyTests": 22,
-  "pageErrors": 0,
-  "remoteRequests": 0,
-  "eslintFiles": 14,
-  "eslintErrors": 0
+  "publicPath": "/festival-romance.html",
+  "bytes": 15361622,
+  "sha256": "be6f104706dc8bf5b0e9419e0f3d82a1670272cd5b8c0ab55d0582c8611433b3",
+  "offlinePublicMatches": true
 }

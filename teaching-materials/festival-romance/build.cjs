@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- Standalone Node tooling uses CommonJS. */
 const fs = require('node:fs');
 const path = require('node:path');
+const {createHash}=require('node:crypto');
 const root = __dirname;
 const source = path.join(__dirname, 'src');
 const assetPath = path.join(__dirname, 'assets');
@@ -15,4 +16,5 @@ const output = path.join(root,'dist','festival-romance.html');
 const published=path.resolve(root,'../../public/festival-romance.html');
 html=html.replace(/\r\n?/g,'\n');
 for(const file of [output,published]){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,html);}
+fs.writeFileSync(path.join(root,'qa/build-manifest.json'),JSON.stringify({html:'festival-romance.html',publicPath:'/festival-romance.html',bytes:Buffer.byteLength(html),sha256:createHash('sha256').update(html).digest('hex'),offlinePublicMatches:true},null,2)+'\n');
 console.log(JSON.stringify({output,published,bytes:Buffer.byteLength(html),chapters:chapters.length,scenes:chapters.reduce((n,c)=>n+c.scenes.length,0)}));

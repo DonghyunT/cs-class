@@ -8,6 +8,8 @@
 
 빌드는 웹 공개용 `../../public/festival-romance.html`도 같은 내용으로 생성합니다. 기존 사이트에 배포하면 `/festival-romance.html`에서 로그인 없이 열 수 있으며, 학생 계정·작품 저장·운영 DB를 사용하지 않습니다.
 
+`qa/build-manifest.json`의 파일 크기·SHA-256도 빌드할 때 갱신합니다. 브라우저 검증 결과는 별도 `qa/verified-report.json`에서 확인합니다.
+
 ## 수업 흐름
 
 **대화에서 내 답 선택 → 선택한 행동의 개념 활동 → 실행 결과 관찰 → 결과를 받아 주는 대화**로 진행합니다.
