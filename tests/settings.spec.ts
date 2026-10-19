@@ -137,10 +137,15 @@ test("자동 입력된 현재 비밀번호는 닉네임 저장과 이동을 막�
   await current.fill(studentPassword);
   const panel = page.getByRole("region", { name: "닉네임", exact: true });
   await panel.getByLabel("닉네임", { exact: true }).fill("자동입력 친구");
+  // 저장 뒤 세션 재확인이 느려도 이동은 막지 않아야 해요.
+  let release!: () => void;
+  const sessionHeld = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/api/auth/session", async route => { await sessionHeld; await route.continue(); });
   await panel.getByRole("button", { name: "저장", exact: true }).click();
   await expect(panel.getByRole("status")).toContainText("저장했어요");
   await page.getByRole("navigation", { name: "교실 메뉴", exact: true }).getByRole("link", { name: "대시보드", exact: true }).click();
-  await expect(page).toHaveURL(/\/student$/);
+  await expect(page).toHaveURL(/\/student$/, { timeout: 15_000 });
+  release(); await page.unroute("**/api/auth/session");
   expect((await ref.get()).data()!.nickname).toBe("자동입력 친구");
 });
 

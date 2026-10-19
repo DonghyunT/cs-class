@@ -72,7 +72,8 @@ function Settings({ session }: { session: Session }) {
       if (!alive.current) return;
       const saved = result.session.nickname ?? "";
       setNickname(saved); setSavedNickname(saved); setProfile({ ...profile, nickname: saved, session: result.session });
-      setNicknameStatus("닉네임을 저장했어요."); setGuardError("");
+      // 저장은 끝났으니 세션을 다시 읽는 동안 이동을 막지 않아요.
+      setNicknameStatus("닉네임을 저장했어요."); setGuardError(""); setBusy(null);
       await refresh();
     } catch (error) { if (alive.current) setNicknameError(error instanceof Error ? error.message : "닉네임을 저장하지 못했어요."); }
     finally { if (alive.current) setBusy(null); }
@@ -88,7 +89,7 @@ function Settings({ session }: { session: Session }) {
       await api<{ session: Session }>("auth/password-self", { currentPassword, password }, "POST", session.uid);
       if (!alive.current) return;
       setCurrentPassword(""); setPassword(""); setConfirmation(""); setGuardError("");
-      setPasswordStatus("비밀번호를 변경했어요. 학습 기록과 현재 접속은 유지돼요.");
+      setPasswordStatus("비밀번호를 변경했어요. 학습 기록과 현재 접속은 유지돼요."); setBusy(null);
       await refresh();
     } catch (error) { if (alive.current) setPasswordError(error instanceof Error ? error.message : "비밀번호를 변경하지 못했어요."); }
     finally { if (alive.current) setBusy(null); }
