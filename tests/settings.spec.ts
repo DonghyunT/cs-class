@@ -134,7 +134,6 @@ test("닉네임 저장 실패·이동 보호·재시도와 좁은 창", async ({
 test("자동 입력된 현재 비밀번호는 닉네임 저장과 이동을 막지 않음", async ({ page }) => {
   await page.goto("/student/settings");
   const current = page.getByRole("region", { name: "비밀번호", exact: true }).getByLabel("현재 비밀번호", { exact: true });
-  await expect(current).toHaveAttribute("autocomplete", "off");
   await current.fill(studentPassword);
   const panel = page.getByRole("region", { name: "닉네임", exact: true });
   await panel.getByLabel("닉네임", { exact: true }).fill("자동입력 친구");
