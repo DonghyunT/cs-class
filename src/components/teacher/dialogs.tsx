@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Settings2 } from "lucide-react";
 import { useSession } from "@/components/session-provider";
+import { useNavigationGuard } from "@/components/navigation-provider";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -112,7 +113,7 @@ export function SubmissionViewer({ student, lesson, lessons, onLock, onComplete,
 }
 
 export function ResetPassword({ student, onLock, onComplete, onClose, finalFocus }: {
-  student: StudentRow; onLock: (value: boolean) => void; onComplete: () => void; onClose: () => void; finalFocus: () => HTMLElement | null | false;
+  student: StudentRow; onLock: (value: boolean) => void; onComplete: (expiresAt: number) => void; onClose: () => void; finalFocus: () => HTMLElement | null | false;
 }) {
   const { session } = useSession();
   const [open, setOpen] = useState(true);
@@ -138,7 +139,7 @@ export function ResetPassword({ student, onLock, onComplete, onClose, finalFocus
       if (!mounted.current || version !== operation.current) return;
       setCredential(result); setOpen(false);
       const release = locked.current; locked.current = null; release?.(false);
-      onComplete();
+      onComplete(result.expiresAt);
     } catch (problem) { if (mounted.current && version === operation.current) setError(problemMessage(problem)); }
     finally { if (mounted.current && version === operation.current) { setSaving(false); const release = locked.current; locked.current = null; release?.(false); } }
   }
@@ -172,9 +173,14 @@ export function BulkIssuePasswords({ classroomName, students, checkedAt, onLock,
   const [results, setResults] = useState<Issued[] | null>(null);
   const [running, setRunning] = useState(false);
   const [shown, setShown] = useState(false);
+  const [leaveBlocked, setLeaveBlocked] = useState(false);
+  const { register } = useNavigationGuard();
   const busy = useRef(false);
+  const holding = useRef(false);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; if (busy.current) onLock(false); }; }, [onLock]);
+  // 발급 중이거나 아직 전달하지 않은 값이 있으면 새로고침·뒤로 가기로 값을 잃지 않게 막아요.
+  useEffect(() => register({ isDirty: () => busy.current || holding.current, flush: async () => { setLeaveBlocked(true); return false; } }), [register]);
   async function issue() {
     if (busy.current || !selected.size) return;
     busy.current = true; setRunning(true); setResults([]); onLock(true);
@@ -184,6 +190,7 @@ export function BulkIssuePasswords({ classroomName, students, checkedAt, onLock,
       if (!mounted.current) return;
       try { issued.push({ uid: student.uid, studentId: student.studentId, ...await classroomApi.resetPassword(student.uid, session?.uid, true) }); }
       catch (problem) { issued.push({ uid: student.uid, studentId: student.studentId, error: problemMessage(problem) }); }
+      if (issued.at(-1)?.password) holding.current = true;
       setResults([...issued]);
     }
     busy.current = false; onLock(false);
@@ -200,6 +207,7 @@ export function BulkIssuePasswords({ classroomName, students, checkedAt, onLock,
         : <><p role="status" className={styles.dialogNote}>{running ? `발급 중 ${results.length}/${selected.size}명` : `${done.length}명 발급 · ${results.length - done.length}명 건너뜀`}{done[0]?.expiresAt && ` · ${expiry(done[0].expiresAt)}까지 사용 가능`}</p>
           <div className={styles.bulkScroll}><table className={styles.bulkResult}><thead><tr><th scope="col">학번</th><th scope="col">임시 비밀번호</th></tr></thead><tbody>{results.map(item => <tr key={item.uid}><th scope="row">{item.studentId}</th><td>{item.password ? <code>{shown ? item.password : "••••••••"}</code> : <span className={styles.dialogError}>{item.error}</span>}</td></tr>)}</tbody></table></div>
           {done.length > 0 && createPortal(<div className={styles.printSlips} aria-hidden="true">{done.map(item => <div key={item.uid}><strong>{classroomName} · {item.studentId}</strong><code>{item.password}</code><small>{expiry(item.expiresAt!)}까지 · 처음 로그인하면 내 비밀번호로 바꿔요.</small></div>)}</div>, document.body)}</>}
+      {leaveBlocked && <p role="alert" className={styles.dialogError}>{running ? "발급이 끝날 때까지 이 화면에 머물러 주세요." : "임시 비밀번호를 전달한 뒤 `전달 완료`로 창을 닫아 주세요."}</p>}
       <DialogFooter>{!results ? <><Button variant="outline" onClick={onClose}>취소</Button><Button disabled={!selected.size} onClick={() => void issue()}>{selected.size}명 발급하기</Button></> : <><Button variant="outline" disabled={running || !done.length} aria-pressed={shown} onClick={() => setShown(value => !value)}>{shown ? "비밀번호 숨기기" : "비밀번호 보이기"}</Button><Button variant="outline" disabled={running || !done.length} onClick={() => window.print()}>쪽지 인쇄</Button><Button disabled={running} onClick={onClose}>전달 완료</Button></>}</DialogFooter>
     </DialogContent>
   </Dialog>;

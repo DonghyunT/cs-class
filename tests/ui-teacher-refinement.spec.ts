@@ -385,6 +385,8 @@ test("임시 비밀번호 일괄 발급은 미설정 학생만 고르고 최근 
   expect(bodies).toEqual([{ uid: "ui-teacher-0", body: { pendingOnly: true } }, { uid: "ui-teacher-2", body: { pendingOnly: true } }]);
   await expect(dialog).not.toContainText("temp-ui-teacher-0");
   await expect(dialog).toContainText("건너뛰었어요");
+  const unloadBlocked = () => page.evaluate(() => { const event = new Event("beforeunload", { cancelable: true }); window.dispatchEvent(event); return event.defaultPrevented; });
+  expect(await unloadBlocked()).toBe(true);
   await dialog.getByRole("button", { name: "비밀번호 보이기", exact: true }).click();
   await expect(dialog).toContainText("temp-ui-teacher-0");
   await page.emulateMedia({ media: "print" });
@@ -394,6 +396,7 @@ test("임시 비밀번호 일괄 발급은 미설정 학생만 고르고 최근 
   await dialog.getByRole("button", { name: "전달 완료", exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByText("temp-ui-teacher-0")).toHaveCount(0);
+  expect(await unloadBlocked()).toBe(false);
   await expect(page.getByText("1명에게 임시 비밀번호를 발급했어요.", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "임시 비밀번호 한꺼번에 발급", exact: true }).click();
   await expect(dialog.getByRole("checkbox", { name: /20181/ })).not.toBeChecked();
@@ -402,4 +405,18 @@ test("임시 비밀번호 일괄 발급은 미설정 학생만 고르고 최근 
   await dialog.getByRole("button", { name: "취소", exact: true }).click();
   await page.emulateMedia({ media: "print" });
   await expect(page.getByRole("heading", { name: "학생별 학습 현황", exact: true })).toBeVisible();
+});
+
+test("학생별 초기화 직후 일괄 발급 창은 방금 받은 학생을 기본 선택하지 않음", async ({ page }) => {
+  const students = rows.map((row, index) => ({ ...row, mustChangePassword: index < 3, lastActiveAt: null }));
+  await page.route("**/api/classroom/students/*/reset", route => route.fulfill({ json: { password: "temp-single", expiresAt: Date.now() + 30 * 60_000 } }));
+  await syntheticRows(page, "normal", students);
+  await page.getByRole("button", { name: "20183 비밀번호 초기화", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "초기화하기", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "전달 완료", exact: true }).click();
+  await page.getByRole("button", { name: "임시 비밀번호 한꺼번에 발급", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("checkbox", { name: /20183/ })).not.toBeChecked();
+  await expect(dialog.getByRole("checkbox", { name: /20183/ })).toHaveAccessibleName(/발급됨/);
+  await expect(dialog.getByRole("button", { name: "2명 발급하기", exact: true })).toBeVisible();
 });

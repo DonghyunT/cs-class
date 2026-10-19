@@ -126,10 +126,10 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
     if (!studentDialog || selectedContext.current !== `${studentDialog.classId}:${studentDialog.lesson?.id}`) return;
     setFetching(true); void load();
   }
-  function resetOpenedStudent() {
+  function resetOpenedStudent(expiresAt: number) {
     if (!studentDialog || selectedContext.current.split(":")[0] !== studentDialog.classId) return;
     const student = studentDialog.student;
-    setData(previous => previous?.classroom.id === studentDialog.classId ? { ...previous, students: previous.students.map(item => item.uid === student.uid ? { ...item, mustChangePassword: true } : item) } : previous);
+    setData(previous => previous?.classroom.id === studentDialog.classId ? { ...previous, students: previous.students.map(item => item.uid === student.uid ? { ...item, mustChangePassword: true, temporaryExpiresAt: expiresAt, lastActiveAt: null } : item) } : previous);
     setNotice(`${student.studentId} 학생의 비밀번호를 초기화했어요. 다음 입장 시 변경이 필요해요.`);
   }
 
