@@ -78,9 +78,12 @@ test("창 포커스 재조회는 30초 안에서는 생략하고, 활동 기록 
   await tick(page, 60_000);
   const hidden = { classReads, sessionReads };
   await page.evaluate(() => { Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" }); });
-  await focus();
+  // Back-to-back focus events while the first check is in flight send one request each.
+  await page.evaluate(() => { window.dispatchEvent(new Event("focus")); window.dispatchEvent(new Event("focus")); });
   await expect.poll(() => classReads).toBe(hidden.classReads + 1);
   await expect.poll(() => sessionReads).toBe(hidden.sessionReads + 1);
+  await page.waitForTimeout(500);
+  expect({ classReads, sessionReads }).toEqual({ classReads: hidden.classReads + 1, sessionReads: hidden.sessionReads + 1 });
 });
 
 test("학생 손들기는 평상시 60초·대기 중 30초이며 상태 전환 직후 재조회하지 않는다", async ({ page }) => {

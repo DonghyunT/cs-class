@@ -90,7 +90,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         finally { busy.current = false; }
       } else if (++tick % 30 === 0 && document.visibilityState === "visible" && now - checked.current >= 30_000) { busy.current = true; try { await refresh(); } finally { busy.current = false; } }
     }, 1000);
-    const onFocus = () => { if (Date.now() - checked.current >= 30_000) void refresh(); }; window.addEventListener("focus", onFocus);
+    const onFocus = async () => {
+      if (busy.current || Date.now() - checked.current < 30_000) return;
+      busy.current = true; try { await refresh(); } finally { busy.current = false; }
+    }; window.addEventListener("focus", onFocus);
     return () => { window.clearInterval(timer); channel?.close(); events.forEach((name) => window.removeEventListener(name, onActivity, true)); window.removeEventListener("focus", onFocus); };
   }, [sessionUid, clear, refresh]); // Session timing lives in refs; no listener churn on polling.
   async function extend() { const started = generation.current; try { const result = await classroomApi.touch(); if (started === generation.current) { applySession(result.session, true); setRemaining(null); } } catch (problem) { if (started === generation.current) setError(problem instanceof Error ? problem.message : "접속을 연장하지 못했어요."); } }
