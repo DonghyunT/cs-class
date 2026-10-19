@@ -149,6 +149,25 @@ test("자동 입력된 현재 비밀번호는 닉네임 저장과 이동을 막�
   expect((await ref.get()).data()!.nickname).toBe("자동입력 친구");
 });
 
+test("비밀번호 변경 뒤 세션을 다시 읽는 동안 입력은 잠그고 이동은 허용", async ({ page }) => {
+  await page.goto("/student/settings");
+  const panel = page.getByRole("region", { name: "비밀번호", exact: true });
+  await panel.getByLabel("현재 비밀번호", { exact: true }).fill(studentPassword);
+  await panel.getByLabel("새 비밀번호", { exact: true }).fill(newPassword);
+  await panel.getByLabel("새 비밀번호 확인", { exact: true }).fill(newPassword);
+  let release!: () => void;
+  const sessionHeld = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/api/auth/session", async route => { await sessionHeld; await route.continue().catch(() => undefined); });
+  await panel.getByRole("button", { name: "변경", exact: true }).click();
+  await expect(panel.getByRole("status")).toContainText("변경했어요");
+  // 다른 변경이 세션 쿠키를 또 바꾸지 않도록 재확인이 끝날 때까지 잠가 둬요.
+  await expect(panel.getByRole("button", { name: "변경 중", exact: true })).toBeVisible();
+  await expect(panel.getByLabel("새 비밀번호", { exact: true })).toHaveAttribute("readonly", "");
+  await page.getByRole("navigation", { name: "교실 메뉴", exact: true }).getByRole("link", { name: "대시보드", exact: true }).click();
+  await expect(page).toHaveURL(/\/student$/, { timeout: 15_000 });
+  release(); await page.unroute("**/api/auth/session");
+});
+
 test("새 비밀번호를 입력하던 중에는 이동을 막음", async ({ page }) => {
   await page.goto("/student/settings");
   await page.getByRole("region", { name: "비밀번호", exact: true }).getByLabel("새 비밀번호", { exact: true }).fill(newPassword);
