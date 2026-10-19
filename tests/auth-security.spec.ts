@@ -134,3 +134,26 @@ test("운영 점검 쓰기는 인증·네트워크·환경 준비 전 거부", a
   // 관리 권한이 필요한 Auth 객체는 로컬 전용 테스트 도우미에서만 사용합니다.
   expect(auth.app.options.projectId).toBe("demo-cs-class");
 });
+
+test("일괄 발급(pendingOnly)은 자기 비밀번호를 정했거나 접속 중인 학생을 건너뛰고 미설정 학생만 발급", async ({ request, playwright }) => {
+  await readyStudent(request);
+  const staff = await playwright.request.newContext({ baseURL: "http://localhost:3000" });
+  try {
+    await resetStudent(staff, "20102"); await readyTeacher(staff);
+    for (const data of [{ pendingOnly: false }, { pendingOnly: "yes" }, { pendingOnly: true, extra: 1 }, []]) expect((await staff.post(resetPath, { headers, data })).status()).toBe(400);
+    const active = await staff.post(resetPath, { headers, data: { pendingOnly: true } });
+    expect(active.status()).toBe(409); expect((await active.json()).code).toBe("ALREADY_ACTIVE");
+    expect((await request.get("/api/auth/session")).status()).toBe(200);
+    expect((await (await request.get("/api/auth/session")).json()).session.uid).toBe("student-20101");
+    const pending = await staff.post("/api/classroom/students/student-20102/reset", { headers, data: { pendingOnly: true } });
+    expect(pending.status()).toBe(200);
+    const credential = await pending.json();
+    const student = await playwright.request.newContext({ baseURL: "http://localhost:3000" });
+    try {
+      expect((await loginStudent(student, credential.password, "20102")).status()).toBe(200);
+      const signedIn = await staff.post("/api/classroom/students/student-20102/reset", { headers, data: { pendingOnly: true } });
+      expect(signedIn.status()).toBe(409); expect((await signedIn.json()).code).toBe("ALREADY_ACTIVE");
+    } finally { await student.dispose(); }
+  } finally { await staff.dispose(); }
+  expect((await loginStudent(request, studentPassword)).status()).toBe(200);
+});

@@ -38,7 +38,7 @@ export const classroomApi = {
   studentClassroom: () => api<Pick<StudentDashboard, "classroom" | "lessons">>("classroom/student/class"),
   teacher: (classId?: string, lessonId?: string) => api<TeacherDashboard>(`classroom/teacher?${new URLSearchParams({ ...(classId ? { classId } : {}), ...(lessonId ? { lessonId } : {}) })}`),
   updateClass: (classId: string, revision: number, currentLessonId: string | null, openedLessonIds: string[], expectedUid?: string) => api<ClassSettings>(`classroom/classes/${encodeURIComponent(classId)}`, { revision, currentLessonId, openedLessonIds }, "POST", expectedUid),
-  resetPassword: (uid: string, expectedUid?: string) => api<{ password: string; expiresAt: number }>(`classroom/students/${encodeURIComponent(uid)}/reset`, {}, "POST", expectedUid),
+  resetPassword: (uid: string, expectedUid?: string, pendingOnly = false) => api<{ password: string; expiresAt: number }>(`classroom/students/${encodeURIComponent(uid)}/reset`, pendingOnly ? { pendingOnly: true } : {}, "POST", expectedUid),
   work: (lessonId: string) => api<Work>(`classroom/work/${encodeURIComponent(lessonId)}`),
   previewEvaluate: (lessonId: string, classId: string, work: Work, action: WorkAction, expectedUid: string) => api<Work>(`teacher-preview/${encodeURIComponent(lessonId)}/evaluate`, { classId, work, action }, "POST", expectedUid),
   saveWork: (lessonId: string, revision: number, draft: WorkDraft, expectedUid?: string) => api<Work>(`classroom/work/${encodeURIComponent(lessonId)}`, { revision, draft }, "POST", expectedUid),

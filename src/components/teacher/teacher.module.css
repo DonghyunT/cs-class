@@ -58,7 +58,7 @@
 .pendingFilter input { width:18px; height:18px; accent-color:#376fc8; }
 .pendingFilter:has(input:focus-visible), .heading h1:focus { outline:3px solid #376fc8; outline-offset:3px; }
 .filters :global([data-slot="select-trigger"]) { min-width: 135px; }
-.resultToolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.resultToolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 10px; }
 .resultCount { color: #526173; font-size: 13px; margin: 0; }
 .viewToggle { display: flex; gap: 2px; }
 .page .viewToggle button { width: 44px; height: 44px; padding: 0; border-radius: 10px; color: #526173; }
@@ -256,3 +256,19 @@
 .submissionItem > summary::-webkit-details-marker { display: none; }
 .submissionItem > summary::before { content: "▸" / ""; width: 14px; color: #376fc8; }
 .submissionItem[open] > summary::before { content: "▾" / ""; }
+.bulkPick { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 6px; max-height: 50vh; overflow: auto; margin: 0; padding: 2px; border: 0; }
+.bulkPick label { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 44px; padding: 6px 10px; border: 1px solid #e3e8ef; border-radius: 10px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.bulkPick input { width: 18px; height: 18px; accent-color: #376fc8; }
+.bulkPick small { flex-basis: 100%; color: #a84f2a; font-size: 12px; }
+.bulkScroll { max-height: 45vh; overflow: auto; }
+.bulkResult { width: 100%; border-collapse: collapse; font-size: 15px; }
+.bulkResult th, .bulkResult td { padding: 8px 6px; border-bottom: 1px solid #edf0f5; text-align: left; }
+.bulkResult code { font-size: 16px; letter-spacing: .04em; }
+.printSlips { display: none; }
+@media print {
+  :global(body):has(> .printSlips) > :not(.printSlips) { display: none !important; }
+  .printSlips { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; font-family: system-ui, sans-serif; color: #000; }
+  .printSlips > div { display: grid; gap: 6px; padding: 14px 16px; border: 1px dashed #000; break-inside: avoid; }
+  .printSlips code { font-size: 20px; letter-spacing: .05em; }
+  .printSlips small { font-size: 11px; }
+}

@@ -121,6 +121,7 @@ export interface StudentRow {
   lastActiveAt?: number | null;
   studentId: string;
   mustChangePassword: boolean;
+  temporaryExpiresAt?: number;
   work: WorkSummary | null;
 }
 export type WorkSummary = Pick<Work, "lessonId" | "revision" | "conceptSolved" | "quizSolved" | "updatedAt"> & {
