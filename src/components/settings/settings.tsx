@@ -35,7 +35,8 @@ function Settings({ session }: { session: Session }) {
   const [passwordStatus, setPasswordStatus] = useState("");
   const [guardError, setGuardError] = useState("");
   const alive = useRef(true);
-  const dirty = nickname !== savedNickname || Boolean(currentPassword || password || confirmation);
+  // 브라우저가 현재 비밀번호만 자동 입력한 상태는 작성 중인 변경으로 보지 않아요.
+  const dirty = nickname !== savedNickname || Boolean(password || confirmation);
   const pending = useRef({ dirty, busy });
   useEffect(() => { pending.current = { dirty, busy }; }, [dirty, busy]);
   const accountLabel = [session.studentId && `학번 ${session.studentId}`, session.classId && `${session.classId.split("-")[0]}학년 ${session.classId.split("-")[1]}반`].filter(Boolean).join(" · ");
