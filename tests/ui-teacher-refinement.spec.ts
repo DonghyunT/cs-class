@@ -360,6 +360,11 @@ test("제출 작품 창에서 다른 열린 수업을 고르면 그 학생의 �
   await expect.poll(() => [...new Set(requested)]).toEqual([lesson.id, "conditionals"]);
   await expect(dialog.getByRole("alert")).toHaveCount(0);
   await expect(dialog.getByRole("button", { name: "요청본 승인", exact: true })).toBeEnabled();
+  await page.route("**/api/classroom/students/ui-teacher-2/work/loops**", route => route.fulfill({ json: { ...rows[2].work, missions: {}, review: null } }));
+  await dialog.getByRole("combobox", { name: "볼 수업", exact: true }).click();
+  await page.getByRole("option", { name: "반복으로 똑똑하게", exact: true }).click();
+  await expect(dialog).toContainText("이 수업에는 아직 제출한 작품이 없어요.");
+  await expect(dialog.locator("details")).toHaveCount(0);
 });
 
 test("임시 비밀번호 일괄 발급은 미설정 학생만 고르고 최근 접속 학생은 기본 제외하며 값은 숨김으로 보여 줌", async ({ page }) => {
