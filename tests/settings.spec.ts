@@ -131,6 +131,28 @@ test("닉네임 저장 실패·이동 보호·재시도와 좁은 창", async ({
   await expect(nickname).toHaveValue("다정한 친구");
 });
 
+test("자동 입력된 현재 비밀번호는 닉네임 저장과 이동을 막지 않음", async ({ page }) => {
+  await page.goto("/student/settings");
+  const current = page.getByRole("region", { name: "비밀번호", exact: true }).getByLabel("현재 비밀번호", { exact: true });
+  await expect(current).toHaveAttribute("autocomplete", "off");
+  await current.fill(studentPassword);
+  const panel = page.getByRole("region", { name: "닉네임", exact: true });
+  await panel.getByLabel("닉네임", { exact: true }).fill("자동입력 친구");
+  await panel.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(panel.getByRole("status")).toContainText("저장했어요");
+  await page.getByRole("navigation", { name: "교실 메뉴", exact: true }).getByRole("link", { name: "대시보드", exact: true }).click();
+  await expect(page).toHaveURL(/\/student$/);
+  expect((await ref.get()).data()!.nickname).toBe("자동입력 친구");
+});
+
+test("새 비밀번호를 입력하던 중에는 이동을 막음", async ({ page }) => {
+  await page.goto("/student/settings");
+  await page.getByRole("region", { name: "비밀번호", exact: true }).getByLabel("새 비밀번호", { exact: true }).fill(newPassword);
+  await page.getByRole("navigation", { name: "교실 메뉴", exact: true }).getByRole("link", { name: "대시보드", exact: true }).click();
+  await expect(page).toHaveURL(/\/student\/settings$/);
+  await expect(page.getByRole("alert").filter({ hasText: "저장하거나" })).toBeVisible();
+});
+
 test("비밀번호 오류 입력 보존·변경 성공 후 입력 비우기와 접속 유지", async ({ page }) => {
   await page.goto("/student/settings");
   const panel = page.getByRole("region", { name: "비밀번호", exact: true });

@@ -35,7 +35,8 @@ function Settings({ session }: { session: Session }) {
   const [passwordStatus, setPasswordStatus] = useState("");
   const [guardError, setGuardError] = useState("");
   const alive = useRef(true);
-  const dirty = nickname !== savedNickname || Boolean(currentPassword || password || confirmation);
+  // 브라우저가 현재 비밀번호만 자동 입력한 상태는 작성 중인 변경으로 보지 않아요.
+  const dirty = nickname !== savedNickname || Boolean(password || confirmation);
   const pending = useRef({ dirty, busy });
   useEffect(() => { pending.current = { dirty, busy }; }, [dirty, busy]);
   const accountLabel = [session.studentId && `학번 ${session.studentId}`, session.classId && `${session.classId.split("-")[0]}학년 ${session.classId.split("-")[1]}반`].filter(Boolean).join(" · ");
@@ -99,7 +100,7 @@ function Settings({ session }: { session: Session }) {
     {profile && <div className={styles.panels}>
       <section className={styles.panel} aria-labelledby="nickname-heading"><h2 id="nickname-heading">닉네임</h2><p>교실에서 표시할 이름이에요. 비워 두면 기본 이름을 사용해요.</p><form noValidate onSubmit={event => void saveNickname(event)}><label htmlFor="settings-nickname">닉네임</label><input id="settings-nickname" type="text" autoComplete="nickname" maxLength={20} value={nickname} readOnly={Boolean(busy)} onChange={event => { setNickname(event.target.value); setNicknameStatus(""); setGuardError(""); }} aria-describedby="nickname-help" /><small id="nickname-help">최대 20자 · 학번과 반은 바뀌지 않아요.</small><div className={styles.actions}><Button type="submit" aria-disabled={Boolean(busy)}>{busy === "nickname" ? "저장 중" : "저장"}</Button><Button type="button" variant="ghost" aria-disabled={Boolean(busy)} onClick={() => { if (busy) return; setNickname(savedNickname); setNicknameError(""); setNicknameStatus(""); setGuardError(""); }}>되돌리기</Button></div>{nicknameError && <p className={styles.error} role="alert">{nicknameError}</p>}<p className={styles.status} role="status">{nicknameStatus}</p></form></section>
       <section className={styles.panel} aria-labelledby="password-heading"><h2 id="password-heading">비밀번호</h2>{profile.passwordProvider === "password" ? <><p>현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿔요.</p><form noValidate onSubmit={event => void savePassword(event)}>{([
-        ["settings-current-password", "현재 비밀번호", currentPassword, setCurrentPassword, "current-password"],
+        ["settings-current-password", "현재 비밀번호", currentPassword, setCurrentPassword, "off"],
         ["settings-password", "새 비밀번호", password, setPassword, "new-password"],
         ["settings-password-confirmation", "새 비밀번호 확인", confirmation, setConfirmation, "new-password"],
       ] as const).map(([id, label, value, setter, autocomplete]) => <div key={id} className={styles.field}><label htmlFor={id}>{label}</label><input id={id} type="password" autoComplete={autocomplete} maxLength={128} value={value} readOnly={Boolean(busy)} onChange={event => { setter(event.target.value); setPasswordStatus(""); setGuardError(""); }} aria-describedby="password-help" /></div>)}<small id="password-help">영문과 숫자를 포함해 8자 이상으로 만들어 주세요.</small><div className={styles.actions}><Button type="submit" aria-disabled={Boolean(busy)}>{busy === "password" ? "변경 중" : "변경"}</Button><Button type="button" variant="ghost" aria-disabled={Boolean(busy)} onClick={() => { if (busy) return; setCurrentPassword(""); setPassword(""); setConfirmation(""); setPasswordError(""); setPasswordStatus(""); setGuardError(""); }}>비우기</Button></div>{passwordError && <p className={styles.error} role="alert">{passwordError}</p>}<p className={styles.status} role="status">{passwordStatus}</p></form></> : <p>{profile.passwordProvider === "google" ? "Google 계정에서 관리하는 비밀번호예요. 변경은 Google 계정 설정에서 해주세요." : "이 계정은 앱에서 비밀번호를 변경할 수 없어요. 로그인 계정의 제공 서비스에서 확인해 주세요."}</p>}</section>
