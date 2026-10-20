@@ -86,6 +86,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 - **커밋 메시지:** 영어 명령형 제목(예: `Limit student logins per account`)과, 무엇을 왜 바꿨는지 적는 본문으로 씁니다. 직접 push 경로에서는 로컬에서 돌린 검사 파일과 통과 개수를 본문에 적습니다. 로컬 결과는 GitHub에 남지 않기 때문입니다.
 - **승인:** push와 병합은 [AGENTS의 승인 범위](../AGENTS.md#검증-및-배포-규칙) 안에서 합니다. PR 경로는 작업을 시작할 때 전체 E2E 실행 여부도 함께 정합니다.
 - **직접 push 뒤 CI 실패:** 운영은 이전 버전 그대로입니다. 곧바로 고친 커밋을 올리거나 `git revert`로 되돌리며, 실패를 둔 채 다른 변경을 올리지 않습니다.
+- **설치 스크립트 검토:** 의존성을 추가·업데이트하면 `npm approve-scripts --allow-scripts-pending`으로 설치 스크립트가 있는 패키지를 확인하고, 스크립트 내용을 읽은 뒤 `npm approve-scripts <패키지>`로 그 버전만 승인해 `package.json`의 `allowScripts`에 남깁니다. 검토 없이 `--all`로 한꺼번에 승인하지 않습니다.
 
 ### 2.2 신규 수업 추가 4단계 체크리스트
 <a id="신규-수업-추가-및-선별-검증-연동-체크리스트"></a>
