@@ -1,6 +1,6 @@
 # 수업 자료 인수인계
 
-2026-10-19 · 작업 브랜치 `feat/festival-romance-lessons` · PR #59 · 게임 흐름·6표정·정적 공개 파일 준비, 최종 공개 승인 대기
+2026-10-20 · PR #59로 10/19 `main` 병합·운영 `/festival-romance.html` 공개(10/20 응답 200 확인) · 남은 일은 현장 확인
 
 ## 현재 결과
 
@@ -15,8 +15,8 @@
 ```powershell
 git status -sb
 git fetch origin
-git switch feat/festival-romance-lessons
-git pull --ff-only origin feat/festival-romance-lessons
+git switch main
+git pull --ff-only origin main
 node teaching-materials/festival-romance/build.cjs
 node --test teaching-materials/festival-romance/tests/*.test.cjs
 ```
@@ -25,9 +25,9 @@ node --test teaching-materials/festival-romance/tests/*.test.cjs
 
 ## 상태와 제한
 
-현재 소스로 단위/패키지 검사 24개, Chrome 검사 17개 묶음과 자동 실행·일시 정지·앱 화면 추가 7개 묶음(세 차시 전체 진행·네 AND 결과·말투와 일반/간결 모드·세 도형 엔딩·키보드·모바일 선택 포함), lint·typecheck·build·문서 검사를 통과했습니다. 페이지 오류·원격 요청 0. 로컬 Next Production 서버의 `/festival-romance.html`은 200 HTML이며 오프라인 완성본과 SHA-256이 같습니다. 최종 원격 커밋·CI는 PR에서 확인합니다. 현장 프로젝터·한글 입력기·수업 시간·학생 반응은 미측정이고 전체 사이트 E2E는 실행하지 않았습니다.
+현재 소스로 단위/패키지 검사 24개, Chrome 검사 17개 묶음과 자동 실행·일시 정지·앱 화면 추가 7개 묶음(세 차시 전체 진행·네 AND 결과·말투와 일반/간결 모드·세 도형 엔딩·키보드·모바일 선택 포함), lint·typecheck·build·문서 검사를 통과했습니다. 페이지 오류·원격 요청 0. 로컬 Next Production 서버의 `/festival-romance.html`은 200 HTML이며 오프라인 완성본과 SHA-256이 같습니다. 현장 프로젝터·한글 입력기·수업 시간·학생 반응은 미측정이고 전체 사이트 E2E는 실행하지 않았습니다.
 
-본 자료는 학생 로그인·useWork·DB·앱 수업 목록을 사용하지 않는 독립 파일입니다. 빌드는 dist와 웹 공개용 `public/festival-romance.html`을 동일하게 생성합니다. 승인 후 기존 사이트의 `/festival-romance.html`로 공개하며, 최종 승인 전 main 병합·운영 공개·Preview 배포는 하지 않습니다.
+본 자료는 학생 로그인·useWork·DB·앱 수업 목록을 사용하지 않는 독립 파일입니다. 빌드는 dist와 웹 공개용 `public/festival-romance.html`을 동일하게 생성합니다. 기존 사이트의 `/festival-romance.html`로 공개되며, 고칠 때는 사이트의 [위험도별 반영 경로](../../docs/DEVELOPMENT.md#위험도별-반영-경로)를 따릅니다.
 
 이번 리뷰어는 사용자 요청에 따라 Luna max 3명이며 서사 플레이어·UX 플레이어·정보교사로 분담했습니다. 모두 읽기 전용으로 계획과 수정본을 반복 검토했고 root만 편집했습니다. 후속 UX·학습 검토에서 동작 줄이기 중 진행과 앱 구별을 확인했고, 일시 정지 후 처음부터 재실행되던 문제를 실패 검사로 재현해 수정·재확인했습니다. 최종 차단 문제는 없습니다. 전체 검증을 매번 반복하지 말고 변경한 경로를 우선 확인합니다.
 
@@ -41,7 +41,6 @@ node --test teaching-materials/festival-romance/tests/*.test.cjs
 
 ## 다음 작업
 
-1. **최종 공개 승인:** PR #59의 최종 커밋·자동 `app` 성공을 확인하고, 사용자가 승인하면 squash 병합합니다. 기존 배포 게이트를 유지한 채 운영 SHA·공개 주소 응답을 확인합니다. 강제 push·원격 브랜치 삭제·운영 설정 변경은 범위에 없습니다.
-2. **현장 확인:** 실제 프로젝터와 학급에서 표정·한글 입력·진행 시간·선택 토론이 자연스러운지 봅니다. 전체 사이트 E2E는 별도 승인 없이는 실행하지 않습니다.
+1. **현장 확인:** 실제 프로젝터와 학급에서 표정·한글 입력·진행 시간·선택 토론이 자연스러운지 봅니다. 전체 사이트 E2E는 별도 승인 없이는 실행하지 않습니다.
 
 기존 중복 진행 버튼·기념품 판단 버튼 잘림·공개 안내판 기록·입장권 출처는 이번에 정리했습니다. 선택별 반응은 일반 모드에 있고 간결 모드는 결과 우선입니다. 엔딩의 다음 날 약속은 현재 사용자의 게임 목표에 맞춰 유지했습니다.
