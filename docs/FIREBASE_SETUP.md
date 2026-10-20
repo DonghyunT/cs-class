@@ -1,6 +1,6 @@
 # Firebase·Vercel 운영 설정과 배포
 
-갱신: 2026-10-19(Asia/Seoul). 운영 Firebase·Vercel의 설정·배포·복구 절차입니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다. 지금 설정이 어떤 상태인지는 끝의 [운영 환경 현황](#운영-환경-현황)에 모읍니다.
+갱신: 2026-10-20(Asia/Seoul). 운영 Firebase·Vercel의 설정·배포·복구 절차입니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다. 지금 설정이 어떤 상태인지는 끝의 [운영 환경 현황](#운영-환경-현황)에 모읍니다.
 
 ## 연결 기준
 
@@ -42,6 +42,8 @@ Google 로그인을 확인할 때는 승인된 `localhost`를 사용해 [교사 
 
 기본 질문 기능은 `firestore.indexes.json`의 `csQuestions` 복합 인덱스(`classId ASC / createdAt DESC`)를 사용합니다. 운영 공개 전 실제 프로젝트의 기존 인덱스·AI TTL을 확인·보존하고 적용한 인덱스의 `READY`를 확인합니다. 로컬 에뮬레이터 성공만으로 운영 인덱스 준비를 판단하지 않습니다. 질문/답변·손들기/저장본·한도 장부도 기존 전체 서버 전용 규칙으로 직접 DB 접근을 거부합니다. 인덱스 적용 상태는 [운영 환경 현황](#운영-환경-현황)을 봅니다.
 
+**Firestore 규칙:** 브라우저 직접 접근을 모두 거부하고 권한은 서버 API가 강제합니다. `main` 병합·Vercel 배포는 규칙을 운영에 올리지 않습니다. 바꾸면 PR 경로로 병합한 뒤 사용자 승인을 받아 `npx firebase deploy --only firestore:rules --project cs-class-f74c4`로 따로 적용하고 운영 환경 현황에 적습니다.
+
 연결 프로젝트는 `cs-class`(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)입니다. Root Directory는 비워 둔 저장소 루트, Framework Preset은 Next.js, Node.js는 24.x이며 빌드·설치·출력은 프레임워크 기본값을 사용합니다. Git 자동 배포는 `main`(Production)만 하며(`vercel.json`), Preview는 아래 [수동 Preview](#수동-preview)로만 만듭니다. 조회 응답에 루트 설정이 없으면 Build and Deployment 화면에서 확인합니다. 한 도구나 API의 403을 전체 연결 불가로 일반화하지 않습니다.
 
 Node 서버 함수는 `vercel.json`의 `regions: ["icn1"]`로 서울에 배치합니다. 기본 Firestore도 서울이므로 반 조회·인증·저장마다 미국 서버를 왕복하지 않도록 한 설정입니다. [Vercel 공식 지역 설정](https://vercel.com/docs/functions/configuring-functions/region)에 따라 새 배포부터 적용되며 정적 파일의 CDN 배치와 구분합니다. 공개 후 배포의 `regions`·SHA·별칭과 인증 API를 확인합니다. 복구가 필요하면 이 설정만 이전 값으로 되돌려 재배포하며 데이터베이스·반 설정·학생 기록은 이동하거나 초기화하지 않습니다.
@@ -56,7 +58,7 @@ Preview와 Production 양쪽에 일반 설정 `NODE_OPTIONS=--experimental-requi
 
 ### CI와 운영 공개
 
-main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Deployment Checks에 GitHub `app` 검사를 Production 조건으로 연결하며, 성공 전에는 새 배포를 운영 도메인에 연결하지 않습니다. 실패·취소·대기는 기존 운영 버전을 유지합니다. 불안정한 검사 때문에 `app`이 실패하면 Production 배포가 `failure`로 표시되며, 실패한 단계만 재실행(`gh run rerun <run-id> --failed`)해 성공하면 같은 SHA가 운영에 반영됩니다(2026-10-19 확인). 이 설정은 Vercel 대시보드에서만 바꿀 수 있어 코드나 문서만으로는 현재 상태를 알 수 없습니다. 빌드 READY와 운영 별칭 연결을 구분합니다. 게이트의 연결 상태는 [운영 환경 현황](#운영-환경-현황)에 두며, 게이트를 추가·제거하면 같은 작업에서 이 절과 현황 표를 함께 고칩니다.
+main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Deployment Checks에 GitHub `app` 검사를 Production 조건으로 연결하며, 성공 전에는 새 배포를 운영 도메인에 연결하지 않습니다. 실패·취소·대기는 기존 운영 버전을 유지합니다. 불안정한 검사 때문에 `app`이 실패하면 Production 배포가 `failure`로 표시되며, 실패한 단계만 재실행(`gh run rerun <run-id> --failed`)해 성공하면 같은 SHA가 운영에 반영됩니다. 이 설정은 Vercel 대시보드에서만 바꿀 수 있어 코드나 문서만으로는 현재 상태를 알 수 없습니다. 빌드 READY와 운영 별칭 연결을 구분합니다. 게이트의 연결 상태는 [운영 환경 현황](#운영-환경-현황)에 두며, 게이트를 추가·제거하면 같은 작업에서 이 절과 현황 표를 함께 고칩니다.
 
 자동 `app` 검사는 정책·단위·정적 검사·빌드와 선별/공통 스모크이며, 전체 E2E는 승인된 `workflow_dispatch` 수동 실행으로만 수행합니다. 배포 검사 통과를 전체 E2E 통과로 바꾸어 기록하지 않습니다. 범위는 [개발 안내의 검증 매트릭스](DEVELOPMENT.md#검증)를 따릅니다. 자동 `app`은 수 분 단위로 끝나는 선별/스모크 범위이며 실제 시간은 실행별 기록을 따릅니다.
 
@@ -64,7 +66,7 @@ main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Depl
 
 - `.github/workflows/verify.yml`의 job ID `app`을 바꾸거나 지우기 전에 Vercel의 Deployment Checks를 먼저 새 이름으로 바꿉니다. 이름이 어긋나면 새 배포가 운영에 연결되지 않고 대기합니다.
 - 커밋 메시지에 `[skip ci]`를 쓰지 않습니다. 앱 변경 커밋에서 `app` 검사가 만들어지지 않아 같은 이유로 대기합니다. 문서만 바꾼 커밋은 Vercel이 빌드를 생략(CANCELED)하므로 게이트와 무관하며 `app`도 문서 모드로 짧게 끝나, `[skip ci]`로 얻는 것이 없습니다.
-- 전체 E2E 수동 실행은 같은 SHA에 별도의 `app` 실행을 만듭니다. 이것이 같은 SHA의 배포 대기를 늘리는지는 확인하지 않았습니다. 늘릴 수 있다고 보고, 배포 직후의 `main` SHA에서는 운영 반영을 확인한 뒤 실행하며, 승인된 전체 검사는 가능하면 작업 브랜치·PR의 SHA에서 실행합니다.
+- 전체 E2E 수동 실행은 같은 SHA에 별도의 `app` 실행을 만듭니다. 이것이 같은 SHA의 배포 대기를 늘리는지는 확인하지 않았습니다. 늘릴 수 있다고 보고, 배포 직후의 `main` SHA에서는 운영 반영을 확인한 뒤 실행하며, 승인된 전체 검사의 실행 위치는 [검증](DEVELOPMENT.md#검증)을 따릅니다.
 
 문서 전용 변경은 `vercel.json`의 Ignored Build Step으로 앱 빌드를 생략합니다. `VERCEL_GIT_PREVIOUS_SHA`(같은 프로젝트·브랜치의 마지막 성공 배포)부터 비교하며 기준 없음·이력 부족·판정 실패는 빌드를 진행합니다. Vercel은 판정 전에 제외 파일을 지우므로 `.vercelignore`에서 Git commit 메타데이터는 남기고 인증 config·hooks·logs는 제외합니다. 생략은 CANCELED로 표시되고 배포 한도에 포함될 수 있습니다. 문서 push 뒤 main과 운영 SHA가 달라도 정상입니다.
 
@@ -82,6 +84,10 @@ Git 자동 배포는 `main`만 허용하므로 작업 브랜치 push는 Preview�
 Preview에는 운영 Firebase 비밀정보·학생 자료를 복사하지 않고 호스팅 게스트·에뮬레이터도 켜지 않습니다. 온라인 화면 확인과 로그인·저장 검증을 구분하며 별도 인증용 Preview 환경은 만들지 않습니다. main 빌드의 CI 대기 중 배포별 주소는 **Production 설정**일 수 있으므로 Preview와 혼동하지 않고 실제 학생 자료를 변경하지 않습니다. 아래 접근 보호를 유지하며, 대상 SHA·주소·환경·검증 한계는 요청한 사용자에게 보고합니다.
 
 Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 적용되는 주소에서는 앱 API에 도달하기 전에 Vercel 인증 화면으로 이동할 수 있습니다. 프로젝트 도메인·Preview·배포별 주소의 적용 범위를 구분하며, 이전 배포 주소에서 관찰한 302를 모든 운영 도메인의 현재 동작으로 일반화하지 않습니다. 학생 공개 배포 때는 이 보호의 실제 적용 범위와 학생 계정 등록을 함께 결정합니다.
+
+### 운영 오류 조사(읽기 전용)
+
+시각·화면·가능하면 실패 응답의 `X-Request-ID`([실패 진단](DEVELOPMENT.md#실패-진단과-오류-번호))를 받아 Vercel Production 런타임 로그에서 `operation`·`category`를 찾고, 재현은 로컬 에뮬레이터에서 합니다. 운영 DB 조회·쓰기와 운영 계정 저장·제출은 AGENTS 승인 범위대로 따로 묻습니다.
 
 ### 학교 시간표 자동 갱신
 
@@ -109,7 +115,7 @@ TTL은 만료 직후 즉시 삭제를 보장하지 않으며, 실제 정리·청
 
 `node --env-file=.env.local scripts/init-firebase.mjs`는 추가할 빈 반을 먼저 보여줍니다. `--apply`는 이메일/비밀번호 로그인 활성화와 없는 반 생성만 수행하며 기존 반·학생 기록을 덮어쓰지 않습니다. Google 제공자는 콘솔에서 지원 이메일과 함께 설정합니다.
 
-실학생 계정은 [명부 절차](DEVELOPMENT.md#실학생-명부-준비와-반별-발급)의 전용 스크립트로만 등록합니다. Auth UID `student-학번`과 서버 `csAccounts`를 함께 만듭니다. 이름·연락처는 현재 모델에 필요하지 않습니다. 강사 계정은 별도 발급하며 담당 반은 10·11반입니다.
+실학생 계정은 [명부 절차](DEVELOPMENT.md#실학생-명부-준비와-반별-발급)의 전용 스크립트로만 등록합니다. Auth UID `student-학번`과 서버 `csAccounts`를 함께 만듭니다. 이름·연락처는 현재 모델에 필요하지 않습니다. 강사 계정은 별도 발급합니다.
 
 `check-cloud-flow.mjs`는 로컬 3001번의 공개 설정만 읽으며 서버 신원을 입증하지 않습니다. `--apply`는 네트워크·관리자 초기화 전에 거부합니다. 이 도구의 운영 합성 계정 생성·비밀번호 전달 검사는 폐기했고 자동 검증은 로컬 demo 에뮬레이터에서만 수행합니다. 운영 확인은 배포 SHA·익명 API·실제 승인 계정의 사용자 흐름을 구분합니다.
 
@@ -117,7 +123,7 @@ TTL은 만료 직후 즉시 삭제를 보장하지 않으며, 실제 정리·청
 
 운영의 합성 계정은 사용자 승인으로 만든 체험 계정뿐입니다. 구성과 실학생 정책의 예외는 [PRD §6.3](PRD.md#운영-테스트-계정), 발급 상태는 [운영 환경 현황](#운영-환경-현황), 당시 발급·검증 기록은 [보관함](archive/README.md)의 인계 원문을 봅니다. 기존 demo 시드와 폐기된 `check-cloud-flow --apply`는 변경하지 않으며 반복 검사나 다른 운영 계정 생성으로 확대하지 않습니다.
 
-학생은 [학생 입장](https://cs-class-donghyunt.vercel.app/login/student)에서 전달받은 해당 반의 학번과 공통 비밀번호를 입력합니다. 교사 비밀번호 로그인은 실제 강사 계정 `instructor` 하나뿐이며, 2026-10-18부터 10·11반만 맡습니다. 그 비밀번호를 바꾸면 체험용으로는 쓸 수 없습니다. 이 테스트 계정은 비밀번호 변경 없이 대시보드로 이동합니다. 비밀번호 원문과 반별 안내는 발급 PC의 Git 제외 `scratch/private/배포-테스트-로그인.txt`에만 전달하며 저장소·일반 로그에는 넣지 않습니다. 다른 PC에서는 본인이 안전한 경로로 안내 파일을 별도로 옮깁니다.
+체험 학생 계정은 [학생 입장](https://cs-class-donghyunt.vercel.app/login/student)에서 전달받은 해당 반의 학번과 공통 비밀번호를 입력합니다(실제 학생은 [명부 절차](DEVELOPMENT.md#실학생-명부-준비와-반별-발급)의 학생별 임시값). 교사 비밀번호 로그인은 실제 강사 계정 `instructor` 하나뿐입니다. 그 비밀번호를 바꾸면 체험용으로는 쓸 수 없습니다. 이 테스트 계정은 비밀번호 변경 없이 대시보드로 이동합니다. 비밀번호 원문과 반별 안내는 발급 PC의 Git 제외 `scratch/private/배포-테스트-로그인.txt`에만 전달하며 저장소·일반 로그에는 넣지 않습니다. 다른 PC에서는 본인이 안전한 경로로 안내 파일을 별도로 옮깁니다.
 
 해당 반을 체험하려면 교사가 `수업 관리`에서 반을 선택하고 수업을 열어야 합니다. 학생 기록과 수업 설정은 운영 DB에 저장되므로 체험 뒤 실제 학생 기록과 혼동하지 않도록 합성 학번을 사용합니다. 교사 초기화를 실행하면 공통 비밀번호 대신 새 학생별 임시값과 개인 비밀번호 설정 절차를 사용합니다.
 
@@ -148,7 +154,7 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 실학생 Excel 변환·사전 충돌 확인·등록·반별 30분 발급·제한된 학습 백업의 실제 명령과 중단 처리는 [명부 운영 안내](DEVELOPMENT.md#실학생-명부-준비와-반별-발급)를 따릅니다. 사전 등록은 임시값 없이 준비하고 수업 직전 별도 발급합니다. 기존 계정·수업 설정·학습 기록을 승인 없이 일괄 변경하지 않습니다.
 
 - `csAccounts`: 역할·반·변경 필요 여부·세션 해시·무활동 시각. 평문 개인 비밀번호를 저장하지 않습니다.
-- `csClasses`: 공개 수업·이번 수업·revision. 이미 열린 수업은 유지합니다.
+- `csClasses`: 공개 수업·이번 수업·revision. 교사는 열린 수업을 닫을 수 있고, 닫아도 학생 작업은 지우지 않습니다([PRD §5.6](PRD.md#교사-대시보드의-1차-범위)).
 - `csWork`: 학생별 초안·풀이 결과·검증·최근 제출본·revision. 프로그래밍 수업의 초안은 `draft.programming`, 미션별 검증·제출은 `missions`에 함께 보존합니다. 완료는 서버가 판정합니다.
 - `csTodos/{uid}`: 본인 개인 할 일의 `revision`과 `items`(항목 ID·텍스트·완료 의도). 서버 세션 UID만 사용하고 교사도 다른 사용자의 목록을 조회하지 않습니다.
 - `csSchedules/{classId}`: 반 일정의 `revision`과 `items`(항목 ID·제목·한국 날짜·선택 수업 ID). 학생은 본인 반 조회만, 교사·강사는 담당 반 조회·수정만 허용합니다. 계정·반 권한·열린 수업을 같은 서버 트랜잭션에서 확인합니다.
@@ -171,7 +177,9 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 | 서버 함수 지역 | Vercel `cs-class` Production 배포가 `icn1`(서울) | 2026-10-18, #44 배포 정보 |
 | 운영 도메인 | `cs-class-donghyunt.vercel.app`, Firebase Authentication 허용 목록에 등록 | 2026-09-28 사용자 승인으로 등록 |
 | Production 환경변수 | Firebase 웹 설정 3개·관리자 JSON·교사 허용 목록·초기/초기화 비밀번호 7개(Production 전용 Secret), `CRON_SECRET`, `UPSTAGE_API_KEY`·`CS_AI_COMMAND_SECRET`(Production 전용 Sensitive) | 2026-10-13판 문서 기록 |
-| 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-18, #44 병합에서 `app` 성공 2초 뒤 공개. 2026-10-19 `app` 실패(`90659bc`)는 Production을 막았고 실패 단계 재실행 성공 뒤 반영 |
+| 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-18, #44 병합에서 `app` 성공 2초 뒤 공개. 2026-10-19 `app` 실패(`90659bc`)는 Production을 막았고 실패 단계 재실행 성공 뒤 반영. 2026-10-20 `a24e0cc`·`334cca0`·`d0dacec` 모두 `app` 성공 3~4초 뒤 공개 |
+| 실행 설정 `NODE_OPTIONS` | Preview·Production에 `--experimental-require-module` | 2026-09-30 보관 인계 기록(재확인 안 함) |
+| Firestore 규칙 | 전체 거부(서버 전용), 운영 적용본 대조 미확인 | 확인 안 함 |
 | 배포 보존 기간 | Build and Deployment의 Deployment Retention Policy 네 항목 모두 1주. Hobby 롤백은 직전 Production까지만 되므로 늘리지 않음 | 2026-10-18 대시보드 확인(Deployment Storage 4.97/10 GB) |
 | 시간표 Cron | Production 일일 예약 Enabled | 2026-10-13판 문서 기록 |
 | 결제·AI TTL | 결제 계정 연결, `csAiCache`·`csAiRequests`의 `expiresAt` TTL 인덱스 적용 | 2026-10-13판 문서 기록 |

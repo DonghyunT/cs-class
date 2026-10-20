@@ -217,6 +217,13 @@
       "origin": "repo-audit-report-git-ignored-copy-20261018",
       "baseCommit": "8afb5fb",
       "sha256": "a67877699db8ccca83b23f611db1e8da7ebc890dd15eda99357cc2f18e00d011"
+    },
+    {
+      "source": "docs/plans/2026-10-19-festival-game.md",
+      "archive": "docs/archive/cs-class/2026-10-20-completed-plans/2026-10-19-festival-game.md",
+      "origin": "completed-plan-archived-20261020",
+      "baseCommit": "d0dacec",
+      "sha256": "76019c60c9ee1ca8cad0de60655f7738f3373898f96a498d4e246a50250715cb"
     }
   ]
 }

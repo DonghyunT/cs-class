@@ -1,6 +1,6 @@
 # Design System: CS Class
 
-갱신: 2026-10-19(Asia/Seoul). 공개 홈과 로그인·대시보드의 시각 디자인 기준, 수업 화면과 선택 복습의 UI 레이아웃 명세입니다. 제품 정책은 [PRD](PRD.md), 실행 및 검증 절차는 [DEVELOPMENT](DEVELOPMENT.md), 상태는 [HANDOFF](HANDOFF.md)를 따릅니다.
+갱신: 2026-10-20(Asia/Seoul). 공개 홈과 로그인·대시보드의 시각 디자인 기준, 수업 화면과 선택 복습의 UI 레이아웃 명세입니다. 제품 정책은 [PRD](PRD.md), 실행 및 검증 절차는 [DEVELOPMENT](DEVELOPMENT.md), 상태는 [HANDOFF](HANDOFF.md)를 따릅니다.
 
 ## 1. Visual Theme & Principles
 
@@ -32,8 +32,9 @@
 | **Blue Mist** | `--color-accent` | `#EDF3FF` | 선택된 항목의 옅은 배경, 하이라이트 |
 | **Warm Surface** | `--warm-surface` | `#FFF3E8` | 안내 배너 및 작은 그래픽의 따뜻한 보조 배경 |
 | **Warm Border** | `--warm-border` | `#EDC3A8` | 따뜻한 안내 배너 테두리 |
+| **Warm Ink** | `--warm-foreground` | `#A84F2A` | 따뜻한 안내 배너·확인 요청 강조의 글자색 |
 | **Destructive** | `--color-destructive` | `#BC3D3D` | 위험 행동, 삭제, 에러 상태 강조 |
-| **Focus Ring** | `--color-ring` | `#7399E8` | 키보드 포커스 테두리(`focus-visible`) |
+| **Focus Ring** | `--color-ring` | `#7399E8` | `ui/button`·`ui/input`의 포커스 보조 링(`ring-ring/50`)과 복습 작업실 포커스 외곽선 |
 
 **컴포넌트별 색상 규격:** 아래 색상은 전역 토큰이 아닌 담당 컴포넌트의 스타일입니다. 진도 게이지는 각 단계 클래스 안에서 `--stage-color`와 `--stage-track`을 설정합니다.
 
@@ -45,7 +46,7 @@
 | **Stage Practice** | `#268673` | 같은 파일의 `.practice`; 트랙 `#D9EBE5` |
 | **Entry Block Categories** | `#16A34A` 외 7종 | [`teacher.module.css`](../src/components/teacher/teacher.module.css)의 `.entryBlockPill[data-category]` 좌측 강조선·배지 색상(개념 그림의 블록 모양 `concept-visual.module.css`도 흐름·움직임·붓·생김새에 같은 색을 씀. 시작 `#16A34A`, 흐름 `#0284C7`, 움직임 `#7C3AED`, 생김새 `#E11D48`, 붓 `#EA580C`, 판단 `#2563EB`, 계산 `#D97706`, 자료 `#C026D3`) |
 
-- **액센트 규칙:** 주요 조작(CTA)은 `Clear Blue`, 키보드 포커스 테두리는 `Focus Ring`으로 일관되게 전달하며, 중요한 동작의 위계가 명확히 드러나도록 구성합니다.
+- **액센트 규칙:** 주요 조작(CTA)은 `Clear Blue`, 키보드 포커스는 [§3 입력창 기준](#3-공통-컴포넌트-명세-global-components)의 3px 외곽선으로 일관되게 전달하며, 중요한 동작의 위계가 명확히 드러나도록 구성합니다.
 - **접근성 대비:** 명암비 기준은 [§6](#6-접근성-및-ui-가이드라인-accessibility--best-practices)을 따릅니다.
 
 ### 2.2 타이포그래피 스케일 (Typography Rules)
@@ -66,11 +67,10 @@
 - **데스크톱:** 최대 1,440px 기준 그리드 (콘텐츠 최대 너비 1,200~1,440px).
 - **태블릿 / 서랍형 전환선 (820px):**
   - 화면 폭 820px 이하에서 대시보드 좌측 사이드바가 모바일 서랍형 메뉴(Drawer)로 전환됩니다.
-  - 수업 상단 헤더의 제목과 저장 상태 배지가 세로 2줄로 유연하게 재배치됩니다.
+  - 수업 헤더의 820px 이하 배치는 [§4.1](#41-수업-전용-공통-틀-lessonshell)을 따릅니다.
 - **모바일:** 390px 기준 (최소 320px까지 가로 스크롤 없이 유연하게 축소).
 - **스크롤바 안정화:** 문서 루트(`html`)에 `scrollbar-gutter: stable`을 적용해 모달 열림이나 동적 콘텐츠 로드 시 레이아웃 흔들림(CLS)을 방지합니다.
-- **스크롤바:** 사이트 전체 스크롤바는 얇게(`scrollbar-width: thin`, 연회색 `scrollbar-color`) 그려 모달·패널에 스크롤이 생겨도 자리를 적게 차지합니다. 공통 대화상자의 닫기 버튼은 36×36px 정사각형(`icon-lg`)입니다.
-- **드롭다운:** 새 선택 상자는 공용 `ui/select`를 씁니다. 남아 있는 네이티브 `<select>`는 지원 브라우저(Chromium 계열의 customizable select)에서 `appearance: base-select`로 같은 모양(흰 목록, 둥근 모서리, 그림자, 선택 항목 강조·체크, 꺾쇠 아이콘)이 되고, 미지원 브라우저는 시스템 목록을 그대로 씁니다.
+- **스크롤바:** 사이트 전체 스크롤바는 얇게(`scrollbar-width: thin`, 연회색 `scrollbar-color`) 그려 모달·패널에 스크롤이 생겨도 자리를 적게 차지합니다.
 
 ---
 
@@ -82,8 +82,10 @@
   - 보조 버튼: 투명 또는 옅은 무채색 표면. 주 버튼의 시각적 위계를 방해하지 않음.
   - 터치 타깃: 모바일과 데스크톱 모두 인터랙티브 요소는 최소 44×44px를 권장합니다.
 - **입력창 (Input / Select):**
-  - 상단 라벨, 하단 오류 메시지, 포커스 시 2px 파란색 테두리(`focus-visible: 2px solid #7399e8`).
-  - 선택 메뉴(Select)는 16px 둥근 모서리의 공통 팝오버를 사용하며, 항목별 10px 라운드 및 파란 하이라이트를 적용합니다.
+  - 상단 라벨, 하단 오류 메시지. 키보드 포커스는 [globals.css](../src/app/globals.css)의 공통 외곽선(`button`·`a`·`input`·`select`에 `3px solid #83A9F5`, 4px 띄움)이 기본이고, 컴포넌트가 따로 정할 때는 `3px solid #376FC8`을 씁니다(공용 Select 트리거와 여러 화면의 모듈 CSS). 외곽선을 지우지 않습니다.
+  - 새 선택 상자는 공용 [`ui/select`](../src/components/ui/select.tsx)를 씁니다. 목록은 16px 둥근 모서리의 공통 팝오버, 항목별 10px 라운드·파란 하이라이트·체크 표시입니다.
+  - 남은 네이티브 `<select>`는 지원 브라우저(Chromium 계열 customizable select)에서 `appearance: base-select`로 같은 모양이 되고, 미지원 브라우저는 시스템 목록을 씁니다.
+- **대화상자:** 공통 닫기 버튼은 36×36px 정사각형(`icon-lg`)입니다.
 - **알림 및 토스트 (Toast):**
   - 수업 설정 저장 성공 등 피드백은 우측 하단에 약 4초간 토스트로 노출되며 본문 레이아웃을 밀어내지 않습니다.
   - 호버 또는 포커스 시 닫힘 타이머를 일시 중지하며 닫기 버튼을 제공합니다.
