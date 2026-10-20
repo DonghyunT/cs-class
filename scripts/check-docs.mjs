@@ -2,8 +2,12 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+export const HANDOFF_MAX_BYTES = 10000;
+export const HANDOFF_MAX_RECENT = 5;
+
 export function activeDocuments(root) {
   const docs = ["AGENTS.md", "README.md"];
+  if (existsSync(path.join(root, ".github/pull_request_template.md"))) docs.push(".github/pull_request_template.md");
   const visit = (directory) => {
     for (const entry of readdirSync(path.join(root, directory), { withFileTypes: true })) {
       const relative = `${directory}/${entry.name}`;
@@ -12,8 +16,31 @@ export function activeDocuments(root) {
       else if (entry.isFile() && entry.name.endsWith(".md")) docs.push(relative);
     }
   };
-  visit("docs");
+  for (const directory of ["docs", "teaching-materials"]) if (existsSync(path.join(root, directory))) visit(directory);
   return docs;
+}
+
+// DEVELOPMENT §6.2 keeps HANDOFF short and finished plans out of docs/plans.
+export function checkHandoff(root) {
+  const handoff = path.join(root, "docs/HANDOFF.md");
+  if (!existsSync(handoff)) return [];
+  const errors = [];
+  // Count LF bytes so a CRLF checkout on Windows gives the same result as CI.
+  const content = readFileSync(handoff, "utf8").replace(/\r\n/g, "\n");
+  const bytes = Buffer.byteLength(content, "utf8");
+  if (bytes > HANDOFF_MAX_BYTES) errors.push(`docs/HANDOFF.md: ${bytes} bytes exceeds ${HANDOFF_MAX_BYTES}`);
+  const recent = content.match(/^## 최근 반영\n([\s\S]*?)(?=^## |(?![\s\S]))/m);
+  const items = recent ? recent[1].split("\n").filter((line) => line.startsWith("- ")).length : 0;
+  if (items > HANDOFF_MAX_RECENT) errors.push(`docs/HANDOFF.md: ${items} recent items exceed ${HANDOFF_MAX_RECENT}`);
+  const plans = path.join(root, "docs/plans");
+  if (existsSync(plans)) {
+    for (const entry of readdirSync(plans, { withFileTypes: true })) {
+      if (entry.isFile() && entry.name.endsWith(".md") && !content.includes(`plans/${entry.name}`)) {
+        errors.push(`docs/plans/${entry.name}: not linked from HANDOFF (finished plans go to an archive snapshot)`);
+      }
+    }
+  }
+  return errors;
 }
 
 export function anchors(content) {
@@ -72,7 +99,7 @@ export function checkDocuments(root, docs = activeDocuments(root)) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  const errors = checkDocuments(root);
+  const errors = [...checkDocuments(root), ...checkHandoff(root)];
   errors.forEach((error) => console.error(error));
   console.log(`Active documents: ${activeDocuments(root).length}; errors: ${errors.length}`);
   process.exitCode = errors.length ? 1 : 0;
