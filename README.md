@@ -101,7 +101,7 @@ flowchart LR
 ## 4. 빠르게 시작하기 (Quick Start)
 
 ### 사전 요구사항
-* **Node.js:** `24.x` (CI·Vercel과 같은 버전)
+* **Node.js:** `24.x` 중 24.12 이상(`firebase` 13 요구, CI·Vercel은 24의 최신판)
 * **Java:** `JDK 21+` (Firebase Local Emulator 실행용)
 
 ### 로컬 개발 환경 실행
