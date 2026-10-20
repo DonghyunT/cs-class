@@ -60,13 +60,13 @@ Preview와 Production 양쪽에 일반 설정 `NODE_OPTIONS=--experimental-requi
 
 main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Deployment Checks에 GitHub `app` 검사를 Production 조건으로 연결하며, 성공 전에는 새 배포를 운영 도메인에 연결하지 않습니다. 실패·취소·대기는 기존 운영 버전을 유지합니다. 불안정한 검사 때문에 `app`이 실패하면 Production 배포가 `failure`로 표시되며, 실패한 단계만 재실행(`gh run rerun <run-id> --failed`)해 성공하면 같은 SHA가 운영에 반영됩니다. 이 설정은 Vercel 대시보드에서만 바꿀 수 있어 코드나 문서만으로는 현재 상태를 알 수 없습니다. 빌드 READY와 운영 별칭 연결을 구분합니다. 게이트의 연결 상태는 [운영 환경 현황](#운영-환경-현황)에 두며, 게이트를 추가·제거하면 같은 작업에서 이 절과 현황 표를 함께 고칩니다.
 
-자동 `app` 검사는 정책·단위·정적 검사·빌드와 선별/공통 스모크이며, 전체 E2E는 승인된 `workflow_dispatch` 수동 실행으로만 수행합니다. 배포 검사 통과를 전체 E2E 통과로 바꾸어 기록하지 않습니다. 범위는 [개발 안내의 검증 매트릭스](DEVELOPMENT.md#검증)를 따릅니다. 자동 `app`은 수 분 단위로 끝나는 선별/스모크 범위이며 실제 시간은 실행별 기록을 따릅니다.
+자동 `app` 범위와 전체 E2E 실행 조건은 [검증](DEVELOPMENT.md#검증)을 따르며, 배포 검사 통과를 전체 E2E 통과로 기록하지 않습니다. 자동 `app`은 수 분 단위로 끝나는 선별/스모크 범위이며 실제 시간은 실행별 기록을 따릅니다.
 
 게이트와 workflow는 `app`이라는 검사 이름으로 맺어져 있어 아래를 함께 지킵니다.
 
 - `.github/workflows/verify.yml`의 job ID `app`을 바꾸거나 지우기 전에 Vercel의 Deployment Checks를 먼저 새 이름으로 바꿉니다. 이름이 어긋나면 새 배포가 운영에 연결되지 않고 대기합니다.
 - 커밋 메시지에 `[skip ci]`를 쓰지 않습니다. 앱 변경 커밋에서 `app` 검사가 만들어지지 않아 같은 이유로 대기합니다. 문서만 바꾼 커밋은 Vercel이 빌드를 생략(CANCELED)하므로 게이트와 무관하며 `app`도 문서 모드로 짧게 끝나, `[skip ci]`로 얻는 것이 없습니다.
-- 전체 E2E 수동 실행은 같은 SHA에 별도의 `app` 실행을 만듭니다. 이것이 같은 SHA의 배포 대기를 늘리는지는 확인하지 않았습니다. 늘릴 수 있다고 보고, 배포 직후의 `main` SHA에서는 운영 반영을 확인한 뒤 실행하며, 승인된 전체 검사의 실행 위치는 [검증](DEVELOPMENT.md#검증)을 따릅니다.
+- 전체 E2E 수동 실행은 같은 SHA에 별도 `app` 실행을 만들어 배포 대기를 늘릴 수 있습니다(미확인). [검증](DEVELOPMENT.md#검증)대로 병합 전 PR 브랜치에서 실행하고, `main`에서 돌려야 하면 운영 반영을 확인한 뒤 실행합니다.
 
 문서 전용 변경은 `vercel.json`의 Ignored Build Step으로 앱 빌드를 생략합니다. `VERCEL_GIT_PREVIOUS_SHA`(같은 프로젝트·브랜치의 마지막 성공 배포)부터 비교하며 기준 없음·이력 부족·판정 실패는 빌드를 진행합니다. Vercel은 판정 전에 제외 파일을 지우므로 `.vercelignore`에서 Git commit 메타데이터는 남기고 인증 config·hooks·logs는 제외합니다. 생략은 CANCELED로 표시되고 배포 한도에 포함될 수 있습니다. 문서 push 뒤 main과 운영 SHA가 달라도 정상입니다.
 
@@ -147,9 +147,10 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 
 개인 비밀번호 계정은 Firebase REST로 앱 장부 밖에서 인증·비밀번호 변경을 시도할 수 있습니다. 임시 입장은 이 경로에서 차단했지만 정상 개인 비밀번호는 호환성을 유지합니다. Firebase Console의 Authentication 비밀번호 정책(Require·최소 8자·영문/숫자)과 Identity Toolkit 남용 방어·할당량을 운영 수업의 동시 입장 규모에 맞춰 별도로 확인합니다. 설정의 현재 강제 여부는 이 코드 검사로 입증하지 않으며 실제 변경은 기존 사용자의 영향을 확인한 뒤 적용합니다. 관련 공식 문서: [비밀번호 정책](https://firebase.google.com/docs/auth/web/password-auth#recommended_set_a_password_policy), [할당량](https://firebase.google.com/docs/auth/limits).
 
-운영 네이티브 8자 정책이나 `passwordPolicyConfig` 강제는 기존 사용자의 입장을 차단하는 `forceUpgradeOnSignin` 등을 감안해 점진적으로 검토합니다.
+운영 네이티브 8자 정책·`passwordPolicyConfig` 강제는 `forceUpgradeOnSignin` 등으로 기존 학생 입장을 막을 수 있어 사용자 승인 없이 켜지 않습니다.
 
-## 데이터와 남은 한계
+## 데이터 구조와 보안 경계
+<a id="데이터와-남은-한계"></a>
 
 실학생 Excel 변환·사전 충돌 확인·등록·반별 30분 발급·제한된 학습 백업의 실제 명령과 중단 처리는 [명부 운영 안내](DEVELOPMENT.md#실학생-명부-준비와-반별-발급)를 따릅니다. 사전 등록은 임시값 없이 준비하고 수업 직전 별도 발급합니다. 기존 계정·수업 설정·학습 기록을 승인 없이 일괄 변경하지 않습니다.
 
@@ -160,7 +161,7 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 - `csSchedules/{classId}`: 반 일정의 `revision`과 `items`(항목 ID·제목·한국 날짜·선택 수업 ID). 학생은 본인 반 조회만, 교사·강사는 담당 반 조회·수정만 허용합니다. 계정·반 권한·열린 수업을 같은 서버 트랜잭션에서 확인합니다.
 - `csTimetables/74022`: 정규화한 학교 정보 수업의 날짜·반·교시·시작 시각·변경 표시·원본 수정 시각·확인 시각과 비공개 갱신 lease/시도 시각/예약 성공 날짜. 서버 조회에서 반을 제한하고 lease 인증값은 응답하지 않습니다. 직접 일정과 저장소를 분리해 갱신 실패나 수업 교체가 수동 기록을 덮어쓰지 않습니다.
 - 데이터는 서버 API로만 접근하며 직접 Firestore 접근은 차단합니다. 쓰기는 Origin·세션 UID·revision을 검사합니다. 재시도·동시 변경의 제품 의미는 [PRD §3.2](PRD.md#작업-저장과-통신-비용), 일정 한도는 [PRD §5.3](PRD.md#작은-버전의-경계와-저장-동작)을 기준으로 합니다.
-- `csRateLimits`, `csGoogleExchanges`: 로그인 제한과 Google 로그인 토큰 재사용 방지. 로그인 제한은 출처·계정 단위 횟수만 저장합니다. 2026-10-18 이전 기록의 정리 기준은 [운영 환경 현황](#운영-환경-현황)에 있습니다. 후속 운영에서 보관 기간·정리 작업을 마련합니다.
+- `csRateLimits`, `csGoogleExchanges`: 로그인 제한과 Google 로그인 토큰 재사용 방지. 로그인 제한은 출처·계정 단위 횟수만 저장합니다. 2026-10-18 이전의 비밀번호별 기록(`credential:` 키)은 문서 ID가 해시라 이름으로 구분할 수 없으므로, `start`가 #44 배포(2026-10-18 00:52 KST) 이전인 문서를 지웁니다(모두 만료된 기록이라 기능 영향 없음, 운영 DB 작업 승인 필요). 남은 상태는 [운영 환경 현황](#운영-환경-현황)에 있습니다. 후속 운영에서 보관 기간·정리 작업을 마련합니다.
 - 무활동 만료·연장·동시 접속·저장 기록의 제품 정책은 [PRD의 로그인 정책](PRD.md#로그인-정책)에 모읍니다. 서버 세션은 계정의 세션 해시·활동 시각과 대조합니다.
 - 세션 쿠키는 HttpOnly·SameSite=Strict, 배포 환경 Secure이며 지속 만료일을 넣지 않습니다. 브라우저의 세션 복원 기능은 쿠키를 복구할 수 있어 창 닫기를 절대적인 로그아웃 보장으로 취급하지 않습니다. 공용 PC에서는 로그아웃을 사용합니다.
 - 미전송 초안과 강제 종료 후 복구 경계는 [PRD의 저장 정책](PRD.md#작업-저장과-통신-비용), 미해결 제품·운영 과제는 [HANDOFF](HANDOFF.md#남은-한계와-다음-결정)에 있습니다. EntryJS 실행·자산·검사는 [개발 안내](DEVELOPMENT.md#entryjs-실습)를 따릅니다.
@@ -177,7 +178,7 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 | 서버 함수 지역 | Vercel `cs-class` Production 배포가 `icn1`(서울) | 2026-10-18, #44 배포 정보 |
 | 운영 도메인 | `cs-class-donghyunt.vercel.app`, Firebase Authentication 허용 목록에 등록 | 2026-09-28 사용자 승인으로 등록 |
 | Production 환경변수 | Firebase 웹 설정 3개·관리자 JSON·교사 허용 목록·초기/초기화 비밀번호 7개(Production 전용 Secret), `CRON_SECRET`, `UPSTAGE_API_KEY`·`CS_AI_COMMAND_SECRET`(Production 전용 Sensitive) | 2026-10-13판 문서 기록 |
-| 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-18, #44 병합에서 `app` 성공 2초 뒤 공개. 2026-10-19 `app` 실패(`90659bc`)는 Production을 막았고 실패 단계 재실행 성공 뒤 반영. 2026-10-20 `a24e0cc`·`334cca0`·`d0dacec` 모두 `app` 성공 3~4초 뒤 공개 |
+| 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-19 `app` 실패가 Production을 막음을 확인, 2026-10-20 `d0dacec`까지 `app` 성공 3~4초 뒤 공개 |
 | 실행 설정 `NODE_OPTIONS` | Preview·Production에 `--experimental-require-module` | 2026-09-30 보관 인계 기록(재확인 안 함) |
 | Firestore 규칙 | 전체 거부(서버 전용), 운영 적용본 대조 미확인 | 확인 안 함 |
 | 배포 보존 기간 | Build and Deployment의 Deployment Retention Policy 네 항목 모두 1주. Hobby 롤백은 직전 Production까지만 되므로 늘리지 않음 | 2026-10-18 대시보드 확인(Deployment Storage 4.97/10 GB) |
@@ -188,4 +189,4 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 | 인증 제공자 | 이메일/비밀번호·Google 활성. 네이티브 비밀번호 정책의 강제 여부는 미확인(점진 검토 대상) | 2026-10-13판 문서 기록 |
 | 운영 계정 | 승인된 체험 계정 12개(2026-10-03). 실제 학생 계정 297개(2-1~2-11반 각 1~27번, 2026학년도 명부)를 사전 등록했고 임시 비밀번호는 아직 발급하지 않음. 실제 인원이 27명보다 적은 반은 없는 번호의 계정도 있음 | 2026-10-19 사용자 승인으로 `student-roster.mjs` register·backup |
 | 강사 계정 `instructor` | 담당 반 10·11반(체험용 1~11반에서 줄임). 비밀번호는 아직 체험용 공통 비밀번호이며 사용자가 Firebase 콘솔에서 바꿀 예정 | 2026-10-18 운영 DB 쓰기·확인 |
-| 로그인 제한 문서 | `csRateLimits`에 2026-10-18 이전의 비밀번호별 기록(`credential:` 키)이 남음. 문서 ID가 해시라 이름으로는 구분할 수 없으므로, `start`가 #44 배포(2026-10-18 00:52 KST) 이전인 문서를 지웁니다(모두 만료된 기록이라 기능 영향 없음). 소금 없는 비밀번호 해시가 섞여 있어 우선 정리 대상이며, 운영 DB 작업 승인이 필요 | 2026-10-18 |
+| 로그인 제한 문서 | 옛 `credential:` 기록 남음(소금 없는 해시 포함), 삭제 대기·운영 DB 승인 필요 | 2026-10-18 |

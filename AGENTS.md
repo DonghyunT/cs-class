@@ -16,7 +16,7 @@
 | 제품 기능·요구사항·저장 정책 | [PRD](docs/PRD.md) | 기능 정책, 권한 경계, 수동 저장 기준 |
 | 화면 레이아웃·UI·상호작용 | [DESIGN](docs/DESIGN.md) | 수업 공통 틀, 색상, 포커스, 반응형 기준 |
 | 개발 환경·체크리스트·검증 | [DEVELOPMENT](docs/DEVELOPMENT.md) | [반영 경로](docs/DEVELOPMENT.md#위험도별-반영-경로), [수업 추가 체크리스트](docs/DEVELOPMENT.md#신규-수업-추가-및-선별-검증-연동-체크리스트), 에뮬레이터 |
-| Firebase·배포·서버 설정 | [FIREBASE_SETUP](docs/FIREBASE_SETUP.md) | Vercel 배포 및 검증, Rules, 복구 절차 |
+| Firebase·배포·서버 설정 | [FIREBASE_SETUP](docs/FIREBASE_SETUP.md) | Vercel 배포·공개 후 확인, Rules, 복구 절차 |
 | 저장소 구조·문서 목차 | [README](README.md) | 폴더 구조, 문서 목록 |
 | 현재 진행 상태·남은 작업 | [HANDOFF](docs/HANDOFF.md) | 현재 상태, 최근 반영·검증, 다음 작업, 남은 한계 |
 | 문서 수정 | [DEVELOPMENT §6](docs/DEVELOPMENT.md#문서-작성-기준) | 주제별 단일 위치, HANDOFF 작성 기준 |
