@@ -1,0 +1,12 @@
+{
+  "archivedAt": "2026-10-20 Asia/Seoul",
+  "sourceCommit": "14472ca",
+  "files": [
+    {
+      "source": "AGENTS.md",
+      "archived": "AGENTS-before-boundaries.md",
+      "bytes": 6544,
+      "sha256": "8d0e908aa8d1aebadaaebe603749a20e0c023decff1c2d0b7c5845deb989e16f"
+    }
+  ]
+}

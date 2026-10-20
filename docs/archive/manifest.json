@@ -224,6 +224,13 @@
       "origin": "completed-plan-archived-20261020",
       "baseCommit": "d0dacec",
       "sha256": "76019c60c9ee1ca8cad0de60655f7738f3373898f96a498d4e246a50250715cb"
+    },
+    {
+      "source": "AGENTS.md",
+      "archive": "docs/archive/cs-class/2026-10-20-before-agents-boundaries/AGENTS-before-boundaries.md",
+      "origin": "agents-before-boundaries-20261020",
+      "baseCommit": "14472ca",
+      "sha256": "8d0e908aa8d1aebadaaebe603749a20e0c023decff1c2d0b7c5845deb989e16f"
     }
   ]
 }

@@ -4,6 +4,8 @@
 
 ## 보관 기록
 
+- **[2026-10-20 AGENTS.md 재구성 전 원문](cs-class/2026-10-20-before-agents-boundaries/manifest.json):** 작업 순서와 3단 경계를 넣기 직전의 `AGENTS.md`를 다른 이름으로 내용 그대로 보존했습니다([안내](cs-class/2026-10-20-before-agents-boundaries/README.md)).
+
 - **[2026-10-20 완료 계획 원문](cs-class/2026-10-20-completed-plans/manifest.json):** PR #59로 공개된 축제 미연시 개선 계획을 `docs/plans/`에서 `git mv`로 옮겨 내용 그대로 보존했습니다([안내](cs-class/2026-10-20-completed-plans/README.md)).
 
 - **[2026-10-17 저장소 전체 점검 보고서](cs-class/2026-10-17-repo-audit/manifest.json):** main@8afb5fb 기준 읽기 전용 점검 보고서(발견 F1~F7)를 점검 PC의 Git 제외 폴더에서 바이트 그대로 옮겼습니다. 처리 상태는 현재 HANDOFF를 따릅니다([안내](cs-class/2026-10-17-repo-audit/README.md)).
