@@ -133,7 +133,6 @@ test("설정 저장: 실패 시 입력 유지·재시도·초점 복귀·토스�
   await expect(added).toBeChecked();
   await expect(currentPicker).toHaveText(RELEASED_LESSONS[1].title);
   await expect(summary).toContainText("새로 공개할 수업 1개");
-  await expect(summary).toContainText("저장 후에는 이 화면에서 공개를 취소할 수 없어요.");
   await expect(toast).toHaveCount(0);
   expect((await classRef.get()).data()).toMatchObject({ revision: 0, currentLessonId: lessonId, openedLessonIds: [lessonId, legacyLessonId] });
 
@@ -223,7 +222,7 @@ test("[후속3b-요약] 공개 선택·해제·취소와 이번 수업만 변경
   const summary = dialog.getByRole("region", { name: "저장할 수업 설정", exact: true });
   const added = dialog.getByRole("checkbox", { name: new RegExp(newlyOpened.title) });
   const currentPicker = dialog.getByRole("combobox", { name: "이번 수업", exact: true });
-  const warning = summary.getByText("저장 후에는 이 화면에서 공개를 취소할 수 없어요.", { exact: true });
+  const warning = summary.getByText(/^닫을 수업/);
   await expect(summary).toContainText("새로 공개할 수업이 없어요.");
   await expect(summary).toContainText(`이번 수업 유지: ${first.title}`);
   await expect(warning).toHaveCount(0);
@@ -232,7 +231,7 @@ test("[후속3b-요약] 공개 선택·해제·취소와 이번 수업만 변경
   await expect(added.locator("..").getByText("저장하면 학생에게 공개돼요", { exact: true })).toBeVisible();
   await expect(summary).toContainText("새로 공개할 수업 1개");
   await expect(summary.getByText(longTitle, { exact: true })).toBeVisible();
-  await expect(warning).toBeVisible();
+  await expect(warning).toHaveCount(0);
   await currentPicker.click();
   await page.getByRole("option", { name: longTitle, exact: true }).click();
   await expect(summary).toContainText(`이번 수업 변경: ${longTitle}`);
@@ -340,7 +339,7 @@ test("[후속3b-충돌] 다른 교사 공개 후 409·최신 조회로 공개 �
     await expect(summary.getByText(otherTeacherOpened.title, { exact: true })).toHaveCount(0);
     await expect(summary).toContainText(`이번 수업 변경: ${ownChoice.title}`);
     await expect(other).toBeChecked();
-    await expect(other).toBeDisabled();
+    await expect(other).toBeEnabled();
     await expect(own).toBeChecked();
     await expect(currentPicker).toHaveText(ownChoice.title);
     await expect(save).toBeEnabled();
@@ -411,4 +410,43 @@ test("교사·학생 탐색 메뉴: 동일한 아이콘 수·현재 화면 표�
     }
   }
   expect(errors).toEqual([]);
+});
+
+test("[수업 닫기] 열린 수업의 체크를 풀어 닫으면 학생에게서 사라지고 다시 열면 이어할 수 있다", async ({ page, request }) => {
+  const [first, second] = RELEASED_LESSONS;
+  await readyStudent(request);
+  await readyTeacher(page.request);
+  await classRef.set({ id: "2-1", name: "2학년 1반", revision: 0, currentLessonId: second.id, openedLessonIds: [first.id, second.id] });
+  expect((await request.get(`/api/classroom/work/${second.id}`)).status()).toBe(200);
+
+  await page.goto("/teacher/classes?classId=2-1");
+  await page.getByRole("button", { name: "수업 관리", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "2학년 1반 수업 관리", exact: true });
+  const opened = dialog.getByRole("checkbox", { name: new RegExp(second.title) });
+  await expect(opened).toBeEnabled();
+  await opened.uncheck();
+  const summary = dialog.getByRole("region", { name: "저장할 수업 설정", exact: true });
+  await expect(summary).toContainText("닫을 수업 1개");
+  await expect(summary).toContainText("이번 수업 미지정");
+  await expect(opened.locator("..").getByText("저장하면 학생 화면에서 닫혀요", { exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "설정 저장", exact: true }).click();
+  await expect(page.getByText("2학년 1반 수업 설정을 저장했어요.")).toBeVisible();
+  expect((await classRef.get()).data()).toMatchObject({ revision: 1, currentLessonId: null, openedLessonIds: [first.id] });
+
+  const closed = await request.get(`/api/classroom/work/${second.id}`);
+  expect(closed.status()).toBe(403);
+  expect(await closed.json()).toMatchObject({ code: "LESSON_CLOSED" });
+  expect((await (await request.get("/api/classroom/student/class")).json()).lessons.map((lesson: { id: string }) => lesson.id)).toEqual([first.id]);
+  // A teacher link to the closed lesson falls back to an open one instead of failing.
+  const dashboard = await page.request.get(`/api/classroom/teacher?classId=2-1&lessonId=${second.id}`);
+  expect(dashboard.status()).toBe(200);
+  expect((await dashboard.json()).selectedLessonId).toBe(first.id);
+
+  await page.reload();
+  await page.getByRole("button", { name: "수업 관리", exact: true }).click();
+  await opened.check();
+  await expect(summary).toContainText("새로 공개할 수업 1개");
+  await dialog.getByRole("button", { name: "설정 저장", exact: true }).click();
+  await expect.poll(async () => (await classRef.get()).data()?.openedLessonIds).toEqual([first.id, second.id]);
+  expect((await request.get(`/api/classroom/work/${second.id}`)).status()).toBe(200);
 });
