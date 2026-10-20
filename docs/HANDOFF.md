@@ -27,7 +27,7 @@
 
 - **전체 E2E:** 마지막 실행은 10/20 `main`(`a24e0cc`) run 39375010793으로 420 통과·14 생략·1 실패였고, 실패한 `classroom-api`는 `334cca0`에서 고쳤지만 전체 재실행은 하지 않았습니다. 마지막 `main` 전체 성공은 10/18 `7264de7`(run 39063459497)입니다. Firebase 5xx·차단 응답 E2E는 없습니다(#44).
 - **CI·로컬 검사 불안정:** 10/19 `main` CI가 `programming-classroom`의 10초 대기 검사에서 한 번 실패해 재실행으로 통과했습니다. 로컬에서는 새로 켠 서버의 첫 실행에서만 `entry-assets`·`flowchart-auto-completion`(#67) 검사가 실패하고 켜 둔 서버에서는 통과합니다(원인 미확정). 반복되면 대기 시간 기준을 점검합니다.
-- **운영 계정·DB 대기:** `instructor` 체험용 비밀번호 교체(사용자, Firebase 콘솔)와 `csRateLimits` 옛 기록 삭제(운영 DB 승인 필요)가 남았습니다([운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)).
+- **운영 계정 대기:** `instructor` 체험용 비밀번호 교체(사용자, Firebase 콘솔)가 남았습니다. `csRateLimits` 옛 기록은 10/20에 정리했습니다([운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)).
 - **의존성:** 10/20 점검 뒤 `npm audit` 23건(보통 4·높음 19)이 남습니다. 고친 판이 없거나(`braces`) 메이저 업그레이드가 필요한 개발 도구(`shadcn`·`eslint-config-next`·`firebase-tools` 안)이며 운영 화면 경로가 아닙니다. `firebase` 13에서도 `@firebase/firestore`가 `@grpc/grpc-js ~1.9.0`에 묶여 GHSA-m9gg-hp2v-232j가 남지만, 앱은 클라이언트에서 `firebase/app`·`firebase/auth`만 쓰고 Firestore는 서버의 `firebase-admin`(grpc-js 1.14.5)으로 다룹니다.
 - **무료 한도:** 하루 4반×27명×45분의 정기 읽기는 측정 환산 약 2.9만 회(과금 실측 아님)이고, 진입·저장·채점은 별도라 일일 무료 읽기 5만 회 안을 보장하지 않습니다.
 - **복습 확인 결정(#46):** 학생 화면은 저장·재접속 전까지 교사 결정을 받지 않고, 그 전 재요청은 결정 메시지를 덮습니다.
