@@ -31,6 +31,7 @@ export function ManageLessons({ classroom, lessons, onSaved, onLock, onRefresh, 
   const [refreshed, setRefreshed] = useState(false);
   const [reloading, setReloading] = useState(false);
   const newlyOpened = lessons.filter(lesson => draft.openedLessonIds.includes(lesson.id) && !baseline.openedLessonIds.includes(lesson.id));
+  const closing = lessons.filter(lesson => baseline.openedLessonIds.includes(lesson.id) && !draft.openedLessonIds.includes(lesson.id));
   const currentLesson = lessons.find(lesson => lesson.id === draft.currentLessonId);
   useEffect(() => {
     if (!initialOpen) { requestConsumed.current = false; return; }
@@ -60,7 +61,13 @@ export function ManageLessons({ classroom, lessons, onSaved, onLock, onRefresh, 
       const latest = await onRefresh();
       if (latest && latest.classroom.id === classroom.id) {
         setBaseline({ ...latest.classroom, openedLessonIds: [...latest.classroom.openedLessonIds] });
-        setDraft((previous) => ({ ...previous, revision: latest.classroom.revision, openedLessonIds: [...new Set([...latest.classroom.openedLessonIds, ...previous.openedLessonIds])] }));
+        // Apply only this teacher's own changes onto the latest list, so another teacher's opening or closing is kept.
+        setDraft((previous) => {
+          const added = previous.openedLessonIds.filter((id) => !baseline.openedLessonIds.includes(id));
+          const closed = baseline.openedLessonIds.filter((id) => !previous.openedLessonIds.includes(id));
+          const openedLessonIds = [...new Set([...latest.classroom.openedLessonIds, ...added])].filter((id) => !closed.includes(id));
+          return { ...previous, revision: latest.classroom.revision, openedLessonIds, currentLessonId: previous.currentLessonId && openedLessonIds.includes(previous.currentLessonId) ? previous.currentLessonId : null };
+        });
         setConflict(false); setError(""); setRefreshed(true);
       }
     } finally { pending.current = false; setReloading(false); }
@@ -73,10 +80,10 @@ export function ManageLessons({ classroom, lessons, onSaved, onLock, onRefresh, 
   }}>
     <DialogTrigger render={<Button ref={trigger} />}><Settings2 size={16} aria-hidden="true" />수업 관리</DialogTrigger>
     <DialogContent className={styles.dialog} showCloseButton={!saving && !reloading} finalFocus={trigger}>
-      <DialogHeader><DialogTitle>{classroom.name} 수업 관리</DialogTitle><DialogDescription>학생에게 열어 줄 수업과 이번 수업을 정해 주세요. 이미 열린 수업과 학생 작업은 유지돼요.</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>{classroom.name} 수업 관리</DialogTitle><DialogDescription>학생에게 열어 줄 수업과 이번 수업을 정해 주세요. 수업을 닫아도 학생 작업은 지워지지 않아요.</DialogDescription></DialogHeader>
       <fieldset className={styles.lessonOptions} disabled={saving || reloading}><legend>열린 수업</legend>
         {lessons.length === 0 && <p>지금은 공개할 수업이 없어요.</p>}
-        {lessons.map((lesson) => <label key={lesson.id}><input type="checkbox" checked={draft.openedLessonIds.includes(lesson.id)} disabled={baseline.openedLessonIds.includes(lesson.id)} onChange={(event) => { const checked = event.currentTarget.checked; setDraft((previous) => ({ ...previous, openedLessonIds: checked ? [...previous.openedLessonIds, lesson.id] : previous.openedLessonIds.filter((id) => id !== lesson.id), currentLessonId: !checked && previous.currentLessonId === lesson.id ? null : previous.currentLessonId })); }} /><span><strong>{lesson.title}</strong><small>{baseline.openedLessonIds.includes(lesson.id) ? "이미 열린 수업 · 복습 가능" : "저장하면 학생에게 공개돼요"}</small></span></label>)}
+        {lessons.map((lesson) => <label key={lesson.id}><input type="checkbox" checked={draft.openedLessonIds.includes(lesson.id)} onChange={(event) => { const checked = event.currentTarget.checked; setDraft((previous) => ({ ...previous, openedLessonIds: checked ? [...previous.openedLessonIds, lesson.id] : previous.openedLessonIds.filter((id) => id !== lesson.id), currentLessonId: !checked && previous.currentLessonId === lesson.id ? null : previous.currentLessonId })); }} /><span><strong>{lesson.title}</strong><small>{baseline.openedLessonIds.includes(lesson.id) ? (draft.openedLessonIds.includes(lesson.id) ? "열린 수업 · 체크를 풀면 닫혀요" : "저장하면 학생 화면에서 닫혀요") : "저장하면 학생에게 공개돼요"}</small></span></label>)}
       </fieldset>
       {/* Reset only the choice menu when its options change; Base UI otherwise falls back to its old initial value. */}
       <label className={styles.dialogField}>이번 수업<Select key={draft.openedLessonIds.join(":")} label="이번 수업" value={draft.currentLessonId ?? ""} disabled={saving || reloading} onValueChange={(value) => setDraft((previous) => ({ ...previous, currentLessonId: value || null }))} options={[{ value: "", label: "지정하지 않음" }, ...lessons.filter((lesson) => draft.openedLessonIds.includes(lesson.id)).map((lesson) => ({ value: lesson.id, label: lesson.title }))]} /></label>
@@ -84,7 +91,7 @@ export function ManageLessons({ classroom, lessons, onSaved, onLock, onRefresh, 
         <h3>{newlyOpened.length ? `새로 공개할 수업 ${newlyOpened.length}개` : "새로 공개할 수업이 없어요."}</h3>
         {newlyOpened.length > 0 && <ul>{newlyOpened.map(lesson => <li key={lesson.id}>{lesson.title}</li>)}</ul>}
         <p>{!draft.currentLessonId ? "이번 수업 미지정" : `이번 수업 ${draft.currentLessonId === baseline.currentLessonId ? "유지" : "변경"}: ${currentLesson?.title ?? draft.currentLessonId}`}</p>
-        {newlyOpened.length > 0 && <p className={styles.dialogNote}>저장 후에는 이 화면에서 공개를 취소할 수 없어요.</p>}
+        {closing.length > 0 && <><h3>닫을 수업 {closing.length}개</h3><ul>{closing.map(lesson => <li key={lesson.id}>{lesson.title}</li>)}</ul><p className={styles.dialogNote}>닫으면 학생 목록에서 사라지고, 그 수업을 열어 둔 학생은 더 저장할 수 없어요. 작업은 남아 있어 다시 열면 이어서 할 수 있어요.</p></>}
       </section>
       {error && <p role="alert" className={styles.dialogError}>{error}</p>}
       {conflict && <Button variant="outline" disabled={reloading} onClick={() => void refreshSettings()}>{reloading ? "확인 중…" : "최신 설정 확인 후 다시 적용"}</Button>}

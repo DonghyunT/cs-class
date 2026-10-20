@@ -251,6 +251,90 @@ input,
 select {
   font: inherit;
 }
+/* Slim, quiet scrollbars so a scrolling panel or dialog keeps its layout and controls. */
+html {
+  scrollbar-color: #c3ccd8 transparent;
+}
+* {
+  scrollbar-width: thin;
+}
+/* Native selects keep their semantics but get a list styled like the shared Select (ui/select.module.css).
+   Browsers without customizable select keep the plain system list. */
+@supports (appearance: base-select) {
+  select,
+  ::picker(select) {
+    appearance: base-select;
+  }
+  select {
+    align-items: center;
+    gap: 0.5em;
+    border: 1px solid #d1d9e5;
+    border-radius: 10px;
+    background: #fff;
+    color: #202b3a;
+    cursor: pointer;
+  }
+  select:hover:not(:disabled) {
+    border-color: #aabbd2;
+  }
+  select:disabled {
+    cursor: default;
+  }
+  select::picker-icon {
+    content: "";
+    flex-shrink: 0;
+    width: 1.1em;
+    height: 1.1em;
+    background: #62718a;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+    transition: rotate 120ms ease;
+  }
+  select:open::picker-icon {
+    rotate: 180deg;
+  }
+  ::picker(select) {
+    margin-block: 6px;
+    padding: 6px;
+    max-height: min(320px, 60dvh);
+    border: 1px solid #dce5f1;
+    border-radius: 14px;
+    background: #fff;
+    color: #202b3a;
+    box-shadow: 0 12px 36px #233b6326;
+    overscroll-behavior: contain;
+  }
+  option {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 40px;
+    padding: 8px 12px;
+    border-radius: 9px;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  option::checkmark {
+    order: 1;
+    margin-left: auto;
+    color: #376fc8;
+  }
+  option:checked {
+    background: #f0f5fc;
+    color: #2e5fab;
+    font-weight: 600;
+  }
+  option:hover,
+  option:focus-visible {
+    outline: none;
+    background: #e7effc;
+    color: #244f92;
+  }
+  option:disabled {
+    color: #8a96a8;
+  }
+}
 .demo-banner {
   background: #f0f3f9;
   color: #5d6880;

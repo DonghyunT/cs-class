@@ -109,8 +109,8 @@ export async function teacherDashboard(classId?: string, lessonId?: string): Pro
     const classroom = classrooms.find((c) => c.id === selectedClassId);
     requireCondition(classroom, 404, "CLASS_NOT_FOUND", "아직 준비되지 않은 반이에요.");
     const openedReleased = classroom.openedLessonIds.filter((id) => RELEASED_LESSONS.some((lesson) => lesson.id === id));
-    const selectedLessonId = lessonId ?? (classroom.currentLessonId && openedReleased.includes(classroom.currentLessonId) ? classroom.currentLessonId : openedReleased[0] ?? null);
-    requireCondition(selectedLessonId === null || classroom.openedLessonIds.includes(selectedLessonId), 400, "INVALID_LESSON", "이 반에 열린 수업을 선택해 주세요.");
+    // A lesson can be closed after a link to it was made, so fall back to the default lesson instead of failing.
+    const selectedLessonId = lessonId && classroom.openedLessonIds.includes(lessonId) ? lessonId : classroom.currentLessonId && openedReleased.includes(classroom.currentLessonId) ? classroom.currentLessonId : openedReleased[0] ?? null;
     const roster = await tx.get(admin().db.collection("csAccounts").where("classId", "==", selectedClassId));
     const students = roster.docs.map((doc) => doc.data() as Account).filter((student): student is Account & { studentId: string } => student.role === "student" && !student.disabled && !!student.studentId);
     const workSnapshots = selectedLessonId && students.length ? await tx.getAll(...students.map((student) => workRef(student.uid, selectedLessonId))) : [];
@@ -162,7 +162,6 @@ export async function updateClass(classId: string, payload: unknown) {
     requireCondition(previous, 404, "CLASS_NOT_FOUND", "반을 찾을 수 없어요.");
     requireCondition(previous.revision === change.revision, 409, "REVISION_CONFLICT", "수업 설정이 변경됐어요. 최신 설정을 불러와 주세요.");
     requireCondition(change.openedLessonIds.every(id => previous.openedLessonIds.includes(id) || RELEASED_LESSONS.some(lesson => lesson.id === id)), 400, "LESSON_NOT_RELEASED", "아직 공개 준비가 끝나지 않은 수업이에요.");
-    requireCondition(previous.openedLessonIds.every((id) => change.openedLessonIds.includes(id)), 400, "CLOSING_NOT_SUPPORTED", "한 번 열린 수업은 복습할 수 있도록 유지해요.");
     const next = { ...previous, ...change, revision: previous.revision + 1 };
     tx.set(ref, next); return next;
   });
