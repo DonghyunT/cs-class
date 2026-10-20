@@ -117,13 +117,15 @@ test("조회·자동 저장은 비활동 시간을 연장하지 않음 · 만료
   expect((await request.post("/api/auth/activity", { headers, data: { idleForMs: 0 } })).status()).toBe(401);
 });
 
-test("교사 수업 설정 동시 변경 · 공개 유지 · 요청 출처/크기 검사", async ({ request }) => {
+test("교사 수업 설정 동시 변경 · 수업 닫기 · 요청 출처/크기 검사", async ({ request }) => {
   await readyStudent(request); await readyTeacher(request);
   const endpoint = "/api/classroom/classes/2-1";
   const data = { revision: 0, currentLessonId: null, openedLessonIds: [lessonId] };
   expect((await request.post(endpoint, { headers, data })).status()).toBe(200);
   expect((await request.post(endpoint, { headers, data })).status()).toBe(409);
-  expect((await request.post(endpoint, { headers, data: { ...data, revision: 1, openedLessonIds: [] } })).status()).toBe(400);
+  // Closing an opened lesson is allowed; the current lesson must still be one of the opened lessons.
+  expect((await request.post(endpoint, { headers, data: { ...data, revision: 1, openedLessonIds: [] } })).status()).toBe(200);
+  expect((await request.post(endpoint, { headers, data: { revision: 2, currentLessonId: lessonId, openedLessonIds: [] } })).status()).toBe(400);
   expect((await request.post(endpoint, { headers: { ...headers, Origin: "https://other.invalid" }, data })).status()).toBe(403);
   expect((await request.post(endpoint, { data })).status()).toBe(403);
   expect((await request.post(endpoint, { headers, data: { padding: "x".repeat(33000) } })).status()).toBe(413);
