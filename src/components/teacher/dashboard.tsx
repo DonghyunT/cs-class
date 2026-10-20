@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Toast } from "@base-ui/react/toast";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, ChevronDown, ClipboardCheck, KeyRound, LayoutGrid, List, Search, ShieldCheck, Users } from "lucide-react";
+import { CheckCircle2, ChevronDown, ClipboardCheck, DoorOpen, KeyRound, LayoutGrid, List, Search, ShieldCheck, Users } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { HelpRequests } from "@/components/classroom/help-requests";
 import { DashboardArt } from "@/components/dashboard-art";
@@ -19,7 +19,7 @@ import { CLASSROOM_HELP_ENABLED } from "@/lib/classroom/features";
 import { progressFor, STATUS_LABELS, submissionCountFor } from "@/lib/classroom/progress";
 import { missionsFor, requiredMissionsFor } from "@/lib/classroom/programming-entry";
 import type { ClassSettings, Lesson, Progress, Stage, StudentRow, TeacherDashboard, WorkSummary } from "@/lib/classroom/types";
-import { BulkIssuePasswords, ManageLessons, ResetPassword, SubmissionViewer } from "./dialogs";
+import { BulkIssuePasswords, FirstEntry, ManageLessons, ResetPassword, SubmissionViewer } from "./dialogs";
 import { dateLabel, problemMessage } from "./presentation";
 import { TeacherToolbar } from "./teacher-toolbar";
 import { ClassPreparationTable } from "./class-preparation-table";
@@ -49,6 +49,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
   const [pendingOnly, setPendingOnly] = useState(review === "pending");
   const [studentDialog, setStudentDialog] = useState<StudentDialog | null>(null);
   const [bulkIssue, setBulkIssue] = useState(false);
+  const [firstEntry, setFirstEntry] = useState(false);
   const pendingFilter = useRef<HTMLInputElement>(null);
   const workspaceHeading = useRef<HTMLHeadingElement>(null);
   const [layout, setLayout] = useState<"list" | "grid">("list");
@@ -193,7 +194,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
           <Select label="진행 상태" value={statusFilter} disabled={!regularLesson} onValueChange={setStatusFilter} options={[{ value: "all", label: "모든 진행" }, ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))]} />
           <label className={styles.search}><Search size={17} aria-hidden="true" /><span className="sr-only">학번·닉네임 검색</span><Input placeholder="학번·닉네임 검색" type="search" value={search} onChange={(event) => { setSearch(event.target.value); setUrlConditions({ q: event.target.value.trim() || null, studentId: null }); }} /></label>
         </div></div>
-        <div className={styles.resultToolbar}><p className={styles.resultCount} role="status">{filtered.length}명 표시 · 전체 {active.students.length}명</p>{active.students.some(student => student.mustChangePassword) && <Button variant="outline" onClick={() => setBulkIssue(true)}><KeyRound size={15} aria-hidden="true" />임시 비밀번호 한꺼번에 발급</Button>}<div className={styles.viewToggle} role="group" aria-label="학생 현황 보기"><Button variant="ghost" aria-label="목록 보기" title="목록 보기" aria-pressed={layout === "list"} onClick={() => setLayout("list")}><List size={17} aria-hidden="true" /></Button><Button variant="ghost" aria-label="격자 보기" title="격자 보기" aria-pressed={layout === "grid"} onClick={() => setLayout("grid")}><LayoutGrid size={17} aria-hidden="true" /></Button></div></div>
+        <div className={styles.resultToolbar}><p className={styles.resultCount} role="status">{filtered.length}명 표시 · 전체 {active.students.length}명</p>{active.students.some(student => student.mustChangePassword) && <><Button variant="outline" onClick={() => setFirstEntry(true)}><DoorOpen size={15} aria-hidden="true" />첫 입장 열기</Button><Button variant="outline" onClick={() => setBulkIssue(true)}><KeyRound size={15} aria-hidden="true" />임시 비밀번호 한꺼번에 발급</Button></>}<div className={styles.viewToggle} role="group" aria-label="학생 현황 보기"><Button variant="ghost" aria-label="목록 보기" title="목록 보기" aria-pressed={layout === "list"} onClick={() => setLayout("list")}><List size={17} aria-hidden="true" /></Button><Button variant="ghost" aria-label="격자 보기" title="격자 보기" aria-pressed={layout === "grid"} onClick={() => setLayout("grid")}><LayoutGrid size={17} aria-hidden="true" /></Button></div></div>
         {active.students.length === 0 ? <div className={styles.empty}><Users size={28} aria-hidden="true" /><h3>등록된 학생이 없어요.</h3><p>이 반에 학생 계정이 등록되면 학습 현황을 볼 수 있어요.</p></div> : filtered.length === 0 ? <div className={styles.empty}><Search size={28} aria-hidden="true" /><h3>조건에 맞는 학생이 없어요.</h3><p>학번·닉네임 검색이나 진행·확인 요청·계정 조건을 바꿔 확인해 주세요.</p><Button variant="outline" onClick={resetFilters}>검색·필터 초기화</Button></div> : <div className={styles.tableFrame} data-layout={layout}>
           <table className={styles.table} data-layout={layout}><caption className="sr-only">{active.classroom.name} {lesson?.title ?? "계정"} 학생별 현황</caption><thead><tr><th scope="col">학생</th><th scope="col">수업 상태</th><th scope="col">개념·퀴즈·실습</th><th scope="col">계정·작품</th></tr></thead><tbody>{filtered.map((student) => <TeacherStudentRow key={`${active.classroom.id}:${active.selectedLessonId}:${student.uid}`} student={student} lesson={lesson} layout={layout} onOpen={(kind, trigger) => setStudentDialog({ kind, trigger, student, lesson, classId: active.classroom.id })} />)}</tbody></table>
         </div>}
@@ -202,6 +203,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
     </>}
     {studentDialog?.kind === "submission" && studentDialog.lesson && <SubmissionViewer student={studentDialog.student} lesson={studentDialog.lesson} lessons={openedLessons} onLock={lockMutation} onComplete={refreshOpenedStudent} onClose={() => setStudentDialog(null)} finalFocus={finalDialogFocus} />}
     {bulkIssue && active && <BulkIssuePasswords classroomName={active.classroom.name} students={active.students} checkedAt={updatedAt ?? 0} onLock={lockMutation} onComplete={issued => { if (!issued.length) return; const expires = new Map(issued.map(item => [item.uid, item.expiresAt])); setData(previous => previous?.classroom.id === active.classroom.id ? { ...previous, students: previous.students.map(item => expires.has(item.uid) ? { ...item, temporaryExpiresAt: expires.get(item.uid), lastActiveAt: null } : item) } : previous); setNotice(`${issued.length}명에게 임시 비밀번호를 발급했어요. 다음 입장 시 변경이 필요해요.`); }} onClose={() => setBulkIssue(false)} />}
+    {firstEntry && active && <FirstEntry key={active.classroom.id} classroomId={active.classroom.id} classroomName={active.classroom.name} students={active.students} onRefresh={load} onClose={() => setFirstEntry(false)} />}
     {studentDialog?.kind === "reset" && <ResetPassword student={studentDialog.student} onLock={lockMutation} onComplete={resetOpenedStudent} onClose={() => setStudentDialog(null)} finalFocus={finalDialogFocus} />}
   </div>;
 }

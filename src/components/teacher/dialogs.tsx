@@ -219,3 +219,60 @@ export function BulkIssuePasswords({ classroomName, students, checkedAt, onLock,
     </DialogContent>
   </Dialog>;
 }
+
+export function FirstEntry({ classroomId, classroomName, students, onRefresh, onClose }: {
+  classroomId: string; classroomName: string; students: StudentRow[]; onRefresh: () => Promise<TeacherDashboard | null>; onClose: () => void;
+}) {
+  const { session } = useSession();
+  const [code, setCode] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  // 연 순간 비밀번호를 아직 정하지 않았던 학생 중 지금 정한 학생이 이번에 입장한 학생이에요.
+  const [waiting, setWaiting] = useState<string[]>([]);
+  const opened = useRef(false);
+  const pending = students.filter(student => student.mustChangePassword).map(student => student.studentId).sort();
+  const entered = waiting.filter(id => !pending.includes(id));
+  const open = expiresAt !== null && expiresAt > now;
+  useEffect(() => {
+    if (!open) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [open]);
+  // 창을 닫거나 다른 화면으로 가면 코드를 바로 닫아요. 실패해도 10분 뒤에는 서버에서 만료돼요.
+  useEffect(() => () => { if (opened.current) void classroomApi.firstEntry(classroomId, "close", session?.uid).catch(() => undefined); }, [classroomId, session?.uid]);
+  async function run(action: "open" | "extend") {
+    if (busy) return;
+    setBusy(true); setError("");
+    try {
+      const result = await classroomApi.firstEntry(classroomId, action, session?.uid);
+      if (action === "open") { opened.current = true; setCode(result.code); setWaiting(previous => [...new Set([...previous, ...pending])]); }
+      setExpiresAt(result.expiresAt); setNow(Date.now());
+    } catch (problem) { setError(problemMessage(problem)); }
+    finally { setBusy(false); }
+  }
+  async function refresh() {
+    if (busy) return;
+    setBusy(true); setError("");
+    try { await onRefresh(); } finally { setBusy(false); }
+  }
+  const left = open ? Math.ceil((expiresAt - now) / 1000) : 0;
+  return <Dialog open onOpenChange={(next) => { if (!next && !busy) onClose(); }}>
+    <DialogContent className={styles.dialog} showCloseButton={!busy}>
+      <DialogHeader><DialogTitle>{classroomName} 첫 입장</DialogTitle><DialogDescription>{code ? "학생은 학생 로그인에서 자기 학번과 아래 코드를 비밀번호 칸에 넣고, 바로 자기 비밀번호를 정해요." : "아직 자기 비밀번호를 정하지 않은 학생이 반 공통 코드로 처음 입장해요. 열면 10분 동안 쓸 수 있고, 이 창을 닫으면 바로 닫혀요."}</DialogDescription></DialogHeader>
+      {code && <>
+        <p className={styles.entryCode} aria-label={`입장 코드 ${code.split("").join(" ")}`}>{code}</p>
+        <p role="status" className={styles.dialogNote}>{open ? `남은 시간 ${Math.floor(left / 60)}분 ${String(left % 60).padStart(2, "0")}초` : "입장 시간이 끝났어요. 다시 열면 새 코드가 나와요."}</p>
+        <div className={styles.entryGroups}>
+          <section><h3>이번에 입장한 학생 {entered.length}명</h3><p>{entered.join(", ") || "아직 없어요."}</p></section>
+          <section><h3>아직 비밀번호를 정하지 않은 학생 {pending.length}명</h3><p>{pending.join(", ") || "모두 정했어요."}</p></section>
+        </div>
+        <p className={styles.dialogNote}>오지 않은 학생 번호가 입장 학생에 있으면, 학생 목록에서 그 학생의 비밀번호를 초기화해 주세요. 현황은 새로고침을 눌러야 바뀌어요.</p>
+      </>}
+      {!code && <p className={styles.dialogNote}>비밀번호를 정해야 하는 학생 {pending.length}명</p>}
+      {error && <p role="alert" className={styles.dialogError}>{error}</p>}
+      <DialogFooter>{!code || !open ? <><Button variant="outline" disabled={busy} onClick={onClose}>닫기</Button><Button disabled={busy || !pending.length} onClick={() => void run("open")}>{code ? "새 코드로 다시 열기" : "첫 입장 열기"}</Button></> : <><Button variant="outline" disabled={busy} onClick={() => void refresh()}>입장 현황 새로고침</Button><Button variant="outline" disabled={busy} onClick={() => void run("extend")}>10분 연장</Button><Button disabled={busy} onClick={onClose}>첫 입장 닫기</Button></>}</DialogFooter>
+    </DialogContent>
+  </Dialog>;
+}
