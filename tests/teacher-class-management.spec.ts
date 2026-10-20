@@ -441,12 +441,34 @@ test("[수업 닫기] 열린 수업의 체크를 풀어 닫으면 학생에게�
   const dashboard = await page.request.get(`/api/classroom/teacher?classId=2-1&lessonId=${second.id}`);
   expect(dashboard.status()).toBe(200);
   expect((await dashboard.json()).selectedLessonId).toBe(first.id);
+  await page.goto(`/teacher/students?classId=2-1&lessonId=${second.id}`);
+  await expect(page.getByRole("combobox", { name: "확인할 수업", exact: true })).toHaveText(first.title);
+  await page.goto("/teacher/classes?classId=2-1");
 
-  await page.reload();
   await page.getByRole("button", { name: "수업 관리", exact: true }).click();
   await opened.check();
   await expect(summary).toContainText("새로 공개할 수업 1개");
   await dialog.getByRole("button", { name: "설정 저장", exact: true }).click();
   await expect.poll(async () => (await classRef.get()).data()?.openedLessonIds).toEqual([first.id, second.id]);
   expect((await request.get(`/api/classroom/work/${second.id}`)).status()).toBe(200);
+});
+
+test("[수업 닫기-충돌] 다른 교사가 닫은 수업은 최신 설정을 반영해도 다시 열리지 않는다", async ({ page }) => {
+  const [first, second, third] = RELEASED_LESSONS;
+  await readyTeacher(page.request);
+  await classRef.set({ id: "2-1", name: "2학년 1반", revision: 0, currentLessonId: second.id, openedLessonIds: [first.id, second.id] });
+  await page.goto("/teacher/classes?classId=2-1");
+  await page.getByRole("button", { name: "수업 관리", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "2학년 1반 수업 관리", exact: true });
+  await dialog.getByRole("checkbox", { name: new RegExp(third.title) }).check();
+  await classRef.update({ revision: 1, currentLessonId: first.id, openedLessonIds: [first.id] });
+  await dialog.getByRole("button", { name: "설정 저장", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("수업 설정이 변경됐어요.");
+  await dialog.getByRole("button", { name: "최신 설정 확인 후 다시 적용", exact: true }).click();
+  await expect(dialog.getByRole("status")).toContainText("최신 공개 목록을 반영했어요.");
+  await expect(dialog.getByRole("checkbox", { name: new RegExp(second.title) })).not.toBeChecked();
+  await expect(dialog.getByRole("checkbox", { name: new RegExp(third.title) })).toBeChecked();
+  await expect(dialog.getByRole("combobox", { name: "이번 수업", exact: true })).toHaveText("지정하지 않음");
+  await dialog.getByRole("button", { name: "설정 저장", exact: true }).click();
+  await expect.poll(async () => (await classRef.get()).data()).toMatchObject({ revision: 2, currentLessonId: null, openedLessonIds: [first.id, third.id] });
 });

@@ -36,6 +36,8 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
   const { classId: selectedClassId, setClassId } = useTeacherClass(classId);
   const query = useSearchParams();
   const [data, setData] = useState<TeacherDashboard | null>(null);
+  // The lesson the shown data was requested for; the server may answer with another lesson when that one was closed.
+  const [loadedFor, setLoadedFor] = useState<string | undefined>();
   const [selectedLessonId, setSelectedLessonId] = useState(lessonId);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
@@ -66,7 +68,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
     const version = ++request.current;
     const promise = classroomApi.teacher(selectedClassId, selectedLessonId).then((result) => {
       if (version !== request.current) return null;
-      setData(result); setError("");
+      setData(result); setLoadedFor(selectedLessonId); setError("");
       setUpdatedAt(Date.now());
       return result;
     }, (problem: unknown) => {
@@ -90,7 +92,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
     if (locked) { request.current += 1; setFetching(false); }
   }, []);
 
-  const matching = data && (!selectedClassId || selectedClassId === data.classroom.id) && (!selectedLessonId || selectedLessonId === data.selectedLessonId);
+  const matching = data && (!selectedClassId || selectedClassId === data.classroom.id) && (!selectedLessonId || selectedLessonId === data.selectedLessonId || selectedLessonId === loadedFor);
   const active = matching ? data : null;
   const manageRequested = !!manage && query.getAll("manage").length === 1 && query.get("manage") === "1" && query.getAll("classId").length === 1 && query.get("classId") === active?.classroom.id;
   const lesson = active?.lessons.find((item) => item.id === active.selectedLessonId);

@@ -61,8 +61,13 @@ export function ManageLessons({ classroom, lessons, onSaved, onLock, onRefresh, 
       const latest = await onRefresh();
       if (latest && latest.classroom.id === classroom.id) {
         setBaseline({ ...latest.classroom, openedLessonIds: [...latest.classroom.openedLessonIds] });
-        // Keep the teacher's unchecks: a lesson they chose to close stays closed after merging the latest list.
-        setDraft((previous) => { const closed = baseline.openedLessonIds.filter((id) => !previous.openedLessonIds.includes(id)); return { ...previous, revision: latest.classroom.revision, openedLessonIds: [...new Set([...latest.classroom.openedLessonIds, ...previous.openedLessonIds])].filter((id) => !closed.includes(id)) }; });
+        // Apply only this teacher's own changes onto the latest list, so another teacher's opening or closing is kept.
+        setDraft((previous) => {
+          const added = previous.openedLessonIds.filter((id) => !baseline.openedLessonIds.includes(id));
+          const closed = baseline.openedLessonIds.filter((id) => !previous.openedLessonIds.includes(id));
+          const openedLessonIds = [...new Set([...latest.classroom.openedLessonIds, ...added])].filter((id) => !closed.includes(id));
+          return { ...previous, revision: latest.classroom.revision, openedLessonIds, currentLessonId: previous.currentLessonId && openedLessonIds.includes(previous.currentLessonId) ? previous.currentLessonId : null };
+        });
         setConflict(false); setError(""); setRefreshed(true);
       }
     } finally { pending.current = false; setReloading(false); }
