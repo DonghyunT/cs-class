@@ -11,6 +11,8 @@ export interface Session {
   classIds: string[];
   mustChangePassword: boolean;
   lastActivityAt: number;
+  /** Server-measured time since lastActivityAt; school PC clocks can be minutes off, so clients compare `Date.now() - idleMs`. */
+  idleMs: number;
   idleTimeoutMs: number;
 }
 export interface ClassSettings {

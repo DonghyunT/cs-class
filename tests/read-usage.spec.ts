@@ -38,10 +38,10 @@ test("읽기 사용량 측정: 27명·11개 담당 반·10분 가상 수업", as
     const studentSession = (await (await page.request.get("/api/auth/session")).json()).session;
     const teacherSession = (await (await teacherContext.request.get("/api/auth/session")).json()).session;
     await page.clock.install(); await teacherPage.clock.install();
-    // The server clock is real. Keep virtual activity from generating unrealistic
-    // repeated account writes and contention with the dashboard transaction.
+    // Keep activity account writes out of the read sample and avoid contention
+    // with the dashboard transaction.
     for (const [target, session] of [[page, studentSession], [teacherPage, teacherSession]] as const) {
-      await target.route("**/api/auth/activity", async route => route.fulfill({ json: { session: { ...session, lastActivityAt: await target.evaluate(() => Date.now()) } } }));
+      await target.route("**/api/auth/activity", async route => route.fulfill({ json: { session: { ...session, idleMs: 0 } } }));
     }
     page.on("request", collect(student)); teacherPage.on("request", collect(teacher));
     await page.goto(`/classroom/${lessonId}`); await teacherPage.goto("/teacher?classId=2-1");
@@ -58,7 +58,7 @@ test("읽기 사용량 측정: 27명·11개 담당 반·10분 가상 수업", as
     const report = { label: process.env.CS_READ_SAMPLE ?? "verification", helpEnabled: CLASSROOM_HELP_ENABLED, teacherRefresh: "manual", virtualMinutes: 10, studentCount: 27, teacherClassCount: 11, releasedLessonCount: RELEASED_LESSONS.length, selectedLessonId: dashboard.selectedLessonId,
       documentReadModel: { teacherWorkPerRequest: 1 + dashboard.classrooms.length + rosterSize + dashboard.students.length, studentDashboardPerRequest: 2 + Object.keys(studentDashboard.work).length, studentClassPerRequest: 2, studentHelpPerRequest: 3, emptyTeacherHelpPerRequest: 2 }, initial, totals: { student, teacher },
       recurring: { studentHelp: (student["GET /api/classroom/help"] ?? 0) - (initial.student["GET /api/classroom/help"] ?? 0), teacherWork: (teacher["GET /api/classroom/teacher"] ?? 0) - (initial.teacher["GET /api/classroom/teacher"] ?? 0) },
-      limitations: "Observed local read API requests with a Playwright virtual clock and one student multiplied by 27; not live billing. Activity responses are fixture-controlled to match the virtual browser clock; account activity/session cost is modeled separately. No help pending, save/grading/AI actions, or quantified transaction retries. Initial navigation recorded separately." };
+      limitations: "Observed local read API requests with a Playwright virtual clock and one student multiplied by 27; not live billing. Activity responses are fixtures so account writes stay out of the sample; account activity/session cost is modeled separately. No help pending, save/grading/AI actions, or quantified transaction retries. Initial navigation recorded separately." };
     expect(report.recurring.teacherWork).toBe(0);
     if (!CLASSROOM_HELP_ENABLED) {
       expect(student["GET /api/classroom/help"] ?? 0).toBe(0);

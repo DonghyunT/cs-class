@@ -23,7 +23,7 @@ export interface Identity { uid: string; secret: string }
 export function hash(value: string) { return createHash("sha256").update(value).digest("hex"); }
 export function timeoutFor(role: Role) { return role === "student" ? 10 * 60_000 : 4 * 60 * 60_000; }
 export function publicSession(account: Account): Session {
-  return { uid: account.uid, ...(account.nickname ? { nickname: account.nickname } : {}), role: account.role, studentId: account.studentId, classId: account.classId, classIds: account.classIds, mustChangePassword: account.mustChangePassword, lastActivityAt: account.session!.lastActivityAt, idleTimeoutMs: timeoutFor(account.role) };
+  return { uid: account.uid, ...(account.nickname ? { nickname: account.nickname } : {}), role: account.role, studentId: account.studentId, classId: account.classId, classIds: account.classIds, mustChangePassword: account.mustChangePassword, lastActivityAt: account.session!.lastActivityAt, idleMs: Math.max(0, Date.now() - account.session!.lastActivityAt), idleTimeoutMs: timeoutFor(account.role) };
 }
 export async function identity(): Promise<Identity> {
   const value = (await cookies()).get(SESSION_COOKIE)?.value ?? "";

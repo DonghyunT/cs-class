@@ -1,6 +1,6 @@
 import { CLASSROOM_HELP_ENABLED } from "../src/lib/classroom/features";
 import { randomUUID } from "node:crypto";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Request } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import type { HelpRequest } from "../src/lib/classroom/help";
 import { db, lessonId, readyStudent, readyTeacher } from "./emulator";
@@ -58,8 +58,8 @@ test("창 포커스 재조회는 30초 안에서는 생략하고, 활동 기록 
     if (path === "/api/classroom/student/class") classReads++;
     if (path === "/api/auth/session") sessionReads++;
   });
-  // The server clock is real; answer activity on the virtual clock so it is sent once per 30 seconds.
-  await page.route("**/api/auth/activity", async route => { touches++; await route.fulfill({ json: { session: { ...session, lastActivityAt: await page.evaluate(() => Date.now()) } } }); });
+  // Answer activity without real account writes; the client paces touches by its own clock.
+  await page.route("**/api/auth/activity", async route => { touches++; await route.fulfill({ json: { session: { ...session, idleMs: 0 } } }); });
   await page.goto(`/classroom/${lessonId}`);
   await expect(page.getByRole("button", { name: "저장", exact: true })).toBeVisible();
   await painted(page);
@@ -215,4 +215,49 @@ test("홈 대시보드는 느린 조회를 합치되 반 전환은 즉시 조회
     await expect(page.getByRole("button", { name: "수업 새로고침", exact: true })).toBeEnabled();
     await expect(page.getByRole("heading", { name: lesson.title, exact: true })).toBeVisible();
   } finally { a.release(); b.release(); await page.unrouteAll({ behavior: "wait" }); }
+});
+
+// School PCs can run minutes off the server clock; the heartbeat must still pace itself by the PC's own clock.
+async function skewedClock(page: Page, offsetMs: number) {
+  await page.clock.install({ time: Date.now() + offsetMs });
+  const count = { touches: 0, open: 0, statuses: [] as number[] };
+  const touch = (request: Request) => new URL(request.url()).pathname === "/api/auth/activity";
+  page.on("request", request => { if (touch(request)) { count.touches++; count.open++; } });
+  const done = (request: Request) => { if (touch(request)) count.open--; };
+  page.on("requestfinished", done); page.on("requestfailed", done);
+  page.on("response", response => { if (touch(response.request())) count.statuses.push(response.status()); });
+  // One virtual second at a time against the real server, letting each touch finish before the next tick.
+  const seconds = async (n: number) => { for (let i = 0; i < n; i++) { await page.clock.runFor(1000); await expect.poll(() => count.open).toBe(0); } };
+  return { count, seconds };
+}
+
+for (const minutes of [5, 11]) test(`PC 시계가 서버보다 ${minutes}분 빨라도 활동 기록은 30초에 한 번만 보내고 바로 로그아웃하지 않는다`, async ({ page }) => {
+  await readyStudent(page.request);
+  const { count, seconds } = await skewedClock(page, minutes * 60_000);
+  await page.goto(`/classroom/${lessonId}`);
+  const save = page.getByRole("button", { name: "저장", exact: true });
+  await expect(save).toBeVisible();
+  await painted(page);
+  // A clock beyond the 10-minute student timeout used to log out on the first tick.
+  await seconds(3);
+  await expect(save).toBeVisible();
+  await expect(page.getByText("곧 자동 로그아웃돼요.")).toBeHidden();
+  await page.locator("h1").first().click();
+  await seconds(65);
+  expect(count.touches).toBe(1);
+  expect(count.statuses).toEqual([200]);
+});
+
+test("PC 시계가 서버보다 느려도 30초 뒤 활동은 서버에 보낸다", async ({ page }) => {
+  await readyStudent(page.request);
+  const { count, seconds } = await skewedClock(page, -5 * 60_000);
+  await page.goto(`/classroom/${lessonId}`);
+  await expect(page.getByRole("button", { name: "저장", exact: true })).toBeVisible();
+  await painted(page);
+  await seconds(31);
+  await page.locator("h1").first().click();
+  await seconds(35);
+  expect(count.touches).toBe(1);
+  // The real server accepted it, so the session stays alive.
+  expect(count.statuses).toEqual([200]);
 });
