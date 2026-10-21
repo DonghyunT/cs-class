@@ -111,7 +111,6 @@ async function loginPasswordAccount(role: Role, uid: string, email: string, pass
   requireCondition(!initial?.authBusy, 423, "ACCOUNT_BUSY", "계정 정보를 변경하고 있어요. 잠시 후 다시 시도해 주세요.");
   if (initial.mustChangePassword) {
     // 임시 비밀번호는 6자리 숫자가 될 수 없어, 6자리 숫자는 반 공통 첫 입장 코드로 확인합니다.
-    // shortcut: 틀린 코드는 위 출처·계정 제한만 받아요. 열린 10분 밖 추측이 문제 되면 반 단위 제한을 더해요.
     if (role === "student" && initial.classId && /^\d{6}$/.test(password)) return openFirstEntry(uid, initial.authVersion, initial.classId, passwordDigest(password));
     const temporary = initial.temporaryPassword;
     requireCondition(temporary && temporary.expiresAt > Date.now(), 401, "TEMP_PASSWORD_EXPIRED", "선생님께 학생별 임시 비밀번호를 발급받아 주세요.");
@@ -126,16 +125,23 @@ async function loginPasswordAccount(role: Role, uid: string, email: string, pass
   return openSession(uid, initial.authVersion, role);
 }
 const FIRST_ENTRY_MS = 10 * 60_000;
-type FirstEntry = { hash: string; expiresAt: number; openedBy: string };
+// 반 전체에서 틀린 코드가 이만큼 쌓이면 코드를 닫아, 학번을 바꿔 가며 6자리를 추측하지 못하게 합니다.
+const FIRST_ENTRY_FAILURES = 50;
+type FirstEntry = { hash: string; expiresAt: number; openedBy: string; failures?: number };
 function firstEntryRef(classId: string) { return admin().db.collection("csFirstEntry").doc(classId); }
 async function openFirstEntry(uid: string, expectedVersion: number, classId: string, digest: string) {
-  const { db } = admin(); const secret = randomBytes(32).toString("hex"); const ref = db.collection("csAccounts").doc(uid);
+  const { db } = admin(); const secret = randomBytes(32).toString("hex"); const ref = db.collection("csAccounts").doc(uid); const entryRef = firstEntryRef(classId);
   const session = await db.runTransaction(async (tx) => {
-    const [snap, entrySnap] = await Promise.all([tx.get(ref), tx.get(firstEntryRef(classId))]);
+    const [snap, entrySnap] = await Promise.all([tx.get(ref), tx.get(entryRef)]);
     const account = snap.data() as Account | undefined; const entry = entrySnap.data() as FirstEntry | undefined; const now = Date.now();
     requireCondition(account && !account.disabled && account.role === "student" && account.classId === classId && account.mustChangePassword && account.authVersion === expectedVersion && !account.authBusy, 401, "LOGIN_CHANGED", "계정 정보가 바뀌었어요. 다시 로그인해 주세요.");
     requireCondition(entry && entry.expiresAt > now, 401, "FIRST_ENTRY_CLOSED", "지금은 첫 입장이 열려 있지 않아요. 선생님께 알려 주세요.");
-    requireCondition(entry.hash.length === digest.length && timingSafeEqual(Buffer.from(entry.hash), Buffer.from(digest)), 401, "INVALID_LOGIN", "학번 또는 입장 코드를 확인해 주세요.");
+    if (!(entry.hash.length === digest.length && timingSafeEqual(Buffer.from(entry.hash), Buffer.from(digest)))) {
+      // 오답 횟수를 남기려면 트랜잭션을 성공시켜야 해서, 오류는 커밋 뒤에 던집니다.
+      const failures = (entry.failures ?? 0) + 1;
+      if (failures >= FIRST_ENTRY_FAILURES) tx.delete(entryRef); else tx.update(entryRef, { failures });
+      return null;
+    }
     // 먼저 들어온 사람이 비밀번호를 정하는 중이면 같은 코드로 그 접속을 빼앗지 못합니다.
     requireCondition(!(account.session && now - account.session.lastActivityAt < timeoutFor("student")), 409, "ALREADY_ACTIVE", "이 학번은 이미 입장 중이에요. 내 학번이 맞다면 선생님께 알려 주세요.");
     // 코드로 연 세션도 기존 임시 입장과 같은 30분 안에 비밀번호를 정해야 합니다. 이 값으로는 로그인할 수 없습니다.
@@ -143,6 +149,7 @@ async function openFirstEntry(uid: string, expectedVersion: number, classId: str
     tx.update(ref, { temporaryPassword: next.temporaryPassword, session: next.session });
     return publicSession(next);
   });
+  requireCondition(session, 401, "INVALID_LOGIN", "학번 또는 입장 코드를 확인해 주세요.");
   await setSessionCookie(uid, secret);
   return session;
 }

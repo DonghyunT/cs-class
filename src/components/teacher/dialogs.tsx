@@ -249,7 +249,11 @@ export function FirstEntry({ classroomId, classroomName, students, onRefresh, on
       const result = await classroomApi.firstEntry(classroomId, action, session?.uid);
       if (action === "open") { opened.current = true; setCode(result.code); setWaiting(previous => [...new Set([...previous, ...pending])]); }
       setExpiresAt(result.expiresAt); setNow(Date.now());
-    } catch (problem) { setError(problemMessage(problem)); }
+    } catch (problem) {
+      setError(problemMessage(problem));
+      // 틀린 코드가 많이 쌓여 서버가 닫았으면, 남은 시간 대신 새 코드로 다시 열기를 보여 줘요.
+      if (problem instanceof ApiError && problem.code === "FIRST_ENTRY_CLOSED") setExpiresAt(null);
+    }
     finally { setBusy(false); }
   }
   async function refresh() {
@@ -268,7 +272,7 @@ export function FirstEntry({ classroomId, classroomName, students, onRefresh, on
           <section><h3>이번에 입장한 학생 {entered.length}명</h3><p>{entered.join(", ") || "아직 없어요."}</p></section>
           <section><h3>아직 비밀번호를 정하지 않은 학생 {pending.length}명</h3><p>{pending.join(", ") || "모두 정했어요."}</p></section>
         </div>
-        <p className={styles.dialogNote}>오지 않은 학생 번호가 입장 학생에 있으면, 학생 목록에서 그 학생의 비밀번호를 초기화해 주세요. 현황은 새로고침을 눌러야 바뀌어요.</p>
+        <p className={styles.dialogNote}>오지 않은 학생 번호가 입장 학생에 있으면, 학생 목록에서 그 학생의 비밀번호를 초기화해 주세요. 현황은 새로고침을 눌러야 바뀌어요. 틀린 코드가 많이 들어오면 코드가 닫혀요. 학생이 닫혔다고 하면 10분 연장을 눌러 확인한 뒤 다시 열어 주세요.</p>
       </>}
       {!code && <p className={styles.dialogNote}>비밀번호를 정해야 하는 학생 {pending.length}명</p>}
       {error && <p role="alert" className={styles.dialogError}>{error}</p>}
