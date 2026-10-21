@@ -33,7 +33,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (!restoreClass) clearClassMemory();
     const classId = value.role !== "student" ? (restoreClass ? rememberedClass(value) : undefined) ?? value.classIds[0] : undefined;
     setSelectedClass(classId ? { uid: value.uid, classId } : null);
-    current.current = value; setExpectedUser(value.uid); setSession(value); activity.current = value.lastActivityAt; lastSent.current = value.lastActivityAt; setError(""); setLoading(false);
+    current.current = value; setExpectedUser(value.uid); setSession(value); activity.current = lastSent.current = Date.now() - value.idleMs; setError(""); setLoading(false);
   }, []);
   // Called after an actual login; loading the existing cookie below keeps this tab's selection.
   const acceptSession = useCallback((value: Session) => applySession(value, false), [applySession]);
@@ -50,7 +50,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       const value = await classroomApi.session(); if (started !== generation.current) return; setConfigured(value.configured);
       if (value.session && (!current.current || value.session.uid === current.current.uid)) {
         if (!current.current) applySession(value.session, true);
-        else { current.current = value.session; setSession(value.session); activity.current = Math.max(activity.current, value.session.lastActivityAt); }
+        else { current.current = value.session; setSession(value.session); activity.current = Math.max(activity.current, Date.now() - value.session.idleMs); }
         checked.current = Date.now();
       } else clear(value.reason === "SESSION_REPLACED" ? "다른 곳에서 로그인되었거나 계정이 초기화되어 로그아웃됐어요." : value.reason === "SESSION_EXPIRED" ? "오랫동안 사용하지 않아 로그아웃됐어요." : "");
     } catch (problem) { if (started === generation.current) setError(problem instanceof Error ? problem.message : "접속을 확인하지 못했어요."); }
@@ -85,7 +85,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (activity.current > lastSent.current && now - lastSent.current >= 30_000 && now - activity.current < 60_000) {
         busy.current = true;
         const started = generation.current;
-        try { const touched = await classroomApi.touch(Math.max(0, now - activity.current)); if (started === generation.current) { lastSent.current = touched.session.lastActivityAt; current.current = touched.session; setSession(touched.session); checked.current = Date.now(); } }
+        try { const touched = await classroomApi.touch(Math.max(0, now - activity.current)); if (started === generation.current) { lastSent.current = Date.now() - touched.session.idleMs; current.current = touched.session; setSession(touched.session); checked.current = Date.now(); } }
         catch { /* A later interaction retries; 401 is handled by the central event. */ }
         finally { busy.current = false; }
       } else if (++tick % 30 === 0 && document.visibilityState === "visible" && now - checked.current >= 30_000) { busy.current = true; try { await refresh(); } finally { busy.current = false; } }
