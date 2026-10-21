@@ -1,6 +1,6 @@
 # CS Class 제품 요구사항 명세서 (PRD)
 
-갱신: 2026-10-20(Asia/Seoul). 확정된 제품 정책과 기능 요구사항의 단일 진실 공급원(SSOT)입니다. 구현·검증 절차는 [DEVELOPMENT](DEVELOPMENT.md), 화면 시각 디자인과 토큰은 [DESIGN](DESIGN.md), 인프라·서버 배포는 [FIREBASE_SETUP](FIREBASE_SETUP.md), 현재 작업 상태는 [HANDOFF](HANDOFF.md)를 따릅니다.
+갱신: 2026-10-21(Asia/Seoul). 확정된 제품 정책과 기능 요구사항의 단일 진실 공급원(SSOT)입니다. 구현·검증 절차는 [DEVELOPMENT](DEVELOPMENT.md), 화면 시각 디자인과 토큰은 [DESIGN](DESIGN.md), 인프라·서버 배포는 [FIREBASE_SETUP](FIREBASE_SETUP.md), 현재 작업 상태는 [HANDOFF](HANDOFF.md)를 따릅니다.
 
 ## 1. 목적과 대상 규모
 <a id="1차-구현-완료-목표--실제-계정과-저장-연결"></a>
