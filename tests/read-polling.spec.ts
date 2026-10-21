@@ -219,6 +219,9 @@ test("홈 대시보드는 느린 조회를 합치되 반 전환은 즉시 조회
 
 // School PCs can run minutes off the server clock; the heartbeat must still pace itself by the PC's own clock.
 async function skewedClock(page: Page, offsetMs: number) {
+  // Virtual seconds pass faster than the real server clock, so each test starts a minute after the last
+  // recorded activity and watches less than the 30-second session re-check.
+  await db.doc("csAccounts/student-20101").update({ "session.lastActivityAt": Date.now() - 60_000 });
   await page.clock.install({ time: Date.now() + offsetMs });
   const count = { touches: 0, open: 0, statuses: [] as number[] };
   const touch = (request: Request) => new URL(request.url()).pathname === "/api/auth/activity";
@@ -231,7 +234,7 @@ async function skewedClock(page: Page, offsetMs: number) {
   return { count, seconds };
 }
 
-for (const minutes of [5, 11]) test(`PC 시계가 서버보다 ${minutes}분 빨라도 활동 기록은 30초에 한 번만 보내고 바로 로그아웃하지 않는다`, async ({ page }) => {
+for (const minutes of [5, 11]) test(`PC 시계가 서버보다 ${minutes}분 빨라도 활동 기록을 매초 보내지 않고 바로 로그아웃하지 않는다`, async ({ page }) => {
   await readyStudent(page.request);
   const { count, seconds } = await skewedClock(page, minutes * 60_000);
   await page.goto(`/classroom/${lessonId}`);
@@ -243,20 +246,22 @@ for (const minutes of [5, 11]) test(`PC 시계가 서버보다 ${minutes}분 빨
   await expect(save).toBeVisible();
   await expect(page.getByText("곧 자동 로그아웃돼요.")).toBeHidden();
   await page.locator("h1").first().click();
-  await seconds(65);
+  await seconds(5);
+  // A second click within 30 seconds waits for the next touch.
+  await page.locator("h1").first().click();
+  await seconds(5);
   expect(count.touches).toBe(1);
   expect(count.statuses).toEqual([200]);
 });
 
-test("PC 시계가 서버보다 느려도 30초 뒤 활동은 서버에 보낸다", async ({ page }) => {
+test("PC 시계가 서버보다 느려도 활동은 서버에 보낸다", async ({ page }) => {
   await readyStudent(page.request);
   const { count, seconds } = await skewedClock(page, -5 * 60_000);
   await page.goto(`/classroom/${lessonId}`);
   await expect(page.getByRole("button", { name: "저장", exact: true })).toBeVisible();
   await painted(page);
-  await seconds(31);
   await page.locator("h1").first().click();
-  await seconds(35);
+  await seconds(10);
   expect(count.touches).toBe(1);
   // The real server accepted it, so the session stays alive.
   expect(count.statuses).toEqual([200]);
