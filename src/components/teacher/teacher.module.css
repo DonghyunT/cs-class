@@ -264,6 +264,10 @@
 .bulkResult { width: 100%; border-collapse: collapse; font-size: 15px; }
 .bulkResult th, .bulkResult td { padding: 8px 6px; border-bottom: 1px solid #edf0f5; text-align: left; }
 .bulkResult code { font-size: 16px; letter-spacing: .04em; }
+.entryCode { margin: 4px 0 0; color: #1f3b63; font-size: clamp(44px, 12vw, 72px); font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: .18em; line-height: 1.1; text-align: center; }
+.entryGroups { display: grid; gap: 10px; max-height: 32vh; overflow: auto; }
+.entryGroups h3 { margin: 0 0 4px; font-size: 14px; }
+.entryGroups p { margin: 0; color: #526173; font-size: 14px; line-height: 1.8; font-variant-numeric: tabular-nums; }
 .printSlips { display: none; }
 @media print {
   :global(body):has(> .printSlips) > :not(.printSlips) { display: none !important; }

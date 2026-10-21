@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // All CS Class collections are server owned: csAccounts (role/session),
     // csClasses (publication), csWork (draft/progress/submission), csRateLimits,
-    // csGoogleExchanges, csTodos (private checklist), csSchedules (class dates), csTimetables,
+    // csGoogleExchanges, csFirstEntry (hashed class first-entry code), csTodos (private checklist), csSchedules (class dates), csTimetables,
     // csQuestions/answers, csCommunityLimits, csHelpRequests/ids, csHelpSnapshots, csHelpLimits.
     // Next.js verifies the session and scope before Admin SDK use.
     // Firebase ID tokens alone never authorize direct database access.
