@@ -16,11 +16,16 @@ test("공간 안내 링크가 제목과 역할 화면을 한 화면에 보여줌
       .getByRole("link", { name: "공간 안내", exact: true })
       .click();
     await expect(page).toHaveURL(/#classrooms$/);
+    // Wait for the smooth anchor scroll to stop: clicking mid-scroll lets Playwright's
+    // scroll-into-view combine with it and push the section away (1280x720).
     await expect
       .poll(() =>
-        page
-          .locator("#classrooms")
-          .evaluate((node) => node.getBoundingClientRect().top),
+        page.locator("#classrooms").evaluate(async (node) => {
+          const top = node.getBoundingClientRect().top;
+          await new Promise(requestAnimationFrame);
+          await new Promise(requestAnimationFrame);
+          return node.getBoundingClientRect().top === top ? top : Infinity;
+        }),
       )
       .toBeLessThanOrEqual(110);
     const header = await page.locator(".landing-header").boundingBox();

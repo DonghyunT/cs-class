@@ -26,7 +26,7 @@
 
 ## 남은 한계와 다음 결정
 
-- **전체 E2E:** 마지막 `main` 전체 실행은 10/20 `a24e0cc`(run 39375010793) 420 통과·14 생략·1 실패였고, 실패한 `classroom-api`는 `334cca0`에서 고쳤습니다. 10/21 로컬 전체 실행(#70 브랜치 `7361d3e`)은 423 통과·`landing` 1개 실패였고, PR 기록상 변경 전 `main`에서도 같은 값으로 실패해 아직 고치지 않았습니다. 마지막 `main` 전체 성공은 10/18 `7264de7`(run 39063459497)입니다. Firebase 5xx·차단 응답 E2E는 없습니다(#44).
+- **전체 E2E:** 마지막 `main` 전체 실행은 10/20 `a24e0cc`(run 39375010793) 420 통과·14 생략·1 실패였고, 실패한 `classroom-api`는 `334cca0`에서 고쳤습니다. 10/21 로컬 전체 실행(#70 브랜치 `7361d3e`)은 423 통과·`landing` 1개 실패였고, 스크롤 도중 클릭한 검사 탓이라 검사만 고쳤습니다. 마지막 `main` 전체 성공은 10/18 `7264de7`(run 39063459497)입니다. Firebase 5xx·차단 응답 E2E는 없습니다(#44).
 - **CI·로컬 검사 불안정:** `main` CI의 10초 대기 검사가 한 번 실패하고 재실행으로 통과한 일이 두 번 있었습니다(10/19 `programming-classroom`, 10/21 `conditionals` 방탈출 미션의 `마지막 말`, 로컬 3회 통과). 로컬에서는 새로 켠 서버의 첫 실행에서만 `entry-assets`·`flowchart-auto-completion`(#67) 검사가 실패하고 켜 둔 서버에서는 통과합니다(원인 미확정). 반복되면 대기 시간 기준을 점검합니다.
 - **운영 계정 대기:** `instructor` 체험용 비밀번호 교체(사용자, Firebase 콘솔)가 남았습니다. `csRateLimits` 옛 기록은 10/20에 정리했습니다([운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)).
 - **의존성:** 10/21 `npm audit` 24건(보통 5·높음 19)이 남습니다. 늘어난 1건은 잠금 파일 변경 없이 새로 나온 `hono` 권고(GHSA-5r4p-p66f-jhc7, `firebase-tools` 안, 범위 안 수정 가능)로 보입니다. 나머지는 고친 판이 없거나(`braces`) 메이저 업그레이드가 필요한 개발 도구(`shadcn`·`eslint-config-next`·`firebase-tools` 안)이며 운영 화면 경로가 아닙니다. `firebase` 13에서도 `@firebase/firestore`가 `@grpc/grpc-js ~1.9.0`에 묶여 GHSA-m9gg-hp2v-232j가 남지만, 앱은 클라이언트에서 `firebase/app`·`firebase/auth`만 쓰고 Firestore는 서버의 `firebase-admin`(grpc-js 1.14.5)으로 다룹니다.
