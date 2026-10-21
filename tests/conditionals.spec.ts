@@ -46,7 +46,7 @@ async function open(page: Page, mission?: string) {
 test("조건 수업 개념·코드 읽기 퀴즈는 공통 화면에서 풀고 저장·이탈 안내를 따른다", async ({ page }) => {
   await open(page);
   await expect(page.getByRole("heading", { name: "조건에 따라 달라지는 프로그램" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "값을 계산하는 산술 연산자" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "산술 연산자", exact: true })).toBeVisible();
   await page.getByRole("radio", { name: "1", exact: true }).check();
   await page.getByRole("button", { name: "정답 확인", exact: true }).click();
   await expect(page.locator("#concept-feedback-cc0")).toContainText("산술 연산자");

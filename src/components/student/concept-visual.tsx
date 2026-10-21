@@ -19,6 +19,9 @@ function Polygon({ n, label }: { n: number; label: string }) {
 const flowArrow = <marker id="cv-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#526173" /></marker>;
 const box = { fill: "#fff", stroke: "#376fc8", strokeWidth: 2 };
 const line = { stroke: "#526173", strokeWidth: 2, fill: "none", markerEnd: "url(#cv-arrow)" };
+// Control-structure arrows: a fixed-size head whose tip sits exactly on the path end.
+const flowHead = <marker id="cv-flow" viewBox="0 0 10 10" refX="10" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#526173" /></marker>;
+const flow = { stroke: "#526173", strokeWidth: 2, fill: "none", markerEnd: "url(#cv-flow)" };
 
 function Tree({ stage, clicks }: { stage: number; clicks: string }) {
   const crown = [5, 9, 14, 20][stage], trunk = [8, 14, 22, 30][stage];
@@ -28,15 +31,19 @@ function Tree({ stage, clicks }: { stage: number; clicks: string }) {
 export const CONCEPT_VISUALS: Record<string, { label: string; node: ReactNode }> = {
   cc0: { label: "괄호 안의 6 + 4를 먼저 계산해 10, 그다음 2로 나누어 5가 되는 과정", node: <Row><Tile sub="A + B">( 6 + 4 )</Tile><Op>→</Op><Tile tone="purple">10</Tile><Op>÷</Op><Tile>2</Tile><Op>=</Op><Tile tone="true">5</Tile></Row> },
   cc1: { label: "대답이 75일 때 75 ≥ 60은 참, 75 < 60은 거짓", node: <><Card title="75 ≥ 60"><Tile tone="true">참</Tile></Card><Card title="75 < 60"><Tile tone="false">거짓</Tile></Card></> },
-  cc2: { label: "그리고는 둘 다 참일 때 참, 또는은 하나만 참이어도 참, 아니다는 참을 거짓으로 뒤집음", node: <>
-    <Card title="그리고"><Row><Tile tone="true">참</Tile><Op>+</Op><Tile tone="true">참</Tile><Op>→</Op><Tile tone="true">참</Tile></Row><small>둘 다 참일 때만</small></Card>
-    <Card title="또는"><Row><Tile tone="false">거짓</Tile><Op>+</Op><Tile tone="true">참</Tile><Op>→</Op><Tile tone="true">참</Tile></Row><small>하나라도 참이면</small></Card>
-    <Card title="아니다"><Row><Tile tone="true">참</Tile><Op>→</Op><Tile tone="false">거짓</Tile></Row><small>뒤집어요</small></Card></> },
-  cc3: { label: "순차는 위에서 아래로, 선택은 조건에 따라 길이 갈라지고, 반복은 앞으로 되돌아가는 흐름", node: <>
-    <Card title="순차"><svg viewBox="0 0 90 100" width="90" height="100" aria-hidden="true"><defs>{flowArrow}</defs><rect x="25" y="4" width="40" height="22" rx="6" {...box} /><rect x="25" y="39" width="40" height="22" rx="6" {...box} /><rect x="25" y="74" width="40" height="22" rx="6" {...box} /><path d="M45 26V37M45 61V72" {...line} /></svg></Card>
-    <Card title="선택"><svg viewBox="0 0 90 100" width="90" height="100" aria-hidden="true"><defs>{flowArrow}</defs><path d="M45 4L66 24L45 44L24 24z" {...box} /><rect x="2" y="68" width="38" height="22" rx="6" {...box} /><rect x="50" y="68" width="38" height="22" rx="6" {...box} /><path d="M32 33L21 66M58 33L69 66" {...line} /></svg></Card>
-    <Card title="반복"><svg viewBox="0 0 90 100" width="90" height="100" aria-hidden="true"><defs>{flowArrow}</defs><rect x="25" y="14" width="40" height="22" rx="6" {...box} /><rect x="25" y="62" width="40" height="22" rx="6" {...box} /><path d="M45 36V60" {...line} /><path d="M65 73H80V25H67" {...line} /></svg></Card></> },
-  cc4: { label: "만일 대답이 8 이상이면 훌륭해요, 아니면 만일 5 이상이면 잘했어요, 아니면 더 연습해 보자", node: <Nest head="만일 ( 대답 ≥ 8 )(이)라면"><Block kind="look">‘훌륭해요!’ 말하기</Block><em>아니면</em><Nest head="만일 ( 대답 ≥ 5 )(이)라면"><Block kind="look">‘잘했어요!’ 말하기</Block><em>아니면</em><Block kind="look">‘더 연습해 보자!’ 말하기</Block></Nest></Nest> },
+  cc2: { label: "그리고(AND)는 둘 다 참일 때 참, 또는(OR)은 하나만 참이어도 참, 아니다(NOT)는 참을 거짓으로 뒤집음", node: <>
+    <Card title="그리고 (AND)"><Row><Tile tone="true">참</Tile><Op>+</Op><Tile tone="true">참</Tile><Op>→</Op><Tile tone="true">참</Tile></Row><small>둘 다 참일 때만</small></Card>
+    <Card title="또는 (OR)"><Row><Tile tone="false">거짓</Tile><Op>+</Op><Tile tone="true">참</Tile><Op>→</Op><Tile tone="true">참</Tile></Row><small>하나라도 참이면</small></Card>
+    <Card title="아니다 (NOT)"><Row><Tile tone="true">참</Tile><Op>→</Op><Tile tone="false">거짓</Tile></Row><small>뒤집어요</small></Card></> },
+  // Each arrow is its own path so every segment gets a head, and the tip stops at the box edge.
+  cc3: { label: "순차는 위에서 아래로, 선택은 조건에 따라 참과 거짓으로 길이 갈라지고, 반복은 앞으로 되돌아가는 흐름", node: <>
+    <Card title="순차"><svg viewBox="0 0 100 100" width="100" height="100" aria-hidden="true"><defs>{flowHead}</defs><rect x="30" y="4" width="40" height="20" rx="6" {...box} /><rect x="30" y="40" width="40" height="20" rx="6" {...box} /><rect x="30" y="76" width="40" height="20" rx="6" {...box} /><path d="M50 24V39" {...flow} /><path d="M50 60V75" {...flow} /></svg></Card>
+    <Card title="선택"><svg viewBox="0 0 100 100" width="100" height="100" aria-hidden="true"><defs>{flowHead}</defs><path d="M50 4L74 24L50 44L26 24z" {...box} /><rect x="6" y="74" width="40" height="22" rx="6" {...box} /><rect x="54" y="74" width="40" height="22" rx="6" {...box} /><path d="M26 24V73" {...flow} /><path d="M74 24V73" {...flow} /><text x="22" y="52" textAnchor="end" fontSize="11" fontWeight="700" fill="#1d6b5a">참</text><text x="78" y="52" fontSize="11" fontWeight="700" fill="#a03a3a">거짓</text></svg></Card>
+    <Card title="반복"><svg viewBox="0 0 100 100" width="100" height="100" aria-hidden="true"><defs>{flowHead}</defs><rect x="30" y="14" width="40" height="22" rx="6" {...box} /><rect x="30" y="62" width="40" height="22" rx="6" {...box} /><path d="M50 36V61" {...flow} /><path d="M70 73H86V25H71" {...flow} /></svg></Card></> },
+  // Entry's own rendering of the freethrow reference solution (block view exported at 3x).
+  cc4: { label: "만일 대답이 8 이상이면 훌륭해요, 아니면 만일 5 이상이면 잘했어요, 아니면 더 연습해 보자", node:
+    // eslint-disable-next-line @next/next/no-img-element -- bundled static capture
+    <img className={styles.capture} src="/concepts/conditionals-nested-if.png" alt="" width={320} height={287} /> },
   lc0: { label: "도장 찍기를 세 번 쓰는 것과, 3번 반복하기 안에 한 번만 쓰는 것이 같은 결과", node: <>
     <Card title="그냥 쓰면"><Block kind="brush">도장 찍기</Block><Block kind="brush">도장 찍기</Block><Block kind="brush">도장 찍기</Block></Card>
     <Op>=</Op>
