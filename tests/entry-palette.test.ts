@@ -498,13 +498,16 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
     ["escape", exported([escapeProgram(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")))])],
     ["square", exported([[start(), node("start_drawing", null), loopOf(number("4"), [forward(number("100")), turn(node("angle", "90"))])]])],
     ["square", exported([[start(), node("start_drawing", null), loopOf(number("4"), [forward(number("100")), turn(node("angle", "90"), "rotate_relative")])]])],
-    ["polygon", exported([[start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(answer(), [forward(number("70")), turn(calc(number("360"), "DIVIDE", answer()))])]])],
+    ["polygon", exported([[start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(answer(), [forward(number("70")), turn(calc(number("360"), "DIVIDE", answer()))]), node("stop_drawing", null), node("locate_xy", number("-150"), number("0"), null)]])],
     ["tree", withTree(treeCode(["5", "10", "15", "20", "25"].map(grow)))],
     ["safe", exported([[start(), until(compare(answer(), "EQUAL", number("1234"))), speak("금고가 열렸어요!")]])],
   ];
   expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(PROGRAMMING_MISSIONS.map((mission) => mission.id)));
   // The steps name the values and slots these solutions use.
   expect(missionById("polygon")!.steps[2]).toContain("70을 넣어요");
+  // After drawing, the pen lifts and Entrybot steps aside so it does not hide the shape.
+  expect(missionById("polygon")!.steps.join(" ")).toContain("‘그리기 멈추기’");
+  expect(missionById("polygon")!.steps.join(" ")).toContain("x -150, y 0");
   // From (0, 0) facing right and turning clockwise, side 70 keeps triangles to hexagons inside the 480×270 stage.
   for (const sides of [3, 5, 6]) {
     let x = 0, y = 0, heading = 90;
