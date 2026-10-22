@@ -15,7 +15,7 @@ import {
 import styles from "./teacher.module.css";
 
 const CHANNEL = "cs-class-entryjs";
-const WAITING = " 키를 누르거나 오브젝트를 클릭해 보세요. 다 해 봤으면 무대 아래 ‘정지하기’를 눌러 주세요.";
+const WAITING = " 키를 누르거나 무대·오브젝트를 클릭해 보세요. 다 해 봤으면 무대 아래 ‘정지하기’를 눌러 주세요.";
 // Entry's stop resets the stage, so drawing runs stay until the teacher stops them.
 const DRAWING = " 그린 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가요.";
 const withoutWaiting = (text: string) => [WAITING, DRAWING].reduce((rest, notice) => rest.endsWith(notice) ? rest.slice(0, -notice.length) : rest, text);

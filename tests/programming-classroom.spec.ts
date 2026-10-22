@@ -566,12 +566,12 @@ test("오브젝트 추가: 그림 고르기 · 코드 저장·복원 · 강아�
   await expect(page.getByRole("status").filter({ hasText: "강아지는 복제할 수 없어요." })).toBeVisible();
   await entryStart(page).click();
   const result = page.getByRole("status").filter({ hasText: "현재 위치 X 10" });
-  await expect(result).toContainText("키를 누르거나 오브젝트를 클릭해 보세요.");
+  await expect(result).toContainText("키를 누르거나 무대·오브젝트를 클릭해 보세요.");
   await expect(entryStop(page)).toBeVisible();
   await entryStop(page).click();
   await expect(entryStart(page)).toBeVisible();
   await expect(result).toContainText("실행을 멈췄어요.");
-  await expect(result).not.toContainText("키를 누르거나 오브젝트를 클릭해 보세요.");
+  await expect(result).not.toContainText("키를 누르거나 무대·오브젝트를 클릭해 보세요.");
   await page.getByRole("button", { name: "조건 검증", exact: true }).click();
   await expect(page.locator("#practice-feedback")).toHaveText("목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요.");
 });
