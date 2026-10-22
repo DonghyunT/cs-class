@@ -121,5 +121,7 @@ export const PALETTE_TEXT: Readonly<Record<string, string>> = {
   calc_basic: "10 + 10 (사칙연산 4가지)", quotient_and_mod: "10 / 10 의 몫", combine_something: "안녕! 과(와) 엔트리 을(를) 합친 값",
   ask_and_wait: "안녕! 을(를) 묻고 대답 기다리기", get_canvas_input_value: "대답", get_variable: "A 값", change_variable: "A 에 10 만큼 더하기", set_variable: "A 를 10 (으)로 정하기",
 };
+// Accepted but not listed for these missions: drawing is not about speech.
+const UNLISTED: Readonly<Record<string, readonly string[]>> = { square: SAY, polygon: SAY };
 // Mission blocks shown to students in palette order; literal inputs, the harmless extras and same-meaning extras are left out.
-export const missionBlockTypes = (id: string): string[] => ENTRY_PALETTE.flatMap((group) => group.blocks).filter((type) => MISSION_BLOCKS[id]?.has(type) && !HARMLESS_BLOCKS.has(type) && !ALSO_ACCEPTED.has(type));
+export const missionBlockTypes = (id: string): string[] => ENTRY_PALETTE.flatMap((group) => group.blocks).filter((type) => MISSION_BLOCKS[id]?.has(type) && !HARMLESS_BLOCKS.has(type) && !ALSO_ACCEPTED.has(type) && !UNLISTED[id]?.includes(type));

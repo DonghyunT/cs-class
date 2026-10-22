@@ -18,8 +18,10 @@ const wordsIn = (line: string, words: readonly string[]) => words.filter((word) 
 const outcomeOf = (line: string, words: readonly string[]) => { const found = wordsIn(line, words); return found.length > 1 ? null : found[0] ?? ""; };
 // Each decision mission's result words.
 const RESULT_WORDS: Record<string, readonly string[]> = { pass: ["합격", "불합격"], freethrow: ["훌륭", "잘했", "연습"], escape: ["성공", "실패"] };
-// A decision whose branches are right but whose lines mix in another result's word.
-export const wordingMessage = (words: readonly string[]) => `조건은 맞게 나눴어요. 그런데 결과를 알리는 말에 다른 결과의 낱말도 들어 있어요. 결과마다 ${words.map((w) => `‘${w}’`).join("·")} 중 그 결과의 낱말만 말하게 해 주세요.`;
+// A decision whose branches are right but whose lines mix in another result's word. It quotes the
+// goal's whole phrases, not the matching stems (‘잘했’).
+const RESULT_PHRASES: Record<string, readonly string[]> = { pass: ["합격", "불합격"], freethrow: ["훌륭해요", "잘했어요", "더 연습해 보자"], escape: ["탈출 성공", "탈출 실패"] };
+export const wordingMessage = (id: string) => `조건은 맞게 나눴어요. 결과를 말할 때 ${RESULT_PHRASES[id].map((w) => `‘${w}’`).join("·")} 중 맞는 말 하나만 넣어 주세요.`;
 // Entry 4.0.23 `Entry.Utils.isNumber`: ‘+’ adds these and joins anything else as text.
 const numeric = (v: unknown) => typeof v === "number" || typeof v === "string" && /^-?\d+\.?\d*(?:[eE][+-]?\d+)?$/.test(v);
 
@@ -50,9 +52,9 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     let again = false;
     // Every line said, with whether it came from an answer, the calculation it shows and how many questions came before.
     const sayings: { text: string; input: boolean; computed?: number; asks: number }[] = [];
-    // Pen strokes, whether each was drawn inside a loop that ran twice or more and whether on a repeated pass.
+    // Pen strokes, whether each was drawn inside a loop that drew on two or more passes and whether on a repeated pass.
     let segments: Stroke[] = [];
-    // The strokes drawn inside each running loop, marked `repeated` when that loop ends after two or more passes.
+    // The strokes drawn inside each running loop, marked `repeated` when that loop ends having drawn on two or more passes.
     const open: Stroke[][] = [];
     const step = () => { if (++steps > MAX_STEPS) throw new MissionError("실행이 너무 길어요. 반복이나 조건을 다시 확인해 주세요."); };
     const number = (v: unknown) => { if (String(v).trim() === "" || !Number.isFinite(Number(v)) || Math.abs(Number(v)) > 1e6) throw new MissionError("실행할 숫자 입력을 확인해 주세요."); return Number(v); };
@@ -114,15 +116,20 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     function loop(body: EntryNode[], next: () => boolean, forever = false) {
       if (forever && observe) { forevers.push({ body, actor }); let left = FRAMES; next = () => left-- > 0; }
       loopDepth++;
-      const outer = again, drawn: Stroke[] = []; let passes = 0;
+      // `drew` counts the passes that drew: a loop drawing on one pass only is not repetition.
+      const outer = again, drawn: Stroke[] = []; let passes = 0, drew = 0;
       open.push(drawn);
-      try { while (next()) { step(); again = outer || passes++ > 0; try { exec(body); } catch (error) { if (error instanceof StopRepeat) break; throw error; } } }
-      finally { loopDepth--; again = outer; open.pop(); if (passes > 1) for (const s of drawn) s.repeated = true; }
+      try { while (next()) { step(); again = outer || passes++ > 0; const before = drawn.length; try { exec(body); } catch (error) { if (error instanceof StopRepeat) break; throw error; } finally { if (drawn.length > before) drew++; } } }
+      finally { loopDepth--; again = outer; open.pop(); if (drew > 1) for (const s of drawn) s.repeated = true; }
     }
     function exec(list: EntryNode[]) {
       for (const n of list) {
         step();
-        if (n.type === "ask_and_wait") { if (asks >= inputs.length) throw new MissionError("이번 목표에 필요한 질문을 차례로 연결해 주세요."); answer = inputs[asks++]; if (loopDepth) asksInLoop++; }
+        if (n.type === "ask_and_wait") {
+          // The safe's tries end with 1234, so asking again inside a loop means it never stops.
+          if (asks >= inputs.length) throw new MissionError(id === "safe" && loopDepth ? "1234를 맞힌 뒤에도 또 물어요. 맞히면 반복이 멈추도록 ‘반복 중단하기’나 반복 조건을 확인해 주세요." : "이번 목표에 필요한 질문을 차례로 연결해 주세요.");
+          answer = inputs[asks++]; if (loopDepth) asksInLoop++;
+        }
         else if (n.type === "set_variable") {
           const value = evaluate(n.params[1] as EntryNode), id = String(n.params[0]);
           variables[id] = value;
@@ -192,9 +199,10 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   function run(signal: string, inputs: string[], m = machine(inputs)) {
     // A dog-free project runs the start line of whichever object owns it (missionBlockIssue keeps it to one object).
     const lines = (p!.free ? p!.added.flatMap((o) => o.threads) : p!.threads).filter((t) => signal === "click" ? t[0]?.type === "when_run_button_click" : t[0]?.type === "when_some_key_pressed" && t[0].params[1] === signal);
-    if (lines.length > 1) throw new MissionError(signal === "click" ? "‘시작하기 버튼을 클릭했을 때’ 줄이 여러 개예요. 한 줄로 이어 붙여 주세요." : `‘${KEY_LABELS[signal]} 키를 눌렀을 때’ 줄이 여러 개예요. 키마다 한 줄로 이어 붙여 주세요.`);
-    // tests/fixtures/entry-legacy-keys.json pins this wording for a missing line.
-    if (!lines.length) throw new MissionError("시작 신호마다 한 줄의 코드를 연결해 주세요.");
+    // Named as the palette shows the block (‘위쪽 화살표 키를 눌렀을 때’); only arrow keys are graded.
+    const block = signal === "click" ? "‘시작하기 버튼을 클릭했을 때’" : `‘${KEY_LABELS[signal]} 화살표 키를 눌렀을 때’`;
+    if (lines.length > 1) throw new MissionError(`${block} 줄이 여러 개예요. ${signal === "click" ? "" : "키마다 "}한 줄로 이어 붙여 주세요.`);
+    if (!lines.length) throw new MissionError(`${block} 아래에 블록을 연결해 주세요.`);
     m.run(lines[0].slice(1), null);
     return m.result();
   }
@@ -236,10 +244,15 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       return list;
     }, []);
     if (laps && sides.length % laps) return sides;
-    return sides.filter((s, i) => !sides.slice(0, i).some((t) => near(t.from, s.from) && near(t.to, s.to) || near(t.from, s.to) && near(t.to, s.from)));
+    // A line drawn over only outside a loop still counts as drawn outside one.
+    return sides.reduce<Stroke[]>((kept, s) => {
+      const same = kept.find((t) => near(t.from, s.from) && near(t.to, s.to) || near(t.from, s.to) && near(t.to, s.from));
+      if (same) same.repeated &&= s.repeated; else kept.push({ ...s });
+      return kept;
+    }, []);
   };
-  // A closed regular polygon with `sides` equal strokes: every side drawn inside a loop that ran
-  // twice or more, and some side on a repeated pass (so ‘1번 반복’ around most sides fails).
+  // A closed regular polygon with `sides` equal strokes: every side drawn inside a loop that drew
+  // on two or more passes, and some side on a repeated pass (so ‘1번 반복’ around most sides fails).
   const regular = (strokes: Stroke[], sides: number, length?: number) => {
     if (strokes.length !== sides || !strokes.every((s) => s.repeated) || !strokes.some((s) => s.again)) return false;
     const lengths = strokes.map((s) => Math.hypot(s.to[0] - s.from[0], s.to[1] - s.from[1]));
@@ -254,13 +267,20 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   // (‘합격 기준은 60점이야’) are never results.
   const after = (r: Run) => r.sayings.filter((s) => s.asks === r.asks).map((s) => s.text);
   // In every case some line says a result, and every line that does says the expected one.
-  // `wordingOnly` asks whether the branches are right and only the wording is not: lines every case
-  // says are dropped, and the first remaining line with a result word must hold the expected one.
-  const saysOnly = (runs: Run[], expected: string[]) => runs.every((r, i) => {
-    if (wordingOnly) return !!after(r).filter((t) => !runs.every((o) => after(o).includes(t))).map((t) => wordsIn(t, RESULT_WORDS[id])).find((f) => f.length)?.includes(expected[i]);
-    const results = after(r).map((t) => outcomeOf(t, RESULT_WORDS[id])).filter((o) => o !== "");
-    return results.length > 0 && results.every((o) => o === expected[i]);
-  });
+  const saysOnly = (runs: Run[], expected: string[]) => {
+    if (wordingOnly) return branchesRight(runs, expected);
+    return runs.every((r, i) => { const results = after(r).map((t) => outcomeOf(t, RESULT_WORDS[id])).filter((o) => o !== ""); return results.length > 0 && results.every((o) => o === expected[i]); });
+  };
+  // `wordingOnly`: are the branches right and only the words wrong? Digits are ignored, so an echoed
+  // answer is the same line in every case; lines every case says are dropped. A result line left must
+  // come only in cases expecting one result (three separate ‘만일’ say ‘잘했어요’ for 9 and for 7), and
+  // each case's first result line must hold its expected word.
+  const branchesRight = (runs: Run[], expected: string[]) => {
+    const said = runs.map((r) => after(r).map((t) => t.replace(/\d/g, "")));
+    const kept = said.map((lines) => lines.filter((t) => !said.every((o) => o.includes(t))));
+    if (kept.flat().some((t) => wordsIn(t, RESULT_WORDS[id]).length && new Set(expected.filter((_, i) => kept[i].includes(t))).size > 1)) return false;
+    return kept.every((lines, i) => !!lines.map((t) => wordsIn(t, RESULT_WORDS[id])).find((f) => f.length)?.includes(expected[i]));
+  };
   // A and B must first store the two inputs, in either order: asking for B first is also correct.
   const storedInputs = (r: Run, a: number, b: number) => {
     const stored = [Number(r.firstInput["cs-A"]?.value), Number(r.firstInput["cs-B"]?.value)];
@@ -314,7 +334,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     try { if (grade()) return fail(THINKING_MESSAGE); } catch { /* the first result stands */ }
     // Right branches, wrong words? Then point at the words, not at the blocks.
     thinkSpeaks = false; wordingOnly = true;
-    try { if (RESULT_WORDS[id] && grade()) return fail(wordingMessage(RESULT_WORDS[id])); } catch { /* the first result stands */ }
+    try { if (RESULT_WORDS[id] && grade()) return fail(wordingMessage(id)); } catch { /* the first result stands */ }
     return fail(mission.failure);
   } catch (error) { return fail(error instanceof MissionError ? error.message : mission.failure); }
 }

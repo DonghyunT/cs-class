@@ -627,6 +627,8 @@ const xOrY = (dx: number, dy: number) => dx ? node("move_x", number(String(dx)),
 const facing = (dx: number, dy: number) => [node("direction_absolute", node("angle", String(dx ? (dx > 0 ? 90 : -90) : dy > 0 ? 0 : 180)), null), forward(number("10"))];
 const arrowLines = (body: (dx: number, dy: number) => EntryNode[]) => [["38", 0, 10], ["39", 10, 0], ["40", 0, -10], ["37", -10, 0]].map(([key, dx, dy]) => [node("when_some_key_pressed", null, String(key)), ...body(Number(dx), Number(dy))]);
 const hintOf = (id: string) => missionById(id)!.failure;
+const when = (condition: EntryNode, inner: EntryNode[]): EntryNode => ({ ...node("_if", condition, null), statements: [inner] });
+const SAFE_STOP = "1234를 맞힌 뒤에도 또 물어요. 맞히면 반복이 멈추도록 ‘반복 중단하기’나 반복 조건을 확인해 주세요.";
 const noneSolved = node("boolean_and_or", compare(v("A"), "EQUAL", number("0")), "AND", compare(v("B"), "EQUAL", number("0")));
 
 const MUST_PASS: [string, string, EntryNode[][]][] = [
@@ -711,14 +713,27 @@ const MUST_FAIL: [string, string, EntryNode[][], string?][] = [
   // The keys are pressed one after another: → that relies on the starting direction 90 goes up after ↑.
   ["keys", "→ 키만 방향을 정하지 않음", arrowLines((dx, dy) => dx > 0 ? [forward(number("10"))] : facing(dx, dy))],
   // Right branches with mixed-in result words get the wording message, not the block hint.
-  ["pass", "불합격 뒤 ‘다음엔 꼭 합격하자’", [scored([speak("합격")], [speak("불합격"), speak("다음엔 꼭 합격하자")])], wordingMessage(["합격", "불합격"])],
-  ["freethrow", "‘연습 잘했어’", [throwsOf("훌륭해요!", "연습 잘했어", "더 연습해 보자!")], wordingMessage(["훌륭", "잘했", "연습"])],
-  ["freethrow", "질문 뒤에 ‘자유투 연습 결과는’", [[start(), ask(), speak("자유투 연습 결과는"), ...throwsOf("훌륭해요!", "잘했어요!", "더 연습해 보자!").slice(2)]], wordingMessage(["훌륭", "잘했", "연습"])],
-  ["escape", "‘탈출 실패, 다음엔 성공하자’", [escapeSays(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")), "탈출 성공!", "탈출 실패, 다음엔 성공하자")], wordingMessage(["성공", "실패"])],
-  ["escape", "마무리 ‘실패해도 괜찮아’", [[...escapeSays(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")), "탈출 성공!", "탈출 실패"), speak("실패해도 괜찮아")]], wordingMessage(["성공", "실패"])],
+  ["pass", "불합격 뒤 ‘다음엔 꼭 합격하자’", [scored([speak("합격")], [speak("불합격"), speak("다음엔 꼭 합격하자")])], wordingMessage("pass")],
+  ["freethrow", "‘연습 잘했어’", [throwsOf("훌륭해요!", "연습 잘했어", "더 연습해 보자!")], wordingMessage("freethrow")],
+  ["freethrow", "질문 뒤에 ‘자유투 연습 결과는’", [[start(), ask(), speak("자유투 연습 결과는"), ...throwsOf("훌륭해요!", "잘했어요!", "더 연습해 보자!").slice(2)]], wordingMessage("freethrow")],
+  ["escape", "‘탈출 실패, 다음엔 성공하자’", [escapeSays(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")), "탈출 성공!", "탈출 실패, 다음엔 성공하자")], wordingMessage("escape")],
+  ["escape", "마무리 ‘실패해도 괜찮아’", [[...escapeSays(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")), "탈출 성공!", "탈출 실패"), speak("실패해도 괜찮아")]], wordingMessage("escape")],
   // Wrong or missing branches still get the mission's hint.
   ["pass", "늘 합격·불합격을 둘 다 말함", [[start(), ask(), speak("합격"), speak("불합격")]], hintOf("pass")],
   ["pass", "‘아니면’ 없이 합격만", [[start(), ask(), { ...node("_if", compare(answer(), "GREATER_OR_EQUAL", number("60")), null), statements: [[speak("합격")]] }]], hintOf("pass")],
+  // The wording message only follows branches that split the cases by result: a result line said in
+  // cases expecting different results, or an answer echoed with every result word, gets the hint.
+  ["freethrow", "만일 세 개를 따로(9개면 두 결과)", [[start(), ask(), when(compare(answer(), "GREATER_OR_EQUAL", number("8")), [speak("훌륭해요!")]), when(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak("잘했어요!")]), when(compare(answer(), "LESS", number("5")), [speak("더 연습해 보자!")])]], hintOf("freethrow")],
+  ["pass", "만일 없이 대답과 두 결과를 한 줄로", [[start(), ask(), say(join(answer(), text("점이면 합격일까 불합격일까")))]], hintOf("pass")],
+  ["freethrow", "만일 없이 대답과 세 결과를 한 줄로", [[start(), ask(), say(join(answer(), text("개! 훌륭? 잘했? 연습?")))]], hintOf("freethrow")],
+  ["pass", "50점 기준에 두 결과를 섞은 말", [scored([speak("불합격이 아니라 합격이야!")], [speak("합격이 아니라 불합격이야")], compare(answer(), "GREATER_OR_EQUAL", number("50")))], hintOf("pass")],
+  ["pass", "결과를 서로 바꿔 말함", [scored([speak("불합격")], [speak("합격")])], hintOf("pass")],
+  ["freethrow", "8개 이상에 ‘정말 잘했어’를 더 말함", [[start(), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("8")), [speak("훌륭해요!"), speak("정말 잘했어")], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak("잘했어요!")], [speak("더 연습해 보자!")])])]], wordingMessage("freethrow")],
+  ["pass", "대답을 말한 뒤 바른 갈래, ‘다음엔 꼭 합격하자’", [[start(), ask(), say(join(answer(), text("점이에요"))), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [speak("합격")], [speak("불합격"), speak("다음엔 꼭 합격하자")])]], wordingMessage("pass")],
+  // A side drawn again outside the loop is still drawn outside it, and a loop must draw on two passes.
+  ["square", "4번 반복 뒤 반복 밖에서 첫 변을 한 번 더", [[...drawn([forward(number("100")), right90()]), forward(number("100"))]]],
+  ["square", "2번 반복 안에 네 변을 풀어 쓰고 맨 아래에서 그리기 시작", [[start(), loopOf(number("2"), [...Array.from({ length: 4 }, () => [forward(number("100")), right90()]).flat(), node("start_drawing", null)])]]],
+  ["safe", "계속 반복에 ‘반복 중단하기’ 없음", [[start(), { ...node("repeat_inf", null, null), statements: [[node("ask_and_wait", text("비밀번호는?"), null), when(compare(answer(), "EQUAL", number("1234")), [opened()])]] }]], SAFE_STOP],
 ];
 
 test("채점 표: 같은 뜻으로 만든 작품은 통과하고, 결과가 틀리거나 다른 결과를 말하거나 고정 답이면 떨어진다", () => {
@@ -728,9 +743,16 @@ test("채점 표: 같은 뜻으로 만든 작품은 통과하고, 결과가 틀�
     expect(result.passed, `${id}: ${label}`).toBe(false);
     if (message) expect(result.message, `${id}: ${label}`).toBe(message);
   }
-  // A start line split in two is named; a missing one keeps the fixture's wording.
+  // A start line split in two or missing is named as the palette shows it (‘위쪽 화살표’).
   expect(checkProgrammingMission("multiply", exported([both, [start(), say(calc(v("A"), "MULTI", v("B")))]])).message).toBe("‘시작하기 버튼을 클릭했을 때’ 줄이 여러 개예요. 한 줄로 이어 붙여 주세요.");
-  expect(checkProgrammingMission("keys", exported([...arrows(xOrY), [node("when_some_key_pressed", null, "38"), wait()]])).message).toBe("‘위쪽 키를 눌렀을 때’ 줄이 여러 개예요. 키마다 한 줄로 이어 붙여 주세요.");
+  expect(checkProgrammingMission("keys", exported([...arrows(xOrY), [node("when_some_key_pressed", null, "38"), wait()]])).message).toBe("‘위쪽 화살표 키를 눌렀을 때’ 줄이 여러 개예요. 키마다 한 줄로 이어 붙여 주세요.");
+  expect(checkProgrammingMission("multiply", exported([both.slice(1)])).message).toBe("‘시작하기 버튼을 클릭했을 때’ 아래에 블록을 연결해 주세요.");
+  expect(checkProgrammingMission("average", missionStarter("average")).message).toBe("‘시작하기 버튼을 클릭했을 때’ 아래에 블록을 연결해 주세요.");
+  expect(checkProgrammingMission("keys", exported(arrows(xOrY).slice(1))).message).toBe("‘위쪽 화살표 키를 눌렀을 때’ 아래에 블록을 연결해 주세요.");
+  // The wording message quotes the whole result phrases students say, in two short sentences.
+  expect(wordingMessage("freethrow")).toBe("조건은 맞게 나눴어요. 결과를 말할 때 ‘훌륭해요’·‘잘했어요’·‘더 연습해 보자’ 중 맞는 말 하나만 넣어 주세요.");
+  expect(wordingMessage("pass")).toContain("‘합격’·‘불합격’");
+  expect(wordingMessage("escape")).toContain("‘탈출 성공’·‘탈출 실패’");
   // Harmless extras run in the tree mission too, and the block list shown to students leaves them out.
   const grown = treeCode(["5", "10", "15", "20", "25"].map(grow));
   expect(checkProgrammingMission("tree", withTree([[...grown[0], node("change_scale_size", number("1"), null), node("show", null)]]))).toEqual(OK);
@@ -738,6 +760,11 @@ test("채점 표: 같은 뜻으로 만든 작품은 통과하고, 결과가 틀�
   // Same-meaning extras are accepted but not listed, so the list keeps the blocks the mission is about.
   expect(MISSION_BLOCKS.square.has("rotate_by_time")).toBe(true);
   expect(missionBlockTypes("square")).not.toContain("rotate_by_time");
+  // Drawing missions accept speech but do not list it.
+  for (const id of ["square", "polygon"]) for (const type of ["dialog", "dialog_time"]) {
+    expect(MISSION_BLOCKS[id].has(type), id).toBe(true);
+    expect(missionBlockTypes(id), id).not.toContain(type);
+  }
   expect(missionBlockTypes("square")).toEqual(expect.arrayContaining(["move_direction", "direction_relative", "repeat_basic", "start_drawing"]));
 });
 
