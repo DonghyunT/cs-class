@@ -315,6 +315,6 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     // Right branches, wrong words? Then point at the words, not at the blocks.
     thinkSpeaks = false; wordingOnly = true;
     try { if (RESULT_WORDS[id] && grade()) return fail(wordingMessage(RESULT_WORDS[id])); } catch { /* the first result stands */ }
-    return fail(mission.failure ?? mission.hint);
-  } catch (error) { return fail(error instanceof MissionError ? error.message : mission.failure ?? mission.hint); }
+    return fail(mission.failure);
+  } catch (error) { return fail(error instanceof MissionError ? error.message : mission.failure); }
 }

@@ -5,8 +5,8 @@ import { ArrowLeft, ArrowRight, Check, Lightbulb, RotateCcw } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { ProgrammingConcept as ProgrammingConceptView } from "./programming-concept";
 import { concepts, questions } from "@/lib/classroom/programming-data";
-import { missionBlockLabels } from "@/lib/classroom/entry-palette";
-import { missionStarter, missionsFor } from "@/lib/classroom/programming-entry";
+import { PALETTE_TEXT, blockLabel, missionBlockTypes } from "@/lib/classroom/entry-palette";
+import { entryBlockCategory, hintParts, missionStarter, missionsFor } from "@/lib/classroom/programming-entry";
 import { practiceMatches } from "@/lib/classroom/progress";
 import type { Lesson, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
@@ -15,6 +15,9 @@ import type { WorkController, LessonMode } from "./work-controller";
 import styles from "./programming-lesson.module.css";
 
 type Props = { lesson: Lesson; controller: WorkController; mode?: LessonMode; locked: boolean; runAction: (action: WorkAction, focusId: string) => Promise<void>; focus: (id: string) => void; next: (stage: WorkDraft["stage"]) => void; exportRef: RefObject<(() => Promise<string | null>) | null>; workspaceWide: boolean; practiceFocused: boolean; onWorkspaceWideChange: (wide: boolean) => void; saveLabel: string; conceptId: string; quizQuestionId: string; onConceptChange: (id: string) => void; onQuizQuestionChange: (id: string) => void; onEditorReady?: (ready: boolean) => void };
+
+// Hint text with its block chips coloured by Entry category; screen readers read the chips as plain words.
+const HintText = ({ text }: { text: string }) => <>{hintParts(text).map((part, i) => typeof part === "string" ? part : <span key={i} className={styles.blockChip} data-category={entryBlockCategory(part.type)}>{part.text}</span>)}</>;
 
 // The first programming lesson keeps its hands-on concept and quiz screens; later lessons use the shared panels.
 export const hasCustomLearning = (lesson: Lesson) => lesson.id === "programming-13";
@@ -120,7 +123,7 @@ function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exp
     <div className={styles.practiceLayout}>
       <aside className={styles.missionBrief} aria-labelledby="programming-mission-title">
         <div className={styles.heading}><div><span>{mission.optional ? "선택 도전 · 기본 완료 조건에 포함되지 않아요" : `미션 0${position + 1}`}</span><h3 id="programming-mission-title" tabIndex={-1}>{mission.title}</h3><p>{mission.goal}</p></div></div>
-        <PracticeGuidance focused={practiceFocused} label="블록 연결 힌트·만든 뒤 확인"><details key={mission.id} className={styles.hint}><summary>블록 연결 힌트 보기</summary><p>{mission.hint}</p><ol aria-label="조립 순서">{mission.steps.map((step) => <li key={step}>{step}</li>)}</ol><details className={styles.hintBlocks}><summary>검증에는 이 블록만 봐요</summary><ul>{missionBlockLabels(mission.id).map((label) => <li key={label}>{label}</li>)}</ul></details></details>
+        <PracticeGuidance focused={practiceFocused} label="블록 연결 힌트·만든 뒤 확인"><details key={mission.id} className={styles.hint}><summary>블록 연결 힌트 보기</summary><div className={styles.hintBody}><div><p><HintText text={mission.hint} /></p><ol aria-label="조립 순서">{mission.steps.map((step) => <li key={step}><HintText text={step} /></li>)}</ol></div><div>{mission.tip && <p className={styles.tip}><span aria-hidden="true">💡 </span><HintText text={mission.tip} /></p>}<details className={styles.hintBlocks}><summary>이 미션에서 쓸 수 있는 블록</summary><ul>{missionBlockTypes(mission.id).map((type) => <li key={type} className={styles.blockChip} data-category={entryBlockCategory(type)}>{PALETTE_TEXT[type] ?? blockLabel(type)}</li>)}</ul></details></div></div></details>
         <div className={styles.experiment}><h4><Lightbulb size={17} aria-hidden="true" />만든 뒤 확인하기</h4><p>{mission.experiment}</p></div></PracticeGuidance>
       </aside>
       <div className={styles.workArea}>

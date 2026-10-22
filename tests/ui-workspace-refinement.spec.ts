@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { buildEntryProject, parseEntryProject } from "../src/lib/classroom/entry-project";
-import { buildProgrammingProject, parseProgrammingProject, missionsFor } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, hintPlain, parseProgrammingProject, missionsFor } from "../src/lib/classroom/programming-entry";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { emptyWork } from "../src/lib/classroom/progress";
 import { resumeLabelFor } from "../src/lib/classroom/lesson-navigation";
@@ -72,7 +72,7 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   await expect(guidance.getByRole("heading", { name: mission.title, exact: true })).toBeVisible();
   await expect(guidance.getByText(mission.goal, { exact: true })).toBeVisible();
   await expect(experiment).toBeVisible();
-  await expect(guidance.getByText(mission.hint, { exact: true })).toBeHidden();
+  await expect(guidance.getByText(hintPlain(mission.hint), { exact: true })).toBeHidden();
   await expect(page.frameLocator("iframe").locator("#entryWorkspaceBoard")).toBeVisible();
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect(experiment).toBeInViewport();
@@ -113,19 +113,19 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   await page.keyboard.press("Tab");
   await expect(hint).toBeFocused();
   await hint.press("Enter");
-  await expect(guidance.getByText(mission.hint, { exact: true })).toBeVisible();
+  await expect(guidance.getByText(hintPlain(mission.hint), { exact: true })).toBeVisible();
   // The folded guide lists every assembly step; the check-after-building card follows the guide.
   await expect(guidance.getByRole("list", { name: "조립 순서", exact: true }).getByRole("listitem")).toHaveCount(mission.steps.length);
   const checkCard = guidance.getByRole("heading", { name: "만든 뒤 확인하기", exact: true });
   expect((await checkCard.boundingBox())!.y).toBeGreaterThan((await hint.boundingBox())!.y);
   // The nested block list keeps its own "+" marker while closed, and its pills line up.
-  const blocksSummary = guidance.getByText("검증에는 이 블록만 봐요", { exact: true });
+  const blocksSummary = guidance.getByText("이 미션에서 쓸 수 있는 블록", { exact: true });
   expect(await blocksSummary.evaluate((element) => getComputedStyle(element, "::before").content)).toBe('"＋"');
   await blocksSummary.click();
   expect(await blocksSummary.locator("xpath=..").locator("li").first().evaluate((element) => getComputedStyle(element).marginTop)).toBe("0px");
   await blocksSummary.click();
   await hint.press("Enter");
-  await expect(guidance.getByText(mission.hint, { exact: true })).toBeHidden();
+  await expect(guidance.getByText(hintPlain(mission.hint), { exact: true })).toBeHidden();
   await page.keyboard.press("Tab");
   await expect(editor.getByRole("button", { name: "무대 초기화", exact: true })).toBeFocused();
   await page.keyboard.press("Tab");
@@ -148,7 +148,7 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   }
 });
 
-test("펼친 조립 순서는 내부 스크롤 없이 모든 단계가 보이고, 요약 다음에 검증 블록 목록으로 초점이 가며, 작업실 이동량을 기록한다", async ({ page }, testInfo) => {
+test("펼친 조립 순서는 내부 스크롤 없이 모든 단계가 보이고, 요약 다음에 쓸 수 있는 블록 목록으로 초점이 가며, 작업실 이동량을 기록한다", async ({ page }, testInfo) => {
   test.setTimeout(240_000);
   await resetStudent(page.request, studentId);
   expect((await loginStudent(page.request, initialPassword, studentId)).status()).toBe(200);
@@ -173,9 +173,11 @@ test("펼친 조립 순서는 내부 스크롤 없이 모든 단계가 보이고
       expect(await steps.evaluate((element) => element.scrollHeight - element.clientHeight), `${missionId} ${width}`).toBeLessThanOrEqual(1);
       shifts[`${missionId} ${width}`] = (await frameTop()) - closed;
       if (width === 1544) expect(shifts[`${missionId} ${width}`], `${missionId} ${width}`).toBe(0);
+      // At 1,024px the short hint keeps the workspace near the fold (the 💡 line sits beside the steps).
+      if (width === 1024) expect(shifts[`${missionId} ${width}`], `${missionId} ${width}`).toBeLessThanOrEqual(230);
       await hint.focus();
       await page.keyboard.press("Tab");
-      await expect(page.getByText("검증에는 이 블록만 봐요", { exact: true })).toBeFocused();
+      await expect(page.getByText("이 미션에서 쓸 수 있는 블록", { exact: true })).toBeFocused();
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     }
   }

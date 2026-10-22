@@ -4,8 +4,8 @@ import { LEGACY_INPUTS } from "./entry-legacy-inputs";
 import legacyKeys from "./fixtures/entry-legacy-keys.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { readEntryDraft } from "../src/components/student/read-editor-draft";
-import { BLOCK_LABELS, CONTAINER_BLOCKS, ENTRY_PALETTE, MISSION_BLOCKS, VALUE_BLOCKS, blockLabel, missionBlockLabels } from "../src/lib/classroom/entry-palette";
-import { PROGRAMMING_MISSIONS, buildProgrammingProject, entryBlockCategory, entryObjectModel, formatEntryNode, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { CONTAINER_BLOCKS, ENTRY_PALETTE, MISSION_BLOCKS, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
+import { PROGRAMMING_MISSIONS, buildProgrammingProject, entryBlockCategory, entryObjectModel, formatEntryNode, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission, wordingMessage } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
@@ -255,15 +255,49 @@ test("비슷한 블록과 다른 오브젝트에 만든 시작 줄을 구체적�
   expect(checkProgrammingMission("move", wrongObject).message).toBe("강아지가 아니라 ‘축구공’에 시작하기 줄이 있어요. 오브젝트 목록에서 강아지를 고른 뒤 코드를 만들어 주세요.");
 });
 
-test("힌트·조립 순서가 ‘ ’로 인용한 블록 이름은 그 미션의 검증 블록이고, 이름 미션 힌트는 ‘( )초 동안 말하기’를 말한다", () => {
-  expect(missionById("name")!.hint).toContain(`‘${blockLabel("dialog_time")}’`);
+// Words each chip must keep so students can find that one block on the palette (and not its look-alike).
+const CHIP_WORDS: Record<string, RegExp> = {
+  when_run_button_click: /^시작하기 버튼을 클릭했을 때$/, when_some_key_pressed: /^.+ 키를 눌렀을 때$/, mouse_clicked: /^마우스를 클릭했을 때$/, ask_and_wait: /^.+[을를] 묻고 대답 기다리기$/,
+  dialog: /^.+[을를] 말하기$/, set_variable: /^[AB]를 .+로 정하기$/, change_variable: /^.+에 \d+만큼 더하기$/, calc_basic: / [+\-x/] /, boolean_basic_operator: /^.+ (=|!=|>|<|≥|≤) .+$/,
+  boolean_and_or: /^참 (그리고|또는) /, if_else: /^만일 .+라면 아니면$/, _if: /^만일 .+라면$/, repeat_basic: /^.+번 반복하기$/, repeat_while_true: /될 때까지 반복하기$/,
+  move_direction: /^\d+만큼 움직이기$/, direction_relative: /^.+° 회전하기$/, direction_absolute: /^이동 방향을 \d+°로 정하기$/,
+  start_drawing: /^그리기 시작하기$/, stop_drawing: /^그리기 멈추기$/, locate_xy: /^x: -?\d+ y: -?\d+ 위치로 이동하기$/, change_to_next_shape: /^다음 모양으로 바꾸기$/,
+};
+const missionText = (id: string) => { const m = missionById(id)!; return [m.hint, ...m.steps, m.tip ?? ""]; };
+
+test("힌트 칩은 그 미션이 받는 블록이고 팔레트의 고정 낱말을 지키며, 힌트는 짧고 칩 표기가 새지 않는다", () => {
   for (const mission of PROGRAMMING_MISSIONS) {
-    expect(mission.steps.length, mission.id).toBeGreaterThanOrEqual(3);
-    for (const [, quoted] of [mission.hint, ...mission.steps].join(" ").matchAll(/‘([^’]+)’/g)) {
-      const types = Object.keys(BLOCK_LABELS).filter((type) => BLOCK_LABELS[type] === quoted);
-      if (types.length) expect(types.some((type) => MISSION_BLOCKS[mission.id]?.has(type)), `${mission.id}: ${quoted}`).toBe(true);
+    const texts = missionText(mission.id);
+    const chips = texts.flatMap(hintParts).filter((part) => typeof part !== "string");
+    expect(chips.length, mission.id).toBeGreaterThan(0);
+    for (const { type, text } of chips) {
+      expect(MISSION_BLOCKS[mission.id].has(type), `${mission.id}: ${type} ${text}`).toBe(true);
+      expect(CHIP_WORDS[type], `${type}: add the words its chip must keep`).toBeTruthy();
+      expect(text, `${mission.id}: ${type}`).toMatch(CHIP_WORDS[type]);
     }
+    // No broken chip, template slot or duplicated palette note reaches the screen.
+    for (const plain of texts.map(hintPlain)) expect(plain, mission.id).not.toMatch(/`|\( \)|팔레트에서는/);
+    // One summary line, at most five one-line steps and one short 💡 line (1,024px: one line; 222px column: four lines).
+    expect(mission.steps.length, mission.id).toBeGreaterThanOrEqual(2);
+    expect(mission.steps.length, mission.id).toBeLessThanOrEqual(5);
+    expect(hintPlain(mission.hint).length, mission.id).toBeLessThanOrEqual(45);
+    for (const step of mission.steps) expect(hintPlain(step).length, `${mission.id}: ${step}`).toBeLessThanOrEqual(45);
+    expect(hintPlain(mission.tip ?? "").length, mission.id).toBeLessThanOrEqual(40);
+    // The grader's failure text is plain: hint chips never leak into validation feedback.
+    expect(mission.failure, mission.id).not.toMatch(/`/);
   }
+  // The palette shows ‘x’ for multiply, so the hint does too; plain ‘말하기’ counts for the name mission now.
+  expect(hintPlain(missionById("multiply")!.steps.join(" "))).toContain("A 값 x B 값");
+  expect(hintParts(missionById("name")!.steps.join(" "))).toContainEqual({ type: "dialog", text: "대답을 말하기" });
+  expect(hintParts("a `dialog: 안녕을 말하기` b")).toEqual(["a ", { type: "dialog", text: "안녕을 말하기" }, " b"]);
+  expect(hintPlain("a `dialog: 안녕을 말하기` b")).toBe("a 안녕을 말하기 b");
+});
+
+test("미션 블록 목록은 팔레트 순서·표기로 보이고 표기가 빠진 블록이 없다", () => {
+  for (const id of Object.keys(MISSION_BLOCKS)) for (const type of missionBlockTypes(id)) expect(PALETTE_TEXT[type], `${id}: ${type}`).toBeTruthy();
+  expect(missionBlockTypes("multiply").slice(0, 2)).toEqual(["when_run_button_click", "dialog_time"]);
+  expect(Object.keys(PALETTE_TEXT).every((type) => PALETTE_BLOCKS.has(type))).toBe(true);
+  expect(blockLabel("combine_something")).toBe("( )과(와) ( )을(를) 합친 값");
 });
 
 test("저장할 때 다른 미션에 남은 엔트리 원문도 정규화해 서버 한도 안으로 보낸다", async () => {
@@ -496,7 +530,7 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
   const store = (id: string) => [ask(), node("set_variable", `cs-${id}`, answer(), null)];
   const calc = (left: EntryNode, op: string, right: EntryNode) => node("calc_basic", left, op, right);
   const solutions: [string, string][] = [
-    ["name", project([[start(), node("ask_and_wait", text("이름이 뭐니?"), null), sayTimed(answer())]])],
+    ["name", project([[start(), node("ask_and_wait", text("이름이 뭐니?"), null), speak2(answer())]])],
     ["multiply", project([[start(), ...store("A"), ...store("B"), sayTimed(calc(variable("A"), "MULTI", variable("B")))]])],
     ["move", project([[start(), node("direction_absolute", node("angle", "90"), null), forward(number("10"))]])],
     ["keys", project([["38", "0"], ["39", "90"], ["40", "180"], ["37", "270"]].map(([key, angle]) => [node("when_some_key_pressed", null, key), node("direction_absolute", node("angle", angle), null), forward(number("10"))]))],
@@ -512,17 +546,60 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
   ];
   expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(PROGRAMMING_MISSIONS.map((mission) => mission.id)));
   // The steps name the values and slots these solutions use.
-  expect(missionById("polygon")!.steps[2]).toContain("70을 넣어요");
+  expect(hintPlain(missionById("polygon")!.steps[1])).toContain("70만큼 움직이기");
   // After drawing, the pen lifts and Entrybot steps aside so it does not hide the shape.
-  expect(missionById("polygon")!.steps.join(" ")).toContain("‘그리기 멈추기’");
-  expect(missionById("polygon")!.steps.join(" ")).toContain("x -150, y 0");
+  expect(hintPlain(missionById("polygon")!.steps.join(" "))).toContain("그리기 멈추기");
+  expect(hintPlain(missionById("polygon")!.steps.join(" "))).toContain("x: -150 y: 0");
+  // Following the steps gives the solution: each block it uses is a hint chip, or (for asking, saying,
+  // answers and variable values written in plain words) named by its word. Alternatives (the second square) are skipped.
+  const MENTION: Record<string, string> = { ask_and_wait: "묻", dialog: "말하기", dialog_time: "말하기", get_canvas_input_value: "대답", get_variable: " 값" };
+  const typesIn = (raw: string) => { const out = new Set<string>(); const walk = (v: unknown): void => { if (typeof v === "string" && v.startsWith("[")) { try { walk(JSON.parse(v)); } catch { /* plain text */ } } else if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") { const t = (v as { type?: unknown }).type; if (typeof t === "string" && PALETTE_BLOCKS.has(t)) out.add(t); Object.values(v).forEach(walk); } }; walk(JSON.parse(raw)); return out; };
+  // Values each solution uses, as the hint writes them (palette symbols; Entry key codes 37–40 as key names).
+  const SYMBOL: Record<string, string> = { GREATER_OR_EQUAL: "≥", EQUAL: "=", MULTI: "x", DIVIDE: "/", PLUS: "+" }, KEY: Record<string, string> = { 37: "왼쪽", 38: "위쪽", 39: "오른쪽", 40: "아래쪽" };
+  const VARIABLE: Record<string, string> = { "cs-A": "A", "cs-B": "B", "cs-clicks": "클릭 수" };
+  // The tree's later thresholds are listed in one step instead of four chips.
+  const VALUE_IN_WORDS: Record<string, RegExp> = Object.fromEntries(["10", "15", "20", "25"].map((n) => [`tree 클릭 수 값 = ${n}`, /5는 10·15·20·25로/]));
+  const valuesIn = (raw: string) => {
+    const out: string[] = [], lit = (v: unknown) => { const n = v as EntryNode | null; return n && typeof n === "object" && ["number", "angle", "text"].includes(n.type) ? String(n.params[0]) : undefined; };
+    const symbol = (op: unknown) => { expect(SYMBOL[op as string], `operator ${op}`).toBeTruthy(); return SYMBOL[op as string]; };
+    // An operand as the chip writes it: ‘대답’, ‘A 값’, or a nested calculation in brackets.
+    const term = (v: unknown): string => { const n = v as EntryNode; return lit(n) ?? (n.type === "get_canvas_input_value" ? "대답" : n.type === "get_variable" ? `${VARIABLE[n.params[0] as string]} 값` : `(${term(n.params[0])} ${symbol(n.params[1])} ${term(n.params[2])})`); };
+    const walk = (v: unknown): void => {
+      if (typeof v === "string" && v.startsWith("[")) { try { walk(JSON.parse(v)); } catch { /* plain text */ } return; }
+      if (Array.isArray(v)) return v.forEach(walk);
+      if (!v || typeof v !== "object") return;
+      const { type, params = [] } = v as EntryNode, [p0, p1, p2] = params;
+      if (type === "repeat_basic" && lit(p0)) out.push(`${lit(p0)}번`);
+      const amount = lit(type === "move_direction" ? p0 : type === "change_variable" ? p1 : undefined);
+      if (amount) out.push(`${amount}만큼`);
+      if ((type === "direction_relative" || type === "direction_absolute") && lit(p0)) out.push(`${lit(p0)}°`);
+      if (type === "locate_xy") out.push(`x: ${lit(p0)} y: ${lit(p1)}`);
+      // A said text appears as its chip, ‘합격을 말하기’ (을 after a final consonant, else 를).
+      if ((type === "dialog" || type === "dialog_time") && (p0 as EntryNode | null)?.type === "text") { const said = lit(p0)!, last = [...said].reverse().find((c) => c >= "가" && c <= "힣")!; out.push(`${said}${(last.charCodeAt(0) - 0xac00) % 28 ? "을" : "를"} 말하기`); }
+      if (type === "when_some_key_pressed") out.push(KEY[p1 as string]);
+      if (type === "boolean_basic_operator" || type === "calc_basic") out.push(`${term(p0)} ${symbol(p1)} ${term(p2)}`);
+      Object.values(v).forEach(walk);
+    };
+    walk(JSON.parse(raw)); return out;
+  };
+  for (const [id, raw] of solutions.filter(([id], i) => solutions.findIndex(([other]) => other === id) === i)) {
+    const texts = missionText(id), chipTypes = new Set(texts.flatMap(hintParts).flatMap((part) => typeof part === "string" ? [] : [part.type])), plain = texts.map(hintPlain).join(" ");
+    // The start block is a chip too unless the starter already places it (lesson 1 students never dragged it in).
+    for (const type of typesIn(raw)) if (type !== "when_run_button_click" || !missionStarter(id).includes(type)) expect(chipTypes.has(type) || (MENTION[type] !== undefined && plain.includes(MENTION[type])), `${id}: ${type}`).toBe(true);
+    // ...and with the solution's values: a right block with a wrong threshold, count or symbol still misleads.
+    const pattern = (value: string) => VALUE_IN_WORDS[`${id} ${value}`] ?? new RegExp(`${/^[\d가-힣-]/.test(value) ? "(?<![\\d\\-가-힣])" : ""}${value.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}`);
+    for (const value of valuesIn(raw)) expect(pattern(value).test(plain), `${id}: ${value}`).toBe(true);
+    // ...in the solution's order within the steps, so a swapped threshold, branch or key angle fails too (the tree's word-form list is skipped).
+    const steps = missionById(id)!.steps.map(hintPlain).join(" "), at = [...new Set(valuesIn(raw))].filter((value) => !VALUE_IN_WORDS[`${id} ${value}`]).map((value) => [value, steps.search(pattern(value))] as const).filter(([, i]) => i >= 0);
+    at.forEach(([value, i], k) => expect(i, `${id}: ${value} comes after ${at[k - 1]?.[0]}`).toBeGreaterThanOrEqual(at[k - 1]?.[1] ?? 0));
+  }
   // From (0, 0) facing right and turning clockwise, side 70 keeps triangles to hexagons inside the 480×270 stage.
   for (const sides of [3, 5, 6]) {
     let x = 0, y = 0, heading = 90;
     for (let i = 0; i < sides; i++) { x += 70 * Math.sin(heading * Math.PI / 180); y += 70 * Math.cos(heading * Math.PI / 180); heading += 360 / sides; expect(y, `${sides}`).toBeGreaterThanOrEqual(-135); expect(Math.abs(x), `${sides}`).toBeLessThanOrEqual(240); }
   }
-  expect(missionById("multiply")!.steps[3]).toContain("첫 칸에");
-  expect(missionById("average")!.steps[4]).toContain("첫 칸에");
+  expect(missionById("multiply")!.steps[2]).toContain("말하기 안에");
+  expect(missionById("average")!.steps[2]).toContain("말하기 안에");
   for (const [id, raw] of solutions) expect(checkProgrammingMission(id, raw), id).toEqual({ passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." });
 });
 const speak2 = (value: EntryNode) => node("dialog", value, "speak", null);
@@ -549,7 +626,7 @@ const arrows = (move: (dx: number, dy: number) => EntryNode) => [["38", 0, 10], 
 const xOrY = (dx: number, dy: number) => dx ? node("move_x", number(String(dx)), null) : node("move_y", number(String(dy)), null);
 const facing = (dx: number, dy: number) => [node("direction_absolute", node("angle", String(dx ? (dx > 0 ? 90 : -90) : dy > 0 ? 0 : 180)), null), forward(number("10"))];
 const arrowLines = (body: (dx: number, dy: number) => EntryNode[]) => [["38", 0, 10], ["39", 10, 0], ["40", 0, -10], ["37", -10, 0]].map(([key, dx, dy]) => [node("when_some_key_pressed", null, String(key)), ...body(Number(dx), Number(dy))]);
-const hintOf = (id: string) => missionById(id)!.failure ?? missionById(id)!.hint;
+const hintOf = (id: string) => missionById(id)!.failure;
 const noneSolved = node("boolean_and_or", compare(v("A"), "EQUAL", number("0")), "AND", compare(v("B"), "EQUAL", number("0")));
 
 const MUST_PASS: [string, string, EntryNode[][]][] = [
@@ -657,11 +734,11 @@ test("채점 표: 같은 뜻으로 만든 작품은 통과하고, 결과가 틀�
   // Harmless extras run in the tree mission too, and the block list shown to students leaves them out.
   const grown = treeCode(["5", "10", "15", "20", "25"].map(grow));
   expect(checkProgrammingMission("tree", withTree([[...grown[0], node("change_scale_size", number("1"), null), node("show", null)]]))).toEqual(OK);
-  expect(missionBlockLabels("square")).not.toContain(blockLabel("brush_stamp"));
+  expect(missionBlockTypes("square")).not.toContain("brush_stamp");
   // Same-meaning extras are accepted but not listed, so the list keeps the blocks the mission is about.
   expect(MISSION_BLOCKS.square.has("rotate_by_time")).toBe(true);
-  expect(missionBlockLabels("square")).not.toContain(blockLabel("rotate_by_time"));
-  expect(missionBlockLabels("square")).toEqual(expect.arrayContaining(["move_direction", "direction_relative", "repeat_basic", "start_drawing"].map(blockLabel)));
+  expect(missionBlockTypes("square")).not.toContain("rotate_by_time");
+  expect(missionBlockTypes("square")).toEqual(expect.arrayContaining(["move_direction", "direction_relative", "repeat_basic", "start_drawing"]));
 });
 
 // Every block a mission accepts must run in the interpreter; an unknown one falls to the
