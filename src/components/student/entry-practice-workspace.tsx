@@ -152,7 +152,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
           startOnly.current = program?.order.length === 1 && program.order[0] === "when_run_button_click";
           setLocalFeedback("");
           // Arrow-key missions never finish on their own, so the waiting notice shows from the start.
-          setResult(!mission ? "엔트리봇이 실행 중이에요." : program?.order.includes("ask_and_wait") ? "실행 중이에요. 질문에는 무대 안의 입력칸으로 답해 주세요." : mission.keyEvents ? `실행 중이에요.${WAITING}` : "실행 중이에요.");
+          setResult(!mission ? "엔트리봇이 실행 중이에요." : program?.order.some((type) => type === "ask_and_wait") ? "실행 중이에요. 질문에는 무대 안의 입력칸으로 답해 주세요." : mission.keyEvents ? `실행 중이에요.${WAITING}` : "실행 중이에요.");
         }
       } else if (mission && message.type === "name-start") {
         const p = parseProgrammingProject(message.project);
