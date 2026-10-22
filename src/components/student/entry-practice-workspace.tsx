@@ -84,6 +84,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   const submitted = practiceMatches(draft, work.submission);
   const nameCheck = mission?.id === "name" ? checkNameMission(draft.entryProject ?? "", recordedRuns, gradedProject) : null;
   // Name runs live only in this screen. A work that already passed validation or was submitted had its two names checked.
+  // Mission results are saved with an empty order (the lesson passes practiceOrder []), so compare with the draft's own order.
   const namesChecked = (current: WorkDraft) => !!work.validation?.passed && practiceMatches(current, work.validation) || practiceMatches(current, work.submission);
   const nameDone = !!nameCheck && namesChecked(draft);
   useEffect(() => { onReadyChange?.(phase === "ready"); return () => onReadyChange?.(false); }, [onReadyChange, phase]);
@@ -238,7 +239,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
     const serialized = await readProject();
     const next = parse(serialized);
     if (serialized && next) {
-      if (mission?.id === "name" && action.type === "validate-practice" && !namesChecked({ ...draft, entryProject: serialized, practiceOrder: next.order })) {
+      if (mission?.id === "name" && action.type === "validate-practice" && !namesChecked({ ...draft, entryProject: serialized })) {
         const issue = missionBlockIssue(mission.id, serialized);
         const check = issue ? { passed: false, message: issue } : checkNameMission(serialized, runs.current, gradedProject);
         if (!check.passed) { setLocalFeedback(check.message); setLocalFocus(value => value + 1); setPreparing(false); return; }

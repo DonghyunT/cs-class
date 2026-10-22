@@ -114,6 +114,10 @@ test.describe("정식 수업 programming-13", () => {
     await expect(page.getByText("이 작품은 두 이름으로 확인하고 검증을 통과했어요. 블록을 바꾸면 두 번 실행을 다시 확인해요.", { exact: true })).toBeVisible();
     await expect(page.getByRole("group", { name: "작품 저장·검증·제출 상태" })).toContainText("현재 작품 제출 완료");
     await expect(page.getByText(/0\/2/)).toHaveCount(0);
+    // Validating the unchanged work again goes to the server, as the finished status promises.
+    await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+    await expect(page.locator("#practice-feedback")).toContainText("목표 조건을 확인했어요");
+    await expect(page.locator("#entry-local-feedback")).toHaveCount(0);
     const frame = page.frameLocator("iframe");
     await frame.locator("#entryWorkspaceBoard").getByText("강아지 이름은?", { exact: true }).locator("..").click();
     await frame.locator("input.entry-widget-input-field:visible").fill("새 이름은?");
