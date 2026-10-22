@@ -94,6 +94,34 @@ test.describe("정식 수업 programming-13", () => {
     await respond(page, "두부");
   });
 
+  test("검증·제출한 이름 미션에 다시 들어오면 0/2 대신 확인 완료를 보이고, 블록을 바꾸면 0/2부터 다시 센다", async ({ page }) => {
+    test.setTimeout(60000);
+    const before = await stored(page);
+    expect((await page.request.post(endpoint, { headers, data: { revision: before.revision, draft: { ...before.draft, stage: "practice", programming: { mission: "name", projects: { name: nameProject }, reflection: "" } } } })).status()).toBe(200);
+    let work = await stored(page);
+    for (const type of ["validate-practice", "submit-practice"]) {
+      const response = await page.request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type, missionId: "name" } } });
+      expect(response.status(), type).toBe(200);
+      work = await response.json();
+    }
+    expect(work.missions?.name?.validation?.passed).toBe(true);
+    expect(work.missions?.name?.submission).toBeTruthy();
+    await page.goto(`/classroom/${id}?from=dashboard`);
+    await page.locator("iframe").scrollIntoViewIfNeeded();
+    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+    const nameCheck = page.getByRole("status", { name: "서로 다른 이름 확인", exact: true });
+    await expect(nameCheck).toHaveText("서로 다른 이름 확인 완료");
+    await expect(page.getByText("이 작품은 두 이름으로 확인하고 검증을 통과했어요. 블록을 바꾸면 두 번 실행을 다시 확인해요.", { exact: true })).toBeVisible();
+    await expect(page.getByRole("group", { name: "작품 저장·검증·제출 상태" })).toContainText("현재 작품 제출 완료");
+    await expect(page.getByText(/0\/2/)).toHaveCount(0);
+    const frame = page.frameLocator("iframe");
+    await frame.locator("#entryWorkspaceBoard").getByText("강아지 이름은?", { exact: true }).locator("..").click();
+    await frame.locator("input.entry-widget-input-field:visible").fill("새 이름은?");
+    await frame.locator("#entryWorkspaceBoard").click({ position: { x: 20, y: 400 } });
+    await expect(nameCheck).toHaveText("서로 다른 이름 확인 0/2");
+    await expect(page.getByText("작품 내용이 바뀌어 실행 확인을 다시 시작해요.", { exact: true })).toBeVisible();
+  });
+
   test("작품 export 실패는 단계·미션 이동과 수업 나가기를 막고 작업실 입력을 유지한다", async ({ page }) => {
     test.setTimeout(60000);
     await page.addInitScript(() => window.addEventListener("message", (event) => {

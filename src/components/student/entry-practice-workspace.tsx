@@ -83,6 +83,9 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   const validation = practiceMatches(draft, work.validation) ? work.validation : null;
   const submitted = practiceMatches(draft, work.submission);
   const nameCheck = mission?.id === "name" ? checkNameMission(draft.entryProject ?? "", recordedRuns, gradedProject) : null;
+  // Name runs live only in this screen. A work that already passed validation or was submitted had its two names checked.
+  const namesChecked = (current: WorkDraft) => !!work.validation?.passed && practiceMatches(current, work.validation) || practiceMatches(current, work.submission);
+  const nameDone = !!nameCheck && namesChecked(draft);
   useEffect(() => { onReadyChange?.(phase === "ready"); return () => onReadyChange?.(false); }, [onReadyChange, phase]);
   useEffect(() => { if (localFocus) localFeedbackRef.current?.focus(); }, [localFocus]);
 
@@ -235,7 +238,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
     const serialized = await readProject();
     const next = parse(serialized);
     if (serialized && next) {
-      if (mission?.id === "name" && action.type === "validate-practice") {
+      if (mission?.id === "name" && action.type === "validate-practice" && !namesChecked({ ...draft, entryProject: serialized, practiceOrder: next.order })) {
         const issue = missionBlockIssue(mission.id, serialized);
         const check = issue ? { passed: false, message: issue } : checkNameMission(serialized, runs.current, gradedProject);
         if (!check.passed) { setLocalFeedback(check.message); setLocalFocus(value => value + 1); setPreparing(false); return; }
@@ -310,8 +313,8 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       </div></PracticeGuidance>
       <div className={styles.actions}>
         {nameCheck && <div className={styles.nameProgress}>
-          <p role="status" aria-label="서로 다른 이름 확인">서로 다른 이름 확인 {nameCheck.validNames}/2</p>
-          <p>{nameCheck.validNames === 0 ? runNotice : nameCheck.validNames === 1 ? "서로 다른 이름으로 한 번 더 실행해 주세요. 같은 이름은 한 번만 세요." : "현재 작품으로 두 이름을 확인했어요. 조건을 검증하고 작품을 제출해 주세요."}</p>
+          <p role="status" aria-label="서로 다른 이름 확인">서로 다른 이름 확인 {nameDone ? "완료" : `${nameCheck.validNames}/2`}</p>
+          <p>{nameDone ? "이 작품은 두 이름으로 확인하고 검증을 통과했어요. 블록을 바꾸면 두 번 실행을 다시 확인해요." : nameCheck.validNames === 0 ? runNotice : nameCheck.validNames === 1 ? "서로 다른 이름으로 한 번 더 실행해 주세요. 같은 이름은 한 번만 세요." : "현재 작품으로 두 이름을 확인했어요. 조건을 검증하고 작품을 제출해 주세요."}</p>
         </div>}
         <Button variant={validation?.passed && !submitted ? "outline" : "default"} disabled={locked || actionsBlocked || preparing || running || phase !== "ready" || !program} onClick={() => void act({ type: "validate-practice" }, "practice-feedback")}>{busy || preparing ? "확인 중…" : "조건 검증"}</Button>
         {localFeedback && <p id="entry-local-feedback" ref={localFeedbackRef} tabIndex={-1} role="status" className={common.feedbackRetry}>{localFeedback}</p>}
