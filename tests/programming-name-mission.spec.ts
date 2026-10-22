@@ -14,6 +14,9 @@ test("entry-guidance: 이름 연결 오류와 현재 작품의 두 이름 실행
   const run = (name: string, id = name): NameRun => ({ id, key, reason: "finished", steps: [{ kind: "ask", value: "강아지 이름은?" }, { kind: "answer", value: name }, { kind: "say", value: `내 이름은 ${name}!` }] });
   expect(checkNameMission("unreadable", [])).toMatchObject({ passed: false, issue: "project", validNames: 0 });
   expect(checkNameMission(buildNameProject()!, [])).toMatchObject({ passed: false, issue: "structure", validNames: 0 });
+  // Structure messages name the same timed speech block as the mission hint.
+  expect(checkNameMission(buildNameProject()!, []).message).toContain("‘( )을(를) ( )초 동안 말하기’");
+  expect(checkNameMission(buildNameProject([{ id: "k", kind: "start", value: "ArrowRight" }])!, []).message).toContain("‘( )을(를) ( )초 동안 말하기’");
   expect(checkNameMission(complete, [])).toMatchObject({ passed: false, issue: "runs", validNames: 0 });
   expect(checkNameMission(complete, [run("초코"), run("초코", "duplicate"), ...["stopped", "timeout", "error"].map(reason => ({ ...run("보리", reason), reason })), { ...run("보리", "old"), key: "old" }])).toMatchObject({ passed: false, issue: "runs", validNames: 1 });
   expect(checkNameMission(complete, [run("초코"), run("보리"), run("두부")])).toMatchObject({ passed: true, issue: null, validNames: 2 });
