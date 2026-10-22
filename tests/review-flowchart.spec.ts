@@ -317,7 +317,7 @@ test("V1처럼 틀린 배치와 빈 기호를 실행하지 않고 답안을 보�
   await run.getByRole("button", { name: "자동 실행", exact: true }).click(); await expect(run.getByRole("status")).toContainText("종료에 도달했어요!");
   await expect(run.getByLabel("실시간 데이터 흐름")).toContainText("출력: 탑승 가능");
   await puzzleSlot(page, 2, "s2").selectOption(""); await run.getByRole("button", { name: "실행 준비 / 다시 시작" }).click();
-  await expect(run).toContainText("빈 기호를 먼저 채워 주세요."); await expect(run.getByRole("button", { name: "한 단계 실행" })).toBeDisabled();
+  await expect(run).toContainText("빈 기호를 먼저 채워 주세요. ‘입출력 ▱ (키 입력받기)’ 자리가 비어 있어요."); await expect(run.getByRole("button", { name: "한 단계 실행" })).toBeDisabled();
   await expect(inputSlot.locator("title")).toHaveText("입출력 ▱ (키 입력받기)");
   await saveDraft(page);
   await expect.poll(async () => (await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.placements["2"].s2).toBe("");
@@ -416,7 +416,7 @@ test("자유 캔버스 초기화는 퍼즐·기획서·공방을 보존하고 �
 test("세 퍼즐은 오류 관찰·실행·각 제출·재접속 기록을 유지한다", async ({ page }) => {
   await prepare(page.request); await page.goto(`/classroom/${id}`); await page.getByRole("tab", { name: /실습/ }).click();
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
-  await page.getByRole("button", { name: "자동 실행", exact: true }).click(); await expect(page.getByText("빈 기호를 먼저 채워 주세요.", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "자동 실행", exact: true }).click(); await expect(page.getByText(`빈 기호를 먼저 채워 주세요. ‘${missions.find((mission) => mission.id === 1)!.slots.find((slot) => !slot.fixed)!.hint}’ 자리가 비어 있어요. 보관함에서 맞는 기호를 골라 넣어 주세요.`, { exact: true }).first()).toBeVisible();
   for (let i = 0; i < 3; i++) {
     if (i) await page.getByRole("button", { name: i === 1 ? /2\. 선택 \(놀이기구\)/ : /3\. 반복 \(비밀번호\)/ }).click();
     if (!(await puzzleSlot(page, i + 1, "s2").isVisible())) await page.getByText("목록으로 배치하기", { exact: true }).click();

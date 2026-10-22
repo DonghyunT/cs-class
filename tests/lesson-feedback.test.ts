@@ -94,3 +94,9 @@ test("조건·반복 문구는 같은 대상·용어를 쓰고, 문항이 묻는
   const abstraction = readFileSync("src/lib/classroom/review/abstraction-data.mjs", "utf8");
   expect(abstraction).not.toMatch(/순삭|안읽씹/);
 });
+
+test("샌드위치 로봇의 모든 오류 문장은 첫 문장 뒤에 다음 행동을 한 문장으로 알려 준다", () => {
+  const messages = readFileSync("src/lib/classroom/review/sandwich-engine.mjs", "utf8").match(/"오류: [^"]*"/g)!;
+  expect(messages.length).toBeGreaterThan(20);
+  for (const message of messages) expect(message).toMatch(/^"오류: [^!]+! [^!]+주세요\."$/);
+});

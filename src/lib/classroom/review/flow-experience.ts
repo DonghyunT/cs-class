@@ -117,12 +117,13 @@ export function puzzleGraph(id: string, placed: Record<string, string>) {
 export function puzzleExecutionGraph(id: string, placed: Record<string, string>) {
   const graph = puzzleGraph(id, placed);
   const mission = missions.find(item => String(item.id) === id)!;
-  const complete = mission.slots.every(slot => slot.fixed || mission.palette.some(block => block.id === placed[slot.id]));
+  const empty = mission.slots.find(slot => !slot.fixed && !mission.palette.some(block => block.id === placed[slot.id]));
+  const complete = !empty;
   const check = complete ? mission.validate(placed) : null;
   const expressions: Record<string, string> = { "b-m2-1": "키 입력", "b-m2-2": "키 >= 150", "b-m3-chk": "비밀번호 == 7777" };
   return {
     ...graph,
-    unavailable: !complete ? "빈 기호를 먼저 채워 주세요." : !check ? "배치를 다시 확인해 주세요. 기호의 순서와 갈래가 미션의 조건에 맞아야 실행할 수 있어요." : "",
+    unavailable: empty ? `빈 기호를 먼저 채워 주세요. ‘${empty.hint}’ 자리가 비어 있어요. 보관함에서 맞는 기호를 골라 넣어 주세요.` : !check ? "배치를 다시 확인해 주세요. 기호의 순서와 갈래가 미션의 조건에 맞아야 실행할 수 있어요." : "",
     nodes: graph.nodes.map(node => expressions[placed[node.id]] ? { ...node, text: expressions[placed[node.id]] } : node),
     textInputs: graph.nodes.filter(node => placed[node.id] === "b-m3-in").map(node => node.id),
     textComparisons: Object.fromEntries(graph.nodes.filter(node => placed[node.id] === "b-m3-chk").map(node => [node.id, { variable: "비밀번호", expected: "7777" }]))

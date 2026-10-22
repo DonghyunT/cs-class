@@ -42,7 +42,7 @@ export function frozenReviewProject(project: ReviewProject, missionId?: string):
 export function basicReviewCheck(project: ReviewProject, missionId?: string) {
   if (project.type === "sandwich") {
     const run = replaySandwich(project.commands);
-    return { passed: run.state.completed && run.review.isFlawless, message: run.state.completed ? run.review.review : "명령을 실행해 두 빵과 속 재료를 완성해 주세요." };
+    return { passed: run.state.completed && run.review.isFlawless, message: run.state.completed ? run.review.review : "아직 샌드위치가 완성되지 않았어요. 실행 기록에서 마지막으로 성공한 단계를 보고, 그다음 명령을 이어서 내려 주세요." };
   }
   if (project.type === "abstraction") {
     const passed = [project.current, project.goal].every(value => value.trim()) && [project.conditions, project.core, project.plans].every(values => values.some(value => value.trim()));
