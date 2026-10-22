@@ -135,7 +135,7 @@ test("EntryJS 저장 실패 복구 · 단계 이동 직전 입력 · 좁은 화�
   await page.keyboard.press("Escape");
   await expect(page.locator("#entry-run")).toBeFocused();
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("button", { name: "무대 처음 위치로" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "무대 초기화" })).toBeFocused();
   for (const width of [320, 390, 768]) {
     await page.setViewportSize({ width, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

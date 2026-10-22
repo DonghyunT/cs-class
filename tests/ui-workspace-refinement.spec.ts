@@ -68,7 +68,7 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   const toggle = editor.getByRole("button", { name: "작업실 넓게 보기", exact: true });
   const scroller = editor.getByRole("region", { name: "엔트리 작업실 가로 이동", exact: true });
   const experiment = guidance.getByText(mission.experiment, { exact: true });
-  const hint = guidance.getByText("블록 연결 힌트", { exact: true });
+  const hint = guidance.getByText("블록 연결 힌트 보기", { exact: true });
   await expect(guidance.getByRole("heading", { name: mission.title, exact: true })).toBeVisible();
   await expect(guidance.getByText(mission.goal, { exact: true })).toBeVisible();
   await expect(experiment).toBeVisible();
@@ -117,7 +117,7 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   await hint.press("Enter");
   await expect(guidance.getByText(mission.hint, { exact: true })).toBeHidden();
   await page.keyboard.press("Tab");
-  await expect(editor.getByRole("button", { name: "무대 처음 위치로 초기화", exact: true })).toBeFocused();
+  await expect(editor.getByRole("button", { name: "무대 초기화", exact: true })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(toggle).toBeFocused();
   await page.keyboard.press("Tab");

@@ -30,7 +30,7 @@ export function ProgrammingLearningStage(props: Props) {
   </section>;
 }
 
-function ProgrammingConcept({ lesson, controller, locked, focus, runAction, next, conceptId, onConceptChange }: Props) {
+function ProgrammingConcept({ lesson, controller, locked, focus, runAction, next, conceptId, onConceptChange, mode = "student" }: Props) {
   const { work, draft, update } = controller;
   const id = lesson.concepts.find((concept) => concept.id === conceptId)?.id ?? lesson.concepts[0].id;
   const index = Number(id.slice(2));
@@ -39,7 +39,7 @@ function ProgrammingConcept({ lesson, controller, locked, focus, runAction, next
     conceptDone: concepts.map((_, i) => i).filter((i) => work.conceptSolved.includes(`pc${i}`)),
     conceptAnswers: Object.fromEntries(Object.entries(draft.conceptAnswers).map(([key, answer]) => [Number(key.slice(2)), Number(answer)])),
   };
-  return <ProgrammingConceptView state={state} locked={locked} actionsBlocked={controller.actionBlocked} focus={focus} next={() => next("quiz")} update={(value) => {
+  return <ProgrammingConceptView mode={mode} state={state} locked={locked} actionsBlocked={controller.actionBlocked} focus={focus} next={() => next("quiz")} update={(value) => {
     if (locked) return;
     onConceptChange(`pc${value.concept}`);
     if (JSON.stringify(value.conceptAnswers) !== JSON.stringify(state.conceptAnswers)) update({ ...controller.getDraft(), conceptAnswers: Object.fromEntries(Object.entries(value.conceptAnswers).map(([key, answer]) => [`pc${key}`, String(answer)])) });
@@ -57,7 +57,7 @@ function ProgrammingQuiz({ lesson, controller, locked, runAction, next, focus, q
   const move = (value: number) => { onQuizQuestionChange(ids[value]); focus("programming-question"); };
   return <div className={styles.quiz}>
     <div className={styles.quizTop}>
-      <div className={styles.quizPosition}><h2 id="stage-heading-quiz" tabIndex={-1}><span className={styles.srOnly}>배운 내용을 적용해요 · </span>QUIZ · {position + 1} / {ids.length}</h2><span>{work.quizSolved.length}/{lesson.quiz.length} 해결 · {work.quizRound}회차</span></div>
+      <div className={styles.quizPosition}><h2 id="stage-heading-quiz" tabIndex={-1}><span className={styles.srOnly}>배운 내용을 적용해요 · </span>퀴즈 · {position + 1} / {ids.length}</h2><span>{work.quizSolved.length}/{lesson.quiz.length} 해결 · {work.quizRound}회차</span></div>
       <nav className={styles.questionNav} aria-label="퀴즈 문항 목록">{ids.map((id, i) => {
         const number = lesson.quiz.findIndex((question) => question.id === id) + 1;
         const state = work.quizRoundGraded ? work.quizFeedback[id]?.correct ? "해결" : "재도전" : draft.quizAnswers[id] ? "답변" : "미답변";
@@ -70,16 +70,16 @@ function ProgrammingQuiz({ lesson, controller, locked, runAction, next, focus, q
       </div>
       {work.quizRoundGraded && <p role="status" className={styles.feedback}>{work.quizFeedback[q.id]?.correct && <Check size={16} />}<span><strong>채점 당시 답안 결과 · {work.quizFeedback[q.id]?.correct ? "맞았어요" : "다시 생각해 보기"}</strong><br />{work.quizFeedback[q.id]?.message}</span></p>}
     </article>
-    <div className={styles.quizActions}><details key={`${work.quizRound}-${q.id}`} className={styles.hint}><summary><Lightbulb size={17} />작은 힌트</summary><p>{q.hint}</p></details><div>
+    <div className={styles.quizActions}><details key={`${work.quizRound}-${q.id}`} className={styles.hint}><summary><Lightbulb size={17} />힌트 보기</summary><p>{q.hint}</p></details><div>
       <Button variant="ghost" disabled={locked || position === 0} onClick={() => move(position - 1)}><ArrowLeft size={16} />이전 문제</Button>
       {!work.quizRoundGraded && position === ids.length - 1 ? remaining > 0 ? <Button disabled={locked} onClick={() => move(ids.findIndex((id) => !draft.quizAnswers[id]))}>답하지 않은 문제로 이동</Button> : <Button disabled={locked || controller.actionBlocked} onClick={() => void runAction({ type: "grade-quiz" }, "programming-quiz-result")}>이번 회차 결과 확인</Button> : <Button disabled={locked || position === ids.length - 1} variant="outline" onClick={() => move(position + 1)}>다음 문제<ArrowRight size={16} /></Button>}
     </div></div>
     {!work.quizRoundGraded && <div className={styles.roundNote}><p>{remaining ? `${remaining}문항이 미답변이에요.` : "모든 답을 선택했어요."}</p><div>
       {remaining > 0 && position !== ids.length - 1 && <Button variant="ghost" disabled={locked} onClick={() => move(ids.findIndex((id) => !draft.quizAnswers[id]))}>답하지 않은 문제로 이동</Button>}
       {(position !== ids.length - 1 || remaining > 0) && <Button variant="outline" disabled={locked || controller.actionBlocked || remaining > 0} onClick={() => void runAction({ type: "grade-quiz" }, "programming-quiz-result")}>이번 회차 결과 확인</Button>}
-      <Button variant="ghost" disabled={locked || controller.actionBlocked} onClick={() => next("practice")}>먼저 실습해 보기<ArrowRight size={16} /></Button>
+      <Button variant="ghost" disabled={locked || controller.actionBlocked} onClick={() => next("practice")}>먼저 실습하기<ArrowRight size={16} /></Button>
     </div></div>}
-    {work.quizRoundGraded && <div id="programming-quiz-result" tabIndex={-1} className={styles.result}><div className={styles.resultSummary}><p>{mode === "preview" ? "이번 체험 결과는 채점 당시 이 창의 답안 기준이에요." : "이번 회차 결과는 채점할 때 저장된 답안 기준이에요."}</p><strong>{complete ? "모든 문제를 해결했어요!" : `전체 ${work.quizSolved.length}/${lesson.quiz.length}문항 해결 · ${lesson.quiz.length - work.quizSolved.length}문제에 다시 도전해요.`}</strong><nav className={styles.questionNav} aria-label="재도전 문항 바로가기">{ids.filter((id) => !work.quizFeedback[id]?.correct).map((id) => <button key={id} type="button" disabled={locked} onClick={() => move(ids.indexOf(id))}>문제 {lesson.quiz.findIndex((question) => question.id === id) + 1} 결과 보기</button>)}</nav></div><div className={styles.resultActions}>{!complete && <Button variant="outline" disabled={locked || controller.actionBlocked} onClick={() => void runAction({ type: "retry-quiz" }, "programming-question")}><RotateCcw size={16} />틀린 문제만 다시 풀기</Button>}<Button disabled={locked || controller.actionBlocked} onClick={() => next("practice")}>실습으로 이동<ArrowRight size={16} /></Button></div></div>}
+    {work.quizRoundGraded && <div id="programming-quiz-result" tabIndex={-1} className={styles.result}><div className={styles.resultSummary}><p>{mode === "preview" ? "이번 체험 결과는 채점 당시 이 창의 답안 기준이에요." : "이번 회차 결과는 채점할 때 저장된 답안 기준이에요. 채점한 답안과 결과는 저장 버튼 없이 바로 저장돼요."}</p><strong>{complete ? "모든 문제를 해결했어요!" : `전체 ${work.quizSolved.length}/${lesson.quiz.length}문항 해결 · ${lesson.quiz.length - work.quizSolved.length}문제에 다시 도전해요.`}</strong><nav className={styles.questionNav} aria-label="재도전 문항 바로가기">{ids.filter((id) => !work.quizFeedback[id]?.correct).map((id) => <button key={id} type="button" disabled={locked} onClick={() => move(ids.indexOf(id))}>문제 {lesson.quiz.findIndex((question) => question.id === id) + 1} 결과 보기</button>)}</nav></div><div className={styles.resultActions}>{!complete && <Button variant="outline" disabled={locked || controller.actionBlocked} onClick={() => void runAction({ type: "retry-quiz" }, "programming-question")}><RotateCcw size={16} />틀린 문제만 다시 풀기</Button>}<Button disabled={locked || controller.actionBlocked} onClick={() => next("practice")}>실습으로 이동<ArrowRight size={16} /></Button></div></div>}
   </div>;
 }
 
@@ -119,9 +119,9 @@ function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exp
     <PracticeGuidance focused={practiceFocused} label="미션 바꾸기"><nav className={styles.missions} aria-label="실습 미션">{missions.map((m, i) => <button key={m.id} type="button" aria-current={m.id === mission.id ? "step" : undefined} disabled={locked || switching || controller.capturing || controller.actionBlocked} onClick={() => void select(m.id)}><span>{work.missions?.[m.id]?.submission ? <Check size={17} /> : m.optional ? "＋" : `0${i + 1}`}</span><strong>{m.title}</strong><small>{work.missions?.[m.id]?.submission ? mode === "preview" ? "체험 제출 확인" : "제출 완료" : m.optional ? "선택 도전" : "독립 작품"}</small></button>)}</nav></PracticeGuidance>
     <div className={styles.practiceLayout}>
       <aside className={styles.missionBrief} aria-labelledby="programming-mission-title">
-        <div className={styles.heading}><div><span>{mission.optional ? "선택 도전 · 기본 완료 조건에 포함되지 않아요" : `MISSION 0${position + 1}`}</span><h3 id="programming-mission-title" tabIndex={-1}>{mission.title}</h3><p>{mission.goal}</p></div></div>
+        <div className={styles.heading}><div><span>{mission.optional ? "선택 도전 · 기본 완료 조건에 포함되지 않아요" : `미션 0${position + 1}`}</span><h3 id="programming-mission-title" tabIndex={-1}>{mission.title}</h3><p>{mission.goal}</p></div></div>
         <PracticeGuidance focused={practiceFocused} label="실험·블록 연결 힌트"><div className={styles.experiment}><h4><Lightbulb size={17} aria-hidden="true" />먼저 해볼 작은 실험</h4><p>{mission.experiment}</p></div>
-        <details key={mission.id} className={styles.hint}><summary>블록 연결 힌트</summary><p>{mission.hint}</p><details className={styles.hintBlocks}><summary>검증에는 이 블록만 봐요</summary><ul>{missionBlockLabels(mission.id).map((label) => <li key={label}>{label}</li>)}</ul></details></details></PracticeGuidance>
+        <details key={mission.id} className={styles.hint}><summary>블록 연결 힌트 보기</summary><p>{mission.hint}</p><details className={styles.hintBlocks}><summary>검증에는 이 블록만 봐요</summary><ul>{missionBlockLabels(mission.id).map((label) => <li key={label}>{label}</li>)}</ul></details></details></PracticeGuidance>
       </aside>
       <div className={styles.workArea}>
         <EntryPracticeWorkspace mode={mode} key={mission.id} mission={mission} lesson={lesson} work={{ ...work, validation: current.validation, submission: current.submission }} draft={{ ...draft, entryProject: raw, practiceOrder: [] }} locked={locked || switching || controller.capturing} busy={controller.busy} exportRef={exportRef} onSave={mode === "student" ? controller.save : undefined} onReadyChange={onEditorReady} runAction={runPracticeAction} workspaceWide={workspaceWide} practiceFocused={practiceFocused} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} saveState={controller.saveState} actionsBlocked={controller.actionBlocked} update={(next) => {

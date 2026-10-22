@@ -26,7 +26,7 @@ test("programming-intro: 새 첫 개념은 옛 pc0~3 답안·제출을 보존하
     await expect(list.getByRole("button")).toHaveCount(5);
     await expect(page.getByRole("tab", { name: "개념 80%", exact: true })).toBeVisible();
     await page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true }).check();
-    await page.getByRole("button", { name: "생각 확인하기", exact: true }).click();
+    await page.getByRole("button", { name: "정답 확인", exact: true }).click();
     await expect(page.getByRole("tab", { name: "개념 100%", exact: true })).toBeVisible();
     const saved: Work = await (await page.request.get(endpoint)).json();
     expect(saved.conceptSolved).toEqual(["pc0", "pc1", "pc2", "pc3", "pc4"]);
@@ -43,7 +43,7 @@ test("programming-intro: 새 첫 개념은 옛 pc0~3 답안·제출을 보존하
     await page.goto(`/teacher/preview/${id}?classId=2-1`);
     await expect(page.locator("#concept-title")).toHaveText("프로그래밍이란?");
     await page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true }).check();
-    await page.getByRole("button", { name: "생각 확인하기", exact: true }).click();
+    await page.getByRole("button", { name: "정답 확인", exact: true }).click();
     await expect(page.getByRole("tab", { name: "개념 20%", exact: true })).toBeVisible();
     expect((await workRef.get()).data()).toEqual(before);
   } finally { await workRef.delete(); await classRef.set(original); }
@@ -80,16 +80,16 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
         const gate = new Promise<void>((resolve) => { release = resolve; });
         await page.route(`**${endpoint}/action`, async (route) => { const response = await route.fetch(); await gate; await route.fulfill({ response }); }, { times: 1 });
         const checking = page.waitForRequest((request) => request.url().endsWith(`${endpoint}/action`));
-        await page.getByRole("button", { name: "생각 확인하기" }).click(); await checking;
+        await page.getByRole("button", { name: "정답 확인" }).click(); await checking;
         try { await expect(page.getByRole("button", { name: "다음 개념", exact: true })).toBeDisabled(); }
         finally { release(); }
-      } else await page.getByRole("button", { name: "생각 확인하기" }).click();
+      } else await page.getByRole("button", { name: "정답 확인" }).click();
       await expect(page.locator("#concept-feedback")).toBeFocused();
       await expect(page.getByRole("button", { name: "개념 확인 완료" })).toBeDisabled();
       if (i < answers.length - 1) await page.getByRole("button", { name: "다음 개념", exact: true }).click();
     }
     await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
-    await page.getByRole("button", { name: "퀴즈에 도전하기" }).click();
+    await page.getByRole("button", { name: "퀴즈로 이동" }).click();
     for (const [i, answer] of ["명령을 표현하는 방법", "수 입력 → 곱하기 → 결과 보여주기", "6", "각 대답을 받은 직후 해당 변수에 저장하기", "90°"].entries()) {
       await page.getByRole("radio", { name: answer, exact: false }).check();
       if (i < 4) await page.getByRole("button", { name: "다음 문제", exact: true }).click();

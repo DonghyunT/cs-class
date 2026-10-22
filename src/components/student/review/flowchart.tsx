@@ -139,7 +139,7 @@ export function Flowchart({ controller, practiceFocused = false, mode = "student
           <FlowDiagram {...graph} {...runtime} fit active={active} emptyNodes={empty} clearableNodes={clearable} clearNode={slotId => place(slotId, "")} select={slotId => { if (paletteBlock) place(slotId, paletteBlock); }} drop={place} />
         </section>
         <div className={styles.puzzleMonitor}>
-          <section className={styles.puzzleExecution} aria-label="순서도 실행"><small>I/O &amp; Simulation</small><h3>실행 검증 &amp; 입출력</h3>{status}{controls}<p id="review-action-feedback" tabIndex={-1} aria-live="polite">{completion.notice}</p>{monitor}</section>
+          <section className={styles.puzzleExecution} aria-label="순서도 실행"><small>입출력과 실행</small><h3>실행 검증 &amp; 입출력</h3>{status}{controls}<p id="review-action-feedback" tabIndex={-1} aria-live="polite">{completion.notice}</p>{monitor}</section>
         </div>
       </div>}
     </FlowExecution> : p.mission === "guide" ? <div className={styles.guideWorkspace} data-planner-collapsed={collapsed}>

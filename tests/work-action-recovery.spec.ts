@@ -271,7 +271,7 @@ for (const programming of [false, true]) {
       expect(route.request().postDataJSON()).toEqual({ revision: before.revision, action: { type: "check-concept", conceptId: first } });
       await route.fetch(); await route.abort("failed");
     });
-    await page.getByRole("button", { name: programming ? "생각 확인하기" : "정답 확인", exact: true }).click();
+    await page.getByRole("button", { name: "정답 확인", exact: true }).click();
     await expect(page.locator("#work-action-error")).toBeVisible();
     let started!: () => void, release!: () => void;
     const getStarted = new Promise<void>(resolve => { started = resolve; });

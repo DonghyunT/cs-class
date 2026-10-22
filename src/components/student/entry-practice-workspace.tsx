@@ -269,7 +269,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         {!mission && <Button id="entry-run" size="sm" disabled={locked || preparing || phase !== "ready" || !program} onClick={() => send(running ? "stop" : "run")}>
           {running ? <Square size={14} /> : <Play size={14} />}{running ? "실행 정지" : "실행하기"}
         </Button>}
-        <Button id="entry-reset" className={styles.auxControl} size="sm" variant="ghost" aria-label="무대 처음 위치로 초기화" title="무대만 초기화 · 블록과 제출 기록 유지" disabled={locked || preparing || phase !== "ready"} onClick={() => send("reset-stage")}><RotateCcw size={14} aria-hidden="true" />초기화</Button>
+        <Button id="entry-reset" className={styles.auxControl} size="sm" variant="ghost" title="무대만 처음 위치로 · 블록과 제출 기록은 그대로" disabled={locked || preparing || phase !== "ready"} onClick={() => send("reset-stage")}><RotateCcw size={14} aria-hidden="true" />무대 초기화</Button>
         {showViewToggle && <Button ref={viewToggle} className={styles.auxControl} size="sm" variant="ghost" aria-label={workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"} aria-pressed={workspaceWide} onClick={() => setWide(!workspaceWide)} onKeyDown={(event) => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); setWide(false); } }}>
           {workspaceWide ? <Minimize2 size={14} aria-hidden="true" /> : <Maximize2 size={14} aria-hidden="true" />}{workspaceWide ? "기본 크기" : "넓게 보기"}
         </Button>}
@@ -289,7 +289,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         <span><strong>검증</strong>{validation ? validation.passed ? "검증 통과" : "조건 보완 필요" : work.validation ? "다시 검증 필요" : "검증 전"}</span>
         <span><strong>{mode === "preview" ? "체험 제출" : "제출"}</strong>{submitted ? mode === "preview" ? "현재 작품 체험 제출 확인" : "현재 작품 제출 완료" : work.submission ? mode === "preview" ? "이전 체험 제출 유지 · 수정 중" : "이전 제출 유지 · 수정 중" : mode === "preview" ? "체험 제출 전" : "아직 제출 전"}</span>
       </div>
-      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} {free ? "무대 아래 ‘시작하기’로 실행해요. ‘오브젝트 추가하기’로 엔트리 오브젝트와 배경을 더하고, 고른 오브젝트에 코드를 만들어요. 시작하기 코드는 한 오브젝트에만 두면 그 오브젝트의 코드로 검증해요. ‘모양’ 탭에서 오브젝트의 모양을 볼 수 있어요." : mission ? "무대 아래 ‘시작하기’로 실행하고, ‘오브젝트 추가하기’로 공·별 같은 오브젝트를 더할 수 있어요. 검증은 강아지의 코드로만 해요." : ""} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 {mission ? "초기화" : "실행"} 버튼으로 돌아와요.</p></details>
+      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} {free ? "무대 아래 ‘시작하기’로 실행해요. ‘오브젝트 추가하기’로 엔트리 오브젝트와 배경을 더하고, 고른 오브젝트에 코드를 만들어요. 시작하기 코드는 한 오브젝트에만 두면 그 오브젝트의 코드로 검증해요. ‘모양’ 탭에서 오브젝트의 모양을 볼 수 있어요." : mission ? "무대 아래 ‘시작하기’로 실행하고, ‘오브젝트 추가하기’로 공·별 같은 오브젝트를 더할 수 있어요. 검증은 강아지의 코드로만 해요." : ""} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 {mission ? "무대 초기화" : "실행"} 버튼으로 돌아와요.</p></details>
       {free && <Dialog open={picking} onOpenChange={setPicking}><DialogContent className={styles.libraryDialog}><DialogHeader><DialogTitle>오브젝트 추가하기</DialogTitle><DialogDescription>분류를 고르거나 이름으로 찾아요. 오브젝트는 {MAX_FREE_OBJECTS}개까지 둘 수 있어요.</DialogDescription></DialogHeader>
         <EntryLibraryPicker onPick={(sprite) => {
           const added = newAddedObject(sprite.id, objectCount(editorProject.current ?? draft.entryProject), true);

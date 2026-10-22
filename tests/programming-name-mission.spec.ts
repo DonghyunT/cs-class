@@ -237,7 +237,7 @@ test.describe("정식 수업 programming-13", () => {
     await page.getByRole("button", { name: "이 명령 실행하기" }).click();
     await expect(experiment.getByText("안녕!", { exact: true })).toBeVisible();
     await page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true }).check();
-    await page.getByRole("button", { name: "생각 확인하기" }).click();
+    await page.getByRole("button", { name: "정답 확인" }).click();
     await expect(page.getByRole("button", { name: "개념 확인 완료" })).toBeDisabled();
     await reset.click();
     await expect(page.getByRole("button", { name: "블록", exact: true })).toHaveAttribute("aria-pressed", "true");

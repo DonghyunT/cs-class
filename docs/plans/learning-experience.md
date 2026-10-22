@@ -858,6 +858,7 @@ push: 4c 뒤 총괄 검토·4단계 QA를 통과하고 로컬 전체 E2E가 통�
 | `review/flow-execution.tsx` 52행 보이는 제목 | 출력 콘솔 (Console) | 출력 콘솔(영어 괄호만 뺌. 영역 이름 `출력 콘솔`과 '출력 콘솔 지우기'는 검사가 쓰므로 유지) |
 | `review/flow-execution.tsx` 53행 보이는 제목 | 실시간 데이터 흐름 (Tracer) | 실시간 데이터 흐름(목록 이름과 같아짐) |
 | `review/flow-execution.tsx` 57행 머리표 | I/O & Simulation | 입출력과 실행 |
+| `review/flowchart.tsx` 퍼즐 실행 머리표(구현 때 추가, 같은 영어 라벨) | I/O & Simulation | 입출력과 실행 |
 | `review/sandwich.tsx` 102행 머리표 | Live Visual Stage | 실시간 조리대 |
 | 개념 머리표(`lesson-concept-panel.tsx` 55행, `programming-concept.tsx` 46행) | CONCEPT 01 / 05 | 개념 01 / 05 |
 | 기초 퀴즈 제목(`programming-lesson.tsx`) | QUIZ · 1 / 5 | 퀴즈 · 1 / 5 |
