@@ -97,6 +97,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 - **컴포넌트 위치:** `src/components/student/<수업ID>.tsx` 또는 전용 하위 폴더(`review/<수업ID>.tsx`).
 - **공통 셸 구성:** [`LessonWorkspace`](../src/components/student/lesson-workspace.tsx) 또는 [`LessonEditor`](../src/components/student/lesson-editor.tsx)로 감싸 공통 헤더·진도율 바·저장 상태 배지 영역을 확보합니다.
 - **엔트리 수업:** 새 컴포넌트 없이 `practice.type: "programming"` 수업 정의(예: [`conditionals-lesson.ts`](../src/lib/classroom/conditionals-lesson.ts))를 만들면 공통 개념·퀴즈 화면과 엔트리 실습 화면을 씁니다. 미션은 `PROGRAMMING_MISSIONS`·`LESSON_MISSIONS`([§4.1](#41-entryjs-4023-실습-환경)의 수업별 미션), 미션별 허용 블록은 `MISSION_BLOCKS`, 채점 규칙은 `programming-grader.ts`에 함께 등록합니다. 규칙이 없는 미션은 통과하지 않습니다. 공통 개념 화면의 그림은 [`concept-visual.tsx`](../src/components/student/concept-visual.tsx)의 `CONCEPT_VISUALS`에 개념 ID로 등록하며(없으면 그림 없이 표시), 수업의 첫 작품은 `emptyWork`가 `missionStarter`로 만듭니다. 수업 정의는 `catalog.ts`의 `LESSONS`(공개 시 `RELEASED_LESSONS`), 개념·퀴즈 정답은 서버 `solutions.ts`, 강아지 없는 미션은 `FREE_MISSIONS`에 등록합니다. 빠뜨리지 않으려면 기존 엔트리 수업 ID(`loops`)를 저장소 전체에서 검색해 같은 자리에 모두 넣습니다(`seed-emulator.mjs`, `tests/e2e-scope.test.mjs` 포함).
+- **수업 내용 점검:** 개념·퀴즈·미션 문구와 피드백은 [PRD §3.1](PRD.md#31-수업-3단계-라이프사이클-및-진도-측정)·[§3.4](PRD.md#수업-내용-기준)와 [DESIGN §2.2·§5.1](DESIGN.md#22-타이포그래피-스케일-typography-rules)로 점검합니다.
 
 #### 2단계: 저장 상태 연동 (`useWork`)
 - [`LessonWorkspace`의 `StudentWorkEditor`](../src/components/student/lesson-workspace.tsx)처럼 서버에서 받은 `initial: Work`와 로그인한 계정의 `uid`로 공통 훅 [`useWork`](../src/components/student/use-work.ts)를 초기화합니다:
@@ -118,6 +119,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
   ```
 - 저장 버튼으로 검사할 때는 기존 [`saveDraft(page)` 검사 도우미](../tests/emulator.ts)를 재사용할 수 있습니다.
 - 변경 후 다른 화면 이동 시 이탈 가드 모달(`저장 후 나가기`, `저장하지 않고 나가기`, `취소`) 노출을 확인합니다.
+- **엔트리 수업:** 힌트·조립 순서대로 만든 작품이 서버 검증을 통과하는지(`tests/entry-palette.test.ts`), 그린 선·말풍선이 실행 직후 무대에 남는지, 1,024px 가로에서 작업실 전체가 보이는지 확인합니다.
 
 #### 4단계: 선별 검증기 등록 (`scripts/e2e-scope.mjs` & `tests/lesson-smoke.spec.ts`)
 - [`scripts/e2e-scope.mjs`](../scripts/e2e-scope.mjs)의 `LESSON_MAPPINGS`에 수업 패턴과 테스트 파일을 등록합니다:
@@ -137,6 +139,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
   }
   ```
 - [`tests/lesson-smoke.spec.ts`](../tests/lesson-smoke.spec.ts)의 `ALL_LESSON_IDS`에 수업 ID를 넣고, 같은 파일에 그 수업의 저장·새로고침 복원 검사 블록을 추가합니다.
+- `tests/lesson-ui-consistency.spec.ts`의 `lessons`에 새 수업을 넣어 공통 헤더·버튼 이름 검사를 받게 합니다.
 
 ### 2.3 학생 수업 수동 저장 아키텍처 및 코드 계약
 <a id="학생-수업-수동-저장-아키텍처-및-계약"></a>
@@ -241,7 +244,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 - **강아지 없는 작품(조건·반복 수업):** `isFreeMission` 미션은 `workspace.html?...&free=1&locked=…`으로 열고 `pictureeditable`(모양 탭)을 켭니다. 그림판(`.entryPlaygroundPainter`)은 CSS로 숨기고 `openPictureManager`·`clonePicture`·`_removePicture`·`painter.newPicture`(‘새로 그리기’는 관리자 창을 거치지 않고 믿을 수 없는 빈 그림을 바로 더함)는 `picture-locked`로 막습니다. `LOCKED_OBJECTS`의 오브젝트와 마지막 오브젝트는 지울 수 없습니다. 파서는 `entrybot`이 없고 그림이 신뢰 목록에 있는 작품을 `free`(`mainIndex -1`)로 읽어 모든 오브젝트를 같은 방식으로 다시 조립합니다(최대 `MAX_FREE_OBJECTS` 12개). 채점과 `missionBlockIssue`는 시작 줄을 가진 한 오브젝트를 보고, 여러 오브젝트에 나뉘면 같은 문구로 화면 토스트와 검증 실패를 냅니다.
 - **엔트리 오브젝트 묶음:** 그림은 `public/entryjs/sprites/library/`, 목록은 `src/lib/classroom/entry-library.json`(`LIBRARY_SPRITES`)입니다. 바꾸려면 `scripts/entry-library-picks.json`(분류별 엔트리 오브젝트 id)을 고친 뒤 `node scripts/fetch-entry-library.mjs`를 돌려 커밋합니다. 스크립트는 엔트리 사이트의 오브젝트 목록을 읽어 모양 10장까지 내려받고 위험한 SVG를 버립니다. 앱은 실행 중 엔트리 사이트에 접속하지 않습니다. 출처 조건은 같은 폴더의 `NOTICE.md`에 있습니다.
 - **정규화·복제 제약:** 원래 12종 블록이 자기 분기 조건에 맞지 않으면 일반 규칙으로 넘기지 않고 거부합니다(교사 작품 보기 오류 방지). 파서는 정규화가 한 번에 수렴하도록 이름을 자른 뒤 다시 다듬고, 엔트리가 음수로 뒤집은 크기는 부호를 유지합니다. 서버는 받은 원문 대신 자체 정규화본을 저장하고 `MAX_PROJECT_BYTES`(32,768)를 클라이언트와 공유합니다. 파서 결과의 `gradeKey`(강아지 코드만)는 이름 미션 실행 기록에, `key`(작품 전체)는 검증·제출 비교에 씁니다. 엔트리의 복제·붙여넣기(`addCloneObject`)는 강아지 복제와 6개 초과를 막고, 추가 직후에는 강아지를 다시 선택합니다. 채점 오류 중 인터프리터가 의도한 `MissionError`만 학생에게 보이고, 나머지는 미션의 채점 실패 문구(`failure`, 없으면 `hint`)로 대신합니다.
-- **수업별 미션:** 미션 정의는 `programming-entry.ts`의 `PROGRAMMING_MISSIONS` 한 곳에 두고, 미션 ID는 수업이 달라도 겹치지 않게 짓습니다. 미션의 `hint`는 화면의 한 줄 힌트, `failure`는 채점 실패 문구(없으면 `hint`)입니다. `tests/fixtures/entry-legacy-keys.json`이 name·multiply·average·move·keys의 실패 문구를 고정하므로, 이 미션들의 화면 힌트를 바꿀 때는 옛 문구를 `failure`에 남깁니다. 힌트가 ‘ ’로 인용한 블록 이름은 그 미션의 검증 블록이어야 합니다(`tests/entry-palette.test.ts`). 수업마다 보여 주는 미션은 `LESSON_MISSIONS`의 `active`이며, 수업에서 뺀 미션은 `retired`에 두어 옛 저장본만 읽을 수 있게 합니다. 초안 저장은 `active`·`retired` 작품을 모두 받고 선택 미션이 `active`가 아니면 첫 미션으로 바꿉니다. 검증·제출·교사 미리보기 행동은 `active`만 받습니다. 미션의 `variables`(무대에 A·B 표시)·`keyEvents`(방향키 대기)는 iframe 주소의 `vars=1`·`keys=1`로 전달하고, 채점기 `checkProgrammingMission`은 고정 입력이 학생 화면 코드에 실리지 않도록 [`src/lib/server/programming-grader.ts`](../src/lib/server/programming-grader.ts)에 둡니다.
+- **수업별 미션:** 미션 정의는 `programming-entry.ts`의 `PROGRAMMING_MISSIONS` 한 곳에 두고, 미션 ID는 수업이 달라도 겹치지 않게 짓습니다. 미션의 `hint`는 화면의 한 줄 힌트, `steps`는 접힌 번호 조립 순서, `failure`는 채점 실패 문구(없으면 `hint`)입니다. `tests/fixtures/entry-legacy-keys.json`이 name·multiply·average·move·keys의 실패 문구를 고정하므로, 이 미션들의 화면 힌트를 바꿀 때는 옛 문구를 `failure`에 남깁니다. 힌트·조립 순서가 ‘ ’로 인용한 블록 이름은 그 미션의 검증 블록이어야 하고, 조립 순서대로 만든 해답은 채점을 통과해야 합니다(`tests/entry-palette.test.ts`). 수업마다 보여 주는 미션은 `LESSON_MISSIONS`의 `active`이며, 수업에서 뺀 미션은 `retired`에 두어 옛 저장본만 읽을 수 있게 합니다. 초안 저장은 `active`·`retired` 작품을 모두 받고 선택 미션이 `active`가 아니면 첫 미션으로 바꿉니다. 검증·제출·교사 미리보기 행동은 `active`만 받습니다. 미션의 `variables`(무대에 A·B 표시)·`keyEvents`(방향키 대기)는 iframe 주소의 `vars=1`·`keys=1`로 전달하고, 채점기 `checkProgrammingMission`은 고정 입력이 학생 화면 코드에 실리지 않도록 [`src/lib/server/programming-grader.ts`](../src/lib/server/programming-grader.ts)에 둡니다.
 - **모양이 여러 개인 오브젝트:** `entry-palette.ts`의 `LESSON_SPRITES`는 수업 시작 작품에만 쓰는 그림(나무 6단계·물뿌리개 2개·흙)이고, 저장 검증은 고르기 목록과 합친 `TRUSTED_SPRITES`로 합니다. 저장된 그림 목록은 모두 한 그림 묶음에 속해야 하며 서버가 묶음 정의로 다시 만듭니다. 모양 id는 `<오브젝트 id>-pic`, `-pic2`, …이고, 보이는 모양은 `picture`(두 번째부터의 번호)로 저장해 첫 모양인 옛 작품의 키를 바꾸지 않습니다(`tests/fixtures/entry-legacy-objects.json`). 나무 미션의 ‘클릭 수’(`cs-clicks`)는 시작 작품에 있을 때만 프로젝트 변수로 유지합니다. 미션별 첫 작품은 `missionStarter`가 만들며 처음 진입·다시 만들기·미저장 비교가 같은 값을 씁니다.
 - **해석기 의미:** 채점기는 엔트리 4.0.23 블록 정의를 따릅니다. 비교는 빈칸이 아닌 숫자 글자를 숫자로 바꾸고(`=`는 엄격 비교), 몫·나머지는 버림 나눗셈입니다. 움직임은 이동 방향과 오브젝트 방향의 합으로 계산하며, `( )번 반복하기`는 횟수를 내림하고 음수는 오류입니다. `될 때까지`는 조건이 거짓인 동안, `인 동안`은 참인 동안 돕니다. 한 번 실행에서 블록 20,000개·글자 500자·말하기 50번·반복 1,000번·선 200개를 넘으면 실패로 처리해 서버 트랜잭션 시간을 묶습니다.
 - **채점 범위:** `missionBlockIssue`가 미션 신호로 시작하는 줄(값 블록·반복 안쪽 포함)에서 미션 밖 블록을 찾아 이름표로 안내하고, 서버 인터프리터는 그 뒤에만 실행합니다.
