@@ -4,8 +4,8 @@ import { LEGACY_INPUTS } from "./entry-legacy-inputs";
 import legacyKeys from "./fixtures/entry-legacy-keys.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { readEntryDraft } from "../src/components/student/read-editor-draft";
-import { ENTRY_PALETTE } from "../src/lib/classroom/entry-palette";
-import { buildProgrammingProject, entryBlockCategory, entryObjectModel, formatEntryNode, missionBlockIssue, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { BLOCK_LABELS, ENTRY_PALETTE, MISSION_BLOCKS, blockLabel } from "../src/lib/classroom/entry-palette";
+import { PROGRAMMING_MISSIONS, buildProgrammingProject, entryBlockCategory, entryObjectModel, formatEntryNode, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
@@ -248,6 +248,16 @@ test("비슷한 블록과 다른 오브젝트에 만든 시작 줄을 구체적�
   expect(missionBlockIssue("move", project([[start(), node("move_x", number("10"), null)]]))).toContain("대신 ‘이동 방향으로 ( )만큼 움직이기’");
   const wrongObject = withObjects([[]], [ball([[start(), node("move_direction", number("10"), null)]], { name: "축구공" })]);
   expect(checkProgrammingMission("move", wrongObject).message).toBe("강아지가 아니라 ‘축구공’에 시작하기 줄이 있어요. 오브젝트 목록에서 강아지를 고른 뒤 코드를 만들어 주세요.");
+});
+
+test("힌트가 ‘ ’로 인용한 블록 이름은 그 미션의 검증 블록이고, 이름 미션 힌트는 ‘( )초 동안 말하기’를 말한다", () => {
+  expect(missionById("name")!.hint).toContain(`‘${blockLabel("dialog_time")}’`);
+  for (const mission of PROGRAMMING_MISSIONS) {
+    for (const [, quoted] of mission.hint.matchAll(/‘([^’]+)’/g)) {
+      const types = Object.keys(BLOCK_LABELS).filter((type) => BLOCK_LABELS[type] === quoted);
+      if (types.length) expect(types.some((type) => MISSION_BLOCKS[mission.id]?.has(type)), `${mission.id}: ${quoted}`).toBe(true);
+    }
+  }
 });
 
 test("저장할 때 다른 미션에 남은 엔트리 원문도 정규화해 서버 한도 안으로 보낸다", async () => {

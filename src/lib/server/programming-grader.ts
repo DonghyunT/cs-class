@@ -227,6 +227,6 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     }
     // A mission without its own rule never passes.
     else passed = false;
-    return passed ? { passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." } : fail(mission.hint);
-  } catch (error) { return fail(error instanceof MissionError ? error.message : mission.hint); }
+    return passed ? { passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." } : fail(mission.failure ?? mission.hint);
+  } catch (error) { return fail(error instanceof MissionError ? error.message : mission.failure ?? mission.hint); }
 }
