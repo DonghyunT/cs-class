@@ -7,6 +7,7 @@
 - **운영:** 설정·배포 게이트 상태는 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)을 봅니다.
 - **실제 학생 계정** (10/19): 297개 사전 등록·임시값 미발급([운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)). 방식은 반별 30분 임시값 → 첫 입장 때 개인 비밀번호(사용자 결정). 명부 CSV·등록 직후 백업은 등록에 쓴 PC의 Git 제외 `private/`에만 있습니다.
 - **축제 미연시:** #59로 운영 `/festival-romance.html`에 공개됐습니다(10/20 응답 200 확인). 남은 일은 현장 확인입니다([자료 인수인계](../teaching-materials/festival-romance/HANDOFF.md)).
+- **진행 중 브랜치:** `feat/learning-experience` ([학습 경험 개선 계획](plans/learning-experience.md), 1~4단계)
 
 ## 최근 반영
 
