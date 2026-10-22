@@ -498,11 +498,15 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
     ["escape", exported([escapeProgram(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")))])],
     ["square", exported([[start(), node("start_drawing", null), loopOf(number("4"), [forward(number("100")), turn(node("angle", "90"))])]])],
     ["square", exported([[start(), node("start_drawing", null), loopOf(number("4"), [forward(number("100")), turn(node("angle", "90"), "rotate_relative")])]])],
-    ["polygon", exported([[start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(answer(), [forward(number("60")), turn(calc(number("360"), "DIVIDE", answer()))])]])],
+    ["polygon", exported([[start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(answer(), [forward(number("100")), turn(calc(number("360"), "DIVIDE", answer()))])]])],
     ["tree", withTree(treeCode(["5", "10", "15", "20", "25"].map(grow)))],
     ["safe", exported([[start(), until(compare(answer(), "EQUAL", number("1234"))), speak("금고가 열렸어요!")]])],
   ];
   expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(PROGRAMMING_MISSIONS.map((mission) => mission.id)));
+  // The steps name the values and slots these solutions use.
+  expect(missionById("polygon")!.steps[2]).toContain("100을 넣어요");
+  expect(missionById("multiply")!.steps[3]).toContain("첫 칸에");
+  expect(missionById("average")!.steps[4]).toContain("첫 칸에");
   for (const [id, raw] of solutions) expect(checkProgrammingMission(id, raw), id).toEqual({ passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." });
 });
 const speak2 = (value: EntryNode) => node("dialog", value, "speak", null);
