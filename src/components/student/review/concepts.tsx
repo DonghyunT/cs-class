@@ -162,7 +162,7 @@ function StructureExperience() {
   }, [running, position, path.length]);
   function change(action: () => void) { action(); setPosition(0); setRunning(false); }
   const instructions = ["시작", "컵 준비", ...(structure === "선택" ? ["우유가 있으면 우유 넣기, 없으면 물 넣기"] : ["우유 넣기"]), structure === "반복" ? `${times}회 젓기` : "젓기", "종료"];
-  const pseudocode = `START\nPREPARE cup\n${structure === "선택" ? "IF milkAvailable THEN ADD milk\nELSE ADD water" : "ADD milk"}\n${structure === "반복" ? `REPEAT ${times} TIMES: STIR` : "STIR"}\nEND`;
+  const pseudocode = `시작\n컵 준비하기\n${structure === "선택" ? "만일 우유가 있으면 우유 넣기\n아니면 물 넣기" : "우유 넣기"}\n${structure === "반복" ? `${times}번 반복하기: 젓기` : "젓기"}\n끝`;
   return <>
     <h4>조건과 횟수를 바꾸면 실행 경로는 어떻게 달라질까요?</h4>
     <p className={scenes.question}>구조를 고르고 실행해 보세요. 같은 명령을 세 가지 표현으로 비교할 수 있어요.</p>

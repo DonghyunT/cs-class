@@ -46,7 +46,7 @@ export const missions = [
           { id: "s5", type: "terminal", label: "종료", fixed: true, shape: "terminal" }
         ],
         palette: [
-          { id: "b-m2-1", type: "io", text: "사용자 키(Height) 입력", shape: "io" },
+          { id: "b-m2-1", type: "io", text: "사용자 키 입력", shape: "io" },
           { id: "b-m2-2", type: "decision", text: "키 >= 150cm 인가?", shape: "decision" },
           { id: "b-m2-yes", type: "io", text: "'탑승 가능' 안내 출력", shape: "io" },
           { id: "b-m2-no", type: "io", text: "'탑승 불가' 안내 출력", shape: "io" }

@@ -134,7 +134,7 @@ export function Flowchart({ controller, practiceFocused = false, mode = "student
           <details><summary>목록으로 배치하기</summary>{mission.slots.filter(slot => !slot.fixed).map(slot => <label key={slot.id} className={styles.field}>{slot.hint}<select aria-label={slot.hint} disabled={locked} value={placements[slot.id] ?? ""} onChange={event => place(slot.id, event.target.value)}><option value="">빈 기호</option>{mission.palette.map(block => <option key={block.id} value={block.id}>{block.text}{used.has(block.id) && placements[slot.id] !== block.id ? " (이 칸으로 이동)" : ""}</option>)}</select></label>)}</details>
         </section>
         <section className={styles.puzzleCanvas}>
-          <header><div><small>Mission {p.mission} of 3</small><h3>{mission.title}</h3></div><Button variant="ghost" disabled={locked} onClick={() => { edit({ placements: { ...p.placements, [p.mission]: {} } }); setPaletteBlock(""); setAttempts(value => ({ ...value, [p.mission]: (value[p.mission] ?? 0) + 1 })); }}>↶ 다시 조립</Button></header>
+          <header><div><small>미션 {p.mission} / 3</small><h3>{mission.title}</h3></div><Button variant="ghost" disabled={locked} onClick={() => { edit({ placements: { ...p.placements, [p.mission]: {} } }); setPaletteBlock(""); setAttempts(value => ({ ...value, [p.mission]: (value[p.mission] ?? 0) + 1 })); }}>↶ 다시 조립</Button></header>
           <p className={styles.missionDescription}>{mission.desc}</p>
           <FlowDiagram {...graph} {...runtime} fit active={active} emptyNodes={empty} clearableNodes={clearable} clearNode={slotId => place(slotId, "")} select={slotId => { if (paletteBlock) place(slotId, paletteBlock); }} drop={place} />
         </section>

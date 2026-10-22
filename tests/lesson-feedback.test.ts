@@ -100,3 +100,14 @@ test("샌드위치 로봇의 모든 오류 문장은 첫 문장 뒤에 다음 �
   expect(messages.length).toBeGreaterThan(20);
   for (const message of messages) expect(message).toMatch(/^"오류: [^!]+! [^!]+주세요\."$/);
 });
+
+test("복습 체험·순서도 화면에는 영어 의사 코드·머리표가 남지 않고, 부분 초기화 버튼은 효과 범위를 이름으로 말한다", () => {
+  const source = (path: string) => readFileSync(path, "utf8");
+  expect(source("src/components/student/review/concepts.tsx")).not.toMatch(/\b(START|PREPARE|IF|ELSE|STIR|REPEAT|END)\b/);
+  expect(source("src/components/student/review/flowchart.tsx")).not.toContain("Mission ");
+  expect(source("src/components/student/review/flow-diagram.tsx")).not.toContain(">Drop<");
+  expect(source("src/lib/classroom/review/flowchart-data.mjs")).not.toContain("(Height)");
+  // The run button's accessible name is "자동 실행", so the visible text must contain it.
+  expect(source("src/components/student/review/flow-execution.tsx")).not.toContain("▶ 실행 검증");
+  expect(source("src/components/student/review/flowchart-concepts.tsx")).not.toContain(">초기화</Button>");
+});

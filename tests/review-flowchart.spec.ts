@@ -309,7 +309,7 @@ test("V1처럼 틀린 배치와 빈 기호를 실행하지 않고 답안을 보�
   await expect(page.getByLabel("실제 순서도 연결", { exact: true }).getByLabel("키 입력값")).toHaveCount(0); await expect(run.getByLabel("실시간 데이터 흐름")).not.toContainText("출력:");
   expect((await (await page.request.get(`/api/classroom/work/${id}`)).json()).draft.reviewProject.placements["2"].s2).toBe("b-m2-yes");
   await page.getByText("목록으로 배치하기", { exact: true }).click(); await puzzleSlot(page, 2, "s2").selectOption("b-m2-1");
-  await expect(inputSlot.locator("title")).toHaveText("사용자 키(Height) 입력");
+  await expect(inputSlot.locator("title")).toHaveText("사용자 키 입력");
   await run.getByRole("button", { name: "실행 준비 / 다시 시작" }).click(); await expect(run.getByRole("button", { name: "한 단계 실행" })).toBeEnabled();
   await run.getByRole("button", { name: "한 단계 실행" }).click(); await run.getByRole("button", { name: "한 단계 실행" }).click();
   const input = page.getByLabel("실제 순서도 연결", { exact: true }).getByLabel("키 입력값");
