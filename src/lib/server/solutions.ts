@@ -31,30 +31,47 @@ export interface LessonSolution {
   lessonId: string;
   conceptAnswers: Record<string, string>;
   quizAnswers: Record<string, string>;
-  quizFeedback?: Record<string, { correct: string; incorrect?: string }>;
+  // `incorrect` is one message, or a message per wrong option id.
+  quizFeedback?: Record<string, { correct: string; incorrect?: string | Readonly<Record<string, string>> }>;
+  conceptRetry?: Readonly<Record<string, string>>;
   practice: OrderingSolution | EntrySolution;
 }
+
+const REVIEW_CONCEPT_RETRY: Readonly<Record<string, string>> = {
+  essential: "환승역을 찾는 목적을 떠올려 보세요. 고른 정보가 없어도 어디서 갈아탈지 알 수 있다면, 그 정보는 덜어낼 정보예요.",
+  state: "지금 벌어지고 있는 일인지, 앞으로 이루고 싶은 모습인지 나눠 보세요. 예시의 ‘지각이 잦다’와 ‘정시에 도착한다’는 서로 다른 상태예요.",
+  decompose: "분해는 큰 문제를 작은 문제로 나누는 일이에요. 고른 보기에서 무엇을 나누고 있는지 찾아보세요.",
+  clear: "로봇이 이 명령을 받으면 빵을 몇 장, 어디에 둘지 알 수 있을까요? 사람마다 다르게 해석할 말이 있는지 살펴보세요.",
+  finite: "고른 조건은 처음에 받는 자료에 관한 것이에요. 다섯 조건 가운데 ‘끝남’에 관한 조건을 찾아보세요.",
+  structure: "우유가 없을 때도 같은 명령을 실행하나요? 조건에 따라 실행할 명령이 달라지는 구조를 떠올려 보세요.",
+  symbols: "처리 기호에는 행동과 계산을 적어요. ‘키가 150 이상인가?’처럼 묻는 문장은 어느 기호에 적었는지 예시를 다시 보세요.",
+  branches: "판단 기호에서는 길이 두 갈래로 나뉘어요. 두 길 중 어느 쪽으로 갈지 알려 주려면 길마다 무엇을 적어야 할까요?",
+  loop: "틀렸을 때 바로 끝나면 다시 시도할 기회가 없어요. 비밀번호를 다시 받으려면 화살표가 어느 단계로 돌아가야 할까요?",
+};
 
 export const SOLUTIONS: Record<string, LessonSolution> = {
   "programming-13": {
     lessonId: "programming-13",
     conceptAnswers: Object.fromEntries(concepts.map((c, i) => [`pc${i}`, String(c.correct)])),
     quizAnswers: Object.fromEntries(questions.map((q) => [q.id, String(q.correct)])),
-    quizFeedback: Object.fromEntries(questions.map((q) => [q.id, { correct: q.explanation, incorrect: q.hint }])),
+    quizFeedback: Object.fromEntries(questions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
+    conceptRetry: Object.fromEntries(concepts.map((c, i) => [`pc${i}`, c.retry])),
     practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
   },
   conditionals: {
     lessonId: "conditionals",
     conceptAnswers: Object.fromEntries(conditionalConcepts.map((c) => [c.id, String(c.correct)])),
     quizAnswers: Object.fromEntries(conditionalQuestions.map((q) => [q.id, String(q.correct)])),
-    quizFeedback: Object.fromEntries(conditionalQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.hint }])),
+    quizFeedback: Object.fromEntries(conditionalQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
+    conceptRetry: Object.fromEntries(conditionalConcepts.map((c) => [c.id, c.retry])),
     practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
   },
   loops: {
     lessonId: "loops",
     conceptAnswers: Object.fromEntries(loopConcepts.map((c) => [c.id, String(c.correct)])),
     quizAnswers: Object.fromEntries(loopQuestions.map((q) => [q.id, String(q.correct)])),
-    quizFeedback: Object.fromEntries(loopQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.hint }])),
+    quizFeedback: Object.fromEntries(loopQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
+    conceptRetry: Object.fromEntries(loopConcepts.map((c) => [c.id, c.retry])),
     practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
   },
   "sequence-lab": {
@@ -149,7 +166,7 @@ export function getLessonSolution(lessonId: string): LessonSolution | undefined 
   const lesson = REVIEW_LESSONS.find(item => item.id === lessonId);
   if (lesson) {
     const unit = UNIT_QUIZ_DATA[lesson.practice.type === "sandwich" ? "algorithm" : lesson.practice.type as "abstraction" | "flowchart"];
-    return { lessonId, conceptAnswers: Object.fromEntries(lesson.concepts.map(c => [c.id, "0"])), quizAnswers: Object.fromEntries(unit.questions.map(q => [String(q.id), String(q.options.findIndex(o => o.correct))])), quizFeedback: Object.fromEntries(unit.questions.map(q => [String(q.id), { correct: q.explanation }])), practice: { type: "ordering", expectedOrder: [], successMessage: "", failureMessage: "" } };
+    return { lessonId, conceptAnswers: Object.fromEntries(lesson.concepts.map(c => [c.id, "0"])), quizAnswers: Object.fromEntries(unit.questions.map(q => [String(q.id), String(q.options.findIndex(o => o.correct))])), quizFeedback: Object.fromEntries(unit.questions.map(q => [String(q.id), { correct: q.explanation, incorrect: q.wrong }])), conceptRetry: REVIEW_CONCEPT_RETRY, practice: { type: "ordering", expectedOrder: [], successMessage: "", failureMessage: "" } };
   }
   return SOLUTIONS[lessonId];
 }
