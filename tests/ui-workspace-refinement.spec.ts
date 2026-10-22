@@ -114,6 +114,10 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   await expect(hint).toBeFocused();
   await hint.press("Enter");
   await expect(guidance.getByText(mission.hint, { exact: true })).toBeVisible();
+  // The folded guide lists every assembly step; the check-after-building card follows the guide.
+  await expect(guidance.getByRole("list", { name: "조립 순서", exact: true }).getByRole("listitem")).toHaveCount(mission.steps.length);
+  const checkCard = guidance.getByRole("heading", { name: "만든 뒤 확인하기", exact: true });
+  expect((await checkCard.boundingBox())!.y).toBeGreaterThan((await hint.boundingBox())!.y);
   await hint.press("Enter");
   await expect(guidance.getByText(mission.hint, { exact: true })).toBeHidden();
   await page.keyboard.press("Tab");

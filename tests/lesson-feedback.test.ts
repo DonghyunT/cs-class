@@ -117,3 +117,13 @@ test("반복 lc2 예시와 그림은 개념 확인(정육각형)·퀴즈(정오�
   expect(lc2.example).not.toMatch(/정육각형|정오각형/);
   expect(readFileSync("src/components/student/concept-visual.tsx", "utf8")).not.toMatch(/n=\{[56]\}/);
 });
+
+test("반복 개념·퀴즈의 블록 이름은 팔레트 이름과 같고, 만든 뒤 확인 문장은 클릭 대상을 헷갈리게 하지 않는다", () => {
+  const lc1 = loopConcepts.find((c) => c.id === "lc1")!;
+  expect(lc1.example).toContain("‘이동 방향으로 100만큼 움직이기’와 ‘이동 방향을 90°만큼 회전하기’");
+  expect(lc1.prompt).toContain("‘이동 방향으로 10만큼 움직이기’");
+  expect(loopQuestions.find((q) => q.id === "distance")!.scene).toContain("  └ 이동 방향으로 10만큼 움직이기");
+  expect(loopQuestions.find((q) => q.id === "pentagon")!.scene).toContain("  └ 이동 방향으로 100만큼 움직이기");
+  expect(missionById("tree")!.experiment).not.toContain("물뿌리개");
+  expect(missionById("escape")!.experiment).toContain("1과 1");
+});

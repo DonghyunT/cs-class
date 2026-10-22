@@ -250,10 +250,11 @@ test("비슷한 블록과 다른 오브젝트에 만든 시작 줄을 구체적�
   expect(checkProgrammingMission("move", wrongObject).message).toBe("강아지가 아니라 ‘축구공’에 시작하기 줄이 있어요. 오브젝트 목록에서 강아지를 고른 뒤 코드를 만들어 주세요.");
 });
 
-test("힌트가 ‘ ’로 인용한 블록 이름은 그 미션의 검증 블록이고, 이름 미션 힌트는 ‘( )초 동안 말하기’를 말한다", () => {
+test("힌트·조립 순서가 ‘ ’로 인용한 블록 이름은 그 미션의 검증 블록이고, 이름 미션 힌트는 ‘( )초 동안 말하기’를 말한다", () => {
   expect(missionById("name")!.hint).toContain(`‘${blockLabel("dialog_time")}’`);
   for (const mission of PROGRAMMING_MISSIONS) {
-    for (const [, quoted] of mission.hint.matchAll(/‘([^’]+)’/g)) {
+    expect(mission.steps.length, mission.id).toBeGreaterThanOrEqual(3);
+    for (const [, quoted] of [mission.hint, ...mission.steps].join(" ").matchAll(/‘([^’]+)’/g)) {
       const types = Object.keys(BLOCK_LABELS).filter((type) => BLOCK_LABELS[type] === quoted);
       if (types.length) expect(types.some((type) => MISSION_BLOCKS[mission.id]?.has(type)), `${mission.id}: ${quoted}`).toBe(true);
     }
@@ -479,3 +480,29 @@ test("엔트리 오브젝트 묶음은 파일·분류·크기가 맞고 위험�
     }
   }
 });
+
+// Solutions built in the order of each mission's `steps` (plan appendix D); guidance and grading must agree.
+test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 블록 모두)은 채점을 통과한다", () => {
+  const sayTimed = (value: EntryNode) => node("dialog_time", value, number("2"), "speak", null);
+  const variable = (id: string) => node("get_variable", `cs-${id}`);
+  const store = (id: string) => [ask(), node("set_variable", `cs-${id}`, answer(), null)];
+  const calc = (left: EntryNode, op: string, right: EntryNode) => node("calc_basic", left, op, right);
+  const solutions: [string, string][] = [
+    ["name", project([[start(), node("ask_and_wait", text("이름이 뭐니?"), null), sayTimed(answer())]])],
+    ["multiply", project([[start(), ...store("A"), ...store("B"), sayTimed(calc(variable("A"), "MULTI", variable("B")))]])],
+    ["move", project([[start(), node("direction_absolute", node("angle", "90"), null), forward(number("10"))]])],
+    ["keys", project([["38", "0"], ["39", "90"], ["40", "180"], ["37", "270"]].map(([key, angle]) => [node("when_some_key_pressed", null, key), node("direction_absolute", node("angle", angle), null), forward(number("10"))]))],
+    ["average", exported([[start(), ...store("A"), ...store("B"), speak2(calc(calc(variable("A"), "PLUS", variable("B")), "DIVIDE", number("2")))]])],
+    ["pass", exported([passProgram()])],
+    ["freethrow", exported([freeThrow()])],
+    ["escape", exported([escapeProgram(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")))])],
+    ["square", exported([[start(), node("start_drawing", null), loopOf(number("4"), [forward(number("100")), turn(node("angle", "90"))])]])],
+    ["square", exported([[start(), node("start_drawing", null), loopOf(number("4"), [forward(number("100")), turn(node("angle", "90"), "rotate_relative")])]])],
+    ["polygon", exported([[start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(answer(), [forward(number("60")), turn(calc(number("360"), "DIVIDE", answer()))])]])],
+    ["tree", withTree(treeCode(["5", "10", "15", "20", "25"].map(grow)))],
+    ["safe", exported([[start(), until(compare(answer(), "EQUAL", number("1234"))), speak("금고가 열렸어요!")]])],
+  ];
+  expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(PROGRAMMING_MISSIONS.map((mission) => mission.id)));
+  for (const [id, raw] of solutions) expect(checkProgrammingMission(id, raw), id).toEqual({ passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." });
+});
+const speak2 = (value: EntryNode) => node("dialog", value, "speak", null);

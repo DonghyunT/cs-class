@@ -48,8 +48,8 @@ export const CONCEPT_VISUALS: Record<string, { label: string; node: ReactNode }>
     <Card title="그냥 쓰면"><Block kind="brush">도장 찍기</Block><Block kind="brush">도장 찍기</Block><Block kind="brush">도장 찍기</Block></Card>
     <Op>=</Op>
     <Card title="반복으로 쓰면"><Nest head="3번 반복하기"><Block kind="brush">도장 찍기</Block></Nest></Card></> },
-  lc1: { label: "4번 반복하기 안에서 100만큼 움직이고 90도 돌면 정사각형이 그려짐", node: <>
-    <Nest head="4번 반복하기"><Block kind="motion">100만큼 움직이기</Block><Block kind="motion">90°만큼 회전하기</Block></Nest>
+  lc1: { label: "4번 반복하기 안에서 이동 방향으로 100만큼 움직이기와 이동 방향을 90°만큼 회전하기를 하면 정사각형이 그려짐", node: <>
+    <Nest head="4번 반복하기"><Block kind="motion">이동 방향으로 100만큼 움직이기</Block><Block kind="motion">이동 방향을 90°만큼 회전하기</Block></Nest>
     <Op>→</Op>
     <svg viewBox="0 0 96 96" width="96" height="96" aria-hidden="true"><rect x="16" y="16" width="64" height="64" rx="2" fill="#eaf2ff" stroke="#376fc8" strokeWidth="3" />{[[48, 10, "1"], [86, 52, "2"], [48, 94, "3"], [10, 52, "4"]].map(([x, y, n]) => <text key={n} x={x} y={y} textAnchor="middle" fontSize="14" fontWeight="700" fill="#2e5fab">{n}</text>)}</svg></> },
   lc2: { label: "정삼각형은 120도, 정사각형은 90도, 정팔각형은 45도씩 돌며 360을 변의 수로 나눈 값", node: <><Polygon n={3} label="정삼각형" /><Polygon n={4} label="정사각형" /><Polygon n={8} label="정팔각형" /></> },
