@@ -126,6 +126,25 @@ test.describe("정식 수업 programming-13", () => {
     await expect(page.getByText("작품 내용이 바뀌어 실행 확인을 다시 시작해요.", { exact: true })).toBeVisible();
   });
 
+  test("구조가 틀린 이름 작품은 실행해도 세지 않는 이유를 두 이름 확인 설명에 보인다", async ({ page }) => {
+    test.setTimeout(60000);
+    const before = await stored(page);
+    const plain = buildProgrammingProject([[node("when_run_button_click", null), node("ask_and_wait", node("text", "강아지 이름은?"), null), node("dialog", node("get_canvas_input_value", null), "speak", null)]]);
+    expect((await page.request.post(endpoint, { headers, data: { revision: before.revision, draft: { ...before.draft, stage: "practice", programming: { mission: "name", projects: { name: plain }, reflection: "" } } } })).status()).toBe(200);
+    await page.goto(`/classroom/${id}?from=dashboard`);
+    await page.locator("iframe").scrollIntoViewIfNeeded();
+    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+    const reason = page.locator('[aria-label="서로 다른 이름 확인"] + p');
+    await expect(reason).toContainText("‘( )을(를) 말하기’ 대신 ‘( )을(를) ( )초 동안 말하기’");
+    await entryStart(page).click();
+    const input = page.frameLocator("iframe").getByLabel("강아지 이름 대답");
+    await input.fill("초코"); await input.press("Enter");
+    await expect(page.getByRole("status").filter({ hasText: "마지막 말: 초코" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("status", { name: "서로 다른 이름 확인", exact: true })).toHaveText("서로 다른 이름 확인 0/2");
+    await expect(reason).toContainText("‘( )을(를) 말하기’ 대신 ‘( )을(를) ( )초 동안 말하기’");
+    await expect(reason).not.toContainText("작품 내용이 바뀌어");
+  });
+
   test("작품 export 실패는 단계·미션 이동과 수업 나가기를 막고 작업실 입력을 유지한다", async ({ page }) => {
     test.setTimeout(60000);
     await page.addInitScript(() => window.addEventListener("message", (event) => {
