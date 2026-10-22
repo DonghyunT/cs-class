@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { buildProgrammingProject } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, missionStarter, parseProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
 import { db, headers, readyStudent, readyTeacher } from "./emulator";
 
@@ -145,5 +145,38 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     for (const width of [320, 390, 768, 1440]) { await page.setViewportSize({ width, height: 900 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }
     await page.keyboard.press("Escape"); await expect(dialog).toBeHidden(); await expect(open).toBeFocused();
     expect(errors).toEqual([]);
+  } finally { await workRef.delete(); await classRef.set(original); }
+});
+
+test("교사 작품 실행기: 그린 작품은 정지 전까지 선을 남기고 그리기 안내를 보이며, 정지하면 안내를 뗀다", async ({ page }) => {
+  test.setTimeout(90000);
+  const id = "loops", endpoint = `/api/classroom/work/${id}`, classRef = db.doc("csClasses/2-1"), workRef = db.doc(`csWork/student-20101__${id}`);
+  const original = (await classRef.get()).data()!;
+  const node = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
+  const square = [node("when_run_button_click", null), node("start_drawing", null), { ...node("repeat_basic", node("number", "4"), null), statements: [[node("move_direction", node("number", "100"), null), node("direction_relative", node("angle", "90"), null)]] }];
+  const project = buildProgrammingProject(undefined, parseProgrammingProject(missionStarter("square"))!.added.map((o) => ({ ...o, threads: [square] })), -1);
+  try {
+    await readyStudent(page.request); await workRef.delete();
+    await classRef.update({ currentLessonId: id, openedLessonIds: [id] });
+    const current: Work = await (await page.request.get(endpoint)).json();
+    current.draft.programming = { mission: "square", projects: { ...current.draft.programming?.projects, square: project }, reflection: "" };
+    let response = await page.request.post(endpoint, { headers, data: { revision: current.revision, draft: current.draft } }); expect(response.status()).toBe(200);
+    for (const type of ["validate-practice", "submit-practice"]) { const work: Work = await response.json(); response = await page.request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type, missionId: "square" } } }); expect(response.status(), type).toBe(200); }
+    await readyTeacher(page.request);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/teacher/students?classId=2-1&lessonId=${id}`);
+    await page.getByRole("button", { name: "20101 제출 작품 보기", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "20101 학생의 제출 작품", exact: true });
+    await dialog.getByRole("button", { name: "작업실에서 실행해 보기", exact: true }).click();
+    await expect(dialog.getByRole("button", { name: "무대 처음 위치로", exact: true })).toBeEnabled({ timeout: 20000 });
+    const runner = page.frameLocator('iframe[title*="교사 실행 작업실"]');
+    await runner.getByRole("button", { name: "시작하기", exact: true }).click();
+    const status = dialog.getByRole("status").filter({ hasText: "실행을 마쳤어요." });
+    await expect(status).toContainText("그린 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가요.", { timeout: 10000 });
+    await expect(status).not.toContainText("키를 누르거나");
+    await runner.getByRole("button", { name: "정지하기", exact: true }).click();
+    await expect(runner.getByRole("button", { name: "시작하기", exact: true })).toBeVisible();
+    await expect(status).toContainText("실행을 멈췄어요.");
+    await expect(status).not.toContainText("그린 결과를 다 봤으면");
   } finally { await workRef.delete(); await classRef.set(original); }
 });
