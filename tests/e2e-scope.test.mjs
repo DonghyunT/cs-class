@@ -125,6 +125,23 @@ test("selectE2E elevates to full if unmapped or shared code is modified", () => 
   assert.equal(server.mode, "full");
 });
 
+test("selectE2E maps concept pictures, Entry specs and logic-only tests", () => {
+  assert.deepEqual(matchLessons("src/components/student/concept-visual.module.css"), ["conditionals", "loops"]);
+  assert.deepEqual(matchLessons("public/concepts/loops-repeat-triangle.png"), ["loops"]);
+  assert.deepEqual(matchLessons("public/concepts/conditionals-nested-if.png"), ["conditionals"]);
+  assert.deepEqual(matchLessons("public/concepts/other.png"), []);
+  assert.deepEqual(matchLessons("tests/ui-workspace-refinement.spec.ts"), ["programming-13"]);
+  assert.deepEqual(matchLessons("tests/programming-name-mission.spec.ts"), ["programming-13"]);
+
+  const picture = selectE2E(["src/components/student/concept-visual.tsx", "public/concepts/loops-repeat-until.png", "tests/lesson-feedback.test.ts"]);
+  assert.equal(picture.mode, "affected");
+  assert.deepEqual(picture.lessonIds, ["conditionals", "loops"]);
+  assert.deepEqual(picture.testFiles, ["tests/conditionals.spec.ts", "tests/loops.spec.ts", "tests/teacher-lesson-preview.spec.ts"]);
+
+  // A logic test alone selects no lesson, so it stays on the conservative full path.
+  assert.equal(selectE2E(["tests/lesson-feedback.test.ts"]).mode, "full");
+});
+
 test("selectE2E normalizes Windows path separators", () => {
   const winPath = selectE2E(["src\\components\\student\\review\\sandwich.tsx"]);
   assert.equal(winPath.mode, "affected");

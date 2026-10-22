@@ -57,7 +57,7 @@ export const CONCEPT_VISUALS: Record<string, { label: string; node: ReactNode }>
     <svg viewBox="0 0 96 96" width="96" height="96" aria-hidden="true"><path d="M16 20H80L48 75.4z" fill="#eaf2ff" stroke="#376fc8" strokeWidth="3" strokeLinejoin="round" />{[[48, 13, "1"], [75, 58, "2"], [21, 58, "3"]].map(([x, y, n]) => <text key={n} x={x} y={y} textAnchor="middle" fontSize="14" fontWeight="700" fill="#2e5fab">{n}</text>)}</svg></> },
   lc2: { label: "정삼각형은 120도, 정사각형은 90도, 정팔각형은 45도씩 돌며 360을 변의 수로 나눈 값", node: <><Polygon n={3} label="정삼각형" /><Polygon n={4} label="정사각형" /><Polygon n={8} label="정팔각형" /></> },
   lc3: { label: "벽에 닿을 때까지 이동 방향으로 10만큼 움직이기를 되풀이하고, 벽에 닿으면 반복을 멈춘 뒤 도착!을 말함", node: <Capture src="loops-repeat-until" width={376} height={131} /> },
-  lc4: { label: "마우스를 클릭할 때마다 클릭 수에 1만큼 더하고, 클릭 수 값이 5가 되면 나무가 다음 모양으로 바뀌어 한 단계 자람", node: <>
+  lc4: { label: "마우스를 클릭했을 때(무대를 클릭할 때마다) 클릭 수에 1만큼 더하고, 클릭 수 값이 5가 되면 나무가 다음 모양으로 바뀌어 한 단계 자람", node: <>
     <Capture src="loops-count-variable" width={367} height={172} />
     <Tree stage={0} clicks="클릭 수 0" /><Op>→</Op><Tree stage={1} clicks="클릭 수 5" /></> },
 };

@@ -122,7 +122,9 @@ test("반복 lc1·lc3·lc4 그림은 미션 조립(정사각형 4번·100·90°,
   // Each label is the text mirror of its picture (the capture itself has alt="").
   const labels = Object.fromEntries([...readFileSync("src/components/student/concept-visual.tsx", "utf8").matchAll(/^\s*(lc\d): \{ label: "([^"]+)"/gm)].map((m) => [m[1], m[2]]));
   for (const id of ["lc1", "lc3", "lc4"]) expect(labels[id]).not.toMatch(/1234|4번|100만큼|90°|5, 10|10, 15|15, 20|20, 25/);
-  expect(labels.lc4).toContain("마우스를 클릭할 때마다");
+  // The label and the example box name the capture's event block and say what it means on the stage.
+  expect(labels.lc4).toContain("마우스를 클릭했을 때(무대를 클릭할 때마다)");
+  expect(loopConcepts.find((c) => c.id === "lc4")!.example).toContain("‘마우스를 클릭했을 때’ 아래 블록은 무대를 클릭할 때마다 실행돼요.");
   // The example box sits right under the picture, so it must describe the same wall program, not the safe mission.
   const lc3 = loopConcepts.find((c) => c.id === "lc3")!;
   expect(lc3.example).toContain("‘벽에 닿았는가?’가 될 때까지 10만큼씩 움직이면");

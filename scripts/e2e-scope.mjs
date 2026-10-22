@@ -18,6 +18,12 @@ const ENTRY_SHARED = [
   /^scripts\/(?:fetch-entry-library\.mjs|entry-library-picks\.json)$/
 ];
 
+// The concept-screen pictures; only conditionals and loops have entries, and the teacher preview shows them too.
+const CONCEPT_VISUAL = /^src\/components\/student\/concept-visual(?:\.tsx|\.module\.css)$/;
+
+// Logic tests run in the unit job (test:review), so on their own they need no E2E.
+const LOGIC_ONLY = [/^tests\/lesson-feedback\.test\.ts$/];
+
 export const LESSON_MAPPINGS = {
   "review-sandwich": {
     lessonId: "review-sandwich",
@@ -71,7 +77,8 @@ export const LESSON_MAPPINGS = {
     patterns: [
       ...ENTRY_SHARED,
       /^src\/components\/student\/programming-concept(?:\.tsx|\.module\.css)$/,
-      /^src\/lib\/classroom\/(?:programming-lesson|programming-data|name-entry)\.ts$/
+      /^src\/lib\/classroom\/(?:programming-lesson|programming-data|name-entry)\.ts$/,
+      /^tests\/(?:programming-name-mission|ui-workspace-refinement)\.spec\.ts$/
     ],
     tests: [
       "tests/programming-classroom.spec.ts",
@@ -81,7 +88,8 @@ export const LESSON_MAPPINGS = {
       "tests/entryjs-ui.spec.ts",
       "tests/manual-save-entry.spec.ts",
       "tests/practice-focus.spec.ts",
-      "tests/lesson-feedback-workspace.spec.ts"
+      "tests/lesson-feedback-workspace.spec.ts",
+      "tests/ui-workspace-refinement.spec.ts"
     ]
   },
   "conditionals": {
@@ -89,10 +97,13 @@ export const LESSON_MAPPINGS = {
     patterns: [
       ...ENTRY_SHARED,
       /^src\/lib\/classroom\/conditionals-(?:lesson|data)\.ts$/,
-      /^tests\/conditionals\.spec\.ts$/
+      /^tests\/conditionals\.spec\.ts$/,
+      CONCEPT_VISUAL,
+      /^public\/concepts\/conditionals-[\w-]+\.png$/
     ],
     tests: [
-      "tests/conditionals.spec.ts"
+      "tests/conditionals.spec.ts",
+      "tests/teacher-lesson-preview.spec.ts"
     ]
   },
   "loops": {
@@ -100,10 +111,13 @@ export const LESSON_MAPPINGS = {
     patterns: [
       ...ENTRY_SHARED,
       /^src\/lib\/classroom\/loops-(?:lesson|data)\.ts$/,
-      /^tests\/loops\.spec\.ts$/
+      /^tests\/loops\.spec\.ts$/,
+      CONCEPT_VISUAL,
+      /^public\/concepts\/loops-[\w-]+\.png$/
     ],
     tests: [
-      "tests/loops.spec.ts"
+      "tests/loops.spec.ts",
+      "tests/teacher-lesson-preview.spec.ts"
     ]
   }
 };
@@ -132,7 +146,7 @@ export function selectE2E(files) {
   }
 
   // Filter out documentation files to see the functional changes
-  const codeFiles = normalizedFiles.filter(f => !isDocument(f));
+  const codeFiles = normalizedFiles.filter(f => !isDocument(f) && !LOGIC_ONLY.some(pattern => pattern.test(f)));
 
   const matchedLessons = new Set();
   let unmapped = null;
