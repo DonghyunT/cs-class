@@ -20,7 +20,10 @@ import common from "./student.module.css";
 import styles from "./entry-practice-workspace.module.css";
 
 const CHANNEL = "cs-class-entryjs";
-const WAITING = " 키를 누르거나 오브젝트를 클릭해 보세요. 다 해 봤으면 무대 아래 ‘정지하기’를 눌러 주세요.";
+const WAITING = " 키를 누르거나 무대·오브젝트를 클릭해 보세요. 다 해 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 조건을 검증할 수 있어요.";
+// Entry's stop resets the stage, so drawing runs stay until the student stops them.
+const DRAWING = " 그린 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가고, 그다음 조건을 검증할 수 있어요.";
+const withoutWaiting = (text: string) => [WAITING, DRAWING].reduce((rest, notice) => rest.endsWith(notice) ? rest.slice(0, -notice.length) : rest, text);
 // Name runs record only the dog, so they are keyed by the dog's code, not the whole work.
 const gradedProject = (raw: unknown) => { const p = parseProgrammingProject(raw); return p && { key: p.gradeKey, threads: p.threads }; };
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
@@ -55,6 +58,8 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   const [recordedRuns, setRecordedRuns] = useState<NameRun[]>([]);
   const [runNotice, setRunNotice] = useState(work.updatedAt ? `${mode === "preview" ? "체험 작품" : "저장된 작품"}은 유지돼요. 이 화면에서 서로 다른 이름으로 두 번 실행해 주세요.` : "서로 다른 이름으로 두 번 실행해 주세요. 질문에 답하고 말하기가 끝날 때까지 기다려요.");
   const currentRun = useRef<{ id: string; key: string } | null>(null);
+  // Structure reasons wait until the student runs this work, so a fresh starter keeps its first notice.
+  const [triedRun, setTriedRun] = useState(false);
   const startOnly = useRef(false);
   const [picking, setPicking] = useState(false);
   // Dog-free lessons pick from the Entry library and warn, without undoing, when work leaves the mission's intent.
@@ -80,6 +85,10 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   const validation = practiceMatches(draft, work.validation) ? work.validation : null;
   const submitted = practiceMatches(draft, work.submission);
   const nameCheck = mission?.id === "name" ? checkNameMission(draft.entryProject ?? "", recordedRuns, gradedProject) : null;
+  // Name runs live only in this screen. A work that already passed validation or was submitted had its two names checked.
+  // Mission results are saved with an empty order (the lesson passes practiceOrder []), so compare with the draft's own order.
+  const namesChecked = (current: WorkDraft) => !!work.validation?.passed && practiceMatches(current, work.validation) || practiceMatches(current, work.submission);
+  const nameDone = !!nameCheck && namesChecked(draft);
   useEffect(() => { onReadyChange?.(phase === "ready"); return () => onReadyChange?.(false); }, [onReadyChange, phase]);
   useEffect(() => { if (localFocus) localFeedbackRef.current?.focus(); }, [localFocus]);
 
@@ -126,7 +135,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       else if (message.type === "changed" && typeof message.project === "string" && !locked) {
         const next = parse(message.project);
         if (mission && parseProgrammingProject(message.project)?.gradeKey !== parseProgrammingProject(draft.entryProject)?.gradeKey) {
-          runs.current = []; setRecordedRuns([]); setLocalFeedback("");
+          runs.current = []; setRecordedRuns([]); setLocalFeedback(""); setTriedRun(false);
           setRunNotice("작품 내용이 바뀌어 실행 확인을 다시 시작해요.");
         }
         editorProject.current = message.project;
@@ -144,11 +153,13 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         if (message.running) {
           startOnly.current = program?.order.length === 1 && program.order[0] === "when_run_button_click";
           setLocalFeedback("");
-          setResult(mission ? "실행 중이에요. 질문에는 무대 안의 입력칸으로 답해 주세요." : "엔트리봇이 실행 중이에요.");
+          // Arrow-key missions never finish on their own, so the waiting notice shows from the start.
+          setResult(!mission ? "엔트리봇이 실행 중이에요." : program?.order.some((type) => type === "ask_and_wait") ? "실행 중이에요. 질문에는 무대 안의 입력칸으로 답해 주세요." : mission.keyEvents ? `실행 중이에요.${WAITING}` : "실행 중이에요.");
         }
       } else if (mission && message.type === "name-start") {
         const p = parseProgrammingProject(message.project);
         currentRun.current = p && typeof message.id === "string" ? { id: message.id, key: p.gradeKey } : null;
+        setTriedRun(true);
       } else if (mission && message.type === "name-run" && currentRun.current && currentRun.current.id === message.run?.id) {
         const steps = message.run.steps;
         if (Array.isArray(steps) && steps.length <= 96 && steps.every((s) => s && ["ask", "answer", "say"].includes(s.kind) && typeof s.value === "string" && s.value.length <= 500)) {
@@ -171,8 +182,8 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         else setResult(`${finish} 현재 위치 X ${Math.round(message.x * 100) / 100} · Y ${Math.round(message.y * 100) / 100}${message.speech ? ` · 마지막 말: ${message.speech.slice(0, 80)}` : ""}`);
       } else if (message.type === "error") { window.clearTimeout(bootTimer.current); setPhase("failed"); setError("작업실을 불러오지 못했어요. 입력한 작품은 이 화면에 유지하고 있어요."); }
       else if (message.type === "focus-return") document.getElementById(mission ? "entry-reset" : "entry-run")?.focus();
-      else if (mission && message.type === "waiting") setResult((text) => text.endsWith(WAITING) ? text : `${text}${WAITING}`);
-      else if (mission && message.type === "waiting-ended") setResult((text) => `${text.endsWith(WAITING) ? text.slice(0, -WAITING.length) : text} ${message.reason === "timeout" ? "15초가 지나 실행을 멈췄어요." : "실행을 멈췄어요."}`);
+      else if (mission && message.type === "waiting") setResult((text) => `${withoutWaiting(text)}${message.drawing === true ? DRAWING : WAITING}`);
+      else if (mission && message.type === "waiting-ended") setResult((text) => `${withoutWaiting(text)} ${message.reason === "timeout" ? "15초가 지나 실행을 멈췄어요." : "실행을 멈췄어요."}`);
       else if (free && message.type === "clone-blocked") setResult(`오브젝트는 ${MAX_FREE_OBJECTS}개까지 둘 수 있어요.`);
       else if (mission && message.type === "clone-blocked") setResult(message.reason === "main" ? "강아지는 복제할 수 없어요. ‘오브젝트 추가하기’로 새 오브젝트를 더해 주세요." : `오브젝트는 강아지 말고 ${MAX_ADDED_OBJECTS}개까지 추가할 수 있어요.`);
       else if (free && message.type === "object-added" && typeof message.name === "string") setResult(`‘${message.name.slice(0, 20)}’을(를) 추가했어요. 오브젝트 목록에서 고른 오브젝트에 코드를 만들어요.`);
@@ -192,13 +203,20 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   }, [draft, locked, update, mission, parse, program, mode, phase, preparing, actionsBlocked, onSave, asksQuestion, free, toasts]);
 
   useEffect(() => {
-    if (!bootReady) return;
+    const element = frame.current;
+    if (!bootReady || !element) return;
+    // With Entry's default stage the block board starts about 793px into the frame, so a frame
+    // narrower than 1,100px (1,024px screens, phones) uses the smallest stage to keep the board 300px+.
     // Sent before the project loads, so the smaller stage is ready when the workspace appears.
-    const narrow = window.matchMedia("(max-width: 600px)");
-    const fit = () => frame.current?.contentWindow?.postMessage({ channel: CHANNEL, type: "stage-size", narrow: narrow.matches }, "*");
+    let narrow: boolean | null = null;
+    const fit = () => {
+      const next = element.clientWidth < 1100;
+      if (next !== narrow) { narrow = next; element.contentWindow?.postMessage({ channel: CHANNEL, type: "stage-size", narrow }, "*"); }
+    };
     fit();
-    narrow.addEventListener("change", fit);
-    return () => narrow.removeEventListener("change", fit);
+    const observer = new ResizeObserver(fit);
+    observer.observe(element);
+    return () => observer.disconnect();
   }, [bootReady]);
 
   useEffect(() => {
@@ -225,7 +243,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
     const serialized = await readProject();
     const next = parse(serialized);
     if (serialized && next) {
-      if (mission?.id === "name" && action.type === "validate-practice") {
+      if (mission?.id === "name" && action.type === "validate-practice" && !namesChecked({ ...draft, entryProject: serialized })) {
         const issue = missionBlockIssue(mission.id, serialized);
         const check = issue ? { passed: false, message: issue } : checkNameMission(serialized, runs.current, gradedProject);
         if (!check.passed) { setLocalFeedback(check.message); setLocalFocus(value => value + 1); setPreparing(false); return; }
@@ -239,7 +257,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   }
 
   function retry() {
-    runs.current = []; setRecordedRuns([]); currentRun.current = null;
+    runs.current = []; setRecordedRuns([]); currentRun.current = null; setTriedRun(false);
     setRunNotice(`${mode === "preview" ? "체험 작품" : "저장된 작품"}은 유지돼요. 이 화면에서 서로 다른 이름으로 두 번 실행해 주세요.`);
     editorProject.current = null; setBootReady(false); setPhase("loading"); setError(""); setRunning(false); setAttempt((value) => value + 1);
   }
@@ -251,7 +269,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         {!mission && <Button id="entry-run" size="sm" disabled={locked || preparing || phase !== "ready" || !program} onClick={() => send(running ? "stop" : "run")}>
           {running ? <Square size={14} /> : <Play size={14} />}{running ? "실행 정지" : "실행하기"}
         </Button>}
-        <Button id="entry-reset" className={styles.auxControl} size="sm" variant="ghost" aria-label="무대 처음 위치로 초기화" title="무대만 초기화 · 블록과 제출 기록 유지" disabled={locked || preparing || phase !== "ready"} onClick={() => send("reset-stage")}><RotateCcw size={14} aria-hidden="true" />초기화</Button>
+        <Button id="entry-reset" className={styles.auxControl} size="sm" variant="ghost" title="무대만 처음 위치로 · 블록과 제출 기록은 그대로" disabled={locked || preparing || phase !== "ready"} onClick={() => send("reset-stage")}><RotateCcw size={14} aria-hidden="true" />무대 초기화</Button>
         {showViewToggle && <Button ref={viewToggle} className={styles.auxControl} size="sm" variant="ghost" aria-label={workspaceWide ? "기본 크기로 돌아가기" : "작업실 넓게 보기"} aria-pressed={workspaceWide} onClick={() => setWide(!workspaceWide)} onKeyDown={(event) => { if (event.key === "Escape" && workspaceWide) { event.preventDefault(); setWide(false); } }}>
           {workspaceWide ? <Minimize2 size={14} aria-hidden="true" /> : <Maximize2 size={14} aria-hidden="true" />}{workspaceWide ? "기본 크기" : "넓게 보기"}
         </Button>}
@@ -271,7 +289,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         <span><strong>검증</strong>{validation ? validation.passed ? "검증 통과" : "조건 보완 필요" : work.validation ? "다시 검증 필요" : "검증 전"}</span>
         <span><strong>{mode === "preview" ? "체험 제출" : "제출"}</strong>{submitted ? mode === "preview" ? "현재 작품 체험 제출 확인" : "현재 작품 제출 완료" : work.submission ? mode === "preview" ? "이전 체험 제출 유지 · 수정 중" : "이전 제출 유지 · 수정 중" : mode === "preview" ? "체험 제출 전" : "아직 제출 전"}</span>
       </div>
-      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} {free ? "무대 아래 ‘시작하기’로 실행해요. ‘오브젝트 추가하기’로 엔트리 오브젝트와 배경을 더하고, 고른 오브젝트에 코드를 만들어요. 시작하기 코드는 한 오브젝트에만 두면 그 오브젝트의 코드로 검증해요. ‘모양’ 탭에서 오브젝트의 모양을 볼 수 있어요." : mission ? "무대 아래 ‘시작하기’로 실행하고, ‘오브젝트 추가하기’로 공·별 같은 오브젝트를 더할 수 있어요. 검증은 강아지의 코드로만 해요." : ""} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 {mission ? "초기화" : "실행"} 버튼으로 돌아와요.</p></details>
+      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} {free ? "무대 아래 ‘시작하기’로 실행해요. ‘오브젝트 추가하기’로 엔트리 오브젝트와 배경을 더하고, 고른 오브젝트에 코드를 만들어요. 시작하기 코드는 한 오브젝트에만 두면 그 오브젝트의 코드로 검증해요. ‘모양’ 탭에서 오브젝트의 모양을 볼 수 있어요." : mission ? "무대 아래 ‘시작하기’로 실행하고, ‘오브젝트 추가하기’로 공·별 같은 오브젝트를 더할 수 있어요. 검증은 강아지의 코드로만 해요." : ""} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 {mission ? "무대 초기화" : "실행"} 버튼으로 돌아와요.</p></details>
       {free && <Dialog open={picking} onOpenChange={setPicking}><DialogContent className={styles.libraryDialog}><DialogHeader><DialogTitle>오브젝트 추가하기</DialogTitle><DialogDescription>분류를 고르거나 이름으로 찾아요. 오브젝트는 {MAX_FREE_OBJECTS}개까지 둘 수 있어요.</DialogDescription></DialogHeader>
         <EntryLibraryPicker onPick={(sprite) => {
           const added = newAddedObject(sprite.id, objectCount(editorProject.current ?? draft.entryProject), true);
@@ -300,8 +318,8 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       </div></PracticeGuidance>
       <div className={styles.actions}>
         {nameCheck && <div className={styles.nameProgress}>
-          <p role="status" aria-label="서로 다른 이름 확인">서로 다른 이름 확인 {nameCheck.validNames}/2</p>
-          <p>{nameCheck.validNames === 0 ? runNotice : nameCheck.validNames === 1 ? "서로 다른 이름으로 한 번 더 실행해 주세요. 같은 이름은 한 번만 세요." : "현재 작품으로 두 이름을 확인했어요. 조건을 검증하고 작품을 제출해 주세요."}</p>
+          <p role="status" aria-label="서로 다른 이름 확인">서로 다른 이름 확인 {nameDone ? "완료" : `${nameCheck.validNames}/2`}</p>
+          <p>{nameDone ? "이 작품은 두 이름으로 확인하고 검증을 통과했어요. 블록을 바꾸면 두 번 실행을 다시 확인해요." : triedRun && (nameCheck.issue === "structure" || nameCheck.issue === "project") ? `지금 블록 연결로는 실행 확인을 세지 않아요. ${missionBlockIssue(mission!.id, draft.entryProject ?? "") ?? nameCheck.message}` : nameCheck.validNames === 0 ? runNotice : nameCheck.validNames === 1 ? "서로 다른 이름으로 한 번 더 실행해 주세요. 같은 이름은 한 번만 세요." : "현재 작품으로 두 이름을 확인했어요. 조건을 검증하고 작품을 제출해 주세요."}</p>
         </div>}
         <Button variant={validation?.passed && !submitted ? "outline" : "default"} disabled={locked || actionsBlocked || preparing || running || phase !== "ready" || !program} onClick={() => void act({ type: "validate-practice" }, "practice-feedback")}>{busy || preparing ? "확인 중…" : "조건 검증"}</Button>
         {localFeedback && <p id="entry-local-feedback" ref={localFeedbackRef} tabIndex={-1} role="status" className={common.feedbackRetry}>{localFeedback}</p>}

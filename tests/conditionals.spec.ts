@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { buildProgrammingProject, missionStarter, parseProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
+import { conditionalConcepts, conditionalQuestions } from "../src/lib/classroom/conditionals-data";
 import { db, headers, readyStudent, entryReset, entryStart } from "./emulator";
 
 const id = "conditionals", endpoint = `/api/classroom/work/${id}`;
@@ -47,9 +48,16 @@ test("조건 수업 개념·코드 읽기 퀴즈는 공통 화면에서 풀고 �
   await open(page);
   await expect(page.getByRole("heading", { name: "조건에 따라 달라지는 프로그램" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "산술 연산자", exact: true })).toBeVisible();
+  // A wrong check re-asks without the answer and marks the concept for another look.
+  await page.getByRole("radio", { name: "3", exact: true }).check();
+  await page.getByRole("button", { name: "정답 확인", exact: true }).click();
+  await expect(page.locator("#concept-feedback-cc0")).toContainText(`다시 생각해 보기 ${conditionalConcepts[0].retry}`);
+  await expect(page.getByRole("navigation", { name: "개념 목록", exact: true }).getByRole("button", { name: /산술 연산자/ })).toContainText("다시 생각해 보기");
   await page.getByRole("radio", { name: "1", exact: true }).check();
   await page.getByRole("button", { name: "정답 확인", exact: true }).click();
+  await expect(page.locator("#concept-feedback-cc0")).toContainText("맞았어요.");
   await expect(page.locator("#concept-feedback-cc0")).toContainText("산술 연산자");
+  await expect(page.getByRole("navigation", { name: "개념 목록", exact: true }).getByRole("button", { name: /산술 연산자/ })).toContainText("확인 완료");
   await page.getByRole("tab", { name: /퀴즈/ }).click();
   await expect(page.getByRole("group", { name: "읽어 볼 코드" })).toContainText("② (A + B) ÷ 2");
   await page.getByRole("radio", { name: "① 8, ② 5", exact: true }).check();
@@ -63,6 +71,20 @@ test("조건 수업 개념·코드 읽기 퀴즈는 공통 화면에서 풀고 �
   for (const name of ["저장 후 나가기", "저장하지 않고 나가기", "취소"]) await expect(dialog.getByRole("button", { name, exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: "취소", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/classroom/${id}`));
+});
+
+test("조건 수업 퀴즈 오답은 고른 답의 이유와 '다시 생각해 보기'를 보이고 결과 보기로 그 문항에 간다", async ({ page }) => {
+  await open(page);
+  const work: Work = await (await page.request.get(endpoint)).json();
+  const quizAnswers = Object.fromEntries(conditionalQuestions.map((q) => [q.id, q.id === "order" ? "1" : String(q.correct)]));
+  expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "quiz", quizAnswers } } })).status()).toBe(200);
+  await page.goto(`/classroom/${id}?from=dashboard`);
+  await page.getByRole("button", { name: "이번 회차 결과 확인", exact: true }).first().click();
+  await page.getByRole("navigation", { name: "재도전 문항 바로가기" }).getByRole("button", { name: "문제 1 결과 보기", exact: true }).click();
+  const result = page.getByRole("status").filter({ hasText: "채점 당시 답안 결과" });
+  await expect(result).toContainText("다시 생각해 보기");
+  await expect(result).toContainText(conditionalQuestions[0].why["1"]);
+  await expect(result).not.toContainText(conditionalQuestions[0].hint);
 });
 
 for (const mission of Object.keys(solutions)) {

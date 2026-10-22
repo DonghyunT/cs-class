@@ -82,13 +82,13 @@ export function checkNameMission(raw: string, runs: NameRun[], parse: (raw: unkn
   const p = parse(raw);
   if (!p) return fail("project", "작품을 읽지 못했어요. 입력한 작품을 보존하고 다시 확인해 주세요.");
   const threads = p.threads.filter((t) => t[0]?.type === "when_run_button_click");
-  if (threads.length !== 1) return fail("structure", "시작하기 버튼 아래 한 줄로 질문과 말하기를 연결해 주세요.");
+  if (threads.length !== 1) return fail("structure", "시작하기 버튼 아래 한 줄로 질문과 ‘( )을(를) ( )초 동안 말하기’를 연결해 주세요.");
   const program = threads[0].slice(1);
   const evaluate = (node: Node, value: string): string => node.type === "get_canvas_input_value" ? value : node.type === "combine_something" ? evaluate(node.params[1] as Node, value) + evaluate(node.params[3] as Node, value) : String(node.params[0]);
   const depends = (node: Node): boolean => node.type === "get_canvas_input_value" || (node.type === "combine_something" && (depends(node.params[1] as Node) || depends(node.params[3] as Node)));
   const question = program.findIndex(node => node.type === "ask_and_wait");
   if (program.filter(node => node.type === "ask_and_wait").length !== 1 || !program.some((node, index) => index > question && node.type === "dialog_time" && node.params[2] === "speak" && depends(node.params[0] as Node)) || program.some(node => !["ask_and_wait", "dialog_time"].includes(node.type))) {
-    return fail("structure", "시작하기 아래에 질문 하나와 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 주세요.");
+    return fail("structure", "시작하기 아래에 질문 하나와 ‘( )을(를) ( )초 동안 말하기’를 연결하고, 그 안에 ‘대답’을 넣어 주세요.");
   }
   // EntryJS dialog_time rounds numeric decimal text to three places.
   const spoken = (value: string): string => value.trim() && !Number.isNaN(Number(value)) && /\d+\.{1}\d+$/.test(value) ? String(Number(`${Math.round(Number(`${value}e3`))}e-3`)) : value;

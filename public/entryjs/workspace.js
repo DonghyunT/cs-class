@@ -49,7 +49,11 @@ let lastTick = 0;
 // Event lines keep a run open after the start lines finish, so students can
 // click or press keys. The finished result is reported once at that point.
 const EVENT_STARTS = ["when_some_key_pressed", "mouse_clicked", "mouse_click_cancled", "when_object_click", "when_object_click_canceled"];
+// Entry's stop erases brush lines and fills, so drawing runs wait the same way. Stamps survive a stop.
+const DRAW_BLOCKS = ["start_drawing", "start_fill"];
+const RUN_STARTS = ["when_run_button_click", "when_clone_start", ...EVENT_STARTS];
 let waitsForEvents = false;
+let keepsDrawing = false;
 let reported = false;
 
 function captureScripts() {
@@ -245,6 +249,8 @@ try {
     lastSpeech = "";
     reported = false;
     waitsForEvents = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => EVENT_STARTS.includes(thread.getFirstBlock()?.type)));
+    // Only lines that run (a start or event block first) count; a loose pen block on the board does not.
+    keepsDrawing = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => RUN_STARTS.includes(thread.getFirstBlock()?.type) && typeof thread.getBlockList === "function" && thread.getBlockList().some((block) => DRAW_BLOCKS.includes(block.type))));
     startedAt = Date.now();
     send("running", { running: true });
     clearInterval(monitor);
@@ -253,8 +259,8 @@ try {
       if (speech) lastSpeech = speech;
       const idle = Entry.container.getAllObjects().every((item) => item.script.executors.length === 0);
       if (idle && !(programming && keyMission)) {
-        if (!waitsForEvents) void stop("finished");
-        else if (!reported) { result("finished"); reported = true; send("waiting"); }
+        if (!waitsForEvents && !keepsDrawing) void stop("finished");
+        else if (!reported) { result("finished"); reported = true; send("waiting", { drawing: !waitsForEvents }); }
       }
       if (monitor === null) return;
       if (traced) {

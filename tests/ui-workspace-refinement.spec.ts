@@ -11,7 +11,7 @@ const studentId = "20102";
 let originalClass: FirebaseFirestore.DocumentData | undefined;
 test.beforeEach(async () => { originalClass = (await db.collection("csClasses").doc("2-1").get()).data(); });
 test.afterEach(async () => {
-  for (const lesson of ["programming-13", "entry-bot-lab"]) await db.collection("csWork").doc(`student-${studentId}__${lesson}`).delete();
+  for (const lesson of ["programming-13", "entry-bot-lab", "conditionals", "loops"]) await db.collection("csWork").doc(`student-${studentId}__${lesson}`).delete();
   if (originalClass) await db.collection("csClasses").doc("2-1").set(originalClass);
 });
 
@@ -68,7 +68,7 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   const toggle = editor.getByRole("button", { name: "작업실 넓게 보기", exact: true });
   const scroller = editor.getByRole("region", { name: "엔트리 작업실 가로 이동", exact: true });
   const experiment = guidance.getByText(mission.experiment, { exact: true });
-  const hint = guidance.getByText("블록 연결 힌트", { exact: true });
+  const hint = guidance.getByText("블록 연결 힌트 보기", { exact: true });
   await expect(guidance.getByRole("heading", { name: mission.title, exact: true })).toBeVisible();
   await expect(guidance.getByText(mission.goal, { exact: true })).toBeVisible();
   await expect(experiment).toBeVisible();
@@ -114,10 +114,20 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   await expect(hint).toBeFocused();
   await hint.press("Enter");
   await expect(guidance.getByText(mission.hint, { exact: true })).toBeVisible();
+  // The folded guide lists every assembly step; the check-after-building card follows the guide.
+  await expect(guidance.getByRole("list", { name: "조립 순서", exact: true }).getByRole("listitem")).toHaveCount(mission.steps.length);
+  const checkCard = guidance.getByRole("heading", { name: "만든 뒤 확인하기", exact: true });
+  expect((await checkCard.boundingBox())!.y).toBeGreaterThan((await hint.boundingBox())!.y);
+  // The nested block list keeps its own "+" marker while closed, and its pills line up.
+  const blocksSummary = guidance.getByText("검증에는 이 블록만 봐요", { exact: true });
+  expect(await blocksSummary.evaluate((element) => getComputedStyle(element, "::before").content)).toBe('"＋"');
+  await blocksSummary.click();
+  expect(await blocksSummary.locator("xpath=..").locator("li").first().evaluate((element) => getComputedStyle(element).marginTop)).toBe("0px");
+  await blocksSummary.click();
   await hint.press("Enter");
   await expect(guidance.getByText(mission.hint, { exact: true })).toBeHidden();
   await page.keyboard.press("Tab");
-  await expect(editor.getByRole("button", { name: "무대 처음 위치로 초기화", exact: true })).toBeFocused();
+  await expect(editor.getByRole("button", { name: "무대 초기화", exact: true })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(toggle).toBeFocused();
   await page.keyboard.press("Tab");
@@ -135,6 +145,83 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
     expect(narrowGuide.y + narrowGuide.height).toBeLessThanOrEqual(narrowEditor.y);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     await expect(experiment).toBeVisible();
+  }
+});
+
+test("펼친 조립 순서는 내부 스크롤 없이 모든 단계가 보이고, 요약 다음에 검증 블록 목록으로 초점이 가며, 작업실 이동량을 기록한다", async ({ page }, testInfo) => {
+  test.setTimeout(240_000);
+  await resetStudent(page.request, studentId);
+  expect((await loginStudent(page.request, initialPassword, studentId)).status()).toBe(200);
+  expect((await page.request.post("/api/auth/password", { headers, data: { password: studentPassword } })).status()).toBe(200);
+  const shifts: Record<string, number> = {};
+  for (const [lesson, missionId] of [["programming-13", "multiply"], ["conditionals", "freethrow"], ["loops", "tree"]] as const) {
+    await db.collection("csClasses").doc("2-1").update({ currentLessonId: lesson, openedLessonIds: [lesson] });
+    const endpoint = `/api/classroom/work/${lesson}`;
+    const work: Work = await (await page.request.get(endpoint)).json();
+    expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice", programming: { ...work.draft.programming!, mission: missionId } } } })).status()).toBe(200);
+    for (const [width, height] of [[1024, 768], [1280, 720], [1544, 712], [390, 844]]) {
+      await page.setViewportSize({ width, height });
+      await page.goto(`/classroom/${lesson}`);
+      await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+      const frameTop = () => page.locator("iframe").evaluate((element) => Math.round(element.getBoundingClientRect().top + window.scrollY));
+      const closed = await frameTop();
+      const hint = page.getByText("블록 연결 힌트 보기", { exact: true });
+      await hint.click();
+      const steps = page.getByRole("list", { name: "조립 순서", exact: true });
+      await expect(steps.getByRole("listitem").last()).toBeVisible();
+      // Every step shows in full: the list never scrolls inside itself.
+      expect(await steps.evaluate((element) => element.scrollHeight - element.clientHeight), `${missionId} ${width}`).toBeLessThanOrEqual(1);
+      shifts[`${missionId} ${width}`] = (await frameTop()) - closed;
+      if (width === 1544) expect(shifts[`${missionId} ${width}`], `${missionId} ${width}`).toBe(0);
+      await hint.focus();
+      await page.keyboard.press("Tab");
+      await expect(page.getByText("검증에는 이 블록만 봐요", { exact: true })).toBeFocused();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+    }
+  }
+  await testInfo.attach("hint-open-shifts", { body: JSON.stringify(shifts), contentType: "application/json" });
+  console.log(`hint-open-shifts ${JSON.stringify(shifts)}`);
+});
+
+test("학교 기기 폭: 1024·1280 가로에서 세 엔트리 수업 작업실이 잘리지 않고 무대·팔레트·조립판(300px 이상)이 다 보인다", async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
+  await resetStudent(page.request, studentId);
+  expect((await loginStudent(page.request, initialPassword, studentId)).status()).toBe(200);
+  expect((await page.request.post("/api/auth/password", { headers, data: { password: studentPassword } })).status()).toBe(200);
+  for (const lesson of ["programming-13", "conditionals", "loops"]) {
+    await db.collection("csClasses").doc("2-1").update({ currentLessonId: lesson, openedLessonIds: [lesson] });
+    const endpoint = `/api/classroom/work/${lesson}`;
+    const work: Work = await (await page.request.get(endpoint)).json();
+    expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice" } } })).status()).toBe(200);
+    for (const [width, height] of [[1024, 768], [1280, 720]]) {
+      await page.setViewportSize({ width, height });
+      await page.goto(`/classroom/${lesson}`);
+      const iframe = page.locator("iframe");
+      await iframe.scrollIntoViewIfNeeded();
+      await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+      await expect(page.frameLocator("iframe").locator("#entryWorkspaceBoard")).toBeVisible();
+      const native = page.frames().find((frame) => frame.url().includes("/entryjs/workspace.html"))!;
+      // Stage, palette and board sit side by side and end inside the frame.
+      const layout = () => native.evaluate(() => {
+        const box = (selector: string) => document.querySelector(selector)!.getBoundingClientRect();
+        const stage = box("#entryCanvas"), palette = box(".entryWorkspaceBlockMenu"), board = box("#entryWorkspaceBoard");
+        return { fits: stage.right <= palette.left + 1 && palette.right <= board.left + 1 && board.right <= innerWidth + 1, board: Math.round(board.width), frame: innerWidth };
+      });
+      await expect.poll(async () => (await layout()).board, { message: `${lesson} ${width}` }).toBeGreaterThanOrEqual(300);
+      const geometry = await layout();
+      await testInfo.attach(`${lesson}-${width}-geometry`, { body: JSON.stringify(geometry), contentType: "application/json" });
+      expect(geometry.fits, `${lesson} ${width}`).toBe(true);
+      const scroller = page.getByRole("region", { name: "엔트리 작업실 가로 이동", exact: true });
+      expect(await scroller.evaluate((element) => element.scrollWidth - element.clientWidth), `${lesson} ${width}`).toBeLessThanOrEqual(1);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `${lesson} ${width}`).toBeLessThanOrEqual(1);
+      const frameBox = (await iframe.boundingBox())!;
+      for (const button of [entryStart(page), page.frameLocator("iframe").getByRole("button", { name: /오브젝트 추가하기/ })]) {
+        const buttonBox = (await button.boundingBox())!;
+        expect(buttonBox.x, `${lesson} ${width}`).toBeGreaterThanOrEqual(frameBox.x);
+        expect(buttonBox.x + buttonBox.width, `${lesson} ${width}`).toBeLessThanOrEqual(frameBox.x + frameBox.width + 1);
+      }
+      await page.screenshot({ path: testInfo.outputPath(`${lesson}-${width}.png`) });
+    }
   }
 });
 

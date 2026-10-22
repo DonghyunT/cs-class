@@ -144,7 +144,7 @@ export function stepSandwich(state, action) {
           return { success: true, name: "봉지 열기", msg: "빵 봉지를 열었습니다." };
 
         case 'TAKE_BREAD':
-          if (!state.bagOpened) return { success: false, name: "식빵 꺼내기", msg: "오류: 빵 봉지가 닫혀 있습니다!" };
+          if (!state.bagOpened) return { success: false, name: "식빵 꺼내기", msg: "오류: 빵 봉지가 닫혀 있습니다! 먼저 빵 봉지를 여는 명령을 내려 주세요." };
           state.breadOnPlate = Math.min(state.breadOnPlate + 1, 2);
           return { 
             success: true, 
@@ -165,73 +165,73 @@ export function stepSandwich(state, action) {
           return { success: true, name: "치즈 비닐 제거", msg: "치즈의 비닐 포장을 벗겨냈습니다." };
 
         case 'SCOOP_JAM':
-          if (!state.jamOpened) return { success: false, name: "딸기잼 뜨기", msg: "오류: 딸기잼 뚜껑이 닫혀 있습니다!" };
+          if (!state.jamOpened) return { success: false, name: "딸기잼 뜨기", msg: "오류: 딸기잼 뚜껑이 닫혀 있습니다! 잼을 뜨기 전에 딸기잼 뚜껑을 여는 명령을 내려 주세요." };
           state.knifeHolding = 'jam';
           return { success: true, name: "딸기잼 뜨기", msg: "칼에 딸기잼을 묻혔습니다." };
 
         case 'SCOOP_PB':
-          if (!state.pbOpened) return { success: false, name: "땅콩버터 뜨기", msg: "오류: 땅콩버터 뚜껑이 닫혀 있습니다!" };
+          if (!state.pbOpened) return { success: false, name: "땅콩버터 뜨기", msg: "오류: 땅콩버터 뚜껑이 닫혀 있습니다! 땅콩버터를 뜨기 전에 뚜껑을 여는 명령을 내려 주세요." };
           state.knifeHolding = 'pb';
           return { success: true, name: "땅콩버터 뜨기", msg: "칼에 땅콩버터를 묻혔습니다." };
 
         case 'SPREAD_JAM_BREAD1_EDGE':
-          if (state.breadOnPlate === 0) return { success: false, name: "식빵1 잼 도포", msg: "오류: 접시에 식빵이 없습니다!" };
-          if (state.knifeHolding !== 'jam') return { success: false, name: "식빵1 잼 도포", msg: "오류: 칼에 딸기잼이 없습니다!" };
+          if (state.breadOnPlate === 0) return { success: false, name: "식빵1 잼 도포", msg: "오류: 접시에 식빵이 없습니다! 빵 봉지에서 식빵을 꺼내 접시에 놓는 명령부터 내려 주세요." };
+          if (state.knifeHolding !== 'jam') return { success: false, name: "식빵1 잼 도포", msg: "오류: 칼에 딸기잼이 없습니다! 바르기 전에 칼로 딸기잼을 뜨는 명령을 내려 주세요." };
           state.bread1Spread = 'jam_edge';
           state.knifeHolding = 'none';
           return { success: true, name: "식빵1 모서리 도포", msg: "⚠️ [글자 그대로 실행]: '넓은 면' 지시가 없어 식빵 1 윗모서리 테두리에만 잼을 발랐습니다!" };
 
         case 'SPREAD_PB_BREAD1_EDGE':
-          if (state.breadOnPlate === 0) return { success: false, name: "식빵1 땅콩버터 도포", msg: "오류: 접시에 식빵이 없습니다!" };
-          if (state.knifeHolding !== 'pb') return { success: false, name: "식빵1 땅콩버터 도포", msg: "오류: 칼에 땅콩버터가 없습니다!" };
+          if (state.breadOnPlate === 0) return { success: false, name: "식빵1 땅콩버터 도포", msg: "오류: 접시에 식빵이 없습니다! 빵 봉지에서 식빵을 꺼내 접시에 놓는 명령부터 내려 주세요." };
+          if (state.knifeHolding !== 'pb') return { success: false, name: "식빵1 땅콩버터 도포", msg: "오류: 칼에 땅콩버터가 없습니다! 바르기 전에 칼로 땅콩버터를 뜨는 명령을 내려 주세요." };
           state.bread1Spread = 'pb_edge';
           state.knifeHolding = 'none';
           return { success: true, name: "식빵1 모서리 도포", msg: "⚠️ [글자 그대로 실행]: '넓은 면' 지시가 없어 식빵 1 윗모서리 테두리에만 땅콩버터를 발랐습니다!" };
 
         case 'SPREAD_JAM_BREAD1_FLAT':
-          if (state.breadOnPlate === 0) return { success: false, name: "식빵1 잼 도포", msg: "오류: 접시에 식빵이 없습니다!" };
-          if (state.knifeHolding !== 'jam') return { success: false, name: "식빵1 잼 도포", msg: "오류: 칼에 딸기잼이 없습니다!" };
+          if (state.breadOnPlate === 0) return { success: false, name: "식빵1 잼 도포", msg: "오류: 접시에 식빵이 없습니다! 빵 봉지에서 식빵을 꺼내 접시에 놓는 명령부터 내려 주세요." };
+          if (state.knifeHolding !== 'jam') return { success: false, name: "식빵1 잼 도포", msg: "오류: 칼에 딸기잼이 없습니다! 바르기 전에 칼로 딸기잼을 뜨는 명령을 내려 주세요." };
           state.bread1Spread = 'jam_flat';
           state.knifeHolding = 'none';
           return { success: true, name: "식빵1 잼 도포", msg: "식빵 1 넓은 면에 딸기잼을 골고루 펴 발랐습니다." };
 
         case 'SPREAD_PB_BREAD1_FLAT':
-          if (state.breadOnPlate === 0) return { success: false, name: "식빵1 땅콩버터 도포", msg: "오류: 접시에 식빵이 없습니다!" };
-          if (state.knifeHolding !== 'pb') return { success: false, name: "식빵1 땅콩버터 도포", msg: "오류: 칼에 땅콩버터가 없습니다!" };
+          if (state.breadOnPlate === 0) return { success: false, name: "식빵1 땅콩버터 도포", msg: "오류: 접시에 식빵이 없습니다! 빵 봉지에서 식빵을 꺼내 접시에 놓는 명령부터 내려 주세요." };
+          if (state.knifeHolding !== 'pb') return { success: false, name: "식빵1 땅콩버터 도포", msg: "오류: 칼에 땅콩버터가 없습니다! 바르기 전에 칼로 땅콩버터를 뜨는 명령을 내려 주세요." };
           state.bread1Spread = 'pb_flat';
           state.knifeHolding = 'none';
           return { success: true, name: "식빵1 땅콩버터 도포", msg: "식빵 1 넓은 면에 땅콩버터를 골고루 발랐습니다." };
 
         case 'SPREAD_JAM_BREAD2_EDGE':
-          if (state.breadOnPlate < 2) return { success: false, name: "식빵2 잼 도포", msg: "오류: 접시에 식빵 2가 없습니다!" };
-          if (state.knifeHolding !== 'jam') return { success: false, name: "식빵2 잼 도포", msg: "오류: 칼에 딸기잼이 없습니다!" };
+          if (state.breadOnPlate < 2) return { success: false, name: "식빵2 잼 도포", msg: "오류: 접시에 식빵 2가 없습니다! 식빵을 하나 더 꺼내 접시에 놓은 뒤 다시 명령해 주세요." };
+          if (state.knifeHolding !== 'jam') return { success: false, name: "식빵2 잼 도포", msg: "오류: 칼에 딸기잼이 없습니다! 바르기 전에 칼로 딸기잼을 뜨는 명령을 내려 주세요." };
           state.bread2Spread = 'jam_edge';
           state.knifeHolding = 'none';
           return { success: true, name: "식빵2 모서리 도포", msg: "⚠️ [글자 그대로 실행]: '넓은 면' 지시가 없어 식빵 2 윗모서리 테두리에만 잼을 발랐습니다!" };
 
         case 'SPREAD_PB_BREAD2_EDGE':
-          if (state.breadOnPlate < 2) return { success: false, name: "식빵2 땅콩버터 도포", msg: "오류: 접시에 식빵 2가 없습니다!" };
-          if (state.knifeHolding !== 'pb') return { success: false, name: "식빵2 땅콩버터 도포", msg: "오류: 칼에 땅콩버터가 없습니다!" };
+          if (state.breadOnPlate < 2) return { success: false, name: "식빵2 땅콩버터 도포", msg: "오류: 접시에 식빵 2가 없습니다! 식빵을 하나 더 꺼내 접시에 놓은 뒤 다시 명령해 주세요." };
+          if (state.knifeHolding !== 'pb') return { success: false, name: "식빵2 땅콩버터 도포", msg: "오류: 칼에 땅콩버터가 없습니다! 바르기 전에 칼로 땅콩버터를 뜨는 명령을 내려 주세요." };
           state.bread2Spread = 'pb_edge';
           state.knifeHolding = 'none';
           return { success: true, name: "식빵2 모서리 도포", msg: "⚠️ [글자 그대로 실행]: '넓은 면' 지시가 없어 식빵 2 윗모서리 테두리에만 땅콩버터를 발랐습니다!" };
 
         case 'SPREAD_JAM_BREAD2_FLAT':
-          if (state.breadOnPlate < 2) return { success: false, name: "식빵2 잼 도포", msg: "오류: 접시에 식빵 2가 없습니다!" };
-          if (state.knifeHolding !== 'jam') return { success: false, name: "식빵2 잼 도포", msg: "오류: 칼에 딸기잼이 없습니다!" };
+          if (state.breadOnPlate < 2) return { success: false, name: "식빵2 잼 도포", msg: "오류: 접시에 식빵 2가 없습니다! 식빵을 하나 더 꺼내 접시에 놓은 뒤 다시 명령해 주세요." };
+          if (state.knifeHolding !== 'jam') return { success: false, name: "식빵2 잼 도포", msg: "오류: 칼에 딸기잼이 없습니다! 바르기 전에 칼로 딸기잼을 뜨는 명령을 내려 주세요." };
           state.bread2Spread = 'jam_flat';
           state.knifeHolding = 'none';
           return { success: true, name: "식빵2 잼 도포", msg: "식빵 2 넓은 면에 딸기잼을 골고루 펴 발랐습니다." };
 
         case 'SPREAD_PB_BREAD2_FLAT':
-          if (state.breadOnPlate < 2) return { success: false, name: "식빵2 땅콩버터 도포", msg: "오류: 접시에 식빵 2가 없습니다!" };
-          if (state.knifeHolding !== 'pb') return { success: false, name: "식빵2 땅콩버터 도포", msg: "오류: 칼에 땅콩버터가 없습니다!" };
+          if (state.breadOnPlate < 2) return { success: false, name: "식빵2 땅콩버터 도포", msg: "오류: 접시에 식빵 2가 없습니다! 식빵을 하나 더 꺼내 접시에 놓은 뒤 다시 명령해 주세요." };
+          if (state.knifeHolding !== 'pb') return { success: false, name: "식빵2 땅콩버터 도포", msg: "오류: 칼에 땅콩버터가 없습니다! 바르기 전에 칼로 땅콩버터를 뜨는 명령을 내려 주세요." };
           state.bread2Spread = 'pb_flat';
           state.knifeHolding = 'none';
           return { success: true, name: "식빵2 땅콩버터 도포", msg: "식빵 2 넓은 면에 땅콩버터를 골고루 발랐습니다." };
 
         case 'PUT_CHEESE_BREAD1':
-          if (state.breadOnPlate === 0) return { success: false, name: "치즈 올리기", msg: "오류: 접시에 식빵 1이 없습니다!" };
+          if (state.breadOnPlate === 0) return { success: false, name: "치즈 올리기", msg: "오류: 접시에 식빵 1이 없습니다! 식빵을 하나 꺼내 접시에 놓은 뒤 다시 명령해 주세요." };
           state.cheeseOnBread = 1;
           if (!state.cheeseUnwrapped) {
             state.cheesePlasticIncluded = true;
@@ -240,7 +240,7 @@ export function stepSandwich(state, action) {
           return { success: true, name: "치즈 올리기", msg: "치즈를 식빵 1 위에 얹었습니다." };
 
         case 'PUT_CHEESE_BREAD2':
-          if (state.breadOnPlate < 2) return { success: false, name: "치즈 올리기", msg: "오류: 접시에 식빵 2가 없습니다!" };
+          if (state.breadOnPlate < 2) return { success: false, name: "치즈 올리기", msg: "오류: 접시에 식빵 2가 없습니다! 식빵을 하나 더 꺼내 접시에 놓은 뒤 다시 명령해 주세요." };
           state.cheeseOnBread = 2;
           if (!state.cheeseUnwrapped) {
             state.cheesePlasticIncluded = true;
@@ -249,13 +249,13 @@ export function stepSandwich(state, action) {
           return { success: true, name: "치즈 올리기", msg: "치즈를 식빵 2 위에 얹었습니다." };
 
         case 'COVER_BREAD_NORMAL':
-          if (state.breadOnPlate < 2) return { success: false, name: "식빵 덮기", msg: "오류: 덮을 두 번째 식빵이 접시에 없습니다!" };
+          if (state.breadOnPlate < 2) return { success: false, name: "식빵 덮기", msg: "오류: 덮을 두 번째 식빵이 접시에 없습니다! 식빵을 하나 더 꺼내 접시에 놓은 뒤 덮어 주세요." };
           state.completed = true;
           state.isFlippedCover = false;
           return { success: true, name: "식빵 덮기", msg: "식빵 2를 식빵 1 위에 덮었습니다." };
 
         case 'COVER_BREAD_FLIPPED':
-          if (state.breadOnPlate < 2) return { success: false, name: "마주보게 덮기", msg: "오류: 덮을 두 번째 식빵이 접시에 없습니다!" };
+          if (state.breadOnPlate < 2) return { success: false, name: "마주보게 덮기", msg: "오류: 덮을 두 번째 식빵이 접시에 없습니다! 식빵을 하나 더 꺼내 접시에 놓은 뒤 덮어 주세요." };
           state.completed = true;
           state.isFlippedCover = true;
           return { success: true, name: "마주보게 덮기", msg: "식빵 2를 뒤집어 잼/버터 면이 마주보도록 깔끔하게 포개었습니다." };

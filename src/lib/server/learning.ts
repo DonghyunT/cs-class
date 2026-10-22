@@ -128,7 +128,7 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
     const answer = next.draft.conceptAnswers[concept.id];
     requireCondition(answer, 400, "ANSWER_REQUIRED", "답을 먼저 선택해 주세요.");
     const correct = solution.conceptAnswers[concept.id] === answer;
-    next.conceptFeedback[concept.id] = { correct, message: correct ? concept.explanation : concept.question.hint };
+    next.conceptFeedback[concept.id] = { correct, message: correct ? concept.explanation : solution.conceptRetry?.[concept.id] ?? concept.question.hint };
     if (correct && !next.conceptSolved.includes(concept.id)) next.conceptSolved.push(concept.id);
   } else if (action.type === "grade-quiz") {
     requireCondition(!next.quizRoundGraded, 409, "ROUND_GRADED", "이미 확인한 풀이예요. 틀린 문제 다시 풀기를 선택해 주세요.");
@@ -138,9 +138,10 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
       const question = lesson.quiz.find((q) => q.id === id)!;
       const customFeedback = solution.quizFeedback?.[id];
       const defaultCorrectMsg = "맞았어요. 구체적인 명령과 실행 순서가 중요해요.";
+      const wrong = customFeedback?.incorrect;
       next.quizFeedback[id] = {
         correct,
-        message: correct ? (customFeedback?.correct ?? defaultCorrectMsg) : (customFeedback?.incorrect ?? question.hint),
+        message: correct ? (customFeedback?.correct ?? defaultCorrectMsg) : ((typeof wrong === "string" ? wrong : wrong?.[next.draft.quizAnswers[id]]) ?? question.hint),
       };
       if (correct && !next.quizSolved.includes(id)) next.quizSolved.push(id);
     }

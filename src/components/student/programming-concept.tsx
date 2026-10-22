@@ -4,7 +4,9 @@ import { useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Code2, Dog, Keyboard, Play, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { concepts, conceptOrder } from "@/lib/classroom/programming-data";
+import type { LessonMode } from "./work-controller";
 import styles from "./programming-concept.module.css";
+import common from "./student.module.css";
 import conceptStyles from "@/components/ui/concept-layout.module.css";
 
 const observations = [
@@ -17,7 +19,7 @@ const observations = [
 
 export type ProgrammingConceptState = { concept: number; conceptDone: number[]; conceptAnswers: Record<number, number> };
 
-export function ProgrammingConcept({ state, update, focus, next, onCheck, serverFeedback, locked = false, actionsBlocked = false }: { state: ProgrammingConceptState; update: (next: ProgrammingConceptState) => void; focus: (id: string) => void; next: () => void; onCheck?: () => void; serverFeedback?: string; locked?: boolean; actionsBlocked?: boolean }) {
+export function ProgrammingConcept({ mode = "student", state, update, focus, next, onCheck, serverFeedback, serverCorrect, retryConcepts = [], locked = false, actionsBlocked = false }: { mode?: LessonMode; state: ProgrammingConceptState; update: (next: ProgrammingConceptState) => void; focus: (id: string) => void; next: () => void; onCheck?: () => void; serverFeedback?: string; serverCorrect?: boolean; retryConcepts?: number[]; locked?: boolean; actionsBlocked?: boolean }) {
   const [language, setLanguage] = useState("block");
   const [name, setName] = useState("초코");
   const [languageGreeting, setLanguageGreeting] = useState("");
@@ -35,15 +37,15 @@ export function ProgrammingConcept({ state, update, focus, next, onCheck, server
     else if (state.concept === 1) { setName("초코"); setNameGreeting(""); }
     else if (state.concept === 2) { setA(6); setB(4); }
     else setPosition({ x: 0, y: 0 });
-  }}><RotateCcw size={16} aria-hidden="true" />초기화</Button>;
+  }}><RotateCcw size={16} aria-hidden="true" />체험 초기화</Button>;
   function move(index: number) {
     update({ ...state, concept: index }); setFeedback(""); focus("concept-title");
   }
   function direction(dx: number, dy: number) { setPosition((p) => ({ x: Math.max(-3, Math.min(3, p.x + dx)), y: Math.max(-2, Math.min(2, p.y + dy)) })); }
   return <div className={`${conceptStyles.layout} ${styles.concept}`}>
-    <nav className={conceptStyles.nav} aria-label="개념 목록">{conceptOrder.map((i, position) => <button key={i} type="button" disabled={locked} aria-current={i === state.concept ? "step" : undefined} onClick={() => move(i)}><span>{state.conceptDone.includes(i) ? <Check size={16} aria-label="확인 완료" /> : `0${position + 1}`}</span><div><strong>{concepts[i].title}</strong><small>{["블록과 텍스트", "입력 → 처리 → 출력", "변수와 연산", "시작 버튼 · 방향키", "프로그래밍 · 언어 · 프로그램"][i]}</small></div></button>)}<p>직접 바꾸고, 결과를 보고,<br />한 번 더 생각해 보세요.</p></nav>
+    <nav className={conceptStyles.nav} aria-label="개념 목록">{conceptOrder.map((i, position) => <button key={i} type="button" disabled={locked} aria-current={i === state.concept ? "step" : undefined} onClick={() => move(i)}><span>{state.conceptDone.includes(i) ? <Check size={16} aria-hidden="true" /> : `0${position + 1}`}</span><div><strong>{concepts[i].title}</strong><small>{state.conceptDone.includes(i) ? "확인 완료" : retryConcepts.includes(i) ? "다시 생각해 보기" : ["블록과 텍스트", "입력 → 처리 → 출력", "변수와 연산", "시작 버튼 · 방향키", "프로그래밍 · 언어 · 프로그램"][i]}</small></div></button>)}<p>직접 바꾸고, 결과를 보고,<br />한 번 더 생각해 보세요.</p></nav>
     <div className={conceptStyles.content}>
-      <div className={conceptStyles.heading}><span className={conceptStyles.eyebrow}>CONCEPT {String(positionIndex + 1).padStart(2, "0")} / {String(concepts.length).padStart(2, "0")}</span><h2 id="concept-title" tabIndex={-1}>{c.title}</h2><p>{c.subtitle}</p></div>
+      <div className={conceptStyles.heading}><span className={conceptStyles.eyebrow}>개념 {String(positionIndex + 1).padStart(2, "0")} / {String(concepts.length).padStart(2, "0")}</span><h2 id="concept-title" tabIndex={-1}>{c.title}</h2><p>{c.subtitle}</p></div>
       <p id="programming-observation" className={styles.observation}><strong>관찰 질문</strong>{observations[state.concept]}</p>
       <div className={styles.experiment} role="group" aria-label={`${c.title} 개념 체험`} aria-describedby="programming-observation">
         {"terms" in c && <>
@@ -63,7 +65,7 @@ export function ProgrammingConcept({ state, update, focus, next, onCheck, server
         {state.concept === 2 && <>
           <div className={styles.experimentTop}><span>상자에 새 값을 넣어 보세요</span>{resetExperience}</div>
           <div className={styles.variableDemo}><div className={styles.variableBox}><label htmlFor="concept-a">변수 A</label><input id="concept-a" type="number" min={-100} max={100} value={A} onChange={(e) => setA(Math.max(-100, Math.min(100, Number(e.target.value))))} /><button type="button" onClick={() => setA(A === 6 ? 3 : 6)}>A에 {A === 6 ? 3 : 6} 저장하기</button></div><span className={styles.operator}>×</span><div className={styles.variableBox}><label htmlFor="concept-b">변수 B</label><input id="concept-b" type="number" min={-100} max={100} value={B} onChange={(e) => setB(Math.max(-100, Math.min(100, Number(e.target.value))))} /></div><span className={styles.operator}>=</span><div className={styles.calculation} aria-live="polite"><small>계산 결과</small><strong>{A * B}</strong></div></div>
-          <p className={styles.takeaway}>변수는 값에 이름을 붙여 기억하는 장소예요. 연산자는 그 값을 계산해요. 두 수의 평균은 (A + B) ÷ 2예요.</p>
+          <p className={styles.takeaway}>변수는 값에 이름을 붙여 기억하는 장소예요. 연산자는 그 값을 계산해요. 두 수의 평균은 (A + B) ÷ 2예요. ‘대답’은 가장 최근 질문의 답만 기억해요. 앞의 대답은 다음 질문 전에 변수에 옮겨 두어요.</p>
         </>}
         {state.concept === 3 && <>
           <div className={styles.experimentTop}><span><Keyboard size={17} />신호를 보내 움직여 보세요</span>{resetExperience}</div>
@@ -73,10 +75,11 @@ export function ProgrammingConcept({ state, update, focus, next, onCheck, server
         {state.concept !== 4 && <div className={styles.experimentActions}><p>새로고침하거나 수업에 다시 들어오면 체험값은 시작 상태로 돌아가요. 답안과 완료 기록은 유지돼요.</p></div>}
       </div>
       <fieldset className={styles.conceptCheck} disabled={locked}><legend><span className={styles.eyebrow}>한 번만 확인해 볼까요?</span>{c.question}</legend><div className={styles.compactOptions}>{c.options.map((option, i) => <label key={option} data-selected={answer === i}><input type="radio" name={`concept-${state.concept}`} checked={answer === i} disabled={done} onChange={() => { update({ ...state, conceptAnswers: { ...state.conceptAnswers, [state.concept]: i } }); setFeedback(""); }} /><span>{option}</span></label>)}</div>
-        <Button variant={done ? "outline" : "default"} disabled={actionsBlocked || done || answer === undefined} onClick={() => { if (onCheck) { onCheck(); return; } const correct = answer === c.correct; if (correct) update({ ...state, conceptDone: [...state.conceptDone, state.concept] }); setFeedback(correct ? c.explanation : "다시 실험해 보고 골라보세요. 위의 변화가 단서예요."); focus("concept-feedback"); }}>{done ? <><Check size={16} />개념 확인 완료</> : "생각 확인하기"}</Button>
-        {((onCheck ? serverFeedback : feedback) || done) && <p id="concept-feedback" tabIndex={-1} role="status" className={done ? styles.good : styles.feedback}>{(onCheck ? serverFeedback : feedback) || c.explanation}</p>}
+        <Button variant={done ? "outline" : "default"} disabled={actionsBlocked || done || answer === undefined} onClick={() => { if (onCheck) { onCheck(); return; } const correct = answer === c.correct; if (correct) update({ ...state, conceptDone: [...state.conceptDone, state.concept] }); setFeedback(correct ? c.explanation : "다시 실험해 보고 골라보세요. 위의 변화가 단서예요."); focus("concept-feedback"); }}>{done ? <><Check size={16} />개념 확인 완료</> : "정답 확인"}</Button>
+        {((onCheck ? serverFeedback : feedback) || done) && <p id="concept-feedback" tabIndex={-1} role="status" className={done ? styles.good : styles.feedback}>{(done || serverCorrect === false) && <strong>{done ? "맞았어요." : "다시 생각해 보기"} </strong>}{(onCheck ? serverFeedback : feedback) || c.explanation}</p>}
+        {((onCheck ? serverFeedback : feedback) || done) && <p className={common.smallNote}>{mode === "preview" ? "확인 결과는 이 창에만 남아요." : "확인 결과는 저장 버튼 없이 바로 저장돼요."}</p>}
       </fieldset>
-      <div className={styles.footer}><Button variant="ghost" disabled={locked || positionIndex === 0} onClick={() => move(conceptOrder[positionIndex - 1])}><ArrowLeft size={16} />이전 개념</Button>{positionIndex < conceptOrder.length - 1 ? <Button variant="outline" disabled={locked} onClick={() => move(conceptOrder[positionIndex + 1])}>다음 개념<ArrowRight size={16} /></Button> : <Button disabled={locked || actionsBlocked} onClick={next}>퀴즈에 도전하기<ArrowRight size={16} /></Button>}</div>
+      <div className={styles.footer}><Button variant="ghost" disabled={locked || positionIndex === 0} onClick={() => move(conceptOrder[positionIndex - 1])}><ArrowLeft size={16} />이전 개념</Button>{positionIndex < conceptOrder.length - 1 ? <Button variant="outline" disabled={locked} onClick={() => move(conceptOrder[positionIndex + 1])}>다음 개념<ArrowRight size={16} /></Button> : <Button disabled={locked || actionsBlocked} onClick={next}>퀴즈로 이동<ArrowRight size={16} /></Button>}</div>
     </div>
   </div>;
 }

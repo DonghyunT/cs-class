@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { auth, clearLoginLimit, correctOrder, db, headers, initialPassword, lessonId, loginStudent, resetStudent, studentPassword, saveDraft } from "./emulator";
 import type { Work, WorkAction } from "../src/lib/classroom/types";
+import { questions } from "../src/lib/classroom/programming-data";
 
 const studentId = "20109", uid = `student-${studentId}`;
 const endpoint = `/api/classroom/work/${lessonId}`;
@@ -270,7 +271,7 @@ for (const programming of [false, true]) {
       expect(route.request().postDataJSON()).toEqual({ revision: before.revision, action: { type: "check-concept", conceptId: first } });
       await route.fetch(); await route.abort("failed");
     });
-    await page.getByRole("button", { name: programming ? "생각 확인하기" : "정답 확인", exact: true }).click();
+    await page.getByRole("button", { name: "정답 확인", exact: true }).click();
     await expect(page.locator("#work-action-error")).toBeVisible();
     let started!: () => void, release!: () => void;
     const getStarted = new Promise<void>(resolve => { started = resolve; });
@@ -305,7 +306,8 @@ for (const programming of [false, true]) {
     const workEndpoint = `/api/classroom/work/${id}`;
     const question = programming ? "flow" : "q2", lateAnswer = programming ? "2" : "b";
     const answerLabel = programming ? "수 입력 → 곱하기 → 결과 보여주기" : "숫자 입력 → 숫자 출력";
-    const hint = programming ? "계산을 시작하려면 무엇을 먼저 알아야 할까요?" : "화면에 보여 줄 값을 먼저 알아야 해요.";
+    // Programming quiz answers get the reason for the chosen wrong option; the private sequence lab keeps its hint fallback.
+    const hint = programming ? (questions.find((q) => q.id === "flow")!.why as Record<string, string>)["0"] : "화면에 보여 줄 값을 먼저 알아야 해요.";
     let before: Work;
     if (programming) {
       await db.doc(`csWork/${uid}__${id}`).delete();

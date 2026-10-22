@@ -162,7 +162,7 @@ function StructureExperience() {
   }, [running, position, path.length]);
   function change(action: () => void) { action(); setPosition(0); setRunning(false); }
   const instructions = ["시작", "컵 준비", ...(structure === "선택" ? ["우유가 있으면 우유 넣기, 없으면 물 넣기"] : ["우유 넣기"]), structure === "반복" ? `${times}회 젓기` : "젓기", "종료"];
-  const pseudocode = `START\nPREPARE cup\n${structure === "선택" ? "IF milkAvailable THEN ADD milk\nELSE ADD water" : "ADD milk"}\n${structure === "반복" ? `REPEAT ${times} TIMES: STIR` : "STIR"}\nEND`;
+  const pseudocode = `시작\n컵 준비하기\n${structure === "선택" ? "만일 우유가 있으면 우유 넣기\n아니면 물 넣기" : "우유 넣기"}\n${structure === "반복" ? `${times}번 반복하기: 젓기` : "젓기"}\n끝`;
   return <>
     <h4>조건과 횟수를 바꾸면 실행 경로는 어떻게 달라질까요?</h4>
     <p className={scenes.question}>구조를 고르고 실행해 보세요. 같은 명령을 세 가지 표현으로 비교할 수 있어요.</p>
@@ -203,7 +203,7 @@ function StructureExperience() {
           {["자연어", "순서도", "의사 코드"].map((value) => <button key={value} type="button" className={scenes.segmentedTab} aria-pressed={representation === value} onClick={() => setRepresentation(value)}>{value}</button>)}
         </div>
       </div>
-      <div className={scenes.representation}>{representation === "순서도" ? structure === "선택" ? <><SelectionFlowchart milk={milk} /><p className={scenes.note}>현재 조건: {milk ? "우유 있음 → 예 → 우유 넣기" : "우유 없음 → 아니오 → 물 넣기"}. 두 경로는 젓기 전에 합쳐져요.</p></> : <svg viewBox="0 0 900 150" role="img" aria-label="선택한 알고리즘의 순서도">{instructions.map((label, i) => <g key={i} transform={`translate(${i * 180},0)`}>{i === 0 || i === instructions.length - 1 ? <rect x="5" y="35" width="165" height="80" rx="40" fill="#eef4ff" stroke="#376fc8" /> : <rect x="5" y="35" width="165" height="80" fill="#fff" stroke="#376fc8" />}<text x="85" y="70" textAnchor="middle">{label}</text>{i < instructions.length - 1 && <text x="172" y="78">→</text>}</g>)}</svg> : <pre>{representation === "자연어" ? instructions.join(" → ") : pseudocode}</pre>}</div>
+      <div className={scenes.representation}>{representation === "순서도" ? structure === "선택" ? <><SelectionFlowchart milk={milk} /><p className={scenes.note}>현재 조건: {milk ? "우유 있음 → 예 → 우유 넣기" : "우유 없음 → 아니오 → 물 넣기"}. 두 경로는 젓기 전에 합쳐져요.</p></> : <svg viewBox="0 0 900 150" role="img" aria-label="선택한 알고리즘의 순서도">{instructions.map((label, i) => <g key={i} transform={`translate(${i * 180},0)`}>{i === 0 || i === instructions.length - 1 ? <rect x="5" y="35" width="165" height="80" rx="40" fill="#eef4ff" stroke="#376fc8" /> : <rect x="5" y="35" width="165" height="80" fill="#fff" stroke="#376fc8" />}<text x="85" y="70" textAnchor="middle">{label}</text>{i < instructions.length - 1 && <text x="172" y="78">→</text>}</g>)}</svg> : <><pre>{representation === "자연어" ? instructions.join(" → ") : pseudocode}</pre>{representation === "의사 코드" && <p className={scenes.note}>의사 코드는 프로그래밍 언어처럼 짧은 규칙에 맞춰 우리말로 쓴 명령이에요.</p>}</>}</div>
     </div>
     <div className={scenes.stepCard}>
       <div className={scenes.stepHeader}>

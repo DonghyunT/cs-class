@@ -14,6 +14,9 @@ test("entry-guidance: 이름 연결 오류와 현재 작품의 두 이름 실행
   const run = (name: string, id = name): NameRun => ({ id, key, reason: "finished", steps: [{ kind: "ask", value: "강아지 이름은?" }, { kind: "answer", value: name }, { kind: "say", value: `내 이름은 ${name}!` }] });
   expect(checkNameMission("unreadable", [])).toMatchObject({ passed: false, issue: "project", validNames: 0 });
   expect(checkNameMission(buildNameProject()!, [])).toMatchObject({ passed: false, issue: "structure", validNames: 0 });
+  // Structure messages name the same timed speech block as the mission hint.
+  expect(checkNameMission(buildNameProject()!, []).message).toContain("‘( )을(를) ( )초 동안 말하기’");
+  expect(checkNameMission(buildNameProject([{ id: "k", kind: "start", value: "ArrowRight" }])!, []).message).toContain("‘( )을(를) ( )초 동안 말하기’");
   expect(checkNameMission(complete, [])).toMatchObject({ passed: false, issue: "runs", validNames: 0 });
   expect(checkNameMission(complete, [run("초코"), run("초코", "duplicate"), ...["stopped", "timeout", "error"].map(reason => ({ ...run("보리", reason), reason })), { ...run("보리", "old"), key: "old" }])).toMatchObject({ passed: false, issue: "runs", validNames: 1 });
   expect(checkNameMission(complete, [run("초코"), run("보리"), run("두부")])).toMatchObject({ passed: true, issue: null, validNames: 2 });
@@ -94,6 +97,71 @@ test.describe("정식 수업 programming-13", () => {
     await respond(page, "두부");
   });
 
+  test("검증·제출한 이름 미션에 다시 들어오면 0/2 대신 확인 완료를 보이고, 블록을 바꾸면 0/2부터 다시 센다", async ({ page }) => {
+    test.setTimeout(60000);
+    const before = await stored(page);
+    expect((await page.request.post(endpoint, { headers, data: { revision: before.revision, draft: { ...before.draft, stage: "practice", programming: { mission: "name", projects: { name: nameProject }, reflection: "" } } } })).status()).toBe(200);
+    let work = await stored(page);
+    for (const type of ["validate-practice", "submit-practice"]) {
+      const response = await page.request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type, missionId: "name" } } });
+      expect(response.status(), type).toBe(200);
+      work = await response.json();
+    }
+    expect(work.missions?.name?.validation?.passed).toBe(true);
+    expect(work.missions?.name?.submission).toBeTruthy();
+    await page.goto(`/classroom/${id}?from=dashboard`);
+    await page.locator("iframe").scrollIntoViewIfNeeded();
+    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+    const nameCheck = page.getByRole("status", { name: "서로 다른 이름 확인", exact: true });
+    await expect(nameCheck).toHaveText("서로 다른 이름 확인 완료");
+    await expect(page.getByText("이 작품은 두 이름으로 확인하고 검증을 통과했어요. 블록을 바꾸면 두 번 실행을 다시 확인해요.", { exact: true })).toBeVisible();
+    await expect(page.getByRole("group", { name: "작품 저장·검증·제출 상태" })).toContainText("현재 작품 제출 완료");
+    await expect(page.getByText(/0\/2/)).toHaveCount(0);
+    // Validating the unchanged work again goes to the server, as the finished status promises.
+    await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+    await expect(page.locator("#practice-feedback")).toContainText("목표 조건을 확인했어요");
+    await expect(page.locator("#entry-local-feedback")).toHaveCount(0);
+    const frame = page.frameLocator("iframe");
+    await frame.locator("#entryWorkspaceBoard").getByText("강아지 이름은?", { exact: true }).locator("..").click();
+    await frame.locator("input.entry-widget-input-field:visible").fill("새 이름은?");
+    await frame.locator("#entryWorkspaceBoard").click({ position: { x: 20, y: 400 } });
+    await expect(nameCheck).toHaveText("서로 다른 이름 확인 0/2");
+    await expect(page.getByText("작품 내용이 바뀌어 실행 확인을 다시 시작해요.", { exact: true })).toBeVisible();
+  });
+
+  test("구조가 틀린 이름 작품은 실행해도 세지 않는 이유를 두 이름 확인 설명에 보인다", async ({ page }) => {
+    test.setTimeout(60000);
+    const before = await stored(page);
+    const plain = buildProgrammingProject([[node("when_run_button_click", null), node("ask_and_wait", node("text", "강아지 이름은?"), null), node("dialog", node("get_canvas_input_value", null), "speak", null)]]);
+    expect((await page.request.post(endpoint, { headers, data: { revision: before.revision, draft: { ...before.draft, stage: "practice", programming: { mission: "name", projects: { name: plain }, reflection: "" } } } })).status()).toBe(200);
+    await page.goto(`/classroom/${id}?from=dashboard`);
+    await page.locator("iframe").scrollIntoViewIfNeeded();
+    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+    const reason = page.locator('[aria-label="서로 다른 이름 확인"] + p');
+    // Before the first run the usual first notice shows; the reason appears once a run is not counted.
+    await expect(reason).toHaveText("저장된 작품은 유지돼요. 이 화면에서 서로 다른 이름으로 두 번 실행해 주세요.");
+    await entryStart(page).click();
+    const input = page.frameLocator("iframe").getByLabel("강아지 이름 대답");
+    await input.fill("초코"); await input.press("Enter");
+    await expect(page.getByRole("status").filter({ hasText: "마지막 말: 초코" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("status", { name: "서로 다른 이름 확인", exact: true })).toHaveText("서로 다른 이름 확인 0/2");
+    await expect(reason).toContainText("‘( )을(를) 말하기’ 대신 ‘( )을(를) ( )초 동안 말하기’");
+    await expect(reason).not.toContainText("작품 내용이 바뀌어");
+  });
+
+  test("시작 블록만 있는 처음 작품은 실행 전에 구조 오류처럼 읽히는 문장을 보이지 않는다", async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto(`/classroom/${id}?from=dashboard`);
+    await page.getByRole("tab", { name: /실습/ }).click();
+    await page.locator("iframe").scrollIntoViewIfNeeded();
+    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+    const reason = page.locator('[aria-label="서로 다른 이름 확인"] + p');
+    await expect(reason).toHaveText("서로 다른 이름으로 두 번 실행해 주세요. 질문에 답하고 말하기가 끝날 때까지 기다려요.");
+    await entryStart(page).click();
+    await expect(page.getByRole("status").filter({ hasText: "시작 신호가 준비됐어요." })).toBeVisible({ timeout: 10000 });
+    await expect(reason).toContainText("지금 블록 연결로는 실행 확인을 세지 않아요.");
+  });
+
   test("작품 export 실패는 단계·미션 이동과 수업 나가기를 막고 작업실 입력을 유지한다", async ({ page }) => {
     test.setTimeout(60000);
     await page.addInitScript(() => window.addEventListener("message", (event) => {
@@ -169,7 +237,7 @@ test.describe("정식 수업 programming-13", () => {
     await page.getByRole("button", { name: "이 명령 실행하기" }).click();
     await expect(experiment.getByText("안녕!", { exact: true })).toBeVisible();
     await page.getByRole("radio", { name: "컴퓨터가 할 일을 명령으로 표현해요", exact: true }).check();
-    await page.getByRole("button", { name: "생각 확인하기" }).click();
+    await page.getByRole("button", { name: "정답 확인" }).click();
     await expect(page.getByRole("button", { name: "개념 확인 완료" })).toBeDisabled();
     await reset.click();
     await expect(page.getByRole("button", { name: "블록", exact: true })).toHaveAttribute("aria-pressed", "true");

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { buildProgrammingProject } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, missionStarter, parseProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
 import { db, headers, readyStudent, readyTeacher } from "./emulator";
 
@@ -26,8 +26,9 @@ test("programming-intro: 새 첫 개념은 옛 pc0~3 답안·제출을 보존하
     await expect(list.getByRole("button")).toHaveCount(5);
     await expect(page.getByRole("tab", { name: "개념 80%", exact: true })).toBeVisible();
     await page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true }).check();
-    await page.getByRole("button", { name: "생각 확인하기", exact: true }).click();
+    await page.getByRole("button", { name: "정답 확인", exact: true }).click();
     await expect(page.getByRole("tab", { name: "개념 100%", exact: true })).toBeVisible();
+    await expect(list.getByRole("button", { name: /프로그래밍이란/ })).toContainText("확인 완료");
     const saved: Work = await (await page.request.get(endpoint)).json();
     expect(saved.conceptSolved).toEqual(["pc0", "pc1", "pc2", "pc3", "pc4"]);
     expect(saved.draft.conceptAnswers).toEqual({ ...oldAnswers, pc4: "0" });
@@ -43,7 +44,7 @@ test("programming-intro: 새 첫 개념은 옛 pc0~3 답안·제출을 보존하
     await page.goto(`/teacher/preview/${id}?classId=2-1`);
     await expect(page.locator("#concept-title")).toHaveText("프로그래밍이란?");
     await page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true }).check();
-    await page.getByRole("button", { name: "생각 확인하기", exact: true }).click();
+    await page.getByRole("button", { name: "정답 확인", exact: true }).click();
     await expect(page.getByRole("tab", { name: "개념 20%", exact: true })).toBeVisible();
     expect((await workRef.get()).data()).toEqual(before);
   } finally { await workRef.delete(); await classRef.set(original); }
@@ -80,16 +81,16 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
         const gate = new Promise<void>((resolve) => { release = resolve; });
         await page.route(`**${endpoint}/action`, async (route) => { const response = await route.fetch(); await gate; await route.fulfill({ response }); }, { times: 1 });
         const checking = page.waitForRequest((request) => request.url().endsWith(`${endpoint}/action`));
-        await page.getByRole("button", { name: "생각 확인하기" }).click(); await checking;
+        await page.getByRole("button", { name: "정답 확인" }).click(); await checking;
         try { await expect(page.getByRole("button", { name: "다음 개념", exact: true })).toBeDisabled(); }
         finally { release(); }
-      } else await page.getByRole("button", { name: "생각 확인하기" }).click();
+      } else await page.getByRole("button", { name: "정답 확인" }).click();
       await expect(page.locator("#concept-feedback")).toBeFocused();
       await expect(page.getByRole("button", { name: "개념 확인 완료" })).toBeDisabled();
       if (i < answers.length - 1) await page.getByRole("button", { name: "다음 개념", exact: true }).click();
     }
     await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
-    await page.getByRole("button", { name: "퀴즈에 도전하기" }).click();
+    await page.getByRole("button", { name: "퀴즈로 이동" }).click();
     for (const [i, answer] of ["명령을 표현하는 방법", "수 입력 → 곱하기 → 결과 보여주기", "6", "각 대답을 받은 직후 해당 변수에 저장하기", "90°"].entries()) {
       await page.getByRole("radio", { name: answer, exact: false }).check();
       if (i < 4) await page.getByRole("button", { name: "다음 문제", exact: true }).click();
@@ -145,5 +146,38 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     for (const width of [320, 390, 768, 1440]) { await page.setViewportSize({ width, height: 900 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }
     await page.keyboard.press("Escape"); await expect(dialog).toBeHidden(); await expect(open).toBeFocused();
     expect(errors).toEqual([]);
+  } finally { await workRef.delete(); await classRef.set(original); }
+});
+
+test("교사 작품 실행기: 그린 작품은 정지 전까지 선을 남기고 그리기 안내를 보이며, 정지하면 안내를 뗀다", async ({ page }) => {
+  test.setTimeout(90000);
+  const id = "loops", endpoint = `/api/classroom/work/${id}`, classRef = db.doc("csClasses/2-1"), workRef = db.doc(`csWork/student-20101__${id}`);
+  const original = (await classRef.get()).data()!;
+  const node = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
+  const square = [node("when_run_button_click", null), node("start_drawing", null), { ...node("repeat_basic", node("number", "4"), null), statements: [[node("move_direction", node("number", "100"), null), node("direction_relative", node("angle", "90"), null)]] }];
+  const project = buildProgrammingProject(undefined, parseProgrammingProject(missionStarter("square"))!.added.map((o) => ({ ...o, threads: [square] })), -1);
+  try {
+    await readyStudent(page.request); await workRef.delete();
+    await classRef.update({ currentLessonId: id, openedLessonIds: [id] });
+    const current: Work = await (await page.request.get(endpoint)).json();
+    current.draft.programming = { mission: "square", projects: { ...current.draft.programming?.projects, square: project }, reflection: "" };
+    let response = await page.request.post(endpoint, { headers, data: { revision: current.revision, draft: current.draft } }); expect(response.status()).toBe(200);
+    for (const type of ["validate-practice", "submit-practice"]) { const work: Work = await response.json(); response = await page.request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type, missionId: "square" } } }); expect(response.status(), type).toBe(200); }
+    await readyTeacher(page.request);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/teacher/students?classId=2-1&lessonId=${id}`);
+    await page.getByRole("button", { name: "20101 제출 작품 보기", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "20101 학생의 제출 작품", exact: true });
+    await dialog.getByRole("button", { name: "작업실에서 실행해 보기", exact: true }).click();
+    await expect(dialog.getByRole("button", { name: "무대 처음 위치로", exact: true })).toBeEnabled({ timeout: 20000 });
+    const runner = page.frameLocator('iframe[title*="교사 실행 작업실"]');
+    await runner.getByRole("button", { name: "시작하기", exact: true }).click();
+    const status = dialog.getByRole("status").filter({ hasText: "실행을 마쳤어요." });
+    await expect(status).toContainText("그린 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가요.", { timeout: 10000 });
+    await expect(status).not.toContainText("키를 누르거나");
+    await runner.getByRole("button", { name: "정지하기", exact: true }).click();
+    await expect(runner.getByRole("button", { name: "시작하기", exact: true })).toBeVisible();
+    await expect(status).toContainText("실행을 멈췄어요.");
+    await expect(status).not.toContainText("그린 결과를 다 봤으면");
   } finally { await workRef.delete(); await classRef.set(original); }
 });

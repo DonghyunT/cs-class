@@ -103,7 +103,7 @@ function AbstractionExperience({ conceptId }: { conceptId: string }) {
     <h4>과제를 제시간에 끝내려면 어떤 정보가 필요할까요?</h4>
     <p className={scenes.question}>목적은 ‘밤 10시 전에 과제 제출하기’예요. 목적에 필요 없는 정보만 눌러 덜어내 보세요.</p>
     <div className={scenes.controls}>{information.filter(item => !discarded.includes(item.name)).map(item => <button key={item.name} type="button" onClick={event => {
-      if (item.core) setMessage(`${item.name}은 남겨요. ${item.reason}`);
+      if (item.core) setMessage(`‘${item.name}’ 정보는 남겨요. ${item.reason}`);
       else { if (document.activeElement === event.currentTarget) setFocus(n => n + 1); const next = [...discarded, item.name]; setDiscarded(next); setMessage(next.length === 3 ? "핵심 정보 세 가지만 남았어요! 각각 왜 필요한지 확인해 보세요." : item.reason); }
     }}>{item.name}</button>)}</div>
     <p ref={result} tabIndex={-1} role="status" className={scenes.result}>{message || "버릴 정보와 남길 정보를 골라 보세요."}</p>

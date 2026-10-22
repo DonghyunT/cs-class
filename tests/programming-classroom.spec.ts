@@ -412,6 +412,10 @@ test("곱셈 실제 실행 · 변수 팔레트 · 이동과 독립한 방향키 
   const native = page.frames().find((f) => f.url().includes("mission=keys"))!;
   const position = () => native.evaluate(() => { const e = (window as unknown as { Entry: { container: { getObject: (id: string) => { entity: { getX: () => number; getY: () => number } } } } }).Entry.container.getObject("entrybot").entity; return [Math.round(e.getX()) || 0, Math.round(e.getY()) || 0]; });
   await entryStart(page).click(); await expect.poll(position).toEqual([10, 0]);
+  // Arrow-key runs keep going; the result line says what to try and why validation waits, without a question prompt.
+  const keyRun = page.getByRole("status").filter({ hasText: /^실행 중이에요\./ });
+  await expect(keyRun).toContainText("다 해 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 조건을 검증할 수 있어요.");
+  await expect(keyRun).not.toContainText("질문에는");
   for (const [label, expected] of [["↑ 위", [10, 10]], ["← 왼쪽", [0, 10]], ["↓ 아래", [0, 0]], ["→ 오른쪽", [10, 0]]] as const) { await page.getByRole("button", { name: label, exact: true }).click(); await expect.poll(position).toEqual(expected); }
   await entryStop(page).click(); await expect.poll(position).toEqual([0, 0]);
   await page.getByLabel("오늘 발견한 것을 한 줄로 남겨볼까요?").fill("방향키 실행을 확인했습니다.");
@@ -562,12 +566,12 @@ test("오브젝트 추가: 그림 고르기 · 코드 저장·복원 · 강아�
   await expect(page.getByRole("status").filter({ hasText: "강아지는 복제할 수 없어요." })).toBeVisible();
   await entryStart(page).click();
   const result = page.getByRole("status").filter({ hasText: "현재 위치 X 10" });
-  await expect(result).toContainText("키를 누르거나 오브젝트를 클릭해 보세요.");
+  await expect(result).toContainText("키를 누르거나 무대·오브젝트를 클릭해 보세요.");
   await expect(entryStop(page)).toBeVisible();
   await entryStop(page).click();
   await expect(entryStart(page)).toBeVisible();
   await expect(result).toContainText("실행을 멈췄어요.");
-  await expect(result).not.toContainText("키를 누르거나 오브젝트를 클릭해 보세요.");
+  await expect(result).not.toContainText("키를 누르거나 무대·오브젝트를 클릭해 보세요.");
   await page.getByRole("button", { name: "조건 검증", exact: true }).click();
   await expect(page.locator("#practice-feedback")).toHaveText("목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요.");
 });
