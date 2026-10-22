@@ -195,13 +195,20 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   }, [draft, locked, update, mission, parse, program, mode, phase, preparing, actionsBlocked, onSave, asksQuestion, free, toasts]);
 
   useEffect(() => {
-    if (!bootReady) return;
+    const element = frame.current;
+    if (!bootReady || !element) return;
+    // With Entry's default stage the block board starts about 793px into the frame, so a frame
+    // narrower than 1,100px (1,024px screens, phones) uses the smallest stage to keep the board 300px+.
     // Sent before the project loads, so the smaller stage is ready when the workspace appears.
-    const narrow = window.matchMedia("(max-width: 600px)");
-    const fit = () => frame.current?.contentWindow?.postMessage({ channel: CHANNEL, type: "stage-size", narrow: narrow.matches }, "*");
+    let narrow: boolean | null = null;
+    const fit = () => {
+      const next = element.clientWidth < 1100;
+      if (next !== narrow) { narrow = next; element.contentWindow?.postMessage({ channel: CHANNEL, type: "stage-size", narrow }, "*"); }
+    };
     fit();
-    narrow.addEventListener("change", fit);
-    return () => narrow.removeEventListener("change", fit);
+    const observer = new ResizeObserver(fit);
+    observer.observe(element);
+    return () => observer.disconnect();
   }, [bootReady]);
 
   useEffect(() => {
