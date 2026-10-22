@@ -30,14 +30,14 @@ const solutions: Record<string, string> = {
   tree: treeSolution(),
 };
 
-async function open(page: Page, mission: string) {
+async function open(page: Page, mission: string, project = solutions[mission]) {
   // Leave the previous editor first so it cannot save over the new fixture.
   await page.goto("about:blank");
   await readyStudent(page.request);
   await db.collection("csWork").doc(`student-20101__${id}`).delete();
   await db.collection("csClasses").doc("2-1").update({ currentLessonId: id, openedLessonIds: [id] });
   const work: Work = await (await page.request.get(endpoint)).json();
-  expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice", programming: { mission, projects: { [mission]: solutions[mission] }, reflection: "" } } } })).status()).toBe(200);
+  expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice", programming: { mission, projects: { [mission]: project }, reflection: "" } } } })).status()).toBe(200);
   await page.goto(`/classroom/${id}?from=dashboard`);
   await page.locator("iframe").scrollIntoViewIfNeeded();
   await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
@@ -87,6 +87,15 @@ test("반복 수업 도형: 실제 엔트리에서 그린 선이 정지 전까�
   const input = frame.getByLabel("질문 대답", { exact: true }); await expect(input).toBeVisible(); await input.fill("5"); await input.press("Enter");
   await keepsDrawingUntilStop(page, start5);
   await validateAndSubmit(page, "polygon");
+});
+
+test("반복 수업 도형: 시작 줄에 연결되지 않은 붓 블록은 실행을 붙잡지 않는다", async ({ page }) => {
+  test.setTimeout(60000);
+  await open(page, "square", onBot("square", [[start(), node("move_direction", number("10"), null)], [node("start_drawing", null)]]));
+  await entryStart(page).click();
+  await expect(page.getByRole("status").filter({ hasText: "실행을 마쳤어요." })).toBeVisible({ timeout: 10000 });
+  await expect(entryStart(page)).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: drawingWait })).toHaveCount(0);
 });
 
 test("반복 수업 금고: 맞힐 때까지 묻고, 다시 실행하면 처음부터 다시 묻는다", async ({ page }) => {
