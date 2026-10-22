@@ -17,7 +17,8 @@ import styles from "./programming-lesson.module.css";
 type Props = { lesson: Lesson; controller: WorkController; mode?: LessonMode; locked: boolean; runAction: (action: WorkAction, focusId: string) => Promise<void>; focus: (id: string) => void; next: (stage: WorkDraft["stage"]) => void; exportRef: RefObject<(() => Promise<string | null>) | null>; workspaceWide: boolean; practiceFocused: boolean; onWorkspaceWideChange: (wide: boolean) => void; saveLabel: string; conceptId: string; quizQuestionId: string; onConceptChange: (id: string) => void; onQuizQuestionChange: (id: string) => void; onEditorReady?: (ready: boolean) => void };
 
 // Hint text with its block chips coloured by Entry category; screen readers read the chips as plain words.
-const HintText = ({ text }: { text: string }) => <>{hintParts(text).map((part, i) => typeof part === "string" ? part : <span key={i} className={styles.blockChip} data-category={entryBlockCategory(part.type)}>{part.text}</span>)}</>;
+// ▾ has a wide glyph box, so it gets a trimmed span to read ‘A▾를’ as one word.
+const HintText = ({ text }: { text: string }) => <>{hintParts(text).map((part, i) => typeof part === "string" ? part.split("▾").flatMap((plain, k) => k ? [<span key={`${i}-${k}`} className={styles.caret}>▾</span>, plain] : [plain]) : <span key={i} className={styles.blockChip} data-category={entryBlockCategory(part.type)}>{part.text}</span>)}</>;
 
 // The first programming lesson keeps its hands-on concept and quiz screens; later lessons use the shared panels.
 export const hasCustomLearning = (lesson: Lesson) => lesson.id === "programming-13";

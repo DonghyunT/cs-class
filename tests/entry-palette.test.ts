@@ -557,8 +557,9 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
   // Values each solution uses, as the hint writes them (palette symbols; Entry key codes 37–40 as key names).
   const SYMBOL: Record<string, string> = { GREATER_OR_EQUAL: "≥", EQUAL: "=", MULTI: "x", DIVIDE: "/", PLUS: "+" }, KEY: Record<string, string> = { 37: "왼쪽", 38: "위쪽", 39: "오른쪽", 40: "아래쪽" };
   const VARIABLE: Record<string, string> = { "cs-A": "A", "cs-B": "B", "cs-clicks": "클릭 수" };
-  // The tree's later thresholds are listed in one step instead of four chips.
-  const VALUE_IN_WORDS: Record<string, RegExp> = Object.fromEntries(["10", "15", "20", "25"].map((n) => [`tree 클릭 수 값 = ${n}`, /5는 10·15·20·25로/]));
+  // The tree's later thresholds are written in words instead of four more chips.
+  const VALUE_IN_WORDS: Record<string, RegExp> = { "tree 클릭 수 값 = 10": /5를 10으로/, ...Object.fromEntries(["15", "20", "25"].map((n) => [`tree 클릭 수 값 = ${n}`, /15·20·25도/])) };
+  const LOGIC: Record<string, string> = { AND: "그리고", OR: "또는" };
   const valuesIn = (raw: string) => {
     const out: string[] = [], lit = (v: unknown) => { const n = v as EntryNode | null; return n && typeof n === "object" && ["number", "angle", "text"].includes(n.type) ? String(n.params[0]) : undefined; };
     const symbol = (op: unknown) => { expect(SYMBOL[op as string], `operator ${op}`).toBeTruthy(); return SYMBOL[op as string]; };
@@ -574,6 +575,9 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
       if (amount) out.push(`${amount}만큼`);
       if ((type === "direction_relative" || type === "direction_absolute") && lit(p0)) out.push(`${lit(p0)}°`);
       if (type === "locate_xy") out.push(`x: ${lit(p0)} y: ${lit(p1)}`);
+      // The stored value (‘A를 대답으로’, not a constant) and the logic word (‘또는’, not ‘그리고’).
+      if (type === "set_variable") out.push(`${VARIABLE[p0 as string]}를 ${term(p1)}`);
+      if (type === "boolean_and_or") { expect(LOGIC[p1 as string], `logic ${p1}`).toBeTruthy(); out.push(`참 ${LOGIC[p1 as string]}`); }
       // A said text appears as its chip, ‘합격을 말하기’ (을 after a final consonant, else 를).
       if ((type === "dialog" || type === "dialog_time") && (p0 as EntryNode | null)?.type === "text") { const said = lit(p0)!, last = [...said].reverse().find((c) => c >= "가" && c <= "힣")!; out.push(`${said}${(last.charCodeAt(0) - 0xac00) % 28 ? "을" : "를"} 말하기`); }
       if (type === "when_some_key_pressed") out.push(KEY[p1 as string]);
@@ -592,6 +596,9 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
     // ...in the solution's order within the steps, so a swapped threshold, branch or key angle fails too (the tree's word-form list is skipped).
     const steps = missionById(id)!.steps.map(hintPlain).join(" "), at = [...new Set(valuesIn(raw))].filter((value) => !VALUE_IN_WORDS[`${id} ${value}`]).map((value) => [value, steps.search(pattern(value))] as const).filter(([, i]) => i >= 0);
     at.forEach(([value, i], k) => expect(i, `${id}: ${value} comes after ${at[k - 1]?.[0]}`).toBeGreaterThanOrEqual(at[k - 1]?.[1] ?? 0));
+    // ...and each block's first chip follows the solution's block order, so swapped steps fail too. Nesting words (안에·아래(바깥)) are not checked.
+    const chipOrder = missionById(id)!.steps.flatMap(hintParts).flatMap((part) => typeof part === "string" ? [] : [part.type]), firsts = [...typesIn(raw)].map((type) => [type, chipOrder.indexOf(type)] as const).filter(([, i]) => i >= 0);
+    firsts.forEach(([type, i], k) => expect(i, `${id}: ${type} chip comes after ${firsts[k - 1]?.[0]}`).toBeGreaterThanOrEqual(firsts[k - 1]?.[1] ?? 0));
   }
   // From (0, 0) facing right and turning clockwise, side 70 keeps triangles to hexagons inside the 480×270 stage.
   for (const sides of [3, 5, 6]) {
