@@ -243,7 +243,7 @@ const DROPDOWN_LABELS: Readonly<Record<string, string>> = {
   YEAR: "연도", MONTH: "월", DAY: "일", HOUR: "시", MINUTE: "분", SECOND: "초",
   number: "숫자", string: "문자", en: "영문", ko: "한글",
 };
-const KEY_LABELS: Readonly<Record<string, string>> = { "37": "왼쪽", "38": "위쪽", "39": "오른쪽", "40": "아래쪽", "32": "스페이스", "13": "엔터" };
+export const KEY_LABELS: Readonly<Record<string, string>> = { "37": "왼쪽", "38": "위쪽", "39": "오른쪽", "40": "아래쪽", "32": "스페이스", "13": "엔터" };
 const COMPARE_LABELS: Readonly<Record<string, string>> = {
   EQUAL: "=", NOT_EQUAL: "≠", GREATER: ">", LESS: "<", SMALLER: "<", GREATER_OR_EQUAL: "≥", LESS_OR_EQUAL: "≤", SMALLER_OR_EQUAL: "≤",
 };
@@ -356,7 +356,8 @@ export function programmingProjectLines(raw: unknown): string[] {
 }
 
 // Blocks students often reach for instead of the mission block.
-const SIMILAR_BLOCKS: Record<string, string> = { dialog: "dialog_time", move_x: "move_direction", rotate_absolute: "direction_absolute" };
+// Absolute moves and ‘방향을 정하기’ (the object's rotation) do not mean the same in Entry.
+const SIMILAR_BLOCKS: Record<string, string> = { locate_x: "move_x", locate_y: "move_y", rotate_absolute: "direction_absolute" };
 
 // Graded lines start with a signal this mission's interpreter runs. Loose blocks
 // and other event lines stay in the work but are not graded.

@@ -169,9 +169,12 @@ try {
         } catch (error) { if (nameRun) nameRun.failed = true; throw error; }
       };
     }
-    const say = Entry.block?.dialog_time?.func;
-    if (typeof say === "function") {
-      Entry.block.dialog_time.func = function (entity, script) {
+    // Both speech blocks count for the name mission. ‘말하기’ runs once; the timed one
+    // runs every frame until its time is up, so only its first frame is recorded.
+    for (const type of ["dialog_time", "dialog"]) {
+      const say = Entry.block?.[type]?.func;
+      if (typeof say !== "function") continue;
+      Entry.block[type].func = function (entity, script) {
         try {
           const first = !script.isStart;
           const result = say.call(this, entity, script);

@@ -21,27 +21,39 @@ export const VALUE_BLOCKS: ReadonlySet<string> = new Set(["text", "number", "ang
 export const CONTAINER_BLOCKS: Readonly<Record<string, number>> = { repeat_basic: 1, repeat_inf: 1, repeat_while_true: 1, _if: 1, if_else: 2 };
 
 const START = ["when_run_button_click", "text", "number"];
-const NAME = [...START, "ask_and_wait", "dialog_time", "get_canvas_input_value", "combine_something"];
-const MOVE = [...START, "move_direction", "direction_absolute", "angle"];
-// Pen missions: waits and colours run in Entry but do not change the drawn path.
-const PEN = [...START, "start_drawing", "stop_drawing", "repeat_basic", "move_direction", "direction_relative", "rotate_relative", "direction_absolute", "angle", "locate_xy", "wait_second", "set_color", "set_thickness", "brush_erase_all", "color"];
-const CHOICE = [...NAME, "dialog", "_if", "if_else", "boolean_basic_operator", "boolean_and_or", "boolean_not", "True", "False", "calc_basic", "quotient_and_mod"];
+// Blocks that run in Entry without changing what any mission grades (waits, bubbles, looks,
+// brush colours). Every mission accepts them and the interpreter skips them.
+export const HARMLESS_BLOCKS: ReadonlySet<string> = new Set(["wait_second", "remove_dialog", "show", "hide", "set_visible_answer", "show_variable", "hide_variable", "set_color", "change_thickness", "set_thickness", "set_random_color", "set_fill_color", "start_fill", "stop_fill", "change_brush_transparency", "set_brush_tranparency", "brush_stamp", "add_effect_amount", "change_effect_amount", "erase_all_effects", "change_scale_size", "set_scale_size", "stretch_scale_size", "reset_scale_size", "flip_x", "flip_y", "change_object_index", "color"]);
+// Both speech blocks have a 말하기/생각하기 choice; only 말하기 counts as saying.
+const SAY = ["dialog_time", "dialog"];
+export const THINKING_MESSAGE = "말풍선이 ‘생각하기’로 되어 있어요. 말하기 블록에서 ‘생각하기’를 ‘말하기’로 바꿔 주세요.";
+const NAME = [...START, "ask_and_wait", ...SAY, "get_canvas_input_value", "combine_something"];
+const VARIABLES = ["set_variable", "get_variable"];
+// Relative moves only: the interpreter starts every run at (0, 0), so an absolute move
+// (‘x: ( ) 위치로 이동하기’) would pass ‘move right 10’ without moving.
+const MOVE = [...START, "move_direction", "move_x", "move_y", "move_xy_time", "move_to_angle", "direction_absolute", "angle"];
+const PEN = [...MOVE, ...SAY, "start_drawing", "stop_drawing", "repeat_basic", "direction_relative", "rotate_relative", "rotate_by_time", "direction_relative_duration", "locate_xy", "locate_xy_time", "brush_erase_all"];
+const CHOICE = [...NAME, ...VARIABLES, "_if", "if_else", "boolean_basic_operator", "boolean_and_or", "boolean_not", "True", "False", "calc_basic", "quotient_and_mod"];
+const mission = (blocks: string[]) => new Set([...blocks, ...HARMLESS_BLOCKS]);
+// Same-meaning moves and timed turns the interpreter also accepts. The block list shown to
+// students leaves them out (with the harmless set) so it keeps the blocks the mission is about.
+const ALSO_ACCEPTED: ReadonlySet<string> = new Set(["move_x", "move_y", "move_xy_time", "move_to_angle", "locate_xy_time", "rotate_by_time", "direction_relative_duration"]);
 // The blocks each mission's server interpreter understands. Other palette blocks
 // are saved and shown, but a graded line that uses them is not validated.
+// Move, keys and square never ask: asking switches the run report to speech.
 export const MISSION_BLOCKS: Readonly<Record<string, ReadonlySet<string>>> = {
-  name: new Set(NAME),
-  multiply: new Set([...NAME, "set_variable", "get_variable", "calc_basic"]),
-  // In the conditionals lesson students also say the result with the plain ‘말하기’ block.
-  average: new Set([...NAME, "dialog", "set_variable", "get_variable", "calc_basic"]),
-  move: new Set(MOVE),
-  keys: new Set([...MOVE, "when_some_key_pressed"]),
-  pass: new Set(CHOICE),
-  freethrow: new Set(CHOICE),
-  escape: new Set([...CHOICE, "set_variable", "get_variable"]),
-  square: new Set(PEN),
-  polygon: new Set([...PEN, "ask_and_wait", "get_canvas_input_value", "calc_basic"]),
-  safe: new Set([...CHOICE, "repeat_while_true", "repeat_inf", "stop_repeat"]),
-  tree: new Set(["when_run_button_click", "mouse_clicked", "when_object_click", "text", "number", "True", "False", "change_variable", "set_variable", "get_variable", "_if", "if_else", "boolean_basic_operator", "boolean_and_or", "calc_basic", "change_to_next_shape", "change_to_some_shape", "get_pictures", "dialog", "dialog_time", "repeat_inf", "locate", "is_clicked", "wait_second"]),
+  name: mission(NAME),
+  multiply: mission([...NAME, ...VARIABLES, "calc_basic"]),
+  average: mission([...NAME, ...VARIABLES, "calc_basic"]),
+  move: mission(MOVE),
+  keys: mission([...MOVE, "when_some_key_pressed"]),
+  pass: mission(CHOICE),
+  freethrow: mission(CHOICE),
+  escape: mission(CHOICE),
+  square: mission(PEN),
+  polygon: mission([...PEN, ...VARIABLES, "ask_and_wait", "get_canvas_input_value", "calc_basic"]),
+  safe: mission([...CHOICE, "repeat_while_true", "repeat_inf", "stop_repeat"]),
+  tree: mission(["when_run_button_click", "mouse_clicked", "when_object_click", "text", "number", "True", "False", "change_variable", ...VARIABLES, "_if", "if_else", "boolean_basic_operator", "boolean_and_or", "calc_basic", "change_to_next_shape", "change_to_some_shape", "get_pictures", ...SAY, "repeat_inf", "locate", "is_clicked"]),
 };
 
 export const BLOCK_LABELS: Readonly<Record<string, string>> = {

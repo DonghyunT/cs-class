@@ -1,3 +1,4 @@
+import { HARMLESS_BLOCKS, THINKING_MESSAGE } from "./entry-palette";
 import { buildEntryProject } from "./entry-project";
 
 type NameBlock = { id: string; kind: "start" | "ask" | "store" | "say" | "calculate" | "direction" | "move"; value: string };
@@ -82,13 +83,18 @@ export function checkNameMission(raw: string, runs: NameRun[], parse: (raw: unkn
   const p = parse(raw);
   if (!p) return fail("project", "작품을 읽지 못했어요. 입력한 작품을 보존하고 다시 확인해 주세요.");
   const threads = p.threads.filter((t) => t[0]?.type === "when_run_button_click");
-  if (threads.length !== 1) return fail("structure", "시작하기 버튼 아래 한 줄로 질문과 ‘( )을(를) ( )초 동안 말하기’를 연결해 주세요.");
-  const program = threads[0].slice(1);
+  if (threads.length > 1) return fail("structure", "‘시작하기 버튼을 클릭했을 때’ 줄이 여러 개예요. 질문과 말하기를 한 줄로 이어 붙여 주세요.");
+  if (!threads.length) return fail("structure", "‘시작하기 버튼을 클릭했을 때’ 아래에 질문과 말하기를 연결해 주세요.");
+  // Waits, bubbles and looks run without being recorded, so the replay skips them.
+  const program = threads[0].slice(1).filter((node) => !HARMLESS_BLOCKS.has(node.type));
   const evaluate = (node: Node, value: string): string => node.type === "get_canvas_input_value" ? value : node.type === "combine_something" ? evaluate(node.params[1] as Node, value) + evaluate(node.params[3] as Node, value) : String(node.params[0]);
   const depends = (node: Node): boolean => node.type === "get_canvas_input_value" || (node.type === "combine_something" && (depends(node.params[1] as Node) || depends(node.params[3] as Node)));
+  // ‘말하기’ and ‘( )초 동안 말하기’ both count; workspace.js records either as a `say` step.
+  const said = (node: Node) => node.type === "dialog_time" ? { value: node.params[0] as Node, speaks: node.params[2] === "speak" } : node.type === "dialog" ? { value: node.params[0] as Node, speaks: node.params[1] !== "think" } : null;
   const question = program.findIndex(node => node.type === "ask_and_wait");
-  if (program.filter(node => node.type === "ask_and_wait").length !== 1 || !program.some((node, index) => index > question && node.type === "dialog_time" && node.params[2] === "speak" && depends(node.params[0] as Node)) || program.some(node => !["ask_and_wait", "dialog_time"].includes(node.type))) {
-    return fail("structure", "시작하기 아래에 질문 하나와 ‘( )을(를) ( )초 동안 말하기’를 연결하고, 그 안에 ‘대답’을 넣어 주세요.");
+  if (program.filter(node => node.type === "ask_and_wait").length !== 1 || !program.some((node, index) => index > question && said(node)?.speaks && depends(said(node)!.value)) || program.some(node => node.type !== "ask_and_wait" && !said(node))) {
+    const thinking = program.some((node, index) => index > question && said(node) && !said(node)!.speaks && depends(said(node)!.value));
+    return fail("structure", thinking ? THINKING_MESSAGE : "시작하기 아래에 질문 하나와 말하기 블록을 연결하고, 말하기 칸에 ‘대답’을 넣어 주세요.");
   }
   // EntryJS dialog_time rounds numeric decimal text to three places.
   const spoken = (value: string): string => value.trim() && !Number.isNaN(Number(value)) && /\d+\.{1}\d+$/.test(value) ? String(Number(`${Math.round(Number(`${value}e3`))}e-3`)) : value;
@@ -103,10 +109,10 @@ export function checkNameMission(raw: string, runs: NameRun[], parse: (raw: unkn
         const ask = run.steps[cursor++], reply = run.steps[cursor++];
         if (ask?.kind !== "ask" || reply?.kind !== "answer" || !reply.value.trim()) { valid = false; break; }
         value = reply.value;
-      } else if (node.type === "dialog_time") {
-        const speech = run.steps[cursor++];
-        if (speech?.kind !== "say" || speech.value !== spoken(evaluate(node.params[0] as Node, value))) { valid = false; break; }
-        if (value && depends(node.params[0] as Node) && node.params[2] === "speak") observedName = value;
+      } else if (said(node)) {
+        const speech = run.steps[cursor++], { value: shown, speaks } = said(node)!;
+        if (speech?.kind !== "say" || speech.value !== spoken(evaluate(shown, value))) { valid = false; break; }
+        if (value && depends(shown) && speaks) observedName = value;
       } else { valid = false; break; }
     }
     if (valid && observedName && cursor === run.steps.length) names.add(observedName);
