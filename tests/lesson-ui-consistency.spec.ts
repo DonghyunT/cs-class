@@ -1,8 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
-import { db, readyStudent } from "./emulator";
+import { db, headers, readyStudent } from "./emulator";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { REVIEW_LESSONS } from "../src/lib/classroom/review/lessons";
+import { RELEASED_LESSONS } from "../src/lib/classroom/catalog";
 import { emptyWork } from "../src/lib/classroom/progress";
+import { concepts, questions } from "../src/lib/classroom/programming-data";
+import { conditionalConcepts, conditionalQuestions } from "../src/lib/classroom/conditionals-data";
+import { loopConcepts, loopQuestions } from "../src/lib/classroom/loops-data";
+import { UNIT_QUIZ_DATA } from "../src/lib/server/review-quiz.mjs";
+import type { Work } from "../src/lib/classroom/types";
 const lessons = [PROGRAMMING_LESSON, ...REVIEW_LESSONS];
 let originalClass: FirebaseFirestore.DocumentData | undefined;
 test.beforeEach(async () => { originalClass = (await db.doc("csClasses/2-1").get()).data(); });
@@ -47,6 +53,41 @@ test("공통 수업 헤더·단계 폭과 완료 진도는 모든 수업에서 �
     await page.screenshot({ path: testInfo.outputPath(`lesson-${lesson.id}-1920.png`) });
   }
 });
+test("공개 6수업의 개념 확인·퀴즈 오답은 힌트와 다른 문구를 받고 화면에 '다시 생각해 보기'로 보인다", async ({ page }) => {
+  test.setTimeout(120_000);
+  await enter(page);
+  await db.doc("csClasses/2-1").update({ openedLessonIds: RELEASED_LESSONS.map((lesson) => lesson.id) });
+  const correct: Record<string, number> = {};
+  concepts.forEach((c, i) => { correct[`pc${i}`] = c.correct; });
+  for (const item of [...questions, ...conditionalConcepts, ...conditionalQuestions, ...loopConcepts, ...loopQuestions]) correct[item.id] = item.correct;
+  for (const lesson of RELEASED_LESSONS) {
+    const unit = Object.values(UNIT_QUIZ_DATA)[["review-abstraction", "review-sandwich", "review-flowchart"].indexOf(lesson.id)];
+    const right = (id: string, kind: "concept" | "quiz") => unit ? kind === "concept" ? 0 : unit.questions.find((q) => String(q.id) === id)!.options.findIndex((o) => o.correct) : correct[id];
+    const wrong = (id: string, kind: "concept" | "quiz", count: number) => String((right(id, kind) + 1) % count);
+    const concept = lesson.concepts[0];
+    const endpoint = `/api/classroom/work/${lesson.id}`;
+    await db.doc(`csWork/student-20101__${lesson.id}`).delete();
+    let work: Work = await (await page.request.get(endpoint)).json();
+    const quizAnswers = Object.fromEntries(work.quizRoundIds.map((id) => [id, wrong(id, "quiz", lesson.quiz.find((q) => q.id === id)!.options.length)]));
+    let response = await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, conceptAnswers: { [concept.id]: wrong(concept.id, "concept", concept.question.options.length) }, quizAnswers } } });
+    expect(response.status(), lesson.id).toBe(200); work = await response.json();
+    for (const action of [{ type: "check-concept", conceptId: concept.id }, { type: "grade-quiz" }]) {
+      response = await page.request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action } });
+      expect(response.status(), `${lesson.id} ${action.type}`).toBe(200); work = await response.json();
+    }
+    expect(work.conceptFeedback[concept.id].correct, lesson.id).toBe(false);
+    expect(work.conceptFeedback[concept.id].message, lesson.id).toBeTruthy();
+    expect(work.conceptFeedback[concept.id].message, lesson.id).not.toBe(concept.question.hint);
+    for (const question of lesson.quiz) {
+      expect(work.quizFeedback[question.id].correct, `${lesson.id} ${question.id}`).toBe(false);
+      expect(work.quizFeedback[question.id].message, `${lesson.id} ${question.id}`).toBeTruthy();
+      expect(work.quizFeedback[question.id].message, `${lesson.id} ${question.id}`).not.toBe(question.hint);
+    }
+    await page.goto(`/classroom/${lesson.id}?from=lessons`);
+    await expect(page.getByRole("navigation", { name: "개념 목록", exact: true }).getByRole("button", { name: new RegExp(concept.title.replace(/[?()]/g, "\\$&")) })).toContainText("다시 생각해 보기");
+  }
+});
+
 test("다른 이번 수업 링크는 나가기 옆에서 헤더 높이를 늘리지 않고 저장 실패 시 이동을 막는다", async ({ page }) => {
   await enter(page, "review-sandwich");
   const link = page.locator("header").getByRole("link", { name: /이번 수업:.*이동/ });

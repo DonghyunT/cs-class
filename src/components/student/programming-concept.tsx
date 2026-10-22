@@ -17,7 +17,7 @@ const observations = [
 
 export type ProgrammingConceptState = { concept: number; conceptDone: number[]; conceptAnswers: Record<number, number> };
 
-export function ProgrammingConcept({ state, update, focus, next, onCheck, serverFeedback, locked = false, actionsBlocked = false }: { state: ProgrammingConceptState; update: (next: ProgrammingConceptState) => void; focus: (id: string) => void; next: () => void; onCheck?: () => void; serverFeedback?: string; locked?: boolean; actionsBlocked?: boolean }) {
+export function ProgrammingConcept({ state, update, focus, next, onCheck, serverFeedback, serverCorrect, retryConcepts = [], locked = false, actionsBlocked = false }: { state: ProgrammingConceptState; update: (next: ProgrammingConceptState) => void; focus: (id: string) => void; next: () => void; onCheck?: () => void; serverFeedback?: string; serverCorrect?: boolean; retryConcepts?: number[]; locked?: boolean; actionsBlocked?: boolean }) {
   const [language, setLanguage] = useState("block");
   const [name, setName] = useState("초코");
   const [languageGreeting, setLanguageGreeting] = useState("");
@@ -41,7 +41,7 @@ export function ProgrammingConcept({ state, update, focus, next, onCheck, server
   }
   function direction(dx: number, dy: number) { setPosition((p) => ({ x: Math.max(-3, Math.min(3, p.x + dx)), y: Math.max(-2, Math.min(2, p.y + dy)) })); }
   return <div className={`${conceptStyles.layout} ${styles.concept}`}>
-    <nav className={conceptStyles.nav} aria-label="개념 목록">{conceptOrder.map((i, position) => <button key={i} type="button" disabled={locked} aria-current={i === state.concept ? "step" : undefined} onClick={() => move(i)}><span>{state.conceptDone.includes(i) ? <Check size={16} aria-label="확인 완료" /> : `0${position + 1}`}</span><div><strong>{concepts[i].title}</strong><small>{["블록과 텍스트", "입력 → 처리 → 출력", "변수와 연산", "시작 버튼 · 방향키", "프로그래밍 · 언어 · 프로그램"][i]}</small></div></button>)}<p>직접 바꾸고, 결과를 보고,<br />한 번 더 생각해 보세요.</p></nav>
+    <nav className={conceptStyles.nav} aria-label="개념 목록">{conceptOrder.map((i, position) => <button key={i} type="button" disabled={locked} aria-current={i === state.concept ? "step" : undefined} onClick={() => move(i)}><span>{state.conceptDone.includes(i) ? <Check size={16} aria-label="확인 완료" /> : `0${position + 1}`}</span><div><strong>{concepts[i].title}</strong><small>{retryConcepts.includes(i) ? "다시 생각해 보기" : ["블록과 텍스트", "입력 → 처리 → 출력", "변수와 연산", "시작 버튼 · 방향키", "프로그래밍 · 언어 · 프로그램"][i]}</small></div></button>)}<p>직접 바꾸고, 결과를 보고,<br />한 번 더 생각해 보세요.</p></nav>
     <div className={conceptStyles.content}>
       <div className={conceptStyles.heading}><span className={conceptStyles.eyebrow}>CONCEPT {String(positionIndex + 1).padStart(2, "0")} / {String(concepts.length).padStart(2, "0")}</span><h2 id="concept-title" tabIndex={-1}>{c.title}</h2><p>{c.subtitle}</p></div>
       <p id="programming-observation" className={styles.observation}><strong>관찰 질문</strong>{observations[state.concept]}</p>
@@ -74,7 +74,7 @@ export function ProgrammingConcept({ state, update, focus, next, onCheck, server
       </div>
       <fieldset className={styles.conceptCheck} disabled={locked}><legend><span className={styles.eyebrow}>한 번만 확인해 볼까요?</span>{c.question}</legend><div className={styles.compactOptions}>{c.options.map((option, i) => <label key={option} data-selected={answer === i}><input type="radio" name={`concept-${state.concept}`} checked={answer === i} disabled={done} onChange={() => { update({ ...state, conceptAnswers: { ...state.conceptAnswers, [state.concept]: i } }); setFeedback(""); }} /><span>{option}</span></label>)}</div>
         <Button variant={done ? "outline" : "default"} disabled={actionsBlocked || done || answer === undefined} onClick={() => { if (onCheck) { onCheck(); return; } const correct = answer === c.correct; if (correct) update({ ...state, conceptDone: [...state.conceptDone, state.concept] }); setFeedback(correct ? c.explanation : "다시 실험해 보고 골라보세요. 위의 변화가 단서예요."); focus("concept-feedback"); }}>{done ? <><Check size={16} />개념 확인 완료</> : "생각 확인하기"}</Button>
-        {((onCheck ? serverFeedback : feedback) || done) && <p id="concept-feedback" tabIndex={-1} role="status" className={done ? styles.good : styles.feedback}>{(onCheck ? serverFeedback : feedback) || c.explanation}</p>}
+        {((onCheck ? serverFeedback : feedback) || done) && <p id="concept-feedback" tabIndex={-1} role="status" className={done ? styles.good : styles.feedback}>{(done || serverCorrect === false) && <strong>{done ? "맞았어요." : "다시 생각해 보기"} </strong>}{(onCheck ? serverFeedback : feedback) || c.explanation}</p>}
       </fieldset>
       <div className={styles.footer}><Button variant="ghost" disabled={locked || positionIndex === 0} onClick={() => move(conceptOrder[positionIndex - 1])}><ArrowLeft size={16} />이전 개념</Button>{positionIndex < conceptOrder.length - 1 ? <Button variant="outline" disabled={locked} onClick={() => move(conceptOrder[positionIndex + 1])}>다음 개념<ArrowRight size={16} /></Button> : <Button disabled={locked || actionsBlocked} onClick={next}>퀴즈에 도전하기<ArrowRight size={16} /></Button>}</div>
     </div>
