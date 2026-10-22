@@ -118,6 +118,12 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   await expect(guidance.getByRole("list", { name: "조립 순서", exact: true }).getByRole("listitem")).toHaveCount(mission.steps.length);
   const checkCard = guidance.getByRole("heading", { name: "만든 뒤 확인하기", exact: true });
   expect((await checkCard.boundingBox())!.y).toBeGreaterThan((await hint.boundingBox())!.y);
+  // The nested block list keeps its own "+" marker while closed, and its pills line up.
+  const blocksSummary = guidance.getByText("검증에는 이 블록만 봐요", { exact: true });
+  expect(await blocksSummary.evaluate((element) => getComputedStyle(element, "::before").content)).toBe('"＋"');
+  await blocksSummary.click();
+  expect(await blocksSummary.locator("xpath=..").locator("li").first().evaluate((element) => getComputedStyle(element).marginTop)).toBe("0px");
+  await blocksSummary.click();
   await hint.press("Enter");
   await expect(guidance.getByText(mission.hint, { exact: true })).toBeHidden();
   await page.keyboard.press("Tab");
@@ -140,6 +146,45 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     await expect(experiment).toBeVisible();
   }
+});
+
+test("펼친 조립 순서는 가장 긴 미션에서도 작업실을 240px 넘게 밀지 않고 마우스·키보드로 끝까지 읽힌다", async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
+  await resetStudent(page.request, studentId);
+  expect((await loginStudent(page.request, initialPassword, studentId)).status()).toBe(200);
+  expect((await page.request.post("/api/auth/password", { headers, data: { password: studentPassword } })).status()).toBe(200);
+  const shifts: Record<string, number> = {};
+  for (const [lesson, missionId] of [["loops", "tree"], ["conditionals", "freethrow"]] as const) {
+    await db.collection("csClasses").doc("2-1").update({ currentLessonId: lesson, openedLessonIds: [lesson] });
+    const endpoint = `/api/classroom/work/${lesson}`;
+    const work: Work = await (await page.request.get(endpoint)).json();
+    expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice", programming: { ...work.draft.programming!, mission: missionId } } } })).status()).toBe(200);
+    for (const [width, height] of [[1024, 768], [1280, 720], [1544, 712], [390, 844]]) {
+      await page.setViewportSize({ width, height });
+      await page.goto(`/classroom/${lesson}`);
+      await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+      const frameTop = () => page.locator("iframe").evaluate((element) => Math.round(element.getBoundingClientRect().top + window.scrollY));
+      const closed = await frameTop();
+      const hint = page.getByText("블록 연결 힌트 보기", { exact: true });
+      await hint.click();
+      const steps = page.getByRole("list", { name: "조립 순서", exact: true });
+      await expect(steps).toBeVisible();
+      shifts[`${missionId} ${width}`] = (await frameTop()) - closed;
+      if (width === 1024 || width === 1280) expect(shifts[`${missionId} ${width}`], `${missionId} ${width}`).toBeLessThanOrEqual(240);
+      // A capped list scrolls by wheel and, from its own tab stop, by keyboard to the last step.
+      if (await steps.evaluate((element) => element.scrollHeight > element.clientHeight + 1)) {
+        await steps.focus();
+        await page.keyboard.press("End");
+        await expect.poll(() => steps.evaluate((element) => Math.ceil(element.scrollTop + element.clientHeight) >= element.scrollHeight - 1)).toBe(true);
+        await steps.evaluate((element) => { element.scrollTop = 0; });
+        await steps.hover(); await page.mouse.wheel(0, 2000);
+        await expect.poll(() => steps.evaluate((element) => Math.ceil(element.scrollTop + element.clientHeight) >= element.scrollHeight - 1)).toBe(true);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+    }
+  }
+  await testInfo.attach("hint-open-shifts", { body: JSON.stringify(shifts), contentType: "application/json" });
+  console.log(`hint-open-shifts ${JSON.stringify(shifts)}`);
 });
 
 test("학교 기기 폭: 1024·1280 가로에서 세 엔트리 수업 작업실이 잘리지 않고 무대·팔레트·조립판(300px 이상)이 다 보인다", async ({ page }, testInfo) => {

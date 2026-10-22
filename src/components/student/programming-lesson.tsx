@@ -120,7 +120,7 @@ function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exp
     <div className={styles.practiceLayout}>
       <aside className={styles.missionBrief} aria-labelledby="programming-mission-title">
         <div className={styles.heading}><div><span>{mission.optional ? "선택 도전 · 기본 완료 조건에 포함되지 않아요" : `미션 0${position + 1}`}</span><h3 id="programming-mission-title" tabIndex={-1}>{mission.title}</h3><p>{mission.goal}</p></div></div>
-        <PracticeGuidance focused={practiceFocused} label="블록 연결 힌트·만든 뒤 확인"><details key={mission.id} className={styles.hint}><summary>블록 연결 힌트 보기</summary><p>{mission.hint}</p><ol aria-label="조립 순서">{mission.steps.map((step) => <li key={step}>{step}</li>)}</ol><details className={styles.hintBlocks}><summary>검증에는 이 블록만 봐요</summary><ul>{missionBlockLabels(mission.id).map((label) => <li key={label}>{label}</li>)}</ul></details></details>
+        <PracticeGuidance focused={practiceFocused} label="블록 연결 힌트·만든 뒤 확인"><details key={mission.id} className={styles.hint}><summary>블록 연결 힌트 보기</summary><p>{mission.hint}</p><ol aria-label="조립 순서" tabIndex={0}>{mission.steps.map((step) => <li key={step}>{step}</li>)}</ol><details className={styles.hintBlocks}><summary>검증에는 이 블록만 봐요</summary><ul>{missionBlockLabels(mission.id).map((label) => <li key={label}>{label}</li>)}</ul></details></details>
         <div className={styles.experiment}><h4><Lightbulb size={17} aria-hidden="true" />만든 뒤 확인하기</h4><p>{mission.experiment}</p></div></PracticeGuidance>
       </aside>
       <div className={styles.workArea}>
