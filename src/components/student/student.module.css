@@ -127,7 +127,7 @@
 .validationPanel{border:1px solid #e3e8ef;background:white;border-radius:20px;padding:25px;display:flex;flex-direction:column;align-items:stretch;gap:12px}
 .validationPanel h3{font-size:20px;font-weight:700;margin:4px 0 0;letter-spacing:-.4px}.validationPanel>p{font-size:14px;color:#526173;margin:0;line-height:1.8}
 .validationPanel>ul{list-style:none;margin:2px 0 7px;padding:0;font-size:13px;color:#526173}.validationPanel li{display:flex;align-items:center;gap:7px;padding:5px 0}
-.validationPanel>p.feedbackGood,.validationPanel>p.feedbackRetry{margin:0}.validationPanel>p.smallNote{font-size:14px;text-align:center;color:#526173}
+.validationPanel>p.feedbackGood,.validationPanel>p.feedbackRetry{margin:0}p.smallNote{font-size:14px;color:#526173}.validationPanel>p.smallNote{text-align:center}
 .submissionNotice{display:flex;align-items:start;gap:13px;border:1px solid #d0ddf1;border-radius:13px;background:#eef4ff;padding:18px 20px;margin-bottom:22px;color:#2e5fab;font-size:14px}
 .submissionNotice>svg{flex-shrink:0;margin-top:2px}.submissionNotice strong{font-weight:650}.submissionNotice p{margin:3px 0 7px;color:#465f82}.submissionNotice summary{cursor:pointer;font-size:13px;font-weight:600;padding:5px 0}.submissionNotice ol{padding-left:20px;margin:8px 0}.submissionNotice li{padding:3px 0}
 .errorPanel{background:#fff4ef;border:1px solid #e8c8b6;border-radius:15px;padding:20px;margin:0 0 22px;color:#7b412d;font-size:14px}.errorPanel strong{font-size:16px;font-weight:700}.errorPanel p{margin:7px 0 12px}

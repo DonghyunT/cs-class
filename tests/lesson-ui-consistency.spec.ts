@@ -89,6 +89,8 @@ test("공개 6수업의 개념 확인·퀴즈 오답은 힌트와 다른 문구�
     await expect(page.getByRole("navigation", { name: "개념 목록", exact: true }).getByRole("button", { name: new RegExp(concept.title.replace(/[?()]/g, "\\$&")) })).toContainText("다시 생각해 보기");
     await expect(page.getByRole("button", { name: "정답 확인", exact: true })).toBeVisible();
     await expect(page.getByText("확인 결과는 저장 버튼 없이 바로 저장돼요.", { exact: true })).toBeVisible();
+    // The save notice is a small helper line, like the other smallNote text.
+    expect(await page.getByText("확인 결과는 저장 버튼 없이 바로 저장돼요.", { exact: true }).evaluate((note) => getComputedStyle(note).fontSize), lesson.id).toBe("14px");
     const list = page.getByRole("navigation", { name: "개념 목록", exact: true });
     // Only lessons with a hands-on concept experience invite students to change things.
     if (lesson.id === "conditionals" || lesson.id === "loops") { await expect(list).toContainText("예시를 읽고 결과를 예상한 뒤"); await expect(list).not.toContainText("직접 바꾸고"); }
