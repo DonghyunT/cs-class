@@ -138,7 +138,8 @@ test.describe("정식 수업 programming-13", () => {
     await page.locator("iframe").scrollIntoViewIfNeeded();
     await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
     const reason = page.locator('[aria-label="서로 다른 이름 확인"] + p');
-    await expect(reason).toContainText("‘( )을(를) 말하기’ 대신 ‘( )을(를) ( )초 동안 말하기’");
+    // Before the first run the usual first notice shows; the reason appears once a run is not counted.
+    await expect(reason).toHaveText("저장된 작품은 유지돼요. 이 화면에서 서로 다른 이름으로 두 번 실행해 주세요.");
     await entryStart(page).click();
     const input = page.frameLocator("iframe").getByLabel("강아지 이름 대답");
     await input.fill("초코"); await input.press("Enter");
@@ -146,6 +147,19 @@ test.describe("정식 수업 programming-13", () => {
     await expect(page.getByRole("status", { name: "서로 다른 이름 확인", exact: true })).toHaveText("서로 다른 이름 확인 0/2");
     await expect(reason).toContainText("‘( )을(를) 말하기’ 대신 ‘( )을(를) ( )초 동안 말하기’");
     await expect(reason).not.toContainText("작품 내용이 바뀌어");
+  });
+
+  test("시작 블록만 있는 처음 작품은 실행 전에 구조 오류처럼 읽히는 문장을 보이지 않는다", async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto(`/classroom/${id}?from=dashboard`);
+    await page.getByRole("tab", { name: /실습/ }).click();
+    await page.locator("iframe").scrollIntoViewIfNeeded();
+    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+    const reason = page.locator('[aria-label="서로 다른 이름 확인"] + p');
+    await expect(reason).toHaveText("서로 다른 이름으로 두 번 실행해 주세요. 질문에 답하고 말하기가 끝날 때까지 기다려요.");
+    await entryStart(page).click();
+    await expect(page.getByRole("status").filter({ hasText: "시작 신호가 준비됐어요." })).toBeVisible({ timeout: 10000 });
+    await expect(reason).toContainText("지금 블록 연결로는 실행 확인을 세지 않아요.");
   });
 
   test("작품 export 실패는 단계·미션 이동과 수업 나가기를 막고 작업실 입력을 유지한다", async ({ page }) => {

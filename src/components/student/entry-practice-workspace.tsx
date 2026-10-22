@@ -58,6 +58,8 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   const [recordedRuns, setRecordedRuns] = useState<NameRun[]>([]);
   const [runNotice, setRunNotice] = useState(work.updatedAt ? `${mode === "preview" ? "체험 작품" : "저장된 작품"}은 유지돼요. 이 화면에서 서로 다른 이름으로 두 번 실행해 주세요.` : "서로 다른 이름으로 두 번 실행해 주세요. 질문에 답하고 말하기가 끝날 때까지 기다려요.");
   const currentRun = useRef<{ id: string; key: string } | null>(null);
+  // Structure reasons wait until the student runs this work, so a fresh starter keeps its first notice.
+  const [triedRun, setTriedRun] = useState(false);
   const startOnly = useRef(false);
   const [picking, setPicking] = useState(false);
   // Dog-free lessons pick from the Entry library and warn, without undoing, when work leaves the mission's intent.
@@ -133,7 +135,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       else if (message.type === "changed" && typeof message.project === "string" && !locked) {
         const next = parse(message.project);
         if (mission && parseProgrammingProject(message.project)?.gradeKey !== parseProgrammingProject(draft.entryProject)?.gradeKey) {
-          runs.current = []; setRecordedRuns([]); setLocalFeedback("");
+          runs.current = []; setRecordedRuns([]); setLocalFeedback(""); setTriedRun(false);
           setRunNotice("작품 내용이 바뀌어 실행 확인을 다시 시작해요.");
         }
         editorProject.current = message.project;
@@ -157,6 +159,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       } else if (mission && message.type === "name-start") {
         const p = parseProgrammingProject(message.project);
         currentRun.current = p && typeof message.id === "string" ? { id: message.id, key: p.gradeKey } : null;
+        setTriedRun(true);
       } else if (mission && message.type === "name-run" && currentRun.current && currentRun.current.id === message.run?.id) {
         const steps = message.run.steps;
         if (Array.isArray(steps) && steps.length <= 96 && steps.every((s) => s && ["ask", "answer", "say"].includes(s.kind) && typeof s.value === "string" && s.value.length <= 500)) {
@@ -254,7 +257,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   }
 
   function retry() {
-    runs.current = []; setRecordedRuns([]); currentRun.current = null;
+    runs.current = []; setRecordedRuns([]); currentRun.current = null; setTriedRun(false);
     setRunNotice(`${mode === "preview" ? "체험 작품" : "저장된 작품"}은 유지돼요. 이 화면에서 서로 다른 이름으로 두 번 실행해 주세요.`);
     editorProject.current = null; setBootReady(false); setPhase("loading"); setError(""); setRunning(false); setAttempt((value) => value + 1);
   }
@@ -316,7 +319,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       <div className={styles.actions}>
         {nameCheck && <div className={styles.nameProgress}>
           <p role="status" aria-label="서로 다른 이름 확인">서로 다른 이름 확인 {nameDone ? "완료" : `${nameCheck.validNames}/2`}</p>
-          <p>{nameDone ? "이 작품은 두 이름으로 확인하고 검증을 통과했어요. 블록을 바꾸면 두 번 실행을 다시 확인해요." : nameCheck.issue === "structure" || nameCheck.issue === "project" ? `지금 블록 연결로는 실행 확인을 세지 않아요. ${missionBlockIssue(mission!.id, draft.entryProject ?? "") ?? nameCheck.message}` : nameCheck.validNames === 0 ? runNotice : nameCheck.validNames === 1 ? "서로 다른 이름으로 한 번 더 실행해 주세요. 같은 이름은 한 번만 세요." : "현재 작품으로 두 이름을 확인했어요. 조건을 검증하고 작품을 제출해 주세요."}</p>
+          <p>{nameDone ? "이 작품은 두 이름으로 확인하고 검증을 통과했어요. 블록을 바꾸면 두 번 실행을 다시 확인해요." : triedRun && (nameCheck.issue === "structure" || nameCheck.issue === "project") ? `지금 블록 연결로는 실행 확인을 세지 않아요. ${missionBlockIssue(mission!.id, draft.entryProject ?? "") ?? nameCheck.message}` : nameCheck.validNames === 0 ? runNotice : nameCheck.validNames === 1 ? "서로 다른 이름으로 한 번 더 실행해 주세요. 같은 이름은 한 번만 세요." : "현재 작품으로 두 이름을 확인했어요. 조건을 검증하고 작품을 제출해 주세요."}</p>
         </div>}
         <Button variant={validation?.passed && !submitted ? "outline" : "default"} disabled={locked || actionsBlocked || preparing || running || phase !== "ready" || !program} onClick={() => void act({ type: "validate-practice" }, "practice-feedback")}>{busy || preparing ? "확인 중…" : "조건 검증"}</Button>
         {localFeedback && <p id="entry-local-feedback" ref={localFeedbackRef} tabIndex={-1} role="status" className={common.feedbackRetry}>{localFeedback}</p>}
