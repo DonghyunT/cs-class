@@ -4,9 +4,9 @@ import { LEGACY_INPUTS } from "./entry-legacy-inputs";
 import legacyKeys from "./fixtures/entry-legacy-keys.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { readEntryDraft } from "../src/components/student/read-editor-draft";
-import { BLOCK_LABELS, ENTRY_PALETTE, MISSION_BLOCKS, blockLabel } from "../src/lib/classroom/entry-palette";
-import { PROGRAMMING_MISSIONS, buildProgrammingProject, entryBlockCategory, entryObjectModel, formatEntryNode, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
-import { checkProgrammingMission } from "../src/lib/server/programming-grader";
+import { CONTAINER_BLOCKS, ENTRY_PALETTE, MISSION_BLOCKS, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
+import { PROGRAMMING_MISSIONS, buildProgrammingProject, entryBlockCategory, entryObjectModel, formatEntryNode, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { checkProgrammingMission, wordingMessage } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
 import { LOOPS_LESSON } from "../src/lib/classroom/loops-lesson";
@@ -114,7 +114,9 @@ test("채점 줄의 미션 밖 블록은 이름으로 안내하고 떨어진 블
   expect(checkProgrammingMission("multiply", project([sameTwice])).passed).toBe(false);
   const loose = project([multiply(), [node("wait_second", number("2"), null)], [node("when_object_click", null), node("move_x", number("10"), null)], [node("calc_rand", null, number("0"), null, number("10"), null)]]);
   expect(checkProgrammingMission("multiply", loose).passed).toBe(true);
-  expect(checkProgrammingMission("multiply", project([multiply([node("wait_second", number("2"), null)])]))).toEqual({ passed: false, message: "이번 미션은 기본 블록으로 확인해요. ‘( )초 기다리기’ 블록을 빼고 다시 검증해 주세요." });
+  // Waits are harmless in every mission now; a block that changes the run is still named.
+  expect(checkProgrammingMission("multiply", project([multiply([node("wait_second", number("2"), null)])])).passed).toBe(true);
+  expect(checkProgrammingMission("multiply", project([multiply([node("bounce_wall", null)])]))).toEqual({ passed: false, message: "이번 미션은 기본 블록으로 확인해요. ‘화면 끝에 닿으면 튕기기’ 블록을 빼고 다시 검증해 주세요." });
   expect(checkProgrammingMission("move", project([[start(), repeat("2", [node("move_direction", number("5"), null)])]])).message).toContain("‘( )번 반복하기’");
   expect(checkProgrammingMission("name", project([[start(), node("dialog_time", node("calc_rand", null, number("0"), null, number("10"), null), number("1"), "speak", null)]])).message).toContain("‘( )부터 ( ) 사이의 무작위 수’");
   const otherKey = project([[start(), node("direction_absolute", node("angle", "90"), null), node("move_direction", number("10"), null)], [node("when_some_key_pressed", null, "81"), node("wait_second", number("1"), null)]]);
@@ -244,21 +246,58 @@ test("이름 실행 기록용 채점 키는 다른 오브젝트를 옮겨도 그
 });
 
 test("비슷한 블록과 다른 오브젝트에 만든 시작 줄을 구체적으로 안내한다", () => {
-  expect(missionBlockIssue("name", project([[start(), node("ask_and_wait", node("text", "?"), null), node("dialog", node("text", "안녕"), "speak", null)]]))).toBe("이번 미션은 ‘( )을(를) 말하기’ 대신 ‘( )을(를) ( )초 동안 말하기’ 블록으로 확인해요. 바꿔서 다시 검증해 주세요.");
-  expect(missionBlockIssue("move", project([[start(), node("move_x", number("10"), null)]]))).toContain("대신 ‘이동 방향으로 ( )만큼 움직이기’");
+  // Plain ‘말하기’ and ‘x 좌표를 바꾸기’ are graded now; absolute position and the object's rotation are not the same.
+  expect(missionBlockIssue("name", project([[start(), node("ask_and_wait", node("text", "?"), null), node("dialog", node("text", "안녕"), "speak", null)]]))).toBeNull();
+  expect(missionBlockIssue("move", project([[start(), node("move_x", number("10"), null)]]))).toBeNull();
+  expect(missionBlockIssue("move", project([[start(), node("locate_x", number("10"), null)]]))).toBe("이번 미션은 ‘x: ( ) 위치로 이동하기’ 대신 ‘x 좌표를 ( )만큼 바꾸기’ 블록으로 확인해요. 바꿔서 다시 검증해 주세요.");
+  expect(missionBlockIssue("keys", project([[node("when_some_key_pressed", null, "38"), node("rotate_absolute", node("angle", "0"), null), node("move_direction", number("10"), null)]]))).toContain("대신 ‘이동 방향을 ( )(으)로 정하기’");
   const wrongObject = withObjects([[]], [ball([[start(), node("move_direction", number("10"), null)]], { name: "축구공" })]);
   expect(checkProgrammingMission("move", wrongObject).message).toBe("강아지가 아니라 ‘축구공’에 시작하기 줄이 있어요. 오브젝트 목록에서 강아지를 고른 뒤 코드를 만들어 주세요.");
 });
 
-test("힌트·조립 순서가 ‘ ’로 인용한 블록 이름은 그 미션의 검증 블록이고, 이름 미션 힌트는 ‘( )초 동안 말하기’를 말한다", () => {
-  expect(missionById("name")!.hint).toContain(`‘${blockLabel("dialog_time")}’`);
+// Words each chip must keep so students can find that one block on the palette (and not its look-alike).
+const CHIP_WORDS: Record<string, RegExp> = {
+  when_run_button_click: /^시작하기 버튼을 클릭했을 때$/, when_some_key_pressed: /^.+ 키를 눌렀을 때$/, mouse_clicked: /^마우스를 클릭했을 때$/, ask_and_wait: /^.+[을를] 묻고 대답 기다리기$/,
+  dialog: /^.+[을를] 말하기$/, set_variable: /^[AB]를 .+로 정하기$/, change_variable: /^.+에 \d+만큼 더하기$/, calc_basic: / [+\-x/] /, boolean_basic_operator: /^.+ (=|!=|>|<|≥|≤) .+$/,
+  boolean_and_or: /^참 (그리고|또는) /, if_else: /^만일 .+라면 아니면$/, _if: /^만일 .+라면$/, repeat_basic: /^.+번 반복하기$/, repeat_while_true: /될 때까지 반복하기$/,
+  move_direction: /^\d+만큼 움직이기$/, direction_relative: /^.+° 회전하기$/, direction_absolute: /^이동 방향을 \d+°로 정하기$/,
+  start_drawing: /^그리기 시작하기$/, stop_drawing: /^그리기 멈추기$/, locate_xy: /^x: -?\d+ y: -?\d+ 위치로 이동하기$/, change_to_next_shape: /^다음 모양으로 바꾸기$/,
+};
+const missionText = (id: string) => { const m = missionById(id)!; return [m.hint, ...m.steps, m.tip ?? ""]; };
+
+test("힌트 칩은 그 미션이 받는 블록이고 팔레트의 고정 낱말을 지키며, 힌트는 짧고 칩 표기가 새지 않는다", () => {
   for (const mission of PROGRAMMING_MISSIONS) {
-    expect(mission.steps.length, mission.id).toBeGreaterThanOrEqual(3);
-    for (const [, quoted] of [mission.hint, ...mission.steps].join(" ").matchAll(/‘([^’]+)’/g)) {
-      const types = Object.keys(BLOCK_LABELS).filter((type) => BLOCK_LABELS[type] === quoted);
-      if (types.length) expect(types.some((type) => MISSION_BLOCKS[mission.id]?.has(type)), `${mission.id}: ${quoted}`).toBe(true);
+    const texts = missionText(mission.id);
+    const chips = texts.flatMap(hintParts).filter((part) => typeof part !== "string");
+    expect(chips.length, mission.id).toBeGreaterThan(0);
+    for (const { type, text } of chips) {
+      expect(MISSION_BLOCKS[mission.id].has(type), `${mission.id}: ${type} ${text}`).toBe(true);
+      expect(CHIP_WORDS[type], `${type}: add the words its chip must keep`).toBeTruthy();
+      expect(text, `${mission.id}: ${type}`).toMatch(CHIP_WORDS[type]);
     }
+    // No broken chip, template slot or duplicated palette note reaches the screen.
+    for (const plain of texts.map(hintPlain)) expect(plain, mission.id).not.toMatch(/`|\( \)|팔레트에서는/);
+    // One summary line, at most five one-line steps and one short 💡 line (1,024px: one line; 222px column: four lines).
+    expect(mission.steps.length, mission.id).toBeGreaterThanOrEqual(2);
+    expect(mission.steps.length, mission.id).toBeLessThanOrEqual(5);
+    expect(hintPlain(mission.hint).length, mission.id).toBeLessThanOrEqual(45);
+    for (const step of mission.steps) expect(hintPlain(step).length, `${mission.id}: ${step}`).toBeLessThanOrEqual(45);
+    expect(hintPlain(mission.tip ?? "").length, mission.id).toBeLessThanOrEqual(40);
+    // The grader's failure text is plain: hint chips never leak into validation feedback.
+    expect(mission.failure, mission.id).not.toMatch(/`/);
   }
+  // The palette shows ‘x’ for multiply, so the hint does too; plain ‘말하기’ counts for the name mission now.
+  expect(hintPlain(missionById("multiply")!.steps.join(" "))).toContain("A 값 x B 값");
+  expect(hintParts(missionById("name")!.steps.join(" "))).toContainEqual({ type: "dialog", text: "대답을 말하기" });
+  expect(hintParts("a `dialog: 안녕을 말하기` b")).toEqual(["a ", { type: "dialog", text: "안녕을 말하기" }, " b"]);
+  expect(hintPlain("a `dialog: 안녕을 말하기` b")).toBe("a 안녕을 말하기 b");
+});
+
+test("미션 블록 목록은 팔레트 순서·표기로 보이고 표기가 빠진 블록이 없다", () => {
+  for (const id of Object.keys(MISSION_BLOCKS)) for (const type of missionBlockTypes(id)) expect(PALETTE_TEXT[type], `${id}: ${type}`).toBeTruthy();
+  expect(missionBlockTypes("multiply").slice(0, 2)).toEqual(["when_run_button_click", "dialog_time"]);
+  expect(Object.keys(PALETTE_TEXT).every((type) => PALETTE_BLOCKS.has(type))).toBe(true);
+  expect(blockLabel("combine_something")).toBe("( )과(와) ( )을(를) 합친 값");
 });
 
 test("저장할 때 다른 미션에 남은 엔트리 원문도 정규화해 서버 한도 안으로 보낸다", async () => {
@@ -297,11 +336,14 @@ test("선택 구조 미션은 실제 내보내기 모양의 조건문을 실행�
   expect(checkProgrammingMission("freethrow", exported([freeThrow("9")])).passed).toBe(false);
 });
 
-test("방탈출은 A·B에 저장한 값을 ‘또는’으로 판단해야 통과한다", () => {
+test("방탈출은 A·B에 저장한 값을 논리 블록으로 바르게 판단해야 통과한다", () => {
   const or = node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B"));
   expect(checkProgrammingMission("escape", exported([escapeProgram(or)])).passed).toBe(true);
   expect(checkProgrammingMission("escape", exported([escapeProgram(node("boolean_and_or", solved("cs-A"), "AND", solved("cs-B")))])).passed).toBe(false);
-  // Nested conditions give the right words but skip the ‘또는’ the mission practices.
+  // The same meaning with ‘그리고’·‘아니다’ also passes: not (A = 0 and B = 0).
+  const none = node("boolean_and_or", compare(node("get_variable", "cs-A"), "EQUAL", number("0")), "AND", compare(node("get_variable", "cs-B"), "EQUAL", number("0")));
+  expect(checkProgrammingMission("escape", exported([escapeProgram(node("boolean_not", null, none, null))])).passed).toBe(true);
+  // Nested conditions give the right words but skip the logic block the mission practices.
   const nested = [...escapeProgram(solved("cs-A")).slice(0, 5), ifElse(solved("cs-A"), [speak("탈출 성공!")], [ifElse(solved("cs-B"), [speak("탈출 성공!")], [speak("탈출 실패")])])];
   expect(checkProgrammingMission("escape", exported([nested])).passed).toBe(false);
   // A ‘또는’ that never looks at A·B does not count.
@@ -488,7 +530,7 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
   const store = (id: string) => [ask(), node("set_variable", `cs-${id}`, answer(), null)];
   const calc = (left: EntryNode, op: string, right: EntryNode) => node("calc_basic", left, op, right);
   const solutions: [string, string][] = [
-    ["name", project([[start(), node("ask_and_wait", text("이름이 뭐니?"), null), sayTimed(answer())]])],
+    ["name", project([[start(), node("ask_and_wait", text("이름이 뭐니?"), null), speak2(answer())]])],
     ["multiply", project([[start(), ...store("A"), ...store("B"), sayTimed(calc(variable("A"), "MULTI", variable("B")))]])],
     ["move", project([[start(), node("direction_absolute", node("angle", "90"), null), forward(number("10"))]])],
     ["keys", project([["38", "0"], ["39", "90"], ["40", "180"], ["37", "270"]].map(([key, angle]) => [node("when_some_key_pressed", null, key), node("direction_absolute", node("angle", angle), null), forward(number("10"))]))],
@@ -504,17 +546,260 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
   ];
   expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(PROGRAMMING_MISSIONS.map((mission) => mission.id)));
   // The steps name the values and slots these solutions use.
-  expect(missionById("polygon")!.steps[2]).toContain("70을 넣어요");
+  expect(hintPlain(missionById("polygon")!.steps[1])).toContain("70만큼 움직이기");
   // After drawing, the pen lifts and Entrybot steps aside so it does not hide the shape.
-  expect(missionById("polygon")!.steps.join(" ")).toContain("‘그리기 멈추기’");
-  expect(missionById("polygon")!.steps.join(" ")).toContain("x -150, y 0");
+  expect(hintPlain(missionById("polygon")!.steps.join(" "))).toContain("그리기 멈추기");
+  expect(hintPlain(missionById("polygon")!.steps.join(" "))).toContain("x: -150 y: 0");
+  // Following the steps gives the solution: each block it uses is a hint chip, or (for asking, saying,
+  // answers and variable values written in plain words) named by its word. Alternatives (the second square) are skipped.
+  const MENTION: Record<string, string> = { ask_and_wait: "묻", dialog: "말하기", dialog_time: "말하기", get_canvas_input_value: "대답", get_variable: " 값" };
+  const typesIn = (raw: string) => { const out = new Set<string>(); const walk = (v: unknown): void => { if (typeof v === "string" && v.startsWith("[")) { try { walk(JSON.parse(v)); } catch { /* plain text */ } } else if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") { const t = (v as { type?: unknown }).type; if (typeof t === "string" && PALETTE_BLOCKS.has(t)) out.add(t); Object.values(v).forEach(walk); } }; walk(JSON.parse(raw)); return out; };
+  // Values each solution uses, as the hint writes them (palette symbols; Entry key codes 37–40 as key names).
+  const SYMBOL: Record<string, string> = { GREATER_OR_EQUAL: "≥", EQUAL: "=", MULTI: "x", DIVIDE: "/", PLUS: "+" }, KEY: Record<string, string> = { 37: "왼쪽", 38: "위쪽", 39: "오른쪽", 40: "아래쪽" };
+  const VARIABLE: Record<string, string> = { "cs-A": "A", "cs-B": "B", "cs-clicks": "클릭 수" };
+  // The tree's later thresholds are written in words instead of four more chips.
+  const VALUE_IN_WORDS: Record<string, RegExp> = { "tree 클릭 수 값 = 10": /5를 10으로/, ...Object.fromEntries(["15", "20", "25"].map((n) => [`tree 클릭 수 값 = ${n}`, /15·20·25도/])) };
+  const LOGIC: Record<string, string> = { AND: "그리고", OR: "또는" };
+  const valuesIn = (raw: string) => {
+    const out: string[] = [], lit = (v: unknown) => { const n = v as EntryNode | null; return n && typeof n === "object" && ["number", "angle", "text"].includes(n.type) ? String(n.params[0]) : undefined; };
+    const symbol = (op: unknown) => { expect(SYMBOL[op as string], `operator ${op}`).toBeTruthy(); return SYMBOL[op as string]; };
+    // An operand as the chip writes it: ‘대답’, ‘A 값’, or a nested calculation in brackets.
+    const term = (v: unknown): string => { const n = v as EntryNode; return lit(n) ?? (n.type === "get_canvas_input_value" ? "대답" : n.type === "get_variable" ? `${VARIABLE[n.params[0] as string]} 값` : `(${term(n.params[0])} ${symbol(n.params[1])} ${term(n.params[2])})`); };
+    const walk = (v: unknown): void => {
+      if (typeof v === "string" && v.startsWith("[")) { try { walk(JSON.parse(v)); } catch { /* plain text */ } return; }
+      if (Array.isArray(v)) return v.forEach(walk);
+      if (!v || typeof v !== "object") return;
+      const { type, params = [] } = v as EntryNode, [p0, p1, p2] = params;
+      if (type === "repeat_basic" && lit(p0)) out.push(`${lit(p0)}번`);
+      const amount = lit(type === "move_direction" ? p0 : type === "change_variable" ? p1 : undefined);
+      if (amount) out.push(`${amount}만큼`);
+      if ((type === "direction_relative" || type === "direction_absolute") && lit(p0)) out.push(`${lit(p0)}°`);
+      if (type === "locate_xy") out.push(`x: ${lit(p0)} y: ${lit(p1)}`);
+      // The stored value (‘A를 대답으로’, not a constant) and the logic word (‘또는’, not ‘그리고’).
+      if (type === "set_variable") out.push(`${VARIABLE[p0 as string]}를 ${term(p1)}`);
+      if (type === "boolean_and_or") { expect(LOGIC[p1 as string], `logic ${p1}`).toBeTruthy(); out.push(`참 ${LOGIC[p1 as string]}`); }
+      // A said text appears as its chip, ‘합격을 말하기’ (을 after a final consonant, else 를).
+      if ((type === "dialog" || type === "dialog_time") && (p0 as EntryNode | null)?.type === "text") { const said = lit(p0)!, last = [...said].reverse().find((c) => c >= "가" && c <= "힣")!; out.push(`${said}${(last.charCodeAt(0) - 0xac00) % 28 ? "을" : "를"} 말하기`); }
+      if (type === "when_some_key_pressed") out.push(KEY[p1 as string]);
+      if (type === "boolean_basic_operator" || type === "calc_basic") out.push(`${term(p0)} ${symbol(p1)} ${term(p2)}`);
+      Object.values(v).forEach(walk);
+    };
+    walk(JSON.parse(raw)); return out;
+  };
+  for (const [id, raw] of solutions.filter(([id], i) => solutions.findIndex(([other]) => other === id) === i)) {
+    const texts = missionText(id), chipTypes = new Set(texts.flatMap(hintParts).flatMap((part) => typeof part === "string" ? [] : [part.type])), plain = texts.map(hintPlain).join(" ");
+    // The start block is a chip too unless the starter already places it (lesson 1 students never dragged it in).
+    for (const type of typesIn(raw)) if (type !== "when_run_button_click" || !missionStarter(id).includes(type)) expect(chipTypes.has(type) || (MENTION[type] !== undefined && plain.includes(MENTION[type])), `${id}: ${type}`).toBe(true);
+    // ...and with the solution's values: a right block with a wrong threshold, count or symbol still misleads.
+    const pattern = (value: string) => VALUE_IN_WORDS[`${id} ${value}`] ?? new RegExp(`${/^[\d가-힣-]/.test(value) ? "(?<![\\d\\-가-힣])" : ""}${value.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}`);
+    for (const value of valuesIn(raw)) expect(pattern(value).test(plain), `${id}: ${value}`).toBe(true);
+    // ...in the solution's order within the steps, so a swapped threshold, branch or key angle fails too (the tree's word-form list is skipped).
+    const steps = missionById(id)!.steps.map(hintPlain).join(" "), at = [...new Set(valuesIn(raw))].filter((value) => !VALUE_IN_WORDS[`${id} ${value}`]).map((value) => [value, steps.search(pattern(value))] as const).filter(([, i]) => i >= 0);
+    at.forEach(([value, i], k) => expect(i, `${id}: ${value} comes after ${at[k - 1]?.[0]}`).toBeGreaterThanOrEqual(at[k - 1]?.[1] ?? 0));
+    // ...and each block's first chip follows the solution's block order, so swapped steps fail too. Nesting words (안에·아래(바깥)) are not checked.
+    const chipOrder = missionById(id)!.steps.flatMap(hintParts).flatMap((part) => typeof part === "string" ? [] : [part.type]), firsts = [...typesIn(raw)].map((type) => [type, chipOrder.indexOf(type)] as const).filter(([, i]) => i >= 0);
+    firsts.forEach(([type, i], k) => expect(i, `${id}: ${type} chip comes after ${firsts[k - 1]?.[0]}`).toBeGreaterThanOrEqual(firsts[k - 1]?.[1] ?? 0));
+  }
   // From (0, 0) facing right and turning clockwise, side 70 keeps triangles to hexagons inside the 480×270 stage.
   for (const sides of [3, 5, 6]) {
     let x = 0, y = 0, heading = 90;
     for (let i = 0; i < sides; i++) { x += 70 * Math.sin(heading * Math.PI / 180); y += 70 * Math.cos(heading * Math.PI / 180); heading += 360 / sides; expect(y, `${sides}`).toBeGreaterThanOrEqual(-135); expect(Math.abs(x), `${sides}`).toBeLessThanOrEqual(240); }
   }
-  expect(missionById("multiply")!.steps[3]).toContain("첫 칸에");
-  expect(missionById("average")!.steps[4]).toContain("첫 칸에");
+  expect(missionById("multiply")!.steps[2]).toContain("말하기 안에");
+  expect(missionById("average")!.steps[2]).toContain("말하기 안에");
   for (const [id, raw] of solutions) expect(checkProgrammingMission(id, raw), id).toEqual({ passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." });
 });
 const speak2 = (value: EntryNode) => node("dialog", value, "speak", null);
+// Grading follows what the student sees: same-meaning blocks, harmless extras, the result's key word.
+const OK = { passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." };
+const THINKING = "말풍선이 ‘생각하기’로 되어 있어요. 말하기 블록에서 ‘생각하기’를 ‘말하기’로 바꿔 주세요.";
+const say = (value: EntryNode, mode = "speak") => node("dialog", value, mode, null);
+const sayFor = (value: EntryNode, mode = "speak") => node("dialog_time", value, number("1"), mode, null);
+const v = (id: string) => node("get_variable", `cs-${id}`);
+const setTo = (id: string, value: EntryNode) => node("set_variable", `cs-${id}`, value, null);
+const store = (id: string) => [ask(), setTo(id, answer())];
+const calc = (left: EntryNode, op: string, right: EntryNode) => node("calc_basic", left, op, right);
+const join = (left: EntryNode, right: EntryNode) => node("combine_something", null, left, null, right, null);
+const wait = () => node("wait_second", number("1"), null);
+const both = [start(), ...store("A"), ...store("B")];
+const scored = (yes: EntryNode[], no: EntryNode[], condition = compare(answer(), "GREATER_OR_EQUAL", number("60"))) => [start(), ask(), ifElse(condition, yes, no)];
+const throwsOf = (top: string, middle: string, low: string) => [start(), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("8")), [speak(top)], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak(middle)], [speak(low)])])];
+const escapeSays = (condition: EntryNode, yes: string, no: string) => [...both, ifElse(condition, [speak(yes)], [speak(no)])];
+const drawn = (inner: EntryNode[], count = "4") => [start(), node("start_drawing", null), loopOf(number(count), inner)];
+const right90 = () => turn(node("angle", "90"));
+const opened = (line = "금고가 열렸어요!") => speak(line);
+const tries = (inner: EntryNode[] = []) => ({ ...node("repeat_while_true", compare(answer(), "EQUAL", number("1234")), "until", null), statements: [[node("ask_and_wait", text("비밀번호는?"), null), ...inner]] });
+const arrows = (move: (dx: number, dy: number) => EntryNode) => [["38", 0, 10], ["39", 10, 0], ["40", 0, -10], ["37", -10, 0]].map(([key, dx, dy]) => [node("when_some_key_pressed", null, String(key)), move(Number(dx), Number(dy))]);
+const xOrY = (dx: number, dy: number) => dx ? node("move_x", number(String(dx)), null) : node("move_y", number(String(dy)), null);
+const facing = (dx: number, dy: number) => [node("direction_absolute", node("angle", String(dx ? (dx > 0 ? 90 : -90) : dy > 0 ? 0 : 180)), null), forward(number("10"))];
+const arrowLines = (body: (dx: number, dy: number) => EntryNode[]) => [["38", 0, 10], ["39", 10, 0], ["40", 0, -10], ["37", -10, 0]].map(([key, dx, dy]) => [node("when_some_key_pressed", null, String(key)), ...body(Number(dx), Number(dy))]);
+const hintOf = (id: string) => missionById(id)!.failure;
+const when = (condition: EntryNode, inner: EntryNode[]): EntryNode => ({ ...node("_if", condition, null), statements: [inner] });
+const SAFE_STOP = "1234를 맞힌 뒤에도 또 물어요. 맞히면 반복이 멈추도록 ‘반복 중단하기’나 반복 조건을 확인해 주세요.";
+const noneSolved = node("boolean_and_or", compare(v("A"), "EQUAL", number("0")), "AND", compare(v("B"), "EQUAL", number("0")));
+
+const MUST_PASS: [string, string, EntryNode[][]][] = [
+  ["name", "일반 말하기", [[start(), ask(), say(answer())]]],
+  ["name", "인사 뒤 질문, 이름과 인사말 합치기", [[start(), sayFor(text("안녕!")), ask(), say(join(answer(), text("야 반가워")))]]],
+  ["name", "이름 뒤 마무리 말", [[start(), ask(), sayFor(answer()), say(text("좋은 이름이야"))]]],
+  ["name", "기다리기·말풍선 지우기", [[start(), ask(), wait(), say(answer()), wait(), node("remove_dialog", null)]]],
+  ["multiply", "일반 말하기", [[...both, say(calc(v("A"), "MULTI", v("B")))]]],
+  ["multiply", "곱 뒤 마무리 말", [[...both, sayFor(calc(v("A"), "MULTI", v("B"))), say(text("끝"))]]],
+  ["multiply", "곱을 A에 저장해 말하기", [[...both, setTo("A", calc(v("A"), "MULTI", v("B"))), say(v("A"))]]],
+  ["multiply", "‘+’로 글자와 곱 잇기", [[...both, say(calc(text("곱은 "), "PLUS", calc(v("A"), "MULTI", v("B"))))]]],
+  ["average", "‘+’로 글자와 평균 잇기", [[...both, say(calc(text("평균은 "), "PLUS", calc(calc(v("A"), "PLUS", v("B")), "DIVIDE", number("2"))))]]],
+  ["average", "평균을 A에 저장해 말하기, 기다리기", [[...both, setTo("A", calc(calc(v("A"), "PLUS", v("B")), "DIVIDE", number("2"))), wait(), say(v("A"))]]],
+  ["pass", "합격이에요!·불합격이에요", [scored([speak("합격이에요!")], [speak("불합격이에요")])]],
+  ["pass", "이모지·인사·마무리 말", [[start(), speak("점수를 알려 줘"), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [speak("축하해요, 합격! 🎉")], [speak("아쉽지만 불합격 😢")]), speak("수고했어")]]],
+  ["pass", "대답을 A에 저장해 비교", [[start(), ask(), setTo("A", answer()), ifElse(compare(v("A"), "GREATER_OR_EQUAL", number("60")), [speak("합격")], [speak("불합격")])]]],
+  ["freethrow", "더 연습하자!·이모지·느낌표 없음", [throwsOf("훌륭해요!👍", "잘했어요", "더 연습하자!")]],
+  ["escape", "탈출에 성공했어!·탈출에 실패했어", [escapeSays(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")), "탈출에 성공했어!", "탈출에 실패했어")]],
+  ["escape", "(A = 0 그리고 B = 0)이면 실패", [escapeSays(noneSolved, "탈출 실패", "탈출 성공!")]],
+  ["square", "변을 50씩 나누어 그리기", [drawn([forward(number("50")), forward(number("50")), right90()])]],
+  ["square", "한 바퀴 더 돌기", [drawn([forward(number("100")), right90()], "5")]],
+  ["square", "( )초 동안 회전하기 두 가지", [drawn([forward(number("100")), node("rotate_by_time", number("1"), node("angle", "45"), null), node("direction_relative_duration", number("1"), node("angle", "45"), null)])]],
+  ["square", "붓 꾸미기와 도장, 인사, ( )초 동안 회전하기", [[start(), speak("정사각형을 그릴게"), node("start_drawing", null), node("set_random_color", null), node("change_thickness", number("2"), null), loopOf(number("4"), [forward(number("100")), node("brush_stamp", null), node("rotate_by_time", number("1"), node("angle", "90"), null)])]]],
+  ["polygon", "변의 수를 A에 저장", [[start(), ask(), setTo("A", answer()), node("start_drawing", null), loopOf(v("A"), [forward(number("60")), turn(calc(number("360"), "DIVIDE", v("A")))])]]],
+  ["polygon", "인사 뒤 두 바퀴", [[start(), sayFor(text("도형을 그려요")), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(calc(answer(), "MULTI", number("2")), [forward(number("60")), turn(calc(number("360"), "DIVIDE", answer()))])]]],
+  ["safe", "열렸다!·틀린 번호 안내·마무리 말", [[start(), tries([{ ...node("_if", compare(answer(), "NOT_EQUAL", number("1234")), null), statements: [[speak("안 열렸어요")]] }]), opened("금고가 열렸다!"), speak("축하해요")]]],
+  ["safe", "먼저 묻고, 틀리면 반복 안에서 다시 묻기", [[start(), ask(), { ...node("repeat_while_true", compare(answer(), "EQUAL", number("1234")), "until", null), statements: [[speak("틀렸어"), ask()]] }, opened()]]],
+  // A line said before the first question cannot depend on the answer, so its words do not count.
+  ["pass", "질문 전에 ‘합격 기준은 60점이야’", [[start(), speak("합격 기준은 60점이야"), ...scored([speak("합격")], [speak("불합격")]).slice(1)]]],
+  ["freethrow", "질문 전에 ‘자유투 연습 결과를 알려 줄게’", [[start(), speak("자유투 연습 결과를 알려 줄게"), ...throwsOf("훌륭해요!", "잘했어요!", "더 연습해 보자!").slice(1)]]],
+  ["escape", "질문 전에 ‘방 탈출, 성공할 수 있을까?’", [[start(), speak("방 탈출, 성공할 수 있을까?"), ...escapeSays(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")), "탈출 성공!", "탈출 실패").slice(1)]]],
+  ["move", "x 좌표 바꾸기", [[start(), node("move_x", number("10"), null)]]],
+  ["move", "( )초 동안 x·y만큼 움직이기", [[start(), node("move_xy_time", number("1"), number("10"), number("0"), null)]]],
+  ["move", "90 방향으로 움직이기", [[start(), node("move_to_angle", node("angle", "90"), number("10"), null)]]],
+  ["move", "5씩 두 번, 사이에 기다리기", [[start(), forward(number("5")), wait(), forward(number("5"))]]],
+  ["keys", "x·y 좌표 바꾸기", arrows(xOrY)],
+  ["keys", "키마다 방향을 정하고 움직이기", arrowLines(facing)],
+];
+const MUST_FAIL: [string, string, EntryNode[][], string?][] = [
+  ["name", "정해 둔 이름", [[start(), ask(), say(text("초코"))]]],
+  ["name", "생각하기로만 말함", [[start(), ask(), say(answer(), "think")]], THINKING],
+  ["name", "질문 없음", [[start(), say(answer())]]],
+  ["multiply", "정해 둔 답", [[...both, say(number("24"))]]],
+  ["multiply", "덧셈", [[...both, say(calc(v("A"), "PLUS", v("B")))]]],
+  ["multiply", "두 번 묻고 나서 저장", [[start(), ask(), ask(), setTo("A", answer()), setTo("B", answer()), say(calc(v("A"), "MULTI", v("B")))]]],
+  ["multiply", "곱 뒤에 합을 말함", [[...both, say(calc(v("A"), "MULTI", v("B"))), say(calc(v("A"), "PLUS", v("B")))]]],
+  ["average", "A + B ÷ 2", [[...both, say(calc(v("A"), "PLUS", calc(v("B"), "DIVIDE", number("2"))))]]],
+  ["pass", "60점에 불합격", [scored([speak("합격")], [speak("불합격")], compare(answer(), "GREATER", number("60")))], hintOf("pass")],
+  ["pass", "두 결과를 차례로 말함", [scored([speak("합격"), speak("불합격")], [speak("불합격")])]],
+  ["pass", "한 줄에 두 결과", [scored([speak("합격 아니면 불합격")], [speak("불합격")])]],
+  ["pass", "늘 합격", [[start(), ask(), speak("합격")]]],
+  ["pass", "생각하기로만 말함", [scored([say(text("합격"), "think")], [sayFor(text("불합격"), "think")])], THINKING],
+  ["freethrow", "5부터 확인", [[start(), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak("잘했어요!")], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("8")), [speak("훌륭해요!")], [speak("더 연습해 보자!")])])]]],
+  ["freethrow", "한 줄에 두 결과", [throwsOf("훌륭해요! 잘했어요!", "잘했어요!", "더 연습해 보자!")]],
+  ["escape", "논리 블록 없이 (A + B) > 0", [escapeSays(compare(calc(v("A"), "PLUS", v("B")), "GREATER", number("0")), "탈출 성공!", "탈출 실패")]],
+  ["escape", "늘 탈출 성공", [[...both, speak("탈출 성공!")]]],
+  ["square", "반복 없이 네 변", [[start(), node("start_drawing", null), ...Array.from({ length: 4 }, () => [forward(number("100")), right90()]).flat()]]],
+  ["square", "정사각형 대신 정팔각형", [drawn([forward(number("100")), turn(node("angle", "45"))], "8")]],
+  ["square", "변마다 옆으로 비켜 감", [drawn([forward(number("100")), right90(), node("move_x", number("10"), null)])]],
+  // A loop that never repeats is not repetition.
+  ["square", "1번 반복 안에 네 변을 풀어 씀", [drawn(Array.from({ length: 4 }, () => [forward(number("100")), right90()]).flat(), "1")]],
+  ["square", "1번 반복 안에 x·y 위치로 네 번 이동", [drawn([[100, 0], [100, -100], [0, -100], [0, 0]].map(([px, py]) => node("locate_xy", number(String(px)), number(String(py)), null)), "1")]],
+  ["square", "변마다 1번 반복", [[start(), node("start_drawing", null), ...[[100, 0], [0, -100], [-100, 0], [0, 100]].map(([dx, dy]) => loopOf(number("1"), [xOrY(dx, dy)]))]]],
+  // Every side must come from a loop that repeats, not only one piece of one side.
+  ["square", "1번 반복 안에 세 변, 남은 변은 50씩 2번 반복", [[start(), node("start_drawing", null), loopOf(number("1"), Array.from({ length: 3 }, () => [forward(number("100")), right90()]).flat()), loopOf(number("2"), [forward(number("50"))])]]],
+  ["square", "1번 반복 안에 x·y 위치로 세 번, 남은 변은 y 50씩 2번 반복", [[start(), node("start_drawing", null), loopOf(number("1"), [[100, 0], [100, -100], [0, -100]].map(([px, py]) => node("locate_xy", number(String(px)), number(String(py)), null))), loopOf(number("2"), [node("move_y", number("50"), null)])]]],
+  ["square", "세 변은 3번 반복, 남은 변은 1번 반복", [[start(), node("start_drawing", null), loopOf(number("3"), [forward(number("100")), right90()]), loopOf(number("1"), [forward(number("100"))])]]],
+  ["square", "2번 반복 안에 네 변을 풀어 씀(같은 선을 다시 그림)", [drawn(Array.from({ length: 4 }, () => [forward(number("100")), right90()]).flat(), "2")]],
+  ["polygon", "나선(변이 점점 길어짐)", [[start(), node("ask_and_wait", text("변의 수는?"), null), setTo("A", number("40")), node("start_drawing", null), loopOf(answer(), [forward(v("A")), turn(calc(number("360"), "DIVIDE", answer())), setTo("A", calc(v("A"), "PLUS", number("10")))])]]],
+  // The repeat count must come from the answer: only whole extra laps are drawn over.
+  ["polygon", "반복 10번 고정", [[start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(number("10"), [forward(number("60")), turn(calc(number("360"), "DIVIDE", answer()))])]]],
+  ["polygon", "반복 120번 고정", [[start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(number("120"), [forward(number("60")), turn(calc(number("360"), "DIVIDE", answer()))])]]],
+  ["polygon", "한 변 더 그림(대답 + 1)", [[start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(calc(answer(), "PLUS", number("1")), [forward(number("60")), turn(calc(number("360"), "DIVIDE", answer()))])]]],
+  ["polygon", "회전각 72로 고정",[[start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(answer(), [forward(number("60")), turn(node("angle", "72"))])]]],
+  ["safe", "반복 없이 정해 둔 횟수만 물음", [[start(), node("ask_and_wait", text("?"), null), node("ask_and_wait", text("?"), null), opened()]]],
+  ["safe", "묻기 전에 열렸다고 말함", [[start(), opened(), tries()]]],
+  ["safe", "시도마다 열렸다고 말함", [[start(), tries([opened()]), opened()]]],
+  ["move", "x: 10 위치로 이동(절대 위치)", [[start(), node("locate_x", number("10"), null)]]],
+  ["move", "x·y 위치로 이동(절대 위치)", [[start(), node("locate_xy", number("10"), number("0"), null)]]],
+  ["move", "y 좌표를 바꿈(방향 틀림)", [[start(), node("move_y", number("10"), null)]]],
+  ["keys", "( )초 동안 x·y 위치로 이동(절대 위치)", arrows((dx, dy) => node("locate_xy_time", number("1"), number(String(dx)), number(String(dy)), null))],
+  // The keys are pressed one after another: → that relies on the starting direction 90 goes up after ↑.
+  ["keys", "→ 키만 방향을 정하지 않음", arrowLines((dx, dy) => dx > 0 ? [forward(number("10"))] : facing(dx, dy))],
+  // Right branches with mixed-in result words get the wording message, not the block hint.
+  ["pass", "불합격 뒤 ‘다음엔 꼭 합격하자’", [scored([speak("합격")], [speak("불합격"), speak("다음엔 꼭 합격하자")])], wordingMessage("pass")],
+  ["freethrow", "‘연습 잘했어’", [throwsOf("훌륭해요!", "연습 잘했어", "더 연습해 보자!")], wordingMessage("freethrow")],
+  ["freethrow", "질문 뒤에 ‘자유투 연습 결과는’", [[start(), ask(), speak("자유투 연습 결과는"), ...throwsOf("훌륭해요!", "잘했어요!", "더 연습해 보자!").slice(2)]], wordingMessage("freethrow")],
+  ["escape", "‘탈출 실패, 다음엔 성공하자’", [escapeSays(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")), "탈출 성공!", "탈출 실패, 다음엔 성공하자")], wordingMessage("escape")],
+  ["escape", "마무리 ‘실패해도 괜찮아’", [[...escapeSays(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")), "탈출 성공!", "탈출 실패"), speak("실패해도 괜찮아")]], wordingMessage("escape")],
+  // Wrong or missing branches still get the mission's hint.
+  ["pass", "늘 합격·불합격을 둘 다 말함", [[start(), ask(), speak("합격"), speak("불합격")]], hintOf("pass")],
+  ["pass", "‘아니면’ 없이 합격만", [[start(), ask(), { ...node("_if", compare(answer(), "GREATER_OR_EQUAL", number("60")), null), statements: [[speak("합격")]] }]], hintOf("pass")],
+  // The wording message only follows branches that split the cases by result: a result line said in
+  // cases expecting different results, or an answer echoed with every result word, gets the hint.
+  ["freethrow", "만일 세 개를 따로(9개면 두 결과)", [[start(), ask(), when(compare(answer(), "GREATER_OR_EQUAL", number("8")), [speak("훌륭해요!")]), when(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak("잘했어요!")]), when(compare(answer(), "LESS", number("5")), [speak("더 연습해 보자!")])]], hintOf("freethrow")],
+  ["pass", "만일 없이 대답과 두 결과를 한 줄로", [[start(), ask(), say(join(answer(), text("점이면 합격일까 불합격일까")))]], hintOf("pass")],
+  ["freethrow", "만일 없이 대답과 세 결과를 한 줄로", [[start(), ask(), say(join(answer(), text("개! 훌륭? 잘했? 연습?")))]], hintOf("freethrow")],
+  ["pass", "50점 기준에 두 결과를 섞은 말", [scored([speak("불합격이 아니라 합격이야!")], [speak("합격이 아니라 불합격이야")], compare(answer(), "GREATER_OR_EQUAL", number("50")))], hintOf("pass")],
+  ["pass", "결과를 서로 바꿔 말함", [scored([speak("불합격")], [speak("합격")])], hintOf("pass")],
+  ["freethrow", "8개 이상에 ‘정말 잘했어’를 더 말함", [[start(), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("8")), [speak("훌륭해요!"), speak("정말 잘했어")], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak("잘했어요!")], [speak("더 연습해 보자!")])])]], wordingMessage("freethrow")],
+  ["pass", "대답을 말한 뒤 바른 갈래, ‘다음엔 꼭 합격하자’", [[start(), ask(), say(join(answer(), text("점이에요"))), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [speak("합격")], [speak("불합격"), speak("다음엔 꼭 합격하자")])]], wordingMessage("pass")],
+  // A side drawn again outside the loop is still drawn outside it, and a loop must draw on two passes.
+  ["square", "4번 반복 뒤 반복 밖에서 첫 변을 한 번 더", [[...drawn([forward(number("100")), right90()]), forward(number("100"))]]],
+  ["square", "2번 반복 안에 네 변을 풀어 쓰고 맨 아래에서 그리기 시작", [[start(), loopOf(number("2"), [...Array.from({ length: 4 }, () => [forward(number("100")), right90()]).flat(), node("start_drawing", null)])]]],
+  ["safe", "계속 반복에 ‘반복 중단하기’ 없음", [[start(), { ...node("repeat_inf", null, null), statements: [[node("ask_and_wait", text("비밀번호는?"), null), when(compare(answer(), "EQUAL", number("1234")), [opened()])]] }]], SAFE_STOP],
+];
+
+test("채점 표: 같은 뜻으로 만든 작품은 통과하고, 결과가 틀리거나 다른 결과를 말하거나 고정 답이면 떨어진다", () => {
+  for (const [id, label, threads] of MUST_PASS) expect(checkProgrammingMission(id, exported(threads)), `${id}: ${label}`).toEqual(OK);
+  for (const [id, label, threads, message] of MUST_FAIL) {
+    const result = checkProgrammingMission(id, exported(threads));
+    expect(result.passed, `${id}: ${label}`).toBe(false);
+    if (message) expect(result.message, `${id}: ${label}`).toBe(message);
+  }
+  // A start line split in two or missing is named as the palette shows it (‘위쪽 화살표’).
+  expect(checkProgrammingMission("multiply", exported([both, [start(), say(calc(v("A"), "MULTI", v("B")))]])).message).toBe("‘시작하기 버튼을 클릭했을 때’ 줄이 여러 개예요. 한 줄로 이어 붙여 주세요.");
+  expect(checkProgrammingMission("keys", exported([...arrows(xOrY), [node("when_some_key_pressed", null, "38"), wait()]])).message).toBe("‘위쪽 화살표 키를 눌렀을 때’ 줄이 여러 개예요. 키마다 한 줄로 이어 붙여 주세요.");
+  expect(checkProgrammingMission("multiply", exported([both.slice(1)])).message).toBe("‘시작하기 버튼을 클릭했을 때’ 아래에 블록을 연결해 주세요.");
+  expect(checkProgrammingMission("average", missionStarter("average")).message).toBe("‘시작하기 버튼을 클릭했을 때’ 아래에 블록을 연결해 주세요.");
+  expect(checkProgrammingMission("keys", exported(arrows(xOrY).slice(1))).message).toBe("‘위쪽 화살표 키를 눌렀을 때’ 아래에 블록을 연결해 주세요.");
+  // The wording message quotes the whole result phrases students say, in two short sentences.
+  expect(wordingMessage("freethrow")).toBe("조건은 맞게 나눴어요. 결과를 말할 때 ‘훌륭해요’·‘잘했어요’·‘더 연습해 보자’ 중 맞는 말 하나만 넣어 주세요.");
+  expect(wordingMessage("pass")).toContain("‘합격’·‘불합격’");
+  expect(wordingMessage("escape")).toContain("‘탈출 성공’·‘탈출 실패’");
+  // Harmless extras run in the tree mission too, and the block list shown to students leaves them out.
+  const grown = treeCode(["5", "10", "15", "20", "25"].map(grow));
+  expect(checkProgrammingMission("tree", withTree([[...grown[0], node("change_scale_size", number("1"), null), node("show", null)]]))).toEqual(OK);
+  expect(missionBlockTypes("square")).not.toContain("brush_stamp");
+  // Same-meaning extras are accepted but not listed, so the list keeps the blocks the mission is about.
+  expect(MISSION_BLOCKS.square.has("rotate_by_time")).toBe(true);
+  expect(missionBlockTypes("square")).not.toContain("rotate_by_time");
+  // Drawing missions accept speech but do not list it.
+  for (const id of ["square", "polygon"]) for (const type of ["dialog", "dialog_time"]) {
+    expect(MISSION_BLOCKS[id].has(type), id).toBe(true);
+    expect(missionBlockTypes(id), id).not.toContain(type);
+  }
+  expect(missionBlockTypes("square")).toEqual(expect.arrayContaining(["move_direction", "direction_relative", "repeat_basic", "start_drawing"]));
+});
+
+// Every block a mission accepts must run in the interpreter; an unknown one falls to the
+// misleading ‘시작 블록은 맨 위에…’ message.
+test("미션이 받는 모든 동작 블록은 해석기에서 실행된다", () => {
+  const STARTS = new Set(["when_run_button_click", "when_some_key_pressed", "mouse_clicked", "when_object_click"]);
+  const REPORTERS = new Set(["get_canvas_input_value", "get_variable", "combine_something", "calc_basic", "boolean_basic_operator", "boolean_and_or", "boolean_not", "quotient_and_mod", "is_clicked"]);
+  const n = number("1"), color = node("color", "#FF0000"), yes = node("True", null);
+  const DEFAULTS: Record<string, unknown[]> = {
+    ask_and_wait: [text("?"), null], dialog_time: [text("안녕"), n, "speak", null], dialog: [text("안녕"), "speak", null], set_variable: ["cs-A", n, null],
+    move_direction: [n, null], move_x: [n, null], move_y: [n, null], move_xy_time: [n, n, n, null], locate_xy_time: [n, n, n, null], move_to_angle: [n, n, null], locate_xy: [n, n, null], locate: ["mouse", null],
+    direction_absolute: [n, null], direction_relative: [n, null], rotate_relative: [n, null], rotate_by_time: [n, n, null], direction_relative_duration: [n, n, null],
+    start_drawing: [null], stop_drawing: [null], brush_erase_all: [null], repeat_basic: [n, null], repeat_while_true: [yes, "until", null], repeat_inf: [null, null], stop_repeat: [null], _if: [yes, null], if_else: [yes, null, null],
+    change_variable: ["cs-clicks", n, null], change_to_next_shape: ["next", null], change_to_some_shape: [node("get_pictures", "tree-pic2"), null],
+    wait_second: [n, null], remove_dialog: [null], show: [null], hide: [null], set_visible_answer: ["HIDE", null], show_variable: ["cs-A", null], hide_variable: ["cs-A", null],
+    set_color: [color, null], change_thickness: [n, null], set_thickness: [n, null], set_random_color: [null], set_fill_color: [color, null], start_fill: [null], stop_fill: [null],
+    change_brush_transparency: [n, null], set_brush_tranparency: [n, null], brush_stamp: [null], add_effect_amount: ["color", n, null], change_effect_amount: ["color", n, null], erase_all_effects: [null],
+    change_scale_size: [n, null], set_scale_size: [n, null], stretch_scale_size: ["WIDTH", n, null], reset_scale_size: [null], flip_x: [null], flip_y: [null], change_object_index: ["FRONT", null],
+  };
+  for (const [id, allowed] of Object.entries(MISSION_BLOCKS)) {
+    for (const type of [...allowed].filter((t) => !STARTS.has(t) && !REPORTERS.has(t) && !VALUE_BLOCKS.has(t))) {
+      expect(DEFAULTS[type], `${type}: add its Entry default params here`).toBeTruthy();
+      const lists = CONTAINER_BLOCKS[type];
+      const block: EntryNode = { ...node(type, ...DEFAULTS[type]), ...(lists ? { statements: Array.from({ length: lists }, () => []) } : {}) };
+      const raw = id === "tree" ? withTree([[node("mouse_clicked", null), block]]) : exported([[id === "keys" ? node("when_some_key_pressed", null, "38") : start(), block]]);
+      expect(missionBlockIssue(id, raw), `${id}: ${type}`).toBeNull();
+      expect(checkProgrammingMission(id, raw).message, `${id}: ${type}`).not.toBe("시작 블록은 맨 위에 두고 동작을 아래로 연결해 주세요.");
+    }
+  }
+});

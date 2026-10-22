@@ -1,6 +1,5 @@
-.visual { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 18px; margin: 0 0 20px; padding: 22px 20px; border: 1px solid #dfe8f6; border-radius: 16px; background: linear-gradient(135deg, #f4f8ff 0%, #f7f4ff 100%); }
+.visual { container-type: inline-size; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 18px; margin: 0 0 20px; padding: 22px 20px; border: 1px solid #dfe8f6; border-radius: 16px; background: linear-gradient(135deg, #f4f8ff 0%, #f7f4ff 100%); }
 .visual svg { max-width: 100%; height: auto; flex-shrink: 0; }
-.wide { width: min(100%, 360px); }
 .capture { max-width: 100%; height: auto; }
 .row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
 .card { display: grid; justify-items: center; align-content: start; gap: 10px; min-width: 132px; padding: 14px 16px; border: 1px solid #dce5f2; border-radius: 14px; background: #fff; }
@@ -14,12 +13,12 @@
 .op { font-size: 22px; font-weight: 700; color: #7a8aa6; }
 .block { padding: 7px 14px; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 650; white-space: nowrap; }
 .block[data-kind="flow"] { background: #0284c7; }
-.block[data-kind="motion"] { background: #7c3aed; }
 .block[data-kind="brush"] { background: #ea580c; }
-.block[data-kind="look"] { background: #e11d48; }
 .nest { display: grid; gap: 8px; padding: 10px; border-radius: 14px; background: #0284c7; color: #fff; font-size: 15px; font-weight: 650; text-align: left; }
 .nest > div:first-child { padding: 2px 6px; }
 .nest .inner { display: grid; gap: 8px; padding: 10px; border-radius: 10px; background: rgba(255, 255, 255, .92); color: #0c5a85; }
 .tree { display: grid; justify-items: center; gap: 2px; }
 .tree small { font-size: 14px; font-weight: 700; color: #1d6b5a; }
+/* lc1 needs about 466px in one row (314 + 18 + 20 + 18 + 96); narrower, stack it as capture, ↓, triangle. */
+@container (max-width: 479px) { .capture + .op { flex-basis: 100%; font-size: 0; text-align: center; } .capture + .op::after { content: "↓"; font-size: 22px; } }
 @media (max-width: 600px) { .visual { padding: 16px 12px; } .card { min-width: 0; flex: 1 1 130px; } }

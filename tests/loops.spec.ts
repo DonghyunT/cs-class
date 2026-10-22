@@ -49,6 +49,12 @@ const stageOf = (page: Page, objectId: string) => page.frames().find((frame) => 
   const entity = entry.container.getObject(target).entity;
   return { x: Math.round(entity.getX() * 100) / 100, y: Math.round(entity.getY() * 100) / 100, picture: entity.picture.id, drawn: !!entity.brush && entity.shapes.length > 0 };
 }, objectId);
+// Entry drops an answer typed before its next question is up (the last answer is still `complete`),
+// so a test waits for the ask, and then for Entry to take the answer.
+const askState = (page: Page) => page.frames().find((frame) => frame.url().includes("/entryjs/workspace.html"))!.evaluate(() => {
+  const entry = (window as unknown as { Entry: { container: { inputValue: { complete?: boolean }; getInputValue: () => unknown }; stage: { inputField?: { _isHidden: boolean } } } }).Entry;
+  return { asking: entry.container.inputValue.complete === false && entry.stage.inputField?._isHidden === false, answer: String(entry.container.getInputValue()) };
+});
 const drawingWait = "정지하면 무대가 처음 상태로 돌아가고, 그다음 조건을 검증할 수 있어요.";
 // A drawing run stays on the stage until the student stops it; stopping resets the stage and allows validation.
 async function keepsDrawingUntilStop(page: Page, start: { x: number; y: number }) {
@@ -104,7 +110,9 @@ test("반복 수업 금고: 맞힐 때까지 묻고, 다시 실행하면 처음�
   for (let run = 0; run < 2; run++) {
     await entryStart(page).click();
     for (const value of ["1111", "1234"]) {
+      await expect.poll(async () => (await askState(page)).asking).toBe(true);
       const input = frame.getByLabel("질문 대답", { exact: true }); await expect(input).toBeVisible(); await input.fill(value); await input.press("Enter");
+      await expect.poll(async () => (await askState(page)).answer).toBe(value);
     }
     await expect(page.getByRole("status").filter({ hasText: "마지막 말: 금고가 열렸어요!" })).toBeVisible({ timeout: 10000 });
     await expect(entryStart(page)).toBeVisible();

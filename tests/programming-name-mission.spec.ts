@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { DocumentData } from "firebase-admin/firestore";
 import { buildNameProject, checkNameMission, parseNameProject, type NameRun } from "../src/lib/classroom/name-entry";
-import { buildProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, parseProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
 import { db, entryReset, entryStart, entryStop, headers, readyStudent } from "./emulator";
 
@@ -14,9 +14,10 @@ test("entry-guidance: 이름 연결 오류와 현재 작품의 두 이름 실행
   const run = (name: string, id = name): NameRun => ({ id, key, reason: "finished", steps: [{ kind: "ask", value: "강아지 이름은?" }, { kind: "answer", value: name }, { kind: "say", value: `내 이름은 ${name}!` }] });
   expect(checkNameMission("unreadable", [])).toMatchObject({ passed: false, issue: "project", validNames: 0 });
   expect(checkNameMission(buildNameProject()!, [])).toMatchObject({ passed: false, issue: "structure", validNames: 0 });
-  // Structure messages name the same timed speech block as the mission hint.
-  expect(checkNameMission(buildNameProject()!, []).message).toContain("‘( )을(를) ( )초 동안 말하기’");
-  expect(checkNameMission(buildNameProject([{ id: "k", kind: "start", value: "ArrowRight" }])!, []).message).toContain("‘( )을(를) ( )초 동안 말하기’");
+  // Either speech block counts, so structure messages say ‘말하기’ and tell a missing start line from a split one.
+  expect(checkNameMission(buildNameProject()!, []).message).toBe("시작하기 아래에 질문 하나와 말하기 블록을 연결하고, 말하기 칸에 ‘대답’을 넣어 주세요.");
+  expect(checkNameMission(buildNameProject([{ id: "k", kind: "start", value: "ArrowRight" }])!, []).message).toBe("‘시작하기 버튼을 클릭했을 때’ 아래에 질문과 말하기를 연결해 주세요.");
+  expect(checkNameMission(buildNameProject([...code, { id: "s2", kind: "start", value: "click" }])!, []).message).toContain("줄이 여러 개예요");
   expect(checkNameMission(complete, [])).toMatchObject({ passed: false, issue: "runs", validNames: 0 });
   expect(checkNameMission(complete, [run("초코"), run("초코", "duplicate"), ...["stopped", "timeout", "error"].map(reason => ({ ...run("보리", reason), reason })), { ...run("보리", "old"), key: "old" }])).toMatchObject({ passed: false, issue: "runs", validNames: 1 });
   expect(checkNameMission(complete, [run("초코"), run("보리"), run("두부")])).toMatchObject({ passed: true, issue: null, validNames: 2 });
@@ -48,6 +49,22 @@ test("확인은 블록 순서·실제로 출력한 대답을 구분한다", () =
   expect(checkNameMission(extra, [extraRun("보리"), extraRun("두부")]).passed).toBe(false);
 });
 
+test("일반 ‘말하기’와 기다리기·말풍선 지우기도 실행 기록으로 세고, 실제 실행 없이는 세지 않는다", () => {
+  // The lesson grades with the programming parser (see entry-practice-workspace.tsx).
+  const graded = (raw: unknown) => { const p = parseProgrammingProject(raw); return p && { key: p.gradeKey, threads: p.threads }; };
+  const node = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
+  const lines = (say: EntryNode) => buildProgrammingProject([[node("when_run_button_click", null), node("ask_and_wait", node("text", "이름이 뭐니?"), null), node("wait_second", node("number", "1"), null), say, node("remove_dialog", null)]]);
+  const plain = lines(node("dialog", node("get_canvas_input_value", null), "speak", null)), key = graded(plain)!.key;
+  const run = (name: string): NameRun => ({ id: name, key, reason: "finished", steps: [{ kind: "ask", value: "이름이 뭐니?" }, { kind: "answer", value: name }, { kind: "say", value: name }] });
+  expect(checkNameMission(plain, [], graded)).toMatchObject({ passed: false, issue: "runs", validNames: 0 });
+  expect(checkNameMission(plain, [run("초코"), run("보리")], graded)).toMatchObject({ passed: true, validNames: 2 });
+  // A run that stopped before speaking, or said something else, does not count.
+  expect(checkNameMission(plain, ["초코", "보리"].map((name) => ({ ...run(name), steps: run(name).steps.slice(0, 2) })), graded).validNames).toBe(0);
+  expect(checkNameMission(plain, ["초코", "보리"].map((name) => ({ ...run(name), steps: [...run(name).steps.slice(0, 2), { kind: "say" as const, value: "안녕" }] })), graded).validNames).toBe(0);
+  // A think bubble shows the name but is not speech; the reason names the dropdown to change.
+  expect(checkNameMission(lines(node("dialog", node("get_canvas_input_value", null), "think", null)), [], graded)).toMatchObject({ issue: "structure", message: "말풍선이 ‘생각하기’로 되어 있어요. 말하기 블록에서 ‘생각하기’를 ‘말하기’로 바꿔 주세요." });
+});
+
 // The rest runs on the real lesson (formerly checked on the removed public prototype).
 test.describe("정식 수업 programming-13", () => {
   const id = "programming-13", endpoint = `/api/classroom/work/${id}`;
@@ -69,9 +86,9 @@ test.describe("정식 수업 programming-13", () => {
     if (originalClass) await classRef.set(originalClass);
   });
 
-  async function enter(page: Page) {
+  async function enter(page: Page, project = nameProject) {
     const before = await stored(page);
-    expect((await page.request.post(endpoint, { headers, data: { revision: before.revision, draft: { ...before.draft, stage: "practice", programming: { mission: "name", projects: { name: nameProject }, reflection: "" } } } })).status()).toBe(200);
+    expect((await page.request.post(endpoint, { headers, data: { revision: before.revision, draft: { ...before.draft, stage: "practice", programming: { mission: "name", projects: { name: project }, reflection: "" } } } })).status()).toBe(200);
     await page.goto(`/classroom/${id}?from=dashboard`);
     await page.locator("iframe").scrollIntoViewIfNeeded();
     await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
@@ -131,22 +148,30 @@ test.describe("정식 수업 programming-13", () => {
 
   test("구조가 틀린 이름 작품은 실행해도 세지 않는 이유를 두 이름 확인 설명에 보인다", async ({ page }) => {
     test.setTimeout(60000);
-    const before = await stored(page);
-    const plain = buildProgrammingProject([[node("when_run_button_click", null), node("ask_and_wait", node("text", "강아지 이름은?"), null), node("dialog", node("get_canvas_input_value", null), "speak", null)]]);
-    expect((await page.request.post(endpoint, { headers, data: { revision: before.revision, draft: { ...before.draft, stage: "practice", programming: { mission: "name", projects: { name: plain }, reflection: "" } } } })).status()).toBe(200);
-    await page.goto(`/classroom/${id}?from=dashboard`);
-    await page.locator("iframe").scrollIntoViewIfNeeded();
-    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+    // The dog greets instead of saying the answer.
+    await enter(page, buildProgrammingProject([[node("when_run_button_click", null), node("ask_and_wait", node("text", "강아지 이름은?"), null), node("dialog", node("text", "안녕"), "speak", null)]]));
     const reason = page.locator('[aria-label="서로 다른 이름 확인"] + p');
     // Before the first run the usual first notice shows; the reason appears once a run is not counted.
     await expect(reason).toHaveText("저장된 작품은 유지돼요. 이 화면에서 서로 다른 이름으로 두 번 실행해 주세요.");
     await entryStart(page).click();
     const input = page.frameLocator("iframe").getByLabel("강아지 이름 대답");
     await input.fill("초코"); await input.press("Enter");
-    await expect(page.getByRole("status").filter({ hasText: "마지막 말: 초코" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("status").filter({ hasText: "마지막 말: 안녕" })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("status", { name: "서로 다른 이름 확인", exact: true })).toHaveText("서로 다른 이름 확인 0/2");
-    await expect(reason).toContainText("‘( )을(를) 말하기’ 대신 ‘( )을(를) ( )초 동안 말하기’");
+    await expect(reason).toContainText("시작하기 아래에 질문 하나와 말하기 블록을 연결하고, 말하기 칸에 ‘대답’을 넣어 주세요.");
     await expect(reason).not.toContainText("작품 내용이 바뀌어");
+  });
+
+  test("초가 없는 ‘말하기’와 기다리기로 만든 이름 작품도 두 이름 실행을 세고 검증을 통과한다", async ({ page }) => {
+    test.setTimeout(60000);
+    await enter(page, buildProgrammingProject([[node("when_run_button_click", null), node("ask_and_wait", node("text", "강아지 이름은?"), null), node("wait_second", node("number", "0.2"), null), node("dialog", node("get_canvas_input_value", null), "speak", null)]]));
+    const counted = page.getByRole("status", { name: "서로 다른 이름 확인", exact: true });
+    await respond(page, "초코");
+    await expect(counted).toHaveText("서로 다른 이름 확인 1/2");
+    await respond(page, "보리");
+    await expect(counted).toHaveText("서로 다른 이름 확인 2/2");
+    await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+    await expect(page.locator("#practice-feedback")).toContainText("목표 조건을 확인했어요");
   });
 
   test("시작 블록만 있는 처음 작품은 실행 전에 구조 오류처럼 읽히는 문장을 보이지 않는다", async ({ page }) => {

@@ -40,7 +40,16 @@
 .missionBrief,.workArea{min-width:0}
 .missionBrief{display:grid;gap:16px;padding:18px;border:1px solid #dce3ed;border-radius:18px;background:#fff;word-break:keep-all;overflow-wrap:anywhere}
 .practice .missionBrief .heading,.practice .missionBrief .hint{margin:0}
-.practice .missionBrief .hint{margin-bottom:12px}.practice .missionBrief .hint ol{margin:10px 0 0;padding-left:22px;list-style:decimal;font-size:16px;line-height:1.7;color:#526173}.practice .missionBrief .hint ol>li+li{margin-top:6px}.hintBlocks{padding:0}.practice .missionBrief .hint .hintBlocks summary::before{content:"＋"}.practice .missionBrief .hint .hintBlocks[open] summary::before{content:"−"}.hintBlocks ul{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}.hintBlocks li{padding:3px 10px;border-radius:999px;background:#eaf1ff;color:#28548e;font-size:14px;line-height:1.6}
+.practice .missionBrief .hint{margin-bottom:12px}.practice .missionBrief .hint ol{margin:10px 0 0;padding-left:22px;list-style:decimal;font-size:16px;line-height:1.7;color:#526173}.practice .missionBrief .hint ol>li+li{margin-top:6px}.hintBlocks{padding:0}.practice .missionBrief .hint .hintBlocks summary::before{content:"＋"}.practice .missionBrief .hint .hintBlocks[open] summary::before{content:"−"}.hintBlocks ul{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}.hintBlocks li{padding:3px 10px;font-size:14px;line-height:1.6}.practice .missionBrief .hint .tip{margin-top:8px}
+/* 821–1,339px: the hint spans the card above the workspace, so the 💡 line and block list sit beside the steps to keep the workspace in view.
+   An opened block list goes back below the steps, where its chips get the full width. */
+@media(min-width:821px) and (max-width:1339px){.practice:not([data-practice-focused=true]) .hintBody:not(:has(.hintBlocks[open])){display:grid;grid-template-columns:minmax(0,1fr) 240px;column-gap:28px;align-items:start}.practice:not([data-practice-focused=true]) .missionBrief .hint .tip{margin-top:12px}}
+/* Block chips in hints and the block list: the Entry category colours of teacher.module.css `.entryBlockPill` (DESIGN §2.1).
+   Inline, not inline-block, so a wrapped chip starts on its list number's line; default slice decoration (not clone) keeps a split chip reading as one continuing chip. */
+.caret{margin-inline:-.15em}
+.blockChip{--chip:#0284c7;--chip-bg:#f2f9fe;display:inline;line-height:1.45;vertical-align:baseline;padding:1px 6px;border:1px solid #d5dfec;border-left:3px solid var(--chip);border-radius:6px;background:var(--chip-bg);color:#1f2a38;font-weight:600}
+.blockChip[data-category=start]{--chip:#16a34a;--chip-bg:#f2fdf5}.blockChip[data-category=moving]{--chip:#7c3aed;--chip-bg:#f8f5ff}.blockChip[data-category=looks]{--chip:#e11d48;--chip-bg:#fff4f6}.blockChip[data-category=brush]{--chip:#ea580c;--chip-bg:#fff7ed}
+.blockChip[data-category=judgement]{--chip:#2563eb;--chip-bg:#f3f7ff}.blockChip[data-category=calc]{--chip:#d97706;--chip-bg:#fffbeb}.blockChip[data-category=variable]{--chip:#c026d3;--chip-bg:#fdf4ff}
 .experiment{padding:14px;border:1px solid #e3dfcc;border-radius:12px;background:#fffaf0;color:#65583b}
 .experiment h4{display:flex;align-items:center;gap:8px;margin:0;font-size:14px;line-height:1.7;font-weight:650}
 .experiment h4 svg{flex-shrink:0}

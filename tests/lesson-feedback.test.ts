@@ -118,9 +118,22 @@ test("반복 lc2 예시와 그림은 개념 확인(정육각형)·퀴즈(정오�
   expect(readFileSync("src/components/student/concept-visual.tsx", "utf8")).not.toMatch(/n=\{[56]\}/);
 });
 
+test("반복 lc1·lc3·lc4 그림은 미션 조립(정사각형 4번·100·90°, 금고 1234, 나무 5·10·15·20·25)을 그대로 보여 주지 않는다", () => {
+  // Each label is the text mirror of its picture (the capture itself has alt="").
+  const labels = Object.fromEntries([...readFileSync("src/components/student/concept-visual.tsx", "utf8").matchAll(/^\s*(lc\d): \{ label: "([^"]+)"/gm)].map((m) => [m[1], m[2]]));
+  for (const id of ["lc1", "lc3", "lc4"]) expect(labels[id]).not.toMatch(/1234|4번|100만큼|90°|5, 10|10, 15|15, 20|20, 25/);
+  // The label and the example box name the capture's event block and say what it means on the stage.
+  expect(labels.lc4).toContain("마우스를 클릭했을 때(무대를 클릭할 때마다)");
+  expect(loopConcepts.find((c) => c.id === "lc4")!.example).toContain("‘마우스를 클릭했을 때’ 아래 블록은 무대를 클릭할 때마다 실행돼요.");
+  // The example box sits right under the picture, so it must describe the same wall program, not the safe mission.
+  const lc3 = loopConcepts.find((c) => c.id === "lc3")!;
+  expect(lc3.example).toContain("‘벽에 닿았는가?’가 될 때까지 10만큼씩 움직이면");
+  expect(lc3.example).not.toMatch(/비밀번호|금고|1234/);
+});
+
 test("반복 개념·퀴즈의 블록 이름은 팔레트 이름과 같고, 만든 뒤 확인 문장은 클릭 대상을 헷갈리게 하지 않는다", () => {
   const lc1 = loopConcepts.find((c) => c.id === "lc1")!;
-  expect(lc1.example).toContain("‘이동 방향으로 100만큼 움직이기’와 ‘이동 방향을 90°만큼 회전하기’");
+  expect(lc1.example).toContain("‘3번 반복하기’ 안에 ‘이동 방향으로 80만큼 움직이기’와 ‘이동 방향을 120°만큼 회전하기’를 넣으면 정삼각형");
   expect(lc1.prompt).toContain("‘이동 방향으로 10만큼 움직이기’");
   expect(loopQuestions.find((q) => q.id === "distance")!.scene).toContain("  └ 이동 방향으로 10만큼 움직이기");
   expect(loopQuestions.find((q) => q.id === "pentagon")!.scene).toContain("  └ 이동 방향으로 100만큼 움직이기");
