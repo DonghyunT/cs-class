@@ -40,7 +40,7 @@
 .missionBrief,.workArea{min-width:0}
 .missionBrief{display:grid;gap:16px;padding:18px;border:1px solid #dce3ed;border-radius:18px;background:#fff;word-break:keep-all;overflow-wrap:anywhere}
 .practice .missionBrief .heading,.practice .missionBrief .hint{margin:0}
-.practice .missionBrief .hint{margin-bottom:12px}.practice .missionBrief .hint ol{margin:10px 0 0;padding-left:22px;list-style:decimal;font-size:16px;line-height:1.7;color:#526173}.practice .missionBrief .hint ol>li+li{margin-top:6px}.practice .missionBrief .hint ol:focus-visible{outline:3px solid #376fc8;outline-offset:2px}.hintBlocks{padding:0}.practice .missionBrief .hint .hintBlocks summary::before{content:"＋"}.practice .missionBrief .hint .hintBlocks[open] summary::before{content:"−"}.hintBlocks ul{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}.hintBlocks li{padding:3px 10px;border-radius:999px;background:#eaf1ff;color:#28548e;font-size:14px;line-height:1.6}
+.practice .missionBrief .hint{margin-bottom:12px}.practice .missionBrief .hint ol{margin:10px 0 0;padding-left:22px;list-style:decimal;font-size:16px;line-height:1.7;color:#526173}.practice .missionBrief .hint ol>li+li{margin-top:6px}.hintBlocks{padding:0}.practice .missionBrief .hint .hintBlocks summary::before{content:"＋"}.practice .missionBrief .hint .hintBlocks[open] summary::before{content:"−"}.hintBlocks ul{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}.hintBlocks li{padding:3px 10px;border-radius:999px;background:#eaf1ff;color:#28548e;font-size:14px;line-height:1.6}
 .experiment{padding:14px;border:1px solid #e3dfcc;border-radius:12px;background:#fffaf0;color:#65583b}
 .experiment h4{display:flex;align-items:center;gap:8px;margin:0;font-size:14px;line-height:1.7;font-weight:650}
 .experiment h4 svg{flex-shrink:0}
@@ -52,7 +52,7 @@
 .practice .missionBrief .hint[open]>summary::before{content:"−"}
 .practice .missionBrief .hint p{color:#526173}
 @media(min-width:1340px){.practiceLayout{grid-template-columns:260px minmax(0,1fr)}.panel:has(.practice)>.reflection{margin-left:276px}}
-@media(min-width:821px) and (max-width:1339px){.missionBrief{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px}.practice .missionBrief .heading{grid-column:1;grid-row:1 / span 2}.practice .missionBrief .hint{grid-column:2;grid-row:1}.missionBrief .experiment{grid-column:2;grid-row:2}.practice .missionBrief .hint ol{max-height:4.5em;overflow-y:auto}}
+@media(min-width:821px) and (max-width:1339px){.missionBrief{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px}.practice:not([data-practice-focused=true]) .missionBrief>details,.practice:not([data-practice-focused=true]) .missionBrief>details::details-content,.practice:not([data-practice-focused=true]) .missionBrief>details>div{display:contents}.practice .missionBrief .heading{grid-column:1;grid-row:1}.missionBrief .experiment{grid-column:2;grid-row:1}.practice .missionBrief .hint{grid-column:1 / -1;grid-row:2}}
 @media(max-width:600px){.practice .heading p,.practice .footer p,.reflection label{font-size:16px}}
 .practice[data-practice-focused=true] .practiceLayout{grid-template-columns:minmax(0,1fr);gap:10px;margin-top:8px}
 .practice[data-practice-focused=true] .missionBrief{grid-template-columns:minmax(0,1fr);padding:12px 16px;gap:4px}

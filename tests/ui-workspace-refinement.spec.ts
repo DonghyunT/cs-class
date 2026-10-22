@@ -148,13 +148,13 @@ test("comments-layout: 탭을 중앙에 두고 실습 안내·간결한 작업�
   }
 });
 
-test("펼친 조립 순서는 가장 긴 미션에서도 작업실을 240px 넘게 밀지 않고 마우스·키보드로 끝까지 읽힌다", async ({ page }, testInfo) => {
-  test.setTimeout(180_000);
+test("펼친 조립 순서는 내부 스크롤 없이 모든 단계가 보이고, 요약 다음에 검증 블록 목록으로 초점이 가며, 작업실 이동량을 기록한다", async ({ page }, testInfo) => {
+  test.setTimeout(240_000);
   await resetStudent(page.request, studentId);
   expect((await loginStudent(page.request, initialPassword, studentId)).status()).toBe(200);
   expect((await page.request.post("/api/auth/password", { headers, data: { password: studentPassword } })).status()).toBe(200);
   const shifts: Record<string, number> = {};
-  for (const [lesson, missionId] of [["loops", "tree"], ["conditionals", "freethrow"]] as const) {
+  for (const [lesson, missionId] of [["programming-13", "multiply"], ["conditionals", "freethrow"], ["loops", "tree"]] as const) {
     await db.collection("csClasses").doc("2-1").update({ currentLessonId: lesson, openedLessonIds: [lesson] });
     const endpoint = `/api/classroom/work/${lesson}`;
     const work: Work = await (await page.request.get(endpoint)).json();
@@ -168,18 +168,14 @@ test("펼친 조립 순서는 가장 긴 미션에서도 작업실을 240px 넘�
       const hint = page.getByText("블록 연결 힌트 보기", { exact: true });
       await hint.click();
       const steps = page.getByRole("list", { name: "조립 순서", exact: true });
-      await expect(steps).toBeVisible();
+      await expect(steps.getByRole("listitem").last()).toBeVisible();
+      // Every step shows in full: the list never scrolls inside itself.
+      expect(await steps.evaluate((element) => element.scrollHeight - element.clientHeight), `${missionId} ${width}`).toBeLessThanOrEqual(1);
       shifts[`${missionId} ${width}`] = (await frameTop()) - closed;
-      if (width === 1024 || width === 1280) expect(shifts[`${missionId} ${width}`], `${missionId} ${width}`).toBeLessThanOrEqual(240);
-      // A capped list scrolls by wheel and, from its own tab stop, by keyboard to the last step.
-      if (await steps.evaluate((element) => element.scrollHeight > element.clientHeight + 1)) {
-        await steps.focus();
-        await page.keyboard.press("End");
-        await expect.poll(() => steps.evaluate((element) => Math.ceil(element.scrollTop + element.clientHeight) >= element.scrollHeight - 1)).toBe(true);
-        await steps.evaluate((element) => { element.scrollTop = 0; });
-        await steps.hover(); await page.mouse.wheel(0, 2000);
-        await expect.poll(() => steps.evaluate((element) => Math.ceil(element.scrollTop + element.clientHeight) >= element.scrollHeight - 1)).toBe(true);
-      }
+      if (width === 1544) expect(shifts[`${missionId} ${width}`], `${missionId} ${width}`).toBe(0);
+      await hint.focus();
+      await page.keyboard.press("Tab");
+      await expect(page.getByText("검증에는 이 블록만 봐요", { exact: true })).toBeFocused();
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     }
   }
