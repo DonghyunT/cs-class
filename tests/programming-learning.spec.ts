@@ -28,6 +28,7 @@ test("programming-intro: 새 첫 개념은 옛 pc0~3 답안·제출을 보존하
     await page.getByRole("radio", { name: "프로그램을 만들고 실행해 보며 고치는 과정", exact: true }).check();
     await page.getByRole("button", { name: "정답 확인", exact: true }).click();
     await expect(page.getByRole("tab", { name: "개념 100%", exact: true })).toBeVisible();
+    await expect(list.getByRole("button", { name: /프로그래밍이란/ })).toContainText("확인 완료");
     const saved: Work = await (await page.request.get(endpoint)).json();
     expect(saved.conceptSolved).toEqual(["pc0", "pc1", "pc2", "pc3", "pc4"]);
     expect(saved.draft.conceptAnswers).toEqual({ ...oldAnswers, pc4: "0" });
