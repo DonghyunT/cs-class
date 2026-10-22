@@ -73,9 +73,9 @@ export const abstractionPresets = [
 export const TUT_SCENARIOS = {
       chat: {
         id: 'chat',
-        name: "친구 관계 / 카톡 안읽씹 고민",
+        name: "친구 관계 / 메시지를 읽지 않는 친구 고민",
         icon: "📱",
-        current: "스토리는 올리면서 카톡 3시간째 안읽음",
+        current: "친구가 다른 글은 올리면서 내 메시지는 3시간째 읽지 않음",
         goal: "부담 없이 답장 받고 자연스럽게 대화 이어감",
         conditions: [
           { text: "상대방의 개인 시간을 존중하고 집착해 보이지 않기", desc: "관계와 감정 배려" },
@@ -101,7 +101,7 @@ export const TUT_SCENARIOS = {
         id: 'game',
         name: "학습 습관 / 게임·유튜브 시간 조절",
         icon: "🎮",
-        current: "공부 시작하려다 유튜브·게임에 빠져 2시간 순삭",
+        current: "공부를 시작하려다 유튜브·게임에 빠져 2시간이 훌쩍 지남",
         goal: "목표 공부 분량을 먼저 끝내고 기분 좋게 쉬기",
         conditions: [
           { text: "하루 목표 공부 분량을 다 풀기 전에는 게임 켜지 않기", desc: "우선순위 규칙" },

@@ -4,6 +4,8 @@ import { concepts, questions } from "../src/lib/classroom/programming-data";
 import { conditionalConcepts, conditionalQuestions } from "../src/lib/classroom/conditionals-data";
 import { loopConcepts, loopQuestions } from "../src/lib/classroom/loops-data";
 import { UNIT_QUIZ_DATA } from "../src/lib/server/review-quiz.mjs";
+import { missionById } from "../src/lib/classroom/programming-entry";
+import { readFileSync } from "node:fs";
 
 const UNITS = { "review-abstraction": "abstraction", "review-sandwich": "algorithm", "review-flowchart": "flowchart" } as const;
 
@@ -77,4 +79,18 @@ test("답하기 전 힌트는 계산·규칙을 그대로 주지 않고 볼 곳�
   expect(hint("and")).toBe("두 조건을 하나씩 참·거짓으로 따진 뒤, 개념 ‘논리 연산자’에서 ‘그리고’가 언제 참인지 확인해 보세요.");
   expect(hint("pentagon")).toBe("다섯 번 꺾어서 처음 방향으로 돌아오려면 모두 몇 도를 돌아야 할까요?");
   expect(hint("signal")).toBe("개념 ‘어떤 신호에 움직일까?’ 실험의 방향 버튼 아래 적힌 각도를 떠올려 보세요.");
+});
+
+test("조건·반복 문구는 같은 대상·용어를 쓰고, 문항이 묻는 규칙을 본문 예시로 먼저 보인다", () => {
+  for (const q of [...conditionalQuestions, ...loopQuestions]) expect(q.prompt, q.id).not.toContain("강아지");
+  const concept = (id: string) => [...conditionalConcepts, ...loopConcepts].find((c) => c.id === id)!;
+  expect(concept("lc4").example).toContain("무대를 클릭");
+  expect(concept("lc2").explanation).toContain("바깥쪽");
+  expect(concept("cc0").explanation).toContain("×, ÷를 +, −보다 먼저");
+  expect(concept("cc0").example).toContain("나머지는 3");
+  expect(concept("cc1").explanation).toContain("같을 때도 참");
+  expect(concept("lc1").explanation).toContain("안쪽 반복이 처음부터");
+  expect(missionById("freethrow")!.experiment).toMatch(/4, 5, 7, 8/);
+  const abstraction = readFileSync("src/lib/classroom/review/abstraction-data.mjs", "utf8");
+  expect(abstraction).not.toMatch(/순삭|안읽씹/);
 });

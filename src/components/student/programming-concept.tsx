@@ -63,7 +63,7 @@ export function ProgrammingConcept({ state, update, focus, next, onCheck, server
         {state.concept === 2 && <>
           <div className={styles.experimentTop}><span>상자에 새 값을 넣어 보세요</span>{resetExperience}</div>
           <div className={styles.variableDemo}><div className={styles.variableBox}><label htmlFor="concept-a">변수 A</label><input id="concept-a" type="number" min={-100} max={100} value={A} onChange={(e) => setA(Math.max(-100, Math.min(100, Number(e.target.value))))} /><button type="button" onClick={() => setA(A === 6 ? 3 : 6)}>A에 {A === 6 ? 3 : 6} 저장하기</button></div><span className={styles.operator}>×</span><div className={styles.variableBox}><label htmlFor="concept-b">변수 B</label><input id="concept-b" type="number" min={-100} max={100} value={B} onChange={(e) => setB(Math.max(-100, Math.min(100, Number(e.target.value))))} /></div><span className={styles.operator}>=</span><div className={styles.calculation} aria-live="polite"><small>계산 결과</small><strong>{A * B}</strong></div></div>
-          <p className={styles.takeaway}>변수는 값에 이름을 붙여 기억하는 장소예요. 연산자는 그 값을 계산해요. 두 수의 평균은 (A + B) ÷ 2예요.</p>
+          <p className={styles.takeaway}>변수는 값에 이름을 붙여 기억하는 장소예요. 연산자는 그 값을 계산해요. 두 수의 평균은 (A + B) ÷ 2예요. ‘대답’은 가장 최근 질문의 답만 기억해요. 앞의 대답은 다음 질문 전에 변수에 옮겨 두어요.</p>
         </>}
         {state.concept === 3 && <>
           <div className={styles.experimentTop}><span><Keyboard size={17} />신호를 보내 움직여 보세요</span>{resetExperience}</div>
