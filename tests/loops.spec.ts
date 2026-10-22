@@ -45,10 +45,23 @@ async function open(page: Page, mission: string) {
 }
 // Reads an object's state from the real EntryJS stage.
 const stageOf = (page: Page, objectId: string) => page.frames().find((frame) => frame.url().includes("/entryjs/workspace.html"))!.evaluate((target) => {
-  const entry = (window as unknown as { Entry: { container: { getObject: (id: string) => { entity: { getX: () => number; getY: () => number; picture: { id: string } } }; getVariableByName?: (name: string) => { getValue: () => unknown } } } }).Entry;
+  const entry = (window as unknown as { Entry: { container: { getObject: (id: string) => { entity: { getX: () => number; getY: () => number; picture: { id: string }; brush: unknown; shapes: unknown[] } }; getVariableByName?: (name: string) => { getValue: () => unknown } } } }).Entry;
   const entity = entry.container.getObject(target).entity;
-  return { x: Math.round(entity.getX() * 100) / 100, y: Math.round(entity.getY() * 100) / 100, picture: entity.picture.id };
+  return { x: Math.round(entity.getX() * 100) / 100, y: Math.round(entity.getY() * 100) / 100, picture: entity.picture.id, drawn: !!entity.brush && entity.shapes.length > 0 };
 }, objectId);
+const drawingWait = "정지하면 무대가 처음 상태로 돌아가고, 그다음 조건을 검증할 수 있어요.";
+// A drawing run stays on the stage until the student stops it; stopping resets the stage and allows validation.
+async function keepsDrawingUntilStop(page: Page, start: { x: number; y: number }) {
+  await expect(page.getByRole("status").filter({ hasText: drawingWait })).toBeVisible({ timeout: 10000 });
+  await expect(entryStop(page)).toBeVisible();
+  expect((await stageOf(page, "bot")).drawn).toBe(true);
+  await expect(page.getByRole("button", { name: "조건 검증", exact: true })).toBeDisabled();
+  await entryStop(page).click();
+  await expect(entryStart(page)).toBeVisible();
+  const stopped = await stageOf(page, "bot");
+  expect([stopped.x, stopped.y, stopped.drawn]).toEqual([start.x, start.y, false]);
+  await expect(page.getByRole("status").filter({ hasText: drawingWait })).toHaveCount(0);
+}
 async function validateAndSubmit(page: Page, mission: string) {
   await page.getByRole("button", { name: "조건 검증", exact: true }).click();
   await expect(page.locator("#practice-feedback")).toContainText("목표 조건을 확인했어요");
@@ -61,22 +74,18 @@ test("반복 수업은 공개되어 미션 네 개(필수 셋·도전 하나)를
   expect(missionsFor(id).map((mission) => [mission.id, !!mission.optional])).toEqual([["square", false], ["polygon", false], ["tree", false], ["safe", true]]);
 });
 
-test("반복 수업 도형: 실제 엔트리에서 그린 뒤 제자리로 돌아오고 서버 검증·제출이 일치한다", async ({ page }) => {
+test("반복 수업 도형: 실제 엔트리에서 그린 선이 정지 전까지 남고, 정지하면 제자리로 돌아오며 서버 검증·제출이 일치한다", async ({ page }) => {
   test.setTimeout(120000);
   await open(page, "square");
   const before = await stageOf(page, "bot");
   await entryStart(page).click();
-  await expect(entryStart(page)).toBeVisible({ timeout: 10000 });
-  const after = await stageOf(page, "bot");
-  expect([after.x, after.y]).toEqual([before.x, before.y]);
+  await keepsDrawingUntilStop(page, before);
   await validateAndSubmit(page, "square");
   const frame = await open(page, "polygon");
   const start5 = await stageOf(page, "bot");
   await entryStart(page).click();
   const input = frame.getByLabel("질문 대답", { exact: true }); await expect(input).toBeVisible(); await input.fill("5"); await input.press("Enter");
-  await expect(entryStart(page)).toBeVisible({ timeout: 10000 });
-  const end5 = await stageOf(page, "bot");
-  expect([end5.x, end5.y]).toEqual([start5.x, start5.y]);
+  await keepsDrawingUntilStop(page, start5);
   await validateAndSubmit(page, "polygon");
 });
 
