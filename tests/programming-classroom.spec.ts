@@ -412,6 +412,10 @@ test("곱셈 실제 실행 · 변수 팔레트 · 이동과 독립한 방향키 
   const native = page.frames().find((f) => f.url().includes("mission=keys"))!;
   const position = () => native.evaluate(() => { const e = (window as unknown as { Entry: { container: { getObject: (id: string) => { entity: { getX: () => number; getY: () => number } } } } }).Entry.container.getObject("entrybot").entity; return [Math.round(e.getX()) || 0, Math.round(e.getY()) || 0]; });
   await entryStart(page).click(); await expect.poll(position).toEqual([10, 0]);
+  // Arrow-key runs keep going; the result line says what to try and why validation waits, without a question prompt.
+  const keyRun = page.getByRole("status").filter({ hasText: /^실행 중이에요\./ });
+  await expect(keyRun).toContainText("다 해 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 조건을 검증할 수 있어요.");
+  await expect(keyRun).not.toContainText("질문에는");
   for (const [label, expected] of [["↑ 위", [10, 10]], ["← 왼쪽", [0, 10]], ["↓ 아래", [0, 0]], ["→ 오른쪽", [10, 0]]] as const) { await page.getByRole("button", { name: label, exact: true }).click(); await expect.poll(position).toEqual(expected); }
   await entryStop(page).click(); await expect.poll(position).toEqual([0, 0]);
   await page.getByLabel("오늘 발견한 것을 한 줄로 남겨볼까요?").fill("방향키 실행을 확인했습니다.");
