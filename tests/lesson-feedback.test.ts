@@ -111,3 +111,9 @@ test("복습 체험·순서도 화면에는 영어 의사 코드·머리표가 �
   expect(source("src/components/student/review/flow-execution.tsx")).not.toContain("▶ 실행 검증");
   expect(source("src/components/student/review/flowchart-concepts.tsx")).not.toContain(">초기화</Button>");
 });
+
+test("반복 lc2 예시와 그림은 개념 확인(정육각형)·퀴즈(정오각형)의 답을 미리 보여 주지 않는다", () => {
+  const lc2 = loopConcepts.find((c) => c.id === "lc2")!;
+  expect(lc2.example).not.toMatch(/정육각형|정오각형/);
+  expect(readFileSync("src/components/student/concept-visual.tsx", "utf8")).not.toMatch(/n=\{[56]\}/);
+});
