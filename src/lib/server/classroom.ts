@@ -160,7 +160,7 @@ export async function decideReview(uid: string, lessonId: string, payload: unkno
   });
 }
 export async function updateClass(classId: string, payload: unknown) {
-  const change = z.object({ revision: revisionSchema, currentLessonId: z.string().max(80).nullable(), openedLessonIds: z.array(z.string().max(80)).max(30) }).strict().parse(payload);
+  const change = z.object({ revision: revisionSchema, currentLessonId: z.string().max(80).nullable(), openedLessonIds: z.array(z.string().max(80)).max(60) }).strict().parse(payload);
   requireCondition(new Set(change.openedLessonIds).size === change.openedLessonIds.length && change.openedLessonIds.every((id) => findLesson(id)) && (!change.currentLessonId || change.openedLessonIds.includes(change.currentLessonId)), 400, "INVALID_LESSON", "열린 수업 중에서 이번 수업을 선택해 주세요.");
   return authorized(await identity(), async (tx, account) => {
     requireCondition(account.role !== "student" && account.classIds.includes(classId), 403, "FORBIDDEN", "담당 반만 변경할 수 있어요.");

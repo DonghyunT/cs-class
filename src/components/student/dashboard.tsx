@@ -26,19 +26,22 @@ export function StudentDashboardView() {
   const alive = useRef(true);
   const fetching = useRef(false);
   const fetchedAt = useRef(0);
+  const revision = useRef<number | null>(null);
   const refresh = useCallback(async (requested = false) => {
     if (requested) setRefreshing(true);
     if (fetching.current) return;
     fetching.current = true; fetchedAt.current = Date.now();
-    try { const result = await classroomApi.student(); if (alive.current) { setData(result); setError(""); } }
-    catch (problem) { if (alive.current) setError(problem instanceof Error ? problem.message : "수업을 불러오지 못했어요."); }
+    try { const result = await classroomApi.student(); if (alive.current) { setData(result); setError(""); revision.current = result.classroom.revision; } }
+    catch (problem) { if (alive.current) { setError(problem instanceof Error ? problem.message : "수업을 불러오지 못했어요."); revision.current = null; } }
     finally { fetching.current = false; if (alive.current) { setLoading(false); setRefreshing(false); } }
   }, []);
   useEffect(() => {
     alive.current = true;
     queueMicrotask(() => { if (alive.current) void refresh(); });
     const visibleRefresh = () => { if (document.visibilityState === "visible") void refresh(); };
-    const timer = window.setInterval(visibleRefresh, 30_000);
+    // Every open lesson's work costs a read, so the poll checks only the class and reloads work when the teacher changed it.
+    const check = () => { if (document.visibilityState === "visible") void classroomApi.studentClassroom().then(({ classroom }) => { if (alive.current && classroom.revision !== revision.current) void refresh(); }, () => { if (alive.current) void refresh(); }); };
+    const timer = window.setInterval(check, 30_000);
     const focused = () => { if (Date.now() - fetchedAt.current >= 30_000) visibleRefresh(); };
     window.addEventListener("focus", focused);
     return () => { alive.current = false; clearInterval(timer); window.removeEventListener("focus", focused); };

@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-10-22(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-10-24(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -35,7 +35,7 @@ npm run dev:emulator
 - **접속 주소:** `http://localhost:3000`
 - **에뮬레이터 포트:** Auth `9099`, Firestore `8080`, Web App `3000` (프로젝트 ID: `demo-cs-class`)
 - **게스트 즉시 로그인:**
-  - **학생 게스트:** 로그인 화면 아래 `빠르게 체험하기`의 `게스트 학생` (학번 `21099`, 2학년 10반)
+  - **학생 게스트:** 로그인 화면 아래 `빠르게 체험하기`의 `게스트 학생` (학번 `21099`, 2학년 10반). 99번 체험 계정이라 교사 화면의 학생 목록·반 통계에는 없고 `명단에서 뺀 계정` 묶음에 보입니다. 학생 목록 확인은 `21001` 등 시드 학생으로 합니다.
   - **교사 게스트:** 같은 곳의 `게스트 교사` (교사 권한, 2학년 1~11반 담당, 처음 화면은 1반)
 - **그 밖의 합성 계정:** 학생 `20101`, 강사 `instructor` 등은 [scripts/seed-emulator.mjs](../scripts/seed-emulator.mjs)가 만듭니다.
 - **합성 테스트 계정 초기 비밀번호:** [scripts/local-test-env.mjs](../scripts/local-test-env.mjs)에 정의되어 있으며 실제 비밀정보는 포함하지 않습니다.
@@ -96,7 +96,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 #### 1단계: 컴포넌트 분리 (`src/components/student/...`)
 - **컴포넌트 위치:** `src/components/student/<수업ID>.tsx` 또는 전용 하위 폴더(`review/<수업ID>.tsx`).
 - **공통 셸 구성:** [`LessonWorkspace`](../src/components/student/lesson-workspace.tsx) 또는 [`LessonEditor`](../src/components/student/lesson-editor.tsx)로 감싸 공통 헤더·진도율 바·저장 상태 배지 영역을 확보합니다.
-- **엔트리 수업:** 새 컴포넌트 없이 `practice.type: "programming"` 수업 정의(예: [`conditionals-lesson.ts`](../src/lib/classroom/conditionals-lesson.ts))를 만들면 공통 개념·퀴즈 화면과 엔트리 실습 화면을 씁니다. 미션은 `PROGRAMMING_MISSIONS`·`LESSON_MISSIONS`([§4.1](#41-entryjs-4023-실습-환경)의 수업별 미션), 미션별 허용 블록은 `MISSION_BLOCKS`, 채점 규칙은 `programming-grader.ts`에 함께 등록합니다. 규칙이 없는 미션은 통과하지 않습니다. 공통 개념 화면의 그림은 [`concept-visual.tsx`](../src/components/student/concept-visual.tsx)의 `CONCEPT_VISUALS`에 개념 ID로 등록하며(없으면 그림 없이 표시), 수업의 첫 작품은 `emptyWork`가 `missionStarter`로 만듭니다. 수업 정의는 `catalog.ts`의 `LESSONS`(공개 시 `RELEASED_LESSONS`), 개념·퀴즈 정답은 서버 `solutions.ts`, 강아지 없는 미션은 `FREE_MISSIONS`에 등록합니다. 빠뜨리지 않으려면 기존 엔트리 수업 ID(`loops`)를 저장소 전체에서 검색해 같은 자리에 모두 넣습니다(`seed-emulator.mjs`, `tests/e2e-scope.test.mjs` 포함).
+- **엔트리 수업:** 새 컴포넌트 없이 `practice.type: "programming"` 수업 정의(예: [`conditionals-lesson.ts`](../src/lib/classroom/conditionals-lesson.ts))를 만들면 공통 개념·퀴즈 화면과 엔트리 실습 화면을 씁니다. 미션은 `PROGRAMMING_MISSIONS`·`LESSON_MISSIONS`([§4.1](#41-entryjs-4023-실습-환경)의 수업별 미션), 미션별 허용 블록은 `MISSION_BLOCKS`, 채점 규칙은 `programming-grader.ts`에 함께 등록합니다. 규칙이 없는 미션은 통과하지 않습니다. 공통 개념 화면의 그림은 [`concept-visual.tsx`](../src/components/student/concept-visual.tsx)의 `CONCEPT_VISUALS`에 개념 ID로 등록하며(없으면 그림 없이 표시), 수업의 첫 작품은 `emptyWork`가 `missionStarter`로 만듭니다. 수업 정의는 `catalog.ts`의 `LESSONS`(공개 시 `RELEASED_LESSONS`)에 가르치는 순서대로 정규 수업 맨 뒤(복습 앞)에 넣고(학생 목록의 '최신 수업 먼저'와 `연속 완주` 배지가 이 순서를 씀), 개념·퀴즈 정답은 서버 `solutions.ts`, 강아지 없는 미션은 `FREE_MISSIONS`에 등록합니다. 빠뜨리지 않으려면 기존 엔트리 수업 ID(`loops`)를 저장소 전체에서 검색해 같은 자리에 모두 넣습니다(`seed-emulator.mjs`, `tests/e2e-scope.test.mjs` 포함).
 - **수업 내용 점검:** 개념·퀴즈·미션 문구와 피드백은 [PRD §3.1](PRD.md#31-수업-3단계-라이프사이클-및-진도-측정)·[§3.4](PRD.md#수업-내용-기준)와 [DESIGN §2.2·§5.1](DESIGN.md#22-타이포그래피-스케일-typography-rules)로 점검합니다.
 
 #### 2단계: 저장 상태 연동 (`useWork`)
@@ -195,7 +195,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 | **미분류 파일(서버·공통·설정·검사 파일)이 있을 때** | 로컬 선별 도구는 `full`을 내고 멈추므로, 아래 안내대로 검사 파일을 직접 고릅니다 | `smoke` 모드로 전체 등록 수업 스모크와 확인된 관련 수업 검사를 실행합니다. 비교 기준이 없거나 조회에 실패해도 전체 검사로 승격하지 않습니다 |
 | **전체 E2E** | **사용자의 명시적 요청 또는 에이전트 질문 후 사전 승인 시에만 실행** | **GitHub Actions의 `workflow_dispatch` 수동 실행으로만 수행** |
 
-**미분류 파일이 있을 때의 로컬 검사:** 로컬 선별 도구(`npm run test:e2e:scope`)는 수업에 매핑되지 않은 파일(서버·공통·설정·검사 파일 등)이 하나라도 있으면 `full`을 내고 멈춥니다. CI는 같은 경우 `smoke`로 낮춥니다. 이때는 전체 E2E를 돌리지 말고, 바꾼 코드를 직접 사용하는 검사 파일과 공통 스모크를 에뮬레이터가 실행 중인 상태에서 `npm run test:e2e:running -- tests/<파일>.spec.ts tests/lesson-smoke.spec.ts`로 돌립니다(예: `src/lib/server/auth.ts` → `auth-security`·`settings`·`guest-login`). **파일을 지정하지 않으면 전체 E2E가 실행되므로** 반드시 파일을 지정합니다. 전체 E2E가 필요하다고 판단되면 사용자에게 묻습니다. 검사 파일을 직접 고를 때는 바꾼 파일 이름·API 경로(예: `/api/classroom/classes`)를 `git grep -l "<이름>" -- tests`로 찾아 나온 검사를 모두 포함합니다(예: 수업 설정 → `classroom-api`·`teacher-class-management`).
+**미분류 파일이 있을 때의 로컬 검사:** 로컬 선별 도구(`npm run test:e2e:scope`)는 수업에 매핑되지 않은 파일(서버·공통·설정·검사 파일 등)이 하나라도 있으면 `full`을 내고 멈춥니다. CI는 같은 경우 `smoke`로 낮춥니다. 이때는 전체 E2E를 돌리지 말고, 바꾼 코드를 직접 사용하는 검사 파일과 공통 스모크를 에뮬레이터가 실행 중인 상태에서 `npm run test:e2e:running -- tests/<파일>.spec.ts tests/lesson-smoke.spec.ts`로 돌립니다(예: `src/lib/server/auth.ts` → `auth-security`·`settings`·`guest-login`·`first-entry`·`roster-off-list`). **파일을 지정하지 않으면 전체 E2E가 실행되므로** 반드시 파일을 지정합니다. 전체 E2E가 필요하다고 판단되면 사용자에게 묻습니다. 검사 파일을 직접 고를 때는 바꾼 파일 이름·API 경로(예: `/api/classroom/classes`)를 `git grep -l "<이름>" -- tests`로 찾아 나온 검사를 모두 포함합니다(예: 수업 설정 → `classroom-api`·`teacher-class-management`).
 
 `:running` 명령은 3000번에 떠 있는 앱을 그대로 씁니다. `npm run dev:emulator`로 띄운 앱은 `CS_TIMETABLE_FIXTURE` 없이 가짜 시간표 서버를 켜지 않아 `timetable` 검사가 실패하고 실제 시간표 사이트로 요청이 갈 수 있습니다. 직접 고른 검사에 `timetable`이 있으면 앱과 에뮬레이터를 모두 끄고(3000·8080·9099 비움) `npx.cmd firebase emulators:exec --only auth,firestore --project demo-cs-class "npx playwright test tests/<파일>.spec.ts"`로 돌립니다(Playwright가 가짜 시간표 서버와 함께 앱을 띄웁니다).
 
@@ -265,7 +265,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 - **반 선택 세션:** `SessionProvider`의 `useTeacherClass`는 탭 단위 `sessionStorage`로 선택 반을 관리하며 URL 쿼리(`?classId=...`)와 연동됩니다.
 - **교사 수업 미리보기 (`/teacher/preview/[id]`):** `LessonPreview`와 `usePreviewWork`는 실제 `LessonShell`을 `mode="preview"`로 렌더링하며, 학생 학습 컬렉션 쓰기를 엄격히 차단하고 컴포넌트 메모리에서만 동작합니다.
 - **교사 제출 작품 열람 및 인라인 실행 (`SubmissionViewer` · `EntryProjectPreview`):** 화면·폭·`Escape` 순서는 [DESIGN §4.4](DESIGN.md#학생교사-대시보드)를 따르며, 파싱 실패 시에만 번호 목록으로 폴백합니다. E2E 검사에서는 iframe 언마운트 경합을 막기 위해 `무대 처음 위치로` 버튼이 활성화된 뒤 `Escape`를 입력합니다.
-- **읽기 최적화·손들기 중지 검사:** `tests/help-paused.spec.ts`, `tests/read-polling.spec.ts`로 손들기 중지·교사 수동 조회·권한·느린 응답 경합과 학생 포커스 재조회 30초 간격·활동 기록 뒤 세션 확인 생략, PC 시계가 서버보다 빠르거나 느려도 활동 기록이 30초에 한 번이고 바로 로그아웃하지 않는지를 확인합니다. 손들기 활성 모드 검사(`help-requests`, `help-races`, 관련 UI 검사)는 보존하되 공유 설정이 false이면 명시적으로 생략하며 이를 통과로 집계하지 않습니다. 복구 시 설정을 true로 변경한 뒤 재빌드하여 활성 모드 검사를 실행합니다. 공유 설정은 `src/lib/classroom/features.ts`의 `CLASSROOM_HELP_ENABLED`입니다. `tests/read-usage.spec.ts`는 공개 수업 4개·학생 27명·담당 반 11개의 10분 가상 시간 요청 샘플이며 과금 실측이 아닙니다. 다른 Playwright 실행과 병렬로 돌릴 때는 `--output` 경로를 분리해야 합니다. 활동 갱신 응답은 계정 쓰기를 표본에서 빼려고 fixture로 두고 세션 비용은 별도 모형으로 계산합니다.
+- **읽기 최적화·손들기 중지 검사:** `tests/help-paused.spec.ts`, `tests/read-polling.spec.ts`로 손들기 중지·교사 수동 조회·권한·느린 응답 경합과 학생 포커스 재조회 30초 간격·학생 대시보드와 열린 수업 목록의 반 설정만 확인하는 30초 조회·활동 기록 뒤 세션 확인 생략, PC 시계가 서버보다 빠르거나 느려도 활동 기록이 30초에 한 번이고 바로 로그아웃하지 않는지를 확인합니다. 손들기 활성 모드 검사(`help-requests`, `help-races`, 관련 UI 검사)는 보존하되 공유 설정이 false이면 명시적으로 생략하며 이를 통과로 집계하지 않습니다. 복구 시 설정을 true로 변경한 뒤 재빌드하여 활성 모드 검사를 실행합니다. 공유 설정은 `src/lib/classroom/features.ts`의 `CLASSROOM_HELP_ENABLED`입니다. `tests/read-usage.spec.ts`는 공개 수업 전부·학생 27명·담당 반 11개의 10분 가상 시간 요청 샘플이며 과금 실측이 아닙니다. 다른 Playwright 실행과 병렬로 돌릴 때는 `--output` 경로를 분리해야 합니다. 활동 갱신 응답은 계정 쓰기를 표본에서 빼려고 fixture로 두고 세션 비용은 별도 모형으로 계산합니다.
 
 ### 4.4 학교 시간표 연동 Fixture
 <a id="학교-시간표-연동"></a>
@@ -349,7 +349,8 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 | :--- | :--- |
 | 에이전트 금지사항·승인 범위 | [AGENTS](../AGENTS.md) |
 | 반영 경로·검증 방법·명령 | 이 문서 §2~3 |
-| 제품 정책·사용 한도·권한 | [PRD](PRD.md) |
+| 제품 정책·사용 한도·권한, 학생이 보는 수업 구성·통과 기준 | [PRD](PRD.md) |
+| 채점기·팔레트·실행 한도 등 수업 구현 세부 | 이 문서 §4 |
 | 화면·토큰·접근성 | [DESIGN](DESIGN.md) |
 | 배포 게이트·운영 절차·운영 환경 현황 | [FIREBASE_SETUP](FIREBASE_SETUP.md) |
 | 현재 진행·최근 반영·다음 작업·남은 한계 | [HANDOFF](HANDOFF.md) |
@@ -358,11 +359,12 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 문서끼리 답이 다르면 위 표의 단일 위치가 이깁니다. 단 AGENTS의 '검증 및 배포 규칙'·'절대 금지 사항'이 모든 문서보다 우선합니다. HANDOFF의 날짜 붙은 사용자 결정과 절차 문서가 다르면 사용자에게 확인하고 절차 문서를 고칩니다. 어긋남을 본 에이전트는 작업 범위 안이면 사본을 링크로 바꾸고, 범위 밖이면 HANDOFF 다음 작업에 적습니다.
 
 ### 6.2 쓰기 규칙
-- **절차와 상태를 나눕니다.** 절차 문서에는 절차만 씁니다. "현재 ~되어 있다" 같은 상태는 FIREBASE_SETUP 끝의 운영 환경 현황 표(마지막 확인일 포함)나 HANDOFF에만 씁니다.
+- **절차와 상태를 나눕니다.** 절차 문서에는 절차만 씁니다. "현재 ~되어 있다" 같은 상태 중 운영 설정 상태는 FIREBASE_SETUP 끝의 운영 환경 현황 표(마지막 확인일 포함)에만, 작업 진행 상태는 HANDOFF에만 씁니다. HANDOFF는 운영 상태를 되풀이하지 않고 링크와 사용자 할 일만 둡니다.
 - **HANDOFF는 짧게 유지합니다.**
   - "최근 반영"에는 PR 경로 변경과 사용자에게 보이는 변경을 적습니다. 5개까지 두고, 항목마다 무엇·검증·한계를 2~3줄로 씁니다. 항목은 PR 번호(직접 push는 커밋 제목)로 식별하고, 전체 E2E를 돌렸는지 반드시 적습니다.
   - 5개를 넘으면 가장 오래된 항목을 지웁니다. 지우기 전에 아직 유효한 한계는 "남은 한계"로 옮깁니다. 원문은 Git과 PR에 남습니다.
   - HANDOFF 전체는 약 8KB 이내로 유지합니다. 10,000바이트(줄바꿈 LF 기준)를 넘거나 최근 반영이 5개를 넘으면 `node scripts/check-docs.mjs`가 실패합니다.
+- **PR 경로 작업은 같은 PR에서 문서를 정리합니다.** HANDOFF 최근 반영을 추가하고, 끝난 다음 작업·해소된 남은 한계를 지우고, 끝난 계획은 보관 스냅샷으로 옮깁니다. 이번에 바꾼 규칙·수치·파일 이름은 `git grep`으로 찾아 다른 문서의 사본을 고치거나 단일 위치 링크로 바꿉니다.
 - **기록은 반영과 함께 씁니다.** HANDOFF 기록은 반영하는 같은 PR·커밋 안에서, 병합 전에 알 수 있는 검증만으로 씁니다. 병합 뒤 알게 된 실패·우회·복구·현장 확인은 다음 반영에 함께 쓰고, 다음 반영이 없거나 그 사실이 다음 작업을 막으면 HANDOFF·운영 환경 현황만 고치는 문서 커밋으로 남깁니다. '병합 완료'·배포 ID만 적는 커밋은 만들지 않습니다. 배포 ID·시각은 이상·우회·복구가 있을 때만 적습니다.
 - **계획 문서는 진행 중일 때만 둡니다.** 진행 중인 작업 계획은 도구의 기본 저장 경로와 관계없이 `docs/plans/`에 두고(폴더는 필요할 때 만듭니다) HANDOFF 현재 작업 상태에서 링크하며, 끝나면 보관 스냅샷으로 옮깁니다. HANDOFF에서 링크되지 않은 계획이 있으면 `check-docs`가 실패합니다. 현재 동작의 기준으로 계획 문서를 가리키지 않습니다.
 - **진행 중 브랜치를 남깁니다.** 진행 중 브랜치가 있으면 HANDOFF 현재 작업 상태에 이름과 남은 일을 적습니다.
