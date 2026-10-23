@@ -390,7 +390,7 @@ test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 �
   await expect(programCard.locator("svg [data-stage]")).toHaveCount(3);
   await expect(programCard.locator("svg [data-start-marker]")).toHaveCount(0);
   await expect(finishedCard.getByRole("progressbar")).toHaveCount(0);
-  await expect(finishedCard).toContainText("복습 수업");
+  await expect(finishedCard).toContainText("복습 완료");
   await expect(page.getByText("완료한 수업", { exact: true }).locator("..").locator("dd")).toHaveText("1개");
   await expect(reviewCard.getByRole("progressbar")).toHaveCount(0);
   await expect(reviewCard.locator("svg [data-stage]")).toHaveCount(0);
@@ -700,4 +700,59 @@ test("첫 조회는 초점을 유지하며 대기·실패의 가짜 0%와 재조
     expect(await savedRing!.evaluate(element => element.isConnected)).toBe(true);
     await expect(refresh).toBeFocused();
   } finally { release(); }
+});
+
+test("완료 알림·배지: 마지막 활동을 마치면 완료 카드와 받은 배지를 보여 주고 다시 들어오면 완료 띠만 남긴다", async ({ page }) => {
+  const conditionals = LESSONS.find(lesson => lesson.id === "conditionals")!;
+  await openLessons([conditionals.id], conditionals.id);
+  const almost = emptyWork(conditionals);
+  almost.conceptSolved = conditionals.concepts.slice(1).map(concept => concept.id);
+  almost.quizSolved = conditionals.quiz.map(question => question.id);
+  almost.missions = Object.fromEntries(["average", "pass", "freethrow"].map(id => [id, { validation: null, submission: submission(`${id}-submitted`) }]));
+  almost.updatedAt = Date.now();
+  await saveWork(almost);
+  await page.goto(`/classroom/${conditionals.id}?from=dashboard`);
+  const card = page.locator("[data-lesson-complete]"), banner = page.locator("[data-completion-banner]");
+  await expect(page.locator("#panel-concept")).toBeVisible();
+  await expect(banner).toHaveCount(0);
+  await page.locator("#panel-concept input[type=radio]").first().check();
+  await page.getByRole("button", { name: "정답 확인", exact: true }).click();
+  await expect(card.getByRole("heading", { name: "이 수업을 모두 마쳤어요!", exact: true })).toBeVisible();
+  await expect(card.getByRole("list", { name: "단계별 완료", exact: true })).toHaveText(/개념 5\/5.*퀴즈 5\/5.*실습 3\/3/);
+  // Only the badges this completion raised: the quiz and missions were already done before.
+  for (const title of ["개념 탐험가", "수업 완주"]) await expect(card.getByText(title, { exact: true })).toBeVisible();
+  for (const title of ["한 번에 만점", "미션 해결사"]) await expect(card.getByText(title, { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("status").filter({ hasText: "필수 활동을 모두 마쳤어요." })).toHaveCount(1);
+  // The card announces itself without pulling focus away from the concept feedback.
+  await expect(card.locator(":focus")).toHaveCount(0);
+  await expect(banner).toContainText("이 수업은 완료했어요.");
+  // The header's account menu opens over the card, so logging out still works while it is shown.
+  await page.getByRole("button", { name: "학생 메뉴", exact: true }).click();
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click({ trial: true });
+  await page.keyboard.press("Escape");
+  await card.getByRole("button", { name: "계속 둘러보기", exact: true }).click();
+  await expect(card).toHaveCount(0);
+  await page.reload();
+  await expect(banner).toContainText("이 수업은 완료했어요.");
+  await expect(card).toHaveCount(0);
+  await page.goto("/student");
+  const badges = page.getByRole("region", { name: "내 배지", exact: true });
+  await expect(badges).toContainText("6종 중 5종 받음");
+  await expect(badges.getByRole("listitem").filter({ hasText: "도전자" })).toContainText("도전 미션 1개 중 0개 제출");
+  await expect(badges.getByRole("heading", { name: "도전자 · 아직 받지 않은 배지", exact: true })).toBeVisible();
+  await expect(badges.getByRole("heading", { name: "수업 완주 · 받은 배지", exact: true })).toBeVisible();
+});
+
+test("남은 활동: 진행 중인 정규 수업은 대시보드와 수업 목록에 남은 개념·퀴즈·미션 수를 보여 준다", async ({ page }) => {
+  const loops = LESSONS.find(lesson => lesson.id === "loops")!;
+  await openLessons([loops.id], loops.id);
+  const partial = emptyWork(loops);
+  partial.conceptSolved = ["lc0", "lc1"];
+  partial.missions = { square: { validation: null, submission: submission("square") }, safe: { validation: null, submission: submission("safe") } };
+  partial.updatedAt = Date.now();
+  await saveWork(partial);
+  await page.goto("/student");
+  await expect(page.getByRole("region", { name: "수업별 학습 진도", exact: true })).toContainText("남은 활동: 개념 3개 · 퀴즈 5문제 · 미션 2개");
+  await page.goto("/student/lessons");
+  await expect(page.getByRole("article", { name: loops.title, exact: true })).toContainText("남은 활동: 개념 3개 · 퀴즈 5문제 · 미션 2개");
 });

@@ -9,6 +9,7 @@ import { useSession } from "@/components/session-provider";
 import { classroomApi } from "@/lib/classroom/client";
 import { prioritizedLessons, resumeLabelFor } from "@/lib/classroom/lesson-navigation";
 import { progressFor } from "@/lib/classroom/progress";
+import { remainingFor } from "@/lib/classroom/achievements";
 import type { StudentDashboard } from "@/lib/classroom/types";
 import { LearningStatus, ProgressSummary } from "./progress-summary";
 import { ActivityProgressRing } from "./activity-progress-ring";
@@ -70,9 +71,9 @@ export function StudentDashboardView() {
       <div id="opened-lessons" className={`${styles.lessonCollection} ${layout === "list" ? styles.lessonRows : styles.lessonTiles}`} data-layout={layout}>{shown.map((lesson) => {
         const work = data.work[lesson.id], progress = progressFor(lesson, work);
         const parts = ([['concept', '개념'], ['quiz', '퀴즈'], ['practice', '실습']] as const).map(([stage, label]) => ({ stage, label, ...progress[stage] }));
-        const entryLabel = lesson.mode === "review" ? work?.updatedAt ? "이어서 복습하기" : "다시 둘러보기" : progress.status === "completed" ? "다시 보기" : work?.updatedAt ? "이어하기" : "수업 시작";
-        return <article key={lesson.id} className={styles.lessonRecord} aria-labelledby={`lesson-card-${lesson.id}`}>
-          <div className={styles.lessonIdentity}><div className={styles.inline}>{current?.id === lesson.id && <span className={styles.tag}>이번 수업</span>}<LearningStatus lesson={lesson} work={work} /></div><h3 id={`lesson-card-${lesson.id}`}>{lesson.title}</h3>{lesson.mode !== "review" && work?.updatedAt && progress.status !== "completed" && <p className={styles.lessonResume}>이어갈 곳: {resumeLabelFor(lesson, work)}</p>}</div>
+        const entryLabel = lesson.mode === "review" ? progress.status === "completed" ? "다시 보기" : work?.updatedAt ? "이어서 복습하기" : "다시 둘러보기" : progress.status === "completed" ? "다시 보기" : work?.updatedAt ? "이어하기" : "수업 시작";
+        return <article key={lesson.id} className={styles.lessonRecord} data-status={progress.status} aria-labelledby={`lesson-card-${lesson.id}`}>
+          <div className={styles.lessonIdentity}><div className={styles.inline}>{current?.id === lesson.id && <span className={styles.tag}>이번 수업</span>}<LearningStatus lesson={lesson} work={work} /></div><h3 id={`lesson-card-${lesson.id}`}>{lesson.title}</h3>{lesson.mode !== "review" && work?.updatedAt && progress.status !== "completed" && <><p className={styles.lessonResume}>이어갈 곳: {resumeLabelFor(lesson, work)}</p><p className={styles.lessonResume}>남은 활동: {remainingFor(lesson, work).join(" · ")}</p></>}</div>
           <div className={styles.lessonMetrics}>{lesson.mode !== "review" ? layout === "list" ? <ProgressSummary lesson={lesson} work={work} /> : <div className={styles.lessonTileVisual}><ActivityProgressRing parts={parts} label={`${lesson.title} 필수 활동 완료율`} size="compact" interactive={false} /><p className={styles.lessonDescription} title={lesson.description}>{lesson.description}</p></div> : <div className={styles.lessonReview}>{layout === "grid" && <p className={styles.lessonDescription} title={lesson.description}>{lesson.description}</p>}<span>선택 복습 · 성적에 반영하지 않아요</span></div>}</div>
           <div className={styles.lessonEntry}><Button variant="outline" nativeButton={false} aria-label={entryLabel} title={`${lesson.title} · ${entryLabel}`} render={<Link href={`/classroom/${lesson.id}?from=lessons`} />}>{entryLabel === "수업 시작" ? "시작하기" : entryLabel === "이어서 복습하기" ? "복습하기" : entryLabel === "다시 둘러보기" ? "둘러보기" : entryLabel}<ArrowRight size={16} aria-hidden="true" /></Button></div>
         </article>;

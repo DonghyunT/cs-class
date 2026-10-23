@@ -20,6 +20,7 @@ import { ScheduleList } from "./schedule";
 import { LoadingList } from "./loading-list";
 import { dateLabel } from "@/components/teacher/presentation";
 import { LearningOverview, StudentLessonProgress } from "@/components/student/learning-overview";
+import { StudentBadges } from "@/components/student/badges";
 import styles from "./dashboard.module.css";
 
 export function DashboardScreen({ teacher = false, classId }: { teacher?: boolean; classId?: string }) {
@@ -79,7 +80,7 @@ function Dashboard({ session, teacher, explicitClassId }: { session: Session; te
     {!teacher ? <LearningOverview data={student} loading={loading} error={Boolean(error)} /> : <section className={styles.current} aria-labelledby="current-heading"><div><span className={styles.eyebrow}><BookOpen size={17} aria-hidden="true" />{active?.classroom.name && `${active.classroom.name} · `}이번 수업</span>{loading && !active && !error ? <><h2 id="current-heading" className="sr-only">이번 수업 확인 중</h2><div className={styles.currentLoading}><Skeleton /><Skeleton /></div></> : <><h2 id="current-heading">{currentTitle}</h2><p>{current?.description ?? "수업 관리에서 담당 반의 수업을 준비해요."}</p>{current && classId && <Button className={styles.currentAction} variant="outline" nativeButton={false} render={<Link href={`/teacher/preview/${encodeURIComponent(current.id)}?classId=${encodeURIComponent(classId)}`} />}>수업 미리보기<ArrowRight size={16} aria-hidden="true" /></Button>}</>}</div>
       {staff && current && staffLesson?.id === current.id && <div className={styles.currentProgress}><ClassProgress lesson={current} students={staff.students} checkedAt={updatedAt ?? 0} /></div>}
     </section>}
-    <div className={styles.columns}><div className={styles.mainColumn}>{!teacher && <><StudentLessonProgress data={student} loading={loading && !error} /><TodoList uid={session.uid} /></>}{teacher && <section className={`${styles.panel} ${styles.actionsPanel}`} aria-labelledby="actions-heading"><div className={styles.sectionHeading}><div className={styles.sectionTitle}><span className={`${styles.titleIcon} ${styles.actionIcon}`}><ListChecks size={19} aria-hidden="true" /></span><h2 id="actions-heading">교사가 확인할 일</h2></div><Link href={`/teacher/students${classId ? `?classId=${classId}` : ""}`}>학생 현황<ArrowRight size={15} aria-hidden="true" /></Link></div>
+    <div className={styles.columns}><div className={styles.mainColumn}>{!teacher && <><StudentLessonProgress data={student} loading={loading && !error} /><StudentBadges data={student} loading={loading && !error} /><TodoList uid={session.uid} /></>}{teacher && <section className={`${styles.panel} ${styles.actionsPanel}`} aria-labelledby="actions-heading"><div className={styles.sectionHeading}><div className={styles.sectionTitle}><span className={`${styles.titleIcon} ${styles.actionIcon}`}><ListChecks size={19} aria-hidden="true" /></span><h2 id="actions-heading">교사가 확인할 일</h2></div><Link href={`/teacher/students${classId ? `?classId=${classId}` : ""}`}>학생 현황<ArrowRight size={15} aria-hidden="true" /></Link></div>
       {loading && !active && !error && <LoadingList label="담당 반의 기록을 불러오고 있어요." />}
         {!session.classIds.length && <p className={styles.empty}>아직 담당 반이 없어요. 개인 할 일은 사용할 수 있어요.</p>}
         {staff && staffLesson && <p className={styles.cardLesson}><BookOpen size={16} aria-hidden="true" />{staffLesson.title}</p>}

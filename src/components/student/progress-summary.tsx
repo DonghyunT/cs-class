@@ -4,8 +4,8 @@ import type { Lesson, Work } from "@/lib/classroom/types";
 import styles from "./student.module.css";
 
 export function LearningStatus({ lesson, work }: { lesson: Lesson; work?: Work }) {
-  if (lesson.mode === "review") return <span className={styles.status}>복습 수업</span>;
   const progress = progressFor(lesson, work);
+  if (lesson.mode === "review") return progress.status === "completed" ? <span className={`${styles.status} ${styles.complete}`}><Check size={14} aria-hidden="true" />복습 완료</span> : <span className={styles.status}>복습 수업</span>;
   return <span className={`${styles.status} ${progress.status === "completed" ? styles.complete : ""}`}>
     {progress.status === "completed" && <Check size={14} aria-hidden="true" />}{STATUS_LABELS[progress.status]}
   </span>;

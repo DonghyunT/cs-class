@@ -18,6 +18,8 @@ import reviewStyles from "./review/review.module.css";
 import styles from "./student.module.css";
 import type { LessonOrigin } from "./lesson-shell";
 import { PracticeGuidance } from "./practice-guidance";
+import { CompletionBanner, CompletionCelebration } from "./lesson-complete";
+import { lessonBadgesFor, type BadgeId } from "@/lib/classroom/achievements";
 import { LessonConceptPanel } from "./lesson-concept-panel";
 import { LessonQuizPanel } from "./lesson-quiz-panel";
 
@@ -45,6 +47,15 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   const { work, draft, busy, update, perform, saveState, error, switchStage: changeStage, actionBlocked } = controller;
   const progress = progressFor(lesson, work);
   const reviewType = lesson.practice.type === "sandwich" || lesson.practice.type === "abstraction" || lesson.practice.type === "flowchart" ? lesson.practice.type : null;
+  const completed = progress.status === "completed", lessonBadges = lessonBadgesFor(lesson, work);
+  // Celebrate only the change to complete during this visit, whichever activity finished it,
+  // and list just the badges whose count this change raised (the dashboard counts lessons per badge).
+  const [seen, setSeen] = useState({ completed, badges: lessonBadges });
+  const [celebration, setCelebration] = useState<BadgeId[] | null>(null);
+  if (completed !== seen.completed || lessonBadges.join() !== seen.badges.join()) {
+    if (completed && !seen.completed) setCelebration(lessonBadges.filter(id => !seen.badges.includes(id)));
+    setSeen({ completed, badges: lessonBadges });
+  }
   const [practiceVisited, setPracticeVisited] = useState(initial.draft.stage === "practice");
   if (draft.stage === "practice" && !practiceVisited) setPracticeVisited(true);
   // Keep local consultation and reading position for this lesson without adding server storage.
@@ -64,6 +75,8 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   const actionLocked = locked || controller.capturing || controller.actionBlocked || saveState === "saving";
   const draftMatchesValidation = work.validation?.passed && practiceMatches(draft, work.validation);
   const draftMatchesSubmission = practiceMatches(draft, work.submission);
+  // Closing with the button would leave focus on nothing, so it returns to the current stage heading.
+  function closeCelebration(returnFocus: boolean) { setCelebration(null); if (returnFocus) setFocusRequest({ id: `stage-heading-${draft.stage}` }); }
   function selectConcept(id: string) { setConceptId(id); setFocusRequest({ id: `concept-title-${id}` }); }
   function resetExperience() {
     setExperienceVersion(value => value + 1);
@@ -130,6 +143,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     onFrameChange({ stage: draft.stage, saveLabel, save: mode === "student" ? controller.save : undefined, saveDisabled: locked || controller.capturing || controller.aiBusy || saveState === "saving" || controller.conflict || controller.actionBlocked || (needsNative && !nativeReady), learningStatus: <LearningStatus lesson={lesson} work={work} />, navigation, focusRequest });
   }, [onFrameChange, saveLabel, lesson, work, actionLocked, draft.stage, tabKey, switchStage, focusRequest, controller.save, controller.capturing, controller.aiBusy, controller.conflict, controller.actionBlocked, locked, mode, saveState, needsNative, nativeReady]);
   const content = <>
+    {completed && !practiceFocused && <CompletionBanner lesson={lesson} mode={mode} />}
     {error && <section id="work-save-error" tabIndex={-1} className={styles.errorPanel} role="alert"><strong>{controller.conflict ? "저장 기록이 서로 달라요." : "요청을 완료하지 못했어요."}</strong><p>{error}</p><p>현재 입력은 이 화면에 유지하고 있어요. 확인 전에는 창을 닫지 마세요.</p><Button variant="outline" disabled={busy} onClick={() => void (controller.conflict ? controller.compare() : controller.retry())}>{controller.conflict ? "서버 기록과 비교" : "저장 다시 확인"}</Button></section>}
     {controller.actionFailure && <section id="work-action-error" tabIndex={-1} className={styles.errorPanel} role="alert">
       <strong>{controller.actionFailure.uncertain ? "요청 결과를 확인해 주세요." : "행동 요청을 완료하지 못했어요."}</strong>
@@ -287,5 +301,8 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
       </section>
     )}
   </>;
-  return <div className={styles.workspace}>{content}</div>;
+  return <div className={styles.workspace}>{content}
+    <span className={styles.srOnly} role="status">{celebration ? "필수 활동을 모두 마쳤어요. 완료 안내에서 이번에 오른 배지를 볼 수 있어요." : ""}</span>
+    {celebration && <CompletionCelebration lesson={lesson} work={work} badges={celebration} mode={mode} onClose={closeCelebration} />}
+  </div>;
 });
