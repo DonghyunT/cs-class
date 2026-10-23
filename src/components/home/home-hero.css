@@ -48,8 +48,26 @@
 }
 .landing-hero-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 32px;
+}
+.landing-hero-actions .landing-button {
+  white-space: nowrap;
+}
+.landing-hero-copy > .landing-teacher-entry {
+  margin-top: 12px;
+  color: var(--landing-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.landing-teacher-entry a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  color: var(--landing-blue);
+  font-weight: 650;
 }
 .landing-hero-bottom {
   display: flex;

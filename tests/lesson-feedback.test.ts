@@ -30,6 +30,18 @@ test("공개 수업의 개념 확인·퀴즈 선택지 수와 정답 번호는 �
   ]);
 });
 
+test("엔트리 수업의 개념 확인·퀴즈 정답은 화면에서 같은 자리에만 있지 않고, 보기는 빠짐없이 한 번씩 보인다", () => {
+  const correct = new Map<string, number>([...concepts.map((c, i) => [`pc${i}`, c.correct] as const), ...[...questions, ...conditionalQuestions, ...conditionalConcepts, ...loopConcepts, ...loopQuestions].map((q) => [q.id, q.correct] as const)]);
+  for (const lesson of RELEASED_LESSONS.filter((item) => item.practice.type === "programming")) {
+    for (const items of [lesson.concepts.map((c) => c.question), lesson.quiz]) {
+      for (const item of items) expect([...item.options.map((o) => o.id)].sort(), `${lesson.id}:${item.id}`).toEqual(item.options.map((_, i) => String(i)));
+      const shown = items.map((item) => item.options.findIndex((o) => o.id === String(correct.get(item.id))));
+      expect(shown.every((i) => i >= 0), lesson.id).toBe(true);
+      expect(new Set(shown).size, `${lesson.id}: ${shown}`).toBeGreaterThan(1);
+    }
+  }
+});
+
 const noAnswer = (text: string, label: string) => {
   expect(text, label).toBeTruthy();
   expect(text, label).not.toContain("정답");

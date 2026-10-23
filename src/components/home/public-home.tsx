@@ -5,12 +5,13 @@ import { useState } from "react";
 import { ArrowDown, ArrowRight, ArrowUp, GraduationCap, Mouse } from "lucide-react";
 import { Brand, DemoBanner } from "@/components/visuals";
 import { HomeArt } from "./home-art";
-import { HomeEntry } from "./home-entry";
+import { HomeEntry, useEntryHref } from "./home-entry";
 import { LessonStory } from "./lesson-story";
 import { RolePreview } from "./role-preview";
 
 export function PublicHome() {
   const [paused, setPaused] = useState(false);
+  const { entryHref, loading } = useEntryHref();
   return (
     <div
       className="public-home"
@@ -47,10 +48,21 @@ export function PublicHome() {
                 지난 활동도 이어갈 수 있어요.
               </p>
               <div className="landing-hero-actions">
-                <a className="landing-button" href="#experience">
+                <Link className="landing-button" href={entryHref ?? "/login/student"}>
+                  {entryHref ? "내 교실로 가기" : "학생으로 입장"} <ArrowRight size={18} />
+                </Link>
+                <a className="landing-button secondary" href="#experience">
                   수업 방식 보기 <ArrowDown size={18} />
                 </a>
               </div>
+              {!entryHref && !loading && (
+                <p className="landing-teacher-entry">
+                  선생님이신가요?{" "}
+                  <Link href="/login/teacher">
+                    선생님으로 입장 <ArrowRight size={14} />
+                  </Link>
+                </p>
+              )}
             </div>
             <HomeArt paused={paused} />
           </div>
