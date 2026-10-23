@@ -213,7 +213,6 @@ test("teacher-preview-entry: 실제 조립·질문 응답·보기 전환·체험
     } else await clickCanvas(true);
     await expect(page.getByRole("status").filter({ hasText: `마지막 말: ${name}` })).toBeVisible({ timeout: 10000 });
     await expect(entryStart(page)).toBeVisible();
-    await expect(page.getByRole("status", { name: "서로 다른 이름 확인", exact: true })).toHaveText(`서로 다른 이름 확인 ${index + 1}/2`);
   }
   await expect(page.locator("[data-lesson-shell]")).toHaveAttribute("data-practice-focused", "true");
   await expect(page.locator("[data-lesson-shell]")).toHaveAttribute("data-workspace-wide", "true");

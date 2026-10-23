@@ -305,7 +305,7 @@ for (const programming of [false, true]) {
     const id = programming ? "programming-13" : lessonId;
     const workEndpoint = `/api/classroom/work/${id}`;
     const question = programming ? "flow" : "q2", lateAnswer = programming ? "2" : "b";
-    const answerLabel = programming ? "수 입력 → 곱하기 → 결과 보여주기" : "숫자 입력 → 숫자 출력";
+    const answerLabel = programming ? "수 입력 → 곱하기 → 결과 보여 주기" : "숫자 입력 → 숫자 출력";
     // Programming quiz answers get the reason for the chosen wrong option; the private sequence lab keeps its hint fallback.
     const hint = programming ? (questions.find((q) => q.id === "flow")!.why as Record<string, string>)["0"] : "화면에 보여 줄 값을 먼저 알아야 해요.";
     let before: Work;

@@ -17,7 +17,6 @@
 .validation h3{margin:0 0 8px;font-size:22px}.validation p{font-size:18px;line-height:1.7}.validation>div:first-child>p{color:#526173}
 .criteria{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:8px;font-size:16px;line-height:1.7}.criteria li{display:flex;align-items:start;gap:8px}.criteria svg{flex-shrink:0;color:#376fc8;margin-top:5px}
 .actions{display:flex;flex-direction:column;align-items:stretch;gap:12px}.actions p{margin:0}
-.nameProgress{display:grid;gap:6px;padding:12px;border:1px solid #dce3ed;border-radius:12px;background:#f6f8fb}.nameProgress p:first-child{font-weight:650;color:#2e5fab}.nameProgress p:last-child{font-size:14px;color:#526173}
 .keyPad{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding:14px}
 @media(max-width:700px){.toolbar{align-items:start;flex-direction:column;padding:12px 16px}.result,.error{padding:12px 16px}.validation{grid-template-columns:1fr;gap:18px}.frame{height:620px}}
 @media(max-width:600px){.result,.error,.validation p{font-size:16px}.validation h3{font-size:20px}}
