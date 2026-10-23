@@ -55,6 +55,16 @@ test("배지 모음은 열린 수업 기준으로 세고, 셀 수 없는 배지�
     "lesson-complete": [1, 2, true],
     "review-complete": [0, 1, false],
   });
+  const where = Object.fromEntries(badgesFor([programming, loops, abstraction], work).map(badge => [badge.id, badge.lessons]));
+  expect(where).toEqual({
+    "first-step": [programming.title, loops.title],
+    concepts: [programming.title, loops.title],
+    "perfect-quiz": [],
+    missions: [programming.title],
+    challenge: [loops.title],
+    "lesson-complete": [programming.title],
+    "review-complete": [],
+  });
   // Only regular lessons without optional missions and no review: challenge and review badges disappear.
   expect(badgesFor([programming], {}).map(badge => badge.id)).toEqual(["first-step", "concepts", "perfect-quiz", "missions", "lesson-complete"]);
   expect(badgesFor([], {})).toEqual([]);

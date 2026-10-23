@@ -395,7 +395,8 @@ test("교사·학생 탐색 메뉴: 동일한 아이콘 수·현재 화면 표�
       }
       const navigation = page.getByRole("navigation", { name: "교실 메뉴", exact: true });
       const links = navigation.getByRole("link");
-      await expect(links).toHaveCount(role === "teacher" ? 5 : 4);
+      // Teachers have 수업 관리, students 내 배지, so both menus have five links.
+      await expect(links).toHaveCount(5);
       for (const link of await links.all()) await expect(link.locator("svg")).toHaveCount(1);
       await expect(navigation.locator('a[aria-current="page"]')).toHaveCount(1);
       await expect(navigation.getByRole("link", { name: role === "teacher" ? "수업 관리" : "열린 수업", exact: true })).toHaveAttribute("aria-current", "page");

@@ -67,6 +67,7 @@
 .lessonRows .lessonMetrics .progressItem:nth-child(2) .track>span{background:#8860ba}
 .lessonRows .lessonMetrics .progressItem:nth-child(3) .track>span{background:#268673}
 .lessonTiles{grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:14px}
+.reviewGroup{grid-column:1/-1;margin:14px 0 0;color:#526173;font-size:15px;font-weight:700}
 .lessonTiles .lessonRecord{display:grid;grid-template-rows:auto 1fr auto;gap:12px;padding:16px}
 .lessonTileVisual{display:grid;grid-template-columns:108px minmax(0,1fr);align-items:center;gap:12px;min-width:0}
 .lessonDescription{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin:0;color:#526173;font-size:14px;line-height:1.6;overflow-wrap:anywhere}

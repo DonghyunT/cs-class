@@ -1,4 +1,5 @@
-import { Award, BookCheck, Compass, Flame, Footprints, Puzzle, Target, Trophy, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Award, BookCheck, Compass, Flame, Footprints, Puzzle, Target, Trophy, type LucideIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/loading-state";
 import { badgesFor, badgeTitle, type BadgeId } from "@/lib/classroom/achievements";
 import type { StudentDashboard } from "@/lib/classroom/types";
@@ -11,11 +12,12 @@ export function BadgeChip({ id }: { id: BadgeId }) {
   return <span className={styles.chip} data-badge={id}><Icon size={16} aria-hidden="true" />{badgeTitle(id)}</span>;
 }
 
-export function StudentBadges({ data, loading }: { data: StudentDashboard | null; loading: boolean }) {
+// The dashboard shows a short version; the badge page adds how to earn each badge and where it was earned.
+export function StudentBadges({ data, loading, summary = false }: { data: StudentDashboard | null; loading: boolean; summary?: boolean }) {
   const badges = data ? badgesFor(data.lessons, data.work) : [];
   const earned = badges.filter(badge => badge.earned).length;
   return <section id="badges" className={styles.panel} aria-labelledby="badges-heading" aria-describedby="badges-scope">
-    <div className={styles.heading}><h2 id="badges-heading"><span className={styles.icon}><Award size={20} aria-hidden="true" /></span>내 배지</h2>{badges.length > 0 && <span className={styles.total}>{badges.length}종 중 {earned}종 받음</span>}</div>
+    <div className={styles.heading}><h2 id="badges-heading"><span className={styles.icon}><Award size={20} aria-hidden="true" /></span>{summary ? "내 배지" : "배지 모음"}</h2>{badges.length > 0 && <span className={styles.total}>{badges.length}종 중 {earned}종 받음</span>}{summary && <Link className={styles.all} href="/student/badges">모두 보기<ArrowRight size={15} aria-hidden="true" /></Link>}</div>
     <p id="badges-scope" className={styles.scope}>지금 열린 수업의 기록으로 받아요. 친구에게는 보이지 않아요.</p>
     {loading && !data && <div className={styles.loading} aria-hidden="true"><Skeleton /><Skeleton /></div>}
     {!loading && !data && <p className={styles.empty}>수업 기록을 확인하면 배지가 보여요.</p>}
@@ -25,7 +27,7 @@ export function StudentBadges({ data, loading }: { data: StudentDashboard | null
       const count = badge.id === "first-step" ? badge.earned ? "받음" : "아직" : badge.id === "challenge" ? `도전 미션 ${badge.total}개 중 ${badge.count}개 제출` : `${badge.total}개 수업 중 ${badge.count}개${badge.earned ? "에서 받음" : ""}`;
       return <li key={badge.id} className={styles.badge} data-badge={badge.id} data-earned={badge.earned}>
         <span className={styles.medal}><Icon size={22} aria-hidden="true" /></span>
-        <div><h3>{badge.title}<span className="sr-only">{badge.earned ? " · 받은 배지" : " · 아직 받지 않은 배지"}</span></h3><strong>{count}</strong><p>{badge.how}</p></div>
+        <div><h3>{badge.title}<span className="sr-only">{badge.earned ? " · 받은 배지" : " · 아직 받지 않은 배지"}</span></h3><strong>{count}</strong>{!summary && <><p>{badge.how}</p>{badge.lessons.length > 0 && <p className={styles.where}>{badge.id === "first-step" ? "개념을 확인한 수업" : "받은 수업"}: {badge.lessons.join(", ")}</p>}</>}</div>
       </li>;
     })}</ul>}
   </section>;

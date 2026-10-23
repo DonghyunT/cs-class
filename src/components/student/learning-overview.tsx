@@ -45,7 +45,7 @@ export function LearningOverview({ data, loading, error }: { data: StudentDashbo
 }
 
 export function StudentLessonProgress({ data, loading }: { data: StudentDashboard | null; loading: boolean }) {
-  const lessons = data ? prioritizedLessons(data.lessons, data.classroom.currentLessonId, data.work).filter(lesson => lesson.mode !== "review") : [];
+  const lessons = data ? prioritizedLessons(data.lessons, data.classroom.currentLessonId).filter(lesson => lesson.mode !== "review") : [];
   return <section className={styles.lessons} aria-labelledby="lesson-progress-heading">
     <div className={styles.sectionHeading}><h2 id="lesson-progress-heading"><span className={styles.sectionIcon}><ChartNoAxesColumn size={20} aria-hidden="true" /></span>수업별 학습 진도</h2><Link href="/student/lessons">수업 전체 보기<LayoutGrid size={15} aria-hidden="true" /></Link></div>
     {loading && !data && <div className={styles.loading} aria-hidden="true"><Skeleton /><Skeleton /><Skeleton /></div>}

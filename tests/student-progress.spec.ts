@@ -730,6 +730,7 @@ test("완료 알림·배지: 마지막 활동을 마치면 완료 카드와 받�
   await page.getByRole("button", { name: "학생 메뉴", exact: true }).click();
   await page.getByRole("button", { name: "로그아웃", exact: true }).click({ trial: true });
   await page.keyboard.press("Escape");
+  await expect(card.locator('a[href="/student/badges"]')).toHaveText("내 배지 보기");
   await card.getByRole("button", { name: "계속 둘러보기", exact: true }).click();
   await expect(card).toHaveCount(0);
   await page.reload();
@@ -741,6 +742,15 @@ test("완료 알림·배지: 마지막 활동을 마치면 완료 카드와 받�
   await expect(badges.getByRole("listitem").filter({ hasText: "도전자" })).toContainText("도전 미션 1개 중 0개 제출");
   await expect(badges.getByRole("heading", { name: "도전자 · 아직 받지 않은 배지", exact: true })).toBeVisible();
   await expect(badges.getByRole("heading", { name: "수업 완주 · 받은 배지", exact: true })).toBeVisible();
+  // The dashboard keeps a short version; how to earn and where it was earned live on the badge page.
+  await expect(badges).not.toContainText("정규 수업의 필수 활동을 모두 마치면 받아요.");
+  await badges.getByRole("link", { name: "모두 보기", exact: true }).click();
+  await expect(page).toHaveURL(/\/student\/badges$/);
+  await expect(page.getByRole("navigation", { name: "교실 메뉴", exact: true }).getByRole("link", { name: "내 배지", exact: true })).toHaveAttribute("aria-current", "page");
+  const finished = page.getByRole("region", { name: "배지 모음", exact: true }).getByRole("listitem").filter({ hasText: "수업 완주" });
+  await expect(finished).toContainText("정규 수업의 필수 활동을 모두 마치면 받아요.");
+  await expect(finished).toContainText(`받은 수업: ${conditionals.title}`);
+  await expect(page.getByRole("region", { name: "배지 모음", exact: true }).getByRole("listitem").filter({ hasText: "첫 발걸음" })).toContainText(`개념을 확인한 수업: ${conditionals.title}`);
 });
 
 test("남은 활동: 진행 중인 정규 수업은 대시보드와 수업 목록에 남은 개념·퀴즈·미션 수를 보여 준다", async ({ page }) => {

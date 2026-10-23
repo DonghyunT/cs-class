@@ -25,14 +25,14 @@ import { TeacherToolbar } from "./teacher-toolbar";
 import { ClassPreparationTable } from "./class-preparation-table";
 import styles from "./teacher.module.css";
 
-type TeacherView = { view: "classes" | "students"; classId?: string; lessonId?: string; studentId?: string; q?: string; password?: "required"; review?: "pending"; manage?: boolean };
+type TeacherView = { view: "classes" | "students"; classId?: string; lessonId?: string; studentId?: string; q?: string; password?: "required"; review?: "pending"; status?: string; manage?: boolean };
 type StudentDialog = { kind: "submission" | "reset"; student: StudentRow; classId: string; lesson?: Lesson; trigger: HTMLButtonElement };
 export function TeacherDashboardView(props: TeacherView) {
   const { session } = useSession();
-  return <AppShell title={props.view === "classes" ? "수업 관리" : "학생 현황·계정"} teacher>{session && session.role !== "student" && (session.classIds.length ? <TeacherWorkspace key={`${session.uid}:${props.classId}:${props.lessonId}:${props.studentId}:${props.q}:${props.password}:${props.review}`} instructor={session.role === "instructor"} {...props} /> : <div className={styles.empty}><Users size={28} aria-hidden="true" /><h1>아직 담당 반이 없어요.</h1><p>담당 반이 연결되면 수업과 학생 기록을 확인할 수 있어요.</p></div>)}</AppShell>;
+  return <AppShell title={props.view === "classes" ? "수업 관리" : "학생 현황·계정"} teacher>{session && session.role !== "student" && (session.classIds.length ? <TeacherWorkspace key={`${session.uid}:${props.classId}:${props.lessonId}:${props.studentId}:${props.q}:${props.password}:${props.review}:${props.status}`} instructor={session.role === "instructor"} {...props} /> : <div className={styles.empty}><Users size={28} aria-hidden="true" /><h1>아직 담당 반이 없어요.</h1><p>담당 반이 연결되면 수업과 학생 기록을 확인할 수 있어요.</p></div>)}</AppShell>;
 }
 
-function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, password, review, manage }: { instructor: boolean } & TeacherView) {
+function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, password, review, status, manage }: { instructor: boolean } & TeacherView) {
   const { classId: selectedClassId, setClassId } = useTeacherClass(classId);
   const query = useSearchParams();
   const [data, setData] = useState<TeacherDashboard | null>(null);
@@ -45,7 +45,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
   const [toastManager] = useState(() => Toast.createToastManager());
   const [search, setSearch] = useState(q ?? studentId ?? "");
   const [passwordOnly, setPasswordOnly] = useState(password === "required");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(status ?? "all");
   const [pendingOnly, setPendingOnly] = useState(review === "pending");
   const [studentDialog, setStudentDialog] = useState<StudentDialog | null>(null);
   const [bulkIssue, setBulkIssue] = useState(false);
@@ -115,7 +115,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
   }
   function resetFilters() {
     setSearch(""); setStatusFilter("all"); setPendingOnly(false); setPasswordOnly(false);
-    setUrlConditions({ q: null, studentId: null, password: null, review: null });
+    setUrlConditions({ q: null, studentId: null, password: null, review: null, status: null });
   }
   function finalDialogFocus() {
     const trigger = studentDialog?.trigger;
@@ -191,7 +191,7 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
         <div className={styles.listToolbar}><span>{lesson ? `${lesson.title} · 확인 요청 ${pendingCount}명` : "학생 계정 관리"}</span><div className={styles.filters}>
           <label className={styles.pendingFilter}><input ref={pendingFilter} type="checkbox" checked={!!lesson && pendingOnly} disabled={!lesson} onChange={event => { setPendingOnly(event.target.checked); setUrlConditions({ review: event.target.checked ? "pending" : null }); }} />확인 요청만</label>
           <label className={styles.pendingFilter}><input type="checkbox" checked={passwordOnly} onChange={event => { setPasswordOnly(event.target.checked); setUrlConditions({ password: event.target.checked ? "required" : null }); }} />비밀번호 변경 필요만</label>
-          <Select label="진행 상태" value={statusFilter} disabled={!regularLesson} onValueChange={setStatusFilter} options={[{ value: "all", label: "모든 진행" }, ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))]} />
+          <Select label="진행 상태" value={statusFilter} disabled={!regularLesson} onValueChange={(value) => { setStatusFilter(value); setUrlConditions({ status: value === "all" ? null : value }); }} options={[{ value: "all", label: "모든 진행" }, ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))]} />
           <label className={styles.search}><Search size={17} aria-hidden="true" /><span className="sr-only">학번·닉네임 검색</span><Input placeholder="학번·닉네임 검색" type="search" value={search} onChange={(event) => { setSearch(event.target.value); setUrlConditions({ q: event.target.value.trim() || null, studentId: null }); }} /></label>
         </div></div>
         <div className={styles.resultToolbar}><p className={styles.resultCount} role="status">{filtered.length}명 표시 · 전체 {active.students.length}명</p>{active.students.some(student => student.mustChangePassword) && <><Button variant="outline" onClick={() => setFirstEntry(true)}><DoorOpen size={15} aria-hidden="true" />첫 입장 열기</Button><Button variant="outline" onClick={() => setBulkIssue(true)}><KeyRound size={15} aria-hidden="true" />임시 비밀번호 한꺼번에 발급</Button></>}<div className={styles.viewToggle} role="group" aria-label="학생 현황 보기"><Button variant="ghost" aria-label="목록 보기" title="목록 보기" aria-pressed={layout === "list"} onClick={() => setLayout("list")}><List size={17} aria-hidden="true" /></Button><Button variant="ghost" aria-label="격자 보기" title="격자 보기" aria-pressed={layout === "grid"} onClick={() => setLayout("grid")}><LayoutGrid size={17} aria-hidden="true" /></Button></div></div>
