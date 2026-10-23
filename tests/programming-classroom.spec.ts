@@ -38,27 +38,13 @@ async function prepare(page: Page, mission = "name", project = buildProgrammingP
 }
 const stored = async (page: Page): Promise<Work> => (await page.request.get(endpoint)).json();
 
-test("entry-guidance: 두 이름 확인 수와 검증 부족 초점·수정·단계 이동 안내", async ({ page }) => {
+test("entry-guidance: 이름 미션은 실행 없이 바로 검증하고, 고친 입력값을 단계 이동 뒤에도 저장한다", async ({ page }) => {
   const frame = await prepare(page, "name", nameProject);
-  const count = page.getByRole("status", { name: "서로 다른 이름 확인", exact: true });
-  await expect(count).toHaveText("서로 다른 이름 확인 0/2");
   await page.getByRole("button", { name: "조건 검증", exact: true }).click();
-  await expect(page.locator("#entry-local-feedback")).toBeFocused();
-  await expect(page.locator("#entry-local-feedback")).toContainText("서로 다른 이름");
-  await expect(page.locator("#entry-local-feedback")).not.toContainText("연결");
-  for (const [name, expected] of [["초코", 1], ["초코", 1], ["보리", 2]] as const) {
-    await entryStart(page).click();
-    const input = frame.getByLabel("강아지 이름 대답"); await input.fill(name); await input.press("Enter");
-    await expect(entryStart(page)).toBeVisible();
-    await expect(count).toHaveText(`서로 다른 이름 확인 ${expected}/2`);
-  }
+  await expect(page.locator("#practice-feedback")).toHaveText("목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요.");
   await frame.locator("#entryWorkspaceBoard").getByText("0.2", { exact: true }).first().locator("..").click();
   const duration = frame.locator("input.entry-widget-input-field:visible"); await duration.fill("0.3"); await duration.press("Enter");
-  await expect(count).toHaveText("서로 다른 이름 확인 0/2");
-  await expect(page.getByText("작품 내용이 바뀌어 실행 확인을 다시 시작해요.", { exact: true })).toBeVisible();
   await page.getByRole("tab", { name: /퀴즈/ }).click(); await page.getByRole("tab", { name: /실습/ }).click();
-  await expect(count).toHaveText("서로 다른 이름 확인 0/2");
-  await expect(page.getByText(/저장된 작품은 유지돼요\. 이 화면에서/)).toBeVisible();
   await saveDraft(page);
   expect(parseProgrammingProject((await stored(page)).draft.programming!.projects.name)?.threads[0][2].params[1]).toMatchObject({ type: "number", params: ["0.3"] });
 });
@@ -76,34 +62,6 @@ test("entry-guidance: 시작 블록의 다음 행동과 위아래 위치를 정�
   await expect(page.getByText("시작 신호가 준비됐어요.", { exact: false })).toHaveCount(0);
 });
 
-test("entry-guidance: 두 이름 확인은 같은 이름 아홉 번·중지·실행 실패 뒤에도 유지한다", async ({ page }) => {
-  test.setTimeout(90000);
-  const frame = await prepare(page, "name", nameProject);
-  const count = page.getByRole("status", { name: "서로 다른 이름 확인", exact: true });
-  for (const [index, name] of ["초코", "보리", ...Array<string>(9).fill("보리")].entries()) {
-    await entryStart(page).click();
-    const input = frame.getByLabel("강아지 이름 대답"); await input.fill(name); await input.press("Enter");
-    await expect(entryStart(page)).toBeVisible();
-    await expect(count).toHaveText(`서로 다른 이름 확인 ${index ? 2 : 1}/2`);
-  }
-  await entryStart(page).click();
-  await expect(frame.getByLabel("강아지 이름 대답")).toBeVisible();
-  await entryStop(page).click();
-  await expect(count).toHaveText("서로 다른 이름 확인 2/2");
-  const native = page.frames().find(item => item.url().includes("mission=name"))!;
-  // Fail the engine's answer dependency once without changing any blocks.
-  await native.evaluate(() => {
-    const container = (window as unknown as { Entry: { container: { getInputValue: () => string } } }).Entry.container;
-    const original = container.getInputValue;
-    container.getInputValue = () => { container.getInputValue = original; throw new Error("합성 실행 응답 실패"); };
-  });
-  await entryStart(page).click();
-  const input = frame.getByLabel("강아지 이름 대답"); await input.fill("실패 입력"); await input.press("Enter");
-  await expect(entryStart(page)).toBeVisible();
-  await expect(count).toHaveText("서로 다른 이름 확인 2/2");
-  await page.getByRole("button", { name: "조건 검증", exact: true }).click();
-  await expect(page.getByRole("button", { name: "작품 제출", exact: true })).toBeEnabled();
-});
 test.afterEach(async () => {
   await db.collection("csWork").doc(`student-20101__${id}`).delete();
   await db.collection("csClasses").doc("2-1").set({ id: "2-1", name: "2학년 1반", revision: 0, currentLessonId: "sequence-lab", openedLessonIds: ["sequence-lab"] });
@@ -576,18 +534,9 @@ test("오브젝트 추가: 그림 고르기 · 코드 저장·복원 · 강아�
   await expect(page.locator("#practice-feedback")).toHaveText("목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요.");
 });
 
-test("이름 미션: 다른 오브젝트·이벤트 줄이 있어도 강아지의 두 실행을 확인한다", async ({ page }) => {
+test("이름 미션: 다른 오브젝트·이벤트 줄이 있어도 강아지 코드로 검증한다", async ({ page }) => {
   const ball = { ...newAddedObject("ball", 0)!, threads: [[node("when_object_click", null), node("dialog_time", node("text", "공이에요"), number(1), "speak", null)]] };
-  const frame = await prepare(page, "name", buildProgrammingProject(JSON.parse(nameProject).objects[0].script, [ball], 1));
-  const count = page.getByRole("status", { name: "서로 다른 이름 확인", exact: true });
-  for (const [name, expected] of [["초코", 1], ["보리", 2]] as const) {
-    await entryStart(page).click();
-    const input = frame.getByLabel("강아지 이름 대답"); await input.fill(name); await input.press("Enter");
-    await expect(count).toHaveText(`서로 다른 이름 확인 ${expected}/2`);
-    await expect(entryStop(page)).toBeVisible();
-    await entryStop(page).click();
-    await expect(entryStart(page)).toBeVisible();
-  }
+  await prepare(page, "name", buildProgrammingProject(JSON.parse(nameProject).objects[0].script, [ball], 1));
   await page.getByRole("button", { name: "조건 검증", exact: true }).click();
   await expect(page.getByRole("button", { name: "작품 제출", exact: true })).toBeEnabled();
 });

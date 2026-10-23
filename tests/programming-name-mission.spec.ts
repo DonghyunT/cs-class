@@ -1,69 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { DocumentData } from "firebase-admin/firestore";
-import { buildNameProject, checkNameMission, parseNameProject, type NameRun } from "../src/lib/classroom/name-entry";
-import { buildProgrammingProject, parseProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
 import { db, entryReset, entryStart, entryStop, headers, readyStudent } from "./emulator";
-
-type Block = NonNullable<Parameters<typeof buildNameProject>[0]>[number];
-const code: Block[] = [{ id: "s", kind: "start", value: "click" }, { id: "q", kind: "ask", value: "name" }, { id: "a", kind: "say", value: "answer" }];
-const complete = buildNameProject(code)!;
-
-test("entry-guidance: 이름 연결 오류와 현재 작품의 두 이름 실행 부족을 구분한다", () => {
-  const key = parseNameProject(complete)!.key;
-  const run = (name: string, id = name): NameRun => ({ id, key, reason: "finished", steps: [{ kind: "ask", value: "강아지 이름은?" }, { kind: "answer", value: name }, { kind: "say", value: `내 이름은 ${name}!` }] });
-  expect(checkNameMission("unreadable", [])).toMatchObject({ passed: false, issue: "project", validNames: 0 });
-  expect(checkNameMission(buildNameProject()!, [])).toMatchObject({ passed: false, issue: "structure", validNames: 0 });
-  // Either speech block counts, so structure messages say ‘말하기’ and tell a missing start line from a split one.
-  expect(checkNameMission(buildNameProject()!, []).message).toBe("시작하기 아래에 질문 하나와 말하기 블록을 연결하고, 말하기 칸에 ‘대답’을 넣어 주세요.");
-  expect(checkNameMission(buildNameProject([{ id: "k", kind: "start", value: "ArrowRight" }])!, []).message).toBe("‘시작하기 버튼을 클릭했을 때’ 아래에 질문과 말하기를 연결해 주세요.");
-  expect(checkNameMission(buildNameProject([...code, { id: "s2", kind: "start", value: "click" }])!, []).message).toContain("줄이 여러 개예요");
-  expect(checkNameMission(complete, [])).toMatchObject({ passed: false, issue: "runs", validNames: 0 });
-  expect(checkNameMission(complete, [run("초코"), run("초코", "duplicate"), ...["stopped", "timeout", "error"].map(reason => ({ ...run("보리", reason), reason })), { ...run("보리", "old"), key: "old" }])).toMatchObject({ passed: false, issue: "runs", validNames: 1 });
-  expect(checkNameMission(complete, [run("초코"), run("보리"), run("두부")])).toMatchObject({ passed: true, issue: null, validNames: 2 });
-  const moved = JSON.parse(complete); moved.objects[0].script[0][0].x = 600; moved.objects[0].script[0][0].id = "moved-start";
-  expect(checkNameMission(JSON.stringify(moved), [run("초코"), run("보리")])).toMatchObject({ passed: true, validNames: 2 });
-  const literal = JSON.parse(complete); literal.objects[0].script[0][2].params[0] = { type: "text", params: ["초코"] };
-  expect(checkNameMission(JSON.stringify(literal), [])).toMatchObject({ passed: false, issue: "structure", validNames: 0 });
-  const changed = JSON.parse(complete); changed.objects[0].script[0][1].params[0] = { type: "text", params: ["새 이름은?"] };
-  expect(checkNameMission(JSON.stringify(changed), [run("초코"), run("보리")])).toMatchObject({ passed: false, issue: "runs", validNames: 0 });
-});
-
-test("확인은 블록 순서·실제로 출력한 대답을 구분한다", () => {
-  const wrong = buildNameProject([{ id: "wrong", kind: "start", value: "ArrowRight" }, code[2], code[1]])!;
-  expect(parseNameProject(wrong)?.threads[0].map((b) => b.type)).toEqual(["when_some_key_pressed", "dialog_time", "ask_and_wait"]);
-  const key = parseNameProject(complete)!.key;
-  const run = (name: string, id = name): NameRun => ({ id, key, reason: "finished", steps: [{ kind: "ask", value: "강아지 이름은?" }, { kind: "answer", value: name }, { kind: "say", value: `내 이름은 ${name}!` }] });
-  expect(checkNameMission(complete, [run("초코"), run("보리")]).passed).toBe(true);
-  expect(checkNameMission(complete, [run("초코", "1"), run("초코", "2")]).passed).toBe(false);
-  expect(checkNameMission(complete, [run("초코"), { ...run("보리"), reason: "stopped" }]).passed).toBe(false);
-  expect(checkNameMission(complete, [run("초코"), { ...run("보리"), key: "old" }]).passed).toBe(false);
-  const literal = JSON.parse(complete); literal.objects[0].script[0][2].params[0] = { type: "text", params: ["초코"] };
-  const literalRaw = JSON.stringify(literal), literalKey = parseNameProject(literalRaw)!.key;
-  expect(checkNameMission(literalRaw, ["초코", "보리"].map((name) => ({ ...run(name), key: literalKey, steps: [...run(name).steps.slice(0, 2), { kind: "say" as const, value: "초코" }] }))).passed).toBe(false);
-  const plain = JSON.parse(complete); plain.objects[0].script[0][2].params[0] = { type: "get_canvas_input_value", params: [null] };
-  const plainRaw = JSON.stringify(plain), plainKey = parseNameProject(plainRaw)!.key;
-  expect(checkNameMission(plainRaw, ["1.23456", "2.34567"].map((name, i) => ({ ...run(name), key: plainKey, steps: [...run(name).steps.slice(0, 2), { kind: "say" as const, value: ["1.235", "2.346"][i] }] }))).passed).toBe(true);
-  const extra = buildNameProject([...code, { id: "extra", kind: "ask", value: "name" }])!;
-  const extraRun = (last: string): NameRun => ({ ...run("초코", last), key: parseNameProject(extra)!.key, steps: [...run("초코").steps, { kind: "ask", value: "다시 물어요" }, { kind: "answer", value: last }] });
-  expect(checkNameMission(extra, [extraRun("보리"), extraRun("두부")]).passed).toBe(false);
-});
-
-test("일반 ‘말하기’와 기다리기·말풍선 지우기도 실행 기록으로 세고, 실제 실행 없이는 세지 않는다", () => {
-  // The lesson grades with the programming parser (see entry-practice-workspace.tsx).
-  const graded = (raw: unknown) => { const p = parseProgrammingProject(raw); return p && { key: p.gradeKey, threads: p.threads }; };
-  const node = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
-  const lines = (say: EntryNode) => buildProgrammingProject([[node("when_run_button_click", null), node("ask_and_wait", node("text", "이름이 뭐니?"), null), node("wait_second", node("number", "1"), null), say, node("remove_dialog", null)]]);
-  const plain = lines(node("dialog", node("get_canvas_input_value", null), "speak", null)), key = graded(plain)!.key;
-  const run = (name: string): NameRun => ({ id: name, key, reason: "finished", steps: [{ kind: "ask", value: "이름이 뭐니?" }, { kind: "answer", value: name }, { kind: "say", value: name }] });
-  expect(checkNameMission(plain, [], graded)).toMatchObject({ passed: false, issue: "runs", validNames: 0 });
-  expect(checkNameMission(plain, [run("초코"), run("보리")], graded)).toMatchObject({ passed: true, validNames: 2 });
-  // A run that stopped before speaking, or said something else, does not count.
-  expect(checkNameMission(plain, ["초코", "보리"].map((name) => ({ ...run(name), steps: run(name).steps.slice(0, 2) })), graded).validNames).toBe(0);
-  expect(checkNameMission(plain, ["초코", "보리"].map((name) => ({ ...run(name), steps: [...run(name).steps.slice(0, 2), { kind: "say" as const, value: "안녕" }] })), graded).validNames).toBe(0);
-  // A think bubble shows the name but is not speech; the reason names the dropdown to change.
-  expect(checkNameMission(lines(node("dialog", node("get_canvas_input_value", null), "think", null)), [], graded)).toMatchObject({ issue: "structure", message: "말풍선이 ‘생각하기’로 되어 있어요. 말하기 블록에서 ‘생각하기’를 ‘말하기’로 바꿔 주세요." });
-});
 
 // The rest runs on the real lesson (formerly checked on the removed public prototype).
 test.describe("정식 수업 programming-13", () => {
@@ -114,77 +53,22 @@ test.describe("정식 수업 programming-13", () => {
     await respond(page, "두부");
   });
 
-  test("검증·제출한 이름 미션에 다시 들어오면 0/2 대신 확인 완료를 보이고, 블록을 바꾸면 0/2부터 다시 센다", async ({ page }) => {
-    test.setTimeout(60000);
-    const before = await stored(page);
-    expect((await page.request.post(endpoint, { headers, data: { revision: before.revision, draft: { ...before.draft, stage: "practice", programming: { mission: "name", projects: { name: nameProject }, reflection: "" } } } })).status()).toBe(200);
-    let work = await stored(page);
-    for (const type of ["validate-practice", "submit-practice"]) {
-      const response = await page.request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type, missionId: "name" } } });
-      expect(response.status(), type).toBe(200);
-      work = await response.json();
-    }
-    expect(work.missions?.name?.validation?.passed).toBe(true);
-    expect(work.missions?.name?.submission).toBeTruthy();
-    await page.goto(`/classroom/${id}?from=dashboard`);
-    await page.locator("iframe").scrollIntoViewIfNeeded();
-    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
-    const nameCheck = page.getByRole("status", { name: "서로 다른 이름 확인", exact: true });
-    await expect(nameCheck).toHaveText("서로 다른 이름 확인 완료");
-    await expect(page.getByText("이 작품은 두 이름으로 확인하고 검증을 통과했어요. 블록을 바꾸면 두 번 실행을 다시 확인해요.", { exact: true })).toBeVisible();
-    await expect(page.getByRole("group", { name: "작품 저장·검증·제출 상태" })).toContainText("현재 작품 제출 완료");
-    await expect(page.getByText(/0\/2/)).toHaveCount(0);
-    // Validating the unchanged work again goes to the server, as the finished status promises.
-    await page.getByRole("button", { name: "조건 검증", exact: true }).click();
-    await expect(page.locator("#practice-feedback")).toContainText("목표 조건을 확인했어요");
-    await expect(page.locator("#entry-local-feedback")).toHaveCount(0);
-    const frame = page.frameLocator("iframe");
-    await frame.locator("#entryWorkspaceBoard").getByText("강아지 이름은?", { exact: true }).locator("..").click();
-    await frame.locator("input.entry-widget-input-field:visible").fill("새 이름은?");
-    await frame.locator("#entryWorkspaceBoard").click({ position: { x: 20, y: 400 } });
-    await expect(nameCheck).toHaveText("서로 다른 이름 확인 0/2");
-    await expect(page.getByText("작품 내용이 바뀌어 실행 확인을 다시 시작해요.", { exact: true })).toBeVisible();
-  });
-
-  test("구조가 틀린 이름 작품은 실행해도 세지 않는 이유를 두 이름 확인 설명에 보인다", async ({ page }) => {
+  test("실행하지 않아도 조건 검증으로 채점하고, 대답 대신 인사를 말하는 작품은 통과하지 않는다", async ({ page }) => {
     test.setTimeout(60000);
     // The dog greets instead of saying the answer.
     await enter(page, buildProgrammingProject([[node("when_run_button_click", null), node("ask_and_wait", node("text", "강아지 이름은?"), null), node("dialog", node("text", "안녕"), "speak", null)]]));
-    const reason = page.locator('[aria-label="서로 다른 이름 확인"] + p');
-    // Before the first run the usual first notice shows; the reason appears once a run is not counted.
-    await expect(reason).toHaveText("저장된 작품은 유지돼요. 이 화면에서 서로 다른 이름으로 두 번 실행해 주세요.");
-    await entryStart(page).click();
-    const input = page.frameLocator("iframe").getByLabel("강아지 이름 대답");
-    await input.fill("초코"); await input.press("Enter");
-    await expect(page.getByRole("status").filter({ hasText: "마지막 말: 안녕" })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("status", { name: "서로 다른 이름 확인", exact: true })).toHaveText("서로 다른 이름 확인 0/2");
-    await expect(reason).toContainText("시작하기 아래에 질문 하나와 말하기 블록을 연결하고, 말하기 칸에 ‘대답’을 넣어 주세요.");
-    await expect(reason).not.toContainText("작품 내용이 바뀌어");
+    await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+    await expect(page.locator("#practice-feedback")).toHaveText("질문 다음에 말하기를 연결하고, 말하기 안에 ‘대답’을 넣어 보세요.");
+    await expect(page.getByRole("button", { name: "작품 제출", exact: true })).toBeDisabled();
   });
 
-  test("초가 없는 ‘말하기’와 기다리기로 만든 이름 작품도 두 이름 실행을 세고 검증을 통과한다", async ({ page }) => {
+  test("초가 없는 ‘말하기’와 기다리기로 만든 이름 작품도 실행 없이 바로 검증을 통과한다", async ({ page }) => {
     test.setTimeout(60000);
     await enter(page, buildProgrammingProject([[node("when_run_button_click", null), node("ask_and_wait", node("text", "강아지 이름은?"), null), node("wait_second", node("number", "0.2"), null), node("dialog", node("get_canvas_input_value", null), "speak", null)]]));
-    const counted = page.getByRole("status", { name: "서로 다른 이름 확인", exact: true });
-    await respond(page, "초코");
-    await expect(counted).toHaveText("서로 다른 이름 확인 1/2");
-    await respond(page, "보리");
-    await expect(counted).toHaveText("서로 다른 이름 확인 2/2");
     await page.getByRole("button", { name: "조건 검증", exact: true }).click();
     await expect(page.locator("#practice-feedback")).toContainText("목표 조건을 확인했어요");
-  });
-
-  test("시작 블록만 있는 처음 작품은 실행 전에 구조 오류처럼 읽히는 문장을 보이지 않는다", async ({ page }) => {
-    test.setTimeout(60000);
-    await page.goto(`/classroom/${id}?from=dashboard`);
-    await page.getByRole("tab", { name: /실습/ }).click();
-    await page.locator("iframe").scrollIntoViewIfNeeded();
-    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
-    const reason = page.locator('[aria-label="서로 다른 이름 확인"] + p');
-    await expect(reason).toHaveText("서로 다른 이름으로 두 번 실행해 주세요. 질문에 답하고 말하기가 끝날 때까지 기다려요.");
-    await entryStart(page).click();
-    await expect(page.getByRole("status").filter({ hasText: "시작 신호가 준비됐어요." })).toBeVisible({ timeout: 10000 });
-    await expect(reason).toContainText("지금 블록 연결로는 실행 확인을 세지 않아요.");
+    await expect(page.getByRole("button", { name: "작품 제출", exact: true })).toBeEnabled();
+    await expect(page.getByText(/서로 다른 이름 확인|0\/2/)).toHaveCount(0);
   });
 
   test("작품 export 실패는 단계·미션 이동과 수업 나가기를 막고 작업실 입력을 유지한다", async ({ page }) => {

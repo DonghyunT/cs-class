@@ -91,7 +91,7 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     }
     await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
     await page.getByRole("button", { name: "퀴즈로 이동" }).click();
-    for (const [i, answer] of ["명령을 표현하는 방법", "수 입력 → 곱하기 → 결과 보여주기", "6", "각 대답을 받은 직후 해당 변수에 저장하기", "90°"].entries()) {
+    for (const [i, answer] of ["명령을 표현하는 방법", "수 입력 → 곱하기 → 결과 보여 주기", "6", "각 대답을 받은 직후 해당 변수에 저장하기", "90°"].entries()) {
       await page.getByRole("radio", { name: answer, exact: false }).check();
       if (i < 4) await page.getByRole("button", { name: "다음 문제", exact: true }).click();
     }

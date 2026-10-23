@@ -12,7 +12,6 @@ import { buildEntryProject, parseEntryProject } from "@/lib/classroom/entry-proj
 import { practiceMatches } from "@/lib/classroom/progress";
 import { LOCKED_OBJECTS, MAX_PROJECT_BYTES, entryObjectModel, isFreeMission, missionBlockIssue, missionStarter, newAddedObject, parseProgrammingProject, type ProgrammingMission } from "@/lib/classroom/programming-entry";
 import { EntryLibraryPicker } from "./entry-library-picker";
-import { checkNameMission, type NameRun } from "@/lib/classroom/name-entry";
 import type { WorkController, LessonMode } from "./work-controller";
 import { useWorkspaceExpansion } from "./use-workspace-expansion";
 import { PracticeGuidance } from "./practice-guidance";
@@ -24,8 +23,6 @@ const WAITING = " 키를 누르거나 무대·오브젝트를 클릭해 보세�
 // Entry's stop resets the stage, so drawing runs stay until the student stops them.
 const DRAWING = " 그린 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가고, 그다음 조건을 검증할 수 있어요.";
 const withoutWaiting = (text: string) => [WAITING, DRAWING].reduce((rest, notice) => rest.endsWith(notice) ? rest.slice(0, -notice.length) : rest, text);
-// Name runs record only the dog, so they are keyed by the dog's code, not the whole work.
-const gradedProject = (raw: unknown) => { const p = parseProgrammingProject(raw); return p && { key: p.gradeKey, threads: p.threads }; };
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
 export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, actionsBlocked = false, update, runAction, exportRef, mission, saveLabel, saveState, workspaceWide, practiceFocused = false, mode = "student", onWorkspaceWideChange, onSave, onReadyChange }: {
@@ -54,12 +51,6 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   const [preparing, setPreparing] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState("블록을 연결한 뒤 실행해 보세요.");
-  const runs = useRef<NameRun[]>([]);
-  const [recordedRuns, setRecordedRuns] = useState<NameRun[]>([]);
-  const [runNotice, setRunNotice] = useState(work.updatedAt ? `${mode === "preview" ? "체험 작품" : "저장된 작품"}은 유지돼요. 이 화면에서 서로 다른 이름으로 두 번 실행해 주세요.` : "서로 다른 이름으로 두 번 실행해 주세요. 질문에 답하고 말하기가 끝날 때까지 기다려요.");
-  const currentRun = useRef<{ id: string; key: string } | null>(null);
-  // Structure reasons wait until the student runs this work, so a fresh starter keeps its first notice.
-  const [triedRun, setTriedRun] = useState(false);
   const startOnly = useRef(false);
   const [picking, setPicking] = useState(false);
   // Dog-free lessons pick from the Entry library and warn, without undoing, when work leaves the mission's intent.
@@ -67,9 +58,6 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   const [toasts] = useState(() => Toast.createToastManager());
   const lastIssue = useRef<string | null>(null);
   const objectCount = (raw: unknown) => { const p = parseProgrammingProject(raw); return p ? p.added.length + (p.mainIndex >= 0 ? 1 : 0) : 0; };
-  const [localFeedback, setLocalFeedback] = useState("");
-  const [localFocus, setLocalFocus] = useState(0);
-  const localFeedbackRef = useRef<HTMLParagraphElement>(null);
   const viewToggle = useRef<HTMLButtonElement>(null);
   const workspaceHeading = useRef<HTMLElement>(null);
   const showViewToggle = useWorkspaceExpansion(workspaceWide, viewToggle, workspaceHeading);
@@ -84,13 +72,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   const program = parse(draft.entryProject);
   const validation = practiceMatches(draft, work.validation) ? work.validation : null;
   const submitted = practiceMatches(draft, work.submission);
-  const nameCheck = mission?.id === "name" ? checkNameMission(draft.entryProject ?? "", recordedRuns, gradedProject) : null;
-  // Name runs live only in this screen. A work that already passed validation or was submitted had its two names checked.
-  // Mission results are saved with an empty order (the lesson passes practiceOrder []), so compare with the draft's own order.
-  const namesChecked = (current: WorkDraft) => !!work.validation?.passed && practiceMatches(current, work.validation) || practiceMatches(current, work.submission);
-  const nameDone = !!nameCheck && namesChecked(draft);
   useEffect(() => { onReadyChange?.(phase === "ready"); return () => onReadyChange?.(false); }, [onReadyChange, phase]);
-  useEffect(() => { if (localFocus) localFeedbackRef.current?.focus(); }, [localFocus]);
 
   function send(type: string, details: Record<string, unknown> = {}) {
     frame.current?.contentWindow?.postMessage({ channel: CHANNEL, type, ...details }, "*");
@@ -134,10 +116,6 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       else if (message.type === "loaded") { window.clearTimeout(bootTimer.current); setPhase("ready"); setError(""); }
       else if (message.type === "changed" && typeof message.project === "string" && !locked) {
         const next = parse(message.project);
-        if (mission && parseProgrammingProject(message.project)?.gradeKey !== parseProgrammingProject(draft.entryProject)?.gradeKey) {
-          runs.current = []; setRecordedRuns([]); setLocalFeedback(""); setTriedRun(false);
-          setRunNotice("작품 내용이 바뀌어 실행 확인을 다시 시작해요.");
-        }
         editorProject.current = message.project;
         if (free && next) {
           const issue = missionBlockIssue(mission!.id, message.project);
@@ -152,27 +130,9 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         setRunning(message.running);
         if (message.running) {
           startOnly.current = program?.order.length === 1 && program.order[0] === "when_run_button_click";
-          setLocalFeedback("");
           // Arrow-key missions never finish on their own, so the waiting notice shows from the start.
           setResult(!mission ? "엔트리봇이 실행 중이에요." : program?.order.some((type) => type === "ask_and_wait") ? "실행 중이에요. 질문에는 무대 안의 입력칸으로 답해 주세요." : mission.keyEvents ? `실행 중이에요.${WAITING}` : "실행 중이에요.");
         }
-      } else if (mission && message.type === "name-start") {
-        const p = parseProgrammingProject(message.project);
-        currentRun.current = p && typeof message.id === "string" ? { id: message.id, key: p.gradeKey } : null;
-        setTriedRun(true);
-      } else if (mission && message.type === "name-run" && currentRun.current && currentRun.current.id === message.run?.id) {
-        const steps = message.run.steps;
-        if (Array.isArray(steps) && steps.length <= 96 && steps.every((s) => s && ["ask", "answer", "say"].includes(s.kind) && typeof s.value === "string" && s.value.length <= 500)) {
-          const previous = runs.current.filter((r) => r.key === currentRun.current!.key);
-          const next = [...previous, { ...currentRun.current!, reason: String(message.run.reason), steps }];
-          if (mission.id === "name") {
-            // Keep the two completed checks even after duplicate or unsuccessful runs.
-            const project = editorProject.current ?? draft.entryProject ?? "";
-            runs.current = checkNameMission(project, next, gradedProject).validNames > previous.length ? next : previous;
-          } else runs.current = next.slice(-8);
-          setRecordedRuns(runs.current);
-        }
-        currentRun.current = null;
       } else if (message.type === "result" && typeof message.x === "number" && Number.isFinite(message.x) && typeof message.y === "number" && Number.isFinite(message.y) && typeof message.speech === "string") {
         const finish = message.reason === "timeout" ? "15초가 지나 실행을 멈췄어요." : message.reason === "reset" ? "무대를 처음 위치로 돌렸어요." : message.reason === "finished" ? "실행을 마쳤어요." : "실행을 멈췄어요.";
         if (message.reason === "finished" && startOnly.current) {
@@ -243,12 +203,6 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
     const serialized = await readProject();
     const next = parse(serialized);
     if (serialized && next) {
-      if (mission?.id === "name" && action.type === "validate-practice" && !namesChecked({ ...draft, entryProject: serialized })) {
-        const issue = missionBlockIssue(mission.id, serialized);
-        const check = issue ? { passed: false, message: issue } : checkNameMission(serialized, runs.current, gradedProject);
-        if (!check.passed) { setLocalFeedback(check.message); setLocalFocus(value => value + 1); setPreparing(false); return; }
-      }
-      setLocalFeedback("");
       editorProject.current = serialized;
       update({ ...draft, entryProject: serialized, practiceOrder: next.order });
       await runAction(mission ? { ...action, missionId: mission.id } as WorkAction : action, focusId);
@@ -257,8 +211,6 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   }
 
   function retry() {
-    runs.current = []; setRecordedRuns([]); currentRun.current = null; setTriedRun(false);
-    setRunNotice(`${mode === "preview" ? "체험 작품" : "저장된 작품"}은 유지돼요. 이 화면에서 서로 다른 이름으로 두 번 실행해 주세요.`);
     editorProject.current = null; setBootReady(false); setPhase("loading"); setError(""); setRunning(false); setAttempt((value) => value + 1);
   }
 
@@ -317,12 +269,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         })}</ul>
       </div></PracticeGuidance>
       <div className={styles.actions}>
-        {nameCheck && <div className={styles.nameProgress}>
-          <p role="status" aria-label="서로 다른 이름 확인">서로 다른 이름 확인 {nameDone ? "완료" : `${nameCheck.validNames}/2`}</p>
-          <p>{nameDone ? "이 작품은 두 이름으로 확인하고 검증을 통과했어요. 블록을 바꾸면 두 번 실행을 다시 확인해요." : triedRun && (nameCheck.issue === "structure" || nameCheck.issue === "project") ? `지금 블록 연결로는 실행 확인을 세지 않아요. ${missionBlockIssue(mission!.id, draft.entryProject ?? "") ?? nameCheck.message}` : nameCheck.validNames === 0 ? runNotice : nameCheck.validNames === 1 ? "서로 다른 이름으로 한 번 더 실행해 주세요. 같은 이름은 한 번만 세요." : "현재 작품으로 두 이름을 확인했어요. 조건을 검증하고 작품을 제출해 주세요."}</p>
-        </div>}
         <Button variant={validation?.passed && !submitted ? "outline" : "default"} disabled={locked || actionsBlocked || preparing || running || phase !== "ready" || !program} onClick={() => void act({ type: "validate-practice" }, "practice-feedback")}>{busy || preparing ? "확인 중…" : "조건 검증"}</Button>
-        {localFeedback && <p id="entry-local-feedback" ref={localFeedbackRef} tabIndex={-1} role="status" className={common.feedbackRetry}>{localFeedback}</p>}
         {validation && <p id="practice-feedback" tabIndex={-1} role="status" className={validation.passed ? common.feedbackGood : common.feedbackRetry}>{validation.message}</p>}
         <Button variant={validation?.passed && !submitted ? "default" : "outline"} disabled={locked || actionsBlocked || preparing || running || phase !== "ready" || !validation?.passed || submitted} onClick={() => void act({ type: "submit-practice" }, "submitted-heading")}><Send size={16} />{submitted ? mode === "preview" ? "체험 제출 확인" : "이 작품 제출 완료" : mode === "preview" ? "체험 제출" : work.submission ? "수정한 작품 제출" : "작품 제출"}</Button>
         {!work.submission && validation?.passed && <p className={common.smallNote}>검증 통과 · 아직 제출 전이에요.</p>}

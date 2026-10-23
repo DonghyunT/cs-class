@@ -42,6 +42,8 @@ let original = null;
 let monitor = null;
 let startedAt = 0;
 let lastSpeech = "";
+// The lesson no longer reads name-run records, but awaitingAnswer is set only while one is open,
+// so the run record also keeps answer waits out of the 15-second run limit.
 let nameRun = null;
 let awaitingAnswer = false;
 let activeTime = 0;

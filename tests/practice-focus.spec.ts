@@ -142,7 +142,6 @@ test("practice-focus-live: 질문 대기 중 집중·넓게 전환 뒤 실제 �
   await clickAnswerCanvas(page, true);
   await expect(page.getByRole("status").filter({ hasText: `마지막 말: ${answer}` })).toBeVisible({ timeout: 10000 });
   await expect(entryStart(page)).toBeVisible();
-  await expect(page.getByRole("status", { name: "서로 다른 이름 확인", exact: true })).toHaveText("서로 다른 이름 확인 1/2");
   await page.screenshot({ path: info.outputPath("focus-live-answer.png"), fullPage: false });
   expect(errors).toEqual([]);
 });
