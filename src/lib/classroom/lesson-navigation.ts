@@ -2,9 +2,11 @@ import { missionById } from "./programming-entry";
 import { progressFor } from "./progress";
 import type { Lesson, Work } from "./types";
 
-export function prioritizedLessons(lessons: Lesson[], currentLessonId: string | null, work: Record<string, Work>) {
-  const rank = (lesson: Lesson) => lesson.id === currentLessonId ? 0 : ({ "in-progress": 1, "not-started": 2, completed: 3 })[progressFor(lesson, work[lesson.id]).status];
-  return [...lessons].sort((a, b) => rank(a) - rank(b));
+// This lesson on top, then regular lessons newest first (the catalog lists them in teaching order), then optional reviews.
+// Progress never moves a lesson, so students find each one where it was.
+export function prioritizedLessons(lessons: readonly Lesson[], currentLessonId: string | null) {
+  const rest = [...lessons.filter(lesson => lesson.mode !== "review").reverse(), ...lessons.filter(lesson => lesson.mode === "review")];
+  return [...rest.filter(lesson => lesson.id === currentLessonId), ...rest.filter(lesson => lesson.id !== currentLessonId)];
 }
 
 export function resumeLabelFor(lesson: Lesson, work?: Work | null) {

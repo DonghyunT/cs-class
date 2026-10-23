@@ -36,7 +36,7 @@ export function CompletionCelebration({ lesson, work, badges, mode, onClose }: {
     <ul className={styles.stages} aria-label="단계별 완료">{STAGES.map(([stage, label]) => <li key={stage}><Check size={15} aria-hidden="true" />{label} {progress[stage].completed}/{progress[stage].total}</li>)}</ul>
     {badges.length > 0 && <div className={styles.badges}><h3>{mode === "preview" ? "이번 체험으로 오른 배지" : "이번에 오른 배지"}</h3><ul>{badges.map(id => <li key={id}><BadgeChip id={id} /></li>)}</ul></div>}
     <div className={styles.actions}>
-      {mode === "student" && <Button nativeButton={false} render={<Link href="/student#badges" />}>대시보드에서 배지 보기</Button>}
+      {mode === "student" && <Button nativeButton={false} render={<Link href="/student/badges" />}>내 배지 보기</Button>}
       <Button variant="outline" onClick={() => onClose(true)}>계속 둘러보기</Button>
     </div>
   </section>;

@@ -18,7 +18,7 @@ export function remainingFor(lesson: Lesson, work: AnyWork): string[] {
 }
 
 export type BadgeId = "first-step" | "concepts" | "perfect-quiz" | "missions" | "challenge" | "lesson-complete" | "review-complete";
-export type Badge = { id: BadgeId; title: string; how: string; count: number; total: number; earned: boolean };
+export type Badge = { id: BadgeId; title: string; how: string; count: number; total: number; earned: boolean; lessons: string[] };
 
 const BADGES: readonly { id: BadgeId; title: string; how: string }[] = [
   { id: "first-step", title: "첫 발걸음", how: "개념 하나를 처음 확인하면 받아요." },
@@ -44,20 +44,31 @@ export function lessonBadgesFor(lesson: Lesson, work: AnyWork): BadgeId[] {
 }
 
 // Badges come from the saved records of open lessons only, so nothing new is stored or read.
+// `lessons` names where each badge was earned, for the badge page.
 export function badgesFor(lessons: readonly Lesson[], work: Record<string, AnyWork>): Badge[] {
   const regular = lessons.filter(lesson => lesson.mode !== "review"), reviews = lessons.filter(lesson => lesson.mode === "review");
-  const countIn = (list: readonly Lesson[], id: BadgeId) => list.filter(lesson => lessonBadgesFor(lesson, work[lesson.id]).includes(id)).length;
+  const earnedIn = (list: readonly Lesson[], id: BadgeId) => list.filter(lesson => lessonBadgesFor(lesson, work[lesson.id]).includes(id));
   const optional = lessons.flatMap(lesson => lesson.practice.type === "programming" ? missionsFor(lesson.id).filter(mission => mission.optional).map(mission => ({ lesson, mission })) : []);
-  const counts: Record<BadgeId, [number, number]> = {
-    "first-step": [lessons.some(lesson => (work[lesson.id]?.conceptSolved.length ?? 0) > 0) ? 1 : 0, lessons.length ? 1 : 0],
-    concepts: [countIn(regular, "concepts"), regular.length],
-    "perfect-quiz": [countIn(regular, "perfect-quiz"), regular.length],
-    missions: [countIn(regular, "missions"), regular.length],
-    challenge: [optional.filter(({ lesson, mission }) => work[lesson.id]?.missions?.[mission.id]?.submission).length, optional.length],
-    "lesson-complete": [countIn(regular, "lesson-complete"), regular.length],
-    "review-complete": [countIn(reviews, "review-complete"), reviews.length],
+  const challenged = optional.filter(({ lesson, mission }) => work[lesson.id]?.missions?.[mission.id]?.submission);
+  const where: Record<BadgeId, readonly Lesson[]> = {
+    "first-step": lessons.filter(lesson => (work[lesson.id]?.conceptSolved.length ?? 0) > 0),
+    concepts: earnedIn(regular, "concepts"),
+    "perfect-quiz": earnedIn(regular, "perfect-quiz"),
+    missions: earnedIn(regular, "missions"),
+    challenge: lessons.filter(lesson => challenged.some(item => item.lesson === lesson)),
+    "lesson-complete": earnedIn(regular, "lesson-complete"),
+    "review-complete": earnedIn(reviews, "review-complete"),
   };
-  return BADGES.map(badge => ({ ...badge, count: counts[badge.id][0], total: counts[badge.id][1], earned: counts[badge.id][0] > 0 })).filter(badge => badge.total > 0);
+  const counts: Record<BadgeId, [number, number]> = {
+    "first-step": [where["first-step"].length ? 1 : 0, lessons.length ? 1 : 0],
+    concepts: [where.concepts.length, regular.length],
+    "perfect-quiz": [where["perfect-quiz"].length, regular.length],
+    missions: [where.missions.length, regular.length],
+    challenge: [challenged.length, optional.length],
+    "lesson-complete": [where["lesson-complete"].length, regular.length],
+    "review-complete": [where["review-complete"].length, reviews.length],
+  };
+  return BADGES.map(badge => ({ ...badge, count: counts[badge.id][0], total: counts[badge.id][1], earned: counts[badge.id][0] > 0, lessons: where[badge.id].map(lesson => lesson.title) })).filter(badge => badge.total > 0);
 }
 
 export const badgeTitle = (id: BadgeId) => BADGES.find(badge => badge.id === id)!.title;

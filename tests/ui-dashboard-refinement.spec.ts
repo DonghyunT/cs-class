@@ -97,7 +97,10 @@ test('학생 이번 수업 우선·구체적 이어갈 곳과 다음 일정 5개
   const cards = page.locator('article');
   await expect(cards.first()).toContainText(programming.title);
   await expect(cards.first()).toContainText('이어갈 곳: 실습 · 곱셈 계산기');
-  await expect(cards.nth(1)).toContainText(recentReview.title);
+  // Newest regular lesson next; a review stays under its own heading after every regular lesson, even when worked on recently.
+  await expect(cards.nth(1)).toContainText(RELEASED_LESSONS.find((item) => item.id === 'loops')!.title);
+  await expect(page.getByRole('heading', { name: '선택 복습', exact: true })).toBeVisible();
+  await expect(cards.nth(3)).toContainText(recentReview.title);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('student-current-first-390.png'), fullPage: true });
@@ -157,6 +160,49 @@ test('교사 단계 막대는 전체 학생 중 필수 활동을 모두 완료�
   }
   const current = page.locator('section[aria-labelledby="current-heading"]');
   await expect(current).toContainText('필수 활동 17/42개 완료');
+});
+
+test('교사 살펴볼 학생은 숫자만 보여 주고, 누르면 그 조건으로 걸러진 학생 현황을 연다', async ({ page }) => {
+  await readyTeacher(page.request);
+  const lesson = RELEASED_LESSONS.find((item) => item.id === 'programming-13')!;
+  const completed = emptyWork(lesson);
+  completed.conceptSolved = lesson.concepts.map((item) => item.id);
+  completed.quizSolved = lesson.quiz.map((item) => item.id);
+  completed.missions = Object.fromEntries(['name', 'multiply', 'move', 'keys'].map((id) => [id, { validation: null, submission: { id, order: [], entryProject: buildProgrammingProject(), submittedAt: 1000 } }]));
+  const partial = emptyWork(lesson);
+  partial.conceptSolved = [lesson.concepts[0].id];
+  partial.quizSolved = [lesson.quiz[0].id];
+  partial.missions = { name: { validation: null, submission: { id: 'name', order: [], entryProject: buildProgrammingProject(), submittedAt: 1000 } } };
+  partial.updatedAt = 1000;
+  const students = [
+    { uid: 'watch-0', studentId: '21070', mustChangePassword: false, work: completed },
+    { uid: 'watch-1', studentId: '21071', mustChangePassword: false, work: partial },
+    { uid: 'watch-2', studentId: '21072', mustChangePassword: false, work: null },
+    { uid: 'watch-3', studentId: '21073', mustChangePassword: true, work: null },
+  ];
+  await page.route('**/api/classroom/teacher?**', async (route) => {
+    const response = await route.fetch(); const data = await response.json() as TeacherDashboard;
+    await route.fulfill({ response, json: { ...data, lessons: RELEASED_LESSONS, selectedLessonId: lesson.id, classroom: { ...data.classroom, currentLessonId: lesson.id }, students } });
+  });
+  await page.goto('/teacher');
+  const watch = page.getByRole('region', { name: '살펴볼 학생', exact: true });
+  await expect(watch.getByRole('link', { name: '시작 전 2명', exact: true })).toBeVisible();
+  await expect(watch.getByRole('link', { name: '진행 중 1명', exact: true })).toBeVisible();
+  await expect(watch.getByRole('link', { name: '첫 입장 전 1명', exact: true })).toHaveAttribute('href', /password=required/);
+  // The screen may be projected, so no student number appears here.
+  await expect(watch).not.toContainText('2107');
+  // Personal todos moved to the right column, next to the schedule.
+  const actions = page.getByRole('region', { name: '교사가 확인할 일', exact: true });
+  const todo = page.getByRole('region', { name: '내 할 일', exact: true });
+  expect((await todo.boundingBox())!.x).toBeGreaterThan((await actions.boundingBox())!.x + 100);
+  await watch.getByRole('link', { name: '시작 전 2명', exact: true }).click();
+  await expect(page).toHaveURL(/\/teacher\/students\?.*status=not-started/);
+  await expect(page.getByRole('combobox', { name: '진행 상태', exact: true })).toHaveText('시작 전');
+  await expect(page.getByText('21072', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('21071', { exact: true })).toHaveCount(0);
+  // Changing the filter writes it back to the address, so a reload keeps what the teacher sees.
+  await choose(page, '진행 상태', '모든 진행');
+  await expect(page).not.toHaveURL(/status=/);
 });
 
 test('교사 이번 수업 카드의 미지정·빈 수업·선택 복습·조회 실패 경계', async ({ page }) => {

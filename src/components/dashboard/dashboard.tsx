@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, BookOpen, CalendarDays, ListChecks, RefreshCw } from "lucide-react";
+import { ArrowRight, BookOpen, CalendarDays, ListChecks, RefreshCw, UserSearch } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { TeacherToolbar } from "@/components/teacher/teacher-toolbar";
@@ -12,9 +12,9 @@ import { useSession, useTeacherClass } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
 import { classroomApi } from "@/lib/classroom/client";
 import { CLASSROOM_HELP_ENABLED } from "@/lib/classroom/features";
-import { latestSubmissionAtFor, submissionCountFor } from "@/lib/classroom/progress";
+import { latestSubmissionAtFor, progressFor, submissionCountFor } from "@/lib/classroom/progress";
 import { seoulToday, eventDate } from "@/lib/classroom/planner";
-import type { Session, StudentDashboard, TeacherDashboard } from "@/lib/classroom/types";
+import type { Lesson, Session, StudentDashboard, TeacherDashboard } from "@/lib/classroom/types";
 import { TodoList } from "./todos";
 import { ScheduleList } from "./schedule";
 import { LoadingList } from "./loading-list";
@@ -80,7 +80,7 @@ function Dashboard({ session, teacher, explicitClassId }: { session: Session; te
     {!teacher ? <LearningOverview data={student} loading={loading} error={Boolean(error)} /> : <section className={styles.current} aria-labelledby="current-heading"><div><span className={styles.eyebrow}><BookOpen size={17} aria-hidden="true" />{active?.classroom.name && `${active.classroom.name} · `}이번 수업</span>{loading && !active && !error ? <><h2 id="current-heading" className="sr-only">이번 수업 확인 중</h2><div className={styles.currentLoading}><Skeleton /><Skeleton /></div></> : <><h2 id="current-heading">{currentTitle}</h2><p>{current?.description ?? "수업 관리에서 담당 반의 수업을 준비해요."}</p>{current && classId && <Button className={styles.currentAction} variant="outline" nativeButton={false} render={<Link href={`/teacher/preview/${encodeURIComponent(current.id)}?classId=${encodeURIComponent(classId)}`} />}>수업 미리보기<ArrowRight size={16} aria-hidden="true" /></Button>}</>}</div>
       {staff && current && staffLesson?.id === current.id && <div className={styles.currentProgress}><ClassProgress lesson={current} students={staff.students} checkedAt={updatedAt ?? 0} /></div>}
     </section>}
-    <div className={styles.columns}><div className={styles.mainColumn}>{!teacher && <><StudentLessonProgress data={student} loading={loading && !error} /><StudentBadges data={student} loading={loading && !error} /><TodoList uid={session.uid} /></>}{teacher && <section className={`${styles.panel} ${styles.actionsPanel}`} aria-labelledby="actions-heading"><div className={styles.sectionHeading}><div className={styles.sectionTitle}><span className={`${styles.titleIcon} ${styles.actionIcon}`}><ListChecks size={19} aria-hidden="true" /></span><h2 id="actions-heading">교사가 확인할 일</h2></div><Link href={`/teacher/students${classId ? `?classId=${classId}` : ""}`}>학생 현황<ArrowRight size={15} aria-hidden="true" /></Link></div>
+    <div className={styles.columns}><div className={styles.mainColumn}>{!teacher && <><StudentLessonProgress data={student} loading={loading && !error} /><StudentBadges data={student} loading={loading && !error} summary /></>}{teacher && <section className={`${styles.panel} ${styles.actionsPanel}`} aria-labelledby="actions-heading"><div className={styles.sectionHeading}><div className={styles.sectionTitle}><span className={`${styles.titleIcon} ${styles.actionIcon}`}><ListChecks size={19} aria-hidden="true" /></span><h2 id="actions-heading">교사가 확인할 일</h2></div><Link href={`/teacher/students${classId ? `?classId=${classId}` : ""}`}>학생 현황<ArrowRight size={15} aria-hidden="true" /></Link></div>
       {loading && !active && !error && <LoadingList label="담당 반의 기록을 불러오고 있어요." />}
         {!session.classIds.length && <p className={styles.empty}>아직 담당 반이 없어요. 개인 할 일은 사용할 수 있어요.</p>}
         {staff && staffLesson && <p className={styles.cardLesson}><BookOpen size={16} aria-hidden="true" />{staffLesson.title}</p>}
@@ -98,7 +98,26 @@ function Dashboard({ session, teacher, explicitClassId }: { session: Session; te
         </>}
         {staff && staffLesson && !submitted.length && <p className={styles.muted}>아직 이 수업에 저장된 제출 작품이 없어요.</p>}
       {!active && session.classIds.length > 0 && <p className={styles.muted}>수업 기록을 확인하면 다음 행동이 보여요.</p>}
-    </section>}{teacher && CLASSROOM_HELP_ENABLED && classId && <HelpRequests key={classId} classId={classId} onStatusChange={setHelpStatus} />}{teacher && <TodoList uid={session.uid} />}</div><div className={styles.sideColumn}>{classId ? <ScheduleList key={classId} uid={session.uid} teacher={teacher} classId={classId} summary /> : <section className={styles.panel}><h2>다가오는 일정</h2><p className={styles.empty}>담당 반이 연결되면 일정을 확인할 수 있어요.</p></section>}<p className={styles.footnote}>일정은 수업을 준비하는 안내예요.<br />학습과 제출 상태는 수업 기록에서 확인해요.</p></div></div>
+    </section>}{teacher && CLASSROOM_HELP_ENABLED && classId && <HelpRequests key={classId} classId={classId} onStatusChange={setHelpStatus} />}{teacher && staff && <WatchList staff={staff} lesson={staffLesson} />}</div><div className={styles.sideColumn}>{classId ? <ScheduleList key={classId} uid={session.uid} teacher={teacher} classId={classId} summary /> : <section className={styles.panel}><h2>다가오는 일정</h2><p className={styles.empty}>담당 반이 연결되면 일정을 확인할 수 있어요.</p></section>}<TodoList uid={session.uid} /></div></div>
     <Link className={styles.allLessons} href={teacher ? `/teacher/classes${classId ? `?classId=${encodeURIComponent(classId)}` : ""}` : `${home}/lessons`}>{teacher ? "담당 반 수업 관리" : "다른 수업도 이어갈 수 있어요. 열린 수업 보기"}<ArrowRight size={16} aria-hidden="true" /></Link>
   </div>;
+}
+
+// Counts only: the teacher screen may be on the projector, so names appear only after opening the filtered student list.
+function WatchList({ staff, lesson }: { staff: TeacherDashboard; lesson?: Lesson }) {
+  const regular = lesson && lesson.mode !== "review" ? lesson : null;
+  const base = `/teacher/students?classId=${staff.classroom.id}${lesson ? `&lessonId=${lesson.id}` : ""}`;
+  const count = (status: "not-started" | "in-progress") => regular ? staff.students.filter(student => progressFor(regular, student.work).status === status).length : 0;
+  const firstEntry = staff.students.filter(student => student.mustChangePassword).length;
+  const rows = [
+    ...(regular ? [{ label: "시작 전", count: count("not-started"), note: "이 수업 기록이 없는 학생", href: `${base}&status=not-started` }, { label: "진행 중", count: count("in-progress"), note: "필수 활동이 남은 학생", href: `${base}&status=in-progress` }] : []),
+    ...(firstEntry ? [{ label: "첫 입장 전", count: firstEntry, note: "아직 비밀번호를 정하지 않은 학생", href: `${base}&password=required` }] : []),
+  ];
+  return <section className={`${styles.panel} ${styles.watchPanel}`} aria-labelledby="watch-heading">
+    <div className={styles.sectionHeading}><div className={styles.sectionTitle}><span className={`${styles.titleIcon} ${styles.watchIcon}`}><UserSearch size={19} aria-hidden="true" /></span><h2 id="watch-heading">살펴볼 학생</h2></div></div>
+    <p className={styles.todoSubtitle}>숫자만 보여 줘요. 누르면 학생 현황에서 명단을 볼 수 있어요.</p>
+    {lesson && !regular && rows.length > 0 && <p className={styles.muted}>선택 복습은 진행 상태를 세지 않아요.</p>}
+    {rows.length ? <ul className={styles.actionList}>{rows.map(row => <li key={row.label}><Link aria-label={`${row.label} ${row.count}명`} href={row.href}><span>{row.label} <b>{row.count}명</b><small>{row.note}</small></span><ArrowRight size={17} aria-hidden="true" /></Link></li>)}</ul>
+      : <p className={styles.muted}>{lesson ? "선택 복습은 진행 상태를 세지 않아요. 첫 입장 전 학생도 없어요." : "수업을 고르면 진행 상태별 학생 수가 보여요."}</p>}
+  </section>;
 }
