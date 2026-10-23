@@ -109,4 +109,9 @@ export function badgesFor(lessons: readonly Lesson[], work: Record<string, AnyWo
   }).filter(badge => badge.total > 0);
 }
 
+// Earned badges are remembered per star level, so a new star counts as new again.
+export const badgeKey = (badge: Badge) => `${badge.id}:${badge.stars}`;
+// Every level up to the current one, so dropping a star after a lesson closes is not shown as new.
+export const seenKeys = (badge: Badge) => Array.from({ length: badge.stars }, (_, i) => `${badge.id}:${i + 1}`);
+
 export const badgeTitle = (id: BadgeId) => BADGES.find(badge => badge.id === id)!.title;

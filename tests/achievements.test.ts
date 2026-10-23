@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
-import { badgesFor, lessonBadgesFor, remainingFor } from "../src/lib/classroom/achievements";
+import { badgeKey, badgesFor, lessonBadgesFor, remainingFor, seenKeys } from "../src/lib/classroom/achievements";
 import { emptyWork } from "../src/lib/classroom/progress";
 import { requiredMissionsFor } from "../src/lib/classroom/programming-entry";
 import type { Lesson, Work } from "../src/lib/classroom/types";
@@ -112,4 +112,11 @@ test("단계 배지는 고정 개수로 별을 올리고, 희귀 배지는 조�
   expect(badge(regular, finished, "streak")).toMatchObject({ earned: true, lessons: [programming.title, conditionals.title, loops.title] });
   expect(badge(regular, { ...finished, [conditionals.id]: done(conditionals, { conceptSolved: [] }) }, "streak")).toMatchObject({ earned: false, lessons: [] });
   expect(badge([programming, conditionals], finished, "streak")).toBeUndefined();
+
+  // Seen keys cover every level reached, so a star lost when a lesson closes is not "new" again.
+  const threeStars = badge(many, Object.fromEntries(many.slice(0, 5).map(item => [item.id, done(item)])), "lesson-complete")!;
+  const twoStars = badge(many, four, "lesson-complete")!;
+  expect(seenKeys(threeStars)).toEqual(["lesson-complete:1", "lesson-complete:2", "lesson-complete:3"]);
+  expect(seenKeys(threeStars)).toContain(badgeKey(twoStars));
+  expect(seenKeys(badge(many, {}, "lesson-complete")!)).toEqual([]);
 });

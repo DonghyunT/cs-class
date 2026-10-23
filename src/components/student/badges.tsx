@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, Award, BookCheck, Compass, Crown, Flame, Footprints, Lock, Palette, Puzzle, Sprout, Stamp, Target, Trophy, Zap, type LucideIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/loading-state";
-import { badgesFor, badgeTitle, lessonBadgesFor, STAMPS, type Badge, type BadgeId } from "@/lib/classroom/achievements";
+import { badgeKey, badgesFor, badgeTitle, lessonBadgesFor, STAMPS, type Badge, type BadgeId } from "@/lib/classroom/achievements";
 import type { Lesson, StudentDashboard, Work } from "@/lib/classroom/types";
 import styles from "./badges.module.css";
 
 const ICONS: Record<BadgeId, LucideIcon> = { "first-step": Footprints, "first-work": Palette, concepts: Compass, "perfect-quiz": Target, missions: Puzzle, challenge: Flame, "lesson-complete": Trophy, "review-complete": BookCheck, stamps: Stamp, "all-clear": Crown, comeback: Sprout, streak: Zap };
 const STAMP_LABELS: Record<(typeof STAMPS)[number], string> = { concepts: "개념", "perfect-quiz": "첫 회차 만점", missions: "미션", "lesson-complete": "완주" };
-// Earned badges are remembered per star level, so a new star counts as new again.
-export const badgeKey = (badge: Badge) => `${badge.id}:${badge.stars}`;
 
 export function BadgeChip({ id }: { id: BadgeId }) {
   const Icon = ICONS[id];

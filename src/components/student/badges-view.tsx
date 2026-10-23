@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useSession } from "@/components/session-provider";
 import { classroomApi } from "@/lib/classroom/client";
 import type { StudentDashboard } from "@/lib/classroom/types";
-import { badgesFor } from "@/lib/classroom/achievements";
-import { badgeKey, StudentBadges } from "./badges";
+import { badgeKey, badgesFor, seenKeys } from "@/lib/classroom/achievements";
+import { StudentBadges } from "./badges";
 import styles from "./student.module.css";
 
 // Reads the student's records once on entry; there is no polling here.
@@ -37,7 +37,7 @@ export function StudentBadgesView() {
   }, [load]);
   useEffect(() => {
     if (!data) return;
-    const keys = badgesFor(data.lessons, data.work).filter(badge => badge.earned).map(badgeKey);
+    const keys = badgesFor(data.lessons, data.work).flatMap(seenKeys);
     try { localStorage.setItem(seenKey, JSON.stringify([...new Set([...seen, ...keys])])); } catch { /* storage blocked: nothing to remember */ }
   }, [data, seen, seenKey]);
   return <div className={styles.dashboard}>
