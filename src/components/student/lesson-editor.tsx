@@ -4,7 +4,7 @@ import { memo, useCallback, useEffect, useRef, useState, type KeyboardEvent, typ
 import { ArrowRight, ArrowDown, ArrowUp, BookOpen, Check, CheckCircle2, Layers3, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { WorkController, LessonMode } from "./work-controller";
-import { practiceMatches, progressFor } from "@/lib/classroom/progress";
+import { practiceMatches, progressFor, shownQuizIds } from "@/lib/classroom/progress";
 import type { Lesson, Question, Stage, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { LearningStatus } from "./progress-summary";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
@@ -66,7 +66,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   const [conceptId, setConceptId] = useState(() => lesson.concepts.find((item) => !initial.conceptSolved.includes(item.id))?.id ?? lesson.concepts[0]?.id);
   const displayedConcept = useRef(conceptId);
   useEffect(() => { displayedConcept.current = conceptId; }, [conceptId]);
-  const [quizQuestionId, setQuizQuestionId] = useState(() => initial.quizRoundIds.find((id) => initial.quizRoundGraded ? !initial.quizFeedback[id]?.correct : !initial.draft.quizAnswers[id]) ?? initial.quizRoundIds[0] ?? lesson.quiz[0]?.id);
+  const [quizQuestionId, setQuizQuestionId] = useState(() => shownQuizIds(lesson, initial).find((id) => initial.quizRoundGraded ? !initial.quizFeedback[id]?.correct : !initial.draft.quizAnswers[id]) ?? shownQuizIds(lesson, initial)[0] ?? lesson.quiz[0]?.id);
   const [experienceVersion, setExperienceVersion] = useState(0);
   const [nativeReady, setNativeReady] = useState(false);
   const needsNative = draft.stage === "practice" && (lesson.practice.type === "entryjs" || lesson.practice.type === "programming");

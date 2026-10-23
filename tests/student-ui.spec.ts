@@ -65,6 +65,7 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   // Once everything is solved the whole quiz is back, with the earlier answer still shown.
   const allQuestions = page.getByRole("navigation", { name: "퀴즈 문항 목록" }).getByRole("button");
   await expect(allQuestions).toHaveCount(3);
+  await expect(page.locator("#panel-quiz")).toContainText("전체 문제");
   await allQuestions.first().click();
   await expect(page.getByRole("radio", { name: "앞으로 3칸 이동한다" })).toBeChecked();
   await page.getByRole("button", { name: "실습으로 이동" }).click();
