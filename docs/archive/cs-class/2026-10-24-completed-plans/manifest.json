@@ -1,0 +1,12 @@
+{
+  "archivedAt": "2026-10-24 Asia/Seoul",
+  "sourceCommit": "a4a832d057e1307161c6f57aa880b5b29f39520b",
+  "files": [
+    {
+      "source": "docs/plans/learning-experience.md",
+      "archived": "learning-experience.md",
+      "bytes": 122839,
+      "sha256": "54fcd8680223d2e436322856b8b29650f12745fb9149342cbd5337860fc14585"
+    }
+  ]
+}

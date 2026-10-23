@@ -238,6 +238,13 @@
       "origin": "completed-plan-archived-20261023",
       "baseCommit": "0532e39",
       "sha256": "bd76dd8eab8b728c0d0120defd98cb5a4e584267d61de40d00dec25c6e324063"
+    },
+    {
+      "source": "docs/plans/learning-experience.md",
+      "archive": "docs/archive/cs-class/2026-10-24-completed-plans/learning-experience.md",
+      "origin": "completed-plan-archived-20261024",
+      "baseCommit": "a4a832d",
+      "sha256": "54fcd8680223d2e436322856b8b29650f12745fb9149342cbd5337860fc14585"
     }
   ]
 }
