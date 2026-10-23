@@ -5,6 +5,7 @@ import { RELEASED_LESSONS, findLesson } from "../classroom/catalog";
 import { emptyWork, practiceMatches } from "../classroom/progress";
 import { isLessonMission, missionsFor, programmingProjectMatches } from "../classroom/programming-entry";
 import type { ClassSettings, StudentDashboard, TeacherDashboard, Work, WorkSummary } from "../classroom/types";
+import { isTrialStudentId } from "../classroom/roster";
 import { randomUUID } from "node:crypto";
 import { basicReviewCheck } from "../classroom/review/project";
 import { admin } from "./firebase";
@@ -112,11 +113,16 @@ export async function teacherDashboard(classId?: string, lessonId?: string): Pro
     // A lesson can be closed after a link to it was made, so fall back to the default lesson instead of failing.
     const selectedLessonId = lessonId && classroom.openedLessonIds.includes(lessonId) ? lessonId : classroom.currentLessonId && openedReleased.includes(classroom.currentLessonId) ? classroom.currentLessonId : openedReleased[0] ?? null;
     const roster = await tx.get(admin().db.collection("csAccounts").where("classId", "==", selectedClassId));
-    const students = roster.docs.map((doc) => doc.data() as Account).filter((student): student is Account & { studentId: string } => student.role === "student" && !student.disabled && !!student.studentId);
+    const accounts = roster.docs.map((doc) => doc.data() as Account).filter((student): student is Account & { studentId: string } => student.role === "student" && !!student.studentId);
+    // An account still mid-registration (disabled and busy) is neither listed nor taken off the list.
+    const offList = accounts.filter((student) => student.disabled ? !student.authBusy : isTrialStudentId(student.studentId))
+      .map((student) => ({ uid: student.uid, studentId: student.studentId, ...(student.nickname ? { nickname: student.nickname } : {}), kind: student.disabled ? "removed" as const : "trial" as const }))
+      .sort((a, b) => a.studentId.localeCompare(b.studentId));
+    const students = accounts.filter((student) => !student.disabled && !isTrialStudentId(student.studentId));
     const workSnapshots = selectedLessonId && students.length ? await tx.getAll(...students.map((student) => workRef(student.uid, selectedLessonId))) : [];
     const records = students.map((student, index) => ({ uid: student.uid, studentId: student.studentId, ...(student.nickname ? { nickname: student.nickname } : {}), lastActiveAt: student.session?.lastActivityAt ?? null, mustChangePassword: student.mustChangePassword, ...(student.mustChangePassword && student.temporaryPassword ? { temporaryExpiresAt: student.temporaryPassword.expiresAt } : {}), work: selectedLessonId ? workSummary(toWork(workSnapshots[index].data() as StoredWork | undefined, selectedLessonId)) : null }));
     records.sort((a, b) => a.studentId.localeCompare(b.studentId));
-    return { classrooms, lessons: RELEASED_LESSONS, classroom, selectedLessonId, students: records };
+    return { classrooms, lessons: RELEASED_LESSONS, classroom, selectedLessonId, students: records, offList };
   });
 }
 function workSummary(work: Work): WorkSummary {

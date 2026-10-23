@@ -39,6 +39,7 @@ export const classroomApi = {
   teacher: (classId?: string, lessonId?: string) => api<TeacherDashboard>(`classroom/teacher?${new URLSearchParams({ ...(classId ? { classId } : {}), ...(lessonId ? { lessonId } : {}) })}`),
   updateClass: (classId: string, revision: number, currentLessonId: string | null, openedLessonIds: string[], expectedUid?: string) => api<ClassSettings>(`classroom/classes/${encodeURIComponent(classId)}`, { revision, currentLessonId, openedLessonIds }, "POST", expectedUid),
   firstEntry: (classId: string, action: "open" | "extend" | "close", expectedUid?: string) => api<{ code: string | null; expiresAt: number | null }>(`classroom/first-entry/${encodeURIComponent(classId)}`, { action }, "POST", expectedUid),
+  setListed: (uid: string, listed: boolean, expectedUid?: string) => api<{ listed: boolean }>(`classroom/students/${encodeURIComponent(uid)}/roster`, { listed }, "POST", expectedUid),
   resetPassword: (uid: string, expectedUid?: string, pendingOnly = false) => api<{ password: string; expiresAt: number }>(`classroom/students/${encodeURIComponent(uid)}/reset`, pendingOnly ? { pendingOnly: true } : {}, "POST", expectedUid),
   work: (lessonId: string) => api<Work>(`classroom/work/${encodeURIComponent(lessonId)}`),
   previewEvaluate: (lessonId: string, classId: string, work: Work, action: WorkAction, expectedUid: string) => api<Work>(`teacher-preview/${encodeURIComponent(lessonId)}/evaluate`, { classId, work, action }, "POST", expectedUid),

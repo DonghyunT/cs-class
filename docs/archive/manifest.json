@@ -231,6 +231,13 @@
       "origin": "agents-before-boundaries-20261020",
       "baseCommit": "14472ca",
       "sha256": "8d0e908aa8d1aebadaaebe603749a20e0c023decff1c2d0b7c5845deb989e16f"
+    },
+    {
+      "source": "docs/plans/hints-grading-visuals.md",
+      "archive": "docs/archive/cs-class/2026-10-23-completed-plans/hints-grading-visuals.md",
+      "origin": "completed-plan-archived-20261023",
+      "baseCommit": "0532e39",
+      "sha256": "bd76dd8eab8b728c0d0120defd98cb5a4e584267d61de40d00dec25c6e324063"
     }
   ]
 }

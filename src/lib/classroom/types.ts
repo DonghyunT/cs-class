@@ -139,7 +139,10 @@ export interface TeacherDashboard {
   classroom: ClassSettings;
   selectedLessonId: string | null;
   students: StudentRow[];
+  // Accounts kept out of the class list and its counts: approved trial accounts, and students the teacher took off the list.
+  offList: OffListAccount[];
 }
+export interface OffListAccount { uid: string; studentId: string; nickname?: string; kind: "trial" | "removed" }
 export type WorkAction =
   | { type: "check-concept"; conceptId: string }
   | { type: "grade-quiz" }
