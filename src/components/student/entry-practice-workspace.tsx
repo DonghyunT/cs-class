@@ -23,7 +23,6 @@ const WAITING = " 키를 누르거나 무대·오브젝트를 클릭해 보세�
 // Entry's stop resets the stage, so drawing runs stay until the student stops them.
 const DRAWING = " 그린 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가고, 그다음 조건을 검증할 수 있어요.";
 const withoutWaiting = (text: string) => [WAITING, DRAWING].reduce((rest, notice) => rest.endsWith(notice) ? rest.slice(0, -notice.length) : rest, text);
-// Name runs record only the dog, so they are keyed by the dog's code, not the whole work.
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
 export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, actionsBlocked = false, update, runAction, exportRef, mission, saveLabel, saveState, workspaceWide, practiceFocused = false, mode = "student", onWorkspaceWideChange, onSave, onReadyChange }: {
