@@ -750,6 +750,7 @@ test("완료 알림·배지: 마지막 활동을 마치면 완료 카드와 받�
   const finished = page.getByRole("region", { name: "배지 모음", exact: true }).getByRole("listitem").filter({ hasText: "수업 완주" });
   await expect(finished).toContainText("정규 수업의 필수 활동을 모두 마치면 받아요.");
   await expect(finished).toContainText(`받은 수업: ${conditionals.title}`);
+  await expect(page.getByRole("region", { name: "배지 모음", exact: true }).getByRole("listitem").filter({ hasText: "첫 발걸음" })).toContainText(`개념을 확인한 수업: ${conditionals.title}`);
 });
 
 test("남은 활동: 진행 중인 정규 수업은 대시보드와 수업 목록에 남은 개념·퀴즈·미션 수를 보여 준다", async ({ page }) => {

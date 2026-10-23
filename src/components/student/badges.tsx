@@ -27,7 +27,7 @@ export function StudentBadges({ data, loading, summary = false }: { data: Studen
       const count = badge.id === "first-step" ? badge.earned ? "받음" : "아직" : badge.id === "challenge" ? `도전 미션 ${badge.total}개 중 ${badge.count}개 제출` : `${badge.total}개 수업 중 ${badge.count}개${badge.earned ? "에서 받음" : ""}`;
       return <li key={badge.id} className={styles.badge} data-badge={badge.id} data-earned={badge.earned}>
         <span className={styles.medal}><Icon size={22} aria-hidden="true" /></span>
-        <div><h3>{badge.title}<span className="sr-only">{badge.earned ? " · 받은 배지" : " · 아직 받지 않은 배지"}</span></h3><strong>{count}</strong>{!summary && <><p>{badge.how}</p>{badge.lessons.length > 0 && badge.id !== "first-step" && <p className={styles.where}>받은 수업: {badge.lessons.join(", ")}</p>}</>}</div>
+        <div><h3>{badge.title}<span className="sr-only">{badge.earned ? " · 받은 배지" : " · 아직 받지 않은 배지"}</span></h3><strong>{count}</strong>{!summary && <><p>{badge.how}</p>{badge.lessons.length > 0 && <p className={styles.where}>{badge.id === "first-step" ? "개념을 확인한 수업" : "받은 수업"}: {badge.lessons.join(", ")}</p>}</>}</div>
       </li>;
     })}</ul>}
   </section>;
