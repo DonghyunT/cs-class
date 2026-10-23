@@ -1,0 +1,24 @@
+.panel { background: #fff; border: 1px solid #e3e8ef; border-radius: 20px; padding: 18px 22px; min-width: 0; }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.heading h2 { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 700; margin: 0; letter-spacing: -.03em; }
+.icon { width: 36px; height: 36px; display: inline-grid; place-items: center; border-radius: 11px; color: #a84f2a; background: #fff3e8; flex-shrink: 0; }
+.total { color: #526173; font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.scope { margin: 6px 0 12px; color: #68758a; font-size: 13px; line-height: 1.5; }
+.empty { margin: 8px 0 0; color: #68758a; font-size: 14px; }
+.loading { display: grid; gap: 10px; }
+.loading > * { height: 64px; border-radius: 14px; }
+.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.badge { --badge: #376fc8; --badge-ink: #2e5fab; --badge-surface: #eaf2ff; display: flex; align-items: flex-start; gap: 12px; min-width: 0; border: 1px solid color-mix(in srgb, var(--badge) 30%, white); border-radius: 14px; background: var(--badge-surface); padding: 12px; }
+.badge h3 { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.4; color: #202637; }
+.badge strong { display: block; margin-top: 2px; color: var(--badge-ink); font-size: 13px; font-variant-numeric: tabular-nums; }
+.badge p { margin: 4px 0 0; color: #526173; font-size: 12px; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; }
+.medal { width: 40px; height: 40px; display: grid; place-items: center; flex-shrink: 0; border-radius: 50%; color: #fff; background: var(--badge); box-shadow: 0 0 0 3px #fff, 0 0 0 4px color-mix(in srgb, var(--badge) 40%, white); }
+.badge[data-badge="perfect-quiz"], .chip[data-badge="perfect-quiz"] { --badge: #8860ba; --badge-ink: #6b4699; --badge-surface: #f3edfa; }
+.badge[data-badge="missions"], .badge[data-badge="lesson-complete"], .chip[data-badge="missions"], .chip[data-badge="lesson-complete"] { --badge: #268673; --badge-ink: #1f6b5c; --badge-surface: #e6f3ee; }
+.badge[data-badge="challenge"], .chip[data-badge="challenge"] { --badge: #c2410c; --badge-ink: #a84f2a; --badge-surface: #fff3e8; }
+/* After the colour rules so an unearned badge always looks grey. */
+.badge[data-earned="false"] { --badge: #9aa4b5; --badge-ink: #626c80; --badge-surface: #f4f6fa; border-style: dashed; border-color: #cfd5df; }
+.badge[data-earned="false"] .medal { color: #fff; box-shadow: none; }
+.chip { --badge: #376fc8; --badge-ink: #2e5fab; --badge-surface: #eaf2ff; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 10px 4px 8px; background: var(--badge-surface); color: var(--badge-ink); font-size: 13px; font-weight: 650; }
+.chip svg { color: var(--badge); flex-shrink: 0; }
+@media (max-width: 600px) { .panel { padding: 14px 16px; } .grid { grid-template-columns: 1fr; } }

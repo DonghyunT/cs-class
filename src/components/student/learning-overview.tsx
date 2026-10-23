@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/loading-state";
 import { prioritizedLessons, resumeLabelFor } from "@/lib/classroom/lesson-navigation";
 import { progressFor } from "@/lib/classroom/progress";
+import { remainingFor } from "@/lib/classroom/achievements";
 import type { StudentDashboard } from "@/lib/classroom/types";
 import { LearningStatus, ProgressSummary } from "./progress-summary";
 import { ActivityProgressRing } from "./activity-progress-ring";
@@ -50,11 +51,12 @@ export function StudentLessonProgress({ data, loading }: { data: StudentDashboar
     {loading && !data && <div className={styles.loading} aria-hidden="true"><Skeleton /><Skeleton /><Skeleton /></div>}
     {!loading && !data && <p className={styles.empty}>수업 기록을 확인하면 진도가 보여요.</p>}
     {data && !lessons.length && <p className={styles.empty}>정규 수업이 열리면 단계별 진도가 보여요.</p>}
-    {lessons.map(lesson => <article key={lesson.id} className={styles.lesson} aria-labelledby={`progress-${lesson.id}`}>
+    {lessons.map(lesson => { const work = data!.work[lesson.id], status = progressFor(lesson, work).status, remaining = remainingFor(lesson, work); return <article key={lesson.id} className={styles.lesson} data-status={status} aria-labelledby={`progress-${lesson.id}`}>
       <div className={styles.lessonHeading}><div>{lesson.id === data!.classroom.currentLessonId && <span className={styles.currentBadge}>이번</span>}<h3 id={`progress-${lesson.id}`} title={lesson.title}>{lesson.title}</h3></div><LearningStatus lesson={lesson} work={data!.work[lesson.id]} /></div>
       <div className={styles.lessonProgress}><ProgressSummary lesson={lesson} work={data!.work[lesson.id]} /></div>
-      <Link className={styles.lessonLink} href={`/classroom/${lesson.id}?from=dashboard`} aria-label={`${lesson.title} · ${resumeLabelFor(lesson, data!.work[lesson.id])}`} title={resumeLabelFor(lesson, data!.work[lesson.id])}>{progressFor(lesson, data!.work[lesson.id]).status === "completed" ? "복습" : data!.work[lesson.id]?.updatedAt ? "이어하기" : "시작하기"}<ArrowRight size={15} aria-hidden="true" /></Link>
-    </article>)}
+      {status === "in-progress" && <p className={styles.remaining}>남은 활동: {remaining.join(" · ")}</p>}
+      <Link className={styles.lessonLink} href={`/classroom/${lesson.id}?from=dashboard`} aria-label={`${lesson.title} · ${resumeLabelFor(lesson, data!.work[lesson.id])}`} title={resumeLabelFor(lesson, data!.work[lesson.id])}>{status === "completed" ? "다시 보기" : work?.updatedAt ? "이어하기" : "시작하기"}<ArrowRight size={15} aria-hidden="true" /></Link>
+    </article>; })}
     {data?.lessons.some(lesson => lesson.mode === "review") && <Link className={styles.reviewLink} href="/student/lessons">선택 복습 수업 둘러보기<ArrowRight size={15} aria-hidden="true" /></Link>}
   </section>;
 }
