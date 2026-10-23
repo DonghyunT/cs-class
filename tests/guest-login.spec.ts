@@ -110,13 +110,17 @@ test("게스트 학생·교사 바로 입장, 로컬 기록 복원, 화면 크�
   await page.keyboard.press("Escape");
   await expect(page.getByRole("combobox", { name: "담당 반" })).toHaveText("2학년 1반");
   await page.goto("/teacher/students?classId=2-10");
-  await page.getByLabel("학번·닉네임 검색").fill("21099");
-  await expect(page.getByRole("button", { name: "21099 비밀번호 초기화" })).toBeHidden();
-  const details = page.getByRole("button", { name: "21099 상세 보기", exact: true });
+  // The guest student is the class's trial account, kept out of the student list.
+  const offList = page.locator("details").filter({ hasText: "명단에서 뺀 계정" });
+  await offList.locator("summary").click();
+  await expect(offList.getByRole("listitem").filter({ hasText: "21099" })).toContainText("체험 계정 · 로그인 가능");
+  await page.getByLabel("학번·닉네임 검색").fill("21001");
+  await expect(page.getByRole("button", { name: "21001 비밀번호 초기화" })).toBeHidden();
+  const details = page.getByRole("button", { name: "21001 상세 보기", exact: true });
   await details.focus();
   await page.keyboard.press("Enter");
   await expect(details).toHaveAttribute("aria-expanded", "true");
-  await expect(page.getByRole("button", { name: "21099 비밀번호 초기화" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "21001 비밀번호 초기화" })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

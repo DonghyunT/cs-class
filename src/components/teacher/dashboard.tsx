@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Toast } from "@base-ui/react/toast";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, ChevronDown, ClipboardCheck, DoorOpen, KeyRound, LayoutGrid, List, Search, ShieldCheck, Users } from "lucide-react";
+import { CheckCircle2, ChevronDown, ClipboardCheck, DoorOpen, KeyRound, LayoutGrid, List, Search, ShieldCheck, UserMinus, Users } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { HelpRequests } from "@/components/classroom/help-requests";
 import { DashboardArt } from "@/components/dashboard-art";
@@ -18,15 +18,15 @@ import { classroomApi } from "@/lib/classroom/client";
 import { CLASSROOM_HELP_ENABLED } from "@/lib/classroom/features";
 import { progressFor, STATUS_LABELS, submissionCountFor } from "@/lib/classroom/progress";
 import { missionsFor, requiredMissionsFor } from "@/lib/classroom/programming-entry";
-import type { ClassSettings, Lesson, Progress, Stage, StudentRow, TeacherDashboard, WorkSummary } from "@/lib/classroom/types";
-import { BulkIssuePasswords, FirstEntry, ManageLessons, ResetPassword, SubmissionViewer } from "./dialogs";
+import type { ClassSettings, Lesson, OffListAccount, Progress, Stage, StudentRow, TeacherDashboard, WorkSummary } from "@/lib/classroom/types";
+import { BulkIssuePasswords, FirstEntry, ManageLessons, RemoveFromList, ResetPassword, SubmissionViewer } from "./dialogs";
 import { dateLabel, problemMessage } from "./presentation";
 import { TeacherToolbar } from "./teacher-toolbar";
 import { ClassPreparationTable } from "./class-preparation-table";
 import styles from "./teacher.module.css";
 
 type TeacherView = { view: "classes" | "students"; classId?: string; lessonId?: string; studentId?: string; q?: string; password?: "required"; review?: "pending"; status?: string; manage?: boolean };
-type StudentDialog = { kind: "submission" | "reset"; student: StudentRow; classId: string; lesson?: Lesson; trigger: HTMLButtonElement };
+type StudentDialog = { kind: "submission" | "reset" | "remove"; student: StudentRow; classId: string; lesson?: Lesson; trigger: HTMLButtonElement };
 export function TeacherDashboardView(props: TeacherView) {
   const { session } = useSession();
   return <AppShell title={props.view === "classes" ? "수업 관리" : "학생 현황·계정"} teacher>{session && session.role !== "student" && (session.classIds.length ? <TeacherWorkspace key={`${session.uid}:${props.classId}:${props.lessonId}:${props.studentId}:${props.q}:${props.password}:${props.review}:${props.status}`} instructor={session.role === "instructor"} {...props} /> : <div className={styles.empty}><Users size={28} aria-hidden="true" /><h1>아직 담당 반이 없어요.</h1><p>담당 반이 연결되면 수업과 학생 기록을 확인할 수 있어요.</p></div>)}</AppShell>;
@@ -199,11 +199,13 @@ function TeacherWorkspace({ instructor, view, classId, lessonId, studentId, q, p
           <table className={styles.table} data-layout={layout}><caption className="sr-only">{active.classroom.name} {lesson?.title ?? "계정"} 학생별 현황</caption><thead><tr><th scope="col">학생</th><th scope="col">수업 상태</th><th scope="col">개념·퀴즈·실습</th><th scope="col">계정·작품</th></tr></thead><tbody>{filtered.map((student) => <TeacherStudentRow key={`${active.classroom.id}:${active.selectedLessonId}:${student.uid}`} student={student} lesson={lesson} layout={layout} onOpen={(kind, trigger) => setStudentDialog({ kind, trigger, student, lesson, classId: active.classroom.id })} />)}</tbody></table>
         </div>}
         <div className={styles.listFooter}><span>{lesson?.mode === "review" ? "선택 복습은 수업 완료율에 포함하지 않아요." : "상세 보기에서 완료 개수와 실습 제출 상태를 확인할 수 있어요."}</span><span>비밀번호 초기화 후에도 학습 기록은 유지돼요.</span></div>
+        <OffList accounts={active.offList} onLock={lockMutation} onChanged={load} />
       </section>}
     </>}
     {studentDialog?.kind === "submission" && studentDialog.lesson && <SubmissionViewer student={studentDialog.student} lesson={studentDialog.lesson} lessons={openedLessons} onLock={lockMutation} onComplete={refreshOpenedStudent} onClose={() => setStudentDialog(null)} finalFocus={finalDialogFocus} />}
     {bulkIssue && active && <BulkIssuePasswords classroomName={active.classroom.name} students={active.students} checkedAt={updatedAt ?? 0} onLock={lockMutation} onComplete={issued => { if (!issued.length) return; const expires = new Map(issued.map(item => [item.uid, item.expiresAt])); setData(previous => previous?.classroom.id === active.classroom.id ? { ...previous, students: previous.students.map(item => expires.has(item.uid) ? { ...item, temporaryExpiresAt: expires.get(item.uid), lastActiveAt: null } : item) } : previous); setNotice(`${issued.length}명에게 임시 비밀번호를 발급했어요. 다음 입장 시 변경이 필요해요.`); }} onClose={() => setBulkIssue(false)} />}
     {firstEntry && active && <FirstEntry key={active.classroom.id} classroomId={active.classroom.id} classroomName={active.classroom.name} students={active.students} onRefresh={load} onClose={() => setFirstEntry(false)} />}
+    {studentDialog?.kind === "remove" && <RemoveFromList student={studentDialog.student} onLock={lockMutation} onComplete={() => { setStudentDialog(null); void load().then(() => workspaceHeading.current?.focus()); }} onClose={() => setStudentDialog(null)} finalFocus={finalDialogFocus} />}
     {studentDialog?.kind === "reset" && <ResetPassword student={studentDialog.student} onLock={lockMutation} onComplete={resetOpenedStudent} onClose={() => setStudentDialog(null)} finalFocus={finalDialogFocus} />}
   </div>;
 }
@@ -242,6 +244,7 @@ function TeacherStudentRow({ student, lesson, layout, onOpen }: { student: Stude
     <td id={`${detailId}-actions`} data-row-detail className={styles.rowActions}>
       {lesson && <Button variant="outline" disabled={!available} aria-label={`${student.studentId} 제출 작품 보기`} onClick={event => onOpen("submission", event.currentTarget)}><ClipboardCheck size={15} aria-hidden="true" />{student.work?.review?.status === "pending" ? "확인 요청" : available ? "제출 작품" : "미제출"}</Button>}
       <Button variant="ghost" aria-label={`${student.studentId} 비밀번호 초기화`} onClick={event => onOpen("reset", event.currentTarget)}><KeyRound size={15} aria-hidden="true" />비밀번호 초기화</Button>
+      <Button variant="ghost" aria-label={`${student.studentId} 명단에서 빼기`} onClick={event => onOpen("remove", event.currentTarget)}><UserMinus size={15} aria-hidden="true" />명단에서 빼기</Button>
     </td>
   </tr>;
 }
@@ -258,4 +261,30 @@ function practiceLabel(lesson: Lesson, work: WorkSummary | null) {
   if (lesson.practice.type === "flowchart") return `${Object.values(work?.missions ?? {}).filter(record => record.submission).length}/4 작품 제출${work?.review?.status === "pending" ? " · 확인 대기" : ""}`;
   if (work?.validated) return "검증 통과 · 제출 전";
   return "아직 제출하지 않았어요";
+}
+
+// Trial accounts and students taken off the list, out of the class counts; removed students can be put back.
+function OffList({ accounts, onLock, onChanged }: { accounts: OffListAccount[]; onLock: (value: boolean) => void; onChanged: () => Promise<unknown> }) {
+  const { session } = useSession();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const summary = useRef<HTMLElement>(null);
+  if (!accounts.length) return null;
+  async function restore(account: OffListAccount) {
+    if (busy) return;
+    setBusy(account.uid); setError(""); onLock(true);
+    // The restored row leaves this group, so focus its summary once the list is reloaded.
+    try { await classroomApi.setListed(account.uid, true, session?.uid); onLock(false); await onChanged(); summary.current?.focus(); }
+    catch (problem) { onLock(false); setError(problemMessage(problem)); }
+    finally { setBusy(null); }
+  }
+  return <details className={styles.offList}>
+    <summary ref={summary}>명단에서 뺀 계정 {accounts.length}개</summary>
+    <p className={styles.dialogNote}>반 통계와 학생 목록에 넣지 않는 계정이에요.</p>
+    {error && <p role="alert" className={styles.dialogError}>{error}</p>}
+    <ul>{accounts.map(account => <li key={account.uid}>
+      <span><strong>{account.studentId}</strong>{account.nickname && ` · ${account.nickname}`}<small>{account.kind === "trial" ? "체험 계정 · 로그인 가능" : "명단에서 뺌 · 로그인 막힘"}</small></span>
+      {account.kind === "removed" && <Button variant="outline" disabled={busy !== null} aria-label={`${account.studentId} 다시 넣기`} onClick={() => void restore(account)}>{busy === account.uid ? "넣는 중…" : "다시 넣기"}</Button>}
+    </li>)}</ul>
+  </details>;
 }

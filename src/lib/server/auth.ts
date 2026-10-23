@@ -9,6 +9,7 @@ import { admin } from "./firebase";
 import { guestLoginEnabled } from "./guest-mode";
 import { createTemporaryPassword, passwordDigest } from "./temporary-password.mjs";
 import { requireCondition, ServiceError } from "./errors";
+import { isTrialStudentId } from "../classroom/roster";
 
 export const SESSION_COOKIE = "cs_session";
 export interface Account {
@@ -308,6 +309,7 @@ export async function resetStudentPassword(uid: string, input: unknown = {}) {
     const student = (await tx.get(ref)).data() as Account | undefined;
     requireCondition(student?.role === "student" && student.classId && staff.classIds.includes(student.classId), 403, "FORBIDDEN", "담당 반의 학생만 관리할 수 있어요.");
     requireCondition(!student.authBusy, 409, "ACCOUNT_BUSY", "이미 계정 정보를 변경하고 있어요.");
+    requireCondition(!student.disabled, 409, "STUDENT_OFF_LIST", "명단에서 뺀 학생이에요. 다시 넣은 뒤 초기화해 주세요.");
     // 일괄 발급은 아직 자기 비밀번호를 정하지 않았고 지금 접속 중이 아닌 학생만 바꿔요.
     requireCondition(!options.pendingOnly || (student.mustChangePassword && !(student.session && Date.now() - student.session.lastActivityAt < timeoutFor("student"))), 409, "ALREADY_ACTIVE", "이미 비밀번호를 정했거나 접속 중이라 건너뛰었어요.");
     tx.update(ref, { authBusy: lock, authBusyAt: Date.now() });
@@ -324,4 +326,25 @@ export async function resetStudentPassword(uid: string, input: unknown = {}) {
     tx.delete(db.collection("csRateLimits").doc(hash(`account:${uid}`)));
   });
   return { password: credential.password, expiresAt: credential.temporaryPassword.expiresAt };
+}
+
+// Taking a student off the list (e.g. after a transfer) blocks sign-in and ends any session; records stay and putting them back restores everything.
+export async function setStudentListed(uid: string, input: unknown) {
+  const options = input && typeof input === "object" && !Array.isArray(input) ? input as Record<string, unknown> : null;
+  requireCondition(options && Object.keys(options).length === 1 && typeof options.listed === "boolean", 400, "INVALID_ROSTER", "명단 변경 요청 형식을 확인해 주세요.");
+  const listed = options.listed as boolean;
+  const who = await identity(); const { db, auth } = admin();
+  const ref = db.collection("csAccounts").doc(uid);
+  await authorized(who, async (tx, staff) => {
+    requireCondition(staff.role !== "student", 403, "FORBIDDEN", "선생님만 명단을 바꿀 수 있어요.");
+    const student = (await tx.get(ref)).data() as Account | undefined;
+    requireCondition(student?.role === "student" && student.classId && staff.classIds.includes(student.classId), 403, "FORBIDDEN", "담당 반의 학생만 관리할 수 있어요.");
+    requireCondition(!student.authBusy, 409, "ACCOUNT_BUSY", "이미 계정 정보를 변경하고 있어요.");
+    requireCondition(listed || !student.studentId || !isTrialStudentId(student.studentId), 409, "TRIAL_ACCOUNT", "체험 계정은 명단에서 빼지 않아요.");
+    if (listed) tx.update(ref, { disabled: false });
+    else tx.update(ref, { disabled: true, session: null, authVersion: student.authVersion + 1 });
+  });
+  // Best effort: sign-in and every request already check `disabled`, so a failed revoke must not report the change as failed.
+  if (!listed) await auth.revokeRefreshTokens(uid).catch(() => undefined);
+  return { listed };
 }

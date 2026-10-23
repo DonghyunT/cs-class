@@ -10,7 +10,7 @@ export const failureOperations = [
   "classroom.help.resolve", "classroom.todos.read", "classroom.todos.save", "classroom.schedule.read",
   "classroom.schedule.save", "classroom.student.dashboard", "classroom.teacher.dashboard",
   "classroom.work.read", "classroom.teacher.work.read", "classroom.ai", "classroom.review.decide",
-  "classroom.timetable.refresh", "classroom.classes.update", "classroom.student.password.reset", "classroom.first-entry.update",
+  "classroom.timetable.refresh", "classroom.classes.update", "classroom.student.password.reset", "classroom.student.roster", "classroom.first-entry.update",
   "classroom.work.save", "classroom.work.action", "cron.timetable.refresh", "teacher-preview.evaluate",
 ] as const;
 export type FailureOperation = typeof failureOperations[number];

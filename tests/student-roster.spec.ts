@@ -45,6 +45,13 @@ test("명부 계획·개별 등록·반별 30분 발급·기존 작품 보존·�
     expect(backup.work[0].data.draft.reflection).toBe("기존 학습");
     expect(JSON.stringify(backup)).not.toContain("temporaryPassword"); expect(JSON.stringify(backup)).not.toContain(credentials[0].password);
     await expect(invoke(["--mode", "issue", "--class", "2-9", "--apply", "--confirm-project", "demo-cs-class", "--output", path.join(directory, "refused.ndjson")])).rejects.toThrow();
+    // A student taken off the class list is skipped instead of blocking the whole class.
+    await db.collection("csAccounts").doc(uids[0]).update({ disabled: true });
+    const skippedFile = path.join(directory, "skipped.ndjson");
+    const skipped = await invoke(["--mode", "issue", "--class", "2-9", "--apply", "--confirm-project", "demo-cs-class", "--output", skippedFile]);
+    expect(JSON.parse(skipped.stdout.split("\n")[0]).offList).toBe(1);
+    const reissued = (await readFile(skippedFile, "utf8")).trim().split("\n").map((s) => JSON.parse(s)).filter((r) => r.status === "issued");
+    expect(reissued.map((r) => r.studentId)).toEqual(["20926"]);
     // Same roster IDs in a different school year are conflicts, not resets.
     await expect(run(process.execPath, ["scripts/student-roster.mjs", "--csv", input, "--year", "2027"], { env: { ...process.env, ...testEnv } })).rejects.toThrow();
     expect((await db.collection("csWork").doc(`${uids[0]}__programming-13`).get()).data()!.draft.reflection).toBe("기존 학습");

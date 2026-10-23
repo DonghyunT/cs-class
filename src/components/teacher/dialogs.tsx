@@ -280,3 +280,34 @@ export function FirstEntry({ classroomId, classroomName, students, onRefresh, on
     </DialogContent>
   </Dialog>;
 }
+
+// Used for empty seats such as a transfer: sign-in stops and the class counts leave the student out; records stay.
+export function RemoveFromList({ student, onLock, onComplete, onClose, finalFocus }: {
+  student: StudentRow; onLock: (value: boolean) => void; onComplete: () => void; onClose: () => void; finalFocus: () => HTMLElement | null | false;
+}) {
+  const { session } = useSession();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const cancel = useRef<HTMLButtonElement>(null);
+  const mounted = useRef(true);
+  // The row leaves the list on success, so the parent moves focus instead of returning it to the gone button.
+  const removed = useRef(false);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  async function remove() {
+    if (saving) return;
+    setSaving(true); setError(""); onLock(true);
+    try {
+      await classroomApi.setListed(student.uid, false, session?.uid);
+      removed.current = true;
+      onLock(false);
+      if (mounted.current) onComplete();
+    } catch (problem) { onLock(false); if (mounted.current) { setError(problemMessage(problem)); setSaving(false); } }
+  }
+  return <AlertDialog open onOpenChange={(next) => { if (!next && !saving) onClose(); }}>
+    <AlertDialogContent className={styles.dialog} initialFocus={cancel} finalFocus={() => removed.current ? false : finalFocus()}>
+      <AlertDialogHeader><AlertDialogTitle>{student.studentId} 학생을 명단에서 뺄까요?</AlertDialogTitle><AlertDialogDescription>전학 등으로 빈 번호일 때 써요. 이 학생은 로그인할 수 없고 반 통계에서 빠져요. 학습 기록은 지우지 않으며, 아래 ‘명단에서 뺀 계정’에서 다시 넣을 수 있어요.</AlertDialogDescription></AlertDialogHeader>
+      {error && <p role="alert" className={styles.dialogError}>{error}</p>}
+      <AlertDialogFooter><AlertDialogCancel ref={cancel} disabled={saving}>취소</AlertDialogCancel><AlertDialogAction disabled={saving} onClick={() => void remove()}>{saving ? "빼는 중…" : "명단에서 빼기"}</AlertDialogAction></AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>;
+}

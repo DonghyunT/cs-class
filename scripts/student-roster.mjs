@@ -57,6 +57,7 @@ try {
   // Inspect every target before changing any account. Existing unrelated or
   // cross-year records are never adopted or overwritten, even if IDs match.
   const plans = [];
+  let offList = 0;
   for (const row of target) {
     const profile = (await accounts.doc(row.uid).get()).data(), provider = await getUser(row.uid);
     if (!(await db.collection("csClasses").doc(row.classId).get()).exists) throw Error("Class settings missing; prepare classes first.");
@@ -65,9 +66,11 @@ try {
     if (profile && !provider && !profile.authBusy) throw Error("Provider account missing; inspect privately.");
     if (provider && profile?.authBusy && provider.displayName !== marker) throw Error("Provider ownership mismatch.");
     if (!provider) { const collision = await auth.getUserByEmail(row.email).catch((e) => { if (e.code === "auth/user-not-found") return null; throw e; }); if (collision) throw Error("Provider email collision; inspect privately. No accounts changed."); }
+    // Students the teacher took off the class list (e.g. transferred) get no new password.
+    if (mode === "issue" && profile?.disabled && !profile.authBusy) { offList += 1; continue; }
     plans.push({ row, profile });
   }
-  console.log(JSON.stringify({ ...summary, projectId, existing: plans.filter((p) => p.profile).length, pending: plans.filter((p) => p.profile?.authBusy).length, new: plans.filter((p) => !p.profile).length, apply: flags.has("--apply") }));
+  console.log(JSON.stringify({ ...summary, projectId, offList, existing: plans.filter((p) => p.profile).length, pending: plans.filter((p) => p.profile?.authBusy).length, new: plans.filter((p) => !p.profile).length, apply: flags.has("--apply") }));
   if (!flags.has("--apply")) process.exitCode = 0;
   else {
     if (mode === "issue" && plans.some((p) => !p.profile || !p.profile.mustChangePassword || p.profile.disabled || p.profile.authBusy)) throw Error("Issue only active registered students who still need their personal password. Use the teacher reset for an individual existing student.");
