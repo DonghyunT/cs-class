@@ -48,6 +48,32 @@ test("학생 수업 안내는 전체 작품 대신 반 설정을 30초마다 조
   expect(fullReads).toBe(0);
 });
 
+for (const path of ["/student", "/student/lessons"]) test(`학생 ${path} 화면은 30초마다 반 설정만 확인하고 반이 바뀔 때만 전체 기록을 다시 읽는다`, async ({ page }) => {
+  await readyStudent(page.request);
+  await page.clock.install();
+  let fullReads = 0, classReads = 0;
+  page.on("request", request => {
+    const url = new URL(request.url()).pathname;
+    if (url === "/api/classroom/student") fullReads++;
+    if (url === "/api/classroom/student/class") classReads++;
+  });
+  await page.goto(path);
+  await expect.poll(() => fullReads).toBe(1);
+  await expect(page.getByRole("button", { name: "수업 새로고침" })).toBeVisible();
+  await painted(page);
+  await tick(page, 30_000);
+  await expect.poll(() => classReads).toBe(1);
+  await tick(page, 30_000);
+  await expect.poll(() => classReads).toBe(2);
+  expect(fullReads).toBe(1);
+  // A teacher change bumps the class revision, which the next check notices.
+  const classroom = db.doc("csClasses/2-1");
+  await classroom.update({ revision: ((await classroom.get()).data()!.revision as number) + 1 });
+  await tick(page, 30_000);
+  await expect.poll(() => fullReads).toBe(2);
+  expect(classReads).toBe(3);
+});
+
 test("창 포커스 재조회는 30초 안에서는 생략하고, 활동 기록 직후에는 세션을 다시 읽지 않는다", async ({ page }) => {
   await readyStudent(page.request);
   const session = (await (await page.request.get("/api/auth/session")).json()).session;

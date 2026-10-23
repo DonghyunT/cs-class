@@ -36,6 +36,7 @@ function Dashboard({ session, teacher, explicitClassId }: { session: Session; te
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [helpStatus, setHelpStatus] = useState<HelpRequestsStatus | null>(null);
   const request = useRef(0);
+  const loaded = useRef<{ revision: number; at: number } | null>(null);
   const inFlight = useRef<{ key: string; version: number; promise: Promise<void> } | null>(null);
   const { beforeLeave } = useNavigationGuard();
   const refresh = useCallback((): Promise<void> => {
@@ -45,8 +46,8 @@ function Dashboard({ session, teacher, explicitClassId }: { session: Session; te
     setLoading(true);
     const promise = Promise.resolve().then(async () => { try {
       const value = teacher ? (classId ? await classroomApi.teacher(classId) : null) : await classroomApi.student();
-      if (version === request.current) { setData(value); setUpdatedAt(Date.now()); setError(""); }
-    } catch (problem) { if (version === request.current) setError(problem instanceof Error ? problem.message : "수업 기록을 불러오지 못했어요."); }
+      if (version === request.current) { setData(value); setUpdatedAt(Date.now()); setError(""); loaded.current = value && { revision: value.classroom.revision, at: Date.now() }; }
+    } catch (problem) { if (version === request.current) { setError(problem instanceof Error ? problem.message : "수업 기록을 불러오지 못했어요."); loaded.current = null; } }
     finally {
       if (version === request.current) setLoading(false);
       if (inFlight.current?.version === version) inFlight.current = null;
@@ -57,8 +58,13 @@ function Dashboard({ session, teacher, explicitClassId }: { session: Session; te
   useEffect(() => {
     let active = true;
     queueMicrotask(() => { if (active) void refresh(); });
-    const timer = teacher ? null : setInterval(() => { if (document.visibilityState === "visible") void refresh(); }, 30_000);
-    return () => { active = false; request.current += 1; if (timer !== null) clearInterval(timer); };
+    // Every open lesson's work costs a read, so the poll checks only the class and reloads work when the teacher changed it.
+    const check = () => { if (document.visibilityState === "visible") void classroomApi.studentClassroom().then(({ classroom }) => { if (active && classroom.revision !== loaded.current?.revision) void refresh(); }, () => { if (active) void refresh(); }); };
+    // Coming back from another tab may follow saves made there, so it reloads work at most every 30 seconds.
+    const focused = () => { if (Date.now() - (loaded.current?.at ?? 0) >= 30_000 && document.visibilityState === "visible") void refresh(); };
+    const timer = teacher ? null : setInterval(check, 30_000);
+    if (!teacher) window.addEventListener("focus", focused);
+    return () => { active = false; request.current += 1; if (timer !== null) clearInterval(timer); window.removeEventListener("focus", focused); };
   }, [refresh, teacher]);
   const active = data && (!classId || data.classroom.id === classId) ? data : null;
   const student = active && "work" in active ? active : null;
