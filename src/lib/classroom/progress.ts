@@ -13,6 +13,10 @@ export function latestSubmissionAtFor(lesson: Lesson, work?: Work | WorkSummary 
   return ids ? Math.max(0, ...ids.map(id => work?.missions?.[id]?.submission?.submittedAt ?? 0)) :
     work?.submission?.submittedAt ?? 0;
 }
+// A retry round lists only the questions still wrong; once all are solved the whole quiz comes back to look over.
+export function shownQuizIds(lesson: Lesson, work: Pick<Work, "quizRoundIds" | "quizSolved">): string[] {
+  return lesson.quiz.length && lesson.quiz.every((question) => work.quizSolved.includes(question.id)) ? lesson.quiz.map((question) => question.id) : work.quizRoundIds;
+}
 export function emptyWork(lesson: Lesson): Work {
   return {
     lessonId: lesson.id, revision: 0,

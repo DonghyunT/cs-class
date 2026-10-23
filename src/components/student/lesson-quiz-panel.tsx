@@ -2,7 +2,7 @@
 
 import { ArrowLeft, ArrowRight, Check, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { progressFor } from "@/lib/classroom/progress";
+import { progressFor, shownQuizIds } from "@/lib/classroom/progress";
 import type { Question } from "@/lib/classroom/types";
 import { AnswerChoices, Hint, type LessonPanelProps } from "./lesson-concept-panel";
 import styles from "./student.module.css";
@@ -13,7 +13,7 @@ export function LessonQuizPanel({ lesson, controller, mode, locked, actionLocked
 }) {
   const { work, draft, busy, update } = controller;
   const progress = progressFor(lesson, work);
-  const quizQuestions = work.quizRoundIds.map((id) => lesson.quiz.find((question) => question.id === id)).filter((question): question is Question => !!question);
+  const quizQuestions = shownQuizIds(lesson, work).map((id) => lesson.quiz.find((question) => question.id === id)).filter((question): question is Question => !!question);
   const unanswered = quizQuestions.filter((question) => !draft.quizAnswers[question.id]).length;
   const quizComplete = progress.quiz.percent === 100;
   const quizQuestion = quizQuestions.find((question) => question.id === quizQuestionId) ?? quizQuestions[0];
