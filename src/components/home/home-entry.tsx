@@ -15,6 +15,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+export function useEntryHref() {
+  const { session, loading } = useSession();
+  const entryHref = session?.role === "student"
+    ? session.mustChangePassword ? "/login/student" : "/student"
+    : session ? "/teacher" : null;
+  return { entryHref, loading };
+}
+
 export function HomeEntry({
   paused,
   onToggleMotion,
@@ -22,10 +30,7 @@ export function HomeEntry({
   paused: boolean;
   onToggleMotion: () => void;
 }) {
-  const { session, loading } = useSession();
-  const entryHref = session?.role === "student"
-    ? session.mustChangePassword ? "/login/student" : "/student"
-    : session ? "/teacher" : null;
+  const { entryHref, loading } = useEntryHref();
   const motionLabel = paused ? "움직임 켜기" : "움직임 줄이기";
   const motionTooltipId = useId();
   return (
