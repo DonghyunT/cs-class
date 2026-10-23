@@ -7,7 +7,7 @@ import { ProgrammingConcept as ProgrammingConceptView } from "./programming-conc
 import { concepts, questions } from "@/lib/classroom/programming-data";
 import { PALETTE_TEXT, blockLabel, missionBlockTypes } from "@/lib/classroom/entry-palette";
 import { entryBlockCategory, hintParts, missionStarter, missionsFor } from "@/lib/classroom/programming-entry";
-import { practiceMatches } from "@/lib/classroom/progress";
+import { practiceMatches, shownQuizIds } from "@/lib/classroom/progress";
 import type { Lesson, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
 import { PracticeGuidance } from "./practice-guidance";
@@ -52,7 +52,7 @@ function ProgrammingConcept({ lesson, controller, locked, focus, runAction, next
 
 function ProgrammingQuiz({ lesson, controller, locked, runAction, next, focus, quizQuestionId, onQuizQuestionChange, mode = "student" }: Props) {
   const { work, draft, update } = controller;
-  const ids = work.quizRoundIds;
+  const ids = shownQuizIds(lesson, work);
   const position = Math.max(0, ids.indexOf(quizQuestionId));
   const q = lesson.quiz.find((question) => question.id === ids[position])!;
   const scene = questions.find((question) => question.id === q.id);

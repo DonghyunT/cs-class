@@ -2,7 +2,7 @@
 
 import { ArrowLeft, ArrowRight, Check, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { progressFor } from "@/lib/classroom/progress";
+import { progressFor, shownQuizIds } from "@/lib/classroom/progress";
 import type { Question } from "@/lib/classroom/types";
 import { AnswerChoices, Hint, type LessonPanelProps } from "./lesson-concept-panel";
 import styles from "./student.module.css";
@@ -13,7 +13,7 @@ export function LessonQuizPanel({ lesson, controller, mode, locked, actionLocked
 }) {
   const { work, draft, busy, update } = controller;
   const progress = progressFor(lesson, work);
-  const quizQuestions = work.quizRoundIds.map((id) => lesson.quiz.find((question) => question.id === id)).filter((question): question is Question => !!question);
+  const quizQuestions = shownQuizIds(lesson, work).map((id) => lesson.quiz.find((question) => question.id === id)).filter((question): question is Question => !!question);
   const unanswered = quizQuestions.filter((question) => !draft.quizAnswers[question.id]).length;
   const quizComplete = progress.quiz.percent === 100;
   const quizQuestion = quizQuestions.find((question) => question.id === quizQuestionId) ?? quizQuestions[0];
@@ -21,7 +21,7 @@ export function LessonQuizPanel({ lesson, controller, mode, locked, actionLocked
   return <section id="panel-quiz" role="tabpanel" aria-labelledby="tab-quiz" tabIndex={0} className={styles.stagePanel}>
   <div className={styles.quizBody}>
     <div className={styles.quizTop}>
-      <div className={styles.quizPosition}><h2 id="stage-heading-quiz" tabIndex={-1}><span className={styles.srOnly}>{quizComplete ? "모든 문제를 해결했어요" : work.quizRound > 1 ? `틀린 문제에 다시 도전해요 · ${work.quizRound}회차` : "배운 내용을 확인해요"} · </span>문제 {lesson.quiz.indexOf(quizQuestion) + 1}</h2><span>{quizPosition + 1} / {quizQuestions.length} · 이번 회차</span></div>
+      <div className={styles.quizPosition}><h2 id="stage-heading-quiz" tabIndex={-1}><span className={styles.srOnly}>{quizComplete ? "모든 문제를 해결했어요" : work.quizRound > 1 ? `틀린 문제에 다시 도전해요 · ${work.quizRound}회차` : "배운 내용을 확인해요"} · </span>문제 {lesson.quiz.indexOf(quizQuestion) + 1}</h2><span>{quizPosition + 1} / {quizQuestions.length} · {quizComplete ? "전체 문제" : "이번 회차"}</span></div>
       <nav className={styles.learningNav} aria-label="퀴즈 문항 목록">{quizQuestions.map((question) => {
         const number = lesson.quiz.indexOf(question) + 1;
         const state = work.quizRoundGraded ? work.quizFeedback[question.id]?.correct ? "해결" : "재도전" : draft.quizAnswers[question.id] ? "답변" : "미답변";

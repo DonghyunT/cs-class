@@ -1,26 +1,98 @@
 .panel { background: #fff; border: 1px solid #e3e8ef; border-radius: 20px; padding: 18px 22px; min-width: 0; }
-.heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.heading { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .heading h2 { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 700; margin: 0; letter-spacing: -.03em; }
 .icon { width: 36px; height: 36px; display: inline-grid; place-items: center; border-radius: 11px; color: #a84f2a; background: #fff3e8; flex-shrink: 0; }
 .total { color: #526173; font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .all { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-left: auto; color: #2e5fab; font-size: 13px; }
-.badge p.where { color: var(--badge-ink); font-weight: 600; }
 .scope { margin: 6px 0 12px; color: #68758a; font-size: 13px; line-height: 1.5; }
 .empty { margin: 8px 0 0; color: #68758a; font-size: 14px; }
 .loading { display: grid; gap: 10px; }
 .loading > * { height: 64px; border-radius: 14px; }
-.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-.badge { --badge: #376fc8; --badge-ink: #2e5fab; --badge-surface: #eaf2ff; display: flex; align-items: flex-start; gap: 12px; min-width: 0; border: 1px solid color-mix(in srgb, var(--badge) 30%, white); border-radius: 14px; background: var(--badge-surface); padding: 12px; }
-.badge h3 { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.4; color: #202637; }
+.section { margin: 22px 0 10px; font-size: 15px; font-weight: 700; color: #202b3a; }
+
+/* Each badge has its own colour; tiers below change only the medal. */
+.badge, .chip, .stamps li { --badge: #376fc8; --badge-ink: #2e5fab; --badge-surface: #eaf2ff; }
+.badge[data-badge="concepts"], .chip[data-badge="concepts"], .stamps li[data-badge="concepts"], .badge[data-badge="first-step"], .chip[data-badge="first-step"], .stamps li[data-badge="first-step"] { --badge: #376fc8; --badge-ink: #2e5fab; --badge-surface: #eaf2ff; }
+.badge[data-badge="perfect-quiz"], .chip[data-badge="perfect-quiz"], .stamps li[data-badge="perfect-quiz"] { --badge: #8860ba; --badge-ink: #6b4699; --badge-surface: #f3edfa; }
+.badge[data-badge="missions"], .chip[data-badge="missions"], .stamps li[data-badge="missions"] { --badge: #268673; --badge-ink: #1f6b5c; --badge-surface: #e6f3ee; }
+.badge[data-badge="lesson-complete"], .chip[data-badge="lesson-complete"], .stamps li[data-badge="lesson-complete"] { --badge: #d97706; --badge-ink: #9a5a06; --badge-surface: #fff4e0; }
+.badge[data-badge="challenge"], .chip[data-badge="challenge"], .stamps li[data-badge="challenge"] { --badge: #e2541b; --badge-ink: #b23d10; --badge-surface: #fff0e8; }
+.badge[data-badge="review-complete"], .chip[data-badge="review-complete"], .stamps li[data-badge="review-complete"] { --badge: #0e8fa8; --badge-ink: #0b6f83; --badge-surface: #e4f6f9; }
+.badge[data-badge="first-work"], .chip[data-badge="first-work"], .stamps li[data-badge="first-work"] { --badge: #d6437d; --badge-ink: #a8305f; --badge-surface: #fdebf2; }
+.badge[data-badge="stamps"], .chip[data-badge="stamps"], .stamps li[data-badge="stamps"] { --badge: #c2410c; --badge-ink: #9a3412; --badge-surface: #fff3e8; }
+.badge[data-badge="all-clear"], .chip[data-badge="all-clear"], .stamps li[data-badge="all-clear"], .badge[data-badge="comeback"], .chip[data-badge="comeback"], .stamps li[data-badge="comeback"], .badge[data-badge="streak"], .chip[data-badge="streak"], .stamps li[data-badge="streak"] { --badge: #c99400; --badge-ink: #8a6500; --badge-surface: #fff8db; }
+
+.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.badge { position: relative; overflow: hidden; display: flex; align-items: flex-start; gap: 12px; min-width: 0; border: 1px solid color-mix(in srgb, var(--badge) 30%, white); border-radius: 16px; background: var(--badge-surface); padding: 14px; transition: transform 180ms ease, box-shadow 180ms ease; }
+.badge:hover, .badge:focus-within { transform: translateY(-4px) rotate(-.6deg); box-shadow: 0 12px 24px -16px color-mix(in srgb, var(--badge) 70%, black); }
+.badge h4 { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0; font-size: 15px; font-weight: 700; line-height: 1.4; color: #202637; }
 .badge strong { display: block; margin-top: 2px; color: var(--badge-ink); font-size: 13px; font-variant-numeric: tabular-nums; }
 .badge p { margin: 4px 0 0; color: #526173; font-size: 12px; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; }
-.medal { width: 40px; height: 40px; display: grid; place-items: center; flex-shrink: 0; border-radius: 50%; color: #fff; background: var(--badge); box-shadow: 0 0 0 3px #fff, 0 0 0 4px color-mix(in srgb, var(--badge) 40%, white); }
-.badge[data-badge="perfect-quiz"], .chip[data-badge="perfect-quiz"] { --badge: #8860ba; --badge-ink: #6b4699; --badge-surface: #f3edfa; }
-.badge[data-badge="missions"], .badge[data-badge="lesson-complete"], .chip[data-badge="missions"], .chip[data-badge="lesson-complete"] { --badge: #268673; --badge-ink: #1f6b5c; --badge-surface: #e6f3ee; }
-.badge[data-badge="challenge"], .chip[data-badge="challenge"] { --badge: #c2410c; --badge-ink: #a84f2a; --badge-surface: #fff3e8; }
+.badge p.where { color: var(--badge-ink); font-weight: 600; }
+.medal { width: 44px; height: 44px; display: grid; place-items: center; flex-shrink: 0; border-radius: 50%; color: #fff; background: var(--badge); box-shadow: 0 0 0 3px #fff, 0 0 0 4px color-mix(in srgb, var(--badge) 40%, white); }
+
+/* Tier medals: bronze, silver, gold, violet, rainbow. */
+.badge[data-stars="1"] .medal { background: linear-gradient(135deg, #b8692c, #e7a668); }
+.badge[data-stars="2"] .medal { background: linear-gradient(135deg, #7d8899, #d9dfe7); }
+.badge[data-stars="3"] .medal { background: linear-gradient(135deg, #c99400, #ffe17a); }
+.badge[data-stars="4"] .medal { background: linear-gradient(135deg, #6d3fc4, #c4a6ff); }
+.badge[data-stars="5"] .medal { background: conic-gradient(from 30deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444); }
+.badge[data-kind="common"] .medal, .badge[data-kind="rare"] .medal { background: var(--badge); }
+
+.stars { display: inline-flex; gap: 1px; font-size: 13px; line-height: 1; letter-spacing: 0; }
+.stars [data-on="true"] { color: #f2a900; }
+.stars [data-on="false"] { color: #cfd5df; }
+.next { display: flex; align-items: center; gap: 8px; margin-top: 6px; color: #526173; font-size: 12px; }
+.bar { flex: 1; max-width: 120px; height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--badge) 15%, white); overflow: hidden; }
+.bar > span { display: block; height: 100%; border-radius: inherit; background: var(--badge); }
+.fresh { position: absolute; top: 10px; right: 10px; display: inline-flex; padding: 1px 8px; border-radius: 999px; background: #e2541b; color: #fff; font-size: 11px; font-weight: 700; }
+/* backwards, not both: holding the end frame would block the hover lift. */
+.badge[data-fresh] { animation: pop 420ms ease-out backwards; }
+
+/* Rare badges shine once earned and stay a mystery until then. */
+.badge[data-kind="rare"][data-earned="true"] { border-color: #f0c443; background: linear-gradient(140deg, #fffbea, #fff1b8 60%, #ffe58a); box-shadow: 0 0 0 1px #ffe58a, 0 10px 26px -18px #c99400; }
+.badge[data-kind="rare"][data-earned="true"] .medal { background: linear-gradient(135deg, #b47f00, #ffd84d); box-shadow: 0 0 0 3px #fff, 0 0 14px 2px #ffd84d; }
+.badge[data-kind="rare"][data-earned="true"]::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, .75) 50%, transparent 65%); transform: translateX(-100%); animation: shine 2.8s ease-in-out infinite; pointer-events: none; }
+.badge[data-kind="rare"][data-earned="false"] { background: repeating-linear-gradient(135deg, #f6f7fb 0 10px, #eff1f6 10px 20px); border-style: dashed; border-color: #cfd5df; }
+
 /* After the colour rules so an unearned badge always looks grey. */
 .badge[data-earned="false"] { --badge: #9aa4b5; --badge-ink: #626c80; --badge-surface: #f4f6fa; border-style: dashed; border-color: #cfd5df; }
-.badge[data-earned="false"] .medal { color: #fff; box-shadow: none; }
-.chip { --badge: #376fc8; --badge-ink: #2e5fab; --badge-surface: #eaf2ff; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 10px 4px 8px; background: var(--badge-surface); color: var(--badge-ink); font-size: 13px; font-weight: 650; }
+.badge[data-earned="false"] .medal { color: #fff; box-shadow: none; background: #9aa4b5; }
+
+.level .badge { padding: 18px; }
+.level .medal { width: 56px; height: 56px; }
+.level .badge strong { font-size: 20px; }
+
+.today h3 { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 4px 0 10px; font-size: 15px; font-weight: 700; }
+.today h3 small { color: #68758a; font-size: 13px; font-weight: 500; }
+.tally { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin: 12px 0 0; color: #526173; font-size: 13px; }
+
+.stamps { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; }
+.stamps li { display: grid; justify-items: center; gap: 6px; text-align: center; color: #526173; font-size: 12px; font-weight: 600; line-height: 1.3; word-break: keep-all; }
+.stamp { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 2px dashed #cfd5df; color: #9aa4b5; transition: transform 180ms ease; }
+.stamps li[data-earned="true"] { color: var(--badge-ink); }
+.stamps li[data-earned="true"] .stamp { border: 3px double var(--badge); color: var(--badge); background: var(--badge-surface); transform: rotate(-8deg); }
+.stamps li:hover .stamp { transform: rotate(0) scale(1.08); }
+
+.board { display: grid; gap: 8px; }
+.boardRow { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr); align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #e3e8ef; border-radius: 14px; }
+.boardRow > span { font-size: 14px; font-weight: 650; color: #202b3a; word-break: keep-all; }
+.older { margin-top: 8px; }
+.older summary { min-height: 44px; display: flex; align-items: center; color: #2e5fab; font-size: 13px; cursor: pointer; }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 10px 4px 8px; background: var(--badge-surface); color: var(--badge-ink); font-size: 13px; font-weight: 650; }
 .chip svg { color: var(--badge); flex-shrink: 0; }
-@media (max-width: 600px) { .panel { padding: 14px 16px; } .grid { grid-template-columns: 1fr; } }
+
+@keyframes shine { 0%, 55% { transform: translateX(-100%); } 85%, 100% { transform: translateX(100%); } }
+@keyframes pop { 0% { transform: scale(.9); opacity: .4; } 60% { transform: scale(1.04); opacity: 1; } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .badge, .stamp { transition: none; }
+  .badge:hover, .badge:focus-within, .stamps li:hover .stamp { transform: none; }
+  .badge[data-fresh], .badge::after { animation: none; }
+  .badge[data-kind="rare"][data-earned="true"]::after { display: none; }
+}
+@media (max-width: 600px) {
+  .panel { padding: 14px 16px; }
+  .grid { grid-template-columns: 1fr; }
+  .boardRow { grid-template-columns: 1fr; }
+}
