@@ -48,9 +48,16 @@ export function PublicHome() {
                 지난 활동도 이어갈 수 있어요.
               </p>
               <div className="landing-hero-actions">
-                <Link className="landing-button" href={entryHref ?? "/login/student"}>
-                  {entryHref ? "내 교실로 가기" : "학생으로 입장"} <ArrowRight size={18} />
-                </Link>
+                {loading ? (
+                  // Held until the session check ends, so a signed-in teacher is not sent to the student login.
+                  <button type="button" className="landing-button" disabled aria-busy="true">
+                    학생으로 입장 <ArrowRight size={18} />
+                  </button>
+                ) : (
+                  <Link className="landing-button" href={entryHref ?? "/login/student"}>
+                    {entryHref ? "내 교실로 가기" : "학생으로 입장"} <ArrowRight size={18} />
+                  </Link>
+                )}
                 <a className="landing-button secondary" href="#experience">
                   수업 방식 보기 <ArrowDown size={18} />
                 </a>
