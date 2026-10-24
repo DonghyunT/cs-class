@@ -1,0 +1,12 @@
+{
+  "archivedAt": "2026-10-24 Asia/Seoul",
+  "sourceCommit": "71ee6f9cedd9ac868973346a3e60936bd76ce610",
+  "files": [
+    {
+      "source": "teaching-materials/instructor-guide/guide.html",
+      "archived": "guide.html",
+      "bytes": 12923,
+      "sha256": "ff3083309628cae2665ada97eb6c15a399a1c2839a93154344dda0ff9a189e22"
+    }
+  ]
+}
