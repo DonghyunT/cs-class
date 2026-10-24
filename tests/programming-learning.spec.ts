@@ -97,17 +97,17 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     }
     await page.getByRole("button", { name: "이번 회차 결과 확인" }).click();
     await expect(page.getByRole("tab", { name: "퀴즈 80%" })).toBeVisible();
-    await expect(page.locator("#programming-quiz-next")).toHaveText("틀린 문제만 다시 풀기");
-    await expect(page.locator("#programming-quiz-next")).toBeFocused();
+    await expect(page.locator("#quiz-next-action")).toHaveText("틀린 문제만 다시 풀기");
+    await expect(page.locator("#quiz-next-action")).toBeFocused();
     await page.getByRole("button", { name: "틀린 문제만 다시 풀기" }).click();
     await expect(page.getByRole("radio")).toHaveCount(3);
-    await expect(page.locator("#programming-question")).toBeFocused();
+    await expect(page.locator("#quiz-question-title")).toBeFocused();
     await page.getByRole("radio", { name: "3", exact: true }).check();
     await page.getByRole("button", { name: "이번 회차 결과 확인" }).click();
     await expect(page.getByRole("tab", { name: "퀴즈 100%" })).toBeVisible();
     // Once everything is solved the whole quiz is back, not only the last retry round.
     await expect(page.getByRole("navigation", { name: "퀴즈 문항 목록" }).getByRole("button")).toHaveCount(5);
-    await expect(page.locator("#stage-heading-quiz")).toContainText("/ 5");
+    await expect(page.locator("#stage-heading-quiz + span")).toContainText("/ 5");
     await page.reload(); await expect(page.getByRole("tab", { name: "개념 100%" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "퀴즈 100%" })).toBeVisible();
     await page.getByRole("tab", { name: "개념 100%", exact: true }).click();

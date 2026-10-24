@@ -457,10 +457,10 @@ test("저장 실패에도 미션 간 초안은 유지하고, 명시 저장한 �
   await expect.poll(async () => (await stored(page)).draft.quizAnswers[questions[0].id]).toBe(String(questions[0].correct));
   await page.getByRole("button", { name: "다음 문제" }).click();
   await page.reload();
-  await expect(page.locator("#programming-question")).toHaveText(questions[1].prompt);
+  await expect(page.locator("#quiz-question-title")).toHaveText(questions[1].prompt);
   await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
   await page.getByRole("navigation", { name: "퀴즈 문항 목록" }).getByRole("button", { name: /문제 1/ }).click();
-  await expect(page.locator("#programming-question")).toHaveText(questions[0].prompt);
+  await expect(page.locator("#quiz-question-title")).toHaveText(questions[0].prompt);
   await expect(page.getByRole("button", { name: "이전 문제" })).toBeDisabled();
   await expect(page.getByRole("radio").nth(questions[0].correct)).toBeChecked();
   expect((await stored(page)).draft.programming!.reflection).toBe("저장 실패 중에도 유지");

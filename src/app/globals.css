@@ -37,13 +37,37 @@
   --card: #fff;
   --muted: #f4f6fa;
   --radius: 12px;
-  --primary: #315bfa;
+  --primary: #376fc8;
   --foreground: #202637;
   --muted-foreground: #626c80;
   --border: #e6e9f0;
   --warm-surface: #fff3e8;
   --warm-foreground: #a84f2a;
   --warm-border: #edc3a8;
+  /* Each hue has one meaning (docs/DESIGN.md §2.1): stage colors stay inside lessons and progress, gold is achievement, plum is plans. */
+  --stage-concept: #376fc8;
+  --stage-concept-ink: #2e5fab;
+  --stage-concept-soft: #eef4ff;
+  --stage-concept-line: #c9d9f2;
+  --stage-concept-track: #dce6f5;
+  --stage-quiz: #8860ba;
+  --stage-quiz-ink: #6b4699;
+  --stage-quiz-soft: #f3edfa;
+  --stage-quiz-line: #dccdf0;
+  --stage-quiz-track: #e8def4;
+  --stage-practice: #268673;
+  --stage-practice-ink: #1f6b5c;
+  --stage-practice-soft: #e6f3ee;
+  --stage-practice-line: #bfddd3;
+  --stage-practice-track: #d9ebe5;
+  --gold: #a67900;
+  --gold-ink: #8a6500;
+  --gold-soft: #fff8db;
+  --gold-line: #ebd58a;
+  --plum: #9d3c72;
+  --plum-ink: #832b5c;
+  --plum-soft: #fdf2f8;
+  --plum-line: #f5cbe1;
   --font-sans: var(--font-pretendard), sans-serif;
   --font-heading: var(--font-pretendard), sans-serif;
 }

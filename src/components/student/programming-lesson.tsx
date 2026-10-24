@@ -1,35 +1,35 @@
 "use client";
 
 import { useState, type RefObject } from "react";
-import { ArrowLeft, ArrowRight, Check, Lightbulb, RotateCcw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProgrammingConcept as ProgrammingConceptView } from "./programming-concept";
-import { concepts, questions } from "@/lib/classroom/programming-data";
+import { concepts } from "@/lib/classroom/programming-data";
 import { PALETTE_TEXT, blockLabel, missionBlockTypes } from "@/lib/classroom/entry-palette";
 import { entryBlockCategory, hintParts, missionStarter, missionsFor } from "@/lib/classroom/programming-entry";
-import { practiceMatches, shownQuizIds } from "@/lib/classroom/progress";
+import { practiceMatches } from "@/lib/classroom/progress";
 import type { Lesson, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
 import { PracticeGuidance } from "./practice-guidance";
 import type { WorkController, LessonMode } from "./work-controller";
 import styles from "./programming-lesson.module.css";
 
-type Props = { lesson: Lesson; controller: WorkController; mode?: LessonMode; locked: boolean; runAction: (action: WorkAction, focusId: string | readonly string[]) => Promise<void>; focus: (id: string) => void; next: (stage: WorkDraft["stage"]) => void; exportRef: RefObject<(() => Promise<string | null>) | null>; workspaceWide: boolean; practiceFocused: boolean; onWorkspaceWideChange: (wide: boolean) => void; saveLabel: string; conceptId: string; quizQuestionId: string; onConceptChange: (id: string) => void; onQuizQuestionChange: (id: string) => void; onEditorReady?: (ready: boolean) => void };
+type Props = { lesson: Lesson; controller: WorkController; mode?: LessonMode; locked: boolean; runAction: (action: WorkAction, focusId: string | readonly string[]) => Promise<void>; focus: (id: string) => void; next: (stage: WorkDraft["stage"]) => void; exportRef: RefObject<(() => Promise<string | null>) | null>; workspaceWide: boolean; practiceFocused: boolean; onWorkspaceWideChange: (wide: boolean) => void; saveLabel: string; conceptId: string; onConceptChange: (id: string) => void; onEditorReady?: (ready: boolean) => void };
 
 // Hint text with its block chips coloured by Entry category; screen readers read the chips as plain words.
 // ▾ has a wide glyph box, so it gets a trimmed span to read ‘A▾를’ as one word.
 const HintText = ({ text }: { text: string }) => <>{hintParts(text).map((part, i) => typeof part === "string" ? part.split("▾").flatMap((plain, k) => k ? [<span key={`${i}-${k}`} className={styles.caret}>▾</span>, plain] : [plain]) : <span key={i} className={styles.blockChip} data-category={entryBlockCategory(part.type)}>{part.text}</span>)}</>;
 
-// The first programming lesson keeps its hands-on concept and quiz screens; later lessons use the shared panels.
+// The first programming lesson keeps its hands-on concept screen; its quiz and later lessons use the shared panels.
 export const hasCustomLearning = (lesson: Lesson) => lesson.id === "programming-13";
 
 export function ProgrammingLearningStage(props: Props) {
   const { controller, locked, lesson } = props;
   const { draft } = controller;
-  if (draft.stage !== "practice" && !hasCustomLearning(lesson)) return null;
+  if (draft.stage === "quiz" || draft.stage === "concept" && !hasCustomLearning(lesson)) return null;
   return <section id={`panel-${draft.stage}`} role="tabpanel" aria-labelledby={`tab-${draft.stage}`} className={styles.panel}>
-    {draft.stage !== "quiz" && <h2 id={`stage-heading-${draft.stage}`} tabIndex={-1} className={styles.srOnly}>{draft.stage === "concept" ? "직접 실험하고 생각해요" : "실습 미션에 도전해요"}</h2>}
-    {draft.stage === "concept" ? <ProgrammingConcept {...props} /> : draft.stage === "quiz" ? <ProgrammingQuiz {...props} /> : <ProgrammingPractice {...props} />}
+    <h2 id={`stage-heading-${draft.stage}`} tabIndex={-1} className={styles.srOnly}>{draft.stage === "concept" ? "직접 실험하고 생각해요" : "실습 미션에 도전해요"}</h2>
+    {draft.stage === "concept" ? <ProgrammingConcept {...props} /> : <ProgrammingPractice {...props} />}
     {draft.stage === "practice" && <div className={styles.reflection}><label htmlFor="programming-reflection">오늘 발견한 것을 한 줄로 남겨볼까요?</label><textarea id="programming-reflection" maxLength={500} disabled={locked} placeholder="예: 첫 대답을 A에 저장해야 두 번째 질문 뒤에도 남아요." value={draft.programming?.reflection ?? ""} onChange={(e) => { const current = controller.getDraft(); if (current.programming) controller.update({ ...current, programming: { ...current.programming, reflection: e.target.value } }); }} /><p>{props.mode === "preview" ? "이 창의 체험에만 남아요." : "내 작품과 함께 저장돼요. 다음 수업에도 이어갈 수 있어요."}</p></div>}
   </section>;
 }
@@ -48,43 +48,6 @@ function ProgrammingConcept({ lesson, controller, locked, focus, runAction, next
     onConceptChange(`pc${value.concept}`);
     if (JSON.stringify(value.conceptAnswers) !== JSON.stringify(state.conceptAnswers)) update({ ...controller.getDraft(), conceptAnswers: Object.fromEntries(Object.entries(value.conceptAnswers).map(([key, answer]) => [`pc${key}`, String(answer)])) });
   }} onCheck={() => void runAction({ type: "check-concept", conceptId: id }, ["concept-next", "concept-feedback"])} serverFeedback={draft.conceptAnswers[id] === work.draft.conceptAnswers[id] ? work.conceptFeedback[id]?.message : undefined} serverCorrect={work.conceptFeedback[id]?.correct} retryConcepts={concepts.map((_, i) => i).filter((i) => !work.conceptSolved.includes(`pc${i}`) && work.conceptFeedback[`pc${i}`]?.correct === false)} />;
-}
-
-function ProgrammingQuiz({ lesson, controller, locked, runAction, next, focus, quizQuestionId, onQuizQuestionChange, mode = "student" }: Props) {
-  const { work, draft, update } = controller;
-  const ids = shownQuizIds(lesson, work);
-  const position = Math.max(0, ids.indexOf(quizQuestionId));
-  const q = lesson.quiz.find((question) => question.id === ids[position])!;
-  const scene = questions.find((question) => question.id === q.id);
-  const complete = work.quizSolved.length === lesson.quiz.length;
-  const remaining = ids.filter((id) => !draft.quizAnswers[id]).length;
-  const move = (value: number) => { onQuizQuestionChange(ids[value]); focus("programming-question"); };
-  return <div className={styles.quiz}>
-    <div className={styles.quizTop}>
-      <div className={styles.quizPosition}><h2 id="stage-heading-quiz" tabIndex={-1}><span className={styles.srOnly}>배운 내용을 적용해요 · </span>퀴즈 · {position + 1} / {ids.length}</h2><span>{work.quizSolved.length}/{lesson.quiz.length} 해결 · {work.quizRound}회차</span></div>
-      <nav className={styles.questionNav} aria-label="퀴즈 문항 목록">{ids.map((id, i) => {
-        const number = lesson.quiz.findIndex((question) => question.id === id) + 1;
-        const state = work.quizRoundGraded ? work.quizFeedback[id]?.correct ? "해결" : "재도전" : draft.quizAnswers[id] ? "답변" : "미답변";
-        return <button key={id} type="button" disabled={locked} aria-label={`문제 ${number} · ${state}`} aria-current={i === position ? "step" : undefined} onClick={() => move(i)}>{number}<span>{state}</span></button>;
-      })}</nav>
-    </div>
-    <article className={styles.quizCard}>
-      <div className={styles.quizQuestionLayout}><div><h3 id="programming-question" tabIndex={-1}>{q.prompt}</h3><div className={styles.scene}>{scene?.scene.map((line) => <code key={line}>{line}</code>)}</div></div>
-        <fieldset disabled={locked || work.quizRoundGraded} className={styles.choices} aria-labelledby="programming-question"><legend className={styles.srOnly}>{q.prompt}</legend>{q.options.map((option) => <label key={option.id} data-selected={draft.quizAnswers[q.id] === option.id}><input type="radio" name={`programming-${q.id}`} checked={draft.quizAnswers[q.id] === option.id} onChange={() => update({ ...controller.getDraft(), quizAnswers: { ...controller.getDraft().quizAnswers, [q.id]: option.id } })} /><span>{option.label}</span></label>)}</fieldset>
-      </div>
-      {work.quizRoundGraded && <p role="status" className={styles.feedback}>{work.quizFeedback[q.id]?.correct && <Check size={16} />}<span><strong>채점 당시 답안 결과 · {work.quizFeedback[q.id]?.correct ? "맞았어요" : "다시 생각해 보기"}</strong><br />{work.quizFeedback[q.id]?.message}</span></p>}
-    </article>
-    <div className={styles.quizActions}><details key={`${work.quizRound}-${q.id}`} className={styles.hint}><summary><Lightbulb size={17} />힌트 보기</summary><p>{q.hint}</p></details><div>
-      <Button variant="ghost" disabled={locked || position === 0} onClick={() => move(position - 1)}><ArrowLeft size={16} />이전 문제</Button>
-      {!work.quizRoundGraded && position === ids.length - 1 ? remaining > 0 ? <Button disabled={locked} onClick={() => move(ids.findIndex((id) => !draft.quizAnswers[id]))}>답하지 않은 문제로 이동</Button> : <Button disabled={locked || controller.actionBlocked} onClick={() => void runAction({ type: "grade-quiz" }, "programming-quiz-next")}>이번 회차 결과 확인</Button> : <Button disabled={locked || position === ids.length - 1} variant="outline" onClick={() => move(position + 1)}>다음 문제<ArrowRight size={16} /></Button>}
-    </div></div>
-    {!work.quizRoundGraded && <div className={styles.roundNote}><p>{remaining ? `${remaining}문항이 미답변이에요.` : "모든 답을 선택했어요."}</p><div>
-      {remaining > 0 && position !== ids.length - 1 && <Button variant="ghost" disabled={locked} onClick={() => move(ids.findIndex((id) => !draft.quizAnswers[id]))}>답하지 않은 문제로 이동</Button>}
-      {(position !== ids.length - 1 || remaining > 0) && <Button variant="outline" disabled={locked || controller.actionBlocked || remaining > 0} onClick={() => void runAction({ type: "grade-quiz" }, "programming-quiz-next")}>이번 회차 결과 확인</Button>}
-      <Button variant="ghost" disabled={locked || controller.actionBlocked} onClick={() => next("practice")}>먼저 실습하기<ArrowRight size={16} /></Button>
-    </div></div>}
-    {work.quizRoundGraded && <div id="programming-quiz-result" tabIndex={-1} className={styles.result}><div className={styles.resultSummary}><p>{mode === "preview" ? "이번 체험 결과는 채점 당시 이 창의 답안 기준이에요." : "이번 회차 결과는 채점할 때 저장된 답안 기준이에요. 채점한 답안과 결과는 저장 버튼 없이 바로 저장돼요."}</p><strong id="programming-quiz-summary">{complete ? "모든 문제를 해결했어요!" : `전체 ${work.quizSolved.length}/${lesson.quiz.length}문항 해결 · ${lesson.quiz.length - work.quizSolved.length}문제에 다시 도전해요.`}</strong><nav className={styles.questionNav} aria-label="재도전 문항 바로가기">{ids.filter((id) => !work.quizFeedback[id]?.correct).map((id) => <button key={id} type="button" disabled={locked} onClick={() => move(ids.indexOf(id))}>문제 {lesson.quiz.findIndex((question) => question.id === id) + 1} 결과 보기</button>)}</nav></div><div className={styles.resultActions}>{!complete && <Button id="programming-quiz-next" aria-describedby="programming-quiz-summary" disabled={locked || controller.actionBlocked} onClick={() => void runAction({ type: "retry-quiz" }, "programming-question")}><RotateCcw size={16} />틀린 문제만 다시 풀기</Button>}<Button id={complete ? "programming-quiz-next" : undefined} aria-describedby={complete ? "programming-quiz-summary" : undefined} variant={complete ? "default" : "outline"} disabled={locked || controller.actionBlocked} onClick={() => next("practice")}>{complete ? "실습으로 이동" : "먼저 실습하기"}<ArrowRight size={16} /></Button></div></div>}
-  </div>;
 }
 
 function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exportRef, workspaceWide, practiceFocused, onWorkspaceWideChange, saveLabel, mode = "student", onEditorReady }: Props) {

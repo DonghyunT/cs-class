@@ -229,17 +229,16 @@ test("0%는 실제 값과 별도의 짧은 시작 표시를 유지하고 100%는
   await expect(overview.locator("svg [data-stage]")).toHaveCount(3);
   await expect(overview.locator("svg path[stroke-dasharray]")).toHaveCount(0);
   const start = overview.locator("svg [data-start-marker]");
-  await expect(start).toHaveCount(1);
-  const geometry = await start.evaluate(element => {
+  await expect(start).toHaveCount(3);
+  const geometry = await start.first().evaluate(element => {
     const path = element as SVGGeometryElement;
     const point = path.getPointAtLength(0);
     return { startX: point.x, startY: point.y, degrees: path.getTotalLength() / 78 * 180 / Math.PI, cap: getComputedStyle(path).strokeLinecap, stroke: getComputedStyle(path).stroke };
   });
   expect(geometry.startX).toBeCloseTo(90, 1);
   expect(geometry.startY).toBeCloseTo(12, 1);
-  expect(geometry.degrees).toBeGreaterThanOrEqual(4);
-  expect(geometry.degrees).toBeLessThanOrEqual(6);
-  expect(geometry.cap).toBe("butt");
+  expect(geometry.degrees).toBeLessThanOrEqual(0.2);
+  expect(geometry.cap).toBe("round");
   expect(geometry.stroke).not.toBe(await overview.locator('svg [data-stage="concept"]').evaluate(element => getComputedStyle(element).stroke));
   for (const stage of ["개념", "퀴즈", "실습"]) {
     const legend = overview.getByRole("button", { name: new RegExp(`^${stage} 진도:`) });
@@ -259,7 +258,7 @@ test("0%는 실제 값과 별도의 짧은 시작 표시를 유지하고 100%는
   await page.getByRole("button", { name: "격자 보기", exact: true }).click();
   await expect(course.locator("svg [data-stage]")).toHaveCount(3);
   await expect(course.locator("svg path[stroke-dasharray]")).toHaveCount(0);
-  await expect(course.locator("svg [data-start-marker]")).toHaveCount(1);
+  await expect(course.locator("svg [data-start-marker]")).toHaveCount(3);
   await expect(course.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
   await expect(course.getByRole("progressbar")).toHaveAttribute("aria-valuetext", "필수 활동 0/14개 완료");
   const completed = emptyWork(programming);

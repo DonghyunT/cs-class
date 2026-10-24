@@ -97,7 +97,7 @@ test("반 전체 진도는 필수 활동 합산이며 선택 도전·최근 활�
     await page.getByRole("button", { name: "수업 새로고침", exact: true }).click();
     await expect(overall).toHaveAttribute("aria-valuenow", "0");
     await expect(overall).toHaveAttribute("aria-valuetext", `필수 활동 ${completed}/378개 완료`);
-    await expect(current.locator("svg [data-start-marker]")).toHaveCount(completed === 0 ? 1 : 0);
+    await expect(current.locator("svg [data-start-marker]")).toHaveCount(completed === 0 ? 3 : 0);
   }
 
   const review = LESSONS.find(item => item.mode === "review")!;

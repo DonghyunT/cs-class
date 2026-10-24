@@ -344,7 +344,7 @@ for (const programming of [false, true]) {
       expect(savePosts).toBe(0);
     } finally { release(); }
     await expect(page.locator("#work-action-error")).toHaveCount(0);
-    const result = page.locator(programming ? "#programming-quiz-result" : "#quiz-round-result");
+    const result = page.locator("#quiz-round-result");
     await expect(result).toContainText("이번 회차 결과는 채점할 때 저장된 답안 기준이에요.");
     await expect(panel.getByRole("status").filter({ hasText: "채점 당시 답안 결과" })).toContainText(hint);
     await expect(panel.getByRole("radio", { name: answerLabel, exact: true })).toBeChecked();
