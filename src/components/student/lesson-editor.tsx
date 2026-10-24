@@ -113,11 +113,11 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     const action = controller.actionFailure?.action;
     if (!action || !await controller.recoverAction(resend)) return;
     const programming = lesson.practice.type === "programming";
-    // Only the first programming lesson has its own concept and quiz screens.
+    // Only the first programming lesson has its own concept screen.
     const customLearning = programming && hasCustomLearning(lesson);
     const id: string | readonly string[] = action.type === "check-concept" ? customLearning ? ["concept-next", "concept-feedback"] : [`concept-next-${action.conceptId}`, `concept-feedback-${action.conceptId}`] :
-      action.type === "grade-quiz" ? customLearning ? "programming-quiz-next" : "quiz-next-action" :
-      action.type === "retry-quiz" ? customLearning ? "programming-question" : "quiz-question-title" :
+      action.type === "grade-quiz" ? "quiz-next-action" :
+      action.type === "retry-quiz" ? "quiz-question-title" :
       reviewType ? "review-action-feedback" : action.type === "submit-practice" ? programming ?
         missionsFor(lesson.id).at(-1)?.id === controller.getDraft().programming?.mission ? "programming-mission-complete" : "programming-next-mission"
         : "submitted-heading" : "practice-feedback";
@@ -162,11 +162,11 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     {controller.remote && <section className={styles.conflictPanel} aria-label="저장 충돌 비교"><h2>어떤 입력으로 이어갈까요?</h2><p>서버의 완료·제출 기록은 유지돼요. 입력 내용은 아래에서 직접 선택하세요.</p><div className={styles.comparisonGrid}><div><h3>이 화면의 입력</h3><DraftComparison lesson={lesson} draft={draft} /></div><div><h3>서버에 저장된 입력</h3><DraftComparison lesson={lesson} draft={controller.remote.draft} /></div></div><div className={styles.actions}><Button disabled={busy} onClick={() => void controller.resolve(true)}>현재 입력을 새 버전으로 저장</Button><Button variant="outline" disabled={busy} onClick={() => void controller.resolve(false)}>서버 기록으로 이어하기</Button></div></section>}
 
 
-    {lesson.practice.type === "programming" && <ProgrammingLearningStage mode={mode} practiceFocused={practiceFocused} lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} conceptId={conceptId} quizQuestionId={quizQuestionId} onConceptChange={setConceptId} onQuizQuestionChange={setQuizQuestionId} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} onEditorReady={setNativeReady} />}
+    {lesson.practice.type === "programming" && <ProgrammingLearningStage mode={mode} practiceFocused={practiceFocused} lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} conceptId={conceptId} onConceptChange={setConceptId} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} onEditorReady={setNativeReady} />}
 
     {!(lesson.practice.type === "programming" && hasCustomLearning(lesson)) && draft.stage === "concept" && <LessonConceptPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} conceptId={conceptId} experienceVersion={experienceVersion} onResetExperience={resetExperience} onSelectConcept={selectConcept} />}
 
-    {!(lesson.practice.type === "programming" && hasCustomLearning(lesson)) && draft.stage === "quiz" && <LessonQuizPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} quizQuestionId={quizQuestionId} moveQuestion={moveQuestion} />}
+    {draft.stage === "quiz" && <LessonQuizPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} quizQuestionId={quizQuestionId} moveQuestion={moveQuestion} />}
 
     {isReviewType(lesson.practice.type) && (draft.stage === "practice" || keepPractice) && <section id="panel-practice" hidden={draft.stage !== "practice"} role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 className={reviewStyles.srOnly} id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2>{lesson.practice.type === "sandwich" ? <Sandwich mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "abstraction" ? <Abstraction mode={mode} controller={controller} practiceFocused={practiceFocused} /> : <Flowchart mode={mode} controller={controller} practiceFocused={practiceFocused} />}</section>}
     {lesson.practice.type !== "programming" && !isReviewType(lesson.practice.type) && draft.stage === "practice" && (

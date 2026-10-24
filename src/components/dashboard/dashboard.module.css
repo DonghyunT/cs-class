@@ -28,9 +28,9 @@
 .page .refresh[data-slot="button"] { min-height: 44px; min-width: 44px; width: 44px; height: 44px; padding: 0; color: #526173; border-radius: 10px; }
 .sectionTools { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 12px; margin-left: auto; max-width: 100%; }
 .page .compactControl[data-slot="button"] { min-height: 44px; min-width: 44px; padding: 8px 10px; gap: 6px; font-size: 13px; border-radius: 10px; color: #526173; white-space: nowrap; }
-.current { position: relative; isolation: isolate; overflow: hidden; border: 1px solid #d7e3f7; border-radius: 22px; background: linear-gradient(112deg, #eaf2ff 0%, #f1f4ff 68%, #fff5ef 100%); box-shadow: 0 18px 38px -34px #376fc8; padding: 24px 28px; display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 26px; }
+.current { position: relative; isolation: isolate; overflow: hidden; border: 1px solid #d7e3f7; border-radius: 22px; background: linear-gradient(112deg, #eaf2ff 0%, #f1f4ff 68%, var(--plum-soft) 100%); box-shadow: 0 18px 38px -34px #376fc8; padding: 24px 28px; display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 26px; }
 .current::before { content: ""; position: absolute; right: 12%; top: -145px; width: 280px; height: 280px; border: 1px solid #fff; border-radius: 50%; background: #ffffff52; pointer-events: none; }
-.current::after { content: ""; position: absolute; right: 27%; top: 27px; width: 19px; height: 19px; border-radius: 5px; background: #a8c5f0; box-shadow: 25px 30px 0 #e9e4f7, -24px 45px 0 #f8e1d5; transform: rotate(12deg); opacity: .72; pointer-events: none; }
+.current::after { content: ""; position: absolute; right: 27%; top: 27px; width: 19px; height: 19px; border-radius: 5px; background: #a8c5f0; box-shadow: 25px 30px 0 #e9e4f7, -24px 45px 0 var(--plum-line); transform: rotate(12deg); opacity: .72; pointer-events: none; }
 .current > div { min-width: 0; flex: 1; position: relative; z-index: 1; }
 .dashboardHome[data-role=teacher] .current::after{display:none}
 /* Same order as the student overview: progress left, current lesson right; DOM keeps the lesson first. */
@@ -42,18 +42,18 @@
 .columns { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; gap: 24px; }
 .mainColumn, .sideColumn { display: grid; gap: 24px; min-width: 0; }
 .panel { background: white; border: 1px solid #e3e8ef; border-radius: 22px; padding: 24px; min-width: 0; box-shadow: 0 16px 36px -34px #526173; }
-.todoPanel { border-color: #e5dff2; background: linear-gradient(145deg, #fff 55%, #fbf9ff); }
-.schedulePanel { border-color: #efdfd7; background: linear-gradient(145deg, #fff 55%, #fffbf8); }
-.actionsPanel { border-color: #dce7f8; }
-.watchPanel { border-color: #d6ece6; }
+/* A card's hue says what it is about: blue lessons, gold students to look after, plum plans. */
+.actionsPanel { --accent-soft: var(--stage-concept-soft); border-color: #dce7f8; }
+.watchPanel { --accent-soft: var(--gold-soft); border-color: #eee3c0; }
+.todoPanel, .schedulePanel { --accent-soft: var(--plum-soft); border-color: #f1dde8; }
+.actionsPanel, .watchPanel, .todoPanel, .schedulePanel { background: linear-gradient(var(--accent-soft), #fff 56px); }
 .panel h2, .eventForm h2 { font-size: 19px; font-weight: 700; line-height: 1.5; letter-spacing: -.025em; }
 .sectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 15px; }
 .sectionTitle { display: inline-flex; align-items: center; gap: 11px; min-width: 0; }
 .titleIcon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; }
-.todoIcon { color: #6652a3; background: #f0ebfa; }
-.scheduleIcon { color: #aa5636; background: #fcece3; }
+.todoIcon, .scheduleIcon { color: var(--plum-ink); background: #fbe4ef; }
 .actionIcon { color: #376fc8; background: #eaf2ff; }
-.watchIcon { color: #268673; background: #e6f5f1; }
+.watchIcon { color: var(--gold-ink); background: #fbefc4; }
 .sectionHeading h2 { margin: 0; font-size: 20px; font-weight: 700; }
 .sectionHeading > span { color: #526173; font-size: 12px; }
 .panelTools { display: flex; align-items: center; gap: 8px; color: #526173; font-size: 12px; }

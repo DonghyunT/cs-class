@@ -346,7 +346,7 @@ for (const lessonId of ["sequence-lab", "programming-13"]) {
         await saveDraft(page);
         await expect.poll(async () => Object.keys((await savedWork(page, endpoint)).draft.quizAnswers).length).toBe(questions.length);
       }
-      const title = panel.locator(lessonId === "programming-13" ? "#programming-question" : "#quiz-question-title");
+      const title = panel.locator("#quiz-question-title");
       await expect(title).toHaveText(questions[position === "first" ? 0 : questions.length - 1].prompt);
       await expect(panel.getByRole("radio")).toHaveCount(questions[position === "first" ? 0 : questions.length - 1].options.length);
       const primary = panel.getByRole("button", { name: position === "first" ? "다음 문제" : "이번 회차 결과 확인", exact: true });
@@ -382,7 +382,7 @@ test("quiz-responsive: 1000/1001·390/320과 CSS 200% 모의 확대에서 문항
     const question = LESSONS.find(lesson => lesson.id === lessonId)!.quiz[0];
     await page.getByRole("tab", { name: /퀴즈/ }).click();
     const panel = page.locator("#panel-quiz"), heading = panel.locator("#stage-heading-quiz");
-    const title = panel.locator(lessonId === "programming-13" ? "#programming-question" : "#quiz-question-title");
+    const title = panel.locator("#quiz-question-title");
     await heading.focus();
     await expect(heading).toBeFocused();
     const headingBox = (await heading.boundingBox())!;
@@ -399,15 +399,6 @@ test("quiz-responsive: 1000/1001·390/320과 CSS 200% 모의 확대에서 문항
         const box = (await element.boundingBox())!;
         expect(box.x, await element.innerText()).toBeGreaterThanOrEqual(0);
         expect(box.x + box.width, await element.innerText()).toBeLessThanOrEqual(width);
-      }
-      if (lessonId === "programming-13" && (width === 1000 || width === 1001)) {
-        const titleBox = (await title.boundingBox())!, optionBox = (await panel.locator("fieldset label").first().boundingBox())!;
-        if (width === 1001) expect(optionBox.x).toBeGreaterThan(titleBox.x + titleBox.width);
-        else {
-          const lastCode = (await panel.locator("code").last().boundingBox())!;
-          expect(optionBox.x).toBeCloseTo(titleBox.x, 1);
-          expect(optionBox.y).toBeGreaterThanOrEqual(lastCode.y + lastCode.height);
-        }
       }
     }
     await panel.locator("details summary").click();
