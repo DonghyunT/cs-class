@@ -30,7 +30,10 @@ export function LessonShell({ lesson, returnOrigin, workspaceWide, practiceFocus
   function changeFocus(focused: boolean) { manualFocus.current = true; onPracticeFocusedChange?.(focused); }
   useEffect(() => {
     // Stage controls and activity feedback have committed before their focus request is applied.
-    if (focusRequest) [focusRequest.id].flat().map((id) => document.getElementById(id)).find(Boolean)?.focus({ preventScroll: focusRequest.preventScroll });
+    if (focusRequest) {
+      const ids = Array.isArray(focusRequest.id) ? focusRequest.id : [focusRequest.id];
+      ids.map((id) => document.getElementById(id)).find(Boolean)?.focus({ preventScroll: focusRequest.preventScroll });
+    }
   }, [focusRequest]);
   useEffect(() => {
     if (!open) return;
