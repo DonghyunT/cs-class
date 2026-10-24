@@ -59,7 +59,7 @@ function CommunityBoard({ uid, classId, teacher, onClassChange }: { uid: string;
   const [filter, setFilter] = useState<"all" | "unanswered" | "resolved">("all");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [deleteError, setDeleteError] = useState("");
-  const [focus, setFocus] = useState<{ target: "title" | "answer" | null; key: number }>({ target: null, key: 0 });
+  const [focus, setFocus] = useState<{ target: "title" | "answer" | "thread" | null; key: number }>({ target: null, key: 0 });
   const title = useRef<HTMLInputElement>(null);
   const answer = useRef<HTMLTextAreaElement>(null);
   const threadTitle = useRef<HTMLHeadingElement>(null);
@@ -99,7 +99,7 @@ function CommunityBoard({ uid, classId, teacher, onClassChange }: { uid: string;
     else setError("작성 내용을 보관하지 못했어요. 등록하거나 입력을 지운 뒤 이동해 주세요.");
     return saved;
   } }), [register, preserveDraft]);
-  useEffect(() => { if (focus.target === "title") title.current?.focus(); else if (focus.target === "answer") (answer.current ?? threadTitle.current)?.focus(); }, [focus]);
+  useEffect(() => { if (focus.target === "title") title.current?.focus(); else if (focus.target === "answer") (answer.current ?? threadTitle.current)?.focus(); else if (focus.target === "thread") threadTitle.current?.focus(); }, [focus]);
 
   const refresh = useCallback(async (after?: string) => {
     const generation = ++request.current;
@@ -147,7 +147,9 @@ function CommunityBoard({ uid, classId, teacher, onClassChange }: { uid: string;
       threadRequest.current++; setThreadLoading(false);
       updateSummary(next); setQuestion(next);
       changeDrafts(previous => ({ ...previous, question: emptyQuestion() }));
-      setMessage("질문을 등록했어요."); setFocus(previous => ({ target: "title", key: previous.key + 1 }));
+      // The posted question opens beside the list, so the writer folds away and focus goes to it.
+      setComposerOpen(false);
+      setMessage("질문을 등록했어요."); setFocus(previous => ({ target: "thread", key: previous.key + 1 }));
     });
   }
   function reply() {

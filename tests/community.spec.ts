@@ -317,7 +317,9 @@ test("질문·답변 실패의 초안을 보관하고 재시도·키보드·좁�
   expect(questionIds[1]).toBe(questionIds[0]);
   await expect(thread.getByText(literal, { exact: true })).toBeVisible();
   await expect(thread.locator("img")).toHaveCount(0);
-  await expect(title).toBeFocused();
+  // Posting folds the writer away and moves focus to the posted question.
+  await expect(title).toBeHidden();
+  await expect(thread.getByRole("heading", { name: "키보드로 묻는 입력 순서", exact: true })).toBeFocused();
   let answerFailure = true;
   const answerIds: string[] = [];
   await page.route("**/api/classroom/community/*/answers", async route => {
