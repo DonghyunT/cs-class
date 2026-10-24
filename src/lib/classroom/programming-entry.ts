@@ -98,7 +98,7 @@ const placed = (id: string, sprite: string, name: string, entity: Partial<AddedO
 // watering can, growing tree and soil.
 export function missionStarter(missionId: string): string {
   if (missionId === "tree") return buildProgrammingProject(undefined, [
-    placed("can", "watering-can", "물뿌리개", { x: -150, y: 40, scaleX: 0.32, scaleY: 0.32 }),
+    placed("can", "watering-can", "물뿌리개", { x: -150, y: 0, scaleX: 0.32, scaleY: 0.32 }),
     placed("tree", "tree-growth", "나무", { x: 110, y: -10, scaleX: 0.8, scaleY: 0.8 }),
     placed("soil", "soil", "흙", { scaleX: 0.5, scaleY: 0.5 }),
   ], -1, true);
@@ -115,12 +115,12 @@ const projectBytes = (project: unknown) => new TextEncoder().encode(JSON.stringi
 // The tree mission's ‘클릭 수’ variable, shown on the stage.
 export const COUNTER = { id: "cs-clicks", name: "클릭 수" } as const;
 
-// Entry places variable boxes from the stage centre with y growing downward: A·B sit top-left, clear of the
+// Entry places variable boxes from the stage centre with y growing downward: A·B and 클릭 수 sit top-left, clear of the
 // answer box that opens along the bottom while a question waits.
 export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0, counter = false): string {
   const p = JSON.parse(buildNameProject()!);
   p.variables.push(...["A", "B"].map((name, i) => ({ id: `cs-${name}`, name, variableType: "variable", value: 0, visible: false, x: -210, y: -112 + i * 30, object: null, isCloud: false, isRealTime: false })));
-  if (counter) p.variables.push({ id: COUNTER.id, name: COUNTER.name, variableType: "variable", value: 0, visible: true, x: -225, y: 125, object: null, isCloud: false, isRealTime: false });
+  if (counter) p.variables.push({ id: COUNTER.id, name: COUNTER.name, variableType: "variable", value: 0, visible: true, x: -210, y: -112, object: null, isCloud: false, isRealTime: false });
   if (threads) p.objects[0].script = threads;
   // Entry lists objects front to back; added objects keep their saved order around the dog.
   // A negative mainIndex is a dog-free project.
