@@ -79,7 +79,7 @@ for (const path of ["/teacher", "/teacher/students", "/teacher/classes"]) {
     const classroom = { id: "2-1", name: "2학년 1반", revision: 0, currentLessonId: lessonId, openedLessonIds: [lessonId] };
     await page.route("**/api/classroom/teacher?**", route => {
       reads++;
-      return route.fulfill({ json: { classroom, classrooms: [classroom], lessons: LESSONS, selectedLessonId: lessonId, students: [] } });
+      return route.fulfill({ json: { classroom, classrooms: [classroom], lessons: LESSONS, selectedLessonId: lessonId, students: [], offList: [] } });
     });
     await page.goto(`${path}?classId=2-1`);
     const refresh = page.getByRole("button", { name: "수업 새로고침", exact: true });
