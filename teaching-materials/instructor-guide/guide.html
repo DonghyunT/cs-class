@@ -6,136 +6,241 @@
 <title>CS Class 강사님 안내서</title>
 <style>
   @page { size: A4; margin: 16mm 15mm; }
-  :root { --ink: #202637; --muted: #626c80; --blue: #315bfa; --soft: #eef3fc; --warm: #fff3e8; --warm-ink: #a84f2a; --line: #e6e9f0; }
+  :root { --ink: #202637; --muted: #647087; --blue: #315bfa; --soft: #edf3ff; --warm: #fff3e8; --warm-ink: #ad512b; --line: #dfe6f1; }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; color: var(--ink); background: #fff; font-size: 10.5pt; line-height: 1.65; }
-  main { max-width: 760px; margin: 0 auto; padding: 24px 16px; }
-  h1 { font-size: 22pt; margin: 0 0 4px; letter-spacing: -0.02em; }
-  h2 { font-size: 14pt; margin: 28px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--soft); break-after: avoid; }
-  h3 { font-size: 11.5pt; margin: 18px 0 6px; break-after: avoid; }
-  p, li { margin: 4px 0; }
-  ol, ul { padding-left: 22px; }
-  .lead { color: var(--muted); margin-bottom: 18px; }
-  .box { background: var(--soft); border-radius: 10px; padding: 12px 16px; margin: 12px 0; break-inside: avoid; }
-  .warn { background: var(--warm); color: var(--ink); border-left: 4px solid var(--warm-ink); }
-  .box strong:first-child { display: block; margin-bottom: 2px; }
-  figure { margin: 12px 0 16px; break-inside: avoid; }
-  figure img { max-width: 100%; max-height: 95mm; border: 1px solid var(--line); border-radius: 8px; display: block; margin: 0 auto; }
-  figure.small img { max-height: 60mm; }
-  figcaption { color: var(--muted); font-size: 9pt; margin-top: 4px; }
-  table { width: 100%; border-collapse: collapse; margin: 10px 0; break-inside: avoid; font-size: 10pt; }
-  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
-  th { background: #f4f6fa; }
-  th:first-child, td:first-child { white-space: nowrap; }
-  b.ui { font-weight: 700; color: var(--blue); }
-  .toc { columns: 2; column-gap: 24px; }
-  .toc li { break-inside: avoid; }
+  body { margin: 0; font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; color: var(--ink); background: #fff; font-size: 11.5pt; line-height: 1.6; word-break: keep-all; overflow-wrap: break-word; }
+  main { width: 180mm; margin: 0 auto; }
+  .page { display: flow-root; position: relative; height: 265mm; padding-bottom: 13mm; break-before: page; }
+  .page:first-child { break-before: auto; }
+  .page-header { display: flow-root; break-inside: avoid; margin-bottom: 6mm; }
+  .kicker { margin: 0 0 3mm; color: var(--blue); font-size: 9.5pt; font-weight: 700; }
+  h1 { font-size: 25pt; line-height: 1.3; margin: 0 0 3mm; letter-spacing: -0.03em; }
+  h2 { font-size: 23pt; line-height: 1.35; margin: 0 0 2mm; letter-spacing: -0.03em; }
+  h3 { font-size: 13pt; line-height: 1.45; margin: 5mm 0 3mm; break-after: avoid; }
+  p { margin: 2mm 0; }
+  a { color: inherit; text-decoration: none; }
+  b.ui { color: var(--blue); }
+  .deck, .muted { color: var(--muted); }
+  .deck { margin: 0; }
+  .address { font-size: 10.5pt; margin: 3mm 0 0; color: var(--muted); }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+  .login-grid { grid-template-columns: 1fr 74mm; align-items: center; }
+  .setup-grid { grid-template-columns: 88mm 1fr; align-items: start; }
+  .entry-grid { grid-template-columns: 80mm 1fr; align-items: start; }
+  .actions { padding: 0; margin: 2mm 0; list-style: none; counter-reset: action; }
+  .actions li { counter-increment: action; display: grid; grid-template-columns: 7mm 1fr; gap: 2mm; margin: 0 0 4mm; }
+  .actions li::before { content: counter(action); width: 6.5mm; height: 6.5mm; border-radius: 50%; background: var(--blue); color: #fff; font-size: 10pt; font-weight: 700; line-height: 6.5mm; text-align: center; }
+  figure { margin: 3mm 0 5mm; break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid var(--line); border-radius: 9px; display: block; }
+  figcaption { font-size: 9.5pt; line-height: 1.5; color: var(--muted); margin-top: 2mm; }
+  .login-grid figure, .entry-grid figure, .setup-grid figure { margin: 0; }
+  .nav-shot { max-height: 88mm; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; }
+  .nav-shot img { border: 0; border-radius: 0; }
+  .menu-cards, .stage-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; margin: 4mm 0; }
+  .card { background: var(--soft); border-radius: 9px; padding: 4mm; break-inside: avoid; }
+  .card > b { display: block; margin-bottom: 1mm; }
+  .menu-cards .card { padding: 3mm; font-size: 11pt; }
+  .menu-cards b { color: var(--blue); }
+  .note { border-left: 3px solid var(--blue); background: var(--soft); padding: 3mm 4mm; margin: 4mm 0; break-inside: avoid; }
+  .note.warn { border-left-color: var(--warm-ink); background: var(--warm); }
+  .note b { font-weight: 700; }
+  .small { font-size: 11pt; }
+  .field-pair { margin-top: 5mm; }
+  .field-pair figure img { max-height: 75mm; object-fit: contain; padding: 2mm; background: #fff; }
+  .stage-row { display: grid; grid-template-columns: 53mm 1fr; gap: 5mm; align-items: center; margin: 6mm 0; }
+  .stage-row figure { margin: 0; }
+  .stage-row h3 { margin: 0 0 2mm; }
+  .stage-row p { margin: 0; }
+  .stage-num { color: var(--blue); font-size: 10pt; display: block; margin-bottom: 1mm; }
+  .help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin: 4mm 0; }
+  .help-grid .card { padding: 3mm 4mm; }
+  .help-grid b { color: var(--blue); }
+  .help-grid p { margin: 0; font-size: 11pt; }
+  .progress-shot { height: 75mm; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; }
+  .progress-shot img { border: 0; border-radius: 0; }
+  .field-pair figcaption, .save-figure figcaption, .validation-figure figcaption, .status-figure figcaption { font-size: 11pt; color: var(--ink); }
+  .save-figure, .status-figure { display: flex; align-items: center; gap: 6mm; }
+  .save-figure img { width: 70mm; }
+  .save-figure figcaption, .status-figure figcaption { margin: 0; }
+  .status-figure img { width: 65mm; }
+  .validation-figure { display: grid; grid-template-columns: 110mm 1fr; align-items: center; gap: 6mm; }
+  .validation-figure figcaption { margin: 0; }
+  .save-intro { display: flex; gap: 4mm; align-items: baseline; margin: 5mm 0 2mm; }
+  .save-intro h3 { margin: 0; color: var(--blue); }
+  .save-intro p { margin: 0; }
+  .submit-flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; margin: 3mm 0 5mm; }
+  .submit-flow .card { padding: 3mm 4mm; }
+  .submit-flow span { font-size: 11pt; }
+  .checks { padding: 0; margin: 3mm 0 0; list-style: none; }
+  .checks li { padding-left: 6mm; position: relative; margin: 0 0 3mm; }
+  .checks li::before { content: "□"; color: var(--blue); position: absolute; left: 0; }
+  .quote { font-size: 12pt; line-height: 1.7; margin: 0; }
+  .footer { position: absolute; bottom: 1mm; left: 0; right: 0; border-top: 1px solid var(--line); padding-top: 2.5mm; display: flex; justify-content: space-between; font-size: 9pt; color: var(--muted); }
+  @media screen { body { background: #f3f5f9; } main { margin: 8mm auto; } .page { background: #fff; box-shadow: 0 2px 16px #20263714; margin-bottom: 8mm; } }
 </style>
 </head>
 <body>
 <main>
-  <h1>CS Class 강사님 안내서</h1>
-  <p class="lead">2학년 10반·11반 정보 수업 복습용 · 2026년 10월판<br>사이트 주소: <b>https://cs-class-donghyunt.vercel.app</b></p>
-
-  <div class="box">
-    <strong>한 줄 요약</strong>
-    학생은 사이트에서 수업마다 <b>개념 → 퀴즈 → 실습</b> 3단계를 스스로 진행합니다. 강사님은 <b>① 수업을 열어 주고 ② 학생에게 시작을 안내한 뒤 ③ 학생 현황에서 진행 상황을 확인</b>해 주시면 됩니다.
+<section class="page" aria-labelledby="guide-title">
+  <header class="page-header">
+    <p class="kicker">1부 · 사이트 안내 / 로그인과 메뉴</p>
+    <h1 id="guide-title">CS Class 강사님 안내서</h1>
+    <p class="deck">학생은 스스로 진행하고, 강사님은 막힌 곳을 도와줍니다.</p>
+    <p class="address">2학년 10반·11반 · 2026년 10월<br><a href="https://cs-class-donghyunt.vercel.app">https://cs-class-donghyunt.vercel.app</a></p>
+  </header>
+  <div class="two-col login-grid">
+    <div>
+      <h3>강사님은 비밀번호만 입력합니다</h3>
+      <ol class="actions">
+        <li><span><b class="ui">선생님으로 입장</b>을 누릅니다.</span></li>
+        <li><span><b class="ui">교사 비밀번호 로그인</b>을 고릅니다.</span></li>
+        <li><span>전달받은 비밀번호를 넣고 <b class="ui">교실 입장</b>을 누릅니다.<br><b>아이디는 입력하지 않습니다.</b></span></li>
+      </ol>
+    </div>
+    <figure><img src="images/02-login.png" alt="교사 비밀번호 로그인 화면"><figcaption>강사님은 Google 로그인 대신 이 화면을 씁니다.</figcaption></figure>
   </div>
+  <h3>담당 반을 고른 뒤, 왼쪽 메뉴로 이동합니다</h3>
+  <figure><div class="nav-shot"><img src="images/22-teacher-home.png" alt="담당 반과 왼쪽 메뉴가 보이는 교사 홈"></div></figure>
+  <div class="menu-cards">
+    <div class="card"><b>대시보드</b>이번 수업·살펴볼 학생</div>
+    <div class="card"><b>학생 현황·계정</b>진도·제출·비밀번호</div>
+    <div class="card"><b>수업 관리</b>수업 열기·미리보기</div>
+  </div>
+  <p class="muted small">강사님은 10반·11반을 관리합니다. 화면은 가상 계정으로 촬영했습니다.</p>
+  <footer class="footer"><span>CS Class · 화면 익히기</span><span>1 / 7</span></footer>
+</section>
 
-  <h2>차례</h2>
-  <ol class="toc">
-    <li>로그인하기</li>
-    <li>교사 홈 둘러보기</li>
-    <li>수업 열어 주기 (수업 관리)</li>
-    <li>학생 화면 미리 체험하기</li>
-    <li>학생이 하는 일</li>
-    <li>학생 진행 상황 확인하기</li>
-    <li>자주 생기는 일과 해결 방법</li>
-    <li>복습 시간 진행 예시</li>
-  </ol>
+<section class="page" aria-labelledby="lesson-setup">
+  <header class="page-header">
+    <p class="kicker">1부 · 사이트 안내 / 수업 준비</p>
+    <h2 id="lesson-setup">수업 전에, 반과 수업부터 확인합니다</h2>
+    <p class="deck">학생에게 오늘 할 수업 제목과 필수 범위를 알려 주세요.</p>
+  </header>
+  <div class="two-col setup-grid">
+    <div><figure><img src="images/10-class-settings.png" alt="담당 반과 열린 수업을 고르는 수업 관리 창"></figure><figure><img src="images/10b-class-settings-save.png" alt="이번 수업 선택과 설정 저장 버튼"><figcaption>창 제목의 반을 확인한 뒤 수업을 고르고 저장합니다.</figcaption></figure></div>
+    <ol class="actions">
+      <li><span><b class="ui">수업 관리</b>에서 담당 반의 <b class="ui">설정 열기</b>를 누릅니다.</span></li>
+      <li><span><b>열린 수업</b>에 체크합니다.</span></li>
+      <li><span><b>이번 수업</b>을 하나 고릅니다. 학생 화면 맨 위에 보입니다.</span></li>
+      <li><span><b class="ui">설정 저장</b>을 누릅니다.</span></li>
+    </ol>
+  </div>
+  <div class="note"><b class="ui">수업 미리보기</b>로 학생 화면을 먼저 체험해 보세요.<br>체험 내용은 학생 기록에 반영되지 않습니다.</div>
+  <h3>정규 수업은 세 단계로 이어집니다</h3>
+  <div class="stage-cards">
+    <div class="card"><b>개념</b>설명 읽고<br>확인 문제 풀기</div>
+    <div class="card"><b>퀴즈</b>모두 풀고<br>틀린 문제 다시 풀기</div>
+    <div class="card"><b>실습</b>기본 미션마다<br>검증 후 제출하기</div>
+  </div>
+  <p class="muted small">학생은 열린 수업만 볼 수 있습니다. 수업을 닫아도 저장한 작업은 유지됩니다.</p>
+  <footer class="footer"><span>CS Class · 반별 수업 설정</span><span>2 / 7</span></footer>
+</section>
 
-  <h2>1. 로그인하기</h2>
-  <ol>
-    <li>사이트 주소로 들어가 첫 화면에서 <b class="ui">선생님으로 입장</b>을 누릅니다.</li>
-    <li><b class="ui">교사 비밀번호 로그인</b>을 누릅니다. (Google 로그인 버튼은 담당 선생님용입니다.)</li>
-    <li>따로 전달받은 강사용 비밀번호를 넣고 <b class="ui">교실 입장</b>을 누릅니다. 아이디는 입력하지 않습니다.</li>
-  </ol>
-  <figure class="small"><img src="images/02-login.png" alt="교사 로그인 화면에서 교사 비밀번호 로그인을 누른 모습"><figcaption>교사 비밀번호 로그인. 비밀번호 칸만 채우면 됩니다.</figcaption></figure>
-  <div class="box warn"><strong>알아 두세요</strong>강사 계정은 10반·11반만 볼 수 있습니다. 4시간 동안 아무 조작이 없으면 자동으로 로그아웃되니, 다시 로그인하면 됩니다.</div>
+<section class="page" aria-labelledby="first-entry">
+  <header class="page-header">
+    <p class="kicker">2부 · 실제 수업 운영 / 처음 입장하기</p>
+    <h2 id="first-entry">첫 시간에는 공통 코드로 입장합니다</h2>
+    <p class="deck">이미 이용한 학생은 학번과 개인 비밀번호로 들어옵니다.</p>
+  </header>
+  <div class="two-col entry-grid">
+    <figure><img src="images/11-first-entry.png" alt="6자리 공통 코드와 입장 현황, 연장 버튼이 보이는 첫 입장 창"></figure>
+    <div>
+      <ol class="actions">
+        <li><span><b class="ui">학생 현황·계정 → 첫 입장 열기</b>에서 코드를 엽니다.</span></li>
+        <li><span><b>6자리 공통 코드</b>는 <b>10분</b> 동안 쓸 수 있습니다.</span></li>
+      </ol>
+      <div class="note warn small"><b>입장이 끝날 때까지 이 창을 열어 두세요.</b><br>닫거나 다른 화면으로 가면 코드도 닫힙니다. 부족하면 <b class="ui">10분 연장</b>, 만료되면 새 코드로 다시 엽니다.</div>
+    </div>
+  </div>
+  <div class="two-col field-pair">
+    <figure><img src="images/12-student-login.png" alt="학번과 비밀번호를 입력하는 학생 로그인 화면"><figcaption><b>학생 로그인</b><br>학번 칸: 본인 학번 5자리<br>비밀번호 칸: 공통 코드 6자리</figcaption></figure>
+    <figure><img src="images/13-personal-password.png" alt="새 비밀번호를 두 번 입력하는 개인 비밀번호 설정 화면"><figcaption><b>개인 비밀번호 만들기</b><br>영문과 숫자를 포함해 8자 이상<br>다음 입장부터 이 비밀번호를 씁니다.</figcaption></figure>
+  </div>
+  <p class="small"><b class="ui">입장 현황 새로고침</b> 후 입장한 학번을 출석과 대조합니다.<br>닉네임을 공식 명부로 보지 마세요. 결석한 학번이 들어왔으면 개별 초기화합니다.</p>
+  <footer class="footer"><span>CS Class · 첫 입장 안내</span><span>3 / 7</span></footer>
+</section>
 
-  <h2>2. 교사 홈 둘러보기</h2>
-  <p>로그인하면 대시보드가 열립니다. 왼쪽 메뉴로 <b class="ui">대시보드 · 학생 현황·계정 · 수업 관리 · 우리 반 질문 · 설정</b>을 오갑니다. 화면 위쪽 <b>담당 반</b>에서 10반·11반을 고르면 모든 화면이 그 반 기준으로 바뀝니다.</p>
-  <figure><img src="images/03-teacher-home.png" alt="교사 대시보드 화면"><figcaption>대시보드. 이번 수업, 교사가 확인할 일, 다가오는 일정이 보입니다.</figcaption></figure>
-  <ul>
-    <li><b>이번 수업:</b> 학생 화면 맨 위에 보이는 수업입니다. 정규 수업이면 반 전체 진도와 살펴볼 학생 수(아직 시작하지 않은 학생, 진행 중인 학생)도 보이고, 숫자를 누르면 그 학생 명단이 열립니다.</li>
-    <li><b>새로고침:</b> 화면은 저절로 바뀌지 않습니다. 담당 반 오른쪽의 동그란 화살표 버튼을 누르면 최신 상황을 다시 불러옵니다. 옆에 마지막으로 확인한 시각이 나옵니다.</li>
-  </ul>
+<section class="page" aria-labelledby="student-flow">
+  <header class="page-header">
+    <p class="kicker">2부 · 실제 수업 운영 / 학생 활동</p>
+    <h2 id="student-flow">학생은 이 순서로 진행합니다</h2>
+    <p class="deck">본인 반과 이번 수업 제목을 확인한 뒤 시작합니다.</p>
+  </header>
+  <div class="stage-row">
+    <div><span class="stage-num">01 · 개념</span><h3>읽고, 확인하기</h3><p>설명과 그림을 보고<br>확인 문제를 모두 맞힙니다.</p></div>
+    <figure><img src="images/14-concept.png" alt="개념 확인 문제와 정답 확인 버튼"></figure>
+  </div>
+  <div class="stage-row">
+    <div><span class="stage-num">02 · 퀴즈</span><h3>풀고, 다시 보기</h3><p>채점 뒤 피드백을 읽고,<br>모두 맞힐 때까지 다시 풉니다.</p></div>
+    <figure><img src="images/15-quiz.png" alt="퀴즈 문항과 채점 버튼이 보이는 화면"></figure>
+  </div>
+  <div class="stage-row">
+    <div><span class="stage-num">03 · 실습</span><h3>만들고, 제출하기</h3><p>기본 미션마다<br>실행 → 검증 → 제출합니다.</p></div>
+    <figure><img src="images/16-practice.png" alt="블록을 연결하고 시작하기로 실행하는 엔트리 실습 작업실"></figure>
+  </div>
+  <div class="note"><b>기본 미션을 모두 마쳤다면 선택 도전!</b><br>배지는 <b class="ui">내 배지</b>에서 봅니다. 도전과 배지는 만점의 필수 조건이 아닙니다.</div>
+  <footer class="footer"><span>CS Class · 개념에서 실습까지</span><span>4 / 7</span></footer>
+</section>
 
-  <h2>3. 수업 열어 주기 (수업 관리)</h2>
-  <p>학생은 <b>열린 수업만</b> 볼 수 있습니다. 복습시킬 수업을 열어 주세요.</p>
-  <ol>
-    <li>왼쪽 메뉴에서 <b class="ui">수업 관리</b>로 갑니다.</li>
-    <li>담당 반 수업 준비 표에서 반 줄의 <b class="ui">설정 열기</b>를 누릅니다.</li>
-    <li>창이 열리면 <b>열린 수업</b>에서 열어 줄 수업에 체크합니다. 복습에는 <b>프로그래밍의 기초 · 조건에 따라 달라지는 프로그램 · 반복으로 똑똑하게</b>를 권합니다.</li>
-    <li>창 아래쪽 <b>이번 수업</b>에서 학생 화면 맨 위에 크게 보일 수업을 하나 고릅니다.</li>
-    <li><b class="ui">설정 저장</b>을 누르면 바로 학생 화면에 반영됩니다.</li>
-  </ol>
-  <figure><img src="images/04-classes.png" alt="수업 관리 화면"><figcaption>수업 관리. 반마다 이번 수업과 열린 수업 수가 보입니다.</figcaption></figure>
-  <figure><img src="images/04b-class-settings.png" alt="반별 수업 관리 창"><figcaption>설정 열기를 누르면 나오는 창. 체크한 수업이 학생의 ‘열린 수업’에 나타납니다.</figcaption></figure>
-  <div class="box"><strong>수업을 닫아도 괜찮아요</strong>체크를 풀고 저장하면 학생 목록에서 사라지지만, 학생이 한 작업은 지워지지 않습니다. 다시 열면 이어서 할 수 있습니다.</div>
+<section class="page" aria-labelledby="teacher-support">
+  <header class="page-header">
+    <p class="kicker">2부 · 실제 수업 운영 / 순회 지도</p>
+    <h2 id="teacher-support">현황을 확인하며 순회합니다</h2>
+    <p class="deck"><b class="ui">학생 현황·계정</b>에서 <b>담당 반 → 확인할 수업 → 새로고침</b></p>
+  </header>
+  <figure><img src="images/17b-refresh.png" alt="담당 반 선택과 수동 새로고침 버튼"></figure>
+  <figure><div class="progress-shot"><img src="images/17-student-progress.png" alt="정규 수업 선택과 첫 학생의 개념·퀴즈·실습 진도"></div><figcaption>저장·채점·제출된 기록입니다. 작성 중 화면은 실시간으로 보이지 않습니다.</figcaption></figure>
+  <div class="help-grid">
+    <div class="card"><b>입장하지 못했어요</b><p>학번·반·코드 만료를 확인합니다.</p></div>
+    <div class="card"><b>아직 시작 전이에요</b><p>이번 수업의 첫 개념으로 안내합니다.</p></div>
+    <div class="card"><b>개념·퀴즈에서 멈췄어요</b><p>피드백을 읽고 다시 풀게 합니다.</p></div>
+    <div class="card"><b>실습에서 막혔어요</b><p>실행 결과·검증 안내·블록 힌트를 봅니다.</p></div>
+    <div class="card"><b>검증은 통과했어요</b><p><b class="ui">작품 제출</b>까지 하게 합니다.</p></div>
+    <div class="card"><b>필수 활동을 마쳤어요</b><p>선택 도전이나 추가 복습을 권합니다.</p></div>
+  </div>
+  <div class="note small"><b>개인 비밀번호를 잊었다면</b><br>그 학번의 <b class="ui">비밀번호 초기화</b>를 누릅니다. 한 번 보이는 <b>30분짜리 임시 비밀번호</b>는 그 학생에게만 전달합니다. 다시 개인 비밀번호를 정하며, 학습·제출 기록은 유지됩니다.</div>
+  <footer class="footer"><span>CS Class · 학생별 도움</span><span>5 / 7</span></footer>
+</section>
 
-  <h2>4. 학생 화면 미리 체험하기</h2>
-  <p>수업 관리 화면 위쪽의 <b class="ui">수업 미리보기</b>를 누르면 학생과 똑같은 화면을 직접 해 볼 수 있습니다. 위쪽 <b>체험 수업</b>에서 다른 수업으로 바꿀 수 있고, 미리보기에서 한 것은 이 창에만 남아 학생 기록에는 영향을 주지 않습니다.</p>
-  <figure><img src="images/06-preview-concept.png" alt="수업 미리보기의 개념 단계"><figcaption>미리보기 화면. 가운데 탭으로 개념·퀴즈·실습을 오갑니다.</figcaption></figure>
+<section class="page" aria-labelledby="save-submit">
+  <header class="page-header">
+    <p class="kicker">2부 · 실제 수업 운영 / 저장과 제출</p>
+    <h2 id="save-submit">저장은 보관, 제출은 완료입니다</h2>
+  </header>
+  <div class="save-intro"><h3>하던 작업은 저장</h3><p>미완성 답안·블록도 <b class="ui">저장</b> 또는 <b>Ctrl+S</b></p></div>
+  <figure class="save-figure"><img src="images/18-save-header.png" alt="학생 수업 상단의 저장 버튼과 저장 완료 상태"><figcaption>버튼을 누른 뒤 <b>저장 완료</b>인지 확인합니다.</figcaption></figure>
+  <h3>실습은 검증을 통과한 뒤, 제출까지</h3>
+  <div class="submit-flow">
+    <div class="card"><b>1. 실행 결과 확인</b><span>실행 중이면 정지합니다.</span></div>
+    <div class="card"><b>2. 조건 검증</b><span>보완할 곳을 고칩니다.</span></div>
+    <div class="card"><b>3. 작품 제출</b><span>성공 표시를 확인합니다.</span></div>
+  </div>
+  <figure class="validation-figure"><img src="images/19-validation-submit.png" alt="검증을 통과한 뒤 누르는 작품 제출 버튼"><figcaption><b>검증 통과만으로는 아직 미제출입니다.</b> 기본 미션마다 제출해야 합니다.</figcaption></figure>
+  <figure class="status-figure"><img src="images/20-submitted.png" alt="현재 작품의 제출 완료를 보여 주는 성공 상태"><figcaption>‘현재 작품 제출 완료’ 등 성공 표시가 나와야 끝입니다.</figcaption></figure>
+  <p class="small"><b>제출 후 고쳤다면 다시 검증 → 제출합니다.</b> 이전 제출본은 유지됩니다.</p>
+  <p class="muted small">편집 중에는 수동 저장합니다. 정답 확인·채점·검증·제출은 필요한 작업과 결과를 함께 저장합니다.</p>
+  <div class="note warn small"><b>저장·제출 오류가 있으면 탭을 열어 둡니다.</b><br>연결을 확인하고 <b class="ui">저장 다시 확인 / 결과 다시 확인</b>으로 재시도합니다. 해결 전에는 새로고침하거나 창을 닫지 않습니다.</div>
+  <footer class="footer"><span>CS Class · 미완성 작업과 완료 제출</span><span>6 / 7</span></footer>
+</section>
 
-  <h2>5. 학생이 하는 일</h2>
-  <h3>입장</h3>
-  <p>학생은 첫 화면에서 <b class="ui">학생으로 입장</b> → 학번 5자리와 비밀번호로 로그인합니다. 들어오면 대시보드 맨 위의 <b>이번 수업</b>이나 <b>열린 수업</b> 목록에서 수업을 고릅니다.</p>
-  <h3>수업 한 개 = 3단계</h3>
-  <table>
-    <tr><th>단계</th><th>학생이 하는 일</th><th>완료 기준</th></tr>
-    <tr><td>개념</td><td>설명과 그림을 보고 확인 문제를 풉니다. 틀려도 감점 없이 다시 풀 수 있습니다.</td><td>모든 확인 문제 정답</td></tr>
-    <tr><td>퀴즈</td><td>5문항을 모두 고른 뒤 결과를 확인하고, 틀린 문제만 다시 풉니다.</td><td>모든 문항 정답</td></tr>
-    <tr><td>실습</td><td>엔트리 블록으로 미션을 만들고 실행 → <b class="ui">조건 검증</b> → <b class="ui">작품 제출</b>합니다.</td><td>기본 미션 모두 제출</td></tr>
-  </table>
-  <figure class="small"><img src="images/07-preview-practice.png" alt="실습 단계의 엔트리 작업실"><figcaption>실습 화면. 위에 미션 목록(마지막이 선택 도전), 그 아래 미션 설명과 힌트가 있고, 더 아래에 엔트리 작업실이 있습니다.</figcaption></figure>
-  <h3>도전 미션과 배지</h3>
-  <p>세 수업에는 기본 미션 뒤에 <b>선택 도전 미션</b>이 하나씩 있습니다. 도전 미션은 완료 조건에 들어가지 않지만, 제출하면 <b>배지</b>를 받습니다. 빨리 끝낸 학생에게 도전 미션을 권해 주세요.</p>
-  <table>
-    <tr><th>수업</th><th>도전 미션</th></tr>
-    <tr><td>프로그래밍의 기초</td><td>거스름돈 계산기 (낸 돈 − 물건값을 ‘거스름돈은 ○원’ 문장으로 말하기)</td></tr>
-    <tr><td>조건에 따라 달라지는 프로그램</td><td>놀이기구 탑승 (키 130 이상 <b>그리고</b> 나이 10 이상이면 탈 수 있어요)</td></tr>
-    <tr><td>반복으로 똑똑하게</td><td>비밀번호 금고 (1234를 맞힐 때까지 계속 묻기)</td></tr>
-  </table>
-  <div class="box warn"><strong>저장은 학생이 직접 눌러야 합니다</strong>이 사이트는 자동 저장이 없습니다. 학생에게 수시로 화면 위쪽 <b class="ui">저장</b> 버튼(또는 Ctrl+S)을 누르라고 안내해 주세요. 정답 확인·퀴즈 채점·작품 제출은 누르는 순간 저장됩니다. 저장하지 않고 나가려 하면 사이트가 한 번 더 물어봅니다.</div>
-
-  <h2>6. 학생 진행 상황 확인하기</h2>
-  <p>왼쪽 메뉴의 <b class="ui">학생 현황·계정</b>에서 학생별로 개념·퀴즈·실습을 얼마나 했는지 봅니다. 오른쪽 위 <b>확인할 수업</b>에서 볼 수업을 고르고, 학번이나 닉네임으로 검색할 수 있습니다.</p>
-  <figure><img src="images/05b-student-rows.png" alt="학생 현황 화면"><figcaption>학생 현황. 학생 줄마다 제출 작품, 비밀번호 초기화 버튼이 있습니다.</figcaption></figure>
-  <ul>
-    <li><b class="ui">제출 작품</b>: 학생이 제출한 엔트리 작품을 블록 문장으로 보고, 작업실에서 직접 실행해 볼 수 있습니다. 아직 내지 않았으면 ‘미제출’로 보입니다.</li>
-    <li><b>제출 후 수정:</b> 학생이 제출한 뒤 작품을 고치면 ‘수정 중’으로 표시됩니다. 다시 검증·제출해야 새 작품이 됩니다.</li>
-    <li><b class="ui">명단에서 빼기</b>는 전학 등으로 빈 번호가 된 학생에게만 씁니다. 누르면 그 학생은 로그인할 수 없게 됩니다.</li>
-  </ul>
-
-  <h2>7. 자주 생기는 일과 해결 방법</h2>
-  <table>
-    <tr><th>상황</th><th>해결 방법</th></tr>
-    <tr><td>학생이 비밀번호를 잊었어요 / 로그인이 잠겼어요</td><td>학생 현황에서 그 학생의 <b class="ui">비밀번호 초기화</b>를 누르면 30분짜리 임시 비밀번호가 한 번 보입니다. 학생에게 알려 주면, 학생은 로그인한 뒤 새 비밀번호를 정합니다. 잠긴 계정도 이걸로 풀립니다.</td></tr>
-    <tr><td>처음 입장하는 학생이 여러 명이에요</td><td>학생 현황의 <b class="ui">첫 입장 열기</b>를 누르면 10분 동안 반 공통 입장 코드가 크게 보입니다. 학생은 학번과 이 코드로 들어와 자기 비밀번호를 정합니다.</td></tr>
-    <tr><td>학생 화면에 수업이 안 보여요</td><td>수업 관리에서 그 수업이 체크·저장되었는지 확인하고, 학생에게 대시보드의 새로고침을 누르게 합니다.</td></tr>
-    <tr><td>작업이 사라졌다고 해요</td><td>대부분 저장하지 않고 창을 닫은 경우입니다. 마지막으로 저장한 데까지는 남아 있습니다. 앞으로 저장 버튼을 자주 누르도록 안내해 주세요.</td></tr>
-    <tr><td>‘조건 검증’이 통과하지 않아요</td><td>검증 아래 안내 문구가 무엇을 고칠지 알려 줍니다. 미션 설명의 <b class="ui">블록 연결 힌트 보기</b>를 펼치면 조립 순서가 나옵니다.</td></tr>
-  </table>
-
-  <h2>8. 복습 시간 진행 예시 (40분)</h2>
-  <ol>
-    <li><b>시작 3분:</b> 수업 관리에서 복습할 수업을 열고 이번 수업으로 지정합니다. 학생에게 로그인과 저장 버튼을 안내합니다.</li>
-    <li><b>개념·퀴즈 15분:</b> 학생이 스스로 풀게 하고, 교사 홈의 진도로 늦는 학생을 찾아 도와줍니다.</li>
-    <li><b>실습 20분:</b> 기본 미션을 제출하게 하고, 먼저 끝낸 학생에게는 도전 미션을 권합니다.</li>
-    <li><b>정리 2분:</b> 저장을 한 번 더 누르게 한 뒤 마칩니다.</li>
-  </ol>
-  <div class="box"><strong>문의</strong>사이트 사용 중 막히는 점은 담당 정보 선생님께 알려 주세요.</div>
+<section class="page" aria-labelledby="class-finish">
+  <header class="page-header">
+    <p class="kicker">2부 · 실제 수업 운영 / 종료 확인</p>
+    <h2 id="class-finish">마치기 3~5분 전, 함께 확인합니다</h2>
+    <p class="deck">학생이 부족한 곳을 알고 다음 시간에 이어갈 수 있게 돕습니다.</p>
+  </header>
+  <div class="two-col">
+    <div class="card"><b>학생이 확인</b><ul class="checks"><li>필수 수업의 세 단계가 각각 <b>100%</b></li><li>기본 미션 <b>전부 제출 성공</b></li><li>마지막 편집 후 <b>저장 완료</b></li></ul></div>
+    <div class="card"><b>강사님이 확인</b><ul class="checks"><li>반·수업 선택 후 <b>새로고침</b></li><li>미완료 학생의 부족한 단계 확인</li><li>필요하면 <b class="ui">제출 작품</b> 살펴보기</li></ul></div>
+  </div>
+  <p class="muted small">필수 수업이 여러 개면 수업마다 확인합니다. 덜 끝난 작업도 저장하고 마칩니다.</p>
+  <h3>학생에게 이렇게 안내해 주세요</h3>
+  <div class="note"><p class="quote">“지정한 정규 수업의 개념·퀴즈·모든 기본 실습을 100%로 마치면 수행평가 만점 기준을 채울 수 있어요. 틀려도 다시 풀고 고쳐 제출하면 됩니다. 끝까지 해낼 수 있도록 도와줄게요.”</p></div>
+  <p><b>선택 도전과 ‘선택 복습’은 만점에 필수가 아닙니다.</b></p>
+  <p class="small">기초·조건·반복 정규 수업을 다시 하는 복습과, 별도 ‘선택 복습’(문제 추상화·알고리즘 설계·순서도 연구소)은 구분합니다. 선택 복습은 성적에 반영하지 않습니다.</p>
+  <p class="muted small">사이트의 학습 기록과 제출물을 바탕으로 담당 선생님이 최종 점수를 확인합니다. 가능한 한 많은 학생이 만점에 도달하도록 돕는 것이 목적입니다.</p>
+  <footer class="footer"><span>CS Class · 완료 확인과 평가 안내</span><span>7 / 7</span></footer>
+</section>
 </main>
 </body>
 </html>

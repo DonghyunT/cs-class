@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Request } from "@playwright/test";
 import { db, headers, readyStudent, entryReset, entryStart, entryStop } from "./emulator";
 import { buildProgrammingProject, parseProgrammingProject } from "../src/lib/classroom/programming-entry";
 const id="programming-13", endpoint=`/api/classroom/work/${id}`;
@@ -47,4 +47,34 @@ test("Entry 실행 중 저장은 실행을 멈추지 않고 현재 코드와 발
   await page.getByLabel("오늘 발견한 것을 한 줄로 남겨볼까요?").fill("실행 중 발견 기록");await entryStart(page).click();await expect(entryStop(page)).toBeVisible();
   await page.getByRole("button",{name:"저장",exact:true}).click();await expect(page.locator("[data-lesson-shell] header [role=status]")).toHaveText("저장 완료");
   await expect(entryStop(page)).toBeVisible();expect((await(await page.request.get(endpoint)).json()).draft.programming.reflection).toBe("실행 중 발견 기록");await entryStop(page).click();
+});
+// The sandboxed Entry frame's pointer and key events never reach this page's own listeners.
+test("Entry 작업실 안에서만 블록을 옮겨도 10분 자동 로그아웃 없이 활동을 서버에 보낸다", async ({ page }) => {
+  const statuses: number[] = []; let open = 0;
+  const touch = (request: Request) => new URL(request.url()).pathname === "/api/auth/activity";
+  page.on("request", request => { if (touch(request)) open++; });
+  const done = (request: Request) => { if (touch(request)) open--; };
+  page.on("requestfinished", done); page.on("requestfailed", done);
+  page.on("response", response => { if (touch(response.request())) statuses.push(response.status()); });
+  await page.clock.install(); await page.reload(); await page.locator("iframe").scrollIntoViewIfNeeded(); await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+  const block = page.frameLocator("iframe").locator("#entryWorkspaceBoard g.block").filter({ hasText: "시작하기 버튼" }).first();
+  // Eleven virtual minutes, one drag a minute: past the 10-minute student timeout and its 60-second warning.
+  for (let minute = 0; minute < 11; minute++) {
+    await expect(page.getByText("곧 자동 로그아웃돼요."), `${minute}분째 경고`).toBeHidden();
+    const box = (await block.boundingBox())!, dx = minute % 2 ? -40 : 40;
+    await page.mouse.move(box.x + 50, box.y + 15); await page.mouse.down(); await page.mouse.move(box.x + 50 + dx, box.y + 15, { steps: 4 }); await page.mouse.up();
+    // A touch goes out 30 seconds after the last one while the latest activity is under a minute old.
+    await page.clock.fastForward(31_000); await expect.poll(() => open).toBe(0);
+    await page.clock.fastForward(29_000); await expect.poll(() => open).toBe(0);
+  }
+  await expect(page.getByText("곧 자동 로그아웃돼요.")).toBeHidden();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(page.locator("[data-lesson-shell] header [role=status]")).toHaveText("저장 완료");
+  expect(statuses.length).toBeGreaterThan(0); expect(statuses.every(status => status === 200)).toBe(true);
+});
+// The frame's own startup and replies to this page must not count as work, or shared PCs never sign out.
+test("Entry 작업실을 열어 두기만 하면 10분 뒤 자동 로그아웃한다", async ({ page }) => {
+  await page.clock.install(); await page.reload(); await page.locator("iframe").scrollIntoViewIfNeeded(); await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+  for (let minute = 0; minute < 11; minute++) await page.clock.fastForward(60_000);
+  await expect(page.getByText("오랫동안 사용하지 않아 로그아웃됐어요.", { exact: false })).toBeVisible();
 });

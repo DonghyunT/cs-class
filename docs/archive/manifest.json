@@ -3,6 +3,12 @@
   "baseline": "98781bd6e506e3ab5b1be08c39677e658215dba9",
   "records": [
     {
+      "source": "teaching-materials/instructor-guide/guide.html",
+      "archive": "docs/archive/cs-class/2026-10-24-before-instructor-guide-flow/guide.html",
+      "origin": "71ee6f9cedd9ac868973346a3e60936bd76ce610",
+      "sha256": "ff3083309628cae2665ada97eb6c15a399a1c2839a93154344dda0ff9a189e22"
+    },
+    {
       "source": "AGENTS.md",
       "archive": "docs/archive/cs-class/2026-09-26-before-refresh/AGENTS-inherited-historical.md",
       "origin": "working-tree-before-refresh",
