@@ -17,10 +17,10 @@ const letters = (text: string) => text.normalize("NFC").replace(/[^\p{L}\p{N}]/g
 const wordsIn = (line: string, words: readonly string[]) => words.filter((word) => words.reduce((rest, other) => other !== word && other.includes(word) ? rest.split(other).join("") : rest, letters(line)).includes(word));
 const outcomeOf = (line: string, words: readonly string[]) => { const found = wordsIn(line, words); return found.length > 1 ? null : found[0] ?? ""; };
 // Each decision mission's result words.
-const RESULT_WORDS: Record<string, readonly string[]> = { pass: ["합격", "불합격"], freethrow: ["훌륭", "잘했", "연습"], escape: ["성공", "실패"] };
+const RESULT_WORDS: Record<string, readonly string[]> = { pass: ["합격", "불합격"], freethrow: ["훌륭", "잘했", "연습"], ride: ["있어", "없어"] };
 // A decision whose branches are right but whose lines mix in another result's word. It quotes the
 // goal's whole phrases, not the matching stems (‘잘했’).
-const RESULT_PHRASES: Record<string, readonly string[]> = { pass: ["합격", "불합격"], freethrow: ["훌륭해요", "잘했어요", "더 연습해 보자"], escape: ["탈출 성공", "탈출 실패"] };
+const RESULT_PHRASES: Record<string, readonly string[]> = { pass: ["합격", "불합격"], freethrow: ["훌륭해요", "잘했어요", "더 연습해 보자"], ride: ["탈 수 있어요", "탈 수 없어요"] };
 export const wordingMessage = (id: string) => `조건은 맞게 나눴어요. 결과를 말할 때 ${RESULT_PHRASES[id].map((w) => `‘${w}’`).join("·")} 중 맞는 말 하나만 넣어 주세요.`;
 // Entry 4.0.23 `Entry.Utils.isNumber`: ‘+’ adds these and joins anything else as text.
 const numeric = (v: unknown) => typeof v === "number" || typeof v === "string" && /^-?\d+\.?\d*(?:[eE][+-]?\d+)?$/.test(v);
@@ -290,18 +290,20 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   const decides = (cases: [number, string][]) => { const runs = cases.map(([input]) => run("click", [String(input)])); return runs.every((r) => r.asks === 1) && saysOnly(runs, cases.map((c) => c[1])); };
   function grade(): boolean {
     if (id === "name") return ["초코", "보리"].every((value) => { const r = run("click", [value]); return r.asks === 1 && r.sayings.some((s) => s.input && s.text.includes(value)); });
-    if (id === "multiply" || id === "average") return [[6, 4], [3, 7], [-2, 5], [0, 9]].every(([a, b]) => {
-      const r = run("click", [String(a), String(b)]), expected = id === "multiply" ? a * b : (a + b) / 2;
+    // The change challenge subtracts the price from the money paid and says it with ‘원’ in one line.
+    if (id === "multiply" || id === "average" || id === "change") return (id === "change" ? [[5000, 3200], [10000, 7500], [1000, 1000], [3000, 450]] : [[6, 4], [3, 7], [-2, 5], [0, 9]]).every(([a, b]) => {
+      const r = run("click", [String(a), String(b)]), expected = id === "multiply" ? a * b : id === "average" ? (a + b) / 2 : a - b;
       // The last line that shows a calculation from the inputs is the answer; a closing line may follow.
       const shown = r.sayings.filter((s) => s.computed !== undefined).at(-1);
       const values = shown?.text.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
-      return r.asks === 2 && storedInputs(r, a, b) && !!shown && Math.abs(shown.computed! - expected) < 0.0001 && values.some((v) => Math.abs(v - expected) < 0.0001);
+      return r.asks === 2 && storedInputs(r, a, b) && !!shown && Math.abs(shown.computed! - expected) < 0.0001 && values.some((v) => Math.abs(v - expected) < 0.0001) && (id !== "change" || letters(shown.text).includes("원"));
     });
     if (id === "pass") return decides([59, 60, 100, 0, 61, 35].map((score) => [score, score >= 60 ? "합격" : "불합격"]));
     if (id === "freethrow") return decides([9, 8, 7, 5, 4, 10, 6, 0, 2].map((count) => [count, count >= 8 ? "훌륭" : count >= 5 ? "잘했" : "연습"]));
-    if (id === "escape") {
-      const pairs = [[1, 1], [1, 0], [0, 1], [0, 0]], runs = pairs.map(([a, b]) => run("click", [String(a), String(b)]));
-      return runs.every((r, i) => r.asks === 2 && storedInputs(r, pairs[i][0], pairs[i][1]) && r.usedLogic) && saysOnly(runs, pairs.map(([a, b]) => a || b ? "성공" : "실패"));
+    // Height and age, with each limit met, missed by one, and both missed.
+    if (id === "ride") {
+      const pairs = [[130, 10], [129, 10], [130, 9], [150, 15], [120, 8], [160, 9], [129, 30]], runs = pairs.map(([a, b]) => run("click", [String(a), String(b)]));
+      return runs.every((r, i) => r.asks === 2 && storedInputs(r, pairs[i][0], pairs[i][1]) && r.usedLogic) && saysOnly(runs, pairs.map(([height, age]) => height >= 130 && age >= 10 ? "있어" : "없어"));
     }
     if (id === "square") return regular(visible(run("click", []).segments), 4, 100);
     if (id === "polygon") return [3, 5, 6, 4, 8, 7].every((sides) => { const r = run("click", [String(sides)]); return r.asks === 1 && regular(visible(r.segments, sides), sides); });

@@ -15,7 +15,7 @@ export type LessonPanelProps = {
   mode: LessonMode;
   locked: boolean;
   actionLocked: boolean;
-  runAction: (action: WorkAction, focusId: string) => Promise<void>;
+  runAction: (action: WorkAction, focusId: string | readonly string[]) => Promise<void>;
   switchStage: (stage: Stage) => Promise<void>;
 };
 
@@ -57,8 +57,8 @@ export function LessonConceptPanel({ lesson, controller, mode, locked, actionLoc
       </div><div className={`${styles.checkArea} ${conceptStyles.check}`}><AnswerChoices question={concept.question} answer={draft.conceptAnswers[concept.id]} disabled={locked || solved} onChange={(answer) => update({ ...draft, conceptAnswers: { ...draft.conceptAnswers, [concept.id]: answer } })} /><Hint hint={concept.question.hint} />
         {feedback && feedbackCurrent && <p id={`concept-feedback-${concept.id}`} tabIndex={-1} role="status" className={feedback.correct ? styles.feedbackGood : styles.feedbackRetry}>{feedback.correct && <Check size={16} />}<span><strong>{feedback.correct ? "맞았어요." : "다시 생각해 보기"}</strong> {feedback.message}</span></p>}
         {feedback && feedbackCurrent && <p className={styles.smallNote}>{mode === "preview" ? "확인 결과는 이 창에만 남아요." : "확인 결과는 저장 버튼 없이 바로 저장돼요."}</p>}
-        {!solved && <Button disabled={actionLocked || !draft.conceptAnswers[concept.id]} onClick={() => void runAction({ type: "check-concept", conceptId: concept.id }, `concept-feedback-${concept.id}`)}>{busy ? "확인 중…" : "정답 확인"}</Button>}
-      </div><div className={conceptStyles.footer}><Button variant="ghost" disabled={locked || index === 0} onClick={() => onSelectConcept(lesson.concepts[index - 1].id)}><ArrowLeft size={16} />이전 개념</Button>{index < lesson.concepts.length - 1 ? <Button variant="ghost" disabled={locked} onClick={() => onSelectConcept(lesson.concepts[index + 1].id)}>다음 개념<ArrowRight size={16} /></Button> : <Button disabled={actionLocked} onClick={() => void switchStage("quiz")}>퀴즈로 이동<ArrowRight size={16} /></Button>}</div></article>;
+        {!solved && <Button disabled={actionLocked || !draft.conceptAnswers[concept.id]} onClick={() => void runAction({ type: "check-concept", conceptId: concept.id }, [`concept-next-${concept.id}`, `concept-feedback-${concept.id}`])}>{busy ? "확인 중…" : "정답 확인"}</Button>}
+      </div><div className={conceptStyles.footer}><Button variant="ghost" disabled={locked || index === 0} onClick={() => onSelectConcept(lesson.concepts[index - 1].id)}><ArrowLeft size={16} />이전 개념</Button>{index < lesson.concepts.length - 1 ? <Button id={solved ? `concept-next-${concept.id}` : undefined} aria-describedby={solved && feedback && feedbackCurrent ? `concept-feedback-${concept.id}` : undefined} variant={solved ? "default" : "ghost"} disabled={locked} onClick={() => onSelectConcept(lesson.concepts[index + 1].id)}>다음 개념<ArrowRight size={16} /></Button> : <Button id={solved ? `concept-next-${concept.id}` : undefined} aria-describedby={solved && feedback && feedbackCurrent ? `concept-feedback-${concept.id}` : undefined} disabled={actionLocked} onClick={() => void switchStage("quiz")}>퀴즈로 이동<ArrowRight size={16} /></Button>}</div></article>;
   })}</div>
   </div>
 </section>;

@@ -775,7 +775,7 @@ test("희귀 배지: 오뚝이·올클리어는 받으면 이름과 함께 반�
   work.conceptSolved = conditionals.concepts.map(concept => concept.id);
   work.quizSolved = conditionals.quiz.map(question => question.id);
   work.quizRound = 3;
-  work.missions = Object.fromEntries(["average", "pass", "freethrow", "escape"].map(id => [id, { validation: null, submission: submission(`${id}-submitted`) }]));
+  work.missions = Object.fromEntries(["average", "pass", "freethrow", "ride"].map(id => [id, { validation: null, submission: submission(`${id}-submitted`) }]));
   work.updatedAt = Date.now();
   await saveWork(work);
   await page.emulateMedia({ reducedMotion: "reduce" });

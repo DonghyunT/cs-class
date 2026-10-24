@@ -11,6 +11,7 @@
 .tile[data-tone="false"] { border-color: #efb3b3; background: #fdecec; color: #a03a3a; }
 .tile[data-tone="purple"] { border-color: #cdbbe6; background: #f1eafa; color: #6d47a3; }
 .op { font-size: 22px; font-weight: 700; color: #7a8aa6; }
+.opWord { font-size: 15px; font-weight: 800; letter-spacing: 0.04em; color: #4b5b7a; }
 .block { padding: 7px 14px; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 650; white-space: nowrap; }
 .block[data-kind="flow"] { background: #0284c7; }
 .block[data-kind="brush"] { background: #ea580c; }

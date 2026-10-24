@@ -54,12 +54,12 @@ test("배지 모음은 열린 수업 기준으로 세고, 셀 수 없는 배지�
     concepts: [2, 2, true],
     "perfect-quiz": [0, 2, false],
     missions: [1, 2, true],
-    challenge: [1, 1, true],
+    challenge: [1, 2, true],
     "lesson-complete": [1, 2, true],
     "review-complete": [0, 1, false],
     // programming: concepts, missions, complete; loops: concepts. The first star needs 10 stamps.
     stamps: [4, 8, false],
-    "all-clear": [0, 1, false],
+    "all-clear": [0, 2, false],
     comeback: [1, 3, true],
   });
   const where = Object.fromEntries(badgesFor([programming, loops, abstraction], work).map(badge => [badge.id, badge.lessons]));
@@ -73,8 +73,8 @@ test("배지 모음은 열린 수업 기준으로 세고, 셀 수 없는 배지�
     "review-complete": [],
     comeback: [programming.title],
   });
-  // No review, no optional mission and fewer than three regular lessons: those badges disappear.
-  expect(badgesFor([programming], {}).map(badge => badge.id)).toEqual(["stamps", "comeback", "concepts", "perfect-quiz", "missions", "lesson-complete", "first-step", "first-work"]);
+  // No review and fewer than three regular lessons: those badges disappear.
+  expect(badgesFor([programming], {}).map(badge => badge.id)).toEqual(["stamps", "all-clear", "comeback", "concepts", "perfect-quiz", "missions", "challenge", "lesson-complete", "first-step", "first-work"]);
   expect(badgesFor([], {})).toEqual([]);
 });
 

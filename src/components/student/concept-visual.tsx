@@ -4,7 +4,8 @@ import styles from "./concept-visual.module.css";
 // Small static pictures for the common concept screen of the conditionals and loops lessons.
 // Keyed by concept id; lessons without an entry (reviews, programming-13) show nothing.
 const Tile = ({ tone = "blue", sub, children }: { tone?: "blue" | "true" | "false" | "purple"; sub?: string; children: ReactNode }) => <b className={styles.tile} data-tone={tone}>{children}{sub && <small>{sub}</small>}</b>;
-const Op = ({ children }: { children: ReactNode }) => <span className={styles.op}>{children}</span>;
+// `word` ops (AND, OR) are words: a `+` there read like addition.
+const Op = ({ children, word }: { children: ReactNode; word?: true }) => <span className={word ? styles.opWord : styles.op}>{children}</span>;
 const Card = ({ title, children }: { title: string; children: ReactNode }) => <div className={styles.card}><strong>{title}</strong>{children}</div>;
 const Row = ({ children }: { children: ReactNode }) => <div className={styles.row}>{children}</div>;
 // Entry-like block: `kind` picks the block category colour (flow, brush).
@@ -35,8 +36,8 @@ export const CONCEPT_VISUALS: Record<string, { label: string; node: ReactNode }>
   cc0: { label: "괄호 안의 6 + 4를 먼저 계산해 10, 그다음 2로 나누어 5가 되는 과정", node: <Row><Tile sub="A + B">( 6 + 4 )</Tile><Op>→</Op><Tile tone="purple">10</Tile><Op>÷</Op><Tile>2</Tile><Op>=</Op><Tile tone="true">5</Tile></Row> },
   cc1: { label: "대답이 75일 때 75 ≥ 60은 참, 75 < 60은 거짓", node: <><Card title="75 ≥ 60"><Tile tone="true">참</Tile></Card><Card title="75 < 60"><Tile tone="false">거짓</Tile></Card></> },
   cc2: { label: "그리고(AND)는 둘 다 참일 때 참, 또는(OR)은 하나만 참이어도 참, 아니다(NOT)는 참을 거짓으로 뒤집음", node: <>
-    <Card title="그리고 (AND)"><Row><Tile tone="true">참</Tile><Op>+</Op><Tile tone="true">참</Tile><Op>→</Op><Tile tone="true">참</Tile></Row><small>둘 다 참일 때만</small></Card>
-    <Card title="또는 (OR)"><Row><Tile tone="false">거짓</Tile><Op>+</Op><Tile tone="true">참</Tile><Op>→</Op><Tile tone="true">참</Tile></Row><small>하나라도 참이면</small></Card>
+    <Card title="그리고 (AND)"><Row><Tile tone="true">참</Tile><Op word>AND</Op><Tile tone="true">참</Tile><Op>→</Op><Tile tone="true">참</Tile></Row><small>둘 다 참일 때만</small></Card>
+    <Card title="또는 (OR)"><Row><Tile tone="false">거짓</Tile><Op word>OR</Op><Tile tone="true">참</Tile><Op>→</Op><Tile tone="true">참</Tile></Row><small>하나라도 참이면</small></Card>
     <Card title="아니다 (NOT)"><Row><Tile tone="true">참</Tile><Op>→</Op><Tile tone="false">거짓</Tile></Row><small>뒤집어요</small></Card></> },
   // Each arrow is its own path so every segment gets a head, and the tip stops at the box edge.
   cc3: { label: "순차는 위에서 아래로, 선택은 조건에 따라 참과 거짓으로 길이 갈라지고, 반복은 앞으로 되돌아가는 흐름", node: <>

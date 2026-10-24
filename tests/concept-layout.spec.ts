@@ -62,7 +62,8 @@ test("수업별 체험·확인 문제·완료 기록과 마지막 개념의 퀴�
     await expect(page.locator(`#concept-${first.id}`)).toContainText(first.example);
     await page.getByRole("radio").first().check();
     await page.getByRole("button", { name: "정답 확인", exact: true }).click();
-    await expect(page.locator(`#concept-feedback-${first.id}`)).toBeFocused();
+    // A right answer moves focus to the next button, a wrong one to the feedback.
+    await expect(page.locator(":focus")).toHaveAttribute("id", new RegExp(`^concept-(next|feedback)-${first.id}$`));
     if (["review-sandwich", "review-abstraction", "review-flowchart"].includes(lesson.id)) await expect(page.locator("[data-concept-experience]")).toBeVisible();
     await nav.getByRole("button").last().click();
     await expect(page.locator(`#concept-title-${lesson.concepts.at(-1)!.id}`)).toBeFocused();
