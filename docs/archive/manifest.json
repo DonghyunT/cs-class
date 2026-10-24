@@ -251,6 +251,13 @@
       "origin": "completed-plan-archived-20261024",
       "baseCommit": "a4a832d",
       "sha256": "54fcd8680223d2e436322856b8b29650f12745fb9149342cbd5337860fc14585"
+    },
+    {
+      "source": "docs/plans/color-refresh.md",
+      "archive": "docs/archive/cs-class/2026-10-24-color-refresh-plan/color-refresh.md",
+      "origin": "completed-plan-archived-20261024",
+      "baseCommit": "ccb7e6c",
+      "sha256": "f7cbbc718c7993c14a93681a1bc66fd51e6289e0e2c5193afaa9a6e7cb73e1b9"
     }
   ]
 }

@@ -26,7 +26,7 @@ export const hasCustomLearning = (lesson: Lesson) => lesson.id === "programming-
 export function ProgrammingLearningStage(props: Props) {
   const { controller, locked, lesson } = props;
   const { draft } = controller;
-  if (draft.stage === "quiz" || draft.stage === "concept" && !hasCustomLearning(lesson)) return null;
+  if (draft.stage === "quiz" || (draft.stage === "concept" && !hasCustomLearning(lesson))) return null;
   return <section id={`panel-${draft.stage}`} role="tabpanel" aria-labelledby={`tab-${draft.stage}`} className={styles.panel}>
     <h2 id={`stage-heading-${draft.stage}`} tabIndex={-1} className={styles.srOnly}>{draft.stage === "concept" ? "직접 실험하고 생각해요" : "실습 미션에 도전해요"}</h2>
     {draft.stage === "concept" ? <ProgrammingConcept {...props} /> : <ProgrammingPractice {...props} />}
