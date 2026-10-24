@@ -66,7 +66,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const onActivity = (event: Event) => {
       if (!event.isTrusted || !current.current) return;
       // Work inside a sandboxed frame (the Entry editor) reaches this page only as that frame's messages.
-      if (event instanceof MessageEvent && !Array.from(document.querySelectorAll("iframe")).some((frame) => frame.contentWindow === event.source)) return;
+      // `parent` is readable even on a cross-origin frame, so this needs no DOM scan per message; the page's own messages don't count.
+      if (event instanceof MessageEvent && (event.source === window || (event.source as Window | null)?.parent !== window)) return;
       const now = Date.now(); if (now - activity.current < 1000) return;
       activity.current = now; channel?.postMessage({ uid, at: now });
     };
