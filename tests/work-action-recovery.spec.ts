@@ -240,7 +240,7 @@ test("개념 요청 반영 뒤 응답 유실은 GET로 결과를 회복하고 PO
   await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
   await expect(page.locator("#work-action-error")).toBeVisible();
   await page.getByRole("button", { name: "결과 다시 확인", exact: true }).click();
-  await expect(page.locator("#concept-feedback-algorithm")).toBeFocused();
+  await expect(page.locator("#concept-next-algorithm")).toBeFocused();
   await expect(page.getByRole("tab", { name: "개념 50%", exact: true })).toBeVisible();
   await expect(page.locator("#work-action-error")).toHaveCount(0);
   expect(posts).toBe(1);

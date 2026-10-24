@@ -85,7 +85,7 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
         try { await expect(page.getByRole("button", { name: "다음 개념", exact: true })).toBeDisabled(); }
         finally { release(); }
       } else await page.getByRole("button", { name: "정답 확인" }).click();
-      await expect(page.locator("#concept-feedback")).toBeFocused();
+      await expect(page.locator("#concept-next")).toBeFocused();
       await expect(page.getByRole("button", { name: "개념 확인 완료" })).toBeDisabled();
       if (i < answers.length - 1) await page.getByRole("button", { name: "다음 개념", exact: true }).click();
     }
@@ -97,7 +97,8 @@ test("계정 수업의 개념·퀴즈 오답 재도전과 재접속 · 교사의
     }
     await page.getByRole("button", { name: "이번 회차 결과 확인" }).click();
     await expect(page.getByRole("tab", { name: "퀴즈 80%" })).toBeVisible();
-    await expect(page.locator("#programming-quiz-result")).toBeFocused();
+    await expect(page.locator("#programming-quiz-next")).toHaveText("틀린 문제만 다시 풀기");
+    await expect(page.locator("#programming-quiz-next")).toBeFocused();
     await page.getByRole("button", { name: "틀린 문제만 다시 풀기" }).click();
     await expect(page.getByRole("radio")).toHaveCount(3);
     await expect(page.locator("#programming-question")).toBeFocused();

@@ -76,7 +76,7 @@ test("abstraction: 상태·조건과 목표를 연결하고 하위 단계를 펼
   await expect(experience.getByRole("status")).toContainText("제출");
   await page.getByRole("radio", { name: "목표 상태", exact: true }).check();
   await page.getByRole("button", { name: "정답 확인", exact: true }).click();
-  await expect(page.locator("#concept-feedback-state")).toBeFocused();
+  await expect(page.locator("#concept-next-state")).toBeFocused();
   await page.getByRole("navigation", { name: "개념 목록" }).getByRole("button", { name: /분해하고 핵심/ }).click();
   await expect(experience.getByText("목표: 안전하게 라면을 끓여 먹기", { exact: true })).toBeVisible();
   await experience.locator("summary").first().focus();
@@ -187,7 +187,7 @@ test("concept-nav: 한 개념·자유 이동·순서 밖 완료와 단계 왕복
   await page.getByRole("button", { name: /알고리즘의 다섯 조건/ }).click();
   await page.getByRole("radio", { name: "유한성", exact: true }).check();
   await page.getByRole("button", { name: "정답 확인", exact: true }).click();
-  await expect(page.locator("#concept-feedback-finite")).toBeFocused();
+  await expect(page.locator("#concept-next-finite")).toBeFocused();
   await expect(page.locator("#concept-finite")).toBeVisible();
   await page.reload();
   await expect(page.locator("#concept-clear")).toBeVisible();
@@ -304,7 +304,7 @@ test("quiz-nav: 단일 문항·미답변 이동·채점·오답만 재도전·�
   await page.getByRole("tab", { name: /퀴즈/ }).click();
   await expect(page.locator("#quiz-question-title")).toHaveText(questions.at(-1)!.prompt);
   await page.getByRole("button", { name: "이번 회차 결과 확인", exact: true }).click();
-  await expect(page.locator("#quiz-round-result")).toBeFocused();
+  await expect(page.locator("#quiz-next-action")).toBeFocused();
   const graded = await savedWork(page, endpoint);
   expect(graded.draft.quizAnswers).toEqual(before.draft.quizAnswers);
   const wrong = graded.quizRoundIds.filter(id => !graded.quizSolved.includes(id));
@@ -320,7 +320,7 @@ test("quiz-nav: 단일 문항·미답변 이동·채점·오답만 재도전·�
     await page.getByRole("radio").nth(original.options.findIndex(option => option.correct)).check();
   }
   await page.getByRole("button", { name: "이번 회차 결과 확인", exact: true }).click();
-  await expect(page.locator("#quiz-round-result")).toBeFocused();
+  await expect(page.locator("#quiz-next-action")).toBeFocused();
   const completed = await savedWork(page, endpoint);
   expect(completed.quizSolved.sort()).toEqual(questions.map(question => question.id).sort());
   await nav.getByRole("button").last().click();
@@ -460,7 +460,7 @@ test("quiz-nav: 채점·재도전 실패는 답안과 현재 문항을 보존", 
   await page.getByRole("button", { name: "저장된 요청 다시 보내기", exact: true }).click();
   expect((await gradeResend).postDataJSON()).toEqual(gradePayload);
   await expect(page.locator("#work-action-error")).toHaveCount(0);
-  await expect(page.locator("#quiz-round-result")).toBeFocused();
+  await expect(page.locator("#quiz-next-action")).toBeFocused();
   const graded = await savedWork(page, endpoint);
   expect(posts).toBe(2);
   let retryPayload: unknown;

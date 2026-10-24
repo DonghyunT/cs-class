@@ -167,8 +167,8 @@ test("개념 기준선과 체험 초기화 위치·선택 표현을 맞추고 �
   await page.getByRole("radio").first().check();
   await page.getByRole("button", { name: "정답 확인", exact: true }).click();
   await expect(article).toContainText("완료");
-  // 완료 표시 이후 정답 확인의 Effect가 피드백으로 초점을 옮긴 뒤 다음 조작을 시작한다.
-  await expect(article.locator("#concept-feedback-clear")).toBeFocused();
+  // 완료 표시 이후 정답 확인의 Effect가 다음 버튼으로 초점을 옮긴 뒤 다음 조작을 시작한다.
+  await expect(article.locator("#concept-next-clear")).toBeFocused();
   await reset.click();
   await expect(reset).toBeFocused();
   await expect(experience.locator('[data-jam]')).toHaveCount(0);

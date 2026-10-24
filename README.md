@@ -132,6 +132,7 @@ cs-class/
 ├─ public/concepts/       # 개념 화면 정적 그림(엔트리 블록 이미지 캡처)
 ├─ scripts/               # 에뮬레이터 시드, 선별 검증기, 문서 검사 스크립트
 ├─ teaching-materials/    # 교사가 투사하는 독립 수업 자료 (로그인·DB 미사용, 자료 자체 빌드 build.cjs가 public/festival-romance.html도 만듦)
+│  └─ instructor-guide/   # 강사님께 보내는 사이트 사용법 안내서(PDF와 원본 HTML, 캡처·PDF 다시 만들기 스크립트)
 ├─ docs/                  # PRD, DESIGN, DEVELOPMENT, FIREBASE_SETUP, HANDOFF 핵심 문서
 │  ├─ plans/              # 진행 중인 작업 계획 (필요할 때 만들고, 끝나면 보관)
 │  ├─ archive/            # 지난 문서 원문 스냅샷 (수정 금지)

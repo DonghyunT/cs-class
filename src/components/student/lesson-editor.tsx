@@ -26,7 +26,7 @@ import { LessonQuizPanel } from "./lesson-quiz-panel";
 const stages = [{ id: "concept", label: "개념", icon: BookOpen }, { id: "quiz", label: "퀴즈", icon: CheckCircle2 }, { id: "practice", label: "실습", icon: Layers3 }] as const;
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
-export type LessonFrame = { stage: Stage; saveLabel: string; save?: () => Promise<boolean>; saveDisabled?: boolean; learningStatus: ReactNode; navigation: ReactNode; focusRequest: { id: string; preventScroll?: boolean } | null };
+export type LessonFrame = { stage: Stage; saveLabel: string; save?: () => Promise<boolean>; saveDisabled?: boolean; learningStatus: ReactNode; navigation: ReactNode; focusRequest: { id: string | readonly string[]; preventScroll?: boolean } | null };
 
 export type WorkspaceView = { returnOrigin: LessonOrigin; workspaceWide: boolean; practiceFocused: boolean; onPracticeFocusedChange: (focused: boolean) => void; onWorkspaceWideChange: (wide: boolean) => void; onWorkspaceStageChange: (stage: Stage) => void };
 
@@ -62,7 +62,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   const keepPractice = practiceVisited && (reviewType === "sandwich" || reviewType === "abstraction");
   const [moveMessage, setMoveMessage] = useState("");
   const [switchingTo, setSwitchingTo] = useState<Stage | null>(null);
-  const [focusRequest, setFocusRequest] = useState<{ id: string; preventScroll?: boolean } | null>(null);
+  const [focusRequest, setFocusRequest] = useState<{ id: string | readonly string[]; preventScroll?: boolean } | null>(null);
   const [conceptId, setConceptId] = useState(() => lesson.concepts.find((item) => !initial.conceptSolved.includes(item.id))?.id ?? lesson.concepts[0]?.id);
   const displayedConcept = useRef(conceptId);
   useEffect(() => { displayedConcept.current = conceptId; }, [conceptId]);
@@ -99,7 +99,8 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     else return;
     event.preventDefault(); void switchStage(stages[next].id, true);
   }, [switchStage]);
-  async function runAction(action: WorkAction, focusId: string) {
+  // `focusId` may list targets; the first one on screen takes focus (the next button once an answer is right).
+  async function runAction(action: WorkAction, focusId: string | readonly string[]) {
     if (await perform(action)) {
       if (action.type === "retry-quiz") setQuizQuestionId(lesson.quiz.find((question) => !work.quizSolved.includes(question.id))?.id ?? lesson.quiz[0]?.id);
       const current = controller.getDraft();
@@ -114,8 +115,8 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     const programming = lesson.practice.type === "programming";
     // Only the first programming lesson has its own concept and quiz screens.
     const customLearning = programming && hasCustomLearning(lesson);
-    const id = action.type === "check-concept" ? customLearning ? "concept-feedback" : `concept-feedback-${action.conceptId}` :
-      action.type === "grade-quiz" ? customLearning ? "programming-quiz-result" : "quiz-round-result" :
+    const id: string | readonly string[] = action.type === "check-concept" ? customLearning ? ["concept-next", "concept-feedback"] : [`concept-next-${action.conceptId}`, `concept-feedback-${action.conceptId}`] :
+      action.type === "grade-quiz" ? customLearning ? "programming-quiz-next" : "quiz-next-action" :
       action.type === "retry-quiz" ? customLearning ? "programming-question" : "quiz-question-title" :
       reviewType ? "review-action-feedback" : action.type === "submit-practice" ? programming ?
         missionsFor(lesson.id).at(-1)?.id === controller.getDraft().programming?.mission ? "programming-mission-complete" : "programming-next-mission"

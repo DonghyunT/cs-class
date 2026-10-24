@@ -16,7 +16,7 @@ export function LessonShell({ lesson, returnOrigin, workspaceWide, practiceFocus
   lesson: Lesson; returnOrigin: LessonOrigin; workspaceWide: boolean; practiceFocused?: boolean; practiceActive?: boolean; onPracticeFocusedChange?: (focused: boolean) => void; saveLabel: string;
   preview?: { classId: string; controls: ReactNode };
   save?: () => Promise<boolean>; saveDisabled?: boolean;
-  learningStatus?: ReactNode; navigation?: ReactNode; otherCurrent?: Lesson; focusRequest?: { id: string; preventScroll?: boolean } | null; children: ReactNode;
+  learningStatus?: ReactNode; navigation?: ReactNode; otherCurrent?: Lesson; focusRequest?: { id: string | readonly string[]; preventScroll?: boolean } | null; children: ReactNode;
 }) {
   const { session, logout } = useSession();
   const { beforeLeave } = useNavigationGuard();
@@ -30,7 +30,7 @@ export function LessonShell({ lesson, returnOrigin, workspaceWide, practiceFocus
   function changeFocus(focused: boolean) { manualFocus.current = true; onPracticeFocusedChange?.(focused); }
   useEffect(() => {
     // Stage controls and activity feedback have committed before their focus request is applied.
-    if (focusRequest) document.getElementById(focusRequest.id)?.focus({ preventScroll: focusRequest.preventScroll });
+    if (focusRequest) [focusRequest.id].flat().map((id) => document.getElementById(id)).find(Boolean)?.focus({ preventScroll: focusRequest.preventScroll });
   }, [focusRequest]);
   useEffect(() => {
     if (!open) return;

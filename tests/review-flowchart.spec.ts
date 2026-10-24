@@ -238,7 +238,7 @@ test.describe("flowchart 개념과 읽기 배치", () => {
     await expect(scene.locator('[data-node="fail"] polygon')).toHaveCount(1);
     await page.getByRole("radio", { name: "비밀번호 입력 단계", exact: true }).check();
     await page.getByRole("button", { name: "정답 확인", exact: true }).click();
-    await expect(page.locator("#concept-feedback-loop")).toBeFocused();
+    await expect(page.locator("#concept-next-loop")).toBeFocused();
     await saveDraft(page); await expect(page.getByText("저장 완료", { exact: true })).toBeVisible();
     const before = await (await page.request.get(`/api/classroom/work/${id}`)).json();
     expect(before.conceptSolved).toEqual(["loop"]);

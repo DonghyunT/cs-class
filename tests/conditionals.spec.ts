@@ -24,7 +24,7 @@ const solutions: Record<string, { project: string; runs: [string[], string][] }>
   average: { project: onBot("average", [[start(), ...store("A"), ...store("B"), speak(node("calc_basic", node("calc_basic", variable("A"), "PLUS", variable("B")), "DIVIDE", number("2")))]]), runs: [[["6", "4"], "5"]] },
   pass: { project: onBot("pass", [[start(), ask("점수는?"), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [speak(text("합격"))], [speak(text("불합격"))])]]), runs: [[["60"], "합격"], [["59"], "불합격"]] },
   freethrow: { project: onBot("freethrow", [[start(), ask("몇 개?"), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("8")), [speak(text("훌륭해요!"))], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak(text("잘했어요!"))], [speak(text("더 연습해 보자!"))])])]]), runs: [[["6"], "잘했어요!"]] },
-  escape: { project: onBot("escape", [[start(), ...store("A"), ...store("B"), ifElse(node("boolean_and_or", compare(variable("A"), "EQUAL", number("1")), "OR", compare(variable("B"), "EQUAL", number("1"))), [speak(text("탈출 성공!"))], [speak(text("탈출 실패"))])]]), runs: [[["0", "1"], "탈출 성공!"], [["0", "0"], "탈출 실패"]] },
+  ride: { project: onBot("ride", [[start(), ask("키는?"), node("set_variable", "cs-A", answer(), null), ask("나이는?"), node("set_variable", "cs-B", answer(), null), ifElse(node("boolean_and_or", compare(variable("A"), "GREATER_OR_EQUAL", number("130")), "AND", compare(variable("B"), "GREATER_OR_EQUAL", number("10"))), [speak(text("탈 수 있어요"))], [speak(text("탈 수 없어요"))])]]), runs: [[["130", "10"], "탈 수 있어요"], [["130", "9"], "탈 수 없어요"]] },
 };
 
 // Work saved before the lessons dropped the dog keeps the dog and still runs and grades.
