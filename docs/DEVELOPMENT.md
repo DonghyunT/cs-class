@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-10-24(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-10-25(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -79,8 +79,18 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 
 | 경로 | 대상 | 절차 |
 | :--- | :--- | :--- |
-| **PR 경로** | 학생 데이터·인증·권한·작업 저장 흐름(`useWork`)·Firestore 규칙·로그에 남기는 정보의 범위, 여러 화면이 함께 쓰는 공통 틀(`LessonShell`, `globals.css`), 신규 수업 추가(선별 검증기 등록 포함), 에이전트 규칙과 권한(`AGENTS.md`의 "검증 및 배포 규칙"·"절대 금지 사항", `.claude/` 설정), 배포와 검증 설정(`vercel.json`, `.vercelignore`, `firebase.json`, `firestore.indexes.json`, `.github/workflows/`, `playwright*.config.ts`, CI가 실행하는 `scripts/*.mjs`), 의존성 변경, 그리고 아래 직접 push 대상에 없는 모든 변경 | 작업 브랜치 → 로컬 검증(§3의 Tier 1~2) → GitHub PR(자동 리뷰·CI) → squash 병합 → [공개 후 확인](FIREBASE_SETUP.md#ci와-운영-공개) |
-| **직접 push 경로** | 다음에 해당하는 작은 변경만: 문서(`README.md`·`AGENTS.md`·`docs/` 아래 `*.md` — CI가 문서로 보는 범위, 단 위 에이전트 규칙 변경은 제외), 이미 있는 한 수업·한 화면의 문구·스타일·표시용 화면 코드(서버 API 호출·저장·권한 처리를 바꾸지 않는 것), `tests/` 아래 파일만 바꾸는 변경(단 `tests/fixtures/entry-legacy-*.json` 제외) | 로컬 검증(§3의 Tier 1~2, 문서만 바꾸면 `node scripts/check-docs.mjs`와 `git diff --check origin/main`만) → `main`에 직접 push → `main` CI 결과 확인. CI는 `main`에서 한 번 실행됩니다 |
+| **PR 경로** | 표 아래 'PR 경로 대상'과, 직접 push 대상에 없는 모든 변경 | 작업 브랜치 → 로컬 검증(§3의 Tier 1~2) → GitHub PR(자동 리뷰·CI) → squash 병합 → [공개 후 확인](FIREBASE_SETUP.md#ci와-운영-공개) |
+| **직접 push 경로** | 다음에 해당하는 작은 변경만: 문서(`README.md`·`AGENTS.md`·`docs/` 아래 `*.md` — CI가 문서로 보는 범위, 단 아래 PR 경로 대상의 에이전트 규칙 변경은 제외), 이미 있는 한 수업·한 화면의 문구·스타일·표시용 화면 코드(서버 API 호출·저장·권한 처리를 바꾸지 않는 것), `tests/` 아래 파일만 바꾸는 변경(단 `tests/fixtures/entry-legacy-*.json` 제외) | 로컬 검증(§3의 Tier 1~2, 문서만 바꾸면 `node scripts/check-docs.mjs`와 `git diff --check origin/main`만) → `main`에 직접 push → `main` CI 결과 확인. CI는 `main`에서 한 번 실행됩니다 |
+
+**PR 경로 대상:**
+- 학생 데이터·인증·권한·작업 저장 흐름(`useWork`)·Firestore 규칙·로그에 남기는 정보의 범위
+- 여러 화면이 함께 쓰는 공통 틀(`LessonShell`, `globals.css`)
+- 신규 수업 추가(선별 검증기 등록 포함)
+- 에이전트 규칙과 권한(`AGENTS.md`의 "검증 및 배포 규칙"·"절대 금지 사항", `.claude/` 설정)
+- 배포와 검증 설정(`vercel.json`, `.vercelignore`, `firebase.json`, `firestore.indexes.json`, `.github/workflows/`, `playwright*.config.ts`, CI가 실행하는 `scripts/*.mjs`)
+- 의존성 변경
+
+**경로 공통 규칙:**
 
 - **작업 브랜치 이름:** 기능은 `feat/<이름>`, 버그는 `fix/<이름>`, 문서·설정·정리는 `chore/<이름>`입니다.
 - **커밋 메시지:** 영어 명령형 제목(예: `Limit student logins per account`)과, 무엇을 왜 바꿨는지 적는 본문으로 씁니다. 직접 push 경로에서는 로컬에서 돌린 검사 파일과 통과 개수를 본문에 적습니다. 로컬 결과는 GitHub에 남지 않기 때문입니다.
@@ -94,9 +104,15 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 새로운 수업을 추가할 때 모든 개발자와 AI 에이전트는 아래 4단계를 순서대로 완료해야 합니다:
 
 #### 1단계: 컴포넌트 분리 (`src/components/student/...`)
-- **컴포넌트 위치:** `src/components/student/<수업ID>.tsx` 또는 전용 하위 폴더(`review/<수업ID>.tsx`).
+- **컴포넌트 위치:** `src/components/student/<수업ID>.tsx` 또는 전용 하위 폴더(`review/<수업ID>.tsx`)에 둡니다.
 - **공통 셸 구성:** [`LessonWorkspace`](../src/components/student/lesson-workspace.tsx) 또는 [`LessonEditor`](../src/components/student/lesson-editor.tsx)로 감싸 공통 헤더·진도율 바·저장 상태 배지 영역을 확보합니다.
-- **엔트리 수업:** 새 컴포넌트 없이 `practice.type: "programming"` 수업 정의(예: [`conditionals-lesson.ts`](../src/lib/classroom/conditionals-lesson.ts))를 만들면 공통 개념·퀴즈 화면과 엔트리 실습 화면을 씁니다. 미션은 `PROGRAMMING_MISSIONS`·`LESSON_MISSIONS`([§4.1](#41-entryjs-4023-실습-환경)의 수업별 미션), 미션별 허용 블록은 `MISSION_BLOCKS`, 채점 규칙은 `programming-grader.ts`에 함께 등록합니다. 규칙이 없는 미션은 통과하지 않습니다. 공통 개념 화면의 그림은 [`concept-visual.tsx`](../src/components/student/concept-visual.tsx)의 `CONCEPT_VISUALS`에 개념 ID로 등록하며(없으면 그림 없이 표시), 수업의 첫 작품은 `emptyWork`가 `missionStarter`로 만듭니다. 수업 정의는 `catalog.ts`의 `LESSONS`(공개 시 `RELEASED_LESSONS`)에 가르치는 순서대로 정규 수업 맨 뒤(복습 앞)에 넣고(학생 목록의 '최신 수업 먼저'와 `연속 완주` 배지가 이 순서를 씀), 개념·퀴즈 정답은 서버 `solutions.ts`, 강아지 없는 미션은 `FREE_MISSIONS`에 등록합니다. 빠뜨리지 않으려면 기존 엔트리 수업 ID(`loops`)를 저장소 전체에서 검색해 같은 자리에 모두 넣습니다(`seed-emulator.mjs`, `tests/e2e-scope.test.mjs` 포함).
+- **엔트리 수업:** 새 컴포넌트 없이 `practice.type: "programming"` 수업 정의(예: [`conditionals-lesson.ts`](../src/lib/classroom/conditionals-lesson.ts))를 만들면 공통 개념·퀴즈 화면과 엔트리 실습 화면을 씁니다. 아래 자리에 모두 등록하며, 빠뜨리지 않으려면 기존 엔트리 수업 ID(`loops`)를 저장소 전체에서 검색해 같은 자리에 넣습니다(`seed-emulator.mjs`, `tests/e2e-scope.test.mjs` 포함).
+  1. 수업 정의: `catalog.ts`의 `LESSONS`(공개 시 `RELEASED_LESSONS`)에 가르치는 순서대로 정규 수업 맨 뒤(복습 앞)에 넣습니다. 학생 목록의 '최신 수업 먼저'와 `연속 완주` 배지가 이 순서를 씁니다.
+  2. 미션: `PROGRAMMING_MISSIONS`·`LESSON_MISSIONS`([§4.1](#41-entryjs-4023-실습-환경)의 수업별 미션), 미션별 허용 블록 `MISSION_BLOCKS`, 강아지 없는 미션 `FREE_MISSIONS`에 등록합니다.
+  3. 채점 규칙: `programming-grader.ts`. 규칙이 없는 미션은 통과하지 않습니다.
+  4. 개념·퀴즈 정답: 서버 `solutions.ts`에 넣습니다.
+  5. 개념 그림: [`concept-visual.tsx`](../src/components/student/concept-visual.tsx)의 `CONCEPT_VISUALS`에 개념 ID로 등록합니다(없으면 그림 없이 표시).
+  6. 첫 작품: 따로 등록하지 않습니다. `emptyWork`가 `missionStarter`로 만듭니다.
 - **수업 내용 점검:** 개념·퀴즈·미션 문구와 피드백은 [PRD §3.1](PRD.md#31-수업-3단계-라이프사이클-및-진도-측정)·[§3.4](PRD.md#수업-내용-기준)와 [DESIGN §2.2·§5.1](DESIGN.md#22-타이포그래피-스케일-typography-rules)로 점검합니다.
 
 #### 2단계: 저장 상태 연동 (`useWork`)
@@ -134,8 +150,8 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
   ```javascript
   "<수업ID>": {
     lessonId: "<수업ID>",
-    patterns: [...ENTRY_SHARED, /^src\/lib\/classroom\/<수업ID>-(?:lesson|data)\.ts$/, /^tests\/<수업ID>\.spec\.ts$/],
-    tests: ["tests/<수업ID>.spec.ts"]
+    patterns: [...ENTRY_SHARED, /^src\/lib\/classroom\/<수업ID>-(?:lesson|data)\.ts$/, /^tests\/<수업ID>\.spec\.ts$/, CONCEPT_VISUAL, /^public\/concepts\/<수업ID>-[\w-]+\.png$/],
+    tests: ["tests/<수업ID>.spec.ts", "tests/teacher-lesson-preview.spec.ts"]
   }
   ```
 - [`tests/lesson-smoke.spec.ts`](../tests/lesson-smoke.spec.ts)의 `ALL_LESSON_IDS`에 수업 ID를 넣고, 같은 파일에 그 수업의 저장·새로고침 복원 검사 블록을 추가합니다.
@@ -159,7 +175,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 | [`HelpButton`](../src/components/classroom/help-button.tsx) | 손들기 요청 시 현재 작품의 exact 스냅샷을 먼저 서버에 저장 후 도움 요청 POST 전송 |
 | [`LessonShell`](../src/components/student/lesson-shell.tsx) | 저장 버튼과 상태 배지 노출; `useWork`와 Entry 브리지가 창/iframe 단축키를 같은 `save`로 전달 |
 
-- **Content Dirty vs. Exact Snapshot Difference:** 화면 이동 경고는 학생의 실제 작업 내용 변화(Content Dirty)만 감지하며, 탭 위치나 스크롤 좌표만 바뀐 경우에는 경고창 없이 이동합니다.
+- **화면 이동 경고 기준:** 학생의 실제 작업 내용 변화만 감지하며, 탭 위치나 스크롤 좌표만 바뀐 경우에는 경고창 없이 이동합니다.
 
 ---
 
@@ -176,7 +192,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 
 | 티어 | 검증 범위 | 실행 명령 | 실행 시점 |
 | :--- | :--- | :--- | :--- |
-| **Tier 1: 초경량 단위 검증** | 순수 로직, 문서, 정책 | `npm run test:scope`<br>`npm run test:review`<br>`node scripts/check-docs.mjs`<br>`git diff --check origin/main` | 커밋 전(문서만 바꾼 커밋은 `check-docs`·`git diff --check`만) |
+| **Tier 1: 초경량 단위 검증** | 순수 로직, 문서, 정책 | `npm run test:scope`<br>`npm run test:review`<br>`node scripts/check-docs.mjs`<br>`git diff --check origin/main`<br>`node --test tests/documentation.test.mjs`(문서 검사 스크립트를 바꿀 때) | 커밋 전(문서만 바꾼 커밋은 `check-docs`·`git diff --check`만) |
 | **Tier 1.5: 정적 검사** | 타입 안정성, 린트 | `npm run lint`<br>`npm run typecheck` | 커밋 전 필수(문서만 바꾼 커밋은 생략) |
 | **Tier 2: 선별 E2E (Scoped)** | 변경된 수업 + 공통 스모크 | `npm run test:e2e:scope:running` (서버 구동 중)<br>`npm run test:e2e:scope` (원스톱) | push 전(문서만 바꾼 커밋은 생략) |
 | **Tier 3: 전체 E2E (Full Suite)** | 전체 회귀 검증 | `npm run test:e2e` | **사용자 승인 시에만** (아래 §3.2) |
@@ -195,11 +211,15 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 | **미분류 파일(서버·공통·설정·검사 파일)이 있을 때** | 로컬 선별 도구는 `full`을 내고 멈추므로, 아래 안내대로 검사 파일을 직접 고릅니다 | `smoke` 모드로 전체 등록 수업 스모크와 확인된 관련 수업 검사를 실행합니다. 비교 기준이 없거나 조회에 실패해도 전체 검사로 승격하지 않습니다 |
 | **전체 E2E** | **사용자의 명시적 요청 또는 에이전트 질문 후 사전 승인 시에만 실행** | **GitHub Actions의 `workflow_dispatch` 수동 실행으로만 수행** |
 
-**미분류 파일이 있을 때의 로컬 검사:** 로컬 선별 도구(`npm run test:e2e:scope`)는 수업에 매핑되지 않은 파일(서버·공통·설정·검사 파일 등)이 하나라도 있으면 `full`을 내고 멈춥니다. CI는 같은 경우 `smoke`로 낮춥니다. 이때는 전체 E2E를 돌리지 말고, 바꾼 코드를 직접 사용하는 검사 파일과 공통 스모크를 에뮬레이터가 실행 중인 상태에서 `npm run test:e2e:running -- tests/<파일>.spec.ts tests/lesson-smoke.spec.ts`로 돌립니다(예: `src/lib/server/auth.ts` → `auth-security`·`settings`·`guest-login`·`first-entry`·`roster-off-list`). **파일을 지정하지 않으면 전체 E2E가 실행되므로** 반드시 파일을 지정합니다. 전체 E2E가 필요하다고 판단되면 사용자에게 묻습니다. 검사 파일을 직접 고를 때는 바꾼 파일 이름·API 경로(예: `/api/classroom/classes`)를 `git grep -l "<이름>" -- tests`로 찾아 나온 검사를 모두 포함합니다(예: 수업 설정 → `classroom-api`·`teacher-class-management`).
+**미분류 파일이 있을 때의 로컬 검사:** 로컬 선별 도구(`npm run test:e2e:scope`)는 수업에 매핑되지 않은 파일(서버·공통·설정·검사 파일 등)이 하나라도 있으면 `full`을 내고 멈춥니다. CI는 같은 경우 `smoke`로 낮춥니다. 이때는 전체 E2E를 돌리지 않고 아래 순서로 검사 파일을 직접 골라 돌립니다.
+
+1. 바꾼 코드를 직접 쓰는 검사와, 바꾼 파일 이름·API 경로(예: `/api/classroom/classes`)를 `git grep -l "<이름>" -- tests`로 찾아 나온 검사를 모두 고릅니다(예: `src/lib/server/auth.ts` → `auth-security`·`settings`·`guest-login`·`first-entry`·`roster-off-list`, 수업 설정 → `classroom-api`·`teacher-class-management`).
+2. 에뮬레이터가 실행 중인 상태에서 `npm run test:e2e:running -- tests/<파일>.spec.ts tests/lesson-smoke.spec.ts`로 공통 스모크와 함께 돌립니다. **파일을 지정하지 않으면 전체 E2E가 실행되므로** 반드시 파일을 지정합니다.
+3. 전체 E2E가 필요하다고 판단되면 사용자에게 묻습니다.
 
 `:running` 명령은 3000번에 떠 있는 앱을 그대로 씁니다. `npm run dev:emulator`로 띄운 앱은 `CS_TIMETABLE_FIXTURE` 없이 가짜 시간표 서버를 켜지 않아 `timetable` 검사가 실패하고 실제 시간표 사이트로 요청이 갈 수 있습니다. 직접 고른 검사에 `timetable`이 있으면 앱과 에뮬레이터를 모두 끄고(3000·8080·9099 비움) `npx.cmd firebase emulators:exec --only auth,firestore --project demo-cs-class "npx playwright test tests/<파일>.spec.ts"`로 돌립니다(Playwright가 가짜 시간표 서버와 함께 앱을 띄웁니다).
 
-자동 CI의 `app`에는 비문서 변경의 정책·단위 검사, lint, typecheck, 빌드와 위 선별/스모크 검사가 포함됩니다. 스모크 성공을 전체 회귀 검증 성공으로 해석하지 않습니다. PR 경로에서 전체 검사가 필요하면 별도로 승인받아 병합 전에 PR 브랜치에서 `gh workflow run verify.yml --ref <브랜치>`로 실행합니다(`main`에서 돌리면 실패를 공개 뒤에 압니다). 수동 실행 결과는 PR에 실행 SHA·범위와 함께 기록합니다. `main` push의 `app` 성공은 Vercel 운영 반영의 조건이기도 하며, 그 규칙(`[skip ci]` 금지·검사 이름 변경 순서 등)은 [서버 안내](FIREBASE_SETUP.md#ci와-운영-공개)가 단일 기준입니다.
+자동 CI의 `app`에는 비문서 변경의 정책·단위 검사, lint, typecheck, 빌드와 위 선별/스모크 검사가 포함됩니다. 스모크 성공을 전체 회귀 검증 성공으로 해석하지 않습니다. PR 경로에서 전체 검사가 필요하면 별도로 승인받아 병합 전에 PR 브랜치에서 `gh workflow run verify.yml --ref <브랜치>`로 실행합니다(`main`에서 돌리면 실패를 공개 뒤에 압니다). `main`에서 돌려야 하면 운영 반영을 확인한 뒤 실행합니다(같은 SHA에 `app` 실행이 하나 더 생겨 배포 대기가 늘 수 있음). 수동 실행 결과는 PR에 실행 SHA·범위와 함께 기록합니다. `main` push의 `app` 성공은 Vercel 운영 반영의 조건이기도 하며, 그 규칙(`[skip ci]` 금지·검사 이름 변경 순서 등)은 [서버 안내](FIREBASE_SETUP.md#ci와-운영-공개)가 단일 기준입니다.
 
 [`run-selected-e2e.mjs`](../scripts/run-selected-e2e.mjs)는 자동 GitHub 실행에서 남아 있는 `full` 계획과 알 수 없는 모드를 실행 전에 거절합니다. 로컬 실행은 `--plan`이나 `CS_E2E_PLAN_PATH`를 명시하지 않으면 남은 `scratch/ci/e2e-plan.json`을 읽지 않고 범위를 매번 새로 계산하며, 결과가 `full`이면 이유만 출력하고 멈춥니다. 사용자 승인 후에만 `--full`을 붙여 실행합니다(예: `npm run test:e2e:scope -- --full`). `smoke` 모드는 수업 필터를 해제해 전체 등록 수업을 확인하고, 등록 수업만의 `affected` 모드는 해당 수업에 한정합니다. [PR 이벤트](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)와 [수동 실행](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)은 GitHub 공식 안내를 따릅니다.
 
@@ -238,16 +258,16 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 - **이미지 CORS & 포커스:** `Entry.init` 전 이미지 생성에 `crossOrigin="anonymous"`를 적용하여 픽셀 클릭 판정을 보장합니다. 질문창 커서 깜빡임 방지를 위해 중복 `focus()` 호출을 제한합니다.
 - **수동 저장 연동:** 실행 중 전체 내보내기 대신 정지 상태의 코드만 반영하며, `useWork`를 통해 단일 불변 스냅샷으로 저장합니다.
 - **수업 팔레트와 블록 문장 변환:** 팔레트·이름표·미션별 허용 블록은 [`entry-palette.ts`](../src/lib/classroom/entry-palette.ts) 한 곳에 둡니다. 격리 iframe은 이 모듈을 가져올 수 없어 `workspace.js`의 `PROGRAMMING_PALETTE`에 복사본을 두며, `tests/entry-palette.test.ts`가 두 목록이 같은지 확인합니다. `EntryStatic.getAllBlocks`는 `Entry.init` 전에 바꿔야 반영됩니다. [`programming-entry.ts`](../src/lib/classroom/programming-entry.ts)의 `formatEntryNode`와 `entryBlockCategory`는 전체 106종 팔레트 블록(기존 12종 + 확장 94종)의 입력 슬롯(`params`), 드롭다운 라벨, 연산자 기호를 교사 열람용 한국어 문장과 8개 카테고리 색상으로 변환합니다.
-- **저장 파서와 기존 키:** `parseProgrammingProject`는 원래 12종 블록을 기존 분기 그대로 정제하고, 그 밖의 팔레트 블록만 일반 규칙(원래 `params`, 반복·조건 블록에만 `statements`)으로 보존합니다. 이 순서를 바꾸면 기존 작품의 `key`가 달라져 검증·제출 기록과 이름 미션 실행 기록이 어긋납니다. `tests/fixtures/entry-legacy-keys.json`이 기존 키·정규화·채점 결과를 고정하며, 이 파일과 `entry-legacy-objects.json`을 다시 만들거나 고치는 변경은 `tests/`만 바꾸더라도 PR 경로로 합니다. 의도한 형식 변경이 아닌데 검사가 실패하면 고정 파일이 아니라 파서를 고칩니다.
+- **저장 파서와 기존 키:** `parseProgrammingProject`는 원래 12종 블록을 기존 분기 그대로 정제하고, 그 밖의 팔레트 블록만 일반 규칙(원래 `params`, 반복·조건 블록에만 `statements`)으로 보존합니다. 이 순서를 바꾸면 기존 작품의 `key`가 달라져 검증·제출 기록이 어긋납니다. `tests/fixtures/entry-legacy-keys.json`이 기존 키·정규화·채점 결과를 고정하며, 이 파일과 `entry-legacy-objects.json`을 다시 만들거나 고치는 변경은 `tests/`만 바꾸더라도 PR 경로로 합니다. 의도한 형식 변경이 아닌데 검사가 실패하면 고정 파일이 아니라 파서를 고칩니다.
 - **실행·이벤트 및 내부 패치 방어:** 프로그래밍 수업은 툴바 실행 버튼 없이 엔트리의 "시작하기/정지하기"를 씁니다(`entry-bot-lab`은 툴바 버튼 유지). 감시기는 모든 오브젝트의 실행 코드가 비면 끝내되, 이벤트로 시작하는 줄이 있으면 결과와 이름 실행 기록을 `finished`로 한 번 보내고 `waiting`을 알린 뒤 정지·15초까지 유지합니다. 실행되는 줄(시작·이벤트 블록으로 시작하는 줄)에 붓 블록(`start_drawing`·`start_fill`)이 있는 실행도 시작 줄이 끝난 뒤 정지하지 않고 같은 대기 상태로 두며(`waiting`의 `drawing`), 엔트리는 정지할 때 선·채우기·위치·말풍선을 처음 상태로 되돌리기 때문입니다(도장은 남으므로 대상이 아님). 15초 강제 종료 타이머(`activeTime`)는 매 틱 유휴 여부(`idle`)를 먼저 판정해 질문 대기(`awaitingAnswer`)와 이벤트 대기(`waitingIdle`)를 시간 누적에서 제외하며, 사용자 입력(`keydown`, `mousedown`, `touchstart`, 부모 창의 `key` 메시지)이 들어오면 `activeTime`을 0으로 초기화합니다. `workspace.js`에서 EntryJS 내부 함수(`CanvasInput.prototype.render`, `Entry.block.*.func`/`def`, `Entry.container.*`)를 패치할 때는 `typeof ... === "function"` 존재 검사를 먼저 거칩니다. 이름 실행 기록은 강아지(`entity.parent.id === "entrybot"`)의 묻기·말하기만 남깁니다. 테스트는 `tests/emulator.ts`의 `entryStart`·`entryStop`·`entryReset` 도우미를 씁니다.
 - **오브젝트 추가:** 프로그래밍 수업에서만 `objectEditable`·`objectaddable`·`objectdeletable`을 켭니다. `objectEditable`이 켜져 있어야 `objectaddable`이 동작합니다. 엔트리 추가 버튼의 `openSpriteManager`를 `add-object-request`로 전달하면 수업 화면이 `ENTRY_SPRITES` 대화상자를 열고, 고른 그림으로 만든 모델을 `add-object`로 보냅니다. `removeObject`는 불러오는 중이 아니면 `entrybot` 삭제를 막습니다. 엔트리는 새 오브젝트를 목록 맨 앞에 넣으므로 파서는 강아지를 `id`로 찾고, 추가 오브젝트의 그림은 목록 파일과 일치할 때만 받아 다시 조립합니다. 오브젝트가 강아지뿐이면 키·정규화는 이전과 같습니다.
 - **강아지 없는 작품(조건·반복 수업):** `isFreeMission` 미션은 `workspace.html?...&free=1&locked=…`으로 열고 `pictureeditable`(모양 탭)을 켭니다. 그림판(`.entryPlaygroundPainter`)은 CSS로 숨기고 `openPictureManager`·`clonePicture`·`_removePicture`·`painter.newPicture`(‘새로 그리기’는 관리자 창을 거치지 않고 믿을 수 없는 빈 그림을 바로 더함)는 `picture-locked`로 막습니다. `LOCKED_OBJECTS`의 오브젝트와 마지막 오브젝트는 지울 수 없습니다. 파서는 `entrybot`이 없고 그림이 신뢰 목록에 있는 작품을 `free`(`mainIndex -1`)로 읽어 모든 오브젝트를 같은 방식으로 다시 조립합니다(최대 `MAX_FREE_OBJECTS` 12개). 채점과 `missionBlockIssue`는 시작 줄을 가진 한 오브젝트를 보고, 여러 오브젝트에 나뉘면 같은 문구로 화면 토스트와 검증 실패를 냅니다.
 - **엔트리 오브젝트 묶음:** 그림은 `public/entryjs/sprites/library/`, 목록은 `src/lib/classroom/entry-library.json`(`LIBRARY_SPRITES`)입니다. 바꾸려면 `scripts/entry-library-picks.json`(분류별 엔트리 오브젝트 id)을 고친 뒤 `node scripts/fetch-entry-library.mjs`를 돌려 커밋합니다. 스크립트는 엔트리 사이트의 오브젝트 목록을 읽어 모양 10장까지 내려받고 위험한 SVG를 버립니다. 앱은 실행 중 엔트리 사이트에 접속하지 않습니다. 출처 조건은 같은 폴더의 `NOTICE.md`에 있습니다.
-- **정규화·복제 제약:** 원래 12종 블록이 자기 분기 조건에 맞지 않으면 일반 규칙으로 넘기지 않고 거부합니다(교사 작품 보기 오류 방지). 파서는 정규화가 한 번에 수렴하도록 이름을 자른 뒤 다시 다듬고, 엔트리가 음수로 뒤집은 크기는 부호를 유지합니다. 서버는 받은 원문 대신 자체 정규화본을 저장하고 `MAX_PROJECT_BYTES`(32,768)를 클라이언트와 공유합니다. 파서 결과의 `gradeKey`(강아지 코드만)는 이름 미션 실행 기록에, `key`(작품 전체)는 검증·제출 비교에 씁니다. 엔트리의 복제·붙여넣기(`addCloneObject`)는 강아지 복제와 6개 초과를 막고, 추가 직후에는 강아지를 다시 선택합니다. 채점 오류 중 인터프리터가 의도한 `MissionError`만 학생에게 보이고, 나머지는 미션의 채점 실패 문구(`failure`)로 대신합니다.
+- **정규화·복제 제약:** 원래 12종 블록이 자기 분기 조건에 맞지 않으면 일반 규칙으로 넘기지 않고 거부합니다(교사 작품 보기 오류 방지). 파서는 정규화가 한 번에 수렴하도록 이름을 자른 뒤 다시 다듬고, 엔트리가 음수로 뒤집은 크기는 부호를 유지합니다. 서버는 받은 원문 대신 자체 정규화본을 저장하고 `MAX_PROJECT_BYTES`(32,768)를 클라이언트와 공유합니다. 파서 결과의 `key`(작품 전체)는 검증·제출 비교에 씁니다. `gradeKey`(채점 대상 코드만, 강아지 없는 작품은 모든 오브젝트 코드)는 이름 미션 실행 기록 비교가 없어진(#74) 뒤 앱에서 읽지 않습니다. 엔트리의 복제·붙여넣기(`addCloneObject`)는 강아지 복제를 막고, 오브젝트 수가 강아지 수업은 6개·강아지 없는 수업은 12개를 넘지 않게 합니다. ‘오브젝트 추가하기’ 직후에는 강아지 수업은 강아지를, 강아지 없는 수업은 새 오브젝트를 선택합니다. 채점 오류 중 인터프리터가 의도한 `MissionError`만 학생에게 보이고, 나머지는 미션의 채점 실패 문구(`failure`)로 대신합니다.
 - **수업별 미션:** 미션 정의는 `programming-entry.ts`의 `PROGRAMMING_MISSIONS` 한 곳에 두고, 미션 ID는 수업이 달라도 겹치지 않게 짓습니다. 미션의 `hint`는 화면의 한 줄 요약, `steps`는 접힌 번호 조립 순서, `tip`은 💡 한 줄(선택), `failure`는 채점 실패 문구(필수, 칩 없는 평문)입니다. 힌트 문구는 블록 칩을 `` `블록종류: 보이는 글자` ``(예: `` `set_variable: A를 대답으로 정하기` ``)로 쓰고 화면은 `hintParts`, 평문 비교는 `hintPlain`으로 읽습니다(문구 기준은 [DESIGN §5.1](DESIGN.md#프로그래밍-13차시--경험-검토용-표현)). `tests/fixtures/entry-legacy-keys.json`이 name·multiply·average·move·keys의 실패 문구를 고정하므로 이 다섯 `failure`는 바꾸지 않습니다. `tests/entry-palette.test.ts`가 칩의 블록 종류가 그 미션의 검증 블록인지, 칩 글자에 그 블록의 고정 낱말이 있는지(`CHIP_WORDS`), 칩 밖 백틱·`( )`·'팔레트에서는'이 없는지, 단계 수·길이 상한, 조립 순서대로 만든 해답이 채점을 통과하고 그 해답의 블록이 모두 칩이나 낱말(묻기·말하기·대답·값)로 나오는지(시작 작품에 없는 시작 블록 포함), 그 해답의 값(횟수·각도·비교식·말할 글자·키·변수에 정할 값·‘그리고’/‘또는’)이 해답 순서대로 단계에 나오는지, 블록 칩이 해답의 블록 순서대로 처음 나오는지 확인합니다. 끼울 자리를 말하는 낱말(안에·아래(바깥))은 자동으로 확인하지 않습니다. 학생에게 보이는 블록 목록은 `missionBlockTypes`(팔레트 순서)와 `PALETTE_TEXT`(실제 팔레트 표기)이며, 미션에 블록을 더하면 `PALETTE_TEXT`에도 넣습니다. 수업마다 보여 주는 미션은 `LESSON_MISSIONS`의 `active`이며, 수업에서 뺀 미션은 `retired`에 두어 옛 저장본만 읽을 수 있게 합니다. 초안 저장은 `active`·`retired` 작품을 모두 받고 선택 미션이 `active`가 아니면 첫 미션으로 바꿉니다. 검증·제출·교사 미리보기 행동은 `active`만 받습니다. 미션의 `variables`(무대에 A·B 표시)·`keyEvents`(방향키 대기)는 iframe 주소의 `vars=1`·`keys=1`로 전달하고, 채점기 `checkProgrammingMission`은 고정 입력이 학생 화면 코드에 실리지 않도록 [`src/lib/server/programming-grader.ts`](../src/lib/server/programming-grader.ts)에 둡니다.
 - **모양이 여러 개인 오브젝트:** `entry-palette.ts`의 `LESSON_SPRITES`는 수업 시작 작품에만 쓰는 그림(나무 6단계·물뿌리개 2개·흙)이고, 저장 검증은 고르기 목록과 합친 `TRUSTED_SPRITES`로 합니다. 저장된 그림 목록은 모두 한 그림 묶음에 속해야 하며 서버가 묶음 정의로 다시 만듭니다. 모양 id는 `<오브젝트 id>-pic`, `-pic2`, …이고, 보이는 모양은 `picture`(두 번째부터의 번호)로 저장해 첫 모양인 옛 작품의 키를 바꾸지 않습니다(`tests/fixtures/entry-legacy-objects.json`). 나무 미션의 ‘클릭 수’(`cs-clicks`)는 시작 작품에 있을 때만 프로젝트 변수로 유지합니다. 미션별 첫 작품은 `missionStarter`가 만들며 처음 진입·다시 만들기·미저장 비교가 같은 값을 씁니다.
 - **해석기 의미:** 채점기는 엔트리 4.0.23 블록 정의를 따릅니다. 비교는 빈칸이 아닌 숫자 글자를 숫자로 바꾸고(`=`는 엄격 비교), 몫·나머지는 버림 나눗셈입니다. 움직임은 이동 방향과 오브젝트 방향의 합으로 계산하며, `( )번 반복하기`는 횟수를 내림하고 음수는 오류입니다. `move_x`·`move_y`는 좌표를 더하고, 시간이 있는 블록(`move_xy_time`·`locate_xy_time`·`rotate_by_time`·`direction_relative_duration`)은 엔트리 프레임이 끝난 상태(끝점·더한 각도)로 한 번에 옮기며 초는 결과에 쓰지 않습니다. `move_to_angle`은 오브젝트 방향과 상관없이 그 각도로 움직입니다. `calc_basic`의 더하기는 엔트리 `Entry.Utils.isNumber`처럼 한쪽이 숫자가 아닌 글자면 이어 붙이고(빈칸은 지금처럼 숫자 오류), 말하기 두 블록은 `speak`·`think`를 같은 방식으로 다룹니다. 결과를 바꾸지 않는 `HARMLESS_BLOCKS`(`entry-palette.ts`)는 건너뜁니다. `될 때까지`는 조건이 거짓인 동안, `인 동안`은 참인 동안 돕니다. 한 번 실행에서 블록 20,000개·글자 500자·말하기 50번·반복 1,000번·선 200개를 넘으면 실패로 처리해 서버 트랜잭션 시간을 묶습니다.
-- **채점 범위:** `missionBlockIssue`가 미션 신호로 시작하는 줄(값 블록·반복 안쪽 포함)에서 미션 밖 블록을 찾아 이름표로 안내하고, 서버 인터프리터는 그 뒤에만 실행합니다. 모든 미션의 `MISSION_BLOCKS`에는 `HARMLESS_BLOCKS`가 더해지고, 학생에게 보이는 블록 목록(`missionBlockTypes`)에서는 이 묶음과 같은 뜻으로 받는 움직임·시간 회전 블록(`ALSO_ACCEPTED`), 미션별로 받지만 알리지 않는 블록(`UNLISTED`, 정사각형·정다각형의 말하기)이 빠집니다. `MISSION_BLOCKS`에 넣는 동작 블록은 해석기 분기가 있어야 하며(없으면 ‘시작 블록은 맨 위에…’로 떨어짐), `tests/entry-palette.test.ts`의 안전장치 테스트가 블록마다 확인합니다. 움직임 미션(`move`·`keys`)에는 절대 위치 블록(`locate_x`·`locate_y`·`locate_xy(_time)`)을 넣지 않고(해석기가 늘 (0, 0)에서 시작해 절대 이동이 통과함), `rotate_absolute`는 오브젝트 방향을 정하므로 `direction_absolute`와 같게 보지 않으며, `move`·`keys`·`square`에는 묻기를 넣지 않습니다(`asksQuestion`이 실행 결과 표시를 말하기로 바꿈). 말은 글자·숫자만 남겨 결과별 핵심어로 보고(다른 결과 낱말이 이 낱말을 품으면 먼저 지움), 마지막 질문 뒤에 말한 줄 전체로 판정합니다(질문 전 인사는 입력과 무관하므로 제외). 이름은 입력에서 온 줄, 곱셈·평균은 입력으로 계산한 마지막 줄, A·B는 처음 저장한 입력값, 금고는 마지막 질문 뒤의 ‘열렸’ 한 줄과 반복 안의 질문(첫 질문만 반복 앞 허용)을 봅니다. 도형은 이어진 같은 방향의 선을 하나로(‘두 바퀴 이상 그린 반복 안’ 여부는 모든 조각의 그리고), 앞서 그린 선과 겹치는 선은 빼고 판정하되(겹친 선이 반복 밖이면 남은 선도 반복 밖으로 봄), 정다각형은 합친 선 수가 변 수의 배수일 때만 겹친 선을 빼서 고정 반복 횟수가 통과하지 못하게 합니다(숨은 변 수 3~8의 최소공배수 840이 선 상한 200을 넘음). 모든 변이 두 바퀴 이상에서 선을 그린 반복 안에서 그려지고(`repeated`, 반복이 끝날 때 그 안에서 그린 선에 표시하므로 한 바퀴에만 그린 반복은 반복으로 치지 않음), 어느 반복이든 두 번째 바퀴부터 그린 변이 하나는 있어야 해서(`again`) ‘1번 반복하기’로 감싸거나 일부 변만 반복으로 그린 도형은 떨어집니다. 방향키 미션은 한 기계에서 네 키 줄을 두 가지 순서로 차례로 실행해 키마다의 x·y 변화를 봅니다. 통과하지 못하면 `생각하기`를 말로 치고 한 번 더 채점해 통과하면 ‘생각하기’ 안내를 내고, 결과 미션(`RESULT_WORDS`)은 `wordingOnly`로 다시 채점해(`branchesRight`: 숫자를 뺀 뒤 모든 경우에 같은 줄은 빼고, 결과 낱말이 있는 줄이 한 결과의 경우에서만 나오며, 경우마다 결과 낱말이 있는 첫 줄이 기대한 낱말을 품음) 통과하면 목표의 결과 말(`RESULT_PHRASES`)을 인용한 `wordingMessage`를 냅니다. 시작 줄이 0개면 그 시작 블록(‘시작하기 버튼을 클릭했을 때’, 방향키는 ‘위쪽 화살표 키를 눌렀을 때’ 등) 아래에 연결하라고, 2개 이상이면 한 줄로 이으라고 안내하며, 0개일 때의 문구는 `entry-legacy-keys.json`이 고정합니다(2026-10-23에 블록 이름을 넣은 문구로 바꿈). 금고에서 마지막 입력(1234) 뒤 반복 안에서 또 물으면 반복이 멈추지 않는다고 안내합니다. 이름 미션은 화면 검사 `checkNameMission`과 `workspace.js` 실행 기록도 `dialog`를 `dialog_time`처럼 다루고 `HARMLESS_BLOCKS`는 기록 없이 건너뜁니다.
+- **채점 범위:** `missionBlockIssue`가 미션 신호로 시작하는 줄(값 블록·반복 안쪽 포함)에서 미션 밖 블록을 찾아 이름표로 안내하고, 서버 인터프리터는 그 뒤에만 실행합니다. 모든 미션의 `MISSION_BLOCKS`에는 `HARMLESS_BLOCKS`가 더해지고, 학생에게 보이는 블록 목록(`missionBlockTypes`)에서는 이 묶음과 같은 뜻으로 받는 움직임·시간 회전 블록(`ALSO_ACCEPTED`), 미션별로 받지만 알리지 않는 블록(`UNLISTED`, 정사각형·정다각형의 말하기)이 빠집니다. `MISSION_BLOCKS`에 넣는 동작 블록은 해석기 분기가 있어야 하며(없으면 ‘시작 블록은 맨 위에…’로 떨어짐), `tests/entry-palette.test.ts`의 안전장치 테스트가 블록마다 확인합니다. 움직임 미션(`move`·`keys`)에는 절대 위치 블록(`locate_x`·`locate_y`·`locate_xy(_time)`)을 넣지 않고(해석기가 늘 (0, 0)에서 시작해 절대 이동이 통과함), `rotate_absolute`는 오브젝트 방향을 정하므로 `direction_absolute`와 같게 보지 않으며, `move`·`keys`·`square`에는 묻기를 넣지 않습니다(`asksQuestion`이 실행 결과 표시를 말하기로 바꿈). 말은 글자·숫자만 남겨 결과별 핵심어로 보고(다른 결과 낱말이 이 낱말을 품으면 먼저 지움), 마지막 질문 뒤에 말한 줄 전체로 판정합니다(질문 전 인사는 입력과 무관하므로 제외). 이름은 입력에서 온 줄, 곱셈·평균은 입력으로 계산한 마지막 줄, A·B는 처음 저장한 입력값, 금고는 마지막 질문 뒤의 ‘열렸’ 한 줄과 반복 안의 질문(첫 질문만 반복 앞 허용)을 봅니다. 도형은 이어진 같은 방향의 선을 하나로(‘두 바퀴 이상 그린 반복 안’ 여부는 모든 조각의 그리고), 앞서 그린 선과 겹치는 선은 빼고 판정하되(겹친 선이 반복 밖이면 남은 선도 반복 밖으로 봄), 정다각형은 합친 선 수가 변 수의 배수일 때만 겹친 선을 빼서 고정 반복 횟수가 통과하지 못하게 합니다(숨은 변 수 3~8의 최소공배수 840이 선 상한 200을 넘음). 모든 변이 두 바퀴 이상에서 선을 그린 반복 안에서 그려지고(`repeated`, 반복이 끝날 때 그 안에서 그린 선에 표시하므로 한 바퀴에만 그린 반복은 반복으로 치지 않음), 어느 반복이든 두 번째 바퀴부터 그린 변이 하나는 있어야 해서(`again`) ‘1번 반복하기’로 감싸거나 일부 변만 반복으로 그린 도형은 떨어집니다. 방향키 미션은 한 기계에서 네 키 줄을 두 가지 순서로 차례로 실행해 키마다의 x·y 변화를 봅니다. 통과하지 못하면 `생각하기`를 말로 치고 한 번 더 채점해 통과하면 ‘생각하기’ 안내를 내고, 결과 미션(`RESULT_WORDS`)은 `wordingOnly`로 다시 채점해(`branchesRight`: 숫자를 뺀 뒤 모든 경우에 같은 줄은 빼고, 결과 낱말이 있는 줄이 한 결과의 경우에서만 나오며, 경우마다 결과 낱말이 있는 첫 줄이 기대한 낱말을 품음) 통과하면 목표의 결과 말(`RESULT_PHRASES`)을 인용한 `wordingMessage`를 냅니다. 시작 줄이 0개면 그 시작 블록(‘시작하기 버튼을 클릭했을 때’, 방향키는 ‘위쪽 화살표 키를 눌렀을 때’ 등) 아래에 연결하라고, 2개 이상이면 한 줄로 이으라고 안내하며, 0개일 때의 문구는 `entry-legacy-keys.json`이 고정합니다. 금고에서 마지막 입력(1234) 뒤 반복 안에서 또 물으면 반복이 멈추지 않는다고 안내합니다. `workspace.js`의 실행 기록(`nameRun`, 옛 이름 미션에서 온 이름)도 `dialog`를 `dialog_time`처럼 다루고 `HARMLESS_BLOCKS`는 기록 없이 건너뜁니다. 이 기록은 수업 화면이 읽지 않고, 질문 대기 시간을 15초 강제 종료에서 빼는 데만 쓰입니다.
 
 ### 4.2 알고리즘 복습 연구소
 <a id="알고리즘-복습-수업"></a>
@@ -263,9 +283,11 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 <a id="대시보드-및-화면-셸"></a>
 
 - **반 선택 세션:** `SessionProvider`의 `useTeacherClass`는 탭 단위 `sessionStorage`로 선택 반을 관리하며 URL 쿼리(`?classId=...`)와 연동됩니다.
-- **교사 수업 미리보기 (`/teacher/preview/[id]`):** `LessonPreview`와 `usePreviewWork`는 실제 `LessonShell`을 `mode="preview"`로 렌더링하며, 학생 학습 컬렉션 쓰기를 엄격히 차단하고 컴포넌트 메모리에서만 동작합니다.
+- **교사 수업 미리보기 (`/teacher/preview/[id]`):** `LessonPreview`와 `usePreviewWork`는 실제 `LessonShell`(`preview` 속성)과 `LessonEditor`(`mode="preview"`)로 렌더링하며, 학생 학습 컬렉션 쓰기를 엄격히 차단하고 컴포넌트 메모리에서만 동작합니다.
 - **교사 제출 작품 열람 및 인라인 실행 (`SubmissionViewer` · `EntryProjectPreview`):** 화면·폭·`Escape` 순서는 [DESIGN §4.4](DESIGN.md#학생교사-대시보드)를 따르며, 파싱 실패 시에만 번호 목록으로 폴백합니다. E2E 검사에서는 iframe 언마운트 경합을 막기 위해 `무대 처음 위치로` 버튼이 활성화된 뒤 `Escape`를 입력합니다.
-- **읽기 최적화·손들기 중지 검사:** `tests/help-paused.spec.ts`, `tests/read-polling.spec.ts`로 손들기 중지·교사 수동 조회·권한·느린 응답 경합과 학생 포커스 재조회 30초 간격·학생 대시보드와 열린 수업 목록의 반 설정만 확인하는 30초 조회·활동 기록 뒤 세션 확인 생략, PC 시계가 서버보다 빠르거나 느려도 활동 기록이 30초에 한 번이고 바로 로그아웃하지 않는지를 확인합니다. 손들기 활성 모드 검사(`help-requests`, `help-races`, 관련 UI 검사)는 보존하되 공유 설정이 false이면 명시적으로 생략하며 이를 통과로 집계하지 않습니다. 복구 시 설정을 true로 변경한 뒤 재빌드하여 활성 모드 검사를 실행합니다. 공유 설정은 `src/lib/classroom/features.ts`의 `CLASSROOM_HELP_ENABLED`입니다. `tests/read-usage.spec.ts`는 공개 수업 전부·학생 27명·담당 반 11개의 10분 가상 시간 요청 샘플이며 과금 실측이 아닙니다. 다른 Playwright 실행과 병렬로 돌릴 때는 `--output` 경로를 분리해야 합니다. 활동 갱신 응답은 계정 쓰기를 표본에서 빼려고 fixture로 두고 세션 비용은 별도 모형으로 계산합니다.
+- **읽기 최적화·손들기 중지 검사:** `tests/help-paused.spec.ts`, `tests/read-polling.spec.ts`로 손들기 중지·교사 수동 조회·권한·느린 응답 경합과 학생 포커스 재조회 30초 간격·학생 대시보드와 열린 수업 목록의 반 설정만 확인하는 30초 조회·활동 기록 뒤 세션 확인 생략, PC 시계가 서버보다 빠르거나 느려도 활동 기록이 30초에 한 번이고 바로 로그아웃하지 않는지를 확인합니다.
+- **손들기 활성 모드 검사:** `help-requests`·`help-races`와 관련 UI 검사는 지우지 않고, 공유 설정(`src/lib/classroom/features.ts`의 `CLASSROOM_HELP_ENABLED`)이 false이면 명시적으로 건너뛰며 통과로 세지 않습니다. 재개할 때는 설정을 true로 바꾸고 다시 빌드해 이 검사를 실행합니다.
+- **읽기 횟수 표본:** `tests/read-usage.spec.ts`는 공개 수업 전부·학생 27명·담당 반 11개의 10분 가상 시간 요청 샘플이며 과금 실측이 아닙니다. 다른 Playwright 실행과 병렬로 돌릴 때는 `--output` 경로를 분리해야 합니다. 활동 갱신 응답은 계정 쓰기를 표본에서 빼려고 fixture로 두고 세션 비용은 별도 모형으로 계산합니다.
 
 ### 4.4 학교 시간표 연동 Fixture
 <a id="학교-시간표-연동"></a>
@@ -285,7 +307,10 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 1. **명부 변환:** 기존 Excel(2학년 `1반`~`11반` 시트, 첫 행 `번호`·`학번`)을 CSV로 바꿉니다. 이름·공통 비밀번호 열은 복사하지 않고 원본은 읽기만 합니다.
 2. **검증과 계획(읽기 전용):** `validate`로 형식을, 기본 모드(`plan`)로 기존 계정·반 기록·이메일 충돌을 확인합니다. 다른 명부나 학년도의 같은 학번은 거절합니다.
 3. **사전 등록:** `register`는 계정을 만들되 최초 입장 비밀번호는 아직 발급하지 않습니다. 중단되면 계정을 비활성·잠금으로 남기며, 같은 명부·학년도의 중단만 `--resume`으로 재개합니다.
-4. **반별 발급:** 수업 직전에 `issue`로 반별 임시값(30분 만료)을 만듭니다. 교사가 명단에서 뺀(사용 중지) 학생은 건너뛰고 요약의 `offList`에 수만 셉니다. 출력 파일에서 `issued` 확인 행이 있는 학생에게만 개별 전달하고, 공용 화면에 전체 파일을 띄우지 않습니다. 11개 반을 미리 한꺼번에 발급하면 수업 전에 만료됩니다. 관리자 키가 없어도 교사 화면 `학생 현황·계정`에서 같은 30분 임시값을 발급합니다: 학생별 `비밀번호 초기화`(이미 개인 비밀번호를 정한 학생 포함) 또는 아직 정하지 않은 학생만 고르는 `임시 비밀번호 한꺼번에 발급`(쪽지 인쇄). 프로젝터를 끄고 발급합니다. 반 전체 첫 입장에는 같은 화면의 `첫 입장 열기`로 반 공통 코드를 프로젝터에 띄우는 방법도 있습니다([PRD §5.6](PRD.md#교사-대시보드의-1차-범위)). 첫 수업에 쓸 방법은 [HANDOFF](HANDOFF.md#다음에-이어갈-작업)의 사용자 결정을 따릅니다.
+4. **반별 발급:** 수업 직전에 발급합니다. 임시값은 30분 뒤 만료되므로 11개 반을 미리 한꺼번에 발급하지 않습니다. 아래 세 방법 중 어느 것을 쓸지는 사용자가 정하며, 지금 쓰는 방법은 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)에 있습니다.
+   - **스크립트(`issue`):** 반별 임시값을 만듭니다. 교사가 명단에서 뺀(사용 중지) 학생은 건너뛰고 요약의 `offList`에 수만 셉니다. 출력 파일에서 `issued` 확인 행이 있는 학생에게만 개별 전달하고, 공용 화면에 전체 파일을 띄우지 않습니다.
+   - **교사 화면(관리자 키 불필요):** `학생 현황·계정`에서 같은 30분 임시값을 학생별 `비밀번호 초기화`(이미 개인 비밀번호를 정한 학생 포함)나, 아직 정하지 않은 학생만 고르는 `임시 비밀번호 한꺼번에 발급`(쪽지 인쇄)으로 발급합니다. 프로젝터를 끄고 발급합니다.
+   - **반 공통 코드:** 반 전체 첫 입장에는 같은 화면의 `첫 입장 열기`로 반 공통 코드를 프로젝터에 띄웁니다([PRD §5.6](PRD.md#교사-대시보드의-1차-범위)).
 5. **수업 기록 백업:** `backup`은 반 설정·비밀 없는 계정 정보·`csWork`만 담습니다. 자동 복원이나 전체 시스템 백업이 아닙니다.
 
 ```powershell
@@ -304,7 +329,7 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 
 1. **수업 전:** 실제 학년도·명부·대상 반을 확인합니다. 이미 등록한 반은 다시 하지 않고, 아직 등록하지 않은 반만 명부 CSV·관리자 키가 있는 PC에서 위 변환·검증·계획·등록을 합니다. 교사의 `수업 관리`에서 해당 반의 공개 수업과 이번 수업을 확인합니다.
 2. **수업 직전:** 해당 반을 [명부 절차](#실학생-명부-준비와-반별-발급) 4단계 중 사용자가 정한 방법(`issue`, 교사 화면 학생별 초기화·일괄 발급, 또는 반 공통 `첫 입장 열기`)으로 입장시키고, 개별 임시값은 완료된 것만 학생별로 전달합니다. 학생은 최초 입장에서 본인 비밀번호를 정하고 배정된 반과 이번 수업 제목을 확인합니다. 만료·입장 실패는 교사가 계정 상태를 확인하며, 예전 공통 비밀번호(`CS_INITIAL_PASSWORD` 등)로 우회하지 않습니다.
-3. **수업 중:** 학생 한 명의 학교 브라우저에서 개념·퀴즈·실습 진입과 실제 엔트리 블록 입력·실행·정지를 확인합니다. 프로그래밍 수업은 기본 네 미션과 선택 도전을 구분하고 `저장 완료`·검증 통과·제출 완료를 각각 확인합니다.
+3. **수업 중:** 학생 한 명의 학교 브라우저에서 개념·퀴즈·실습 진입과 실제 엔트리 블록 입력·실행·정지를 확인합니다. 엔트리 수업은 기본 미션(기초 4개, 조건·반복 3개)과 선택 도전을 구분하고 `저장 완료`·검증 통과·제출 완료를 각각 확인합니다.
 4. **저장 확인:** 저장 실패 때 입력이 남는지, 재시도 뒤 같은 작업을 이어가는지 확인합니다. 학교망·실제 입력기·로그아웃 후 재접속은 로컬 에뮬레이터 결과와 따로 기록합니다. 학생 비밀번호·작품 원문을 공개 화면이나 로그에 남기지 않습니다.
 5. **수업 종료 전:** 교사의 `학생 현황·계정`에서 진행과 제출을 확인합니다(제출 학생 수와 작품 수를 구분). 발견한 문제는 범위·환경과 함께 [HANDOFF](HANDOFF.md#남은-한계와-다음-결정)에 남깁니다.
 

@@ -56,13 +56,13 @@ flowchart LR
     Auth -->|Idle Timeout| DB
 ```
 
-1. **무부하 수동 저장 체계 (Manual Save SSOT):**
+1. **수동 저장 체계 (Manual Save):**
    - 저장 버튼·`Ctrl+S`와 [PRD §3.2](docs/PRD.md#학생-수업의-수동-저장-정책)의 명시적 예외(채점·제출·AI 요청·손들기 등)에서만 서버에 보관하고 debounce 자동 저장을 두지 않으며, 미저장 이탈은 3선택 모달로 막습니다.
 2. **학교 공용 PC 보안 및 세션 격리:**
    - 평문 학생 답안을 브라우저 로컬 스토리지에 영구 보관하지 않으며, 로그아웃·자동 로그아웃·계정 전환 시 메모리 초안을 지웁니다. 브라우저 세션 복원이 있어 공용 PC에서는 로그아웃해야 합니다.
    - 동일 계정의 다중 동시 접속을 전면 차단(단일 세션 강제)하며, 무활동 시 자동 로그아웃됩니다(시간은 [PRD §6.2](docs/PRD.md#62-세션-및-다중-접속-제어)).
 3. **선별 검증 (Scoped CI):**
-   - 단일 수업 수정 시 해당 수업의 E2E 및 공통 스모크만 선별 실행하며, 순수 마크다운 문서 커밋은 짧게 끝나는 경량 CI 모드로 자동 전환됩니다.
+   - 단일 수업 수정 시 해당 수업의 E2E 및 공통 스모크만 선별 실행하며, README·AGENTS·`docs/` 아래 마크다운만 바꾼 커밋은 짧게 끝나는 문서 모드 CI로 자동 전환됩니다.
 
 ---
 
@@ -70,11 +70,11 @@ flowchart LR
 
 ### 사전 요구사항
 * **Node.js:** `24.x` 중 24.12 이상(`firebase` 13 요구, CI·Vercel은 24의 최신판)
-* **Java:** `JDK 21+` (Firebase Local Emulator 실행용)
+* **Java:** `JDK 21+`. 로컬 에뮬레이터(실제 서버 대신 이 PC에서 실행하는 연습용 Firebase)에 필요합니다. 설치 방법은 [개발 안내 §1.1](docs/DEVELOPMENT.md#11-시스템-요구사항)에 있습니다.
 
 ### 로컬 개발 환경 실행
 ```powershell
-# 1. 의존성 설치 및 EntryJS 자산 준비
+# 1. 앱이 쓰는 패키지(의존성) 설치와 엔트리 파일 준비
 npm ci
 
 # 2. 로컬 에뮬레이터(Auth 9099 / Firestore 8080)와 개발 서버 동시 실행
@@ -89,7 +89,7 @@ npm run dev:emulator
 
 ## 5. 프로젝트 문서 색인 (Documentation Map)
 
-모든 설계와 운영 원칙은 **단일 진실 공급원(SSOT)** 원칙에 따라 고유한 담당 문서에 체계적으로 분리되어 있습니다.
+한 주제는 한 문서에만 쓰고 다른 문서는 링크로 가리킵니다(주제별 위치는 [문서 작성 기준](docs/DEVELOPMENT.md#문서-작성-기준)).
 
 | 문서 | 핵심 내용 및 담당 영역 | 대상 독자 |
 | :--- | :--- | :--- |
@@ -97,10 +97,10 @@ npm run dev:emulator
 | **[`docs/PRD.md`](docs/PRD.md)** | 확정 제품 요구사항, 수업 카탈로그 규약, 도메인 상태 머신, Non-Goals | 선생님(제품 결정)·에이전트 |
 | **[`docs/DESIGN.md`](docs/DESIGN.md)** | 시각 디자인 기준, 시맨틱 색상 토큰, 반응형 기준(820px), LessonShell 명세 | 에이전트(화면 작업) |
 | **[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)** | 로컬 에뮬레이터 설정, 반영 경로·검증, 신규 수업 추가 체크리스트, 문서 작성 기준 | 에이전트 |
-| **[`docs/FIREBASE_SETUP.md`](docs/FIREBASE_SETUP.md)** | Vercel 서버 설정, Firestore 인덱스/규칙, AI 환경변수, 장애 복구 절차 | 선생님(운영 승인·콘솔 작업)·에이전트 |
+| **[`docs/FIREBASE_SETUP.md`](docs/FIREBASE_SETUP.md)** | Vercel·Firebase 설정, 배포 게이트와 공개 후 확인, 장애 복구, 운영 환경 현황 | 선생님(운영 승인·콘솔 작업)·에이전트 |
 | **[`docs/HANDOFF.md`](docs/HANDOFF.md)** | 현재 작업 상태, 최근 반영과 검증, 다음 작업, 남은 한계 | 선생님·다음 에이전트 |
 
-문서를 고칠 때의 주제별 위치와 쓰기 규칙은 [문서 작성 기준](docs/DEVELOPMENT.md#문서-작성-기준)에 있습니다. `docs/plans/`에는 진행 중인 작업 계획만 두고, 끝난 계획과 지난 원문은 [`docs/archive/`](docs/archive/README.md)에 보관합니다. `docs/reference/`는 보관 원문이 가리키는 근거 자료(화면 캡처 등)입니다.
+문서를 고칠 때의 주제별 위치와 쓰기 규칙은 [문서 작성 기준](docs/DEVELOPMENT.md#문서-작성-기준)에 있습니다. `docs/plans/`에는 진행 중인 작업 계획만 두고, 끝난 계획과 지난 원문은 [`docs/archive/`](docs/archive/README.md)에 보관합니다. `docs/reference/`는 보관 원문과 HANDOFF가 가리키는 근거 자료(화면 캡처·날짜 붙은 검토 보고서)입니다.
 
 선생님이 직접 할 일은 [HANDOFF의 다음 작업·남은 한계](docs/HANDOFF.md#다음에-이어갈-작업), 수업 당일 순서는 [첫 실제 수업 확인 순서](docs/DEVELOPMENT.md#첫-실제-수업-확인-순서)에 있습니다. 교사가 투사하는 3차시 개념 수업 자료는 [내일, 축제에서 만나](teaching-materials/festival-romance/README.md)를 참고하세요. 독립 HTML 완성본과 수정 소스가 함께 있습니다.
 
@@ -114,7 +114,7 @@ cs-class/
 ├─ AGENTS.md              # 에이전트 작업 규칙·승인 범위·금지사항
 ├─ src/
 │  ├─ app/                # Next.js App Router (페이지 및 서버 API)
-│  ├─ components/         # 앱 전체 틀(app-shell, 세션, 이동, 로그인)은 바로 아래에 둠
+│  ├─ components/         # 앱 전체 틀과 공용 조각은 바로 아래에 둠(자세한 배치는 AGENTS 컴포넌트 구조)
 │  │  ├─ home/            # 공개 랜딩 페이지 및 수업 시연
 │  │  ├─ ui/              # 버튼, 입력창 등 공통 디자인 컴포넌트 (Base UI)
 │  │  ├─ dashboard/       # 공통 대시보드, 개인 할 일, 반 일정
@@ -131,12 +131,13 @@ cs-class/
 ├─ public/entryjs/        # EntryJS 4.0.23 편집기 및 브라우저 정적 자산 (sprites/library: 엔트리 공식 오브젝트 묶음)
 ├─ public/concepts/       # 개념 화면 정적 그림(엔트리 블록 이미지 캡처)
 ├─ scripts/               # 에뮬레이터 시드, 선별 검증기, 문서 검사 스크립트
-├─ teaching-materials/    # 교사가 투사하는 독립 수업 자료 (로그인·DB 미사용, 자료 자체 빌드 build.cjs가 public/festival-romance.html도 만듦)
+├─ teaching-materials/    # 교사용 독립 자료 (로그인·DB 미사용)
+│  ├─ festival-romance/   # 3차시 개념 수업 투사 자료(자체 빌드 build.cjs가 public/festival-romance.html도 만듦)
 │  └─ instructor-guide/   # 강사님께 보내는 사이트 사용법 안내서(PDF와 원본 HTML, 캡처·PDF 다시 만들기 스크립트)
 ├─ docs/                  # PRD, DESIGN, DEVELOPMENT, FIREBASE_SETUP, HANDOFF 핵심 문서
 │  ├─ plans/              # 진행 중인 작업 계획 (필요할 때 만들고, 끝나면 보관)
 │  ├─ archive/            # 지난 문서 원문 스냅샷 (수정 금지)
-│  └─ reference/          # 보관 원문이 가리키는 근거 자료
+│  └─ reference/          # 보관 원문·HANDOFF가 가리키는 근거 자료
 ├─ outputs/design-review/ # 보관 원문이 가리키는 초기 화면 캡처 (수정 금지)
 └─ archive/               # V1 최신 소스 참고본 (실행·배포 대상 아님, 수정 금지)
 ```
