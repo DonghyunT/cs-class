@@ -300,7 +300,7 @@ test("단계별 0%와 100%를 터치로 확인하고 정규 수업과 복습을 
   const quiz = overview.getByRole("button", { name: /^퀴즈 진도:/ });
   await expect(concept).toHaveAccessibleName("개념 진도: 5/5개 완료, 100%");
   await expect(quiz).toHaveAccessibleName("퀴즈 진도: 0/5개 완료, 0%");
-  await expect(overview.locator("svg [data-start-marker]")).toHaveCount(0);
+  await expect(overview.locator("svg [data-start-marker]")).toHaveCount(2);
   const lessons = page.getByRole("region", { name: "수업별 학습 진도", exact: true });
   await expect(lessons.getByRole("article")).toHaveCount(1);
   await expect(lessons.getByRole("link", { name: "선택 복습 수업 둘러보기", exact: true })).toBeVisible();

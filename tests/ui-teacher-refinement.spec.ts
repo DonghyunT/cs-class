@@ -262,7 +262,7 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   const row = page.locator("tbody tr");
   await expect(row).toHaveCount(1);
   await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuetext", "필수 활동 1/14개 완료");
-  await expect(row.locator("svg [data-start-marker]")).toHaveCount(0);
+  await expect(row.locator("svg [data-start-marker]")).toHaveCount(2);
   const viewer = row.getByRole("button", { name: "20182 제출 작품 보기", exact: true });
   await viewer.click();
   await expect(page.getByRole("dialog", { name: "20182 학생의 제출 작품", exact: true })).toBeVisible();
