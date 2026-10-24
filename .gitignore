@@ -1,5 +1,7 @@
 # PDF 교과서/지도서 (용량 초과 방지)
 *.pdf
+# 강사님께 보내는 안내서 PDF(약 1.2MB)는 저장소에 둡니다.
+!teaching-materials/instructor-guide/*.pdf
 
 # 백업 폴더 (원본 보존용, 배포 불필요)
 백업용/
