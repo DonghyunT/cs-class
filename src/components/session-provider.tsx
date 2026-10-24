@@ -65,11 +65,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const channel = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel("cs-class-activity");
     const onActivity = (event: Event) => {
       if (!event.isTrusted || !current.current) return;
+      // Work inside a sandboxed frame (the Entry editor) reaches this page only as that frame's messages.
+      if (event instanceof MessageEvent && !Array.from(document.querySelectorAll("iframe")).some((frame) => frame.contentWindow === event.source)) return;
       const now = Date.now(); if (now - activity.current < 1000) return;
       activity.current = now; channel?.postMessage({ uid, at: now });
     };
     if (channel) channel.onmessage = (event) => { if (event.data?.uid === uid && typeof event.data.at === "number" && event.data.at <= Date.now() + 1000) activity.current = Math.max(activity.current, event.data.at); };
-    const events = ["pointerdown", "keydown", "input", "scroll", "touchstart"];
+    const events = ["pointerdown", "keydown", "input", "scroll", "touchstart", "message"];
     events.forEach((name) => window.addEventListener(name, onActivity, { passive: true, capture: true }));
     let tick = 0;
     const timer = window.setInterval(async () => {

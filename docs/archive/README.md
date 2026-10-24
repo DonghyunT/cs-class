@@ -4,6 +4,8 @@
 
 ## 보관 기록
 
+- **[2026-10-24 강사 안내서 재구성 전 원문](cs-class/2026-10-24-before-instructor-guide-flow/manifest.json):** 사이트 소개와 실제 수업 활용을 나누기 전 `main@71ee6f9`의 HTML을 내용 그대로 보존했습니다([안내](cs-class/2026-10-24-before-instructor-guide-flow/README.md)).
+
 - **[2026-10-24 완료 계획 원문](cs-class/2026-10-24-completed-plans/manifest.json):** PR #72로 공개된 학습 경험 개선 계획을 `docs/plans/`에서 `git mv`로 옮겨 내용 그대로 보존했습니다([안내](cs-class/2026-10-24-completed-plans/README.md)).
 
 - **[2026-10-23 완료 계획 원문](cs-class/2026-10-23-completed-plans/manifest.json):** PR #73으로 공개된 힌트·채점·반복 그림 계획을 `docs/plans/`에서 `git mv`로 옮겨 내용 그대로 보존했습니다([안내](cs-class/2026-10-23-completed-plans/README.md)).
