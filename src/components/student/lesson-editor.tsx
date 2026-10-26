@@ -2,7 +2,9 @@
 
 import { memo, useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { ArrowRight, ArrowDown, ArrowUp, BookOpen, Check, CheckCircle2, Layers3, Send } from "lucide-react";
+import { Toast } from "@base-ui/react/toast";
 import { Button } from "@/components/ui/button";
+import { SuccessToasts } from "@/components/ui/toast";
 import type { WorkController, LessonMode } from "./work-controller";
 import { practiceMatches, progressFor, shownQuizIds } from "@/lib/classroom/progress";
 import type { Lesson, Question, Stage, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
@@ -19,7 +21,7 @@ import styles from "./student.module.css";
 import type { LessonOrigin } from "./lesson-shell";
 import { PracticeGuidance } from "./practice-guidance";
 import { CompletionBanner, CompletionCelebration } from "./lesson-complete";
-import { lessonBadgesFor, type BadgeId } from "@/lib/classroom/achievements";
+import { badgeTitle, lessonBadgesFor, type BadgeId } from "@/lib/classroom/achievements";
 import { LessonConceptPanel } from "./lesson-concept-panel";
 import { LessonQuizPanel } from "./lesson-quiz-panel";
 
@@ -51,6 +53,14 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   // Celebrate only the change to complete during this visit, whichever activity finished it,
   // and list just the badges whose count this change raised (the dashboard counts lessons per badge).
   const [seen, setSeen] = useState({ completed, badges: lessonBadges });
+  const [toasts] = useState(() => Toast.createToastManager());
+  const prev = useRef({ completed, badges: lessonBadges });
+  useEffect(() => {
+    const justCompleted = completed && !prev.current.completed;
+    const added = lessonBadges.filter(id => !prev.current.badges.includes(id));
+    prev.current = { completed, badges: lessonBadges };
+    if (!justCompleted) for (const id of added) toasts.add({ id: `badge-${id}`, title: `‘${badgeTitle(id)}’ 배지를 받았어요!`, priority: "low" });
+  }, [completed, lessonBadges, toasts]);
   const [celebration, setCelebration] = useState<BadgeId[] | null>(null);
   if (completed !== seen.completed || lessonBadges.join() !== seen.badges.join()) {
     if (completed && !seen.completed) setCelebration(lessonBadges.filter(id => !seen.badges.includes(id)));
@@ -305,5 +315,6 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   return <div className={styles.workspace}>{content}
     <span className={styles.srOnly} role="status">{celebration ? "필수 활동을 모두 마쳤어요. 완료 안내에서 이번에 오른 배지를 볼 수 있어요." : ""}</span>
     {celebration && <CompletionCelebration lesson={lesson} work={work} badges={celebration} mode={mode} onClose={closeCelebration} />}
+    <SuccessToasts manager={toasts} label="배지 알림" />
   </div>;
 });

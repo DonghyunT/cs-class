@@ -330,7 +330,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
       if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "s") return;
       if (!(event.target instanceof Element) || !event.target.closest("[data-lesson-shell]")) return;
       event.preventDefault();
-      if (event.repeat || event.isComposing || event.keyCode === 229 || document.querySelector("[role=dialog]")) return;
+      if (event.repeat || event.isComposing || event.keyCode === 229 || document.querySelector("[role=dialog]:not([data-slot=toast])")) return;
       if (event.target.closest("[data-lesson-shell]")?.querySelector<HTMLButtonElement>("[data-work-save]")?.matches('[disabled], [aria-disabled="true"]')) return;
       void save();
     };

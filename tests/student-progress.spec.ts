@@ -742,13 +742,13 @@ test("완료 알림·배지: 마지막 활동을 마치면 완료 카드와 받�
   await expect(stamps).toHaveCount(4);
   await expect(stamps.filter({ hasText: "찍음" })).toHaveCount(4);
   await expect(badges).toContainText("도장 4개");
-  await expect(badges).toContainText("희귀 배지 0/2");
+  await expect(badges).toContainText("희귀 배지 0/1 · 깜짝 배지 0/2");
   await expect(badges).not.toContainText("정규 수업의 필수 활동을 모두 마치면 받아요.");
   await badges.getByRole("link", { name: "모두 보기", exact: true }).click();
   await expect(page).toHaveURL(/\/student\/badges$/);
   await expect(page.getByRole("navigation", { name: "교실 메뉴", exact: true }).getByRole("link", { name: "내 배지", exact: true })).toHaveAttribute("aria-current", "page");
   const all = page.getByRole("region", { name: "배지 모음", exact: true });
-  await expect(all).toContainText("10종 중 6종 받음");
+  await expect(all).toContainText("11종 중 6종 받음");
   const finished = all.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "수업 완주 · 받은 배지", exact: true }) });
   await expect(finished.getByLabel("별 5개 중 1개")).toBeVisible();
   await expect(finished).toContainText("다음 별까지 2개");
@@ -757,41 +757,53 @@ test("완료 알림·배지: 마지막 활동을 마치면 완료 카드와 받�
   await expect(all.getByRole("heading", { name: "도전자 · 아직 받지 않은 배지", exact: true })).toBeVisible();
   await expect(all.getByRole("listitem").filter({ hasText: "첫 발걸음" })).toContainText(`개념을 확인한 수업: ${conditionals.title}`);
   // Rare badges stay a mystery with a teaser until earned.
-  await expect(all.getByRole("heading", { name: "??? · 아직 받지 않은 희귀 배지", exact: true })).toHaveCount(2);
-  await expect(all).toContainText("한 수업을 도전 미션까지 완벽하게");
+  await expect(all.getByRole("heading", { name: "??? · 아직 받지 않은 희귀 배지", exact: true })).toHaveCount(1);
+  await expect(all.getByRole("heading", { name: "??? · 아직 받지 않은 깜짝 배지", exact: true })).toHaveCount(2);
+  await expect(all).toContainText("빈틈없이 완벽한 하루");
+  await expect(all).toContainText("포기하지 않는 사람에게");
+  await expect(all).toContainText("작품 너머의 깨달음을 남기면");
   await expect(all).not.toContainText("올클리어");
   // Earned badges are new once on this device, then remembered.
   await expect(all.getByText("새로 받음", { exact: true })).toHaveCount(6);
   await page.reload();
-  await expect(all).toContainText("10종 중 6종 받음");
+  await expect(all).toContainText("11종 중 6종 받음");
   await expect(all.getByText("새로 받음", { exact: true })).toHaveCount(0);
 });
 
-test("희귀 배지: 오뚝이·올클리어는 받으면 이름과 함께 반짝이고, 움직임 줄이기에서는 멈춘다", async ({ page }) => {
+test("희귀·깜짝 배지·토스트: 수업 중 배지를 받으면 토스트로 알리고, 희귀 배지만 반짝인다", async ({ page }) => {
   const conditionals = LESSONS.find(lesson => lesson.id === "conditionals")!;
   await openLessons([conditionals.id], conditionals.id);
   const work = emptyWork(conditionals);
-  work.conceptSolved = conditionals.concepts.map(concept => concept.id);
+  work.conceptSolved = conditionals.concepts.slice(1).map(concept => concept.id);
   work.quizSolved = conditionals.quiz.map(question => question.id);
   work.quizRound = 3;
+  work.missions = Object.fromEntries(["average", "pass"].map(id => [id, { validation: null, submission: submission(`${id}-submitted`) }]));
+  work.updatedAt = Date.now();
+  await saveWork(work);
+  await page.goto(`/classroom/${conditionals.id}?from=dashboard`);
+  await page.locator("#panel-concept input[type=radio]").first().check();
+  await page.getByRole("button", { name: "정답 확인", exact: true }).click();
+  await expect(page.locator('[data-slot="toast"]').filter({ hasText: "‘개념 탐험가’ 배지를 받았어요!" })).toBeVisible();
+  work.conceptSolved = conditionals.concepts.map(concept => concept.id);
   work.missions = Object.fromEntries(["average", "pass", "freethrow", "ride"].map(id => [id, { validation: null, submission: submission(`${id}-submitted`) }]));
   work.updatedAt = Date.now();
   await saveWork(work);
-  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/student/badges");
   const all = page.getByRole("region", { name: "배지 모음", exact: true });
   const comeback = all.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "오뚝이 · 받은 배지", exact: true }) });
   await expect(comeback).toContainText("세 번 넘어져도 끝까지 해냈어요!");
-  // A retried quiz is not a first-try score, so 올클리어 stays hidden here.
   await expect(all.getByRole("heading", { name: "??? · 아직 받지 않은 희귀 배지", exact: true })).toHaveCount(1);
-  expect(await comeback.evaluate(element => getComputedStyle(element, "::after").display)).toBe("none");
+  await expect(all.getByRole("heading", { name: "??? · 아직 받지 않은 깜짝 배지", exact: true })).toHaveCount(1);
+  expect(await comeback.evaluate(element => getComputedStyle(element, "::after").animationName)).toBe("none");
   work.quizRound = 1;
   await saveWork(work);
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.reload();
   const allClear = all.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "올클리어 · 받은 배지", exact: true }) });
   await expect(allClear).toContainText("1개 수업에서 받음");
   expect(await allClear.evaluate(element => getComputedStyle(element, "::after").animationName)).toContain("shine");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(await allClear.evaluate(element => getComputedStyle(element, "::after").display)).toBe("none");
 });
 
 test("남은 활동: 진행 중인 정규 수업은 대시보드와 수업 목록에 남은 개념·퀴즈·미션 수를 보여 준다", async ({ page }) => {

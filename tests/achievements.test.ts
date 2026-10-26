@@ -28,13 +28,15 @@ test("남은 활동은 개념·퀴즈·실습 순서로 남은 개수만 보여 
   expect(remainingFor(flowchart, { ...emptyWork(flowchart), conceptSolved: flowchart.concepts.map(c => c.id), quizSolved: flowchart.quiz.map(q => q.id) })).toEqual(["작품 4개"]);
 });
 
-test("한 수업의 배지는 저장된 진도와 퀴즈 회차로 정한다", () => {
+test("한 수업의 배지는 저장된 진도와 퀴즈 회차·성찰로 정한다", () => {
   const conditionals = lesson("conditionals");
   expect(lessonBadgesFor(conditionals, null)).toEqual([]);
   expect(lessonBadgesFor(conditionals, done(conditionals))).toEqual(["concepts", "perfect-quiz", "missions", "lesson-complete"]);
   expect(lessonBadgesFor(conditionals, done(conditionals, { quizRound: 2 }))).toEqual(["concepts", "missions", "lesson-complete"]);
   // A first round that is not fully solved yet is not a full score.
   expect(lessonBadgesFor(conditionals, done(conditionals, { quizSolved: ["order"] }))).toEqual(["concepts", "missions"]);
+  const withReflection = done(conditionals, { draft: { ...emptyWork(conditionals).draft, programming: { mission: "average", projects: {}, reflection: "조건을 먼저 확인해요" } } });
+  expect(lessonBadgesFor(conditionals, withReflection)).toContain("reflection");
   const sandwich = lesson("review-sandwich");
   expect(lessonBadgesFor(sandwich, done(sandwich))).toEqual(["review-complete"]);
   // Review quizzes count toward 오뚝이 too.
@@ -44,7 +46,7 @@ test("한 수업의 배지는 저장된 진도와 퀴즈 회차로 정한다", (
 test("배지 모음은 열린 수업 기준으로 세고, 셀 수 없는 배지는 숨긴다", () => {
   const programming = lesson("programming-13"), loops = lesson("loops"), abstraction = lesson("review-abstraction");
   const work = {
-    [programming.id]: done(programming, { quizRound: 3 }),
+    [programming.id]: done(programming, { quizRound: 3, draft: { ...emptyWork(programming).draft, programming: { mission: "name", projects: {}, reflection: "한 줄 발견" } } }),
     [loops.id]: done(loops, { quizSolved: [], missions: { square: { validation: null, submission }, safe: { validation: null, submission } } }),
   };
   const badges = Object.fromEntries(badgesFor([programming, loops, abstraction], work).map(badge => [badge.id, [badge.count, badge.total, badge.earned]]));
@@ -61,6 +63,7 @@ test("배지 모음은 열린 수업 기준으로 세고, 셀 수 없는 배지�
     stamps: [4, 8, false],
     "all-clear": [0, 2, false],
     comeback: [1, 3, true],
+    reflection: [1, 2, true],
   });
   const where = Object.fromEntries(badgesFor([programming, loops, abstraction], work).map(badge => [badge.id, badge.lessons]));
   expect(where).toMatchObject({
@@ -72,13 +75,14 @@ test("배지 모음은 열린 수업 기준으로 세고, 셀 수 없는 배지�
     "lesson-complete": [programming.title],
     "review-complete": [],
     comeback: [programming.title],
+    reflection: [programming.title],
   });
   // No review and fewer than three regular lessons: those badges disappear.
-  expect(badgesFor([programming], {}).map(badge => badge.id)).toEqual(["stamps", "all-clear", "comeback", "concepts", "perfect-quiz", "missions", "challenge", "lesson-complete", "first-step", "first-work"]);
+  expect(badgesFor([programming], {}).map(badge => badge.id)).toEqual(["stamps", "all-clear", "concepts", "perfect-quiz", "missions", "challenge", "lesson-complete", "comeback", "reflection", "first-step", "first-work"]);
   expect(badgesFor([], {})).toEqual([]);
 });
 
-test("단계 배지는 고정 개수로 별을 올리고, 희귀 배지는 조건을 모두 채워야 받는다", () => {
+test("단계 배지는 고정 개수로 별을 올리고, 희귀·깜짝 배지는 조건을 모두 채워야 받는다", () => {
   const programming = lesson("programming-13"), conditionals = lesson("conditionals"), loops = lesson("loops"), review = lesson("review-sandwich");
   const badge = (lessons: Lesson[], work: Record<string, Work>, id: string) => badgesFor(lessons, work).find(item => item.id === id);
   // Twenty regular lessons with a single submission as practice: counts of 4 and 20 sit between and on the 1·3·5·10·20 steps.
@@ -106,11 +110,11 @@ test("단계 배지는 고정 개수로 별을 올리고, 희귀 배지는 조�
   expect(lessonBadgesFor(loops, { ...loopsAll, quizRound: 2 })).not.toContain("all-clear");
   expect(lessonBadgesFor(programming, done(programming))).not.toContain("all-clear");
 
-  // 연속 완주: three neighbouring open regular lessons; a review in between does not break the run.
+  // 만점 행진: three neighbouring open regular lessons with a first-try full score; a review in between does not break the run.
   const regular = [programming, conditionals, review, loops];
   const finished = Object.fromEntries([programming, conditionals, loops].map(item => [item.id, done(item)]));
   expect(badge(regular, finished, "streak")).toMatchObject({ earned: true, lessons: [programming.title, conditionals.title, loops.title] });
-  expect(badge(regular, { ...finished, [conditionals.id]: done(conditionals, { conceptSolved: [] }) }, "streak")).toMatchObject({ earned: false, lessons: [] });
+  expect(badge(regular, { ...finished, [conditionals.id]: done(conditionals, { quizRound: 2 }) }, "streak")).toMatchObject({ earned: false, lessons: [] });
   expect(badge([programming, conditionals], finished, "streak")).toBeUndefined();
 
   // Seen keys cover every level reached, so a star lost when a lesson closes is not "new" again.
