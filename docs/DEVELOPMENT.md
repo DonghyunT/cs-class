@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-10-25(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-10-26(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -107,7 +107,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 - **컴포넌트 위치:** `src/components/student/<수업ID>.tsx` 또는 전용 하위 폴더(`review/<수업ID>.tsx`)에 둡니다.
 - **공통 셸 구성:** [`LessonWorkspace`](../src/components/student/lesson-workspace.tsx) 또는 [`LessonEditor`](../src/components/student/lesson-editor.tsx)로 감싸 공통 헤더·진도율 바·저장 상태 배지 영역을 확보합니다.
 - **엔트리 수업:** 새 컴포넌트 없이 `practice.type: "programming"` 수업 정의(예: [`conditionals-lesson.ts`](../src/lib/classroom/conditionals-lesson.ts))를 만들면 공통 개념·퀴즈 화면과 엔트리 실습 화면을 씁니다. 아래 자리에 모두 등록하며, 빠뜨리지 않으려면 기존 엔트리 수업 ID(`loops`)를 저장소 전체에서 검색해 같은 자리에 넣습니다(`seed-emulator.mjs`, `tests/e2e-scope.test.mjs` 포함).
-  1. 수업 정의: `catalog.ts`의 `LESSONS`(공개 시 `RELEASED_LESSONS`)에 가르치는 순서대로 정규 수업 맨 뒤(복습 앞)에 넣습니다. 학생 목록의 '최신 수업 먼저'와 `연속 완주` 배지가 이 순서를 씁니다.
+  1. 수업 정의: `catalog.ts`의 `LESSONS`(공개 시 `RELEASED_LESSONS`)에 가르치는 순서대로 정규 수업 맨 뒤(복습 앞)에 넣습니다. 학생 목록의 '최신 수업 먼저'와 `만점 행진` 배지가 이 순서를 씁니다.
   2. 미션: `PROGRAMMING_MISSIONS`·`LESSON_MISSIONS`([§4.1](#41-entryjs-4023-실습-환경)의 수업별 미션), 미션별 허용 블록 `MISSION_BLOCKS`, 강아지 없는 미션 `FREE_MISSIONS`에 등록합니다.
   3. 채점 규칙: `programming-grader.ts`. 규칙이 없는 미션은 통과하지 않습니다.
   4. 개념·퀴즈 정답: 서버 `solutions.ts`에 넣습니다.

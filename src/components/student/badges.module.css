@@ -20,7 +20,9 @@
 .badge[data-badge="review-complete"], .chip[data-badge="review-complete"], .stamps li[data-badge="review-complete"] { --badge: #0e8fa8; --badge-ink: #0b6f83; --badge-surface: #e4f6f9; }
 .badge[data-badge="first-work"], .chip[data-badge="first-work"], .stamps li[data-badge="first-work"] { --badge: #d6437d; --badge-ink: #a8305f; --badge-surface: #fdebf2; }
 .badge[data-badge="stamps"], .chip[data-badge="stamps"], .stamps li[data-badge="stamps"] { --badge: #c2410c; --badge-ink: #9a3412; --badge-surface: #fff3e8; }
-.badge[data-badge="all-clear"], .chip[data-badge="all-clear"], .stamps li[data-badge="all-clear"], .badge[data-badge="comeback"], .chip[data-badge="comeback"], .stamps li[data-badge="comeback"], .badge[data-badge="streak"], .chip[data-badge="streak"], .stamps li[data-badge="streak"] { --badge: #c99400; --badge-ink: #8a6500; --badge-surface: #fff8db; }
+.badge[data-badge="comeback"], .chip[data-badge="comeback"], .stamps li[data-badge="comeback"] { --badge: #168a50; --badge-ink: #116b3e; --badge-surface: #e8f7ef; }
+.badge[data-badge="reflection"], .chip[data-badge="reflection"], .stamps li[data-badge="reflection"] { --badge: #4f5bd5; --badge-ink: #3b44a8; --badge-surface: #eef0ff; }
+.badge[data-badge="all-clear"], .chip[data-badge="all-clear"], .stamps li[data-badge="all-clear"], .badge[data-badge="streak"], .chip[data-badge="streak"], .stamps li[data-badge="streak"] { --badge: #c99400; --badge-ink: #8a6500; --badge-surface: #fff8db; }
 
 .grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
 .badge { position: relative; overflow: hidden; display: flex; align-items: flex-start; gap: 12px; min-width: 0; border: 1px solid color-mix(in srgb, var(--badge) 30%, white); border-radius: 16px; background: var(--badge-surface); padding: 14px; transition: transform 180ms ease, box-shadow 180ms ease; }
@@ -37,7 +39,7 @@
 .badge[data-stars="3"] .medal { background: linear-gradient(135deg, #c99400, #ffe17a); }
 .badge[data-stars="4"] .medal { background: linear-gradient(135deg, #6d3fc4, #c4a6ff); }
 .badge[data-stars="5"] .medal { background: conic-gradient(from 30deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444); }
-.badge[data-kind="common"] .medal, .badge[data-kind="rare"] .medal { background: var(--badge); }
+.badge[data-kind="common"] .medal, .badge[data-kind="rare"] .medal, .badge[data-kind="surprise"] .medal { background: var(--badge); }
 
 .stars { display: inline-flex; gap: 1px; font-size: 13px; line-height: 1; letter-spacing: 0; }
 .stars [data-on="true"] { color: #f2a900; }
@@ -49,11 +51,11 @@
 /* backwards, not both: holding the end frame would block the hover lift. */
 .badge[data-fresh] { animation: pop 420ms ease-out backwards; }
 
-/* Rare badges shine once earned and stay a mystery until then. */
+/* Rare badges shine once earned; rare and surprise badges stay a mystery until then. */
 .badge[data-kind="rare"][data-earned="true"] { border-color: #f0c443; background: linear-gradient(140deg, #fffbea, #fff1b8 60%, #ffe58a); box-shadow: 0 0 0 1px #ffe58a, 0 10px 26px -18px #c99400; }
 .badge[data-kind="rare"][data-earned="true"] .medal { background: linear-gradient(135deg, #b47f00, #ffd84d); box-shadow: 0 0 0 3px #fff, 0 0 14px 2px #ffd84d; }
 .badge[data-kind="rare"][data-earned="true"]::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, .75) 50%, transparent 65%); transform: translateX(-100%); animation: shine 2.8s ease-in-out infinite; pointer-events: none; }
-.badge[data-kind="rare"][data-earned="false"] { background: repeating-linear-gradient(135deg, #f6f7fb 0 10px, #eff1f6 10px 20px); border-style: dashed; border-color: #cfd5df; }
+.badge[data-kind="rare"][data-earned="false"], .badge[data-kind="surprise"][data-earned="false"] { background: repeating-linear-gradient(135deg, #f6f7fb 0 10px, #eff1f6 10px 20px); border-style: dashed; border-color: #cfd5df; }
 
 /* After the colour rules so an unearned badge always looks grey. */
 .badge[data-earned="false"] { --badge: #9aa4b5; --badge-ink: #626c80; --badge-surface: #f4f6fa; border-style: dashed; border-color: #cfd5df; }

@@ -25,7 +25,7 @@ export function CompletionBanner({ lesson, mode }: { lesson: Lesson; mode: Lesso
 export function CompletionCelebration({ lesson, work, badges, mode, onClose }: { lesson: Lesson; work: Work; badges: BadgeId[]; mode: LessonMode; onClose: (returnFocus: boolean) => void }) {
   const progress = progressFor(lesson, work);
   useEffect(() => {
-    const close = (event: KeyboardEvent) => { if (event.key === "Escape" && !event.defaultPrevented && !document.querySelector("[role=dialog], [role=alertdialog]")) onClose(false); };
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape" && !event.defaultPrevented && !document.querySelector("[role=dialog]:not([data-slot=toast]), [role=alertdialog]:not([data-slot=toast])")) onClose(false); };
     document.addEventListener("keydown", close);
     return () => document.removeEventListener("keydown", close);
   }, [onClose]);
