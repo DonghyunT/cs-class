@@ -10,7 +10,7 @@ import { SuccessToasts } from "@/components/ui/toast";
 import type { Lesson, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { buildEntryProject, parseEntryProject } from "@/lib/classroom/entry-project";
 import { practiceMatches } from "@/lib/classroom/progress";
-import { LOCKED_OBJECTS, MAX_PROJECT_BYTES, entryObjectModel, isFreeMission, missionBlockIssue, missionStarter, newAddedObject, parseProgrammingProject, type ProgrammingMission } from "@/lib/classroom/programming-entry";
+import { LOCKED_OBJECTS, MAX_PROJECT_BYTES, MAX_STUDENT_VARIABLES, entryObjectModel, isFreeMission, missionBlockIssue, missionStarter, newAddedObject, parseProgrammingProject, type ProgrammingMission } from "@/lib/classroom/programming-entry";
 import { EntryLibraryPicker } from "./entry-library-picker";
 import type { WorkController, LessonMode } from "./work-controller";
 import { useWorkspaceExpansion } from "./use-workspace-expansion";
@@ -152,6 +152,8 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       else if (free && message.type === "picture-locked") setResult("모양은 목록에서 보고 고르기만 할 수 있어요. 다른 그림은 ‘오브젝트 추가하기’로 더해 주세요.");
       else if (mission && message.type === "object-added" && typeof message.name === "string") setResult(`‘${message.name.slice(0, 20)}’을(를) 추가했어요. 이 오브젝트의 코드를 만들려면 오브젝트 목록에서 고르세요. 검증은 강아지 코드로 해요.`);
       else if (mission && message.type === "main-object-locked") setResult("강아지는 미션 검증에 쓰여서 지울 수 없어요. 추가한 오브젝트만 지울 수 있어요.");
+      else if (mission && message.type === "variable-locked") setResult("수업에서 준비한 변수는 지우거나 이름을 바꿀 수 없어요. 필요한 변수는 ‘변수 추가하기’로 새로 만들어요.");
+      else if (mission && message.type === "variable-limit") setResult(`변수는 ${MAX_STUDENT_VARIABLES}개까지 만들 수 있어요. 쓰지 않는 변수를 지운 뒤 추가해 주세요.`);
       else if (mission && message.type === "add-object-request" && !locked) {
         if (free && objectCount(editorProject.current ?? draft.entryProject) >= MAX_FREE_OBJECTS) setResult(`오브젝트는 ${MAX_FREE_OBJECTS}개까지 둘 수 있어요. 쓰지 않는 오브젝트를 지운 뒤 추가해 주세요.`);
         else if (!free && (parseProgrammingProject(editorProject.current ?? draft.entryProject)?.added.length ?? 0) >= MAX_ADDED_OBJECTS) setResult(`오브젝트는 강아지 말고 ${MAX_ADDED_OBJECTS}개까지 추가할 수 있어요.`);

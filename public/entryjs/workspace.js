@@ -141,7 +141,7 @@ try {
     // The programming lesson lets students add objects from the lesson's own sprites.
     projectsaveable: false, objectEditable: programming, objectaddable: programming,
     objectdeletable: programming, pictureeditable: free, soundeditable: false,
-    sceneEditable: false, variableEnable: false, listEnable: false,
+    sceneEditable: false, variableEnable: programming, listEnable: false,
     functionEnable: false, messageEnable: false, hardwareEnable: false,
     aiLearningEnable: false, aiUtilizeDisable: true, expansionDisable: true,
     textCodingEnable: false, backpackDisable: true, exportObjectEnable: false,
@@ -211,6 +211,36 @@ try {
         return clone;
       };
     }
+    // The lesson's own variables are rebuilt on save, so they cannot be deleted or renamed. Copy of
+    // LESSON_VARIABLES and MAX_STUDENT_VARIABLES in src/lib/classroom/programming-entry.ts.
+    const LESSON_VARIABLES = ["cs-A", "cs-B", "cs-clicks"];
+    const variables = Entry.variableContainer;
+    const removeVariable = variables?.removeVariable, renameVariable = variables?.changeVariableName, addVariable = variables?._addVariable;
+    if (typeof removeVariable === "function") variables.removeVariable = function (variable, ...rest) {
+      if (!loading && LESSON_VARIABLES.includes(variable?.id_ ?? variable?.id)) { send("variable-locked"); return; }
+      return removeVariable.call(this, variable, ...rest);
+    };
+    if (typeof renameVariable === "function") variables.changeVariableName = function (variable, name, ...rest) {
+      if (!loading && LESSON_VARIABLES.includes(variable?.id_)) { variable.listElement.nameField.value = variable.name_; send("variable-locked"); return; }
+      return renameVariable.call(this, variable, name, ...rest);
+    };
+    if (typeof addVariable === "function") variables._addVariable = function (...rest) {
+      if (this.variables_.filter((item) => item.type === "variable" && !LESSON_VARIABLES.includes(item.id_)).length >= 10) { send("variable-limit"); return; }
+      return addVariable.apply(this, rest);
+    };
+    // Deleting, renaming or changing a variable's value or visibility goes through Entry.do without a block
+    // change event, so report it as an edit. Lesson variables always start at 0.
+    const run = Entry.do;
+    if (typeof run === "function") Entry.do = function (command, ...rest) {
+      if (!loading && command === "variableSetDefaultValue" && LESSON_VARIABLES.includes(rest[0])) {
+        if (variables.selected?.listElement) variables.updateSelectedVariable(variables.selected);
+        send("variable-locked");
+        return;
+      }
+      const result = run.call(this, command, ...rest);
+      if (typeof command === "string" && command.startsWith("variable")) queueMicrotask(changed);
+      return result;
+    };
     // Entry's add button only asks for a sprite; the lesson page shows its own sprite list.
     Entry.addEventListener("openSpriteManager", () => { if (!locked && !loading) send("add-object-request"); });
     if (free) {
