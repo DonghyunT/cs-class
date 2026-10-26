@@ -221,7 +221,7 @@ try {
       return removeVariable.call(this, variable, ...rest);
     };
     if (typeof renameVariable === "function") variables.changeVariableName = function (variable, name, ...rest) {
-      if (!loading && LESSON_VARIABLES.includes(variable?.id_)) { variable.listElement.nameField.value = variable.name_; send("variable-locked"); return; }
+      if (!loading && LESSON_VARIABLES.includes(variable?.id_)) { if (variable.listElement?.nameField) variable.listElement.nameField.value = variable.name_; send("variable-locked"); return; }
       return renameVariable.call(this, variable, name, ...rest);
     };
     if (typeof addVariable === "function") variables._addVariable = function (...rest) {

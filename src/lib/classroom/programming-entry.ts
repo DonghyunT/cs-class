@@ -170,12 +170,13 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
       // Entry allows 10 characters but numbers a copied name past that (`이름1`).
       const name = typeof v.name === "string" ? v.name.trim().slice(0, 20).trim() : "";
       const value = typeof v.value === "number" && Number.isFinite(v.value) || typeof v.value === "string" && v.value.length <= 180 ? loadedValue(v.value) : fail();
-      if (!variableId(v.id) || !name || (v.object != null && typeof v.object !== "string")) throw Error();
+      // Text like ‘1e309’ loads as Infinity, which a saved project cannot hold.
+      if (!variableId(v.id) || !name || (v.object != null && typeof v.object !== "string") || !Number.isFinite(typeof value === "number" ? value : 0)) throw Error();
       return { id: v.id, name, value, visible: v.visible !== false, x: num(v.x, -1000, 1000, 0), y: num(v.y, -1000, 1000, 0), object: typeof v.object === "string" ? v.object : null };
     });
-    // The editor stops the add panel at MAX_STUDENT_VARIABLES, but copying an object copies its own variables;
-    // names are not checked, since blocks and grading use ids.
-    if (variables.length > 3 * MAX_STUDENT_VARIABLES || new Set(variables.map((v) => v.id)).size < variables.length) return null;
+    // The editor stops the add panel at MAX_STUDENT_VARIABLES, but copying an object copies its own variables, so the
+    // count is left to MAX_PROJECT_BYTES, which tells the student to trim the work. Names are not checked: blocks use ids.
+    if (new Set(variables.map((v) => v.id)).size < variables.length) return null;
     // The original blocks must match their own branch. Letting a malformed one fall
     // through to the generic rule would hand the interpreter and teacher view a shape they cannot read.
     const legacy = new Set([...reporters, "when_run_button_click", "when_some_key_pressed", "ask_and_wait", "set_variable", "move_direction", "direction_absolute", "dialog_time"]);

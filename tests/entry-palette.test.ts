@@ -5,7 +5,7 @@ import legacyKeys from "./fixtures/entry-legacy-keys.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { readEntryDraft } from "../src/components/student/read-editor-draft";
 import { CONTAINER_BLOCKS, ENTRY_PALETTE, MISSION_BLOCKS, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
-import { PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { MAX_PROJECT_BYTES, PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission, wordingMessage } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
@@ -840,9 +840,12 @@ test("엔트리가 만들 수 있는 학생 변수는 받고, 너무 많거나 �
   const plain = project([[start()]]);
   // Entry numbers a copied 10-character name past 10 (`abcdefghij1`), and ‘클릭 수’ is free outside the tree mission.
   expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "abcdefghij"), studentVariable("bbbb", "abcdefghij1"), studentVariable("cccc", "클릭 수")]))!.variables.map((v) => v.name)).toEqual(["abcdefghij", "abcdefghij1", "클릭 수"]);
-  // Copying an object copies its own variables past the add panel's limit of 10.
-  expect(parseProgrammingProject(withVariables(plain, Array.from({ length: 30 }, (_, i) => studentVariable(`v${i}`, `변수${i}`))))).not.toBeNull();
-  expect(parseProgrammingProject(withVariables(plain, Array.from({ length: 31 }, (_, i) => studentVariable(`v${i}`, `변수${i}`))))).toBeNull();
+  // Copying an object copies its own variables past the add panel's limit of 10 (ten local variables, three copies);
+  // only the saved size limits them.
+  const many = parseProgrammingProject(withVariables(plain, Array.from({ length: 40 }, (_, i) => studentVariable(`v${i}`, `변수${i}`))))!;
+  expect([many.variables.length, many.bytes < MAX_PROJECT_BYTES]).toEqual([40, true]);
+  // ‘1e309’ would load as Infinity, which the saved project cannot hold.
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "큰 수", { value: "1e309" })]))).toBeNull();
   expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "점수"), studentVariable("aaaa", "점수2")]))).toBeNull();
   expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "속도", { object: "obj-gone" })]))).toBeNull();
   expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "  ")]))).toBeNull();
