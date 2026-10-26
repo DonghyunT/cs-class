@@ -5,7 +5,7 @@ import legacyKeys from "./fixtures/entry-legacy-keys.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { readEntryDraft } from "../src/components/student/read-editor-draft";
 import { CONTAINER_BLOCKS, ENTRY_PALETTE, MISSION_BLOCKS, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
-import { PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { MAX_PROJECT_BYTES, PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission, wordingMessage } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
@@ -216,9 +216,9 @@ test("채점은 강아지 코드만 보고 다른 오브젝트의 블록은 무�
 test("원래 블록이 자기 조건에 맞지 않으면 일반 규칙으로 넘어가지 않고 거부한다", () => {
   const with_ = (block: EntryNode) => project([[start(), block]]);
   expect(parseProgrammingProject(with_(node("dialog_time", null, null, "x", null)))).toBeNull();
-  expect(parseProgrammingProject(with_(node("set_variable", "cs-Z", node("text", "1"), null)))).toBeNull();
+  expect(parseProgrammingProject(with_(node("set_variable", "변수 Z!", node("text", "1"), null)))).toBeNull();
   expect(parseProgrammingProject(with_(node("dialog_time", node("calc_basic", node("number", "1"), null, node("number", "2")), node("number", "1"), "speak", null)))).toBeNull();
-  expect(parseProgrammingProject(project([[node("get_variable", "cs-Z")]]))).toBeNull();
+  expect(parseProgrammingProject(project([[node("get_variable", null)]]))).toBeNull();
   expect(parseProgrammingProject(with_(node("move_x", ...Array.from({ length: 9 }, () => null))))).toBeNull();
 });
 
@@ -810,4 +810,90 @@ test("미션이 받는 모든 동작 블록은 해석기에서 실행된다", ()
       expect(checkProgrammingMission(id, raw).message, `${id}: ${type}`).not.toBe("시작 블록은 맨 위에 두고 동작을 아래로 연결해 주세요.");
     }
   }
+});
+
+// Variables students make in the attribute tab, as Entry 4.0.23 exports them (newest first).
+const studentVariable = (id: string, name: string, extra: Record<string, unknown> = {}) => ({ name, id, visible: true, value: 0, variableType: "variable", isCloud: false, isRealTime: false, cloudDate: false, object: null, x: -230, y: -32, ...extra });
+const withVariables = (raw: string, variables: Record<string, unknown>[]) => { const p = JSON.parse(raw); p.variables.unshift(...variables); return JSON.stringify(p); };
+
+test("학생이 만든 변수는 저장되고 기존 변수 키·채점은 그대로다", () => {
+  const plain = project([multiply()]);
+  const raw = withVariables(plain, [studentVariable("tcgg", " 속도 ", { object: "entrybot", value: "5", isCloud: true }), studentVariable("syrt", "점수")]);
+  const parsed = parseProgrammingProject(raw)!;
+  expect(parsed.variables).toEqual([
+    { id: "tcgg", name: "속도", value: 5, visible: true, x: -230, y: -32, object: "entrybot" },
+    { id: "syrt", name: "점수", value: 0, visible: true, x: -230, y: -32, object: null },
+  ]);
+  expect((parsed.project.variables as { id: string; isCloud: boolean }[]).filter((v) => !["timer", "answer", "cs-A", "cs-B"].includes(v.id)).map((v) => [v.id, v.isCloud])).toEqual([["tcgg", false], ["syrt", false]]);
+  // Adding a variable is a change to save; a reload that lists variables in another order is not.
+  expect(parsed.key).not.toBe(parseProgrammingProject(plain)!.key);
+  const reordered = JSON.parse(JSON.stringify(parsed.project)); reordered.variables.reverse();
+  expect(parseProgrammingProject(JSON.stringify(reordered))!.key).toBe(parsed.key);
+  const again = parseProgrammingProject(JSON.stringify(parsed.project))!;
+  expect([again.key, JSON.stringify(again.project)]).toEqual([parsed.key, JSON.stringify(parsed.project)]);
+  // Without student variables the key is the one saved work already has.
+  expect(parseProgrammingProject(plain)!.key).toBe(parseProgrammingProject(plain)!.gradeKey);
+  expect(checkProgrammingMission("multiply", raw).passed).toBe(true);
+});
+
+test("엔트리가 만들 수 있는 학생 변수는 받고, 너무 많거나 없는 오브젝트 것이면 거부한다", () => {
+  const plain = project([[start()]]);
+  // Entry numbers a copied 10-character name past 10 (`abcdefghij1`), and ‘클릭 수’ is free outside the tree mission.
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "abcdefghij"), studentVariable("bbbb", "abcdefghij1"), studentVariable("cccc", "클릭 수")]))!.variables.map((v) => v.name)).toEqual(["abcdefghij", "abcdefghij1", "클릭 수"]);
+  // Copying an object copies its own variables past the add panel's limit of 10 (ten local variables, three copies);
+  // only the saved size limits them.
+  const many = parseProgrammingProject(withVariables(plain, Array.from({ length: 40 }, (_, i) => studentVariable(`v${i}`, `변수${i}`))))!;
+  expect([many.variables.length, many.bytes < MAX_PROJECT_BYTES]).toEqual([40, true]);
+  // ‘1e309’ would load as Infinity, which the saved project cannot hold.
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "큰 수", { value: "1e309" })]))).toBeNull();
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "점수"), studentVariable("aaaa", "점수2")]))).toBeNull();
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "속도", { object: "obj-gone" })]))).toBeNull();
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "  ")]))).toBeNull();
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "점수", { value: { x: 1 } })]))).toBeNull();
+});
+
+test("학생 변수로 결과를 담거나 기준값을 두어도 채점이 엔트리와 같다", () => {
+  const say = (value: EntryNode) => node("dialog", value, "speak", null);
+  const product = withVariables(project([[start(), ask(), node("set_variable", "cs-A", answer(), null), ask(), node("set_variable", "cs-B", answer(), null),
+    node("set_variable", "gopp", node("calc_basic", node("get_variable", "cs-A"), "MULTI", node("get_variable", "cs-B")), null), say(node("get_variable", "gopp"))]]), [studentVariable("gopp", "곱")]);
+  expect(checkProgrammingMission("multiply", product)).toEqual({ passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." });
+  // A variable starts at its saved value: 기준 = 60 decides 합격.
+  const pass = (limit: number | string) => withVariables(buildProgrammingProject(undefined, parseProgrammingProject(missionStarter("pass"))!.added.map((o) => ({ ...o, threads: [[start(), node("ask_and_wait", node("text", "점수는?"), null),
+    { ...node("if_else", node("boolean_basic_operator", answer(), "GREATER_OR_EQUAL", node("get_variable", "gijn")), null), statements: [[say(node("text", "합격"))], [say(node("text", "불합격"))]] }]] })), -1), [studentVariable("gijn", "기준", { value: limit })]);
+  expect(checkProgrammingMission("pass", pass(60)).passed).toBe(true);
+  expect(checkProgrammingMission("pass", pass("60")).passed).toBe(true);
+  expect(checkProgrammingMission("pass", pass(50)).passed).toBe(false);
+});
+
+test("지운 변수를 가리키는 블록은 저장되고 교사 화면과 채점이 ‘대상 없음’으로 알린다", () => {
+  const raw = withVariables(project([[start(), node("set_variable", "gone", number("1"), null), node("change_variable", "syrt", number("2"), null)]]), [studentVariable("syrt", "점수")]);
+  expect(programmingProjectLines(raw)).toEqual(["시작하기 버튼을 클릭했을 때", "대상 없음에 1 저장하기", "점수에 2만큼 더하기"]);
+  const missing = "변수 블록에 ‘대상 없음’이 있어요. ▾를 눌러 변수를 다시 골라 주세요.";
+  expect(checkProgrammingMission("multiply", project([multiply([node("set_variable", "gone", number("1"), null)])])).message).toBe(missing);
+  expect(checkProgrammingMission("multiply", project([[...multiply().slice(0, -1), node("dialog", node("get_variable", "gone"), "speak", null)]])).message).toBe(missing);
+  expect(formatEntryNode(node("get_variable", "toString"))).toBe("대상 없음 · 아직 연결하지 않은 블록");
+});
+
+test("학생 변수만 바꿔도 저장할 변경으로 보고, 순서만 바뀐 것은 변경이 아니다", () => {
+  const plain = project([multiply()]);
+  const draft = (raw: string): WorkDraft => ({ ...emptyWork(PROGRAMMING_LESSON).draft, programming: { mission: "multiply", projects: { multiply: raw }, reflection: "" } });
+  const one = withVariables(plain, [studentVariable("aaaa", "점수", { value: 1 }), studentVariable("bbbb", "속도")]);
+  expect(sameWorkContent(draft(plain), draft(one))).toBe(false);
+  expect(sameWorkContent(draft(one), draft(withVariables(plain, [studentVariable("aaaa", "점수", { value: 99 }), studentVariable("bbbb", "속도")])))).toBe(false);
+  expect(sameWorkContent(draft(one), draft(withVariables(plain, [studentVariable("bbbb", "속도"), studentVariable("aaaa", "점수", { value: 1 })])))).toBe(true);
+});
+
+test("놀이기구 탑승은 A·B를 학생 변수에 옮겨 담아 판단해도 통과한다", () => {
+  const copies = [...rideProgram(node("True", null)).slice(0, 5), node("set_variable", "kiii", node("get_variable", "cs-A"), null), node("set_variable", "naii", node("get_variable", "cs-B"), null)];
+  const ride = (op: string) => withVariables(exported([[...copies, ifElse(node("boolean_and_or", atLeast("kiii", "130"), op, atLeast("naii", "10")), [speak("탈 수 있어요")], [speak("탈 수 없어요")])]]), [studentVariable("kiii", "키"), studentVariable("naii", "나이")]);
+  expect(checkProgrammingMission("ride", ride("AND")).passed).toBe(true);
+  expect(checkProgrammingMission("ride", ride("OR")).passed).toBe(false);
+});
+
+test("학생 변수 기본값은 엔트리가 다시 불러온 값으로 저장해 새로고침 뒤에도 검증 기록이 맞는다", () => {
+  const plain = project([multiply()]);
+  const value = (v: unknown) => parseProgrammingProject(withVariables(plain, [studentVariable("gijn", "기준", { value: v })]))!;
+  // Entry.parseNumber: numeric text becomes a number unless it starts with 0, and an empty value is 0.
+  expect([60, "60", "-2.5", "6e2", "007", "0", "", "1,000", " 60"].map((v) => value(v).variables[0].value)).toEqual([60, 60, -2.5, 600, "007", "0", 0, "1,000", " 60"]);
+  expect(programmingProjectMatches(withVariables(plain, [studentVariable("gijn", "기준", { value: "60" })]), withVariables(plain, [studentVariable("gijn", "기준", { value: 60 })]))).toBe(true);
 });

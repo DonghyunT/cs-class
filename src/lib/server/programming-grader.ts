@@ -1,5 +1,5 @@
 import { HARMLESS_BLOCKS, spritePictures, THINKING_MESSAGE, TRUSTED_SPRITES } from "../classroom/entry-palette";
-import { COUNTER, KEY_LABELS, missionBlockIssue, missionById, parseProgrammingProject, pictureId, type EntryNode } from "../classroom/programming-entry";
+import { COUNTER, KEY_LABELS, entryNumeric, missionBlockIssue, missionById, parseProgrammingProject, pictureId, type EntryNode } from "../classroom/programming-entry";
 
 // Server-side grading. Kept out of the client bundle so fixed test inputs are not shipped to students.
 class MissionError extends Error {}
@@ -22,8 +22,6 @@ const RESULT_WORDS: Record<string, readonly string[]> = { pass: ["합격", "불�
 // goal's whole phrases, not the matching stems (‘잘했’).
 const RESULT_PHRASES: Record<string, readonly string[]> = { pass: ["합격", "불합격"], freethrow: ["훌륭해요", "잘했어요", "더 연습해 보자"], ride: ["탈 수 있어요", "탈 수 없어요"] };
 export const wordingMessage = (id: string) => `조건은 맞게 나눴어요. 결과를 말할 때 ${RESULT_PHRASES[id].map((w) => `‘${w}’`).join("·")} 중 맞는 말 하나만 넣어 주세요.`;
-// Entry 4.0.23 `Entry.Utils.isNumber`: ‘+’ adds these and joins anything else as text.
-const numeric = (v: unknown) => typeof v === "number" || typeof v === "string" && /^-?\d+\.?\d*(?:[eE][+-]?\d+)?$/.test(v);
 
 // Deterministic interpreter for the lessons' bounded blocks, following EntryJS 4.0.23 semantics.
 // It never runs submitted JavaScript or accepts a client's claimed result.
@@ -41,7 +39,8 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   // `observe` stops forever loops after a few passes and keeps them to rerun after events.
   function machine(inputs: string[], observe = false) {
     type Value = { value: string | number | boolean; input: boolean; computed?: number };
-    const variables: Record<string, Value> = { "cs-A": { value: 0, input: false }, "cs-B": { value: 0, input: false }, [COUNTER.id]: { value: 0, input: false } };
+    // Variables students made start at their saved value, as in Entry.
+    const variables: Record<string, Value> = { "cs-A": { value: 0, input: false }, "cs-B": { value: 0, input: false }, [COUNTER.id]: { value: 0, input: false }, ...Object.fromEntries(p!.variables.map((v) => [v.id, { value: v.value, input: false }])) };
     // The first answer stored in each variable, so a result saved over A later still counts.
     const firstInput: Record<string, Value> = {};
     let actor: Actor | null = null;
@@ -60,13 +59,17 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     const number = (v: unknown) => { if (String(v).trim() === "" || !Number.isFinite(Number(v)) || Math.abs(Number(v)) > 1e6) throw new MissionError("실행할 숫자 입력을 확인해 주세요."); return Number(v); };
     // EntryJS compares a non-empty numeric string as a number.
     const comparable = (v: string | number | boolean) => typeof v === "string" && v.length && !Number.isNaN(Number(v)) ? Number(v) : v;
-    const usesAB = (n: unknown): boolean => !!n && typeof n === "object" && ((n as EntryNode).type === "get_variable" && ["cs-A", "cs-B"].includes(String((n as EntryNode).params[0])) || (n as EntryNode).params.some(usesAB));
+    // A block whose variable was deleted shows ‘대상 없음’ in Entry.
+    const variable = (id: unknown) => { if (!Object.hasOwn(variables, String(id))) throw new MissionError("변수 블록에 ‘대상 없음’이 있어요. ▾를 눌러 변수를 다시 골라 주세요."); return variables[String(id)]; };
+    // A student variable can hold a copy of A·B, so it counts too; the runs decide whether the logic is right.
+    const stored = ["cs-A", "cs-B", ...p!.variables.map((v) => v.id)];
+    const usesAB = (n: unknown): boolean => !!n && typeof n === "object" && ((n as EntryNode).type === "get_variable" && stored.includes(String((n as EntryNode).params[0])) || (n as EntryNode).params.some(usesAB));
     function evaluate(n: EntryNode): Value {
       step();
       if (["text", "number", "angle"].includes(n.type)) return { value: n.params[0] as string | number, input: false };
       if (n.type === "True" || n.type === "False") return { value: n.type === "True", input: false };
       if (n.type === "get_canvas_input_value") return { value: answer, input: asks > 0 };
-      if (n.type === "get_variable") return variables[String(n.params[0])];
+      if (n.type === "get_variable") return variable(n.params[0]);
       if (n.type === "get_pictures") return { value: String(n.params[0] ?? ""), input: false };
       // No mouse button is held between the simulated clicks.
       if (n.type === "is_clicked") return { value: false, input: false };
@@ -81,7 +84,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       const left = evaluate(n.params[n.type === "combine_something" ? 1 : 0] as EntryNode), right = evaluate(n.params[n.type === "combine_something" ? 3 : 2] as EntryNode);
       // ‘+’ joins as text when a side is text that is not a number, like Entry (‘평균은 ’ + 5).
       // An empty side stays a number error (the legacy fixture pins it).
-      if (n.type === "combine_something" || n.type === "calc_basic" && n.params[1] === "PLUS" && [left.value, right.value].some((v) => typeof v === "string" && v !== "" && !numeric(v))) {
+      if (n.type === "combine_something" || n.type === "calc_basic" && n.params[1] === "PLUS" && [left.value, right.value].some((v) => typeof v === "string" && v !== "" && !entryNumeric(v))) {
         const text = String(left.value) + String(right.value);
         if (text.length > MAX_TEXT) throw new MissionError("글자가 너무 길어요.");
         return { value: text, input: left.input || right.input, computed: left.computed === undefined ? right.computed : right.computed === undefined ? left.computed : undefined };
@@ -132,7 +135,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         }
         else if (n.type === "set_variable") {
           const value = evaluate(n.params[1] as EntryNode), id = String(n.params[0]);
-          variables[id] = value;
+          variable(id); variables[id] = value;
           if (value.input && value.computed === undefined && !firstInput[id]) firstInput[id] = value;
         }
         else if (n.type === "dialog_time") { const value = evaluate(n.params[0] as EntryNode); const seconds = number(evaluate(n.params[1] as EntryNode).value); if (seconds < 0 || seconds > 10) throw new MissionError("말하기 시간은 0~10초로 정해 주세요."); say(value, n.params[2]); }
@@ -168,8 +171,8 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         // Only the step budget ends a loop without ‘반복 중단하기’.
         else if (n.type === "repeat_inf") loop(n.statements?.[0] ?? [], () => true, true);
         else if (n.type === "change_variable") {
-          const target = variables[String(n.params[0])];
-          if (!target) throw new MissionError("더할 변수를 골라 주세요.");
+          if (!n.params[0]) throw new MissionError("더할 변수를 골라 주세요.");
+          const target = variable(n.params[0]);
           variables[String(n.params[0])] = { value: number(number(target.value) + number(evaluate(n.params[1] as EntryNode).value)), input: false };
         }
         else if (n.type === "change_to_next_shape" || n.type === "change_to_some_shape") {

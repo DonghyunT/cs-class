@@ -7,3 +7,5 @@ html, body { margin: 0; width: 100%; height: 100%; background: #fff; font-family
 .block.dragging { cursor: grabbing; }
 /* Dog-free lessons show the picture tab to view and pick shapes; drawing is not saved, so the painter stays hidden. */
 .entryPlaygroundPainter { display: none !important; }
+/* Student variables are saved in the work; cloud and real-time variables need Entry's server and sliders are not saved. */
+.entryVariableTypeBoxWrapper, .slide_inpt { display: none !important; }

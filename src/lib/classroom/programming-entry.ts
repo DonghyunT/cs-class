@@ -114,13 +114,26 @@ const projectBytes = (project: unknown) => new TextEncoder().encode(JSON.stringi
 
 // The tree mission's ‘클릭 수’ variable, shown on the stage.
 export const COUNTER = { id: "cs-clicks", name: "클릭 수" } as const;
+// The lesson's own variables: rebuilt on every save, so students cannot delete or rename them.
+export const LESSON_VARIABLES: readonly string[] = ["cs-A", "cs-B", COUNTER.id];
+// A variable a student made in the attribute tab. `object` is the owner of an ‘이 오브젝트에서 사용’ variable.
+export type StudentVariable = { id: string; name: string; value: string | number; visible: boolean; x: number; y: number; object: string | null };
+export const MAX_STUDENT_VARIABLES = 10;
+// Entry 4.0.23 `Entry.Utils.isNumber`.
+export const entryNumeric = (v: unknown) => typeof v === "number" || typeof v === "string" && /^-?\d+\.?\d*(?:[eE][+-]?\d+)?$/.test(v);
+// A variable's value as Entry keeps it after loading (`Entry.parseNumber`): numeric text becomes a number unless it
+// starts with 0 (‘007’), and an empty value is 0. Saving it that way keeps a reload from changing the key.
+const loadedValue = (v: string | number) => typeof v === "number" ? v : !v ? 0 : entryNumeric(v) && v[0] !== "0" ? Number(v) : v;
+// A block can name a variable the project lacks: Entry keeps blocks whose variable was deleted (‘대상 없음’).
+const variableId = (v: unknown): v is string => typeof v === "string" && /^[\w-]{1,30}$/.test(v);
 
 // Entry places variable boxes from the stage centre with y growing downward: A·B and 클릭 수 sit top-left, clear of the
 // answer box that opens along the bottom while a question waits.
-export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0, counter = false): string {
+export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0, counter = false, variables: readonly StudentVariable[] = []): string {
   const p = JSON.parse(buildNameProject()!);
   p.variables.push(...["A", "B"].map((name, i) => ({ id: `cs-${name}`, name, variableType: "variable", value: 0, visible: false, x: -210, y: -112 + i * 30, object: null, isCloud: false, isRealTime: false })));
   if (counter) p.variables.push({ id: COUNTER.id, name: COUNTER.name, variableType: "variable", value: 0, visible: true, x: -210, y: -112, object: null, isCloud: false, isRealTime: false });
+  p.variables.push(...variables.map((v) => ({ ...v, variableType: "variable", isCloud: false, isRealTime: false })));
   if (threads) p.objects[0].script = threads;
   // Entry lists objects front to back; added objects keep their saved order around the dog.
   // A negative mainIndex is a dog-free project.
@@ -133,7 +146,7 @@ export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObj
 // literal inputs here; validity for execution is checked separately below.
 // `key` compares whole saved works (validation/submission). `gradeKey` covers only
 // the dog's code, which is all grading and the name mission's run records use.
-export function parseProgrammingProject(raw: unknown): { project: Record<string, unknown>; key: string; gradeKey: string; bytes: number; threads: EntryNode[][]; order: string[]; added: AddedObject[]; mainIndex: number; free: boolean } | null {
+export function parseProgrammingProject(raw: unknown): { project: Record<string, unknown>; key: string; gradeKey: string; bytes: number; threads: EntryNode[][]; order: string[]; added: AddedObject[]; mainIndex: number; free: boolean; variables: StudentVariable[] } | null {
   if (typeof raw !== "string" || raw.length > MAX_RAW_PROJECT_CHARS) return null;
   try {
     const p = JSON.parse(raw);
@@ -151,6 +164,19 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     let count = 0;
     const reporters = ["text", "number", "angle", "get_canvas_input_value", "get_variable", "combine_something", "calc_basic"];
     const fail = (): never => { throw Error(); };
+    const num = (v: unknown, min: number, max: number, fallback: number) => typeof v === "number" && Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : fallback;
+    // Variables students made; 대답·초시계 have other types. Cloud, real-time and slider settings are dropped (the editor hides them).
+    const variables: StudentVariable[] = (Array.isArray(p.variables) ? p.variables : []).filter((v: unknown) => object(v) && ["variable", "slide"].includes(String(v.variableType)) && !LESSON_VARIABLES.includes(String(v.id))).map((v: Record<string, unknown>) => {
+      // Entry allows 10 characters but numbers a copied name past that (`이름1`).
+      const name = typeof v.name === "string" ? v.name.trim().slice(0, 20).trim() : "";
+      const value = typeof v.value === "number" && Number.isFinite(v.value) || typeof v.value === "string" && v.value.length <= 180 ? loadedValue(v.value) : fail();
+      // Text like ‘1e309’ loads as Infinity, which a saved project cannot hold.
+      if (!variableId(v.id) || !name || (v.object != null && typeof v.object !== "string") || !Number.isFinite(typeof value === "number" ? value : 0)) throw Error();
+      return { id: v.id, name, value, visible: v.visible !== false, x: num(v.x, -1000, 1000, 0), y: num(v.y, -1000, 1000, 0), object: typeof v.object === "string" ? v.object : null };
+    });
+    // The editor stops the add panel at MAX_STUDENT_VARIABLES, but copying an object copies its own variables, so the
+    // count is left to MAX_PROJECT_BYTES, which tells the student to trim the work. Names are not checked: blocks use ids.
+    if (new Set(variables.map((v) => v.id)).size < variables.length) return null;
     // The original blocks must match their own branch. Letting a malformed one fall
     // through to the generic rule would hand the interpreter and teacher view a shape they cannot read.
     const legacy = new Set([...reporters, "when_run_button_click", "when_some_key_pressed", "ask_and_wait", "set_variable", "move_direction", "direction_absolute", "dialog_time"]);
@@ -162,13 +188,13 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
       let statements: EntryNode[][] | undefined;
       if (expression && ["text", "number", "angle"].includes(type) && ["string", "number"].includes(typeof params[0]) && String(params[0]).length <= 180) next = [params[0]];
       else if (expression && type === "get_canvas_input_value") next = [null];
-      else if (expression && type === "get_variable" && ["cs-A", "cs-B", COUNTER.id].includes(String(params[0]))) next = [params[0]];
+      else if (expression && type === "get_variable" && variableId(params[0])) next = [params[0]];
       else if (expression && type === "combine_something") next = [null, expr(params[1]), null, expr(params[3]), null];
       else if (expression && type === "calc_basic" && ["PLUS", "MINUS", "MULTI", "DIVIDE"].includes(String(params[1]))) next = [expr(params[0]), params[1], expr(params[2])];
       else if (!expression && type === "when_run_button_click") next = [null];
       else if (!expression && type === "when_some_key_pressed" && /^\d{1,3}$/.test(String(params[1])) && Number(params[1]) <= 255) next = [null, String(params[1])];
       else if (!expression && type === "ask_and_wait") next = [expr(params[0]), null];
-      else if (!expression && type === "set_variable" && ["cs-A", "cs-B", COUNTER.id].includes(String(params[0]))) next = [params[0], expr(params[1]), null];
+      else if (!expression && type === "set_variable" && variableId(params[0])) next = [params[0], expr(params[1]), null];
       else if (!expression && ["move_direction", "direction_absolute"].includes(type)) next = [expr(params[0]), null];
       else if (!expression && type === "dialog_time" && ["speak", "think"].includes(String(params[2]))) next = [expr(params[0]), expr(params[1]), params[2], null];
       // The branches above keep the original lesson blocks' saved shape and keys.
@@ -192,7 +218,6 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     };
     const threads = mainIndex < 0 ? [] : scriptOf(p.objects[mainIndex]);
     const ids = new Set<string>();
-    const num = (v: unknown, min: number, max: number, fallback: number) => typeof v === "number" && Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : fallback;
     // Entry flips scaleX negative for vertical rotation; keep the sign and limit the size.
     const scale = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v !== 0 ? Math.sign(v) * Math.max(0.05, Math.min(5, Math.abs(v))) : 0.5;
     const added: AddedObject[] = p.objects.filter((_: unknown, i: number) => i !== mainIndex).map((o: Record<string, unknown>) => {
@@ -222,13 +247,17 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     const code = (list: EntryNode[][]) => list.map((t) => t.map(semantic));
     // The click counter exists only in projects that started with it (the tree mission).
     const counter = Array.isArray(p.variables) && p.variables.some((v: unknown) => object(v) && v.id === COUNTER.id);
-    const project = JSON.parse(buildProgrammingProject(threads, added, mainIndex, counter));
+    // An ‘이 오브젝트에서 사용’ variable belongs to an object in this project; the dog is always rebuilt as `entrybot`.
+    if (variables.some((v) => v.object !== null && !(v.object === "entrybot" && mainIndex >= 0) && !ids.has(v.object))) return null;
+    const project = JSON.parse(buildProgrammingProject(threads, added, mainIndex, counter, variables));
     // Projects with only the dog keep the original key so saved checks still match.
     // Dog-free projects grade every object's code.
     const free = mainIndex < 0;
     const gradeKey = JSON.stringify(free ? added.map((o) => code(o.threads)) : code(threads));
-    const key = added.length ? JSON.stringify({ main: code(threads), mainIndex, added: added.map((o) => ({ ...o, threads: code(o.threads) })), ...(counter ? { counter } : {}) }) : gradeKey;
-    return { project, threads, added, mainIndex, free, order: [...threads, ...added.flatMap((o) => o.threads)].flatMap(flat), key, gradeKey, bytes: projectBytes(project) };
+    // Entry lists new variables first, so the key sorts them to stay the same after a reload.
+    const sorted = [...variables].sort((a, b) => a.id < b.id ? -1 : 1);
+    const key = added.length || variables.length ? JSON.stringify({ main: code(threads), mainIndex, added: added.map((o) => ({ ...o, threads: code(o.threads) })), ...(counter ? { counter } : {}), ...(variables.length ? { variables: sorted } : {}) }) : gradeKey;
+    return { project, threads, added, mainIndex, free, variables, order: [...threads, ...added.flatMap((o) => o.threads)].flatMap(flat), key, gradeKey, bytes: projectBytes(project) };
   } catch { return null; }
 }
 
@@ -267,21 +296,23 @@ const REPORTER_BLOCKS: ReadonlySet<string> = new Set([
   "get_canvas_input_value", "get_variable",
 ]);
 
-const variableName = (id: string) => id === COUNTER.id ? COUNTER.name : id.replace("cs-", "변수 ");
+// Student variables are shown by the names in `names` (id → name, from `variableNames`); a deleted one as Entry shows it.
+const variableName = (id: string, names: Readonly<Record<string, string>> = {}) => Object.hasOwn(names, id) ? names[id] : id === COUNTER.id ? COUNTER.name : LESSON_VARIABLES.includes(id) ? id.replace("cs-", "변수 ") : "대상 없음";
+export const variableNames = (variables: readonly StudentVariable[]): Record<string, string> => Object.fromEntries(variables.map((v) => [v.id, v.name]));
 
-export function formatEntryNode(node: EntryNode): string {
+export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, string>> = {}): string {
   const keyName = (v: unknown) => v === null || v === undefined ? "( )" : KEY_LABELS[String(v)] ?? `${v}번`;
   const val = (n: EntryNode, index: number): string => {
     const v = n.params[index];
     if (v === null || v === undefined) return "( )";
     if (object(v) && typeof v.type === "string") return expression(v as EntryNode);
     const s = String(v);
-    if (s.startsWith("cs-")) return variableName(s);
+    if (s.startsWith("cs-") || Object.hasOwn(names, s)) return variableName(s, names);
     return DROPDOWN_LABELS[s] ?? s;
   };
   const expression = (n: EntryNode): string => {
     if (n.type === "get_canvas_input_value") return "대답";
-    if (n.type === "get_variable") return n.params[0] ? variableName(String(n.params[0])) : "변수 값";
+    if (n.type === "get_variable") return n.params[0] ? variableName(String(n.params[0]), names) : "변수 값";
     // Shape ids end in -pic (1st), -pic2, -pic3, …
     if (n.type === "get_pictures") return n.params[0] ? `${Number(/-pic(\d*)$/.exec(String(n.params[0]))?.[1] || 1)}번` : "( )";
     if (n.type === "combine_something") return `${val(n, 1)} + ${val(n, 3)}`;
@@ -316,7 +347,7 @@ export function formatEntryNode(node: EntryNode): string {
     if (n.type === "when_run_button_click") return "시작하기 버튼을 클릭했을 때";
     if (n.type === "when_some_key_pressed") return `${keyName(n.params[1])} 키를 눌렀을 때`;
     if (n.type === "ask_and_wait") return `${expression(n.params[0] as EntryNode)} · 묻고 대답 기다리기`;
-    if (n.type === "set_variable") return `${variableName(String(n.params[0]))}에 ${expression(n.params[1] as EntryNode)} 저장하기`;
+    if (n.type === "set_variable") return `${variableName(String(n.params[0]), names)}에 ${expression(n.params[1] as EntryNode)} 저장하기`;
     if (n.type === "change_to_next_shape") return n.params[0] === "prev" ? "이전 모양으로 바꾸기" : "다음 모양으로 바꾸기";
     if (n.type === "change_to_some_shape") return `${val(n, 0)} 모양으로 바꾸기`;
     if (n.type === "dialog_time") return `${expression(n.params[0] as EntryNode)} · ${expression(n.params[1] as EntryNode)}초 동안 ${n.params[2] === "speak" ? "말하기" : "생각하기"}`;
@@ -342,9 +373,9 @@ export function formatEntryNode(node: EntryNode): string {
     if (n.type === "change_object_index") return n.params[0] ? `${val(n, 0)} 보내기` : "앞뒤 순서 바꾸기";
     if (n.type === "set_color") return n.params[0] !== null && n.params[0] !== undefined ? `그리기 색을 ${val(n, 0)}(으)로 정하기` : "그리기 색 정하기";
     if (n.type === "set_fill_color") return n.params[0] !== null && n.params[0] !== undefined ? `채우기 색을 ${val(n, 0)}(으)로 정하기` : "채우기 색 정하기";
-    if (n.type === "change_variable") return `${n.params[0] ? val(n, 0) : "변수"}에 ${val(n, 1)}만큼 더하기`;
-    if (n.type === "show_variable") return `${n.params[0] ? val(n, 0) : "변수"} 보이기`;
-    if (n.type === "hide_variable") return `${n.params[0] ? val(n, 0) : "변수"} 숨기기`;
+    if (n.type === "change_variable") return `${n.params[0] ? variableName(String(n.params[0]), names) : "변수"}에 ${val(n, 1)}만큼 더하기`;
+    if (n.type === "show_variable") return `${n.params[0] ? variableName(String(n.params[0]), names) : "변수"} 보이기`;
+    if (n.type === "hide_variable") return `${n.params[0] ? variableName(String(n.params[0]), names) : "변수"} 숨기기`;
     if (n.type === "choose_project_timer_action" || n.type === "set_visible_project_timer") return n.params[1] ? `초시계 ${val(n, 1)}` : blockLabel(n.type);
     if (n.type === "set_visible_answer") return n.params[0] ? `대답 ${val(n, 0)}` : blockLabel(n.type);
     const label = blockLabel(n.type);
@@ -354,13 +385,14 @@ export function formatEntryNode(node: EntryNode): string {
 }
 
 export function programmingProjectLines(raw: unknown): string[] {
-  // Inner blocks of repeat/if are listed under their block with └.
-  const lines = (thread: EntryNode[], depth: number): string[] => thread.flatMap((n) => [
-    `${depth ? `${"  ".repeat(depth - 1)}└ ` : ""}${formatEntryNode(n)}`,
-    ...(n.statements ?? []).flatMap((inner, i) => [...(i ? [`${"  ".repeat(depth)}아니면`] : []), ...lines(inner, depth + 1)]),
-  ]);
   const parsed = parseProgrammingProject(raw);
   if (!parsed) return ["작품을 읽지 못했어요. 저장된 원문은 보존돼요."];
+  const names = variableNames(parsed.variables);
+  // Inner blocks of repeat/if are listed under their block with └.
+  const lines = (thread: EntryNode[], depth: number): string[] => thread.flatMap((n) => [
+    `${depth ? `${"  ".repeat(depth - 1)}└ ` : ""}${formatEntryNode(n, names)}`,
+    ...(n.statements ?? []).flatMap((inner, i) => [...(i ? [`${"  ".repeat(depth)}아니면`] : []), ...lines(inner, depth + 1)]),
+  ]);
   // The dog's code comes first; added objects follow with their names.
   return [...parsed.threads.flatMap((thread) => lines(thread, 0)), ...parsed.added.flatMap((o) => {
     const code = o.threads.flatMap((thread) => lines(thread, 0));

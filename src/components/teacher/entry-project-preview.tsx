@@ -10,6 +10,7 @@ import {
   missionById,
   parseProgrammingProject,
   programmingProjectLines,
+  variableNames,
   type EntryNode,
 } from "@/lib/classroom/programming-entry";
 import styles from "./teacher.module.css";
@@ -33,7 +34,7 @@ const CATEGORY_LABELS: Record<EntryCategory, string> = {
   variable: "자료",
 };
 
-function BlockTree({ nodes }: { nodes: EntryNode[] }) {
+function BlockTree({ nodes, names }: { nodes: EntryNode[]; names: Readonly<Record<string, string>> }) {
   if (!nodes.length) return <p className={styles.entryEmptyBranch}>비어 있음</p>;
   return (
     <ol className={styles.entryBlockList}>
@@ -46,18 +47,18 @@ function BlockTree({ nodes }: { nodes: EntryNode[] }) {
           <li key={index} className={styles.entryBlockItem}>
             <div className={styles.entryBlockPill} data-category={category}>
               <span className={styles.entryBlockBadge}>{CATEGORY_LABELS[category]}</span>
-              <span className={styles.entryBlockText}>{formatEntryNode(node)}</span>
+              <span className={styles.entryBlockText}>{formatEntryNode(node, names)}</span>
             </div>
             {branches.length > 0 && (
               <div className={styles.entryBranches} data-category={category}>
                 <div className={styles.entryBranch}>
-                  <BlockTree nodes={branches[0] ?? []} />
+                  <BlockTree nodes={branches[0] ?? []} names={names} />
                 </div>
                 {branches.length > 1 && (
                   <>
                     <div className={styles.entryElseDivider}>아니면</div>
                     <div className={styles.entryBranch}>
-                      <BlockTree nodes={branches[1] ?? []} />
+                      <BlockTree nodes={branches[1] ?? []} names={names} />
                     </div>
                   </>
                 )}
@@ -397,7 +398,7 @@ export function EntryProjectPreview({
                         ? `시작 묶음 ${index + 1}`
                         : `블록 묶음 ${index + 1}`}
                     </div>
-                    <BlockTree nodes={thread} />
+                    <BlockTree nodes={thread} names={variableNames(parsed.variables)} />
                   </div>
                 ))}
               </div>

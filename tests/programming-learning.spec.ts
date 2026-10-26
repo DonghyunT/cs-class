@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { buildProgrammingProject, missionStarter, parseProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
-import { db, headers, readyStudent, readyTeacher } from "./emulator";
+import { db, entryReset, headers, readyStudent, readyTeacher, saveDraft } from "./emulator";
 
 test("programming-intro: 새 첫 개념은 옛 pc0~3 답안·제출을 보존하고 별도로 확인한다", async ({ page }, info) => {
   const id = "programming-13", endpoint = `/api/classroom/work/${id}`;
@@ -184,4 +184,58 @@ test("교사 작품 실행기: 그린 작품은 정지 전까지 선을 남기�
     await expect(status).toContainText("실행을 멈췄어요.");
     await expect(status).not.toContainText("그린 결과를 다 봤으면");
   } finally { await workRef.delete(); await classRef.set(original); }
+});
+
+type VariablesWindow = { Entry: { getMainWS: () => { board: { code: { createThread: (blocks: unknown[]) => void } } }; variableContainer: { variables_: { id_: string; name_: string }[]; removeVariable: (variable: unknown) => void }; do: (command: string, ...args: unknown[]) => void } };
+test("변수 직접 만들기: 속성 탭에서 만든 변수로 조립·저장·복원 · 수업 변수 보호 · 서버 변수 옵션 숨김", async ({ page }) => {
+  const id = "programming-13", endpoint = `/api/classroom/work/${id}`;
+  const classRef = db.doc("csClasses/2-1"), workRef = db.doc(`csWork/student-20101__${id}`);
+  const original = (await classRef.get()).data()!;
+  const node = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
+  const variable = (name: string) => node("get_variable", `cs-${name}`), ask = () => node("ask_and_wait", node("text", "숫자는?"), null);
+  const math = buildProgrammingProject([[node("when_run_button_click", null), ask(), node("set_variable", "cs-A", node("get_canvas_input_value", null), null), ask(), node("set_variable", "cs-B", node("get_canvas_input_value", null), null),
+    node("dialog", node("calc_basic", variable("A"), "MULTI", variable("B")), "speak", null)]]);
+  try {
+    await readyStudent(page.request); await workRef.delete();
+    await classRef.update({ currentLessonId: id, openedLessonIds: [id] });
+    const work: Work = await (await page.request.get(endpoint)).json();
+    expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice", programming: { mission: "multiply", projects: { multiply: math }, reflection: "" } } } })).status()).toBe(200);
+    await page.goto(`/classroom/${id}?from=dashboard`);
+    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+    const frame = page.frameLocator("iframe");
+    await frame.locator("#entryVariableTab").click();
+    await frame.locator(".entryVariableSelectButtonWorkspace.variable").click();
+    await frame.getByRole("button", { name: "변수 추가하기" }).click();
+    await expect(frame.getByText("공유 변수로 사용")).toBeHidden();
+    await frame.getByPlaceholder("변수의 이름을 입력해주세요.").fill("곱");
+    await frame.getByText("변수 추가", { exact: true }).click();
+    const created = () => frame.locator("body").evaluate(() => (window as unknown as VariablesWindow).Entry.variableContainer.variables_.filter((v) => !v.id_.startsWith("cs-")).map((v) => [v.id_, v.name_]));
+    await expect.poll(async () => (await created()).map(([, name]) => name)).toEqual(["곱"]);
+    const [[gop]] = await created();
+    // A·B keep storing the two inputs; a loose line stores the product in the student's variable.
+    await frame.locator("body").evaluate((_, gop) => {
+      (window as unknown as VariablesWindow).Entry.getMainWS().board.code.createThread([{ type: "set_variable", params: [gop, { type: "calc_basic", params: [{ type: "get_variable", params: ["cs-A"] }, "MULTI", { type: "get_variable", params: ["cs-B"] }] }, null] }]);
+      document.dispatchEvent(new MouseEvent("mouseup"));
+    }, gop);
+    // A default typed in the attribute tab arrives as text; Entry reloads it as a number.
+    await frame.locator("body").evaluate((_, gop) => (window as unknown as VariablesWindow).Entry.do("variableSetDefaultValue", gop, "60"), gop);
+    await expect(page.locator("[data-lesson-shell] header [role=status]")).toHaveText("저장하지 않은 변경 있음");
+    await saveDraft(page);
+    expect(parseProgrammingProject(((await (await page.request.get(endpoint)).json()) as Work).draft.programming!.projects.multiply)!.variables.map((v) => [v.id, v.name, v.value])).toEqual([[gop, "곱", 60]]);
+    await page.reload();
+    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+    await expect.poll(created).toEqual([[gop, "곱"]]);
+    await frame.locator("body").evaluate(() => { const { variableContainer } = (window as unknown as VariablesWindow).Entry; variableContainer.removeVariable(variableContainer.variables_.find((v) => v.id_ === "cs-A")); });
+    await expect(page.getByRole("status").filter({ hasText: "수업에서 준비한 변수는 지우거나 이름을 바꿀 수 없어요." })).toBeVisible();
+    await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+    await expect(page.locator("#practice-feedback")).toHaveText("목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요.");
+    // The validation still matches after a reload.
+    await page.reload();
+    await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+    await page.getByRole("button", { name: "작품 제출", exact: true }).click();
+    await expect(page.getByRole("button", { name: "이 작품 제출 완료" })).toBeDisabled();
+  } finally {
+    await workRef.delete();
+    await classRef.set(original);
+  }
 });
