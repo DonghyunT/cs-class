@@ -13,9 +13,11 @@ const Context = createContext<SessionContextValue | null>(null);
 const CLASS_KEY = "cs-teacher-class";
 function clearClassMemory() { try { sessionStorage.removeItem(CLASS_KEY); } catch { /* Selection still works with storage blocked. */ } }
 // Q&A drafts outlive their screen in this tab, so the session end clears every class's draft here.
-function clearDrafts() {
-  window.dispatchEvent(new Event("cs-draft-clear"));
-  try { for (const key of Object.keys(sessionStorage)) if (key.startsWith("cs-community-draft:")) sessionStorage.removeItem(key); } catch { /* Nothing was stored with storage blocked. */ }
+// With `keepUid` only other accounts' drafts go, and the open screen keeps what it shows.
+function clearDrafts(keepUid?: string) {
+  if (!keepUid) window.dispatchEvent(new Event("cs-draft-clear"));
+  const kept = `cs-community-draft:${keepUid}:`;
+  try { for (const key of Object.keys(sessionStorage)) if (key.startsWith("cs-community-draft:") && !(keepUid && key.startsWith(kept))) sessionStorage.removeItem(key); } catch { /* Nothing was stored with storage blocked. */ }
 }
 function rememberedClass(value: Session) {
   try {
@@ -34,8 +36,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [selectedClass, setSelectedClass] = useState<{ uid: string; classId: string } | null>(null);
   const applySession = useCallback((value: Session, restoreClass: boolean) => {
     generation.current += 1;
-    // A reload starts without a session; only a switch from another account drops its drafts.
-    if (current.current && current.current.uid !== value.uid) clearDrafts();
+    // A switch drops every draft; otherwise this account's drafts stay (a reload) and only drafts another
+    // account left in this tab go, as when another tab changed the shared cookie before this reload.
+    clearDrafts(current.current && current.current.uid !== value.uid ? undefined : value.uid);
     if (!restoreClass) clearClassMemory();
     const classId = value.role !== "student" ? (restoreClass ? rememberedClass(value) : undefined) ?? value.classIds[0] : undefined;
     setSelectedClass(classId ? { uid: value.uid, classId } : null);
