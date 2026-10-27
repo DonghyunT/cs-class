@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { buildProgrammingProject, missionStarter, parseProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
 import { conditionalConcepts, conditionalQuestions } from "../src/lib/classroom/conditionals-data";
-import { db, headers, readyStudent, entryReset, entryStart } from "./emulator";
+import { db, headers, readyStudent, entryReset, entryStart, entryStop } from "./emulator";
 
 const id = "conditionals", endpoint = `/api/classroom/work/${id}`;
 const node = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
@@ -31,7 +31,7 @@ const solutions: Record<string, { project: string; runs: [string[], string][] }>
 solutions.legacy = { project: buildProgrammingProject([[start(), ask("점수는?"), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [speak(text("합격"))], [speak(text("불합격"))])]]), runs: [[["61"], "합격"]] };
 const missionOf = (key: string) => key === "legacy" ? "pass" : key;
 
-async function open(page: Page, mission?: string) {
+async function open(page: Page, mission?: string, project = mission && solutions[mission].project) {
   // Leave the previous editor first so it cannot save over the new fixture.
   await page.goto("about:blank");
   await readyStudent(page.request);
@@ -39,7 +39,7 @@ async function open(page: Page, mission?: string) {
   await db.collection("csClasses").doc("2-1").update({ currentLessonId: id, openedLessonIds: ["programming-13", id] });
   if (mission) {
     const work: Work = await (await page.request.get(endpoint)).json();
-    expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice", programming: { mission: missionOf(mission), projects: { [missionOf(mission)]: solutions[mission].project }, reflection: "" } } } })).status()).toBe(200);
+    expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice", programming: { mission: missionOf(mission), projects: { [missionOf(mission)]: project }, reflection: "" } } } })).status()).toBe(200);
   }
   await page.goto(`/classroom/${id}?from=dashboard`);
 }
@@ -100,6 +100,29 @@ test("강아지 없는 조건 수업도 질문에 대답을 기다리는 시간�
   await expect(page.getByText("15초가 지나 실행을 멈췄어요.", { exact: false })).toHaveCount(0);
   await input.fill("60"); await input.press("Enter");
   await expect(page.getByRole("status").filter({ hasText: "마지막 말: 합격" })).toBeVisible({ timeout: 10000 });
+});
+
+test("무대 클릭으로 시작한 질문도 대답을 기다리는 시간은 15초 실행 제한에 넣지 않는다", async ({ page }) => {
+  test.setTimeout(90000);
+  // The run reports `finished` and waits for clicks; the question starts only from the click.
+  await open(page, "pass", onBot("pass", [[node("mouse_clicked", null), ask("점수는?"), speak(answer())]]));
+  const frame = page.frameLocator("iframe");
+  await page.locator("iframe").scrollIntoViewIfNeeded();
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+  await entryStart(page).click();
+  await expect(page.getByRole("status").filter({ hasText: "무대·오브젝트를 클릭해 보세요." })).toBeVisible({ timeout: 10000 });
+  await frame.locator("#entryCanvas").click({ position: { x: 40, y: 40 } });
+  const input = frame.getByLabel("질문 대답", { exact: true });
+  await expect(input).toBeVisible();
+  await page.waitForTimeout(16000);
+  await expect(page.getByText("15초가 지나 실행을 멈췄어요.", { exact: false })).toHaveCount(0);
+  // The status keeps the waiting text after `finished`, so the stage's speech shows the answer was taken.
+  await input.fill("60"); await input.press("Enter");
+  const said = () => page.frames().find((f) => f.url().includes("/entryjs/workspace.html"))!.evaluate(() =>
+    (window as unknown as { Entry: { container: { getObject: (id: string) => { entity: { dialog?: { message_?: string } } } } } }).Entry.container.getObject("bot").entity.dialog?.message_ ?? "");
+  await expect.poll(said).toBe("60");
+  await expect(entryStop(page)).toBeEnabled();
+  await expect(page.getByText("15초가 지나 실행을 멈췄어요.", { exact: false })).toHaveCount(0);
 });
 
 for (const mission of Object.keys(solutions)) {
