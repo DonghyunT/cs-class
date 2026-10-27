@@ -3,6 +3,13 @@
   "baseline": "98781bd6e506e3ab5b1be08c39677e658215dba9",
   "records": [
     {
+      "source": "docs/plans/generalize-school-identity.md",
+      "archive": "docs/archive/cs-class/2026-10-27-completed-plans/generalize-school-identity.md",
+      "origin": "completed-plan-archived-20261027",
+      "baseCommit": "4437ec4",
+      "sha256": "8cba34a71787fbfbda2b050f5870d3d53a4fc18b5b589a3378e84bec9e31fad4"
+    },
+    {
       "source": "teaching-materials/instructor-guide/guide.html",
       "archive": "docs/archive/cs-class/2026-10-24-before-instructor-guide-flow/guide.html",
       "origin": "71ee6f9cedd9ac868973346a3e60936bd76ce610",
