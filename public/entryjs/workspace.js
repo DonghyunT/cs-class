@@ -43,7 +43,7 @@ let monitor = null;
 let startedAt = 0;
 let lastSpeech = "";
 // The lesson no longer reads name-run records, but awaitingAnswer is set only while one is open,
-// so the run record also keeps answer waits out of the 15-second run limit.
+// so the run record also keeps every object's answer wait out of the 15-second run limit.
 let nameRun = null;
 let awaitingAnswer = false;
 let activeTime = 0;
@@ -157,10 +157,10 @@ try {
           const first = !script.isInit;
           const input = Entry.container.inputValue;
           const answered = script.isInit && input.complete && input.sprite === entity && Entry.stage.inputField?._isHidden;
-          // Only the dog's question and speech belong to the name mission's run record.
+          // Any object's question pauses the run limit; only the dog's belongs to the name mission's run record.
           const own = entity.parent?.id === "entrybot";
-          if (!script.isInit && nameRun && own) { awaitingAnswer = true; nameRun.steps.push({ kind: "ask", value: String(script.getValue("VALUE", script)) }); }
-          if (answered && nameRun && own) { awaitingAnswer = false; nameRun.steps.push({ kind: "answer", value: String(Entry.container.getInputValue()) }); }
+          if (!script.isInit && nameRun) { awaitingAnswer = true; if (own) nameRun.steps.push({ kind: "ask", value: String(script.getValue("VALUE", script)) }); }
+          if (answered && nameRun) { awaitingAnswer = false; if (own) nameRun.steps.push({ kind: "answer", value: String(Entry.container.getInputValue()) }); }
           const result = ask.call(this, entity, script);
           if (first) {
             const field = Entry.stage.inputField;

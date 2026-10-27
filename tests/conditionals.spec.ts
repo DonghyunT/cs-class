@@ -87,6 +87,21 @@ test("조건 수업 퀴즈 오답은 고른 답의 이유와 '다시 생각해 �
   await expect(result).not.toContainText(conditionalQuestions[0].hint);
 });
 
+test("강아지 없는 조건 수업도 질문에 대답을 기다리는 시간은 15초 실행 제한에 넣지 않는다", async ({ page }) => {
+  test.setTimeout(90000);
+  await open(page, "pass");
+  await page.locator("iframe").scrollIntoViewIfNeeded();
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+  await entryStart(page).click();
+  const input = page.frameLocator("iframe").getByLabel("질문 대답", { exact: true });
+  await expect(input).toBeVisible();
+  // The limit itself is the subject: wait past it while the question stays open.
+  await page.waitForTimeout(16000);
+  await expect(page.getByText("15초가 지나 실행을 멈췄어요.", { exact: false })).toHaveCount(0);
+  await input.fill("60"); await input.press("Enter");
+  await expect(page.getByRole("status").filter({ hasText: "마지막 말: 합격" })).toBeVisible({ timeout: 10000 });
+});
+
 for (const mission of Object.keys(solutions)) {
   test(`조건 수업 ${mission}: 기준 해답을 실제 엔트리에서 실행한 말과 서버 검증·제출이 일치한다`, async ({ page }) => {
     test.setTimeout(90000);

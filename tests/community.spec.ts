@@ -527,3 +527,16 @@ test("질문 초안을 탭에 보관한 뒤 실제 뒤로가기·앞으로가기
   await expect(body).toHaveValue("아직 전송하지 않은 두 줄\n탭에 보관하는 내용이에요.");
   expect((await (await page.request.get(base)).json()).questions).toHaveLength(0);
 });
+
+test("Q&A를 떠나 보관한 초안도 로그아웃하면 탭에서 지운다", async ({ page }) => {
+  const drafts = () => page.evaluate(() => Object.keys(sessionStorage).filter((key) => key.startsWith("cs-community-draft:")));
+  await page.goto("/student/community");
+  await page.locator("summary").filter({ hasText: "질문 쓰기" }).click();
+  await page.getByLabel("질문 제목", { exact: true }).fill("로그아웃하면 지워질 질문이에요");
+  await page.getByRole("link", { name: "대시보드", exact: true }).click();
+  await expect(page).toHaveURL("http://localhost:3000/student");
+  expect(await drafts()).toHaveLength(1);
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
+  await expect(page).toHaveURL(/\/login\/student$/, { timeout: 20000 });
+  expect(await drafts()).toHaveLength(0);
+});

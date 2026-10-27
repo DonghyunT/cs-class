@@ -12,6 +12,11 @@ interface SessionContextValue {
 const Context = createContext<SessionContextValue | null>(null);
 const CLASS_KEY = "cs-teacher-class";
 function clearClassMemory() { try { sessionStorage.removeItem(CLASS_KEY); } catch { /* Selection still works with storage blocked. */ } }
+// Q&A drafts outlive their screen in this tab, so the session end clears every class's draft here.
+function clearDrafts() {
+  window.dispatchEvent(new Event("cs-draft-clear"));
+  try { for (const key of Object.keys(sessionStorage)) if (key.startsWith("cs-community-draft:")) sessionStorage.removeItem(key); } catch { /* Nothing was stored with storage blocked. */ }
+}
 function rememberedClass(value: Session) {
   try {
     const saved = JSON.parse(sessionStorage.getItem(CLASS_KEY) ?? "null");
@@ -29,7 +34,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [selectedClass, setSelectedClass] = useState<{ uid: string; classId: string } | null>(null);
   const applySession = useCallback((value: Session, restoreClass: boolean) => {
     generation.current += 1;
-    if (current.current?.uid !== value.uid) window.dispatchEvent(new Event("cs-draft-clear"));
+    // A reload starts without a session; only a switch from another account drops its drafts.
+    if (current.current && current.current.uid !== value.uid) clearDrafts();
     if (!restoreClass) clearClassMemory();
     const classId = value.role !== "student" ? (restoreClass ? rememberedClass(value) : undefined) ?? value.classIds[0] : undefined;
     setSelectedClass(classId ? { uid: value.uid, classId } : null);
@@ -37,7 +43,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
   // Called after an actual login; loading the existing cookie below keeps this tab's selection.
   const acceptSession = useCallback((value: Session) => applySession(value, false), [applySession]);
-  const clear = useCallback((message = "") => { generation.current += 1; clearClassMemory(); setSelectedClass(null); window.dispatchEvent(new Event("cs-draft-clear")); current.current = null; setExpectedUser(null); setSession(null); setError(message); setRemaining(null); setLoading(false); }, []);
+  const clear = useCallback((message = "") => { generation.current += 1; clearClassMemory(); setSelectedClass(null); clearDrafts(); current.current = null; setExpectedUser(null); setSession(null); setError(message); setRemaining(null); setLoading(false); }, []);
   const selectTeacherClass = useCallback((classId: string) => {
     const value = current.current;
     if (!value || value.role === "student" || !value.classIds.includes(classId)) return;
