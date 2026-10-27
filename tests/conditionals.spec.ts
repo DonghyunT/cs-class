@@ -125,6 +125,18 @@ test("무대 클릭으로 시작한 질문도 대답을 기다리는 시간은 1
   await expect(page.getByText("15초가 지나 실행을 멈췄어요.", { exact: false })).toHaveCount(0);
 });
 
+test("다른 줄이 멈춘 질문은 15초 실행 제한을 풀어 두지 않는다", async ({ page }) => {
+  test.setTimeout(90000);
+  // `코드 멈추기` ends the asking line but leaves its answer box open; the endless loop must still hit the limit.
+  const loop = { ...node("repeat_inf", null), statements: [[node("wait_second", number("0.1"), null)]] };
+  await open(page, "pass", onBot("pass", [[start(), ask("점수는?")], [start(), node("wait_second", number("1"), null), node("stop_object", "otherThread", null), loop]]));
+  await page.locator("iframe").scrollIntoViewIfNeeded();
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+  await entryStart(page).click();
+  await expect(page.frameLocator("iframe").getByLabel("질문 대답", { exact: true })).toBeVisible();
+  await expect(page.getByText("15초가 지나 실행을 멈췄어요.", { exact: false })).toBeVisible({ timeout: 25000 });
+});
+
 for (const mission of Object.keys(solutions)) {
   test(`조건 수업 ${mission}: 기준 해답을 실제 엔트리에서 실행한 말과 서버 검증·제출이 일치한다`, async ({ page }) => {
     test.setTimeout(90000);
