@@ -5,7 +5,7 @@ import type { Lesson, Work, WorkAction } from "../classroom/types";
 import { parseEntryProject } from "../classroom/entry-project";
 import { MAX_PROJECT_BYTES, MAX_RAW_PROJECT_CHARS, isKnownLessonMission, isLessonMission, knownMissionCount, missionsFor, parseProgrammingProject, programmingProjectMatches } from "../classroom/programming-entry";
 import { checkProgrammingMission } from "./programming-grader";
-import { practiceMatches } from "../classroom/progress";
+import { practiceMatches, submissionTimes } from "../classroom/progress";
 import { requireCondition } from "./errors";
 import { getLessonSolution } from "./solutions";
 import { basicReviewCheck, frozenReviewProject, isReviewType, reviewMissionIds, reviewProjectSchema, sameReviewProject } from "../classroom/review/project";
@@ -94,7 +94,7 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
       next.review = { id: randomUUID(), ...(missionId ? { missionId } : {}), project: snapshot, status: "pending", message: review.message, requestedAt: Date.now() };
     } else {
       requireCondition(checked.passed && aiPassed && previous.validation?.passed && sameReviewProject(project, previous.validation.reviewProject, missionId), 409, "VALIDATION_REQUIRED", "현재 작품을 검증한 뒤 제출해 주세요.");
-      const submission = { id: randomUUID(), order: [], reviewProject: snapshot, submittedAt: Date.now() };
+      const submission = { id: randomUUID(), order: [], reviewProject: snapshot, ...submissionTimes(previous.submission) };
       if (missionId) next.missions = { ...next.missions, [missionId]: { validation: previous.validation, submission } };
       else next.submission = submission;
       if (next.review?.status === "pending") next.review = { ...next.review, status: "replaced" };
@@ -114,7 +114,7 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
       if (action.type === "validate-practice") next.missions = { ...next.missions, [id]: { ...previous, validation: { ...checked, order: [], entryProject: project } } };
       else {
         requireCondition(previous.validation?.passed && programmingProjectMatches(project, previous.validation.entryProject) && checked.passed, 409, "VALIDATION_REQUIRED", "현재 작품을 검증한 뒤 제출해 주세요.");
-        next.missions = { ...next.missions, [id]: { ...previous, submission: { id: randomUUID(), order: [], entryProject: project, submittedAt: Date.now() } } };
+        next.missions = { ...next.missions, [id]: { ...previous, submission: { id: randomUUID(), order: [], entryProject: project, ...submissionTimes(previous.submission) } } };
       }
       next.revision += 1; next.updatedAt = Date.now();
       return next;
@@ -192,7 +192,7 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
         "VALIDATION_REQUIRED",
         "현재 작품을 검증한 뒤 제출해 주세요."
       );
-      next.submission = { id: randomUUID(), order: [...next.draft.practiceOrder], submittedAt: Date.now() };
+      next.submission = { id: randomUUID(), order: [...next.draft.practiceOrder], ...submissionTimes(next.submission) };
     } else {
       const allPassed = solution.practice.criteria.every((c) => c.check(next.draft.entryProject, next.draft).passed);
       requireCondition(
@@ -205,7 +205,7 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
         id: randomUUID(),
         order: [...next.draft.practiceOrder],
         entryProject: next.draft.entryProject ?? null,
-        submittedAt: Date.now(),
+        ...submissionTimes(next.submission),
       };
     }
   }

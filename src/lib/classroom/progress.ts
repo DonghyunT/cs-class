@@ -1,9 +1,14 @@
 import { parseEntryProject } from "./entry-project";
 import { missionStarter, missionsFor, programmingProjectMatches, requiredMissionsFor } from "./programming-entry";
-import type { Lesson, Progress, ValidationResult, Work, WorkDraft, WorkSummary } from "./types";
+import type { Lesson, Progress, Submission, ValidationResult, Work, WorkDraft, WorkSummary } from "./types";
 import { initialReviewProject, isReviewType, sameReviewProject, reviewMissionIds } from "./review/project";
 
-export const STATUS_LABELS = { "not-started": "시작 전", "in-progress": "진행 중", completed: "완료" };
+// A new submission keeps the first one's time. A submission saved before firstSubmittedAt existed
+// hands on its own submittedAt, which is then only the latest time the first submission can have been.
+export function submissionTimes(previous: Pick<Submission, "submittedAt" | "firstSubmittedAt"> | null | undefined, now = Date.now()) {
+  return { submittedAt: now, firstSubmittedAt: previous ? previous.firstSubmittedAt ?? previous.submittedAt : now };
+}
+export const STATUS_LABELS ={ "not-started": "시작 전", "in-progress": "진행 중", completed: "완료" };
 export function submissionCountFor(lesson: Lesson, work?: Work | WorkSummary | null): number {
   return lesson.practice.type === "flowchart" ? reviewMissionIds.filter(id => work?.missions?.[id]?.submission).length : lesson.practice.type === "programming" ? missionsFor(lesson.id).filter((mission) => work?.missions?.[mission.id]?.submission).length : work?.submission ? 1 : 0;
 }
