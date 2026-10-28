@@ -527,3 +527,31 @@ test("질문 초안을 탭에 보관한 뒤 실제 뒤로가기·앞으로가기
   await expect(body).toHaveValue("아직 전송하지 않은 두 줄\n탭에 보관하는 내용이에요.");
   expect((await (await page.request.get(base)).json()).questions).toHaveLength(0);
 });
+
+test("Q&A를 떠나 보관한 초안도 로그아웃하면 탭에서 지운다", async ({ page }) => {
+  const drafts = () => page.evaluate(() => Object.keys(sessionStorage).filter((key) => key.startsWith("cs-community-draft:")));
+  await page.goto("/student/community");
+  await page.locator("summary").filter({ hasText: "질문 쓰기" }).click();
+  await page.getByLabel("질문 제목", { exact: true }).fill("로그아웃하면 지워질 질문이에요");
+  await page.getByRole("link", { name: "대시보드", exact: true }).click();
+  await expect(page).toHaveURL("http://localhost:3000/student");
+  expect(await drafts()).toHaveLength(1);
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
+  await expect(page).toHaveURL(/\/login\/student$/, { timeout: 20000 });
+  expect(await drafts()).toHaveLength(0);
+});
+
+test("다른 탭에서 계정이 바뀐 뒤 새로고침하면 이 탭의 다른 계정 초안을 지우고 내 초안은 남긴다", async ({ page }) => {
+  const drafts = () => page.evaluate(() => Object.keys(sessionStorage).filter((key) => key.startsWith("cs-community-draft:")));
+  await page.goto("/student/community");
+  await page.locator("summary").filter({ hasText: "질문 쓰기" }).click();
+  await page.getByLabel("질문 제목", { exact: true }).fill("새로고침해도 남을 내 질문이에요");
+  await page.getByRole("link", { name: "대시보드", exact: true }).click();
+  await expect(page).toHaveURL("http://localhost:3000/student");
+  const [mine] = await drafts();
+  // A draft another account left in this tab before the shared cookie switched to this student.
+  await page.evaluate(() => sessionStorage.setItem("cs-community-draft:another-account:2-1", JSON.stringify({ title: "다른 계정 초안" })));
+  await page.reload();
+  await expect(page.getByRole("button", { name: "로그아웃", exact: true })).toBeVisible();
+  await expect.poll(drafts).toEqual([mine]);
+});

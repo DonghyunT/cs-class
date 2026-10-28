@@ -42,10 +42,9 @@ let original = null;
 let monitor = null;
 let startedAt = 0;
 let lastSpeech = "";
-// The lesson no longer reads name-run records, but awaitingAnswer is set only while one is open,
-// so the run record also keeps answer waits out of the 15-second run limit.
+// The lesson no longer reads name-run records. A record closes when the start lines finish; the 15-second
+// limit does not use it and instead checks on every tick whether a running line waits on a question.
 let nameRun = null;
-let awaitingAnswer = false;
 let activeTime = 0;
 let lastTick = 0;
 // Event lines keep a run open after the start lines finish, so students can
@@ -157,10 +156,11 @@ try {
           const first = !script.isInit;
           const input = Entry.container.inputValue;
           const answered = script.isInit && input.complete && input.sprite === entity && Entry.stage.inputField?._isHidden;
-          // Only the dog's question and speech belong to the name mission's run record.
-          const own = entity.parent?.id === "entrybot";
-          if (!script.isInit && nameRun && own) { awaitingAnswer = true; nameRun.steps.push({ kind: "ask", value: String(script.getValue("VALUE", script)) }); }
-          if (answered && nameRun && own) { awaitingAnswer = false; nameRun.steps.push({ kind: "answer", value: String(Entry.container.getInputValue()) }); }
+          // Only the dog's question and answer belong to the name mission's run record.
+          if (nameRun && entity.parent?.id === "entrybot") {
+            if (!script.isInit) nameRun.steps.push({ kind: "ask", value: String(script.getValue("VALUE", script)) });
+            if (answered) nameRun.steps.push({ kind: "answer", value: String(Entry.container.getInputValue()) });
+          }
           const result = ask.call(this, entity, script);
           if (first) {
             const field = Entry.stage.inputField;
@@ -278,7 +278,7 @@ try {
       // calls toggleStop; capture the code without changing engine state.
       captureScripts();
       nameRun = { id: crypto.randomUUID(), project: JSON.stringify(original), steps: [] };
-      awaitingAnswer = false; activeTime = 0; lastTick = Date.now();
+      activeTime = 0; lastTick = Date.now();
       send("name-start", { id: nameRun.id, project: nameRun.project });
     }
     lastSpeech = "";
@@ -301,7 +301,10 @@ try {
       if (traced) {
         const now = Date.now();
         const waitingIdle = idle && (reported || (programming && keyMission));
-        if (!awaitingAnswer && !waitingIdle) activeTime += now - lastTick;
+        // A flag set by the question block could outlive its line (`코드 멈추기` ends the line but leaves the
+        // answer box open), so only a line that is still on a question pauses the limit.
+        const asking = Entry.container.getAllObjects().some((item) => item.script.executors.some((executor) => executor.scope?.block?.type === "ask_and_wait"));
+        if (!asking && !waitingIdle) activeTime += now - lastTick;
         lastTick = now;
       }
       if ((traced ? activeTime : Date.now() - startedAt) >= 15000) void stop("timeout");

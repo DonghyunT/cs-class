@@ -212,7 +212,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   // The tree must grow one shape at a time with clicks, never on its own, and speak when grown.
   function growTree() {
     const tree = p!.added.find((o) => o.sprite === "tree-growth");
-    if (!tree) throw new MissionError("나무 오브젝트가 없어요. ‘처음 작품으로’ 버튼으로 시작 작품을 다시 불러와 주세요.");
+    if (!tree) throw new MissionError("나무 오브젝트가 없어요. 선생님께 알려 주세요.");
     const actorOf = (id: string, sprite: string, index = 0): Actor => ({ id, count: spritePictures(TRUSTED_SPRITES.find((item) => item.id === sprite)!).length, index, said: [] });
     const cast = [...(p!.free ? [] : [{ actor: { id: "entrybot", count: 1, index: 0, said: [] } as Actor, threads: p!.threads }]), ...p!.added.map((o) => ({ actor: actorOf(o.id, o.sprite, o.picture), threads: o.threads }))];
     const grown = cast.find((c) => c.actor.id === tree.id)!.actor, last = grown.count - 1;
