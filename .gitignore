@@ -63,3 +63,4 @@ firestore-debug.log*
 # 플랫폼 배포 도구 캐시
 .vercel/
 /.archify/
+/.ua/
