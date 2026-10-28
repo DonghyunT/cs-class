@@ -25,6 +25,7 @@ test("서버에서만 완료 판정 · 오답 회차 · 검증/제출 분리 · 
   work.draft.practiceOrder = correctOrder; await save(); await act({ type: "validate-practice" });
   expect(progressFor(SAMPLE_LESSON, work).practice.percent).toBe(0);
   await act({ type: "submit-practice" }); const submitted = work.submission;
+  expect(submitted?.firstSubmittedAt).toBe(submitted?.submittedAt);
   expect(progressFor(SAMPLE_LESSON, work).status).toBe("in-progress");
   work.draft.quizAnswers.q2 = "b"; await save(); await act({ type: "grade-quiz" });
   expect(progressFor(SAMPLE_LESSON, work).status).toBe("completed");
@@ -33,6 +34,11 @@ test("서버에서만 완료 판정 · 오답 회차 · 검증/제출 분리 · 
   expect(progressFor(SAMPLE_LESSON, work).status).toBe("completed");
   expect((await request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type: "submit-practice" } } })).status()).toBe(409);
   expect(await (await request.get(endpoint)).json()).toEqual(work);
+  // A submission saved before firstSubmittedAt existed hands its own time on to the next one.
+  const ref = db.collection("csWork").doc(`student-20101__${lessonId}`);
+  await ref.update({ submission: { id: "legacy", order: [], submittedAt: 1000 } }); work = await (await request.get(endpoint)).json();
+  work.draft.practiceOrder = correctOrder; await save(); await act({ type: "validate-practice" }); await act({ type: "submit-practice" });
+  expect(work.submission).toMatchObject({ firstSubmittedAt: 1000 }); expect(work.submission?.submittedAt).toBeGreaterThan(1000);
 });
 
 test("동시 저장 충돌 · 응답 유실 재시도 · 타 학생으로 전송 차단", async ({ request }) => {

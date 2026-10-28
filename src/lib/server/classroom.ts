@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import type { Transaction } from "firebase-admin/firestore";
 import { RELEASED_LESSONS, findLesson } from "../classroom/catalog";
-import { emptyWork, practiceMatches } from "../classroom/progress";
+import { emptyWork, practiceMatches, submissionTimes } from "../classroom/progress";
 import { isLessonMission, missionsFor, programmingProjectMatches } from "../classroom/programming-entry";
 import type { ClassSettings, StudentDashboard, TeacherDashboard, Work, WorkSummary } from "../classroom/types";
 import { isTrialStudentId } from "../classroom/roster";
@@ -128,7 +128,7 @@ export async function teacherDashboard(classId?: string, lessonId?: string): Pro
 function workSummary(work: Work): WorkSummary {
   const edited = work.draft.programming ? Object.entries(work.missions ?? {}).some(([id, record]) => isLessonMission(work.lessonId, id) && record.submission && !programmingProjectMatches(work.draft.programming?.projects[id], record.submission.entryProject)) : work.draft.reviewProject?.type === "flowchart" ? Object.entries(work.missions ?? {}).some(([id, record]) => record.submission && !sameReviewProject(work.draft.reviewProject, record.submission.reviewProject, id)) : !!work.submission && !practiceMatches(work.draft, work.submission);
   const summary = { edited, validated: !!work.validation?.passed };
-  const submission = (value: Work["submission"]) => value ? { id: value.id, submittedAt: value.submittedAt } : null;
+  const submission = (value: Work["submission"]) => value ? { id: value.id, submittedAt: value.submittedAt, firstSubmittedAt: value.firstSubmittedAt } : null;
   return { ...summary, lessonId: work.lessonId, revision: work.revision, conceptSolved: work.conceptSolved, quizSolved: work.quizSolved, updatedAt: work.updatedAt, submission: submission(work.submission), ...(work.missions ? { missions: Object.fromEntries(Object.entries(work.missions).map(([id, record]) => [id, { submission: submission(record.submission) }])) } : {}), ...(work.review ? { review: { id: work.review.id, status: work.review.status, requestedAt: work.review.requestedAt, ...(work.review.missionId ? { missionId: work.review.missionId } : {}) } } : {}) };
 }
 export async function teacherWork(uid: string, lessonId: string) {
@@ -151,7 +151,7 @@ export async function decideReview(uid: string, lessonId: string, payload: unkno
     requireCondition(basicReviewCheck(request.project, request.missionId).passed, 409, "BASIC_CHECK_REQUIRED", "요청본의 필수 내용을 확인해 주세요.");
     work.review = { ...request, status: input.decision === "approve" ? "approved" : "changes", message: input.message.trim() || "선생님이 요청한 작품을 확인하고 승인했어요.", decidedAt: Date.now() };
     if (input.decision === "approve") {
-      const submission = { id: randomUUID(), order: [], reviewProject: request.project, submittedAt: Date.now(), approvedByTeacher: true };
+      const submission = { id: randomUUID(), order: [], reviewProject: request.project, ...submissionTimes(request.missionId ? work.missions?.[request.missionId]?.submission : work.submission), approvedByTeacher: true };
       if (request.missionId) work.missions = { ...work.missions, [request.missionId]: { validation: work.missions?.[request.missionId]?.validation ?? null, submission } };
       else work.submission = submission;
     }

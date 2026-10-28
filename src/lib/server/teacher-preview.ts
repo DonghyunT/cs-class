@@ -24,7 +24,7 @@ const validationSchema = z.object({
   passed: z.boolean(), message: messageSchema, ...snapshotFields,
   criteriaResults: z.array(z.object({ id: idSchema, passed: z.boolean(), message: messageSchema }).strict()).max(50).optional(),
 }).strict();
-const submissionSchema = z.object({ id: z.uuid(), submittedAt: timeSchema, ...snapshotFields }).strict();
+const submissionSchema = z.object({ id: z.uuid(), submittedAt: timeSchema, firstSubmittedAt: timeSchema.optional(), ...snapshotFields }).strict();
 const workSchema = z.object({
   lessonId: z.string().min(1).max(80), revision: revisionSchema, draft: draftSchema,
   conceptSolved: idsSchema, conceptFeedback: feedbackSchema,

@@ -77,6 +77,8 @@ export interface Submission {
   order: string[];
   entryProject?: string | null;
   submittedAt: number;
+  // Carried over on every resubmission. Missing on submissions made before 2026-10-28 (see submissionTimes).
+  firstSubmittedAt?: number;
   reviewProject?: ReviewProject;
   approvedByTeacher?: boolean;
 }
@@ -129,8 +131,8 @@ export interface StudentRow {
 export type WorkSummary = Pick<Work, "lessonId" | "revision" | "conceptSolved" | "quizSolved" | "updatedAt"> & {
   edited: boolean;
   validated: boolean;
-  submission: Pick<Submission, "id" | "submittedAt"> | null;
-  missions?: Record<string, { submission: Pick<Submission, "id" | "submittedAt"> | null }>;
+  submission: Pick<Submission, "id" | "submittedAt" | "firstSubmittedAt"> | null;
+  missions?: Record<string, { submission: Pick<Submission, "id" | "submittedAt" | "firstSubmittedAt"> | null }>;
   review?: Pick<NonNullable<Work["review"]>, "id" | "status" | "requestedAt" | "missionId">;
 };
 export interface TeacherDashboard {
