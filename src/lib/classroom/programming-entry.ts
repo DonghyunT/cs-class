@@ -145,7 +145,8 @@ export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObj
 // The editor's media, objects and variables are fixed. Preserve incomplete
 // literal inputs here; validity for execution is checked separately below.
 // `key` compares whole saved works (validation/submission). `gradeKey` covers only
-// the dog's code, which is all grading and the name mission's run records use.
+// the graded code (the dog's, or every object's in a dog-free project); the app no
+// longer reads it since name-run records were dropped (#74).
 export function parseProgrammingProject(raw: unknown): { project: Record<string, unknown>; key: string; gradeKey: string; bytes: number; threads: EntryNode[][]; order: string[]; added: AddedObject[]; mainIndex: number; free: boolean; variables: StudentVariable[] } | null {
   if (typeof raw !== "string" || raw.length > MAX_RAW_PROJECT_CHARS) return null;
   try {
