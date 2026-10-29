@@ -15,6 +15,7 @@ archive
 tests
 tools
 scratch
+private
 outputs
 node_modules
 .next

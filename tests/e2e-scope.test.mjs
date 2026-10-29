@@ -60,6 +60,7 @@ test("matchLesson matches lesson specific files accurately", () => {
   assert.deepEqual(matchLessons("src\\lib\\classroom\\programming-entry.ts"), ["programming-13", "conditionals", "loops"]);
   assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops"]);
   assert.deepEqual(matchLessons("tests/programming-learning.spec.ts"), ["programming-13", "conditionals", "loops"]);
+  assert.deepEqual(matchLessons("src/proxy.ts"), ["programming-13", "conditionals", "loops"]);
   assert.deepEqual(matchLessons("src/components/teacher/teacher.module.css"), []);
   assert.deepEqual(matchLessons("src/lib/classroom/conditionals-data.ts"), ["conditionals"]);
   assert.deepEqual(matchLessons("src/components/student/programming-concept.tsx"), ["programming-13"]);

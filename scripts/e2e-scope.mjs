@@ -9,6 +9,8 @@ const ENTRY_SHARED = [
   /^tests\/(?:entry-palette\.test\.ts|entry-legacy-(?:inputs|objects)\.ts|fixtures\/entry-legacy-(?:keys|objects)\.json)$/,
   /^public\/entryjs\/.+$/,
   /^scripts\/prepare-entryjs\.mjs$/,
+  // Answers the sandboxed iframe's CORS preflights. Remove this entry if the matcher grows beyond /entryjs/.
+  /^src\/proxy\.ts$/,
   // The teacher runner boots the same iframe for every Entry lesson; its E2E check lives in programming-learning.
   /^src\/components\/teacher\/entry-project-preview\.tsx$/,
   /^tests\/programming-learning\.spec\.ts$/,
@@ -61,7 +63,7 @@ export const LESSON_MAPPINGS = {
   "review-abstraction": {
     lessonId: "review-abstraction",
     patterns: [
-      /^src\/components\/student\/review\/abstraction(?:\.tsx|\.module\.css|-stage\.tsx|-concepts\.tsx|-concepts\.module\.css)$/,
+      /^src\/components\/student\/review\/abstraction(?:\.tsx|\.module\.css|-concepts\.tsx|-concepts\.module\.css)$/,
       /^src\/lib\/classroom\/review\/abstraction-data\.mjs$/
     ],
     tests: [
