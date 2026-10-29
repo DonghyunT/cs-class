@@ -253,7 +253,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 <a id="운영-프로그래밍-수업"></a>
 <a id="코드-위치와-역할"></a>
 
-- **자산 및 무결성:** `npm ci` 시 `scripts/prepare-entryjs.mjs`가 SHA-512 검증 후 `public/entryjs/vendor/`에 브라우저 자산을 준비합니다.
+- **자산 및 무결성:** `npm ci` 시 `scripts/prepare-entryjs.mjs`가 SHA-512 검증 후 `public/entryjs/vendor/`에 브라우저 자산을 준비합니다. `next.config.ts`는 `public/entryjs/vendor/`·`sprites/`에 `Cache-Control: public, max-age=86400`을 붙여 브라우저가 하루 동안 다시 받지 않게 하므로(파일 이름에 버전이 없음), 엔트리 패키지 버전을 올리거나 `sprites/`의 그림을 제자리에서 바꾸면 이미 열어 본 PC에는 최대 하루 뒤에 반영됩니다(`workspace.html`·`workspace.js`·`workspace.css`는 매번 확인). 수업이 없는 날에 올리거나 바꾼 파일의 이름을 바꿉니다.
 - **iframe 격리:** 작업실(`public/entryjs/workspace.html`)과 브리지(`workspace.js`)는 `allow-scripts`만 허용한 격리 iframe에서 구동되며 부모의 쿠키나 세션에 접근할 수 없습니다.
 - **이미지 CORS & 포커스:** `Entry.init` 전 이미지 생성에 `crossOrigin="anonymous"`를 적용하여 픽셀 클릭 판정을 보장합니다. 질문창 커서 깜빡임 방지를 위해 중복 `focus()` 호출을 제한합니다.
 - **수동 저장 연동:** 실행 중 전체 내보내기 대신 정지 상태의 코드만 반영하며, `useWork`를 통해 단일 불변 스냅샷으로 저장합니다.
