@@ -11,7 +11,7 @@
 
 ## 최근 반영
 
-- **문서·코드 정리** (10/30): #94·#95 뒤 문서를 현재 상태로 맞춤(포트폴리오 계획 0단계 완료, PRD §5.1 수업 화면 30초 조회, DEVELOPMENT §4.1 프록시 규칙·§4.4 시간표 합성 서버, 중복 규칙은 링크로). ESLint의 `.ua/` 제외, `src/proxy.ts`를 엔트리 선별 E2E에 연결, 배포 제외에 `private` 추가, 쓰지 않는 `abstractionPresets`·낡은 주석 제거. 검증: typecheck·lint, 단위 21·72, 파일 지정 E2E 6개 스펙 40 통과, 전체 E2E 미실행.
+- **#96 문서·코드 정리** (10/30): #94·#95 뒤 문서를 현재 상태로 맞춤(포트폴리오 계획 0단계 완료, PRD §5.1 수업 화면 30초 조회, DEVELOPMENT §4.1 프록시 규칙·§4.4 시간표 합성 서버, 중복 규칙은 링크로). ESLint의 `.ua/` 제외, `src/proxy.ts`를 엔트리 선별 E2E에 연결, 배포 제외에 `private` 추가, 쓰지 않는 `abstractionPresets`·낡은 주석 제거. 검증: typecheck·lint, 단위 21·72, 파일 지정 E2E 6개 스펙 40 통과, 전체 E2E 미실행.
 - **#95 엔트리 프록시를 사전 요청에만** (10/29): Vercel 함수 호출 76%·Active CPU 78%의 주원인으로 본 `src/proxy.ts`가 `/entryjs/` 모든 파일 요청마다 함수로 돌던 것을, `access-control-request-method` 헤더가 있는 사전 요청에만 돌게 함. 검증: typecheck·lint·build, 빈 캐시 수업 1회+2분에 프록시 실행 92→2회(소리 정상), 단위 21, 파일 지정 E2E 24 통과·1 실패(단독 3회 통과), 전체 E2E 미실행.
 - **#94 엔트리 정적 파일 브라우저 캐시** (10/29): Vercel CDN 요청 한도의 75%가 쓰였고 6시간 표본의 85%가 `/entryjs/` 정적 파일이라, `next.config.ts`가 `public/entryjs/vendor/`·`sprites/`에 하루 브라우저 캐시(`max-age=86400`)를 붙임([개발 안내 §4.1](DEVELOPMENT.md#41-entryjs-4023-실습-환경)의 지연 전제). 로컬에서 작업실 재진입 요청 70→2건. 검증: Tier 1~1.5(단위 21), 파일 지정 E2E `programming-classroom` 16(1개는 20초 대기 검사가 단독 재실행에서 통과)·`lesson-smoke` 6 통과, 로컬 `build`, 전체 E2E 미실행, 운영 응답 헤더(`max-age=86400`)는 공개 뒤 확인함.
 - **Show the quiz button as primary only after the last concept is checked** (10/29): 마지막 개념의 `퀴즈로 이동`이 정답 확인 전부터 파란 주 버튼이라 학생이 확인 없이 넘어가던 문제를 고쳐, `다음 개념`처럼 맞힌 뒤에만 주 버튼이 됨(공통 개념 화면·프로그래밍 기초 개념 화면). 검증: typecheck·lint, 파일 지정 E2E 4개 스펙 16 통과, 화면 확인, 전체 E2E 미실행.
