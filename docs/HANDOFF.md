@@ -6,7 +6,7 @@
 
 - **운영:** 설정·배포 게이트 상태는 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)을 봅니다.
 - **실제 학생 계정:** 등록 현황과 입장 방식(10/21부터 반 공통 첫 입장 코드)은 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)에 있습니다. 명부 CSV·등록 직후 백업은 등록에 쓴 PC의 Git 제외 `private/`에만 있습니다.
-- **진행 중 브랜치(원격):** `feat/assessment-portfolio`(포트폴리오 채점, 0단계는 #93으로 병합, 1단계는 main에서 새로 시작, [계획](plans/assessment-portfolio.md)), `feat/festival-character-v7`(축제 캐릭터 초안 보존, 게임 미적용). 설명은 각 브랜치에 있습니다.
+- **진행 중 브랜치(원격):** `feat/festival-character-v7`(축제 캐릭터 초안 보존, 게임 미적용). 포트폴리오 채점은 0단계가 #93으로 병합돼 브랜치를 지웠고, 1단계는 main에서 새로 시작합니다([계획](plans/assessment-portfolio.md)).
 - **엔트리 파일 Cloudflare 분리 검토:** [자가검증·인계 보고서](reference/2026-10-29-entry-assets-cloudflare-handoff.md). 로컬 대조 실험 3건 통과, 이전 구현·배포는 미착수입니다. 후속 작업 전 캐시 변경의 반영 상태와 보고서의 미검증 항목을 확인합니다.
 
 ## 최근 반영
