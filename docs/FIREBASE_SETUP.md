@@ -99,15 +99,13 @@ Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 �
 
 ### 복습 AI 서버 설정
 
-cs-class Vercel 프로젝트(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Production 서버 설정에 `UPSTAGE_API_KEY`와 임의 생성한 32자 이상 `CS_AI_COMMAND_SECRET`을 Sensitive로 등록합니다. 키를 채팅·Git·로그·브라우저 `NEXT_PUBLIC_*`에 넣지 않습니다. Preview에 운영 인증값이나 AI 키를 자동 복사하지 않습니다.
+cs-class Vercel 프로젝트(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Production 서버 설정에 `UPSTAGE_API_KEY`와 임의 생성한 32자 이상 `CS_AI_COMMAND_SECRET`을 Sensitive로 등록합니다. 키를 채팅·Git·로그·명령 인자·문서·브라우저 `NEXT_PUBLIC_*`에 넣지 않습니다. Preview에 운영 인증값을, Preview·Development에 AI 키를 복사하지 않습니다.
 
-공개 전 실제 제공자 확인에는 로컬 PC의 Git 제외 `.env.local` 또는 사용자가 지정한 비공개 로컬 설정 경로도 필요합니다. Vercel에 Sensitive로 등록한 키는 다시 읽어 로컬 검사에 가져올 수 있다고 가정하지 않습니다. 실제 Solar 호출 검사의 원칙은 [개발 안내](DEVELOPMENT.md#알고리즘-복습-수업)를 따릅니다.
+공개 전 실제 제공자 확인에는 로컬 PC의 Git 제외 `.env.local`(파일 접근 권한 제한) 또는 사용자가 지정한 비공개 로컬 설정 경로도 필요합니다. Vercel에 Sensitive로 등록한 키는 다시 읽어 로컬 검사에 가져올 수 있다고 가정하지 않습니다. 실제 Solar 호출은 [AGENTS의 먼저 묻는 일](../AGENTS.md#검증-및-배포-규칙)을 따릅니다.
 
 서버는 [Upstage 공식 Chat API](https://console.upstage.ai/api/chat)의 `solar-pro4`와 구조화 JSON 출력을 사용합니다. 출력 토큰·호출 한도와 비보관 정책은 [PRD §4.3](PRD.md#43-선택-복습-수업-공통-정책)을 따릅니다. 시간 제한은 제공자 25초·전체 45초·브라우저 50초이며, 응답 잘림·형식 오류를 성공으로 처리하지 않습니다. `CS_AI_PAUSED=1`로 새 AI 요청을 중지할 수 있습니다.
 
 공개 전 AI 캐시/요청 장부에만 `expiresAt` TTL을 활성화합니다. 기존 인덱스 설정을 읽어 보존하고 `firestore.indexes.json`의 두 컬렉션을 확인한 뒤 승인된 프로젝트에 `npx firebase deploy --only firestore:indexes --project cs-class-f74c4`로 적용합니다. [공식 TTL/인덱스 정의](https://firebase.google.com/docs/reference/firestore/indexes)를 따르며 Firestore 비용·활성 상태를 확인합니다. 학생 작품/제출 컬렉션에는 적용하지 않습니다. 적용 상태는 [운영 환경 현황](#운영-환경-현황)을 봅니다.
-
-로컬 `.env.local`은 Git 제외이며 파일 접근 권한을 제한합니다. AI 키는 Preview나 Development에 복사하지 않으며, 원문을 로그·명령 인자·문서에 노출하지 않습니다.
 
 TTL은 만료 직후 즉시 삭제를 보장하지 않으며, 실제 정리·청구와 월 AI 예산은 운영 집계로 확인합니다.
 

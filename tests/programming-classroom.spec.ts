@@ -23,7 +23,6 @@ const nameProject = buildProgrammingProject([[start(), node("ask_and_wait", node
 
 async function prepare(page: Page, mission = "name", project = buildProgrammingProject()) {
   // Stop the previous editor before replacing its account and server fixture.
-  // Otherwise its autosave can write the old mission after the new fixture POST.
   await page.goto("about:blank");
   await readyStudent(page.request);
   await db.collection("csWork").doc(`student-20101__${id}`).delete();
@@ -187,7 +186,7 @@ test("entry-answer: 실제 질문칸에서 한글·조합 Enter·저장 대기·
       await expect(entryStop(page)).toBeEnabled();
       await expect(input).toHaveValue(name);
       await input.dispatchEvent("compositionend", { data: name });
-      // The 900 ms debounce and five-second save interval must not blur the answer.
+      // Several idle seconds with the answer box open must not blur it.
       await page.waitForTimeout(5500);
       await expect(input).toBeFocused();
       await page.keyboard.press("Enter");

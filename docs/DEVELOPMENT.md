@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-10-26(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-10-30(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -175,8 +175,6 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 | [`HelpButton`](../src/components/classroom/help-button.tsx) | 손들기 요청 시 현재 작품의 exact 스냅샷을 먼저 서버에 저장 후 도움 요청 POST 전송 |
 | [`LessonShell`](../src/components/student/lesson-shell.tsx) | 저장 버튼과 상태 배지 노출; `useWork`와 Entry 브리지가 창/iframe 단축키를 같은 `save`로 전달 |
 
-- **화면 이동 경고 기준:** 학생의 실제 작업 내용 변화만 감지하며, 탭 위치나 스크롤 좌표만 바뀐 경우에는 경고창 없이 이동합니다.
-
 ---
 
 ## 3. 검증 및 테스트 체계 (Verification & Testing Matrix)
@@ -255,7 +253,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 
 - **자산 및 무결성:** `npm ci` 시 `scripts/prepare-entryjs.mjs`가 SHA-512 검증 후 `public/entryjs/vendor/`에 브라우저 자산을 준비합니다. `next.config.ts`는 `public/entryjs/vendor/`·`sprites/`에 `Cache-Control: public, max-age=86400`을 붙여 브라우저가 하루 동안 다시 받지 않게 하므로(파일 이름에 버전이 없음), 엔트리 패키지 버전을 올리거나 `sprites/`의 그림을 제자리에서 바꾸면 이미 열어 본 PC에는 최대 하루 뒤에 반영됩니다(`workspace.html`·`workspace.js`·`workspace.css`는 매번 확인). 수업이 없는 날에 올리거나 바꾼 파일의 이름을 바꿉니다.
 - **iframe 격리:** 작업실(`public/entryjs/workspace.html`)과 브리지(`workspace.js`)는 `allow-scripts`만 허용한 격리 iframe에서 구동되며 부모의 쿠키나 세션에 접근할 수 없습니다.
-- **이미지 CORS & 포커스:** `Entry.init` 전 이미지 생성에 `crossOrigin="anonymous"`를 적용하여 픽셀 클릭 판정을 보장합니다. 질문창 커서 깜빡임 방지를 위해 중복 `focus()` 호출을 제한합니다.
+- **CORS·포커스:** `next.config.ts`가 `/entryjs/` 응답에 `Access-Control-Allow-Origin: *`를 붙이고, 격리 iframe 소리 로더의 사전 요청(OPTIONS)에만 [`src/proxy.ts`](../src/proxy.ts)가 204로 답합니다. 프록시 matcher는 `access-control-request-method` 헤더가 있는 요청으로 한정해 일반 파일 요청마다 Vercel 함수가 실행(과금)되지 않게 하므로 넓히지 않습니다. `Entry.init` 전 이미지 생성에 `crossOrigin="anonymous"`를 적용하여 픽셀 클릭 판정을 보장합니다. 질문창 커서 깜빡임 방지를 위해 중복 `focus()` 호출을 제한합니다.
 - **수동 저장 연동:** 실행 중 전체 내보내기 대신 정지 상태의 코드만 반영하며, `useWork`를 통해 단일 불변 스냅샷으로 저장합니다.
 - **수업 팔레트와 블록 문장 변환:** 팔레트·이름표·미션별 허용 블록은 [`entry-palette.ts`](../src/lib/classroom/entry-palette.ts) 한 곳에 둡니다. 격리 iframe은 이 모듈을 가져올 수 없어 `workspace.js`의 `PROGRAMMING_PALETTE`에 복사본을 두며, `tests/entry-palette.test.ts`가 두 목록이 같은지 확인합니다. `EntryStatic.getAllBlocks`는 `Entry.init` 전에 바꿔야 반영됩니다. [`programming-entry.ts`](../src/lib/classroom/programming-entry.ts)의 `formatEntryNode`와 `entryBlockCategory`는 전체 106종 팔레트 블록(기존 12종 + 확장 94종)의 입력 슬롯(`params`), 드롭다운 라벨, 연산자 기호를 교사 열람용 한국어 문장과 8개 카테고리 색상으로 변환합니다.
 - **저장 파서와 기존 키:** `parseProgrammingProject`는 원래 12종 블록을 기존 분기 그대로 정제하고, 그 밖의 팔레트 블록만 일반 규칙(원래 `params`, 반복·조건 블록에만 `statements`)으로 보존합니다. 이 순서를 바꾸면 기존 작품의 `key`가 달라져 검증·제출 기록이 어긋납니다. `tests/fixtures/entry-legacy-keys.json`이 기존 키·정규화·채점 결과를 고정하며, 이 파일과 `entry-legacy-objects.json`을 다시 만들거나 고치는 변경은 `tests/`만 바꾸더라도 PR 경로로 합니다. 의도한 형식 변경이 아닌데 검사가 실패하면 고정 파일이 아니라 파서를 고칩니다.
@@ -276,7 +274,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 - **코드 구조:** `src/lib/classroom/review/`에 순수 엔진(샌드위치, 순서도 실행기, 추상화 데이터)을 두고, 화면 컴포넌트는 `src/components/student/review/`에 배치합니다.
 - **순서도 (`flowchart.tsx`):** 퍼즐 실습(3열), 예시 공방(2열), 자유 공방(4열). 임의 JS 실행 없이 순수 표현식 인터프리터(`flow-runner.mjs`)로 동작합니다.
 - **AI 엔드포인트 (`POST /api/classroom/ai`):** HMAC 기반 요청 검증, 학생별 사용량 장부(`csAiUsage/{uid}`, 한도는 [PRD §4.3](PRD.md#43-선택-복습-수업-공통-정책)), 결과 TTL 캐시(24시간)를 적용합니다.
-- **실제 AI 품질 검사:** 유료인 실제 Solar 호출 검사는 필요한 변경·진단 범위를 먼저 정한 뒤 돌립니다. 기대한 판정이 나올 때까지 반복하지 않고, 운영 DB에 합성 계정·작품을 넣지 않습니다.
+- **실제 AI 품질 검사:** 유료 Solar 호출은 [AGENTS의 먼저 묻는 일](../AGENTS.md#검증-및-배포-규칙)을 따릅니다.
 
 ### 4.3 대시보드 및 교사 미리보기
 <a id="대시보드-파일럿"></a>
@@ -286,15 +284,14 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 - **반 선택 세션:** `SessionProvider`의 `useTeacherClass`는 탭 단위 `sessionStorage`로 선택 반을 관리하며 URL 쿼리(`?classId=...`)와 연동됩니다.
 - **교사 수업 미리보기 (`/teacher/preview/[id]`):** `LessonPreview`와 `usePreviewWork`는 실제 `LessonShell`(`preview` 속성)과 `LessonEditor`(`mode="preview"`)로 렌더링하며, 학생 학습 컬렉션 쓰기를 엄격히 차단하고 컴포넌트 메모리에서만 동작합니다.
 - **교사 제출 작품 열람 및 인라인 실행 (`SubmissionViewer` · `EntryProjectPreview`):** 화면·폭·`Escape` 순서는 [DESIGN §4.4](DESIGN.md#학생교사-대시보드)를 따르며, 파싱 실패 시에만 번호 목록으로 폴백합니다. E2E 검사에서는 iframe 언마운트 경합을 막기 위해 `무대 처음 위치로` 버튼이 활성화된 뒤 `Escape`를 입력합니다.
-- **읽기 최적화·손들기 중지 검사:** `tests/help-paused.spec.ts`, `tests/read-polling.spec.ts`로 손들기 중지·교사 수동 조회·권한·느린 응답 경합과 학생 포커스 재조회 30초 간격·학생 대시보드와 열린 수업 목록의 반 설정만 확인하는 30초 조회·활동 기록 뒤 세션 확인 생략, PC 시계가 서버보다 빠르거나 느려도 활동 기록이 30초에 한 번이고 바로 로그아웃하지 않는지를 확인합니다.
+- **읽기 최적화·손들기 중지 검사:** `tests/help-paused.spec.ts`는 손들기 중지·교사 수동 조회를, `tests/read-polling.spec.ts`는 [PRD §5.1 학생 화면 갱신](PRD.md#51-학생-대시보드-및-이번-수업-전환)·[§5.5 손들기](PRD.md#설정과-손들기)·[§6.2 활동 기록](PRD.md#62-세션-및-다중-접속-제어)의 간격과 권한·느린 응답 경합(PC 시계가 어긋난 경우 포함)을 확인합니다. 간격을 바꾸면 PRD와 이 검사를 함께 고칩니다.
 - **손들기 활성 모드 검사:** `help-requests`·`help-races`와 관련 UI 검사는 지우지 않고, 공유 설정(`src/lib/classroom/features.ts`의 `CLASSROOM_HELP_ENABLED`)이 false이면 명시적으로 건너뛰며 통과로 세지 않습니다. 재개할 때는 설정을 true로 바꾸고 다시 빌드해 이 검사를 실행합니다.
 - **읽기 횟수 표본:** `tests/read-usage.spec.ts`는 공개 수업 전부·학생 27명·담당 반 11개의 10분 가상 시간 요청 샘플이며 과금 실측이 아닙니다. 다른 Playwright 실행과 병렬로 돌릴 때는 `--output` 경로를 분리해야 합니다. 활동 갱신 응답은 계정 쓰기를 표본에서 빼려고 fixture로 두고 세션 비용은 별도 모형으로 계산합니다.
 
 ### 4.4 학교 시간표 연동 Fixture
 <a id="학교-시간표-연동"></a>
 
-- 자동 테스트에서는 `scripts/timetable-fixture.mjs`의 `127.0.0.1:4781` 로컬 합성 서버를 사용합니다.
-- `CS_TIMETABLE_FIXTURE=1` 환경변수와 함께 실행 시 외부 실제 나이스/학교 서버 호출 없이 안정적인 시간표 조회 흐름을 검증합니다.
+- 자동 테스트는 `CS_TIMETABLE_FIXTURE=1`로 실제 컴시간 서버(`comci.net`) 대신 `scripts/timetable-fixture.mjs`의 `127.0.0.1:4781` 합성 서버를 씁니다. Playwright `webServer`가 이 값으로 앱을 띄우며, 데모 프로젝트·로컬 에뮬레이터에서만 켜지고 Vercel에서는 켜지지 않습니다.
 
 ---
 
@@ -356,7 +353,7 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 - **Stitch 디자인 연동:** API 키는 `STITCH_API_KEY` 환경변수로만 관리하며(설정 스크립트 `scripts/Set-StitchApiKey.ps1`) 저장소나 로그에 노출하지 않습니다.
 - **Claude Code 전용 설정:** `.claude/`는 Claude Code만 읽으며, 다른 에이전트의 동작과 공통 규칙은 [AGENTS](../AGENTS.md)를 따릅니다.
   - `settings.json`은 `.env*.local`·서비스 계정 키 읽기와 Firestore 삭제·Firebase 배포 도구를 막습니다.
-  - 매번 확인받는 것: 운영 Firebase 도구, GitHub 도구의 직접 쓰기, Vercel 승격·배포, 강제 push(`--force`, `-f`, `+` 참조), 원격 브랜치 삭제(`git push`의 `--delete`·`-d`, `gh pr merge`의 `--delete-branch`·`-d`), `--mirror`·`--prune` push, `gh pr merge --admin`.
+  - 매번 확인받는 것: Firebase MCP 도구 전체, GitHub 도구의 직접 쓰기, Vercel 승격·배포, 강제 push(`--force`, `-f`, `+` 참조), 원격 브랜치 삭제(`git push`의 `--delete`·`-d`, `gh pr merge`의 `--delete-branch`·`-d`), `--mirror`·`--prune` push, `gh pr merge --admin`.
   - 일반 `git push`와 `gh pr merge`는 확인 없이 실행됩니다. 언제 해도 되는지는 [AGENTS의 승인 범위](../AGENTS.md#검증-및-배포-규칙)가 정합니다.
   - 이 규칙은 명령 문자열만 비교하는 실수 방지 장치입니다. 다른 형태로 쓴 명령(예: 콜론으로 원격 브랜치를 지우는 `git push origin :이름`, `-uf`처럼 묶어 쓴 짧은 옵션)은 잡지 못하므로 보안 경계로 여기지 않습니다.
   - `launch.json`은 내장 미리보기용 `dev:emulator` 실행 설정입니다.
@@ -380,6 +377,7 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 | 화면·토큰·접근성 | [DESIGN](DESIGN.md) |
 | 배포 게이트·운영 절차·운영 환경 현황 | [FIREBASE_SETUP](FIREBASE_SETUP.md) |
 | 현재 진행·최근 반영·다음 작업·남은 한계 | [HANDOFF](HANDOFF.md) |
+| 날짜 붙은 조사·검토 보고서·화면 캡처(현재 동작 기준 아님) | `docs/reference/`(HANDOFF·보관 원문에서 링크) |
 | 지난 원문 | [보관함](archive/README.md) |
 
 문서끼리 답이 다르면 위 표의 단일 위치가 이깁니다. 단 AGENTS의 '검증 및 배포 규칙'·'절대 금지 사항'이 모든 문서보다 우선합니다. HANDOFF의 날짜 붙은 사용자 결정과 절차 문서가 다르면 사용자에게 확인하고 절차 문서를 고칩니다. 어긋남을 본 에이전트는 작업 범위 안이면 사본을 링크로 바꾸고, 범위 밖이면 HANDOFF 다음 작업에 적습니다.

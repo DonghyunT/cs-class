@@ -1,6 +1,6 @@
 # Run this script yourself in PowerShell; do not pass the key as a command argument.
 # The key is stored in the current Windows user's environment, outside the repository.
-# If script files are blocked, use the interactive command in README.md (Stitch key input).
+# If script files are blocked, run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Set-StitchApiKey.ps1
 [CmdletBinding()]
 param()
 
