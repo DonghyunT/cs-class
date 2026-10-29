@@ -119,7 +119,7 @@ test("운영 수업 API · 미션별 검증/제출 · 재시도 · 수정 뒤 �
     const result = await teacher.get(`/api/classroom/teacher?classId=2-1&lessonId=${id}`);
     expect(result.status()).toBe(200);
     const summary = (await result.json()).students.find((s: { uid: string }) => s.uid === "student-20101").work;
-    expect(summary.missions.keys.submission).toEqual({ id: submissions!.keys.submission!.id, submittedAt: submissions!.keys.submission!.submittedAt });
+    expect(summary.missions.keys.submission).toEqual({ id: submissions!.keys.submission!.id, submittedAt: submissions!.keys.submission!.submittedAt, firstSubmittedAt: submissions!.keys.submission!.firstSubmittedAt });
     expect(summary.draft).toBeUndefined();
     const detail = await teacher.get(`/api/classroom/students/student-20101/work/${id}`);
     expect(detail.status()).toBe(200);
