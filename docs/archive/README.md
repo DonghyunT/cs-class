@@ -1,12 +1,14 @@
 # 과거 기록 보관함
 
-목록 갱신: 2026-10-27. 각 원문의 보존 시점은 아래 기록을 따릅니다. 이 폴더는 역사 자료이며 현재 에이전트 지침·요구사항·작업 승인이 아닙니다. 현재 기준은 [프로젝트 안내](../../README.md)에서 확인합니다.
+목록 갱신: 2026-10-30. 각 원문의 보존 시점은 아래 기록을 따릅니다. 이 폴더는 역사 자료이며 현재 에이전트 지침·요구사항·작업 승인이 아닙니다. 현재 기준은 [프로젝트 안내](../../README.md)에서 확인합니다.
 
 ## 보관 기록
 
 - **[2026-10-24 색상 다듬기 계획 원문](cs-class/2026-10-24-color-refresh-plan/manifest.json):** PR #83으로 공개된 색상 다듬기 계획을 `docs/plans/`에서 `git mv`로 옮겨 내용 그대로 보존했습니다([안내](cs-class/2026-10-24-color-refresh-plan/README.md)).
 
 - **[2026-10-27 완료 계획 원문](cs-class/2026-10-27-completed-plans/manifest.json):** 현행 문서의 학교 식별 표현을 일반화한 계획을 `docs/plans/`에서 `git mv`로 옮겨 내용 그대로 보존했습니다([안내](cs-class/2026-10-27-completed-plans/README.md)).
+
+- **[2026-10-30 완료 계획 원문](cs-class/2026-10-30-completed-plans/manifest.json):** 엔트리 라이브러리 파일을 Cloudflare로 나눈 계획(#97)을 `docs/plans/`에서 `git mv`로 옮겨 내용 그대로 보존했습니다([안내](cs-class/2026-10-30-completed-plans/README.md)).
 
 - **[2026-10-24 강사 안내서 재구성 전 원문](cs-class/2026-10-24-before-instructor-guide-flow/manifest.json):** 사이트 소개와 실제 수업 활용을 나누기 전 `main@71ee6f9`의 HTML을 내용 그대로 보존했습니다([안내](cs-class/2026-10-24-before-instructor-guide-flow/README.md)).
 

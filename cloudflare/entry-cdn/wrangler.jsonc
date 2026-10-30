@@ -1,4 +1,4 @@
-// Static-only Worker for the Entry vendor files (docs/plans/entry-assets-cloudflare.md).
+// Static-only Worker for the Entry vendor files (docs/FIREBASE_SETUP.md, "엔트리 라이브러리 CDN").
 // No `main` script: every request is a static asset request, which the Workers Free plan does not count or bill.
 // Build the folder first with `node scripts/entryjs-cdn.mjs bundle`; `npm run deploy:entry-cdn` does both.
 {
