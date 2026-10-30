@@ -67,7 +67,9 @@ function Assessment({ classId }: { classId?: string }) {
     const stamp = new Intl.DateTimeFormat("sv-SE", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Seoul" }).format(report.checkedAt).replace(/\D/g, "");
     const link = document.createElement("a");
     link.href = url; link.download = `수행평가-진행률-${data.classroom.name}-${stamp}.csv`;
-    try { link.click(); } finally { URL.revokeObjectURL(url); }
+    // Attached for the click: some browsers (older Firefox) ignore clicks on a detached link.
+    document.body.append(link);
+    try { link.click(); } finally { link.remove(); URL.revokeObjectURL(url); }
   }
 
   return <div className={teacher.page}>
