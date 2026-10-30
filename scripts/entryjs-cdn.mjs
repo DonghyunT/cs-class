@@ -1,6 +1,7 @@
 // Serves the Entry vendor files from Cloudflare instead of Vercel (docs/plans/entry-assets-cloudflare.md).
 //   node scripts/entryjs-cdn.mjs html    (prebuild) on Vercel production builds, point workspace.html at the CDN
 //   node scripts/entryjs-cdn.mjs bundle  write scratch/entry-cdn/ for `wrangler deploy`
+import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -28,12 +29,13 @@ export function rewriteWorkspace(html, prefix) {
 export async function workspaceForBuild({ html, vercelEnv, base, fingerprint, fetchImpl = fetch }) {
   if (vercelEnv !== "production" || !base) return { html, reason: "local" };
   const prefix = cdnPrefix(base, fingerprint);
-  const version = await fetchImpl(`${prefix}/version.txt`).then((response) => response.ok ? response.text() : "").catch(() => "");
+  const version = await fetchImpl(`${prefix}/version.txt`, { signal: AbortSignal.timeout(10_000) }).then((response) => response.ok ? response.text() : "").catch(() => "");
   if (version.trim() !== fingerprint) return { html, reason: `missing ${prefix}/version.txt` };
   return { html: rewriteWorkspace(html, prefix), reason: prefix };
 }
 
 async function main(mode) {
+  if (!existsSync(path.join(root, "scripts/entryjs-cdn.mjs"))) throw new Error("Run scripts/entryjs-cdn.mjs from the repository root");
   const fingerprint = (await readFile(path.join(vendor, ".prepared"), "utf8")).trim();
   if (mode === "html") {
     const { base } = JSON.parse(await readFile(path.join(root, "scripts/entryjs-cdn.json"), "utf8"));
