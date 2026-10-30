@@ -1,4 +1,6 @@
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { cdnPrefix, rewriteWorkspace } from "../scripts/entryjs-cdn.mjs";
 import { buildProgrammingProject, newAddedObject, parseProgrammingProject, programmingProjectMatches, type EntryNode } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
@@ -247,6 +249,50 @@ test("entry-assets: 그림 준비 전 실행을 막고 그림 로딩 실패에�
   await page.unroute("**/entryjs/name-dog.svg");
   await page.getByRole("button", { name: "작업실 다시 불러오기", exact: true }).click();
   await expect(entryStart(page)).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("entry-cdn: 라이브러리를 CDN에서 받아도 실행·저장되고 작품에 CDN 주소가 남지 않는다", async ({ page }, info) => {
+  const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
+  const prefix = cdnPrefix("https://entry-cdn.test", readFileSync("public/entryjs/vendor/.prepared", "utf8").trim());
+  const cdn: string[] = [], app: string[] = [], failed: string[] = [];
+  page.on("requestfailed", (request) => failed.push(`${request.url()} ${request.failure()?.errorText}`));
+  page.on("response", (response) => { if (response.status() >= 400) failed.push(`${response.url()} ${response.status()}`); });
+  page.on("console", (message) => { if (message.type() === "error") failed.push(`console: ${message.text()}`); });
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.origin === "https://entry-cdn.test") cdn.push(`${request.method()} ${url.pathname}`);
+    else if (url.pathname.startsWith("/entryjs/")) app.push(url.pathname);
+  });
+  // The production build's workspace.html (scripts/entryjs-cdn.mjs) next to a CDN holding the local vendor files.
+  // Every iframe file is answered here: Chromium treats a route-fulfilled document as public and blocks its requests
+  // back to localhost (Local Network Access), which production, with Vercel and the CDN both public, never meets.
+  await page.route((url) => url.origin === "https://entry-cdn.test" || url.pathname.startsWith("/entryjs/"), async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/entryjs/workspace.html") {
+      const response = await route.fetch();
+      return route.fulfill({ response, body: rewriteWorkspace(await response.text(), prefix) });
+    }
+    const file = decodeURIComponent(url.origin === "https://entry-cdn.test" ? `public/entryjs/vendor${url.pathname.slice(new URL(prefix).pathname.length)}` : `public${url.pathname}`);
+    return existsSync(file) && statSync(file).isFile() ? route.fulfill({ path: file, headers: { "Access-Control-Allow-Origin": "*" } }) : route.fulfill({ status: 404 });
+  });
+  await prepare(page, "name", nameProject);
+  await entryStart(page).click();
+  const input = page.frameLocator("iframe").getByLabel("강아지 이름 대답");
+  await clickAnswerCanvas(page); await expect(input).toBeFocused();
+  await page.keyboard.insertText("별이"); await page.keyboard.press("Enter");
+  await expect(page.getByRole("status").filter({ hasText: "마지막 말: 별이" })).toBeVisible();
+  await expect(entryStart(page)).toBeEnabled();
+  await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+  await expect(page.locator("#practice-feedback")).toHaveText("목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요.");
+  await saveDraft(page);
+  const project = (await stored(page)).draft.programming!.projects.name;
+  expect(JSON.stringify(project)).not.toContain("entry-cdn.test");
+  expect(cdn.length).toBeGreaterThan(50);
+  // Only the bridge and the pictures a project names by its saved /entryjs/ path still come from the app.
+  expect(app.filter((file) => !/^\/entryjs\/(?:workspace\.(?:html|js|css)|name-dog\.svg|sprites\/.+|vendor\/entry\/images\/media\/.+)$/.test(file))).toEqual([]);
+  info.annotations.push({ type: "entry-cdn requests", description: `CDN ${cdn.length}, app ${app.length}: ${[...new Set(app)].join(" ")}` });
+  expect(failed).toEqual([]);
   expect(errors).toEqual([]);
 });
 

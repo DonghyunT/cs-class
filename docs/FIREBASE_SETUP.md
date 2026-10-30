@@ -97,6 +97,16 @@ Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 �
 
 배포 후 Cron 인증 없는 요청의 401, 담당 교사의 첫 수동 갱신, 학생 본인 반 조회·직접 일정 보존을 확인합니다. Vercel Cron 설정·실제 예약 실행 로그와 `csTimetables/<학교코드>.checkedAt`을 확인한 뒤에만 운영 일일 갱신이 검증됐다고 기록합니다. 로컬 `next start`의 호출 검증을 실제 예약 실행으로 표현하지 않습니다.
 
+### 엔트리 라이브러리 CDN
+<a id="엔트리-라이브러리-cdn"></a>
+
+엔트리 라이브러리(`public/entryjs/vendor/`)는 Cloudflare Workers 정적 파일 `cs-class-entry`([`cloudflare/entry-cdn/wrangler.jsonc`](../cloudflare/entry-cdn/wrangler.jsonc))에서도 제공해 Vercel CDN 요청을 줄입니다. 서버 코드가 없는 정적 파일만이라 [무료 플랜에서도 요청이 무료·무제한](https://developers.cloudflare.com/workers/platform/pricing/)이고, 한 버전 20,000개·파일당 25MiB 한도 안입니다. 주소 전환 규칙은 [개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)에 있습니다.
+
+1. **올리기(사용자 승인 필요):** `npx wrangler login`(사용자 로그인) 뒤 `npm run deploy:entry-cdn`. `scratch/entry-cdn/<지문 16자>/`와 `_headers`(CORS `*`, 1년 `immutable`, `nosniff`, `noindex`)를 만들어 올립니다. 주소는 `https://cs-class-entry.cs-class.workers.dev`이고 버전별 미리보기 주소는 끕니다(`preview_urls: false`). 새 하위 주소는 처음 몇 분간 TLS 연결이 끊길 수 있습니다. 올릴 때마다 그 묶음만 남아 지난 지문의 파일은 사라지므로, 라이브러리를 바꿀 때는 [개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)의 순서(병합 → 올리기 → 재배포)를 지킵니다.
+2. **확인:** `https://<주소>/<지문 16자>/version.txt`가 `.prepared`와 같은 값이고 `entry/dist/entry.min.js` 응답에 `Access-Control-Allow-Origin: *`가 있는지 봅니다. 학교 PC에서도 같은 주소가 열려야 합니다.
+3. **켜기:** `scripts/entryjs-cdn.json`의 `base`에 `https://` 주소(경로 없이)를 넣어 PR로 병합합니다. Vercel 설정은 바꾸지 않습니다. 공개 뒤 빌드 로그의 `Entry vendor files:` 줄과 작업실의 라이브러리 요청 주소를 확인합니다.
+4. **되돌리기:** `base`를 비워 병합·배포하면 Vercel 파일로 돌아갑니다. 이미 열린 탭은 새로고침해야 바뀝니다. CDN 장애 때 자동으로 돌아가지 않습니다. Vercel 롤백으로 지문이 다른 옛 배포를 되살리면 그 지문이 CDN에 없어 작업실이 열리지 않으므로, 그때는 `base`를 비운 배포로 되돌립니다.
+
 ### 복습 AI 서버 설정
 
 cs-class Vercel 프로젝트(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Production 서버 설정에 `UPSTAGE_API_KEY`와 임의 생성한 32자 이상 `CS_AI_COMMAND_SECRET`을 Sensitive로 등록합니다. 키를 채팅·Git·로그·명령 인자·문서·브라우저 `NEXT_PUBLIC_*`에 넣지 않습니다. Preview에 운영 인증값을, Preview·Development에 AI 키를 복사하지 않습니다.
