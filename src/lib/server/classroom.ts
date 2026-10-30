@@ -1,10 +1,10 @@
 import "server-only";
 import { z } from "zod";
-import type { Transaction } from "firebase-admin/firestore";
+import { FieldPath, type Transaction } from "firebase-admin/firestore";
 import { RELEASED_LESSONS, findLesson } from "../classroom/catalog";
-import { emptyWork, practiceMatches, submissionTimes } from "../classroom/progress";
-import { isLessonMission, missionsFor, programmingProjectMatches } from "../classroom/programming-entry";
-import type { ClassSettings, StudentDashboard, TeacherDashboard, Work, WorkSummary } from "../classroom/types";
+import { emptyWork, practiceMatches, progressFor, submissionTimes } from "../classroom/progress";
+import { isLessonMission, missionsFor, programmingProjectMatches, requiredMissionsFor } from "../classroom/programming-entry";
+import type { ClassSettings, StudentDashboard, TeacherAssessment, TeacherDashboard, Work, WorkSummary } from "../classroom/types";
 import { isTrialStudentId } from "../classroom/roster";
 import { randomUUID } from "node:crypto";
 import { basicReviewCheck } from "../classroom/review/project";
@@ -124,6 +124,42 @@ export async function teacherDashboard(classId?: string, lessonId?: string): Pro
     records.sort((a, b) => a.studentId.localeCompare(b.studentId));
     return { classrooms, lessons: RELEASED_LESSONS, classroom, selectedLessonId, students: records, offList };
   });
+}
+export async function teacherAssessment(classId?: string, lessonsParam?: string): Promise<TeacherAssessment> {
+  const regular = RELEASED_LESSONS.filter((lesson) => lesson.mode !== "review");
+  const lessonIds = lessonsParam === undefined ? null : [...new Set(lessonsParam.split(","))];
+  requireCondition(!lessonIds || (lessonIds.length <= 60 && lessonIds.every((id) => regular.some((lesson) => lesson.id === id))), 400, "INVALID_LESSON", "평가할 정규 수업을 골라 주세요.");
+  const { classrooms, classroom } = await authorized(await identity(), async (tx, account) => {
+    requireCondition(account.role !== "student", 403, "FORBIDDEN", "선생님 계정으로 입장해 주세요.");
+    const selectedClassId = classId ?? account.classIds[0];
+    requireCondition(account.classIds.includes(selectedClassId), 403, "FORBIDDEN", "담당 반만 확인할 수 있어요.");
+    const classrooms = (await tx.getAll(...account.classIds.map((id) => admin().db.collection("csClasses").doc(id)))).map((snap) => snap.data() as ClassSettings | undefined).filter((value): value is ClassSettings => !!value);
+    const classroom = classrooms.find((c) => c.id === selectedClassId);
+    requireCondition(classroom, 404, "CLASS_NOT_FOUND", "아직 준비되지 않은 반이에요.");
+    return { classrooms, classroom };
+  });
+  const lessons = regular.map((lesson) => ({ id: lesson.id, title: lesson.title, opened: classroom.openedLessonIds.includes(lesson.id) }));
+  if (!lessonIds) return { classrooms, classroom, lessons, report: null };
+  // Read after the session check, outside its transaction: a read-write transaction would lock every student's work while they save.
+  const { db } = admin();
+  const chosen = lessonIds.map((id) => findLesson(id)!);
+  const roster = (await db.collection("csAccounts").where("classId", "==", classroom.id).get()).docs.map((doc) => doc.data() as Account)
+    .filter((student): student is Account & { studentId: string } => student.role === "student" && !!student.studentId && !student.disabled && !isTrialStudentId(student.studentId))
+    .sort((a, b) => a.studentId.localeCompare(b.studentId));
+  // Only what progress counts: a work document's drafts alone can reach 160KB.
+  const paths = new Map<string, string | FieldPath>([["conceptSolved", "conceptSolved"], ["quizSolved", "quizSolved"], ["submission.id", "submission.id"]]);
+  for (const lesson of chosen) if (lesson.practice.type === "programming") for (const mission of requiredMissionsFor(lesson.id)) paths.set(`missions/${mission.id}`, new FieldPath("missions", mission.id, "submission", "id"));
+  const refs = roster.flatMap((student) => chosen.map((lesson) => workRef(student.uid, lesson.id)));
+  const snapshots = refs.length ? await db.getAll(...refs, { fieldMask: [...paths.values()] }) : [];
+  const rows = roster.map((student, index) => ({
+    uid: student.uid, studentId: student.studentId, ...(student.nickname ? { nickname: student.nickname } : {}),
+    progress: Object.fromEntries(chosen.map((lesson, offset) => {
+      const data = snapshots[index * chosen.length + offset].data() as Partial<StoredWork> | undefined;
+      const { concept, quiz, practice } = progressFor(lesson, data && { conceptSolved: data.conceptSolved ?? [], quizSolved: data.quizSolved ?? [], updatedAt: null, submission: data.submission ?? null, missions: data.missions });
+      return [lesson.id, { concept, quiz, practice }];
+    })),
+  }));
+  return { classrooms, classroom, lessons, report: { lessonIds, rows, checkedAt: Date.now() } };
 }
 function workSummary(work: Work): WorkSummary {
   const edited = work.draft.programming ? Object.entries(work.missions ?? {}).some(([id, record]) => isLessonMission(work.lessonId, id) && record.submission && !programmingProjectMatches(work.draft.programming?.projects[id], record.submission.entryProject)) : work.draft.reviewProject?.type === "flowchart" ? Object.entries(work.missions ?? {}).some(([id, record]) => record.submission && !sameReviewProject(work.draft.reviewProject, record.submission.reviewProject, id)) : !!work.submission && !practiceMatches(work.draft, work.submission);
