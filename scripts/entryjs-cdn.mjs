@@ -3,9 +3,9 @@
 //   node scripts/entryjs-cdn.mjs bundle  write scratch/entry-cdn/ for `wrangler deploy`
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
 
-const root = fileURLToPath(new URL("../", import.meta.url));
+// No import.meta: Playwright loads this module from CommonJS-compiled specs. npm runs scripts from the repo root.
+const root = process.cwd();
 const vendor = path.join(root, "public/entryjs/vendor");
 const workspace = path.join(root, "public/entryjs/workspace.html");
 const bundle = path.join(root, "scratch/entry-cdn");
@@ -36,7 +36,7 @@ export async function workspaceForBuild({ html, vercelEnv, base, fingerprint, fe
 async function main(mode) {
   const fingerprint = (await readFile(path.join(vendor, ".prepared"), "utf8")).trim();
   if (mode === "html") {
-    const { base } = JSON.parse(await readFile(new URL("./entryjs-cdn.json", import.meta.url), "utf8"));
+    const { base } = JSON.parse(await readFile(path.join(root, "scripts/entryjs-cdn.json"), "utf8"));
     const html = await readFile(workspace, "utf8");
     const result = await workspaceForBuild({ html, vercelEnv: process.env.VERCEL_ENV, base, fingerprint });
     // Rewritten in place: only Vercel's throwaway build checkout reaches this branch.
@@ -58,4 +58,4 @@ async function main(mode) {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) await main(process.argv[2]);
+if (path.basename(process.argv[1] ?? "") === "entryjs-cdn.mjs") main(process.argv[2]).catch((error) => { console.error(error); process.exitCode = 1; });
