@@ -47,7 +47,9 @@ export function practiceMatches(draft: WorkDraft, saved: Pick<ValidationResult, 
   const previous = parseEntryProject(saved.entryProject);
   return current && previous ? JSON.stringify(current.threads) === JSON.stringify(previous.threads) : programmingProjectMatches(draft.entryProject, saved.entryProject);
 }
-export function progressFor(lesson: Lesson, work?: Work | WorkSummary | null): Progress {
+// The fields progress reads, so the assessment can pass work read through a field mask.
+type ProgressSource = Pick<WorkSummary, "conceptSolved" | "quizSolved" | "updatedAt"> & { submission: unknown; missions?: Record<string, { submission: unknown }> };
+export function progressFor(lesson: Lesson, work?: ProgressSource | null): Progress {
   const ratio = (completed: number, total: number) => ({ completed, total, percent: total ? Math.round(completed / total * 100) : 100 });
   const concept = ratio(lesson.concepts.filter((c) => work?.conceptSolved.includes(c.id)).length, lesson.concepts.length);
   const quiz = ratio(lesson.quiz.filter((q) => work?.quizSolved.includes(q.id)).length, lesson.quiz.length);
@@ -55,4 +57,12 @@ export function progressFor(lesson: Lesson, work?: Work | WorkSummary | null): P
   const practice = lesson.practice.type === "flowchart" ? ratio(reviewMissionIds.filter(id => work?.missions?.[id]?.submission).length, reviewMissionIds.length) : lesson.practice.type === "programming" ? ratio(required.filter((m) => work?.missions?.[m.id]?.submission).length, required.length) : ratio(work?.submission ? 1 : 0, 1);
   const completed = concept.percent === 100 && quiz.percent === 100 && practice.percent === 100;
   return { concept, quiz, practice, status: completed ? "completed" : work?.updatedAt ? "in-progress" : "not-started" };
+}
+// Concept, quiz and practice weigh a third each however many items they hold; a stage with no items is left out.
+// Floored, so 100 means every item is done, after rounding away float error (94.99999999999999 for a true 95).
+export function overallPercent(stages: readonly { completed: number; total: number }[]): number {
+  const present = stages.filter((stage) => stage.total > 0);
+  if (!present.length) return 0;
+  const mean = present.reduce((sum, stage) => sum + stage.completed / stage.total, 0) / present.length;
+  return Math.floor(+(mean * 100).toFixed(6));
 }

@@ -8,6 +8,8 @@
 
 - **[2026-10-27 완료 계획 원문](cs-class/2026-10-27-completed-plans/manifest.json):** 현행 문서의 학교 식별 표현을 일반화한 계획을 `docs/plans/`에서 `git mv`로 옮겨 내용 그대로 보존했습니다([안내](cs-class/2026-10-27-completed-plans/README.md)).
 
+- **[2026-10-30 수행평가 포트폴리오 계획 원문](cs-class/2026-10-30-assessment-plan/manifest.json):** 수행평가 진행률 화면(1단계)을 반영하며 교사 결정을 적은 계획을 `docs/plans/`에서 `git mv`로 옮겨 보존했습니다([안내](cs-class/2026-10-30-assessment-plan/README.md)).
+
 - **[2026-10-30 완료 계획 원문](cs-class/2026-10-30-completed-plans/manifest.json):** 엔트리 라이브러리 파일을 Cloudflare로 나눈 계획(#97)을 `docs/plans/`에서 `git mv`로 옮겨 내용 그대로 보존했습니다([안내](cs-class/2026-10-30-completed-plans/README.md)).
 
 - **[2026-10-24 강사 안내서 재구성 전 원문](cs-class/2026-10-24-before-instructor-guide-flow/manifest.json):** 사이트 소개와 실제 수업 활용을 나누기 전 `main@71ee6f9`의 HTML을 내용 그대로 보존했습니다([안내](cs-class/2026-10-24-before-instructor-guide-flow/README.md)).

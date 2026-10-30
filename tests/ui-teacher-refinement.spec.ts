@@ -287,7 +287,7 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   await expect(page.getByRole("searchbox", { name: "학번·닉네임 검색" })).toHaveValue("20182");
   await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("진행 중");
   await expect(row).toHaveCount(1);
-  await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "7");
+  await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "8");
 });
 
 test("선택 복습과 미지정 학생은 목록·격자에서 정규 완료율을 만들지 않음", async ({ page }) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { overallPercent } from "@/lib/classroom/progress";
 import type { Stage } from "@/lib/classroom/types";
 import styles from "./activity-progress-ring.module.css";
 
@@ -22,7 +23,7 @@ export function ActivityProgressRing({ parts, label = "전체 필수 활동 완�
   const [focused, setFocused] = useState<Stage | null>(null);
   const completed = parts.reduce((sum, part) => sum + part.completed, 0);
   const total = parts.reduce((sum, part) => sum + part.total, 0);
-  const percent = total ? Math.round(completed / total * 100) : 0;
+  const percent = overallPercent(parts);
   const detail = interactive ? parts.find(part => part.stage === (hovered ?? focused)) : undefined;
   const detailOpen = total > 0 && Boolean(detail);
   useEffect(() => {

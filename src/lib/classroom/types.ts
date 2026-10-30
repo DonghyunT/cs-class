@@ -145,6 +145,16 @@ export interface TeacherDashboard {
   offList: OffListAccount[];
 }
 export interface OffListAccount { uid: string; studentId: string; nickname?: string; kind: "trial" | "removed" }
+export interface AssessmentLesson { id: string; title: string; opened: boolean }
+export interface AssessmentRow { uid: string; studentId: string; nickname?: string; progress: Record<string, Pick<Progress, Stage>> }
+export interface TeacherAssessment {
+  classrooms: ClassSettings[];
+  classroom: ClassSettings;
+  // Regular lessons only; review lessons are left out of grades.
+  lessons: AssessmentLesson[];
+  // Read only when the teacher asks for chosen lessons, so opening the page reads no student work.
+  report: { lessonIds: string[]; rows: AssessmentRow[]; checkedAt: number } | null;
+}
 export type WorkAction =
   | { type: "check-concept"; conceptId: string }
   | { type: "grade-quiz" }

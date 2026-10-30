@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Award,
   BookOpen,
+  ClipboardList,
   MessageCircle,
   Settings,
   ChevronRight,
@@ -163,6 +164,7 @@ export function AppShell({
             </Link>
             {!teacher && <Link className={path === "/student/badges" ? styles.active : ""} aria-current={path === "/student/badges" ? "page" : undefined} href="/student/badges" onClick={() => setMobileNav(false)}><Award size={19} />내 배지</Link>}
             {teacher && <Link className={path === "/teacher/classes" ? styles.active : ""} aria-current={path === "/teacher/classes" ? "page" : undefined} href={classLink("/teacher/classes")} onClick={() => setMobileNav(false)}><BookOpen size={19} />수업 관리</Link>}
+            {teacher && <Link className={path === "/teacher/assessment" ? styles.active : ""} aria-current={path === "/teacher/assessment" ? "page" : undefined} href={classLink("/teacher/assessment")} onClick={() => setMobileNav(false)}><ClipboardList size={19} />수행평가</Link>}
             <Link className={path === `${home}/community` ? styles.active : ""} aria-current={path === `${home}/community` ? "page" : undefined} href={classLink(`${home}/community`)} onClick={() => setMobileNav(false)}><MessageCircle size={19} />우리 반 질문</Link>
             <Link className={path === `${home}/settings` ? styles.active : ""} aria-current={path === `${home}/settings` ? "page" : undefined} href={classLink(`${home}/settings`)} onClick={() => setMobileNav(false)}><Settings size={19} />설정</Link>
           </nav>

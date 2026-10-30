@@ -284,6 +284,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 
 - **반 선택 세션:** `SessionProvider`의 `useTeacherClass`는 탭 단위 `sessionStorage`로 선택 반을 관리하며 URL 쿼리(`?classId=...`)와 연동됩니다.
 - **교사 수업 미리보기 (`/teacher/preview/[id]`):** `LessonPreview`와 `usePreviewWork`는 실제 `LessonShell`(`preview` 속성)과 `LessonEditor`(`mode="preview"`)로 렌더링하며, 학생 학습 컬렉션 쓰기를 엄격히 차단하고 컴포넌트 메모리에서만 동작합니다.
+- **수행평가 진행률 (`/teacher/assessment`):** 정책은 [PRD §5.6](PRD.md#수행평가-진행률)입니다. 서버 `teacherAssessment`는 세션·담당 반 확인 트랜잭션이 끝난 뒤, 트랜잭션 밖에서 명단 질의와 `getAll(..., { fieldMask })`로 진도 필드만 읽습니다(읽기·쓰기 트랜잭션이면 학생 저장과 잠금이 겹침). 진행률은 `progress.ts`의 `overallPercent`(진행률 고리와 공유), 점수·CSV는 `src/lib/classroom/assessment.ts`가 계산합니다. 선별 매핑이 없으니 바꿀 때는 [미분류 파일 절차](#검증)로 `tests/assessment.test.ts`·`teacher-assessment`와 진행률 고리 검사(`student-progress`·`classroom-connected-ui`)를 고릅니다.
 - **교사 제출 작품 열람 및 인라인 실행 (`SubmissionViewer` · `EntryProjectPreview`):** 화면·폭·`Escape` 순서는 [DESIGN §4.4](DESIGN.md#학생교사-대시보드)를 따르며, 파싱 실패 시에만 번호 목록으로 폴백합니다. E2E 검사에서는 iframe 언마운트 경합을 막기 위해 `무대 처음 위치로` 버튼이 활성화된 뒤 `Escape`를 입력합니다.
 - **읽기 최적화·손들기 중지 검사:** `tests/help-paused.spec.ts`는 손들기 중지·교사 수동 조회를, `tests/read-polling.spec.ts`는 [PRD §5.1 학생 화면 갱신](PRD.md#51-학생-대시보드-및-이번-수업-전환)·[§5.5 손들기](PRD.md#설정과-손들기)·[§6.2 활동 기록](PRD.md#62-세션-및-다중-접속-제어)의 간격과 권한·느린 응답 경합(PC 시계가 어긋난 경우 포함)을 확인합니다. 간격을 바꾸면 PRD와 이 검사를 함께 고칩니다.
 - **손들기 활성 모드 검사:** `help-requests`·`help-races`와 관련 UI 검사는 지우지 않고, 공유 설정(`src/lib/classroom/features.ts`의 `CLASSROOM_HELP_ENABLED`)이 false이면 명시적으로 건너뛰며 통과로 세지 않습니다. 재개할 때는 설정을 true로 바꾸고 다시 빌드해 이 검사를 실행합니다.

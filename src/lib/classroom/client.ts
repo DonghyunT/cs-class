@@ -1,5 +1,5 @@
 "use client";
-import type { ClassSettings, Session, StudentDashboard, TeacherDashboard, Work, WorkAction, WorkDraft } from "./types";
+import type { ClassSettings, Session, StudentDashboard, TeacherAssessment, TeacherDashboard, Work, WorkAction, WorkDraft } from "./types";
 import type { AiReply, AiTask, FlowPlanning } from "./review/ai";
 
 export class ApiError extends Error {
@@ -37,6 +37,7 @@ export const classroomApi = {
   student: () => api<StudentDashboard>("classroom/student"),
   studentClassroom: () => api<Pick<StudentDashboard, "classroom" | "lessons">>("classroom/student/class"),
   teacher: (classId?: string, lessonId?: string) => api<TeacherDashboard>(`classroom/teacher?${new URLSearchParams({ ...(classId ? { classId } : {}), ...(lessonId ? { lessonId } : {}) })}`),
+  assessment: (classId?: string, lessonIds?: string[]) => api<TeacherAssessment>(`classroom/assessment?${new URLSearchParams({ ...(classId ? { classId } : {}), ...(lessonIds ? { lessons: lessonIds.join(",") } : {}) })}`),
   updateClass: (classId: string, revision: number, currentLessonId: string | null, openedLessonIds: string[], expectedUid?: string) => api<ClassSettings>(`classroom/classes/${encodeURIComponent(classId)}`, { revision, currentLessonId, openedLessonIds }, "POST", expectedUid),
   firstEntry: (classId: string, action: "open" | "extend" | "close", expectedUid?: string) => api<{ code: string | null; expiresAt: number | null }>(`classroom/first-entry/${encodeURIComponent(classId)}`, { action }, "POST", expectedUid),
   setListed: (uid: string, listed: boolean, expectedUid?: string) => api<{ listed: boolean }>(`classroom/students/${encodeURIComponent(uid)}/roster`, { listed }, "POST", expectedUid),
