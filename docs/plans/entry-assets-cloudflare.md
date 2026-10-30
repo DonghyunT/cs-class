@@ -34,6 +34,8 @@
 | L5 연결·문서 | `scripts/e2e-scope.mjs` 연결, DEVELOPMENT §4.1·FIREBASE_SETUP 절차, HANDOFF | `test:scope`·`check-docs`·`git diff --check origin/main` 통과 |
 | QA | 이 계획을 모르는 리뷰어(서브에이전트)가 diff를 검토, typecheck·lint·build, 선별 E2E 전부(`programming-classroom`, `manual-save-entry`, `programming-learning`, `programming-mission-navigation`, `entryjs-ui`, `conditionals`, `loops`, 새 검사) | 지적을 고치거나 이유를 남김, 검사 통과 개수 기록 |
 
+**진행(10/30):** L1~L5 커밋. L3 가짜 CDN에서 작업실 첫 로딩은 CDN 88건·앱 5건(`workspace.html`·`css`·`js`, `name-dog.svg`). L4 `wrangler dev`에서 CDN 요청은 GET만(효과음 포함) 모두 200이고 브라우저 사전 요청은 0건이었습니다.
+
 QA 뒤 커밋까지만 합니다. push·PR, Cloudflare 첫 배포(사용자 로그인 필요), 학교 PC에서 `workers.dev` 접속 확인은 사용자에게 다시 묻습니다.
 
 ## 4. 반영 순서(push 뒤, 승인 필요)
