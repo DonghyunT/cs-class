@@ -53,7 +53,7 @@ async function main(mode) {
     await cp(vendor, target, { recursive: true, filter: (source) => path.basename(source) !== ".prepared" });
     await writeFile(path.join(target, "version.txt"), fingerprint);
     // Files under a version path never change. The sandboxed iframe has an opaque origin, so CORS must allow any.
-    await writeFile(path.join(bundle, "_headers"), "/*\n  Access-Control-Allow-Origin: *\n  Cache-Control: public, max-age=31536000, immutable\n");
+    await writeFile(path.join(bundle, "_headers"), "/*\n  Access-Control-Allow-Origin: *\n  Cache-Control: public, max-age=31536000, immutable\n  X-Content-Type-Options: nosniff\n  X-Robots-Tag: noindex\n");
     console.log(`Entry CDN bundle ready: scratch/entry-cdn/${fingerprint.slice(0, 16)}`);
   } else {
     throw new Error("Usage: node scripts/entryjs-cdn.mjs html|bundle");

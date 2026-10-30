@@ -6,6 +6,9 @@
   "name": "cs-class-entry",
   // No later than the pinned wrangler's workerd (1.20261019.1) supports, so `wrangler dev` can serve it locally.
   "compatibility_date": "2026-10-19",
+  // Serve only the stable https://cs-class-entry.<subdomain>.workers.dev address; no per-version preview hosts.
+  "workers_dev": true,
+  "preview_urls": false,
   "assets": {
     "directory": "../../scratch/entry-cdn",
     "not_found_handling": "none"

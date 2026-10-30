@@ -36,6 +36,8 @@
 
 **진행(10/30):** L1~L5 커밋. L3 가짜 CDN에서 작업실 첫 로딩은 CDN 88건·앱 5건(`workspace.html`·`css`·`js`, `name-dog.svg`). L4 `wrangler dev`에서 CDN 요청은 GET만(효과음 포함) 모두 200이고 브라우저 사전 요청은 0건이었습니다.
 
+**배포(10/30 14시, 사용자 승인):** Worker `cs-class-entry`를 `https://cs-class-entry.cs-class.workers.dev`에 올렸습니다(지문 `edd97a3a4026506f`, 파일 555개, `preview_urls` 끔). 새 하위 주소는 몇 분간 TLS 연결이 끊긴 뒤 열렸습니다. 파일 555개 모두 200·내용 일치·헤더(CORS·1년 캐시·nosniff·noindex) 정상이고, 없는 파일·`_headers`·루트는 404입니다. 로컬 작업실을 이 주소로 바꿔 엔트리 E2E 4개가 통과했습니다(`entryjs-ui:152`는 `/entryjs/vendor/` 주소를 끊는 검사라 이 임시 확인에서는 해당 없음). `base`는 아직 비어 있어 운영은 Vercel 파일을 씁니다. 다음은 학교 PC 접속 확인 뒤 `base` 설정 PR입니다.
+
 QA 뒤 커밋까지만 합니다. push·PR, Cloudflare 첫 배포(사용자 로그인 필요), 학교 PC에서 `workers.dev` 접속 확인은 사용자에게 다시 묻습니다.
 
 ## 4. 반영 순서(push 뒤, 승인 필요)
