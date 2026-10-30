@@ -20,6 +20,7 @@ const eslintConfig = defineConfig([
     "docs/**",
     "outputs/**",
     "scratch/**",
+    "**/.wrangler/**",
     "private/**",
     ".ua/**",
     "public/entryjs/vendor/**",
