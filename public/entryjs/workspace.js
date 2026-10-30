@@ -136,7 +136,9 @@ try {
   ];
   Entry.creationChangedEvent = new Entry.Event(window);
   Entry.init(document.getElementById("workspace"), {
-    type: "workspace", libDir: "/entryjs/vendor", entryDir: "/entry",
+    // The production build may point the vendor <script> tags at the Entry CDN (scripts/entryjs-cdn.mjs);
+    // the raw attribute keeps the local value "/entryjs/vendor", which Entry copies into picture URLs.
+    type: "workspace", libDir: document.querySelector('script[src$="/entry/dist/entry.min.js"]').getAttribute("src").replace(/\/entry\/dist\/entry\.min\.js$/, ""), entryDir: "/entry",
     // The programming lesson lets students add objects from the lesson's own sprites.
     projectsaveable: false, objectEditable: programming, objectaddable: programming,
     objectdeletable: programming, pictureeditable: free, soundeditable: false,
