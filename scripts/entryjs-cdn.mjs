@@ -1,4 +1,4 @@
-// Serves the Entry vendor files from Cloudflare instead of Vercel (docs/plans/entry-assets-cloudflare.md).
+// Serves the Entry vendor files from Cloudflare instead of Vercel (docs/FIREBASE_SETUP.md, "엔트리 라이브러리 CDN").
 //   node scripts/entryjs-cdn.mjs html    (prebuild) on Vercel production builds, point workspace.html at the CDN
 //   node scripts/entryjs-cdn.mjs bundle  write scratch/entry-cdn/ for `wrangler deploy`
 import { existsSync } from "node:fs";

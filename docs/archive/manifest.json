@@ -3,6 +3,13 @@
   "baseline": "98781bd6e506e3ab5b1be08c39677e658215dba9",
   "records": [
     {
+      "source": "docs/plans/entry-assets-cloudflare.md",
+      "archive": "docs/archive/cs-class/2026-10-30-completed-plans/entry-assets-cloudflare.md",
+      "origin": "completed-plan-archived-20261030",
+      "baseCommit": "4ce9dc9",
+      "sha256": "90794d0ec2dcb5044578fd293a2c237adbe6b05f2b848b3f9da9a58621e6cd76"
+    },
+    {
       "source": "docs/plans/generalize-school-identity.md",
       "archive": "docs/archive/cs-class/2026-10-27-completed-plans/generalize-school-identity.md",
       "origin": "completed-plan-archived-20261027",
