@@ -345,7 +345,7 @@ export function EntryProjectPreview({
             <iframe
               key={attempt}
               ref={frameRef}
-              src={`/entryjs/workspace.html?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${parsed.free ? "&free=1" : ""}`}
+              src={`/entryjs/workspace.html?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${missionById(missionId)?.functions ? "&fn=1" : ""}${parsed.free ? "&free=1" : ""}`}
               title={`${missionTitle} 교사 실행 작업실`}
               sandbox="allow-scripts"
               className={styles.entryRunnerFrame}

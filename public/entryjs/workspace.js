@@ -9,6 +9,8 @@ const mission = params.get("mission");
 // Mission flags from the lesson page: arrow-key events keep the run waiting; vars shows A·B.
 const keyMission = params.get("keys") === "1";
 const showVariables = params.get("vars") === "1";
+// The functions lesson turns on plain Entry functions (no parameters, return values or local variables).
+const functionsEnabled = programming && params.get("fn") === "1";
 // Dog-free lessons: every object is equal, a few starter objects stay, shapes can be viewed.
 const free = programming && params.get("free") === "1";
 const lockedIds = (params.get("locked") ?? "").split(",").filter(Boolean);
@@ -23,6 +25,8 @@ const speechNow = () => {
   return "";
 };
 let disposed = false;
+// Copy of FUNCTION_PALETTE in src/lib/classroom/entry-palette.ts, kept equal by tests/entry-palette.test.ts.
+const FUNCTION_PALETTE = { category: "func", blocks: ["functionAddButton"] };
 // Copy of ENTRY_PALETTE in src/lib/classroom/entry-palette.ts. This sandboxed
 // script cannot import it; tests/entry-palette.test.ts keeps both lists equal.
 const PROGRAMMING_PALETTE = [
@@ -53,6 +57,17 @@ const EVENT_STARTS = ["when_some_key_pressed", "mouse_clicked", "mouse_click_can
 // Entry's stop erases brush lines and fills, so drawing runs wait the same way. Stamps survive a stop.
 const DRAW_BLOCKS = ["start_drawing", "start_fill"];
 const RUN_STARTS = ["when_run_button_click", "when_clone_start", ...EVENT_STARTS];
+// A line draws when it, or a function it calls (each function once), has a pen block.
+function drawsIn(blocks, seen = new Set()) {
+  return blocks.some((block) => {
+    if (DRAW_BLOCKS.includes(block.type)) return true;
+    const id = /^func_(.+)$/.exec(block.type)?.[1];
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    const content = Entry.variableContainer?.functions_?.[id]?.content;
+    return typeof content?.getBlockList === "function" && drawsIn(content.getBlockList(), seen);
+  });
+}
 let waitsForEvents = false;
 let keepsDrawing = false;
 let reported = false;
@@ -73,8 +88,10 @@ function exportProject() {
   return JSON.stringify(original);
 }
 
+const functionEditing = () => functionsEnabled && Entry.Func?.isEdit === true;
 function changed() {
-  if (loading || locked || !Entry.isLoadProject) return;
+  // A function being edited is not the work yet; its save or cancel sends the result.
+  if (loading || locked || !Entry.isLoadProject || functionEditing()) return;
   // Menu clones live offscreen until the drop is committed.
   if (Entry.getMainWS().board.dragBlock || Entry.playground.blockMenu.dragBlock) return;
   try { send("changed", { project: exportProject() }); }
@@ -129,7 +146,12 @@ try {
   }
   EntryStatic.fontFamily = "sans-serif";
   if (programming && keyMission && Entry.block?.when_some_key_pressed?.def) Entry.block.when_some_key_pressed.def.params = [null, "38"];
-  EntryStatic.getAllBlocks = () => programming ? PROGRAMMING_PALETTE : [
+  if (functionsEnabled) {
+    // The editor menu would offer parameter fields and the properties panel (value return, local variables).
+    // A block shows unless every class in isNotFor is banned, so these get one class that stays banned.
+    for (const type of ["function_field_string", "function_field_boolean", "showFunctionPropsButton", "function_name"]) if (Entry.block?.[type]) Entry.block[type].isNotFor = ["csClassHidden"];
+  }
+  EntryStatic.getAllBlocks = () => programming ? (functionsEnabled ? [...PROGRAMMING_PALETTE, FUNCTION_PALETTE] : PROGRAMMING_PALETTE) : [
     { category: "start", blocks: ["when_run_button_click"] },
     { category: "moving", blocks: ["move_direction"] },
     { category: "looks", blocks: ["dialog_time"] },
@@ -144,7 +166,7 @@ try {
     projectsaveable: false, objectEditable: programming, objectaddable: programming,
     objectdeletable: programming, pictureeditable: free, soundeditable: false,
     sceneEditable: false, variableEnable: programming, listEnable: false,
-    functionEnable: false, messageEnable: false, hardwareEnable: false,
+    functionEnable: functionsEnabled, messageEnable: false, hardwareEnable: false,
     aiLearningEnable: false, aiUtilizeDisable: true, expansionDisable: true,
     textCodingEnable: false, backpackDisable: true, exportObjectEnable: false,
     blockSaveImageEnable: false, iframeDomAccess: "none", fullScreenEnable: false,
@@ -246,6 +268,19 @@ try {
     };
     // Entry's add button only asks for a sprite; the lesson page shows its own sprite list.
     Entry.addEventListener("openSpriteManager", () => { if (!locked && !loading) send("add-object-request"); });
+    if (functionsEnabled) {
+      Entry.getMainWS()?.getBlockMenu()?.banClass("csClassHidden", true);
+      // Entry has no event for the function editor; the page learns when it opens and closes.
+      for (const name of ["edit", "endEdit"]) {
+        const original = Entry.Func?.[name];
+        if (typeof original === "function") Entry.Func[name] = function (...rest) {
+          const result = original.apply(this, rest);
+          send("function-editing", { editing: Entry.Func.isEdit === true });
+          if (name === "endEdit") queueMicrotask(changed);
+          return result;
+        };
+      }
+    }
     if (free) {
       // Shapes come from the bundled Entry library and are rebuilt on save, so they can only be viewed and picked.
       Entry.addEventListener("openPictureManager", () => send("picture-locked"));
@@ -288,7 +323,7 @@ try {
     reported = false;
     waitsForEvents = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => EVENT_STARTS.includes(thread.getFirstBlock()?.type)));
     // Only lines that run (a start or event block first) count; a loose pen block on the board does not.
-    keepsDrawing = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => RUN_STARTS.includes(thread.getFirstBlock()?.type) && typeof thread.getBlockList === "function" && thread.getBlockList().some((block) => DRAW_BLOCKS.includes(block.type))));
+    keepsDrawing = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => RUN_STARTS.includes(thread.getFirstBlock()?.type) && typeof thread.getBlockList === "function" && drawsIn(thread.getBlockList())));
     startedAt = Date.now();
     send("running", { running: true });
     clearInterval(monitor);
@@ -372,6 +407,8 @@ try {
       } else if (message.type === "stage-size") {
         // Phone-width pages show only this frame's left edge. Entry's smallest stage keeps its start button there.
         Entry.resizeElement({ ...Entry.interfaceState, canvasWidth: message.narrow === true ? Entry.CANVAS_DEFAULT_WIDTH : wideStage });
+      } else if (message.type === "export" && functionEditing()) {
+        send("exported", { id: message.id, refused: "function-editing" });
       } else if (message.type === "export") {
         document.activeElement?.blur();
         Entry.getMainWS().syncCode();

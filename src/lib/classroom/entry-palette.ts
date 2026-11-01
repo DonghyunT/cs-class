@@ -13,6 +13,9 @@ export const ENTRY_PALETTE = [
   { category: "variable", blocks: ["ask_and_wait", "get_canvas_input_value", "set_visible_answer", "get_variable", "change_variable", "set_variable", "show_variable", "hide_variable"] },
 ] as const;
 
+// The functions lesson adds Entry's function category: its ‘함수 만들기’ button, then each function's block.
+export const FUNCTION_PALETTE = { category: "func", blocks: ["functionAddButton"] } as const;
+
 export const PALETTE_BLOCKS: ReadonlySet<string> = new Set(ENTRY_PALETTE.flatMap((group) => group.blocks));
 // Literal inputs EntryJS nests inside other blocks.
 // `get_pictures` is the shape dropdown inside ‘( ) 모양으로 바꾸기’.

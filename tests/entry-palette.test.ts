@@ -5,7 +5,7 @@ import legacyKeys from "./fixtures/entry-legacy-keys.json";
 import functionExport from "./fixtures/entry-function-export.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { readEntryDraft } from "../src/components/student/read-editor-draft";
-import { CONTAINER_BLOCKS, ENTRY_PALETTE, MISSION_BLOCKS, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
+import { CONTAINER_BLOCKS, ENTRY_PALETTE, FUNCTION_PALETTE, MISSION_BLOCKS, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
 import { MAX_FUNCTIONS, functionCallId, MAX_PROJECT_BYTES, PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, functionNamesOf, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode, type ProgramFunction } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission, wordingMessage } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
@@ -74,6 +74,9 @@ test("workspace.js의 팔레트 복사본은 공유 목록과 같다", () => {
   const literal = source.match(/const PROGRAMMING_PALETTE = (\[[\s\S]*?\n\]);/)?.[1];
   expect(literal).toBeTruthy();
   expect(new Function(`return ${literal}`)()).toEqual(ENTRY_PALETTE.map((group) => ({ category: group.category, blocks: [...group.blocks] })));
+  const functions = source.match(/const FUNCTION_PALETTE = (\{.*\});/)?.[1];
+  expect(functions).toBeTruthy();
+  expect(new Function(`return ${functions}`)()).toEqual({ category: FUNCTION_PALETTE.category, blocks: [...FUNCTION_PALETTE.blocks] });
 });
 
 test("팔레트 블록·반복 안쪽·값 블록·미완성 드롭다운을 저장하고 다시 읽어도 같다", () => {
