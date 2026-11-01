@@ -3,6 +3,13 @@
   "baseline": "98781bd6e506e3ab5b1be08c39677e658215dba9",
   "records": [
     {
+      "source": "docs/plans/functions-lesson.md",
+      "archive": "docs/archive/cs-class/2026-11-01-completed-plans/functions-lesson.md",
+      "origin": "completed-plan-archived-20261101",
+      "baseCommit": "4adfecf",
+      "sha256": "5f8f34cf91b686b954a8e97cbcd5fb746e8fa466f6dee402eb916f38cbe0c175"
+    },
+    {
       "source": "docs/plans/assessment-portfolio.md",
       "archive": "docs/archive/cs-class/2026-10-30-assessment-plan/assessment-portfolio.md",
       "origin": "completed-plan-archived-20261030",

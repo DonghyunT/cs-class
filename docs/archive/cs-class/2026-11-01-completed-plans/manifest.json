@@ -1,0 +1,12 @@
+{
+  "archivedAt": "2026-11-01 Asia/Seoul",
+  "sourceCommit": "4adfecf3d9be3d0bc9f6664dc9cae32c87192eb8",
+  "files": [
+    {
+      "source": "docs/plans/functions-lesson.md",
+      "archived": "functions-lesson.md",
+      "bytes": 54890,
+      "sha256": "5f8f34cf91b686b954a8e97cbcd5fb746e8fa466f6dee402eb916f38cbe0c175"
+    }
+  ]
+}
