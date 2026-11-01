@@ -10,6 +10,7 @@ import { practiceMatches, progressFor, shownQuizIds } from "@/lib/classroom/prog
 import type { Lesson, Question, Stage, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { LearningStatus } from "./progress-summary";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
+import type { EntryExport } from "./read-editor-draft";
 import { ProgrammingLearningStage, hasCustomLearning } from "./programming-lesson";
 import { missionsFor, parseProgrammingProject } from "@/lib/classroom/programming-entry";
 import { isReviewType } from "@/lib/classroom/review/project";
@@ -45,7 +46,7 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
 }
 
 // Keep the editor independent of its presentation snapshots: header updates never recreate its controller or iframe.
-export const LessonEditor = memo(function LessonEditor({ lesson, initial, controller, entryExport, mode = "student", workspaceWide, practiceFocused, onWorkspaceWideChange, onWorkspaceStageChange, onFrameChange }: { lesson: Lesson; initial: Work; controller: WorkController; entryExport: RefObject<(() => Promise<string | null>) | null>; mode?: LessonMode; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
+export const LessonEditor = memo(function LessonEditor({ lesson, initial, controller, entryExport, mode = "student", workspaceWide, practiceFocused, onWorkspaceWideChange, onWorkspaceStageChange, onFrameChange }: { lesson: Lesson; initial: Work; controller: WorkController; entryExport: RefObject<EntryExport | null>; mode?: LessonMode; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
   const { work, draft, busy, update, perform, saveState, error, switchStage: changeStage, actionBlocked } = controller;
   const progress = progressFor(lesson, work);
   const reviewType = lesson.practice.type === "sandwich" || lesson.practice.type === "abstraction" || lesson.practice.type === "flowchart" ? lesson.practice.type : null;

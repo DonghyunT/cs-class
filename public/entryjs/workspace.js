@@ -77,6 +77,8 @@ function captureScripts() {
     const live = Entry.container.getObject(object.id);
     if (live) object.script = live.getScriptText();
   }
+  // Functions can be edited during a run too.
+  if (functionsEnabled && typeof Entry.variableContainer?.getFunctionJSON === "function") original.functions = Entry.variableContainer.getFunctionJSON();
 }
 
 function exportProject() {

@@ -27,7 +27,7 @@ type ActionFailure = {
   canResend?: boolean;
   verificationError?: string;
 };
-export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: WorkDraft) => Promise<WorkDraft>) {
+export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: WorkDraft) => Promise<WorkDraft>, editorBusy?: () => boolean) {
   const key = `${uid}:${initial.lessonId}`;
   const [work, setWork] = useState(initial);
   const [draft, setDraft] = useState(() => {
@@ -328,8 +328,8 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
       return flush(true);
     },
     save, prepareLeave, discard: discardDraft,
-    isDirty: () => hasUnsavedContent() || blocked.current || actionPending.current || preparingAi.current || !!pendingAi.current || !!saving.current,
-  }), [discardDraft, flush, hasUnsavedContent, prepareLeave, register, save]);
+    isDirty: () => hasUnsavedContent() || blocked.current || actionPending.current || preparingAi.current || !!pendingAi.current || !!saving.current || !!editorBusy?.(),
+  }), [discardDraft, editorBusy, flush, hasUnsavedContent, prepareLeave, register, save]);
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "s") return;

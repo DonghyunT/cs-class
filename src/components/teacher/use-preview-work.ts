@@ -5,6 +5,7 @@ import { classroomApi } from "@/lib/classroom/client";
 import { emptyWork } from "@/lib/classroom/progress";
 import type { Lesson, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import type { WorkController } from "../student/work-controller";
+import { FunctionEditingError } from "../student/function-editing";
 
 export function usePreviewWork(lesson: Lesson, classId: string, uid: string, readEditorDraft?: (draft: WorkDraft) => Promise<WorkDraft>): WorkController {
   const { session } = useSession();
@@ -30,7 +31,8 @@ export function usePreviewWork(lesson: Lesson, classId: string, uid: string, rea
       memory.current = { ...memory.current, draft: next }; setWork(memory.current); setError("");
       return true;
     } catch (problem) {
-      if (available()) setError(problem instanceof Error ? problem.message : "체험 작품을 확인하지 못했어요. 현재 입력은 유지됩니다.");
+      // A function still being edited is a wait; the workspace already shows why.
+      if (available() && !(problem instanceof FunctionEditingError)) setError(problem instanceof Error ? problem.message : "체험 작품을 확인하지 못했어요. 현재 입력은 유지됩니다.");
       return false;
     }
   }, [available, readEditorDraft]);

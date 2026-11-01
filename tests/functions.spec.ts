@@ -64,13 +64,16 @@ test("함수 편집 중에는 저장·검증·이동이 멈추고, 편집 창을
   const revision = async () => ((await (await page.request.get(endpoint)).json()) as Work).revision;
   const saved = await revision();
 
-  await page.getByRole("button", { name: "저장", exact: true }).click();
-  await expect(page.getByText(EDITING).first()).toBeVisible();
-  await expect(status(page)).toHaveText(before ?? "");
-  // Ctrl+S inside the workspace comes back as the frame's save request.
+  // Ctrl+S inside the workspace comes back as the frame's save request; it is the first attempt, so the notice proves it was refused.
   await frame.locator("#entryCategoryfunc").click();
   await page.keyboard.press("Control+s");
+  await expect(page.getByText(EDITING).first()).toBeVisible();
   await expect(status(page)).toHaveText(before ?? "");
+  await page.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(status(page)).toHaveText(before ?? "");
+  // Leaving by link stops at reading the work, so the page stays.
+  await page.getByRole("link", { name: /수업 나가기/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/classroom/${id}`));
   await page.getByRole("button", { name: "조건 검증", exact: true }).click();
   await expect(page.getByText(EDITING).first()).toBeVisible();
   // Mission and stage switches keep the editor open.
@@ -85,7 +88,9 @@ test("함수 편집 중에는 저장·검증·이동이 멈추고, 편집 창을
   await press(page, frame.locator("text.entryFunctionButton", { hasText: "저장" }));
   await expect.poll(() => editing(page)).toBe(false);
   await expect(page.getByText(EDITING)).toHaveCount(0);
-  await page.getByRole("button", { name: "저장", exact: true }).click();
+  // Ctrl+S from the workspace saves once the editor is closed.
+  await frame.locator("#entryCategoryfunc").click();
+  await page.keyboard.press("Control+s");
   await expect(status(page)).toHaveText("저장 완료");
   const stored = ((await (await page.request.get(endpoint)).json()) as Work).draft.programming!.projects["cat-walk"];
   expect(parseProgrammingProject(stored)!.functions).toHaveLength(1);
@@ -156,4 +161,35 @@ test("1,024px에서 작업실과 함수 편집 창의 저장·취소 버튼이 �
     expect(button.y + button.height, label).toBeLessThanOrEqual(iframe.y + iframe.height);
     expect(button.x + button.width, label).toBeLessThanOrEqual(1024);
   }
+});
+
+test("함수 편집 중에 브라우저 뒤로 가기를 해도 수업 화면과 편집 창이 남는다", async ({ page }) => {
+  await open(page, id, "cat-walk");
+  // Arrive by an in-app link so Back stays inside the app's history.
+  await page.goto("/student");
+  await page.locator(`a[href*="/classroom/${id}"]`).first().click();
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+  const frame = page.frameLocator("iframe");
+  await frame.locator("#entryCategoryfunc").click();
+  await press(page, frame.locator("tspan", { hasText: "함수 만들기" }));
+  await expect.poll(() => editing(page)).toBe(true);
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/classroom/${id}`));
+  await expect(entryReset(page)).toBeVisible();
+  expect(await editing(page)).toBe(true);
+});
+
+test("고장 난 도형의 함수 블록을 두 번 누르면 그 함수의 편집 창이 열린다", async ({ page }) => {
+  await open(page, id, "fix-shapes");
+  // The second block of the start line calls ‘사각형 그리기’.
+  const rect = await workspaceFrame(page).evaluate(() => {
+    const entry = (window as unknown as { Entry: { getMainWS: () => { board: { code: { getThreads: () => { getBlockList: () => { view: { svgGroup: Element } }[] }[] } } } } }).Entry;
+    const box = entry.getMainWS().board.code.getThreads()[0].getBlockList()[1].view.svgGroup.getBoundingClientRect();
+    // A block's group also holds the blocks below it, so press its first row.
+    return { x: box.x + 12, y: box.y + 10 };
+  });
+  const frameBox = (await page.locator("iframe").boundingBox())!;
+  await page.mouse.dblclick(frameBox.x + rect.x, frameBox.y + rect.y);
+  await expect.poll(() => editing(page)).toBe(true);
+  expect(await workspaceFrame(page).evaluate(() => (window as unknown as { Entry: { Func: { targetFunc: { id: string } } } }).Entry.Func.targetFunc.id)).toBe("fsq1");
 });

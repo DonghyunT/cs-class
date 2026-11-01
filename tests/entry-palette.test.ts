@@ -1084,3 +1084,37 @@ test("꽃 피우기는 반복 안에서 부른 같은 함수가 60°씩 돌아�
   expect(pass([[start(), ...Array.from({ length: 6 }, () => [callOf("petal"), turn(node("angle", "60"))]).flat()]], [petal])).toBe(false);
   expect(pass([[start(), loopOf(number("6"), [callOf("petal"), turn(node("angle", "45"))])]], [petal])).toBe(false);
 });
+
+test("QA: 창문이 닿는지는 오브젝트의 저장된 방향으로 그린 모양으로 판단한다", () => {
+  const win = fnOf("win", penBody(4));
+  // Turned 45°, a side-50 square is a diamond about 70.7 wide: 60 apart they cross, 100 apart they do not.
+  const turned = (gap: string) => buildProgrammingProject(undefined, [{ ...newAddedObject(ENTRYBOT_SPRITE, 0, true)!, id: "actor", threads: [[start(), callOf("win"), moveX(gap), callOf("win")]], entity: { ...newAddedObject(ENTRYBOT_SPRITE, 0, true)!.entity, direction: 45 } }], -1, false, [], [win]);
+  expect(checkProgrammingMission("windows", turned("60")).passed).toBe(false);
+  expect(checkProgrammingMission("windows", turned("100")).passed).toBe(true);
+});
+
+test("QA: 고양이 걸음은 방향키 줄을 가진 오브젝트를 채점하고 다른 키의 꾸미기 줄은 무시한다", () => {
+  const step = fnOf("step", [node("change_to_next_shape", "next", null)]);
+  const decoration = { ...newAddedObject("e667cf0989776a4d6c183825d", 0, true)!, id: "deco", threads: [keyLine("32", node("change_to_next_shape", "next", null))] };
+  const cat = { ...newAddedObject(CAT, 1, true)!, id: "cat", threads: [keyLine("39", moveX("10"), callOf("step")), keyLine("37", moveX("-10"), callOf("step"))] };
+  expect(checkProgrammingMission("cat-walk", buildProgrammingProject(undefined, [decoration, cat], -1, false, [], [step])).passed).toBe(true);
+});
+
+test("QA: 객체 원형 이름과 겹치는 함수 id는 읽지 않는다", () => {
+  for (const id of ["__proto__", "constructor", "toString"]) {
+    const raw = withFunctionEdit((p, fn) => {
+      fn.id = id;
+      p.objects[0].script = p.objects[0].script.replaceAll("func_win1", `func_${id}`);
+    });
+    expect(parseProgrammingProject(raw), id).toBeNull();
+  }
+});
+
+test("QA: 이름 칸을 비운 함수는 기본 이름 ‘함수’로 읽는다", () => {
+  const blank = withFunctionEdit((_, __, head) => { head.params[0].params[0] = "  "; });
+  expect(parseProgrammingProject(blank)!.functions[0].name).toBe("함수");
+});
+
+test("QA: 고장 난 도형 미션은 이미 있는 함수를 여는 방법을 알려 준다", () => {
+  expect(missionById("fix-shapes")!.tip).toContain("두 번");
+});

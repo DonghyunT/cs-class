@@ -28,7 +28,7 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "ride", title: "도전 · 놀이기구 탑승", goal: "키와 나이를 묻고 A·B에 저장한 뒤, 키가 130 이상이고 나이가 10 이상이면 ‘탈 수 있어요’, 아니면 ‘탈 수 없어요’를 말하게 해 주세요.", hint: "묻기·변수는 ‘자료’, 두 조건을 묶는 블록은 ‘판단’ 꾸러미에 있어요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 키 묻기 → `set_variable: A를 대답으로 정하기`", "나이 묻기 → `set_variable: B를 대답으로 정하기`(A▾를 B로)", "`if_else: 만일 참(이)라면 아니면` 조건 칸에 `boolean_and_or: 참 그리고 참`", "‘그리고’의 두 칸에 `boolean_basic_operator: A 값 ≥ 130`, `boolean_basic_operator: B 값 ≥ 10`", "위 칸에 `dialog: 탈 수 있어요를 말하기`, 아래 칸에 `dialog: 탈 수 없어요를 말하기`"], tip: "130cm·10살도 탈 수 있으니 두 비교 모두 ‘≥’를 골라요.", failure: "130과 10에서 ‘탈 수 있어요’, 129와 10·130과 9에서 ‘탈 수 없어요’가 나오는지 A·B 저장과 ‘그리고’ 조건을 확인해 보세요.", experiment: "130과 10, 129와 10, 130과 9를 넣어 보세요. 기준과 같은 수에서는 어떤 말이 나와야 할까요?", optional: true, variables: true },
   { id: "cat-walk", title: "고양이 걸음", goal: "‘고양이 걸음’ 함수에 ‘다음 모양으로 바꾸기’를 넣고, ←·→ 키를 누르면 그 방향으로 10만큼 움직인 뒤 고양이 걸음을 부르게 해 주세요.", hint: "함수는 ‘함수’ 꾸러미의 ‘함수 만들기’로 만들어요.", steps: ["‘함수 만들기’ → 이름 칸에 ‘고양이 걸음’ 쓰기", "함수 안에 `change_to_next_shape: 다음 모양으로 바꾸기` → 함수 편집 창의 ‘저장’", "`when_some_key_pressed: 오른쪽 화살표 키를 눌렀을 때` → `move_x: x 좌표를 10만큼 바꾸기`", "그 아래에 ‘함수’ 꾸러미의 ‘고양이 걸음’ 블록 끼우기", "왼쪽 화살표 키로 같은 줄을 만들고 10을 -10으로"], tip: "키는 블록의 ▾를 눌러 바꿔요.", failure: "←·→ 키마다 10만큼 움직이고, 두 키 모두 ‘고양이 걸음’ 함수를 부르는지 확인해 보세요.", experiment: "실행 후 무대를 클릭하고 ←·→ 키를 번갈아 눌러 보세요. 걸을 때마다 모양이 바뀌어요.", keyEvents: true, functions: true },
   { id: "windows", title: "창문 두 개", goal: "‘창문 그리기’ 함수로 한 변이 50인 정사각형을 그리고, 위치를 옮겨 한 번 더 불러 서로 닿지 않는 창문 두 개를 만들어 주세요.", hint: "그리는 블록은 모두 ‘창문 그리기’ 함수 안에 넣어요.", steps: ["‘창문 그리기’ 함수 안: `start_drawing: 그리기 시작하기` → `repeat_basic: 4번 반복하기`", "반복 안에 `move_direction: 50만큼 움직이기`, `direction_relative: 90° 회전하기`", "반복 아래에 `stop_drawing: 그리기 멈추기` → 함수 편집 창의 ‘저장’", "`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 창문 그리기", "그 아래 `move_x: x 좌표를 100만큼 바꾸기` → 창문 그리기 한 번 더"], failure: "창문 그리기 함수를 위치를 옮겨 두 번 부르고, 선은 모두 함수 안에서 그렸는지 확인해 보세요.", experiment: "함수 안의 50을 80으로 바꾸고 다시 실행해 보세요. 두 창문이 함께 커져요.", functions: true },
-  { id: "fix-shapes", title: "고장 난 도형 고치기", goal: "정호의 코드는 정사각형·정오각형·정육각형을 그려야 하는데 이상하게 그려져요. 디버깅해서 세 도형을 모두 완성해 주세요.", hint: "먼저 실행해 보고, 예상과 다른 곳을 찾아요.", steps: ["시작하기를 눌러 어느 도형이 이상한지 보기", "‘오각형 그리기’ 안의 90°를 `direction_relative: 72° 회전하기`로", "시작하기 줄 맨 아래에 ‘육각형 그리기’ 블록 끼우기", "다시 실행해 세 도형이 모두 닫혔는지 확인하기"], failure: "세 도형이 모두 닫혔는지, 도형마다 자기 함수로 그리는지 확인해 보세요.", experiment: "오각형의 회전 각도를 다른 값으로 바꿔 보며 도형이 어떻게 달라지는지 보세요.", functions: true },
+  { id: "fix-shapes", title: "고장 난 도형 고치기", goal: "정호의 코드는 정사각형·정오각형·정육각형을 그려야 하는데 이상하게 그려져요. 디버깅해서 세 도형을 모두 완성해 주세요.", hint: "먼저 실행해 보고, 예상과 다른 곳을 찾아요.", steps: ["시작하기를 눌러 어느 도형이 이상한지 보기", "‘오각형 그리기’ 안의 90°를 `direction_relative: 72° 회전하기`로", "시작하기 줄 맨 아래에 ‘육각형 그리기’ 블록 끼우기", "다시 실행해 세 도형이 모두 닫혔는지 확인하기"], tip: "함수 블록을 두 번 누르면 편집 창이 열려요.", failure: "세 도형이 모두 닫혔는지, 도형마다 자기 함수로 그리는지 확인해 보세요.", experiment: "오각형의 회전 각도를 다른 값으로 바꿔 보며 도형이 어떻게 달라지는지 보세요.", functions: true },
   { id: "flower", title: "도전 · 꽃 피우기", goal: "‘꽃잎’ 함수로 한 변이 50인 정사각형을 그리고, 반복 안에서 6번 부르며 부를 때마다 60°씩 돌아 꽃을 만들어 주세요.", hint: "‘창문 그리기’처럼 함수를 만들고 반복 안에서 불러요.", steps: ["‘꽃잎’ 함수 안: `start_drawing: 그리기 시작하기` → `repeat_basic: 4번 반복하기`", "반복 안에 `move_direction: 50만큼 움직이기`, `direction_relative: 90° 회전하기`", "반복 아래에 `stop_drawing: 그리기 멈추기` → 함수 편집 창의 ‘저장’", "`when_run_button_click: 시작하기 버튼을 클릭했을 때` → `repeat_basic: 6번 반복하기`", "반복 안에 꽃잎 → `direction_relative: 60° 회전하기`"], failure: "반복 안에서 ‘꽃잎’을 6번 부르고, 부를 때마다 60°씩 도는지 확인해 보세요.", experiment: "6과 60을 8과 45로 바꾸면 어떤 꽃이 될까요?", optional: true, functions: true },
 ];
 
@@ -201,7 +201,9 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     if (new Set(variables.map((v) => v.id)).size < variables.length) return null;
     const rawFunctions: unknown[] = Array.isArray(p.functions) ? p.functions : [];
     if (rawFunctions.length > MAX_FUNCTIONS) return null;
-    const declared = new Set(rawFunctions.map((f) => object(f) && variableId(f.id) ? f.id : ""));
+    // Entry keeps functions in a plain object, so an id like __proto__ would not survive its own export.
+    const functionId = (v: unknown): v is string => variableId(v) && !(v in Object.prototype);
+    const declared = new Set(rawFunctions.map((f) => object(f) && functionId(f.id) ? f.id : ""));
     // Entry drops a call whose function is gone (on delete and on load); dropping it here keeps reloads stable.
     const dangling = (n: unknown) => object(n) && typeof n.type === "string" && functionCallId(n.type) !== null && !declared.has(functionCallId(n.type)!);
     const live = (list: unknown[]) => list.filter((n) => !dangling(n));
@@ -248,7 +250,7 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     };
     // Only plain functions: a ‘값 반환’ type, parameter fields or local variables are refused.
     const functions: ProgramFunction[] = rawFunctions.map((f) => {
-      if (!object(f) || !variableId(f.id) || f.type !== "normal" || f.useLocalVariables === true || (Array.isArray(f.localVariables) && f.localVariables.length)) throw Error();
+      if (!object(f) || !functionId(f.id) || f.type !== "normal" || f.useLocalVariables === true || (Array.isArray(f.localVariables) && f.localVariables.length)) throw Error();
       const content = typeof f.content === "string" ? JSON.parse(f.content) : f.content;
       const head = Array.isArray(content) && Array.isArray(content[0]) ? content[0][0] : null;
       if (!object(head) || head.type !== "function_create" || !Array.isArray(head.params)) throw Error();
@@ -257,9 +259,10 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
         if (i > 10 || !object(label) || label.type !== "function_field_label" || !Array.isArray(label.params) || typeof label.params[0] !== "string") throw Error();
         name = `${name} ${label.params[0]}`;
       }
-      name = name.trim().slice(0, 20).trim();
+      // An emptied name label reads as Entry's default name instead of refusing the work.
+      name = name.trim().slice(0, 20).trim() || "함수";
       const body = Array.isArray(head.statements) ? head.statements[0] ?? [] : [];
-      if (!name || !Array.isArray(body) || body.length > 40) throw Error();
+      if (!Array.isArray(body) || body.length > 40) throw Error();
       return { id: f.id, name, body: live(body).map((n) => clean(n, object(n) && reporters.includes(String(n.type)))) };
     });
     if (declared.size < functions.length) return null;

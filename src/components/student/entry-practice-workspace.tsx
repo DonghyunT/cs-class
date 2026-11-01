@@ -8,6 +8,7 @@ import { Toast } from "@base-ui/react/toast";
 import { ENTRY_SPRITES, MAX_ADDED_OBJECTS, MAX_FREE_OBJECTS, MISSION_BLOCKS } from "@/lib/classroom/entry-palette";
 import { SuccessToasts } from "@/components/ui/toast";
 import { FUNCTION_EDITING_MESSAGE, FunctionEditingError } from "./function-editing";
+import type { EntryExport } from "./read-editor-draft";
 import type { Lesson, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { buildEntryProject, parseEntryProject } from "@/lib/classroom/entry-project";
 import { practiceMatches } from "@/lib/classroom/progress";
@@ -32,7 +33,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   onSave?: () => Promise<boolean>; onReadyChange?: (ready: boolean) => void;
   update: (next: WorkDraft) => void;
   runAction: (action: WorkAction, focusId: string) => Promise<void>;
-  exportRef: RefObject<(() => Promise<string | null>) | null>;
+  exportRef: RefObject<EntryExport | null>;
   mission?: ProgrammingMission;
   saveLabel: string;
   saveState: WorkController["saveState"];
@@ -100,8 +101,9 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       if (serialized) editorProject.current = serialized;
       return serialized;
     };
-    exportRef.current = phase === "ready" ? exportProject : null;
-    return () => { if (exportRef.current === exportProject) exportRef.current = null; };
+    const link: EntryExport = { read: exportProject, editing: () => functionEditing.current };
+    exportRef.current = phase === "ready" ? link : null;
+    return () => { if (exportRef.current === link) exportRef.current = null; };
   }, [exportRef, phase, readProject]);
 
   useEffect(() => {
@@ -117,7 +119,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       if (event.source !== frame.current?.contentWindow || event.origin !== "null" || event.data?.channel !== CHANNEL) return;
       const message = event.data;
       if (message.type === "save-request") { if (mode === "student" && phase === "ready" && !locked && !preparing && !actionsBlocked) void onSave?.(); }
-      else if (message.type === "ready") setBootReady(true);
+      else if (message.type === "ready") { functionEditing.current = false; setBootReady(true); }
       else if (message.type === "loaded") { window.clearTimeout(bootTimer.current); setPhase("ready"); setError(""); }
       else if (message.type === "changed" && typeof message.project === "string" && !locked) {
         const next = parse(message.project);
@@ -228,7 +230,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   }
 
   function retry() {
-    editorProject.current = null; setBootReady(false); setPhase("loading"); setError(""); setRunning(false); setAttempt((value) => value + 1);
+    editorProject.current = null; functionEditing.current = false; setBootReady(false); setPhase("loading"); setError(""); setRunning(false); setAttempt((value) => value + 1);
   }
 
   return <div className={styles.workspace}>

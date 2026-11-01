@@ -211,6 +211,8 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     return {
       result, variables,
       run(list: EntryNode[], who: Actor | null) { actor = who; exec(list); },
+      // Start from an object's saved 이동 방향 and 방향 instead of Entry's defaults.
+      orient(moving: number, turned: number) { direction = moving; rotation = turned; },
       // One more watch of every forever loop, as frames passing on the stage.
       frames() { for (const { body, actor: who } of [...forevers]) { actor = who; let left = FRAMES; loop(body, () => left-- > 0); } },
     };
@@ -303,7 +305,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   const apart = (a: Stroke[], b: Stroke[]) => a.every((s) => b.every((t) => !crosses(s, t) && Math.min(pointGap(s.from, t), pointGap(s.to, t), pointGap(t.from, s), pointGap(t.to, s)) > 0.5));
   // ←·→ each move 10 and change the costume once, inside calls of one function both keys share.
   function catWalk() {
-    const owner = p!.added.find((o) => o.threads.some((t) => t[0]?.type === "when_some_key_pressed"));
+    const owner = p!.added.find((o) => o.threads.some((t) => t[0]?.type === "when_some_key_pressed" && ["37", "38", "39", "40"].includes(String(t[0].params[1]))));
     if (!owner) return false;
     const moves: Record<string, number> = { 39: 10, 37: -10 }, chains: string[][] = [];
     for (const order of [["39", "37", "39", "39", "37"], ["37", "37", "39", "37", "39"]]) {
@@ -321,9 +323,15 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     if (!chains.reduce((shared, fns) => shared.filter((fn) => fns.includes(fn)), chains[0]).length) throw new MissionError("두 키 모두 같은 ‘고양이 걸음’ 함수를 부르게 해 주세요.");
     return true;
   }
+  // A drawing mission's start line, run from its owner's saved heading (touching shapes depend on it).
+  const drawing = () => {
+    const m = machine([]), owner = p!.added.find((o) => o.threads.some((t) => t[0]?.type === "when_run_button_click"));
+    if (owner) m.orient(owner.entity.direction, owner.entity.rotation);
+    return insideFunctions(run("click", [], m));
+  };
   // Two calls of one function each draw a side-50 square, and the squares do not touch.
   function windows() {
-    const groups = byFunction(shapeCalls(insideFunctions(run("click", [])), 4));
+    const groups = byFunction(shapeCalls(drawing(), 4));
     if (groups.some((list) => list.some((a, i) => list.slice(i + 1).some((b) => apart(a.strokes, b.strokes))))) return true;
     if (groups.some((list) => list.length > 1)) throw new MissionError("두 창문이 붙어 있어요. 더 멀리 옮긴 뒤 불러 보세요.");
     if (groups.length) throw new MissionError("창문 함수를 한 번만 불렀어요. 위치를 옮긴 뒤 한 번 더 불러 보세요.");
@@ -331,13 +339,13 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   }
   // Calls of three different functions draw the square, the pentagon and the hexagon.
   function fixShapes() {
-    const r = insideFunctions(run("click", []));
+    const r = drawing();
     const [four, five, six] = [4, 5, 6].map((sides) => new Set(shapeCalls(r, sides).map((s) => s.fn)));
     return [...four].some((a) => [...five].some((b) => b !== a && [...six].some((c) => c !== a && c !== b)));
   }
   // Six calls of one function, made inside a loop that ran twice or more, draw squares turned 60° apart.
   function flower() {
-    const r = insideFunctions(run("click", []));
+    const r = drawing();
     const repeated = (id: number) => r.calls[id].loops.some((loop) => r.loopPasses[loop] >= 2);
     return byFunction(shapeCalls(r, 4).filter((s) => repeated(s.id))).some((list) => {
       const turns = [...new Set(list.map((s) => Math.round((((heading(s.strokes[0]) % 360) + 360) % 360) * 2) / 2))].sort((a, b) => a - b);
