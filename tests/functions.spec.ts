@@ -1,7 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
-import { buildProgrammingProject, missionStarter, parseProgrammingProject, type EntryNode, type ProgramFunction } from "../src/lib/classroom/programming-entry";
+import { RELEASED_LESSONS } from "../src/lib/classroom/catalog";
+import { buildProgrammingProject, missionStarter, missionsFor, parseProgrammingProject, type EntryNode, type ProgramFunction } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
-import { db, headers, readyStudent, entryReset, entryStart } from "./emulator";
+import { db, headers, readyStudent, readyTeacher, entryReset, entryStart } from "./emulator";
 
 const id = "functions", endpoint = `/api/classroom/work/${id}`;
 const EDITING = "함수 편집 창에서 ‘저장’이나 ‘취소’를 먼저 눌러 주세요.";
@@ -13,6 +14,19 @@ const square: EntryNode[] = [node("start_drawing", null), loopOf(number("4"), [n
 // Missions start from their starter object; solutions replace its code and add functions.
 const onStarter = (mission: string, threads: EntryNode[][], functions: ProgramFunction[]) => buildProgrammingProject(undefined, parseProgrammingProject(missionStarter(mission))!.added.map((o) => ({ ...o, threads })), -1, false, [], functions);
 const windows = onStarter("windows", [[start(), node("func_win1", null), node("move_x", number("100"), null), node("func_win1", null)]], [{ id: "win1", name: "창문 그리기", body: square }]);
+const keyLine = (key: string, move: string) => [node("when_some_key_pressed", null, key), node("move_x", number(move), null), node("func_cat1", null)];
+// The broken-shapes starter with its two bugs fixed: the pentagon turns 72° and the hexagon is called.
+function repairedShapes() {
+  const p = parseProgrammingProject(missionStarter("fix-shapes"))!, [, pentagon, hexagon] = p.functions;
+  const fixed = p.functions.map((f) => f === pentagon ? { ...f, body: [node("start_drawing", null), loopOf(number("5"), [node("move_direction", number("50"), null), node("direction_relative", node("angle", "72"), null)]), node("stop_drawing", null)] } : f);
+  return buildProgrammingProject(undefined, [{ ...p.added[0], threads: [[...p.added[0].threads[0], node(`func_${hexagon.id}`, null)]] }], -1, false, [], fixed);
+}
+const solutions: Record<string, string> = {
+  "cat-walk": onStarter("cat-walk", [keyLine("39", "10"), keyLine("37", "-10")], [{ id: "cat1", name: "고양이 걸음", body: [node("change_to_next_shape", "next", null)] }]),
+  windows,
+  "fix-shapes": repairedShapes(),
+  flower: onStarter("flower", [[start(), loopOf(number("6"), [node("func_pet1", null), node("direction_relative", node("angle", "60"), null)])]], [{ id: "pet1", name: "꽃잎", body: square }]),
+};
 
 async function open(page: Page, lesson: string, mission: string, project = missionStarter(mission)) {
   await page.goto("about:blank");
@@ -88,4 +102,58 @@ test("함수 안에서만 그린 선이 실행 뒤 남는다", async ({ page }) 
     return entry.container.getAllObjects().some((object) => object.entity.shapes.length > 0);
   });
   expect(drawn).toBe(true);
+});
+
+test("함수 수업은 공개되어 미션 네 개(필수 셋·도전 하나)를 보여 준다", () => {
+  expect(RELEASED_LESSONS.some((lesson) => lesson.id === id)).toBe(true);
+  expect(missionsFor(id).map((mission) => [mission.id, !!mission.optional])).toEqual([["cat-walk", false], ["windows", false], ["fix-shapes", false], ["flower", true]]);
+});
+
+for (const mission of Object.keys(solutions)) test(`${mission}: 안내대로 만든 작품은 검증·제출되고 새로고침 뒤에도 함수가 남는다`, async ({ page }) => {
+  await open(page, id, mission, solutions[mission]);
+  await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+  await expect(page.locator("#practice-feedback")).toContainText("목표 조건을 확인했어요");
+  await page.getByRole("button", { name: "작품 제출", exact: true }).click();
+  await expect.poll(async () => !!((await (await page.request.get(endpoint)).json()) as Work).missions?.[mission]?.submission).toBe(true);
+  const expected = parseProgrammingProject(solutions[mission])!.functions.length;
+  await page.reload();
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+  await expect.poll(() => workspaceFrame(page).evaluate(() => Object.keys((window as unknown as { Entry: { variableContainer: { functions_: Record<string, unknown> } } }).Entry.variableContainer.functions_).length)).toBe(expected);
+});
+
+test("교사 작품 보기에 함수 정의와 호출이 보이고, 실행하면 함수 안에서 그린 선이 남는다", async ({ page }) => {
+  const classRef = db.doc("csClasses/2-1"), workRef = db.doc(`csWork/student-20101__${id}`), original = (await classRef.get()).data()!;
+  try {
+    await readyStudent(page.request); await workRef.delete();
+    await classRef.update({ currentLessonId: id, openedLessonIds: [id] });
+    const current: Work = await (await page.request.get(endpoint)).json();
+    current.draft.programming = { mission: "windows", projects: { windows }, reflection: "" };
+    let response = await page.request.post(endpoint, { headers, data: { revision: current.revision, draft: current.draft } }); expect(response.status()).toBe(200);
+    for (const type of ["validate-practice", "submit-practice"]) { const work: Work = await response.json(); response = await page.request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type, missionId: "windows" } } }); expect(response.status()).toBe(200); }
+    await readyTeacher(page.request);
+    await page.goto(`/teacher/students?classId=2-1&lessonId=${id}`);
+    await page.getByRole("button", { name: "20101 제출 작품 보기", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "20101 학생의 제출 작품", exact: true });
+    await expect(dialog.getByText("함수 ‘창문 그리기’", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("‘창문 그리기’ 부르기", { exact: true })).toHaveCount(2);
+    await dialog.getByRole("button", { name: "작업실에서 실행해 보기", exact: true }).click();
+    await expect(dialog.getByRole("button", { name: "무대 처음 위치로", exact: true })).toBeEnabled({ timeout: 20000 });
+    await page.frameLocator('iframe[title*="교사 실행 작업실"]').getByRole("button", { name: "시작하기", exact: true }).click();
+    await expect(dialog.getByRole("status").filter({ hasText: "실행을 마쳤어요." })).toContainText("그린 결과를 다 봤으면", { timeout: 10000 });
+  } finally { await workRef.delete(); await classRef.set(original); }
+});
+
+test("1,024px에서 작업실과 함수 편집 창의 저장·취소 버튼이 보인다", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  const frame = await open(page, id, "cat-walk");
+  await frame.locator("#entryCategoryfunc").click();
+  await press(page, frame.locator("tspan", { hasText: "함수 만들기" }));
+  await expect.poll(() => editing(page)).toBe(true);
+  const iframe = (await page.locator("iframe").boundingBox())!;
+  for (const label of ["저장", "취소"]) {
+    const button = (await frame.locator("text", { hasText: label }).filter({ hasText: new RegExp(`^${label}$`) }).last().boundingBox())!;
+    expect(button.x + button.width, label).toBeLessThanOrEqual(iframe.x + iframe.width);
+    expect(button.y + button.height, label).toBeLessThanOrEqual(iframe.y + iframe.height);
+    expect(button.x + button.width, label).toBeLessThanOrEqual(1024);
+  }
 });
