@@ -119,6 +119,11 @@ export const LESSON_VARIABLES: readonly string[] = ["cs-A", "cs-B", COUNTER.id];
 // A variable a student made in the attribute tab. `object` is the owner of an ‘이 오브젝트에서 사용’ variable.
 export type StudentVariable = { id: string; name: string; value: string | number; visible: boolean; x: number; y: number; object: string | null };
 export const MAX_STUDENT_VARIABLES = 10;
+// A plain Entry function (no parameters, return value or local variables). Entry keeps the body
+// inside the definition block (`function_create.statements[0]`) and calls it as `func_<id>`.
+export type ProgramFunction = { id: string; name: string; body: EntryNode[] };
+export const MAX_FUNCTIONS = 10;
+export const functionCallId = (type: string): string | null => /^func_([\w-]{1,30})$/.exec(type)?.[1] ?? null;
 // Entry 4.0.23 `Entry.Utils.isNumber`.
 export const entryNumeric = (v: unknown) => typeof v === "number" || typeof v === "string" && /^-?\d+\.?\d*(?:[eE][+-]?\d+)?$/.test(v);
 // A variable's value as Entry keeps it after loading (`Entry.parseNumber`): numeric text becomes a number unless it
@@ -129,8 +134,9 @@ const variableId = (v: unknown): v is string => typeof v === "string" && /^[\w-]
 
 // Entry places variable boxes from the stage centre with y growing downward: A·B and 클릭 수 sit top-left, clear of the
 // answer box that opens along the bottom while a question waits.
-export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0, counter = false, variables: readonly StudentVariable[] = []): string {
+export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0, counter = false, variables: readonly StudentVariable[] = [], functions: readonly ProgramFunction[] = []): string {
   const p = JSON.parse(buildNameProject()!);
+  if (functions.length) p.functions = functions.map((f) => ({ id: f.id, type: "normal", localVariables: [], useLocalVariables: false, content: JSON.stringify([[{ type: "function_create", x: 50, y: 30, params: [{ type: "function_field_label", params: [f.name, null] }, null], statements: [f.body] }]]) }));
   p.variables.push(...["A", "B"].map((name, i) => ({ id: `cs-${name}`, name, variableType: "variable", value: 0, visible: false, x: -210, y: -112 + i * 30, object: null, isCloud: false, isRealTime: false })));
   if (counter) p.variables.push({ id: COUNTER.id, name: COUNTER.name, variableType: "variable", value: 0, visible: true, x: -210, y: -112, object: null, isCloud: false, isRealTime: false });
   p.variables.push(...variables.map((v) => ({ ...v, variableType: "variable", isCloud: false, isRealTime: false })));
@@ -147,7 +153,7 @@ export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObj
 // `key` compares whole saved works (validation/submission). `gradeKey` covers only
 // the graded code (the dog's, or every object's in a dog-free project); the app no
 // longer reads it since name-run records were dropped (#74).
-export function parseProgrammingProject(raw: unknown): { project: Record<string, unknown>; key: string; gradeKey: string; bytes: number; threads: EntryNode[][]; order: string[]; added: AddedObject[]; mainIndex: number; free: boolean; variables: StudentVariable[] } | null {
+export function parseProgrammingProject(raw: unknown): { project: Record<string, unknown>; key: string; gradeKey: string; bytes: number; threads: EntryNode[][]; order: string[]; added: AddedObject[]; mainIndex: number; free: boolean; variables: StudentVariable[]; functions: ProgramFunction[] } | null {
   if (typeof raw !== "string" || raw.length > MAX_RAW_PROJECT_CHARS) return null;
   try {
     const p = JSON.parse(raw);
@@ -178,6 +184,12 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     // The editor stops the add panel at MAX_STUDENT_VARIABLES, but copying an object copies its own variables, so the
     // count is left to MAX_PROJECT_BYTES, which tells the student to trim the work. Names are not checked: blocks use ids.
     if (new Set(variables.map((v) => v.id)).size < variables.length) return null;
+    const rawFunctions: unknown[] = Array.isArray(p.functions) ? p.functions : [];
+    if (rawFunctions.length > MAX_FUNCTIONS) return null;
+    const declared = new Set(rawFunctions.map((f) => object(f) && variableId(f.id) ? f.id : ""));
+    // Entry drops a call whose function is gone (on delete and on load); dropping it here keeps reloads stable.
+    const dangling = (n: unknown) => object(n) && typeof n.type === "string" && functionCallId(n.type) !== null && !declared.has(functionCallId(n.type)!);
+    const live = (list: unknown[]) => list.filter((n) => !dangling(n));
     // The original blocks must match their own branch. Letting a malformed one fall
     // through to the generic rule would hand the interpreter and teacher view a shape they cannot read.
     const legacy = new Set([...reporters, "when_run_button_click", "when_some_key_pressed", "ask_and_wait", "set_variable", "move_direction", "direction_absolute", "dialog_time"]);
@@ -198,6 +210,7 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
       else if (!expression && type === "set_variable" && variableId(params[0])) next = [params[0], expr(params[1]), null];
       else if (!expression && ["move_direction", "direction_absolute"].includes(type)) next = [expr(params[0]), null];
       else if (!expression && type === "dialog_time" && ["speak", "think"].includes(String(params[2]))) next = [expr(params[0]), expr(params[1]), params[2], null];
+      else if (!expression && declared.has(functionCallId(type) ?? "") && params.length <= 1 && params[0] == null) next = [null];
       // The branches above keep the original lesson blocks' saved shape and keys.
       // Other palette blocks keep their native params; only containers keep statements.
       else if (!legacy.has(type) && (PALETTE_BLOCKS.has(type) || VALUE_BLOCKS.has(type)) && params.length <= 8) {
@@ -206,7 +219,7 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
         if (lists) {
           const inner = value.statements ?? Array.from({ length: lists }, () => []);
           if (!Array.isArray(inner) || inner.length !== lists) throw Error();
-          statements = inner.map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return t.map((n) => clean(n, object(n) && reporters.includes(String(n.type)), depth + 1)); });
+          statements = inner.map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return live(t).map((n) => clean(n, object(n) && reporters.includes(String(n.type)), depth + 1)); });
         }
       }
       else throw Error();
@@ -215,8 +228,26 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     const scriptOf = (o: Record<string, unknown>): EntryNode[][] => {
       const script = typeof o.script === "string" ? JSON.parse(o.script) : o.script ?? [];
       if (!Array.isArray(script) || script.length > 16) throw Error();
-      return script.map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return t.map((n) => clean(n, object(n) && reporters.includes(String(n.type)))); });
+      // A line that held only dropped calls goes too, as in Entry.
+      return script.filter((t: unknown) => !Array.isArray(t) || !t.length || live(t).length).map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return live(t).map((n) => clean(n, object(n) && reporters.includes(String(n.type)))); });
     };
+    // Only plain functions: a ‘값 반환’ type, parameter fields or local variables are refused.
+    const functions: ProgramFunction[] = rawFunctions.map((f) => {
+      if (!object(f) || !variableId(f.id) || f.type !== "normal" || f.useLocalVariables === true || (Array.isArray(f.localVariables) && f.localVariables.length)) throw Error();
+      const content = typeof f.content === "string" ? JSON.parse(f.content) : f.content;
+      const head = Array.isArray(content) && Array.isArray(content[0]) ? content[0][0] : null;
+      if (!object(head) || head.type !== "function_create" || !Array.isArray(head.params)) throw Error();
+      let name = "", label: unknown = head.params[0];
+      for (let i = 0; label != null; i++, label = (label as Record<string, unknown[]>).params[1]) {
+        if (i > 10 || !object(label) || label.type !== "function_field_label" || !Array.isArray(label.params) || typeof label.params[0] !== "string") throw Error();
+        name = `${name} ${label.params[0]}`;
+      }
+      name = name.trim().slice(0, 20).trim();
+      const body = Array.isArray(head.statements) ? head.statements[0] ?? [] : [];
+      if (!name || !Array.isArray(body) || body.length > 40) throw Error();
+      return { id: f.id, name, body: live(body).map((n) => clean(n, object(n) && reporters.includes(String(n.type)))) };
+    });
+    if (declared.size < functions.length) return null;
     const threads = mainIndex < 0 ? [] : scriptOf(p.objects[mainIndex]);
     const ids = new Set<string>();
     // Entry flips scaleX negative for vertical rotation; keep the sign and limit the size.
@@ -250,15 +281,17 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     const counter = Array.isArray(p.variables) && p.variables.some((v: unknown) => object(v) && v.id === COUNTER.id);
     // An ‘이 오브젝트에서 사용’ variable belongs to an object in this project; the dog is always rebuilt as `entrybot`.
     if (variables.some((v) => v.object !== null && !(v.object === "entrybot" && mainIndex >= 0) && !ids.has(v.object))) return null;
-    const project = JSON.parse(buildProgrammingProject(threads, added, mainIndex, counter, variables));
+    const project = JSON.parse(buildProgrammingProject(threads, added, mainIndex, counter, variables, functions));
     // Projects with only the dog keep the original key so saved checks still match.
     // Dog-free projects grade every object's code.
     const free = mainIndex < 0;
     const gradeKey = JSON.stringify(free ? added.map((o) => code(o.threads)) : code(threads));
     // Entry lists new variables first, so the key sorts them to stay the same after a reload.
     const sorted = [...variables].sort((a, b) => a.id < b.id ? -1 : 1);
-    const key = added.length || variables.length ? JSON.stringify({ main: code(threads), mainIndex, added: added.map((o) => ({ ...o, threads: code(o.threads) })), ...(counter ? { counter } : {}), ...(variables.length ? { variables: sorted } : {}) }) : gradeKey;
-    return { project, threads, added, mainIndex, free, variables, order: [...threads, ...added.flatMap((o) => o.threads)].flatMap(flat), key, gradeKey, bytes: projectBytes(project) };
+    // Functions join the key only when the work has some, so works without them keep their key.
+    const functionKey = [...functions].sort((a, b) => a.id < b.id ? -1 : 1).map((f) => ({ id: f.id, name: f.name, body: f.body.map(semantic) }));
+    const key = added.length || variables.length || functions.length ? JSON.stringify({ main: code(threads), mainIndex, added: added.map((o) => ({ ...o, threads: code(o.threads) })), ...(counter ? { counter } : {}), ...(variables.length ? { variables: sorted } : {}), ...(functions.length ? { functions: functionKey } : {}) }) : gradeKey;
+    return { project, threads, added, mainIndex, free, variables, functions, order: [...threads, ...added.flatMap((o) => o.threads)].flatMap(flat), key, gradeKey, bytes: projectBytes(project) };
   } catch { return null; }
 }
 

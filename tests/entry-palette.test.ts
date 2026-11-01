@@ -2,10 +2,11 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { LEGACY_INPUTS } from "./entry-legacy-inputs";
 import legacyKeys from "./fixtures/entry-legacy-keys.json";
+import functionExport from "./fixtures/entry-function-export.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { readEntryDraft } from "../src/components/student/read-editor-draft";
 import { CONTAINER_BLOCKS, ENTRY_PALETTE, MISSION_BLOCKS, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
-import { MAX_PROJECT_BYTES, PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { MAX_FUNCTIONS, functionCallId, MAX_PROJECT_BYTES, PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission, wordingMessage } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
@@ -896,4 +897,66 @@ test("학생 변수 기본값은 엔트리가 다시 불러온 값으로 저장�
   // Entry.parseNumber: numeric text becomes a number unless it starts with 0, and an empty value is 0.
   expect([60, "60", "-2.5", "6e2", "007", "0", "", "1,000", " 60"].map((v) => value(v).variables[0].value)).toEqual([60, 60, -2.5, 600, "007", "0", 0, "1,000", " 60"]);
   expect(programmingProjectMatches(withVariables(plain, [studentVariable("gijn", "기준", { value: "60" })]), withVariables(plain, [studentVariable("gijn", "기준", { value: 60 })]))).toBe(true);
+});
+
+// A real Entry 4.0.23 export: function `창문 그리기` (id win1) called twice from the start line.
+const functionRaw = JSON.stringify(functionExport);
+const withFunctionEdit = (change: (project: Record<string, any>, fn: Record<string, any>, head: Record<string, any>) => void) => {
+  const p = JSON.parse(functionRaw), fn = p.functions[0], content = JSON.parse(fn.content);
+  change(p, fn, content[0][0]);
+  fn.content = JSON.stringify(content);
+  return JSON.stringify(p);
+};
+const startLine = (raw: string) => parseProgrammingProject(raw)!.added[0].threads[0].map((n) => n.type);
+
+test("함수 정의와 호출을 저장하고 다시 읽어도 같다", () => {
+  const parsed = parseProgrammingProject(functionRaw)!;
+  expect(parsed.functions).toHaveLength(1);
+  expect(parsed.functions[0]).toMatchObject({ id: "win1", name: "창문 그리기" });
+  expect(parsed.functions[0].body.map((n) => n.type)).toEqual(["start_drawing", "repeat_basic", "stop_drawing"]);
+  expect(startLine(functionRaw)).toEqual(["when_run_button_click", "func_win1", "move_x", "func_win1"]);
+  const again = parseProgrammingProject(JSON.stringify(parsed.project))!;
+  expect(again.key).toBe(parsed.key);
+  expect(again.functions).toEqual(parsed.functions);
+});
+
+test("함수가 없는 작품의 키에는 함수가 들어가지 않는다", () => {
+  const plain = withFunctionEdit((p) => {
+    p.functions = [];
+    p.objects[0].script = JSON.stringify(JSON.parse(p.objects[0].script).map((t: { type: string }[]) => t.filter((b) => !b.type.startsWith("func_"))));
+  });
+  const parsed = parseProgrammingProject(plain)!;
+  expect(parsed.functions).toEqual([]);
+  expect(parsed.key).not.toContain("functions");
+  expect(JSON.stringify(parsed.project)).toContain("\"functions\":[]");
+});
+
+test("값 반환 함수·매개변수·지역 변수·상한 초과 함수는 읽지 않는다", () => {
+  expect(parseProgrammingProject(withFunctionEdit((_, fn) => { fn.type = "value"; }))).toBeNull();
+  expect(parseProgrammingProject(withFunctionEdit((_, __, head) => { head.params[0].params[1] = { type: "function_field_string", params: [{ type: "stringParam_ab12", params: [] }, null] }; }))).toBeNull();
+  expect(parseProgrammingProject(withFunctionEdit((_, fn) => { fn.useLocalVariables = true; }))).toBeNull();
+  expect(parseProgrammingProject(withFunctionEdit((_, fn) => { fn.localVariables = [{ id: "lv1", name: "지역", value: 0 }]; }))).toBeNull();
+  const copies = (count: number) => withFunctionEdit((p, fn) => { p.functions = Array.from({ length: count }, (_, i) => ({ ...fn, id: `f${i}` })); });
+  expect(parseProgrammingProject(copies(10))?.functions).toHaveLength(10);
+  expect(parseProgrammingProject(copies(MAX_FUNCTIONS + 1))).toBeNull();
+  // Long names are trimmed and cut like student variable names, not refused.
+  expect(parseProgrammingProject(withFunctionEdit((_, __, head) => { head.params[0].params[0] = ` ${"가".repeat(25)} `; }))!.functions[0].name).toBe("가".repeat(20));
+});
+
+test("없는 함수를 부르는 블록은 빼고 읽고, 이름이 같은 함수는 id로 구분한다", () => {
+  // Entry drops calls to a deleted function on load, so the parser does the same.
+  const deleted = withFunctionEdit((p) => { p.functions = []; });
+  expect(startLine(deleted)).toEqual(["when_run_button_click", "move_x"]);
+  expect(parseProgrammingProject(JSON.stringify(parseProgrammingProject(deleted)!.project))!.key).toBe(parseProgrammingProject(deleted)!.key);
+  const twins = withFunctionEdit((p, fn) => {
+    p.functions.push({ ...fn, id: "win2" });
+    const script = JSON.parse(p.objects[0].script);
+    script[0].push({ ...script[0][1], id: "call2", type: "func_win2" });
+    p.objects[0].script = JSON.stringify(script);
+  });
+  const parsed = parseProgrammingProject(twins)!;
+  expect(parsed.functions.map((f) => [f.id, f.name])).toEqual([["win1", "창문 그리기"], ["win2", "창문 그리기"]]);
+  expect(startLine(twins).at(-1)).toBe("func_win2");
+  expect(functionCallId("func_win2")).toBe("win2");
+  expect(functionCallId("move_x")).toBeNull();
 });
