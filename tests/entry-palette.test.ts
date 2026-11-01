@@ -960,3 +960,40 @@ test("없는 함수를 부르는 블록은 빼고 읽고, 이름이 같은 함�
   expect(functionCallId("func_win2")).toBe("win2");
   expect(functionCallId("move_x")).toBeNull();
 });
+
+test("교사 작품 보기는 함수 정의와 호출을 보여 준다", () => {
+  const lines = programmingProjectLines(functionRaw);
+  expect(lines[0]).toBe("함수 ‘창문 그리기’");
+  expect(lines[1].startsWith("└ ")).toBe(true);
+  expect(lines.filter((line) => line.includes("‘창문 그리기’ 부르기"))).toHaveLength(2);
+  const call = parseProgrammingProject(functionRaw)!.added[0].threads[0][1];
+  expect(formatEntryNode(call, {}, { win1: "창문 그리기" })).toBe("‘창문 그리기’ 부르기");
+});
+
+test("채점 줄에서 부르는 함수 본문도 미션 블록으로 검사한다", () => {
+  const ask = { type: "ask_and_wait", params: [{ type: "text", params: ["몇 개?"] }, null] };
+  const asking = withFunctionEdit((_, __, head) => { head.statements[0].push(ask); });
+  expect(missionBlockIssue("square", asking)).toContain("묻고 대답 기다리기");
+  // A function no graded line calls is not checked.
+  const uncalled = withFunctionEdit((p, _, head) => {
+    head.statements[0].push(ask);
+    p.objects[0].script = JSON.stringify(JSON.parse(p.objects[0].script).map((t: { type: string }[]) => t.filter((b) => !b.type.startsWith("func_"))));
+  });
+  expect(missionBlockIssue("square", uncalled)).toBeNull();
+  // Functions calling each other are each checked once.
+  const mutual = withFunctionEdit((p, fn, head) => {
+    head.statements[0].push({ type: "func_win2", params: [null] });
+    const other = JSON.parse(fn.content);
+    other[0][0].statements[0] = [{ type: "func_win1", params: [null] }];
+    p.functions.push({ ...fn, id: "win2", content: JSON.stringify(other) });
+  });
+  expect(missionBlockIssue("square", mutual)).toBeNull();
+});
+
+test("함수 본문만 바꿔도 미저장으로 본다", () => {
+  const wider = withFunctionEdit((_, __, head) => { head.statements[0][1].statements[0][0].params[0].params = ["80"]; });
+  expect(programmingProjectMatches(functionRaw, wider)).toBe(false);
+  const draft = (raw: string): WorkDraft => ({ ...emptyWork(LOOPS_LESSON).draft, programming: { mission: "square", projects: { square: raw }, reflection: "" } });
+  expect(sameWorkContent(draft(functionRaw), draft(wider))).toBe(false);
+  expect(sameWorkContent(draft(functionRaw), draft(functionRaw))).toBe(true);
+});

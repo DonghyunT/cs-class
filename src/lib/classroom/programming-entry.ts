@@ -333,8 +333,9 @@ const REPORTER_BLOCKS: ReadonlySet<string> = new Set([
 // Student variables are shown by the names in `names` (id → name, from `variableNames`); a deleted one as Entry shows it.
 const variableName = (id: string, names: Readonly<Record<string, string>> = {}) => Object.hasOwn(names, id) ? names[id] : id === COUNTER.id ? COUNTER.name : LESSON_VARIABLES.includes(id) ? id.replace("cs-", "변수 ") : "대상 없음";
 export const variableNames = (variables: readonly StudentVariable[]): Record<string, string> => Object.fromEntries(variables.map((v) => [v.id, v.name]));
+export const functionNamesOf = (functions: readonly ProgramFunction[]): Record<string, string> => Object.fromEntries(functions.map((f) => [f.id, f.name]));
 
-export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, string>> = {}): string {
+export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, string>> = {}, functionNames: Readonly<Record<string, string>> = {}): string {
   const keyName = (v: unknown) => v === null || v === undefined ? "( )" : KEY_LABELS[String(v)] ?? `${v}번`;
   const val = (n: EntryNode, index: number): string => {
     const v = n.params[index];
@@ -378,6 +379,8 @@ export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, 
     return blockLabel(n.type);
   };
   const line = (n: EntryNode): string => {
+    const callee = functionCallId(n.type);
+    if (callee) return `‘${functionNames[callee] ?? "함수"}’ 부르기`;
     if (n.type === "when_run_button_click") return "시작하기 버튼을 클릭했을 때";
     if (n.type === "when_some_key_pressed") return `${keyName(n.params[1])} 키를 눌렀을 때`;
     if (n.type === "ask_and_wait") return `${expression(n.params[0] as EntryNode)} · 묻고 대답 기다리기`;
@@ -421,14 +424,14 @@ export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, 
 export function programmingProjectLines(raw: unknown): string[] {
   const parsed = parseProgrammingProject(raw);
   if (!parsed) return ["작품을 읽지 못했어요. 저장된 원문은 보존돼요."];
-  const names = variableNames(parsed.variables);
+  const names = variableNames(parsed.variables), functionNames = functionNamesOf(parsed.functions);
   // Inner blocks of repeat/if are listed under their block with └.
   const lines = (thread: EntryNode[], depth: number): string[] => thread.flatMap((n) => [
-    `${depth ? `${"  ".repeat(depth - 1)}└ ` : ""}${formatEntryNode(n, names)}`,
+    `${depth ? `${"  ".repeat(depth - 1)}└ ` : ""}${formatEntryNode(n, names, functionNames)}`,
     ...(n.statements ?? []).flatMap((inner, i) => [...(i ? [`${"  ".repeat(depth)}아니면`] : []), ...lines(inner, depth + 1)]),
   ]);
-  // The dog's code comes first; added objects follow with their names.
-  return [...parsed.threads.flatMap((thread) => lines(thread, 0)), ...parsed.added.flatMap((o) => {
+  // Function definitions come first, then the dog's code; added objects follow with their names.
+  return [...parsed.functions.flatMap((f) => [`함수 ‘${f.name}’`, ...lines(f.body, 1)]), ...parsed.threads.flatMap((thread) => lines(thread, 0)), ...parsed.added.flatMap((o) => {
     const code = o.threads.flatMap((thread) => lines(thread, 0));
     return code.length ? code.map((text) => `[${o.name}] ${text}`) : [`[${o.name}] 코드 없음`];
   })];
@@ -453,7 +456,17 @@ export function missionBlockIssue(id: string, raw: unknown): string | null {
   const graded = mission?.objects
     ? [...p.threads, ...p.added.flatMap((o) => o.threads)].filter((t) => OBJECT_EVENTS.includes(t[0]?.type))
     : (p.free ? p.added.flatMap((o) => o.threads) : p.threads).filter(starts);
-  const outside = (n: EntryNode): string | undefined => allowed.has(n.type) ? [...n.params.filter((v): v is EntryNode => object(v) && typeof v.type === "string"), ...(n.statements ?? []).flat()].map(outside).find(Boolean) : n.type;
+  // A graded line's function calls are followed into their bodies, each function once.
+  const bodies = new Map(p.functions.map((f) => [f.id, f.body])), entered = new Set<string>();
+  const outside = (n: EntryNode): string | undefined => {
+    const callee = functionCallId(n.type);
+    if (callee) {
+      if (entered.has(callee) || !bodies.has(callee)) return undefined;
+      entered.add(callee);
+      return bodies.get(callee)!.map(outside).find(Boolean);
+    }
+    return allowed.has(n.type) ? [...n.params.filter((v): v is EntryNode => object(v) && typeof v.type === "string"), ...(n.statements ?? []).flat()].map(outside).find(Boolean) : n.type;
+  };
   const type = graded.flat().map(outside).find(Boolean);
   if (type) {
     const instead = SIMILAR_BLOCKS[type];
