@@ -143,6 +143,8 @@ test("selectE2E maps concept pictures, Entry specs and logic-only tests", () => 
   assert.deepEqual(picture.testFiles, ["tests/conditionals.spec.ts", "tests/functions.spec.ts", "tests/loops.spec.ts", "tests/teacher-lesson-preview.spec.ts"]);
   assert.deepEqual(matchLessons("src/lib/classroom/functions-data.ts"), ["functions"]);
   assert.deepEqual(matchLessons("src/components/student/function-editing.ts"), ["functions"]);
+  assert.deepEqual(matchLessons("src/components/student/function-concepts.tsx"), ["functions"]);
+  assert.deepEqual(matchLessons("src/components/student/function-concepts.module.css"), ["functions"]);
   assert.deepEqual(matchLessons("tests/fixtures/entry-function-export.json"), ["functions"]);
 
   // A logic test alone selects no lesson, so it stays on the conservative full path.
