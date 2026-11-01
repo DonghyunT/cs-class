@@ -111,7 +111,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
   2. 미션: `PROGRAMMING_MISSIONS`·`LESSON_MISSIONS`([§4.1](#41-entryjs-4023-실습-환경)의 수업별 미션), 미션별 허용 블록 `MISSION_BLOCKS`, 강아지 없는 미션 `FREE_MISSIONS`에 등록합니다.
   3. 채점 규칙: `programming-grader.ts`. 규칙이 없는 미션은 통과하지 않습니다.
   4. 개념·퀴즈 정답: 서버 `solutions.ts`에 넣습니다.
-  5. 개념 그림: [`concept-visual.tsx`](../src/components/student/concept-visual.tsx)의 `CONCEPT_VISUALS`에 개념 ID로 등록합니다(없으면 그림 없이 표시).
+  5. 개념 그림: [`concept-visual.tsx`](../src/components/student/concept-visual.tsx)의 `CONCEPT_VISUALS`에 개념 ID로 등록합니다(없으면 그림 없이 표시). 함수 수업은 그림 대신 [`function-concepts.tsx`](../src/components/student/function-concepts.tsx)의 조작 체험을 씁니다([DESIGN](DESIGN.md)의 '함수 수업 개념 체험').
   6. 첫 작품: 따로 등록하지 않습니다. `emptyWork`가 `missionStarter`로 만듭니다.
 - **수업 내용 점검:** 개념·퀴즈·미션 문구와 피드백은 [PRD §3.1](PRD.md#31-수업-3단계-라이프사이클-및-진도-측정)·[§3.4](PRD.md#수업-내용-기준)와 [DESIGN §2.2·§5.1](DESIGN.md#22-타이포그래피-스케일-typography-rules)로 점검합니다.
 
