@@ -1,5 +1,5 @@
 import { HARMLESS_BLOCKS, spritePictures, THINKING_MESSAGE, TRUSTED_SPRITES } from "../classroom/entry-palette";
-import { COUNTER, KEY_LABELS, entryNumeric, missionBlockIssue, missionById, parseProgrammingProject, pictureId, type EntryNode } from "../classroom/programming-entry";
+import { COUNTER, KEY_LABELS, entryNumeric, functionCallId, missionBlockIssue, missionById, parseProgrammingProject, pictureId, type EntryNode } from "../classroom/programming-entry";
 
 // Server-side grading. Kept out of the client bundle so fixed test inputs are not shipped to students.
 class MissionError extends Error {}
@@ -7,7 +7,9 @@ class MissionError extends Error {}
 class StopRepeat extends Error {}
 
 // One run may evaluate at most this many blocks, keep this long a text and say this many lines.
-const MAX_STEPS = 20_000, MAX_TEXT = 500, MAX_SPEECH = 50, MAX_REPEAT = 1000, MAX_SEGMENTS = 200;
+const MAX_STEPS = 20_000, MAX_TEXT = 500, MAX_SPEECH = 50, MAX_REPEAT = 1000, MAX_SEGMENTS = 200, MAX_CALL_DEPTH = 20;
+// One function call: the function it ran, the call it was made from, and the loops running when it was made.
+type CallRecord = { fn: string; parent: number | null; loops: number[] };
 // Event missions watch each forever loop for this many passes after every click.
 const FRAMES = 4;
 // Speech keeps only letters and digits, so spaces, punctuation and emoji never matter.
@@ -53,6 +55,11 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     const sayings: { text: string; input: boolean; computed?: number; asks: number }[] = [];
     // Pen strokes, whether each was drawn inside a loop that drew on two or more passes and whether on a repeated pass.
     let segments: Stroke[] = [];
+    // Every function call (its function, the call it was made from, the loops running then), the call now
+    // running, how many passes each loop made, and the shape changes with the call that made them.
+    const bodies = new Map(p!.functions.map((f) => [f.id, f.body]));
+    const calls: CallRecord[] = [], loopStack: number[] = [], loopPasses: number[] = [], shapes: { call: number | null }[] = [];
+    let current: number | null = null, callDepth = 0;
     // The strokes drawn inside each running loop, marked `repeated` when that loop ends having drawn on two or more passes.
     const open: Stroke[][] = [];
     const step = () => { if (++steps > MAX_STEPS) throw new MissionError("실행이 너무 길어요. 반복이나 조건을 다시 확인해 주세요."); };
@@ -111,7 +118,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     const goTo = (nextX: number, nextY: number) => {
       if (drawing && (Math.abs(nextX - x) > 1e-9 || Math.abs(nextY - y) > 1e-9)) {
         if (segments.length >= MAX_SEGMENTS) throw new MissionError("선을 너무 많이 그렸어요.");
-        const stroke: Stroke = { from: [x, y], to: [nextX, nextY], repeated: false, again };
+        const stroke: Stroke = { from: [x, y], to: [nextX, nextY], repeated: false, again, call: current };
         segments.push(stroke); for (const list of open) list.push(stroke);
       }
       x = nextX; y = nextY;
@@ -120,14 +127,22 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       if (forever && observe) { forevers.push({ body, actor }); let left = FRAMES; next = () => left-- > 0; }
       loopDepth++;
       // `drew` counts the passes that drew: a loop drawing on one pass only is not repetition.
-      const outer = again, drawn: Stroke[] = []; let passes = 0, drew = 0;
-      open.push(drawn);
+      const outer = again, drawn: Stroke[] = [], loopId = loopPasses.push(0) - 1; let passes = 0, drew = 0;
+      open.push(drawn); loopStack.push(loopId);
       try { while (next()) { step(); again = outer || passes++ > 0; const before = drawn.length; try { exec(body); } catch (error) { if (error instanceof StopRepeat) break; throw error; } finally { if (drawn.length > before) drew++; } } }
-      finally { loopDepth--; again = outer; open.pop(); if (drew > 1) for (const s of drawn) s.repeated = true; }
+      finally { loopDepth--; again = outer; open.pop(); loopStack.pop(); loopPasses[loopId] = passes; if (drew > 1) for (const s of drawn) s.repeated = true; }
     }
     function exec(list: EntryNode[]) {
       for (const n of list) {
         step();
+        const callee = functionCallId(n.type), body = callee ? bodies.get(callee) : undefined;
+        if (body) {
+          if (callDepth >= MAX_CALL_DEPTH) throw new MissionError("함수가 자기 자신을 계속 부르고 있어요. 함수 안에서 같은 함수를 다시 부르지 않았는지 확인해 주세요.");
+          const caller = current;
+          current = calls.push({ fn: callee!, parent: caller, loops: [...loopStack] }) - 1; callDepth++;
+          try { exec(body); } finally { current = caller; callDepth--; }
+          continue;
+        }
         if (n.type === "ask_and_wait") {
           // The safe's tries end with 1234, so asking again inside a loop means it never stops.
           if (asks >= inputs.length) throw new MissionError(id === "safe" && loopDepth ? "1234를 맞힌 뒤에도 또 물어요. 맞히면 반복이 멈추도록 ‘반복 중단하기’나 반복 조건을 확인해 주세요." : "이번 목표에 필요한 질문을 차례로 연결해 주세요.");
@@ -177,6 +192,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         }
         else if (n.type === "change_to_next_shape" || n.type === "change_to_some_shape") {
           if (!actor || actor.count < 2) throw new MissionError("모양이 여러 개인 오브젝트에서 모양을 바꿔 주세요.");
+          shapes.push({ call: current });
           if (n.type === "change_to_next_shape") actor.index = (actor.index + (n.params[0] === "prev" ? actor.count - 1 : 1)) % actor.count;
           else {
             const picked = String(evaluate(n.params[0] as EntryNode).value), owner = actor;
@@ -191,7 +207,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         else throw new MissionError("시작 블록은 맨 위에 두고 동작을 아래로 연결해 주세요.");
       }
     }
-    const result = () => ({ variables, firstInput, asks, x, y, usedLogic, segments, asksInLoop, sayings });
+    const result = () => ({ variables, firstInput, asks, x, y, usedLogic, segments, asksInLoop, sayings, calls, loopPasses, shapes });
     return {
       result, variables,
       run(list: EntryNode[], who: Actor | null) { actor = who; exec(list); },
@@ -199,21 +215,21 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       frames() { for (const { body, actor: who } of [...forevers]) { actor = who; let left = FRAMES; loop(body, () => left-- > 0); } },
     };
   }
-  function run(signal: string, inputs: string[], m = machine(inputs)) {
+  function run(signal: string, inputs: string[], m = machine(inputs), who: Actor | null = null) {
     // A dog-free project runs the start line of whichever object owns it (missionBlockIssue keeps it to one object).
     const lines = (p!.free ? p!.added.flatMap((o) => o.threads) : p!.threads).filter((t) => signal === "click" ? t[0]?.type === "when_run_button_click" : t[0]?.type === "when_some_key_pressed" && t[0].params[1] === signal);
     // Named as the palette shows the block (‘위쪽 화살표 키를 눌렀을 때’); only arrow keys are graded.
     const block = signal === "click" ? "‘시작하기 버튼을 클릭했을 때’" : `‘${KEY_LABELS[signal]} 화살표 키를 눌렀을 때’`;
     if (lines.length > 1) throw new MissionError(`${block} 줄이 여러 개예요. ${signal === "click" ? "" : "키마다 "}한 줄로 이어 붙여 주세요.`);
     if (!lines.length) throw new MissionError(`${block} 아래에 블록을 연결해 주세요.`);
-    m.run(lines[0].slice(1), null);
+    m.run(lines[0].slice(1), who);
     return m.result();
   }
+  const actorOf = (id: string, sprite: string, index = 0): Actor => ({ id, count: spritePictures(TRUSTED_SPRITES.find((item) => item.id === sprite)!).length, index, said: [] });
   // The tree must grow one shape at a time with clicks, never on its own, and speak when grown.
   function growTree() {
     const tree = p!.added.find((o) => o.sprite === "tree-growth");
     if (!tree) throw new MissionError("나무 오브젝트가 없어요. 선생님께 알려 주세요.");
-    const actorOf = (id: string, sprite: string, index = 0): Actor => ({ id, count: spritePictures(TRUSTED_SPRITES.find((item) => item.id === sprite)!).length, index, said: [] });
     const cast = [...(p!.free ? [] : [{ actor: { id: "entrybot", count: 1, index: 0, said: [] } as Actor, threads: p!.threads }]), ...p!.added.map((o) => ({ actor: actorOf(o.id, o.sprite, o.picture), threads: o.threads }))];
     const grown = cast.find((c) => c.actor.id === tree.id)!.actor, last = grown.count - 1;
     const m = machine([], true);
@@ -233,7 +249,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     }
     return stage === last;
   }
-  type Stroke = { from: [number, number]; to: [number, number]; repeated: boolean; again: boolean };
+  type Stroke = { from: [number, number]; to: [number, number]; repeated: boolean; again: boolean; call: number | null };
   const near = (a: [number, number], b: [number, number]) => Math.hypot(a[0] - b[0], a[1] - b[1]) < 0.5;
   const heading = (s: Stroke) => Math.atan2(s.to[0] - s.from[0], s.to[1] - s.from[1]) * 180 / Math.PI;
   // Strokes as the stage shows them: a side drawn in pieces is one side (repeated only if every
@@ -242,7 +258,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   const visible = (strokes: Stroke[], laps?: number) => {
     const sides = strokes.reduce<Stroke[]>((list, s) => {
       const last = list.at(-1);
-      if (last && near(last.to, s.from) && Math.abs(((heading(s) - heading(last)) % 360 + 540) % 360 - 180) < 0.01) list[list.length - 1] = { from: last.from, to: s.to, repeated: last.repeated && s.repeated, again: last.again || s.again };
+      if (last && near(last.to, s.from) && Math.abs(((heading(s) - heading(last)) % 360 + 540) % 360 - 180) < 0.01) list[list.length - 1] = { from: last.from, to: s.to, repeated: last.repeated && s.repeated, again: last.again || s.again, call: last.call };
       else list.push(s);
       return list;
     }, []);
@@ -256,8 +272,10 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   };
   // A closed regular polygon with `sides` equal strokes: every side drawn inside a loop that drew
   // on two or more passes, and some side on a repeated pass (so ‘1번 반복’ around most sides fails).
-  const regular = (strokes: Stroke[], sides: number, length?: number) => {
-    if (strokes.length !== sides || !strokes.every((s) => s.repeated) || !strokes.some((s) => s.again)) return false;
+  const regular = (strokes: Stroke[], sides: number, length?: number) => strokes.length === sides && strokes.every((s) => s.repeated) && strokes.some((s) => s.again) && closedRegular(strokes, sides, length);
+  // The shape alone: `sides` equal strokes closing with equal turns of 360 ÷ sides.
+  const closedRegular = (strokes: Stroke[], sides: number, length?: number) => {
+    if (strokes.length !== sides) return false;
     const lengths = strokes.map((s) => Math.hypot(s.to[0] - s.from[0], s.to[1] - s.from[1]));
     const headings = strokes.map(heading);
     const turns = headings.map((h, i) => ((headings[(i + 1) % sides] - h) % 360 + 540) % 360 - 180);
@@ -266,6 +284,66 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       && turns.every((t) => Math.abs(t - turns[0]) < 0.5 && Math.abs(Math.abs(t) - 360 / sides) < 0.5);
   };
   type Run = ReturnType<typeof run>;
+  // Function missions judge what each call drew, counting the calls it made in turn.
+  const within = (r: Run, call: number | null, root: number) => { for (let c = call; c !== null; c = r.calls[c].parent) if (c === root) return true; return false; };
+  const shapeCalls = (r: Run, sides: number) => r.calls.flatMap((c, id) => {
+    const strokes = visible(r.segments.filter((s) => within(r, s.call, id)));
+    return closedRegular(strokes, sides, 50) ? [{ id, fn: c.fn, strokes }] : [];
+  });
+  const insideFunctions = (r: Run) => { if (r.segments.some((s) => s.call === null)) throw new MissionError("선이 함수 밖에서 그려졌어요. 그리는 블록을 함수 안으로 옮겨 보세요."); return r; };
+  const byFunction = <T extends { fn: string }>(list: T[]) => [...Map.groupBy(list, (item) => item.fn).values()];
+  // Two strokes touch when they cross or come within half a step of each other.
+  const pointGap = (point: [number, number], s: Stroke) => {
+    const [x1, y1] = s.from, dx = s.to[0] - x1, dy = s.to[1] - y1, length = dx * dx + dy * dy;
+    const t = length ? Math.max(0, Math.min(1, ((point[0] - x1) * dx + (point[1] - y1) * dy) / length)) : 0;
+    return Math.hypot(point[0] - x1 - t * dx, point[1] - y1 - t * dy);
+  };
+  const side = (o: [number, number], a: [number, number], b: [number, number]) => Math.sign((a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]));
+  const crosses = (s: Stroke, t: Stroke) => side(t.from, t.to, s.from) * side(t.from, t.to, s.to) < 0 && side(s.from, s.to, t.from) * side(s.from, s.to, t.to) < 0;
+  const apart = (a: Stroke[], b: Stroke[]) => a.every((s) => b.every((t) => !crosses(s, t) && Math.min(pointGap(s.from, t), pointGap(s.to, t), pointGap(t.from, s), pointGap(t.to, s)) > 0.5));
+  // ←·→ each move 10 and change the costume once, inside calls of one function both keys share.
+  function catWalk() {
+    const owner = p!.added.find((o) => o.threads.some((t) => t[0]?.type === "when_some_key_pressed"));
+    if (!owner) return false;
+    const moves: Record<string, number> = { 39: 10, 37: -10 }, chains: string[][] = [];
+    for (const order of [["39", "37", "39", "39", "37"], ["37", "37", "39", "37", "39"]]) {
+      const m = machine([]), who = actorOf(owner.id, owner.sprite, owner.picture);
+      for (const key of order) {
+        const { x, y, shapes } = m.result(), changes = shapes.length, r = run(key, [], m, who);
+        if (Math.abs(r.x - x - moves[key]) > 0.0001 || Math.abs(r.y - y) > 0.0001 || r.shapes.length !== changes + 1) return false;
+        const change = r.shapes[changes].call;
+        if (change === null) throw new MissionError("‘다음 모양으로 바꾸기’를 ‘고양이 걸음’ 함수 안으로 옮겨 보세요.");
+        const fns: string[] = [];
+        for (let c: number | null = change; c !== null; c = r.calls[c].parent) fns.push(r.calls[c].fn);
+        chains.push(fns);
+      }
+    }
+    if (!chains.reduce((shared, fns) => shared.filter((fn) => fns.includes(fn)), chains[0]).length) throw new MissionError("두 키 모두 같은 ‘고양이 걸음’ 함수를 부르게 해 주세요.");
+    return true;
+  }
+  // Two calls of one function each draw a side-50 square, and the squares do not touch.
+  function windows() {
+    const groups = byFunction(shapeCalls(insideFunctions(run("click", [])), 4));
+    if (groups.some((list) => list.some((a, i) => list.slice(i + 1).some((b) => apart(a.strokes, b.strokes))))) return true;
+    if (groups.some((list) => list.length > 1)) throw new MissionError("두 창문이 붙어 있어요. 더 멀리 옮긴 뒤 불러 보세요.");
+    if (groups.length) throw new MissionError("창문 함수를 한 번만 불렀어요. 위치를 옮긴 뒤 한 번 더 불러 보세요.");
+    return false;
+  }
+  // Calls of three different functions draw the square, the pentagon and the hexagon.
+  function fixShapes() {
+    const r = insideFunctions(run("click", []));
+    const [four, five, six] = [4, 5, 6].map((sides) => new Set(shapeCalls(r, sides).map((s) => s.fn)));
+    return [...four].some((a) => [...five].some((b) => b !== a && [...six].some((c) => c !== a && c !== b)));
+  }
+  // Six calls of one function, made inside a loop that ran twice or more, draw squares turned 60° apart.
+  function flower() {
+    const r = insideFunctions(run("click", []));
+    const repeated = (id: number) => r.calls[id].loops.some((loop) => r.loopPasses[loop] >= 2);
+    return byFunction(shapeCalls(r, 4).filter((s) => repeated(s.id))).some((list) => {
+      const turns = [...new Set(list.map((s) => Math.round((((heading(s.strokes[0]) % 360) + 360) % 360) * 2) / 2))].sort((a, b) => a - b);
+      return turns.length === 6 && turns.every((t, i) => Math.abs((i ? t - turns[i - 1] : t + 360 - turns[5]) - 60) < 0.5);
+    });
+  }
   // Lines said after the last question; greetings and lines said before the answers are in
   // (‘합격 기준은 60점이야’) are never results.
   const after = (r: Run) => r.sayings.filter((s) => s.asks === r.asks).map((s) => s.text);
@@ -318,6 +396,10 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       return r.asks === tries.length && r.asksInLoop >= tries.length - 1 && opened.length === 1 && opened[0].asks === tries.length;
     });
     if (id === "tree") return growTree();
+    if (id === "cat-walk") return catWalk();
+    if (id === "windows") return windows();
+    if (id === "fix-shapes") return fixShapes();
+    if (id === "flower") return flower();
     if (id === "move") { const r = run("click", []); return Math.abs(r.x - 10) < 0.0001 && Math.abs(r.y) < 0.0001; }
     // The keys mission grades only the four arrow keys; the carried-over start line is optional. The
     // keys are pressed one after another in two orders, as on the stage, so a key that relies on the

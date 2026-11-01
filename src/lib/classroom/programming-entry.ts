@@ -1,12 +1,12 @@
 import { buildNameProject } from "./name-entry";
-import { CONTAINER_BLOCKS, ENTRYBOT_SPRITE, ENTRY_PALETTE, ENTRY_SPRITES, LIBRARY_SPRITES, MAX_ADDED_OBJECTS, MAX_FREE_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, TRUSTED_SPRITES, VALUE_BLOCKS, blockLabel, spritePictures } from "./entry-palette";
+import { CAT_SPRITE, CONTAINER_BLOCKS, ENTRYBOT_SPRITE, ENTRY_PALETTE, ENTRY_SPRITES, LIBRARY_SPRITES, MAX_ADDED_OBJECTS, MAX_FREE_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, TRUSTED_SPRITES, VALUE_BLOCKS, blockLabel, spritePictures } from "./entry-palette";
 
 // `variables` shows A·B on the stage; `keyEvents` keeps the run waiting for arrow keys.
 // `objects` missions grade every object's event code instead of only the dog's.
 // `hint` is the summary line, `steps` the folded assembly order and `tip` one 💡 reason. They write
 // block chips as `type: text` (the Entry block type and the filled-in block a student builds);
 // read them with `hintParts`/`hintPlain`. `failure` is the grader's plain failure message.
-export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; steps: readonly string[]; tip?: string; failure: string; experiment: string; optional?: true; variables?: true; keyEvents?: true; objects?: true };
+export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; steps: readonly string[]; tip?: string; failure: string; experiment: string; optional?: true; variables?: true; keyEvents?: true; objects?: true; functions?: true };
 
 // Every mission across lessons, keyed by an id no other lesson reuses. Grading and
 // saved records look missions up here; lessons list theirs in LESSON_MISSIONS.
@@ -26,6 +26,10 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "safe", title: "도전 · 비밀번호 금고", goal: "대답이 1234가 될 때까지 비밀번호를 묻고, 맞히면 ‘금고가 열렸어요!’를 말하게 해 주세요.", hint: "반복은 ‘흐름’, 비교는 ‘판단’ 꾸러미에 있어요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` → `repeat_while_true: 참이 될 때까지 반복하기`", "조건 칸에 `boolean_basic_operator: 대답 = 1234`, 반복 안에 `ask_and_wait: 비밀번호를 묻고 대답 기다리기`", "반복 아래(바깥)에 `dialog: 금고가 열렸어요!를 말하기`"], tip: "묻기가 반복 안에 있어야 틀릴 때마다 다시 물어요.", failure: "묻기가 반복 안에, ‘금고가 열렸어요!’ 말하기가 반복 아래(바깥)에 있는지 확인해 보세요.", experiment: "틀린 번호를 몇 번 넣은 뒤 1234를 넣어 보세요. 질문이 몇 번 나왔나요?", optional: true },
   { id: "escape", title: "도전 · 방탈출", goal: "1번·2번 문제를 풀었으면 1, 못 풀었으면 0을 묻고 A·B에 저장한 뒤, 하나라도 풀었으면 ‘탈출 성공!’, 아니면 ‘탈출 실패’를 말하게 해 주세요.", hint: "묻기·변수는 ‘자료’, 두 조건을 묶는 블록은 ‘판단’ 꾸러미에 있어요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 1번 결과 묻기 → `set_variable: A를 대답으로 정하기`", "2번 결과 묻기 → `set_variable: B를 대답으로 정하기`", "`if_else: 만일 참(이)라면 아니면` 조건 칸에 `boolean_and_or: 참 또는 거짓`", "‘또는’의 두 칸에 `boolean_basic_operator: A 값 = 1`, `boolean_basic_operator: B 값 = 1`", "위 칸에 `dialog: 탈출 성공!을 말하기`, 아래 칸에 `dialog: 탈출 실패를 말하기`"], tip: "‘또는’은 하나만 참이어도 참, ‘그리고’는 둘 다 참이어야 참이에요.", failure: "1과 0, 0과 1에서 ‘탈출 성공!’, 0과 0에서 ‘탈출 실패’가 나오는지 A·B 저장과 조건을 확인해 보세요.", experiment: "1과 0, 0과 1, 0과 0을 넣어 보세요. 여유가 있으면 1과 1에서 어떻게 될지 먼저 예상해 보세요.", optional: true, variables: true },
   { id: "ride", title: "도전 · 놀이기구 탑승", goal: "키와 나이를 묻고 A·B에 저장한 뒤, 키가 130 이상이고 나이가 10 이상이면 ‘탈 수 있어요’, 아니면 ‘탈 수 없어요’를 말하게 해 주세요.", hint: "묻기·변수는 ‘자료’, 두 조건을 묶는 블록은 ‘판단’ 꾸러미에 있어요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 키 묻기 → `set_variable: A를 대답으로 정하기`", "나이 묻기 → `set_variable: B를 대답으로 정하기`(A▾를 B로)", "`if_else: 만일 참(이)라면 아니면` 조건 칸에 `boolean_and_or: 참 그리고 참`", "‘그리고’의 두 칸에 `boolean_basic_operator: A 값 ≥ 130`, `boolean_basic_operator: B 값 ≥ 10`", "위 칸에 `dialog: 탈 수 있어요를 말하기`, 아래 칸에 `dialog: 탈 수 없어요를 말하기`"], tip: "130cm·10살도 탈 수 있으니 두 비교 모두 ‘≥’를 골라요.", failure: "130과 10에서 ‘탈 수 있어요’, 129와 10·130과 9에서 ‘탈 수 없어요’가 나오는지 A·B 저장과 ‘그리고’ 조건을 확인해 보세요.", experiment: "130과 10, 129와 10, 130과 9를 넣어 보세요. 기준과 같은 수에서는 어떤 말이 나와야 할까요?", optional: true, variables: true },
+  { id: "cat-walk", title: "고양이 걸음", goal: "‘고양이 걸음’ 함수에 ‘다음 모양으로 바꾸기’를 넣고, ←·→ 키를 누르면 그 방향으로 10만큼 움직인 뒤 고양이 걸음을 부르게 해 주세요.", hint: "함수는 ‘함수’ 꾸러미의 ‘함수 만들기’로 만들어요.", steps: ["‘함수 만들기’ → 이름 칸에 ‘고양이 걸음’ 쓰기", "함수 안에 `change_to_next_shape: 다음 모양으로 바꾸기` → 함수 편집 창의 ‘저장’", "`when_some_key_pressed: 오른쪽 화살표 키를 눌렀을 때` → `move_x: x 좌표를 10만큼 바꾸기`", "그 아래에 ‘함수’ 꾸러미의 ‘고양이 걸음’ 블록 끼우기", "왼쪽 화살표 키로 같은 줄을 만들고 10을 -10으로"], tip: "키는 블록의 ▾를 눌러 바꿔요.", failure: "←·→ 키마다 10만큼 움직이고, 두 키 모두 ‘고양이 걸음’ 함수를 부르는지 확인해 보세요.", experiment: "실행 후 무대를 클릭하고 ←·→ 키를 번갈아 눌러 보세요. 걸을 때마다 모양이 바뀌어요.", keyEvents: true, functions: true },
+  { id: "windows", title: "창문 두 개", goal: "‘창문 그리기’ 함수로 한 변이 50인 정사각형을 그리고, 위치를 옮겨 한 번 더 불러 서로 닿지 않는 창문 두 개를 만들어 주세요.", hint: "그리는 블록은 모두 ‘창문 그리기’ 함수 안에 넣어요.", steps: ["‘창문 그리기’ 함수 안: `start_drawing: 그리기 시작하기` → `repeat_basic: 4번 반복하기`", "반복 안에 `move_direction: 50만큼 움직이기`, `direction_relative: 90° 회전하기`", "반복 아래에 `stop_drawing: 그리기 멈추기` → 함수 편집 창의 ‘저장’", "`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 창문 그리기", "그 아래 `move_x: x 좌표를 100만큼 바꾸기` → 창문 그리기 한 번 더"], failure: "창문 그리기 함수를 위치를 옮겨 두 번 부르고, 선은 모두 함수 안에서 그렸는지 확인해 보세요.", experiment: "함수 안의 50을 80으로 바꾸고 다시 실행해 보세요. 두 창문이 함께 커져요.", functions: true },
+  { id: "fix-shapes", title: "고장 난 도형 고치기", goal: "정호의 코드는 정사각형·정오각형·정육각형을 그려야 하는데 이상하게 그려져요. 디버깅해서 세 도형을 모두 완성해 주세요.", hint: "먼저 실행해 보고, 예상과 다른 곳을 찾아요.", steps: ["시작하기를 눌러 어느 도형이 이상한지 보기", "‘오각형 그리기’ 안의 90°를 `direction_relative: 72° 회전하기`로", "시작하기 줄 맨 아래에 ‘육각형 그리기’ 블록 끼우기", "다시 실행해 세 도형이 모두 닫혔는지 확인하기"], failure: "세 도형이 모두 닫혔는지, 도형마다 자기 함수로 그리는지 확인해 보세요.", experiment: "오각형의 회전 각도를 다른 값으로 바꿔 보며 도형이 어떻게 달라지는지 보세요.", functions: true },
+  { id: "flower", title: "도전 · 꽃 피우기", goal: "‘꽃잎’ 함수로 한 변이 50인 정사각형을 그리고, 반복 안에서 6번 부르며 부를 때마다 60°씩 돌아 꽃을 만들어 주세요.", hint: "‘창문 그리기’처럼 함수를 만들고 반복 안에서 불러요.", steps: ["‘꽃잎’ 함수 안: `start_drawing: 그리기 시작하기` → `repeat_basic: 4번 반복하기`", "반복 안에 `move_direction: 50만큼 움직이기`, `direction_relative: 90° 회전하기`", "반복 아래에 `stop_drawing: 그리기 멈추기` → 함수 편집 창의 ‘저장’", "`when_run_button_click: 시작하기 버튼을 클릭했을 때` → `repeat_basic: 6번 반복하기`", "반복 안에 꽃잎 → `direction_relative: 60° 회전하기`"], failure: "반복 안에서 ‘꽃잎’을 6번 부르고, 부를 때마다 60°씩 도는지 확인해 보세요.", experiment: "6과 60을 8과 45로 바꾸면 어떤 꽃이 될까요?", optional: true, functions: true },
 ];
 
 // A hint string split into plain text and `{ type, text }` block chips.
@@ -41,9 +45,10 @@ const LESSON_MISSIONS: Readonly<Record<string, { active: readonly string[]; reti
   // The escape-room challenge was replaced by the ride check; earlier escape work stays readable.
   conditionals: { active: ["average", "pass", "freethrow", "ride"], retired: ["escape"] },
   loops: { active: ["square", "polygon", "tree", "safe"] },
+  functions: { active: ["cat-walk", "windows", "fix-shapes", "flower"] },
 };
 // These lessons start without the dog: every object is equal and students pick from the Entry library.
-const FREE_MISSIONS: ReadonlySet<string> = new Set([...LESSON_MISSIONS.conditionals.active, ...LESSON_MISSIONS.conditionals.retired!, ...LESSON_MISSIONS.loops.active]);
+const FREE_MISSIONS: ReadonlySet<string> = new Set([...LESSON_MISSIONS.conditionals.active, ...LESSON_MISSIONS.conditionals.retired!, ...LESSON_MISSIONS.loops.active, ...LESSON_MISSIONS.functions.active]);
 export const isFreeMission = (id: string) => FREE_MISSIONS.has(id);
 // Starter objects the mission needs; they cannot be deleted.
 export const LOCKED_OBJECTS: Readonly<Record<string, readonly string[]>> = { tree: ["can", "tree"] };
@@ -102,9 +107,19 @@ export function missionStarter(missionId: string): string {
     placed("tree", "tree-growth", "나무", { x: 110, y: -10, scaleX: 0.8, scaleY: 0.8 }),
     placed("soil", "soil", "흙", { scaleX: 0.5, scaleY: 0.5 }),
   ], -1, true);
+  if (missionId === "cat-walk") return buildProgrammingProject(undefined, [placed("cat", CAT_SPRITE, "고양이", { scaleX: 0.5, scaleY: 0.5 })], -1);
+  // Jeongho's shapes (textbook p.133) with two bugs: the pentagon turns 90° and the hexagon is never called.
+  if (missionId === "fix-shapes") return buildProgrammingProject(undefined, [{ ...placed("bot", ENTRYBOT_SPRITE, "엔트리봇", { x: -200, scaleX: 0.3, scaleY: 0.3 }), threads: [[{ ...starterBlock("when_run_button_click", null), x: 40, y: 50 }, starterBlock("func_fsq1", null), starterBlock("move_x", starterNumber(130), null), starterBlock("func_fpe1", null), starterBlock("move_x", starterNumber(130), null)]] }], -1, false, [], [
+    { id: "fsq1", name: "사각형 그리기", body: polygonBody(4, 90) }, { id: "fpe1", name: "오각형 그리기", body: polygonBody(5, 90) }, { id: "fhx1", name: "육각형 그리기", body: polygonBody(6, 60) },
+  ]);
   if (isFreeMission(missionId)) return buildProgrammingProject(undefined, [placed("bot", ENTRYBOT_SPRITE, "엔트리봇", { scaleX: 0.4, scaleY: 0.4 })], -1);
   return buildProgrammingProject();
 }
+
+const starterBlock = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
+const starterNumber = (value: number, type = "number") => starterBlock(type, String(value));
+// Pen down, `sides` sides of 50 turning `turn`° each, pen up.
+const polygonBody = (sides: number, turn: number): EntryNode[] => [starterBlock("start_drawing", null), { ...starterBlock("repeat_basic", starterNumber(sides), null), statements: [[starterBlock("move_direction", starterNumber(50), null), starterBlock("direction_relative", starterNumber(turn, "angle"), null)]] }, starterBlock("stop_drawing", null)];
 
 // Same per-mission limit the server enforces on the normalized project.
 export const MAX_PROJECT_BYTES = 32_768;

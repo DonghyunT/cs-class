@@ -6,7 +6,7 @@ import functionExport from "./fixtures/entry-function-export.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { readEntryDraft } from "../src/components/student/read-editor-draft";
 import { CONTAINER_BLOCKS, ENTRY_PALETTE, MISSION_BLOCKS, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
-import { MAX_FUNCTIONS, functionCallId, MAX_PROJECT_BYTES, PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { MAX_FUNCTIONS, functionCallId, MAX_PROJECT_BYTES, PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode, type ProgramFunction } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission, wordingMessage } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
@@ -262,7 +262,7 @@ const CHIP_WORDS: Record<string, RegExp> = {
   dialog: /^.+[을를] 말하기$/, set_variable: /^[AB]를 .+로 정하기$/, change_variable: /^.+에 \d+만큼 더하기$/, calc_basic: / [+\-x/] /, combine_something: /^.+ 과\(와\) .+ 을\(를\) 합친 값$/, boolean_basic_operator: /^.+ (=|!=|>|<|≥|≤) .+$/,
   boolean_and_or: /^참 (그리고|또는) /, if_else: /^만일 .+라면 아니면$/, _if: /^만일 .+라면$/, repeat_basic: /^.+번 반복하기$/, repeat_while_true: /될 때까지 반복하기$/,
   move_direction: /^\d+만큼 움직이기$/, direction_relative: /^.+° 회전하기$/, direction_absolute: /^이동 방향을 \d+°로 정하기$/,
-  start_drawing: /^그리기 시작하기$/, stop_drawing: /^그리기 멈추기$/, locate_xy: /^x: -?\d+ y: -?\d+ 위치로 이동하기$/, change_to_next_shape: /^다음 모양으로 바꾸기$/,
+  move_x: /^x 좌표를 -?\d+만큼 바꾸기$/, start_drawing: /^그리기 시작하기$/, stop_drawing: /^그리기 멈추기$/, locate_xy: /^x: -?\d+ y: -?\d+ 위치로 이동하기$/, change_to_next_shape: /^다음 모양으로 바꾸기$/,
 };
 const missionText = (id: string) => { const m = missionById(id)!; return [m.hint, ...m.steps, m.tip ?? ""]; };
 
@@ -901,7 +901,9 @@ test("학생 변수 기본값은 엔트리가 다시 불러온 값으로 저장�
 
 // A real Entry 4.0.23 export: function `창문 그리기` (id win1) called twice from the start line.
 const functionRaw = JSON.stringify(functionExport);
-const withFunctionEdit = (change: (project: Record<string, any>, fn: Record<string, any>, head: Record<string, any>) => void) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- edits raw Entry export JSON
+type RawJson = any;
+const withFunctionEdit = (change: (project: RawJson, fn: RawJson, head: RawJson) => void) => {
   const p = JSON.parse(functionRaw), fn = p.functions[0], content = JSON.parse(fn.content);
   change(p, fn, content[0][0]);
   fn.content = JSON.stringify(content);
@@ -996,4 +998,67 @@ test("함수 본문만 바꿔도 미저장으로 본다", () => {
   const draft = (raw: string): WorkDraft => ({ ...emptyWork(LOOPS_LESSON).draft, programming: { mission: "square", projects: { square: raw }, reflection: "" } });
   expect(sameWorkContent(draft(functionRaw), draft(wider))).toBe(false);
   expect(sameWorkContent(draft(functionRaw), draft(functionRaw))).toBe(true);
+});
+
+// Function lesson grading. Free projects with one object; functions are named by id.
+const fnOf = (id: string, body: EntryNode[]): ProgramFunction => ({ id, name: id, body });
+const callOf = (id: string) => node(`func_${id}`, null);
+const moveX = (v: string) => node("move_x", number(v), null);
+const penBody = (sides: number, length = 50, angle = 360 / sides) => [node("start_drawing", null), loopOf(number(String(sides)), [forward(number(String(length))), turn(node("angle", String(angle)))]), node("stop_drawing", null)];
+const CAT = "e55e8ef04e443a90e6afe5e6d";
+const oneObject = (threads: EntryNode[][], functions: ProgramFunction[], sprite = ENTRYBOT_SPRITE) => buildProgrammingProject(undefined, [{ ...newAddedObject(sprite, 0, true)!, id: "actor", threads }], -1, false, [], functions);
+const keyLine = (key: string, ...body: EntryNode[]) => [node("when_some_key_pressed", null, key), ...body];
+
+test("창문 두 개는 같은 함수의 서로 다른 두 호출이 닿지 않는 정사각형을 하나씩 그려야 통과한다", () => {
+  const win = fnOf("win", penBody(4));
+  const pass = (raw: string) => checkProgrammingMission("windows", raw).passed;
+  expect(pass(oneObject([[start(), callOf("win"), moveX("100"), callOf("win")]], [win]))).toBe(true);
+  const unrolled = fnOf("win", [node("start_drawing", null), ...Array.from({ length: 4 }, () => [forward(number("50")), turn(node("angle", "90"))]).flat(), node("stop_drawing", null)]);
+  expect(pass(oneObject([[start(), callOf("win"), moveX("100"), callOf("win")]], [unrolled]))).toBe(true);
+  // Wrapping the calls in another function still counts each window call.
+  expect(pass(oneObject([[start(), callOf("house")]], [win, fnOf("house", [callOf("win"), moveX("100"), callOf("win")])]))).toBe(true);
+  const message = (raw: string) => checkProgrammingMission("windows", raw).message;
+  const outsideSquare = [node("start_drawing", null), loopOf(number("4"), [forward(number("50")), turn(node("angle", "90"))])];
+  expect(message(oneObject([[start(), callOf("win"), callOf("win"), moveX("100"), ...outsideSquare]], [win]))).toContain("함수 밖에서");
+  expect(message(oneObject([[start(), callOf("win")]], [win]))).toContain("한 번 더 불러");
+  expect(message(oneObject([[start(), callOf("win"), moveX("50"), callOf("win")]], [win]))).toContain("더 멀리");
+  // A call to a deleted function is dropped like Entry does, leaving one call.
+  expect(message(oneObject([[start(), callOf("win"), moveX("100"), callOf("gone")]], [win]))).toContain("한 번 더 불러");
+  expect(message(oneObject([[start(), callOf("again")]], [fnOf("again", [callOf("again")])]))).toContain("자기 자신");
+});
+
+test("고양이 걸음은 두 방향키가 같은 함수 안에서 모양을 바꿔야 통과한다", () => {
+  const step = fnOf("step", [node("change_to_next_shape", "next", null)]);
+  const check = (threads: EntryNode[][], functions: ProgramFunction[]) => checkProgrammingMission("cat-walk", oneObject(threads, functions, CAT));
+  expect(check([keyLine("39", moveX("10"), callOf("step")), keyLine("37", moveX("-10"), callOf("step"))], [step]).passed).toBe(true);
+  expect(check([keyLine("39", callOf("right")), keyLine("37", moveX("-10"), callOf("step"))], [step, fnOf("right", [moveX("10"), callOf("step")])]).passed).toBe(true);
+  expect(check([keyLine("39", moveX("10"), node("change_to_next_shape", "next", null)), keyLine("37", moveX("-10"), callOf("step"))], [step]).message).toContain("함수 안으로");
+  expect(check([keyLine("39", moveX("10"), callOf("step")), keyLine("37", moveX("-10"), callOf("other"))], [step, fnOf("other", [node("change_to_next_shape", "next", null)])]).message).toContain("같은");
+  expect(check([keyLine("39", moveX("10"), callOf("step")), keyLine("37", moveX("10"), callOf("step"))], [step]).passed).toBe(false);
+});
+
+test("고장 난 도형 시작 작품은 오각형 90°와 육각형 호출 누락만 고치면 통과한다", () => {
+  const starter = missionStarter("fix-shapes");
+  expect(checkProgrammingMission("fix-shapes", starter).passed).toBe(false);
+  const p = parseProgrammingProject(starter)!;
+  expect(p.functions.map((f) => f.name)).toEqual(["사각형 그리기", "오각형 그리기", "육각형 그리기"]);
+  expect(p.bytes).toBeLessThan(MAX_PROJECT_BYTES / 4);
+  const pentagon = p.functions[1], hexagon = p.functions[2];
+  const fixed = p.functions.map((f) => f === pentagon ? { ...f, body: penBody(5) } : f);
+  const main = p.added[0].threads[0];
+  expect(main.filter((n) => functionCallId(n.type))).toHaveLength(2);
+  const repaired = buildProgrammingProject(undefined, [{ ...p.added[0], threads: [[...main, callOf(hexagon.id)]] }], -1, false, [], fixed);
+  expect(checkProgrammingMission("fix-shapes", repaired).passed).toBe(true);
+  // Fixing only one of the two bugs is not enough.
+  expect(checkProgrammingMission("fix-shapes", buildProgrammingProject(undefined, [{ ...p.added[0], threads: [[...main, callOf(hexagon.id)]] }], -1, false, [], p.functions)).passed).toBe(false);
+});
+
+test("꽃 피우기는 반복 안에서 부른 같은 함수가 60°씩 돌아간 정사각형 여섯 개를 그려야 통과한다", () => {
+  const petal = fnOf("petal", penBody(4));
+  const pass = (threads: EntryNode[][], functions: ProgramFunction[]) => checkProgrammingMission("flower", oneObject(threads, functions)).passed;
+  const bloom = [loopOf(number("6"), [callOf("petal"), turn(node("angle", "60"))])];
+  expect(pass([[start(), ...bloom]], [petal])).toBe(true);
+  expect(pass([[start(), callOf("bloom")]], [petal, fnOf("bloom", bloom)])).toBe(true);
+  expect(pass([[start(), ...Array.from({ length: 6 }, () => [callOf("petal"), turn(node("angle", "60"))]).flat()]], [petal])).toBe(false);
+  expect(pass([[start(), loopOf(number("6"), [callOf("petal"), turn(node("angle", "45"))])]], [petal])).toBe(false);
 });

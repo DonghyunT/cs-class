@@ -55,6 +55,10 @@ export const MISSION_BLOCKS: Readonly<Record<string, ReadonlySet<string>>> = {
   square: mission(PEN),
   polygon: mission([...PEN, ...VARIABLES, "ask_and_wait", "get_canvas_input_value", "calc_basic"]),
   safe: mission([...CHOICE, "repeat_while_true", "repeat_inf", "stop_repeat"]),
+  "cat-walk": mission([...MOVE, "when_some_key_pressed", "change_to_next_shape"]),
+  windows: mission(PEN),
+  "fix-shapes": mission(PEN),
+  flower: mission(PEN),
   tree: mission(["when_run_button_click", "mouse_clicked", "when_object_click", "text", "number", "True", "False", "change_variable", ...VARIABLES, "_if", "if_else", "boolean_basic_operator", "boolean_and_or", "calc_basic", "change_to_next_shape", "change_to_some_shape", "get_pictures", ...SAY, "repeat_inf", "locate", "is_clicked"]),
 };
 
@@ -102,6 +106,8 @@ export type LibrarySprite = EntrySprite & { category: (typeof LIBRARY_CATEGORIES
 export const LIBRARY_SPRITES: readonly LibrarySprite[] = (library as Omit<LibrarySprite, "file" | "width" | "height">[]).map((s) => ({ ...s, ...s.pictures![0] }));
 // The dog-free lessons' starting object: the classic walking Entrybot.
 export const ENTRYBOT_SPRITE = "e557fe88b77e7209c34993968";
+// The library cat (5 costumes) the function lesson's walking mission starts with.
+export const CAT_SPRITE = "e55e8ef04e443a90e6afe5e6d";
 // Every sprite a saved object may use, picker or lesson.
 export const TRUSTED_SPRITES: readonly EntrySprite[] = [...ENTRY_SPRITES, ...LESSON_SPRITES, ...LIBRARY_SPRITES];
 export const spritePictures = (sprite: EntrySprite) => sprite.pictures ?? [{ file: sprite.file, width: sprite.width, height: sprite.height }];
@@ -124,6 +130,6 @@ export const PALETTE_TEXT: Readonly<Record<string, string>> = {
   ask_and_wait: "안녕! 을(를) 묻고 대답 기다리기", get_canvas_input_value: "대답", get_variable: "A 값", change_variable: "A 에 10 만큼 더하기", set_variable: "A 를 10 (으)로 정하기",
 };
 // Accepted but not listed for these missions: drawing is not about speech.
-const UNLISTED: Readonly<Record<string, readonly string[]>> = { square: SAY, polygon: SAY };
+const UNLISTED: Readonly<Record<string, readonly string[]>> = { square: SAY, polygon: SAY, windows: SAY, "fix-shapes": SAY, flower: SAY };
 // Mission blocks shown to students in palette order; literal inputs, the harmless extras and same-meaning extras are left out.
 export const missionBlockTypes = (id: string): string[] => ENTRY_PALETTE.flatMap((group) => group.blocks).filter((type) => MISSION_BLOCKS[id]?.has(type) && !HARMLESS_BLOCKS.has(type) && !ALSO_ACCEPTED.has(type) && !UNLISTED[id]?.includes(type));
