@@ -6,18 +6,19 @@ import functionExport from "./fixtures/entry-function-export.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { readEntryDraft } from "../src/components/student/read-editor-draft";
 import { CONTAINER_BLOCKS, ENTRY_PALETTE, MISSION_BLOCKS, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
-import { MAX_FUNCTIONS, functionCallId, MAX_PROJECT_BYTES, PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode, type ProgramFunction } from "../src/lib/classroom/programming-entry";
+import { MAX_FUNCTIONS, functionCallId, MAX_PROJECT_BYTES, PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, functionNamesOf, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode, type ProgramFunction } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission, wordingMessage } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
 import { LOOPS_LESSON } from "../src/lib/classroom/loops-lesson";
+import { FUNCTIONS_LESSON } from "../src/lib/classroom/functions-lesson";
 import { emptyWork } from "../src/lib/classroom/progress";
 import type { WorkDraft } from "../src/lib/classroom/types";
 
 test("처음 여는 수업의 첫 미션 작품은 수업 유형에 맞는 시작 작품이다", () => {
   const first = (lesson: Parameters<typeof emptyWork>[0]) => { const { mission, projects } = emptyWork(lesson).draft.programming!; return parseProgrammingProject(projects[mission])!; };
   expect(first(PROGRAMMING_LESSON).free).toBe(false);
-  for (const lesson of [CONDITIONALS_LESSON, LOOPS_LESSON]) expect(first(lesson).free, lesson.id).toBe(true);
+  for (const lesson of [CONDITIONALS_LESSON, LOOPS_LESSON, FUNCTIONS_LESSON]) expect(first(lesson).free, lesson.id).toBe(true);
 });
 
 const legacy: Record<string, { key: string | null; order: string[] | null; project: string | null; lines: string[]; checks: Record<string, { passed: boolean; message: string }> }> = legacyKeys;
@@ -264,6 +265,8 @@ const CHIP_WORDS: Record<string, RegExp> = {
   move_direction: /^\d+만큼 움직이기$/, direction_relative: /^.+° 회전하기$/, direction_absolute: /^이동 방향을 \d+°로 정하기$/,
   move_x: /^x 좌표를 -?\d+만큼 바꾸기$/, start_drawing: /^그리기 시작하기$/, stop_drawing: /^그리기 멈추기$/, locate_xy: /^x: -?\d+ y: -?\d+ 위치로 이동하기$/, change_to_next_shape: /^다음 모양으로 바꾸기$/,
 };
+// Functions come first: students make a function before they call it.
+const walkProject = (raw: string, walk: (v: unknown) => void) => { const p = JSON.parse(raw); walk(p.functions ?? []); walk({ ...p, functions: [] }); };
 const missionText = (id: string) => { const m = missionById(id)!; return [m.hint, ...m.steps, m.tip ?? ""]; };
 
 test("힌트 칩은 그 미션이 받는 블록이고 팔레트의 고정 낱말을 지키며, 힌트는 짧고 칩 표기가 새지 않는다", () => {
@@ -527,7 +530,7 @@ test("엔트리 오브젝트 묶음은 파일·분류·크기가 맞고 위험�
 });
 
 // Solutions built in the order of each mission's `steps` (plan appendix D); guidance and grading must agree.
-test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 블록 모두)은 채점을 통과한다", () => {
+test("조립 순서대로 만든 미션 해답(정사각형은 두 회전 블록 모두)은 채점을 통과한다", () => {
   const sayTimed = (value: EntryNode) => node("dialog_time", value, number("2"), "speak", null);
   const variable = (id: string) => node("get_variable", `cs-${id}`);
   const store = (id: string) => [ask(), node("set_variable", `cs-${id}`, answer(), null)];
@@ -547,9 +550,13 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
     ["polygon", exported([[start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(answer(), [forward(number("70")), turn(calc(number("360"), "DIVIDE", answer()))]), node("stop_drawing", null), node("locate_xy", number("-150"), number("0"), null)]])],
     ["tree", withTree(treeCode(["5", "10", "15", "20", "25"].map(grow)))],
     ["safe", exported([[start(), until(compare(answer(), "EQUAL", number("1234"))), speak("금고가 열렸어요!")]])],
+    ["cat-walk", oneObject([keyLine("39", moveX("10"), callOf("step")), keyLine("37", moveX("-10"), callOf("step"))], [{ id: "step", name: "고양이 걸음", body: [node("change_to_next_shape", "next", null)] }], CAT)],
+    ["windows", oneObject([[start(), callOf("win"), moveX("100"), callOf("win")]], [{ id: "win", name: "창문 그리기", body: penBody(4) }])],
+    ["fix-shapes", repairedShapes()],
+    ["flower", oneObject([[start(), loopOf(number("6"), [callOf("petal"), turn(node("angle", "60"))])]], [{ id: "petal", name: "꽃잎", body: penBody(4) }])],
   ];
   // Every mission a lesson still offers has a solution; retired ones (escape) are no longer graded.
-  expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(["programming-13", "conditionals", "loops"].flatMap((lesson) => missionsFor(lesson).map((mission) => mission.id))));
+  expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(["programming-13", "conditionals", "loops", "functions"].flatMap((lesson) => missionsFor(lesson).map((mission) => mission.id))));
   // The steps name the values and slots these solutions use.
   expect(hintPlain(missionById("polygon")!.steps[1])).toContain("70만큼 움직이기");
   // After drawing, the pen lifts and Entrybot steps aside so it does not hide the shape.
@@ -558,7 +565,7 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
   // Following the steps gives the solution: each block it uses is a hint chip, or (for asking, saying,
   // answers and variable values written in plain words) named by its word. Alternatives (the second square) are skipped.
   const MENTION: Record<string, string> = { ask_and_wait: "묻", dialog: "말하기", dialog_time: "말하기", get_canvas_input_value: "대답", get_variable: " 값" };
-  const typesIn = (raw: string) => { const out = new Set<string>(); const walk = (v: unknown): void => { if (typeof v === "string" && v.startsWith("[")) { try { walk(JSON.parse(v)); } catch { /* plain text */ } } else if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") { const t = (v as { type?: unknown }).type; if (typeof t === "string" && PALETTE_BLOCKS.has(t)) out.add(t); Object.values(v).forEach(walk); } }; walk(JSON.parse(raw)); return out; };
+  const typesIn = (raw: string) => { const out = new Set<string>(); const walk = (v: unknown): void => { if (typeof v === "string" && v.startsWith("[")) { try { walk(JSON.parse(v)); } catch { /* plain text */ } } else if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") { const t = (v as { type?: unknown }).type; if (typeof t === "string" && PALETTE_BLOCKS.has(t)) out.add(t); Object.values(v).forEach(walk); } }; walkProject(raw, walk); return out; };
   // Values each solution uses, as the hint writes them (palette symbols; Entry key codes 37–40 as key names).
   const SYMBOL: Record<string, string> = { GREATER_OR_EQUAL: "≥", EQUAL: "=", MULTI: "x", DIVIDE: "/", PLUS: "+", MINUS: "-" }, KEY: Record<string, string> = { 37: "왼쪽", 38: "위쪽", 39: "오른쪽", 40: "아래쪽" };
   const VARIABLE: Record<string, string> = { "cs-A": "A", "cs-B": "B", "cs-clicks": "클릭 수" };
@@ -589,17 +596,23 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
       if (type === "boolean_basic_operator" || type === "calc_basic") out.push(`${term(p0)} ${symbol(p1)} ${term(p2)}`);
       Object.values(v).forEach(walk);
     };
-    walk(JSON.parse(raw)); return out;
+    walkProject(raw, walk); return out;
   };
   for (const [id, raw] of solutions.filter(([id], i) => solutions.findIndex(([other]) => other === id) === i)) {
     const texts = missionText(id), chipTypes = new Set(texts.flatMap(hintParts).flatMap((part) => typeof part === "string" ? [] : [part.type])), plain = texts.map(hintPlain).join(" ");
-    // The start block is a chip too unless the starter already places it (lesson 1 students never dragged it in).
-    for (const type of typesIn(raw)) if (type !== "when_run_button_click" || !missionStarter(id).includes(type)) expect(chipTypes.has(type) || (MENTION[type] !== undefined && plain.includes(MENTION[type])), `${id}: ${type}`).toBe(true);
+    // Blocks and values the starter already places need no chip (lesson 1 students never dragged the start block in;
+    // the broken-shapes starter holds the code to repair).
+    const starterTypes = typesIn(missionStarter(id)), starterValues = valuesIn(missionStarter(id));
+    for (const type of typesIn(raw)) if (!starterTypes.has(type)) expect(chipTypes.has(type) || (MENTION[type] !== undefined && plain.includes(MENTION[type])), `${id}: ${type}`).toBe(true);
     // ...and with the solution's values: a right block with a wrong threshold, count or symbol still misleads.
     const pattern = (value: string) => VALUE_IN_WORDS[`${id} ${value}`] ?? new RegExp(`${/^[\d가-힣-]/.test(value) ? "(?<![\\d\\-가-힣])" : ""}${value.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}`);
-    for (const value of valuesIn(raw)) expect(pattern(value).test(plain), `${id}: ${value}`).toBe(true);
+    for (const value of valuesIn(raw)) if (!starterValues.includes(value)) expect(pattern(value).test(plain), `${id}: ${value}`).toBe(true);
+    // A function the solution calls (and the starter does not) is named in the steps.
+    const callsIn = (text: string) => new Set([...text.matchAll(/\\*"type\\*":\\*"func_([\w-]+)/g)].map((m) => m[1]));
+    const starterCalls = callsIn(missionStarter(id)), names = functionNamesOf(parseProgrammingProject(raw)!.functions);
+    for (const callee of callsIn(raw)) if (!starterCalls.has(callee)) expect(plain, `${id}: ${names[callee]}`).toContain(names[callee]);
     // ...in the solution's order within the steps, so a swapped threshold, branch or key angle fails too (the tree's word-form list is skipped).
-    const steps = missionById(id)!.steps.map(hintPlain).join(" "), at = [...new Set(valuesIn(raw))].filter((value) => !VALUE_IN_WORDS[`${id} ${value}`]).map((value) => [value, steps.search(pattern(value))] as const).filter(([, i]) => i >= 0);
+    const steps = missionById(id)!.steps.map(hintPlain).join(" "), at = [...new Set(valuesIn(raw))].filter((value) => !VALUE_IN_WORDS[`${id} ${value}`] && !starterValues.includes(value)).map((value) => [value, steps.search(pattern(value))] as const).filter(([, i]) => i >= 0);
     at.forEach(([value, i], k) => expect(i, `${id}: ${value} comes after ${at[k - 1]?.[0]}`).toBeGreaterThanOrEqual(at[k - 1]?.[1] ?? 0));
     // ...and each block's first chip follows the solution's block order, so swapped steps fail too. Nesting words (안에·아래(바깥)) are not checked.
     const chipOrder = missionById(id)!.steps.flatMap(hintParts).flatMap((part) => typeof part === "string" ? [] : [part.type]), firsts = [...typesIn(raw)].map((type) => [type, chipOrder.indexOf(type)] as const).filter(([, i]) => i >= 0);
@@ -1036,6 +1049,12 @@ test("고양이 걸음은 두 방향키가 같은 함수 안에서 모양을 바
   expect(check([keyLine("39", moveX("10"), callOf("step")), keyLine("37", moveX("-10"), callOf("other"))], [step, fnOf("other", [node("change_to_next_shape", "next", null)])]).message).toContain("같은");
   expect(check([keyLine("39", moveX("10"), callOf("step")), keyLine("37", moveX("10"), callOf("step"))], [step]).passed).toBe(false);
 });
+
+// The broken-shapes starter with both bugs fixed: the pentagon turns 72° and the hexagon is called.
+function repairedShapes() {
+  const p = parseProgrammingProject(missionStarter("fix-shapes"))!, [, pentagon, hexagon] = p.functions;
+  return buildProgrammingProject(undefined, [{ ...p.added[0], threads: [[...p.added[0].threads[0], callOf(hexagon.id)]] }], -1, false, [], p.functions.map((f) => f === pentagon ? { ...f, body: penBody(5) } : f));
+}
 
 test("고장 난 도형 시작 작품은 오각형 90°와 육각형 호출 누락만 고치면 통과한다", () => {
   const starter = missionStarter("fix-shapes");

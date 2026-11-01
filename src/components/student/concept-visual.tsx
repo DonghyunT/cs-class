@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import styles from "./concept-visual.module.css";
 
-// Small static pictures for the common concept screen of the conditionals and loops lessons.
+// Small static pictures for the common concept screen of the conditionals, loops and functions lessons.
 // Keyed by concept id; lessons without an entry (reviews, programming-13) show nothing.
 const Tile = ({ tone = "blue", sub, children }: { tone?: "blue" | "true" | "false" | "purple"; sub?: string; children: ReactNode }) => <b className={styles.tile} data-tone={tone}>{children}{sub && <small>{sub}</small>}</b>;
 // `word` ops (AND, OR) are words: a `+` there read like addition.
@@ -61,6 +61,18 @@ export const CONCEPT_VISUALS: Record<string, { label: string; node: ReactNode }>
   lc4: { label: "마우스를 클릭했을 때(무대를 클릭할 때마다) 클릭 수에 1만큼 더하고, 클릭 수 값이 5가 되면 나무가 다음 모양으로 바뀌어 한 단계 자람", node: <>
     <Capture src="loops-count-variable" width={367} height={172} />
     <Tree stage={0} clicks="클릭 수 0" /><Op>→</Op><Tree stage={1} clicks="클릭 수 5" /></> },
+  // The functions lesson starts from the class beat game; fc0 shows one call so it does not answer its own question.
+  fc0: { label: "비트를 쿵·쿵·짝으로 정해 두면, 비트!라고 부를 때 쿵·쿵·짝을 차례로 연주함", node: <>
+    <Card title="【비트】 정해 두기"><Row><Tile>쿵</Tile><Tile>쿵</Tile><Tile tone="purple">짝</Tile></Row></Card>
+    <Op>→</Op>
+    <Card title="“비트!” 부르기"><small>쿵 · 쿵 · 짝</small></Card></> },
+  fc2: { label: "반복은 같은 자리에서 정한 횟수만큼 되풀이하고, 함수는 이름으로 떨어진 곳에서도 부를 수 있음", node: <>
+    <Card title="반복"><Nest head="4번 반복하기"><Block>비트</Block></Nest></Card>
+    <Card title="함수 부르기"><Block>비트</Block><Block>브레이크</Block><Block>비트</Block></Card></> },
+  fc3: { label: "창문 그리기 정의 안의 50을 80으로 고치고 다시 실행하면, 이 함수를 부른 창문 두 개가 모두 커짐", node: <>
+    <Card title="한 변 50"><svg viewBox="0 0 96 48" width="96" height="48" aria-hidden="true"><rect x="8" y="14" width="20" height="20" fill="#eaf2ff" stroke="#376fc8" strokeWidth="3" /><rect x="58" y="14" width="20" height="20" fill="#eaf2ff" stroke="#376fc8" strokeWidth="3" /></svg></Card>
+    <Op>→</Op>
+    <Card title="80으로 고치면"><svg viewBox="0 0 96 48" width="96" height="48" aria-hidden="true"><rect x="4" y="6" width="34" height="34" fill="#eaf2ff" stroke="#376fc8" strokeWidth="3" /><rect x="54" y="6" width="34" height="34" fill="#eaf2ff" stroke="#376fc8" strokeWidth="3" /></svg></Card></> },
 };
 
 export function ConceptVisual({ conceptId }: { conceptId: string }) {

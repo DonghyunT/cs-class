@@ -4,6 +4,7 @@ import { runnableEntryBlocks } from "../classroom/entry-project";
 import { concepts, questions } from "../classroom/programming-data";
 import { conditionalConcepts, conditionalQuestions } from "../classroom/conditionals-data";
 import { loopConcepts, loopQuestions } from "../classroom/loops-data";
+import { functionConcepts, functionQuestions } from "../classroom/functions-data";
 import { UNIT_QUIZ_DATA } from "./review-quiz.mjs";
 import { REVIEW_LESSONS } from "../classroom/review/lessons";
 
@@ -72,6 +73,14 @@ export const SOLUTIONS: Record<string, LessonSolution> = {
     quizAnswers: Object.fromEntries(loopQuestions.map((q) => [q.id, String(q.correct)])),
     quizFeedback: Object.fromEntries(loopQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
     conceptRetry: Object.fromEntries(loopConcepts.map((c) => [c.id, c.retry])),
+    practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
+  },
+  functions: {
+    lessonId: "functions",
+    conceptAnswers: Object.fromEntries(functionConcepts.map((c) => [c.id, String(c.correct)])),
+    quizAnswers: Object.fromEntries(functionQuestions.map((q) => [q.id, String(q.correct)])),
+    quizFeedback: Object.fromEntries(functionQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
+    conceptRetry: Object.fromEntries(functionConcepts.map((c) => [c.id, c.retry])),
     practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
   },
   "sequence-lab": {
