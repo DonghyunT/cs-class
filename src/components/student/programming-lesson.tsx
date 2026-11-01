@@ -9,12 +9,13 @@ import { PALETTE_TEXT, blockLabel, missionBlockTypes } from "@/lib/classroom/ent
 import { entryBlockCategory, hintParts, missionStarter, missionsFor } from "@/lib/classroom/programming-entry";
 import { practiceMatches } from "@/lib/classroom/progress";
 import type { Lesson, WorkAction, WorkDraft } from "@/lib/classroom/types";
+import type { EntryExport } from "./read-editor-draft";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
 import { PracticeGuidance } from "./practice-guidance";
 import type { WorkController, LessonMode } from "./work-controller";
 import styles from "./programming-lesson.module.css";
 
-type Props = { lesson: Lesson; controller: WorkController; mode?: LessonMode; locked: boolean; runAction: (action: WorkAction, focusId: string | readonly string[]) => Promise<void>; focus: (id: string) => void; next: (stage: WorkDraft["stage"]) => void; exportRef: RefObject<(() => Promise<string | null>) | null>; workspaceWide: boolean; practiceFocused: boolean; onWorkspaceWideChange: (wide: boolean) => void; saveLabel: string; conceptId: string; onConceptChange: (id: string) => void; onEditorReady?: (ready: boolean) => void };
+type Props = { lesson: Lesson; controller: WorkController; mode?: LessonMode; locked: boolean; runAction: (action: WorkAction, focusId: string | readonly string[]) => Promise<void>; focus: (id: string) => void; next: (stage: WorkDraft["stage"]) => void; exportRef: RefObject<EntryExport | null>; workspaceWide: boolean; practiceFocused: boolean; onWorkspaceWideChange: (wide: boolean) => void; saveLabel: string; conceptId: string; onConceptChange: (id: string) => void; onEditorReady?: (ready: boolean) => void };
 
 // Hint text with its block chips coloured by Entry category; screen readers read the chips as plain words.
 // ▾ has a wide glyph box, so it gets a trimmed span to read ‘A▾를’ as one word.

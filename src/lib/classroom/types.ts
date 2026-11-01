@@ -27,6 +27,8 @@ export interface Question {
   prompt: string;
   // Code lines shown with a quiz question, for reading a program before answering.
   scene?: string[];
+  // Entry's own rendering of the scene (public/concepts/); then `scene` stays as its screen-reader text.
+  captures?: { src: string; width: number; height: number }[];
   options: { id: string; label: string }[];
   hint: string;
 }

@@ -56,21 +56,19 @@ flowchart LR
     Auth -->|Idle Timeout| DB
 ```
 
-1. **수동 저장 체계 (Manual Save):**
-   - 저장 버튼·`Ctrl+S`와 [PRD §3.2](docs/PRD.md#학생-수업의-수동-저장-정책)의 명시적 예외(채점·제출·AI 요청·손들기 등)에서만 서버에 보관하고 debounce 자동 저장을 두지 않으며, 미저장 이탈은 3선택 모달로 막습니다.
+1. **수동 저장 체계 (Manual Save):** 저장 버튼·`Ctrl+S`와 [PRD §3.2](docs/PRD.md#학생-수업의-수동-저장-정책)의 명시적 예외(채점·제출·AI 요청·손들기 등)에서만 서버에 보관하고 debounce 자동 저장을 두지 않으며, 미저장 이탈은 3선택 모달로 막습니다.
 2. **학교 공용 PC 보안 및 세션 격리:**
    - 평문 학생 답안을 브라우저 로컬 스토리지에 영구 보관하지 않으며, 로그아웃·자동 로그아웃·계정 전환 시 메모리 초안을 지웁니다. 브라우저 세션 복원이 있어 공용 PC에서는 로그아웃해야 합니다.
    - 동일 계정의 다중 동시 접속을 전면 차단(단일 세션 강제)하며, 무활동 시 자동 로그아웃됩니다(시간은 [PRD §6.2](docs/PRD.md#62-세션-및-다중-접속-제어)).
-3. **선별 검증 (Scoped CI):**
-   - 단일 수업 수정 시 해당 수업의 E2E 및 공통 스모크만 선별 실행하며, README·AGENTS·`docs/` 아래 마크다운만 바꾼 커밋은 짧게 끝나는 문서 모드 CI로 자동 전환됩니다.
+3. **선별 검증 (Scoped CI):** 바꾼 수업의 E2E와 공통 스모크만 돌립니다([개발 안내 §3](docs/DEVELOPMENT.md#검증)).
 
 ---
 
 ## 4. 빠르게 시작하기 (Quick Start)
 
 ### 사전 요구사항
-* **Node.js:** `24.x` 중 24.12 이상(`firebase` 13 요구, CI·Vercel은 24의 최신판)
-* **Java:** `JDK 21+`. 로컬 에뮬레이터(실제 서버 대신 이 PC에서 실행하는 연습용 Firebase)에 필요합니다. 설치 방법은 [개발 안내 §1.1](docs/DEVELOPMENT.md#11-시스템-요구사항)에 있습니다.
+* **Node.js:** `24.x` 중 24.12 이상
+* **Java:** `JDK 21+`. 로컬 에뮬레이터(실제 서버 대신 이 PC에서 실행하는 연습용 Firebase)에 필요하며 설치 방법은 [개발 안내 §1.1](docs/DEVELOPMENT.md#11-시스템-요구사항)에 있습니다.
 
 ### 로컬 개발 환경 실행
 ```powershell
@@ -100,7 +98,7 @@ npm run dev:emulator
 | **[`docs/FIREBASE_SETUP.md`](docs/FIREBASE_SETUP.md)** | Vercel·Firebase 설정, 배포 게이트와 공개 후 확인, 장애 복구, 운영 환경 현황 | 선생님(운영 승인·콘솔 작업)·에이전트 |
 | **[`docs/HANDOFF.md`](docs/HANDOFF.md)** | 현재 작업 상태, 최근 반영과 검증, 다음 작업, 남은 한계 | 선생님·다음 에이전트 |
 
-문서를 고칠 때의 주제별 위치와 쓰기 규칙은 [문서 작성 기준](docs/DEVELOPMENT.md#문서-작성-기준)에 있습니다. `docs/plans/`에는 진행 중인 작업 계획만 두고, 끝난 계획과 지난 원문은 [`docs/archive/`](docs/archive/README.md)에 보관합니다. `docs/reference/`는 보관 원문과 HANDOFF가 가리키는 근거 자료(화면 캡처·날짜 붙은 검토 보고서)입니다.
+`docs/plans/`에는 진행 중인 작업 계획만 두고, 끝난 계획과 지난 원문은 [`docs/archive/`](docs/archive/README.md)에 보관합니다. `docs/reference/`는 보관 원문과 HANDOFF가 가리키는 근거 자료(화면 캡처·날짜 붙은 검토 보고서)입니다.
 
 선생님이 직접 할 일은 [HANDOFF의 다음 작업·남은 한계](docs/HANDOFF.md#다음에-이어갈-작업), 수업 당일 순서는 [첫 실제 수업 확인 순서](docs/DEVELOPMENT.md#첫-실제-수업-확인-순서)에 있습니다. 교사가 투사하는 3차시 개념 수업 자료는 [내일, 축제에서 만나](teaching-materials/festival-romance/README.md)를 참고하세요. 독립 HTML 완성본과 수정 소스가 함께 있습니다.
 
@@ -114,7 +112,7 @@ cs-class/
 ├─ AGENTS.md              # 에이전트 작업 규칙·승인 범위·금지사항
 ├─ src/
 │  ├─ app/                # Next.js App Router (페이지 및 서버 API)
-│  ├─ components/         # 앱 전체 틀과 공용 조각은 바로 아래에 둠(자세한 배치는 AGENTS 컴포넌트 구조)
+│  ├─ components/         # 앱 전체 틀과 공용 조각은 바로 아래에 둠(복습 수업은 student/review/)
 │  │  ├─ home/            # 공개 랜딩 페이지 및 수업 시연
 │  │  ├─ ui/              # 버튼, 입력창 등 공통 디자인 컴포넌트 (Base UI)
 │  │  ├─ dashboard/       # 공통 대시보드, 개인 할 일, 반 일정
@@ -129,7 +127,8 @@ cs-class/
 │     └─ server/          # 인증 장부, Firestore 서비스, Q&A 서버 로직
 ├─ tests/                 # Playwright E2E 검증 및 단위 테스트 스위트
 ├─ public/entryjs/        # EntryJS 4.0.23 편집기 및 브라우저 정적 자산 (sprites/library: 엔트리 공식 오브젝트 묶음)
-├─ public/concepts/       # 개념 화면 정적 그림(엔트리 블록 이미지 캡처)
+├─ public/concepts/       # 개념·퀴즈 화면의 엔트리 블록 이미지 캡처(조건·반복·함수 수업)
+├─ cloudflare/entry-cdn/  # 엔트리 라이브러리를 올리는 Cloudflare Workers 정적 CDN 설정(절차는 FIREBASE_SETUP)
 ├─ scripts/               # 에뮬레이터 시드, 선별 검증기, 문서 검사 스크립트
 ├─ teaching-materials/    # 교사용 독립 자료 (로그인·DB 미사용)
 │  ├─ festival-romance/   # 3차시 개념 수업 투사 자료(자체 빌드 build.cjs가 public/festival-romance.html도 만듦)

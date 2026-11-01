@@ -6,6 +6,7 @@ import { ApiError, classroomApi } from "@/lib/classroom/client";
 import type { Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import type { AiReply, AiTask, FlowPlanning } from "@/lib/classroom/review/ai";
 import { sameWorkContent } from "./work-draft";
+import { FunctionEditingError } from "./function-editing";
 import { hasActionResult, hasRecoveryFields } from "./work-recovery";
 
 type SaveState = "saved" | "dirty" | "saving" | "failed";
@@ -26,7 +27,7 @@ type ActionFailure = {
   canResend?: boolean;
   verificationError?: string;
 };
-export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: WorkDraft) => Promise<WorkDraft>) {
+export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: WorkDraft) => Promise<WorkDraft>, editorBusy?: () => boolean) {
   const key = `${uid}:${initial.lessonId}`;
   const [work, setWork] = useState(initial);
   const [draft, setDraft] = useState(() => {
@@ -93,7 +94,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
       local.current = next; setDraft(next);
       if (hasUnsavedContent()) recovery.set(key, { revision: server.current.revision, draft: next, at: Date.now() });
       return structuredClone(next);
-    } catch (problem) { fail(problem); throw problem; }
+    } catch (problem) { if (!(problem instanceof FunctionEditingError)) fail(problem); throw problem; }
     finally { if (active.current) setCapturing(false); }
   }, [fail, hasUnsavedContent, key, readEditorDraft]);
 
@@ -115,7 +116,11 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
         if (!active.current) return false;
         setSaveState(hasUnsavedContent() ? "dirty" : "saved"); setError("");
         return true;
-      } catch (problem) { fail(problem); return false; }
+      } catch (problem) {
+        // A function still being edited is a wait, not a failed save: restore the state shown before saving.
+        if (problem instanceof FunctionEditingError) { if (active.current) setSaveState(hasUnsavedContent() ? "dirty" : "saved"); return false; }
+        fail(problem); return false;
+      }
       finally { saving.current = null; }
     })();
     saving.current = operation;
@@ -284,7 +289,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
         if (hasUnsavedContent()) recovery.set(key, { revision: server.current.revision, draft: next, at: Date.now() });
         if (!blocked.current) setSaveState(hasUnsavedContent() ? "dirty" : "saved");
         return true;
-      } catch (problem) { fail(problem); return false; }
+      } catch (problem) { if (!(problem instanceof FunctionEditingError)) fail(problem); return false; }
       finally { pendingAction.current = null; actionPending.current = false; }
     })();
     pendingAction.current = operation;
@@ -313,7 +318,7 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
     if (pendingAction.current) await pendingAction.current;
     if (saving.current) await saving.current;
     if (!active.current || failedAction.current?.uncertain) return false;
-    try { await captureDraft(); return true; } catch (problem) { fail(problem); return false; }
+    try { await captureDraft(); return true; } catch (problem) { if (!(problem instanceof FunctionEditingError)) fail(problem); return false; }
   }, [captureDraft, fail]);
 
   useEffect(() => register({
@@ -323,8 +328,8 @@ export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: Wo
       return flush(true);
     },
     save, prepareLeave, discard: discardDraft,
-    isDirty: () => hasUnsavedContent() || blocked.current || actionPending.current || preparingAi.current || !!pendingAi.current || !!saving.current,
-  }), [discardDraft, flush, hasUnsavedContent, prepareLeave, register, save]);
+    isDirty: () => hasUnsavedContent() || blocked.current || actionPending.current || preparingAi.current || !!pendingAi.current || !!saving.current || !!editorBusy?.(),
+  }), [discardDraft, editorBusy, flush, hasUnsavedContent, prepareLeave, register, save]);
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "s") return;

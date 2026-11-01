@@ -14,9 +14,10 @@ function scriptContent(threads: ContentNode[][]) {
 function programmingContent(raw: string) {
   const parsed = parseProgrammingProject(raw);
   if (!parsed) return raw;
-  // Added objects and student variables are edits too; dog-only projects without variables keep their shape.
+  // Added objects, student variables and functions are edits too; dog-only projects without them keep their shape.
   const variables = [...parsed.variables].sort((a, b) => a.id < b.id ? -1 : 1);
-  return parsed.added.length || variables.length ? { main: scriptContent(parsed.threads), mainIndex: parsed.mainIndex, added: parsed.added.map((o) => ({ ...o, threads: scriptContent(o.threads) })), ...(variables.length ? { variables } : {}) } : scriptContent(parsed.threads);
+  const functions = [...parsed.functions].sort((a, b) => a.id < b.id ? -1 : 1).map((f) => ({ id: f.id, name: f.name, body: scriptContent([f.body])[0].blocks }));
+  return parsed.added.length || variables.length || functions.length ? { main: scriptContent(parsed.threads), mainIndex: parsed.mainIndex, added: parsed.added.map((o) => ({ ...o, threads: scriptContent(o.threads) })), ...(variables.length ? { variables } : {}), ...(functions.length ? { functions } : {}) } : scriptContent(parsed.threads);
 }
 function entryContent(raw: string) {
   if (!parseEntryProject(raw)) return raw;

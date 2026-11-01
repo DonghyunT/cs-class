@@ -124,6 +124,21 @@ export const LESSON_MAPPINGS = {
       "tests/loops.spec.ts",
       "tests/teacher-lesson-preview.spec.ts"
     ]
+  },
+  "functions": {
+    lessonId: "functions",
+    patterns: [
+      ...ENTRY_SHARED,
+      /^src\/lib\/classroom\/functions-(?:lesson|data)\.ts$/,
+      /^src\/components\/student\/function-(?:editing\.ts|concepts\.(?:tsx|module\.css))$/,
+      /^tests\/(?:functions\.spec\.ts|fixtures\/entry-function-export\.json)$/,
+      CONCEPT_VISUAL,
+      /^public\/concepts\/functions-[\w-]+\.png$/
+    ],
+    tests: [
+      "tests/functions.spec.ts",
+      "tests/teacher-lesson-preview.spec.ts"
+    ]
   }
 };
 

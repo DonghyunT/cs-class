@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import styles from "./concept-visual.module.css";
 
 // Small static pictures for the common concept screen of the conditionals and loops lessons.
+// The functions lesson shows hands-on experiences instead (function-concepts.tsx).
 // Keyed by concept id; lessons without an entry (reviews, programming-13) show nothing.
 const Tile = ({ tone = "blue", sub, children }: { tone?: "blue" | "true" | "false" | "purple"; sub?: string; children: ReactNode }) => <b className={styles.tile} data-tone={tone}>{children}{sub && <small>{sub}</small>}</b>;
 // `word` ops (AND, OR) are words: a `+` there read like addition.

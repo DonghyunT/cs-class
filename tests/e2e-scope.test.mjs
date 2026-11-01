@@ -57,12 +57,12 @@ test("matchLesson matches lesson specific files accurately", () => {
   assert.equal(matchLesson("tests/entry-palette.test.ts"), "programming-13");
   assert.equal(matchLesson("tests/fixtures/entry-legacy-keys.json"), "programming-13");
   assert.equal(matchLesson("src/lib/server/programming-grader.ts"), "programming-13");
-  assert.deepEqual(matchLessons("src\\lib\\classroom\\programming-entry.ts"), ["programming-13", "conditionals", "loops"]);
-  assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops"]);
-  assert.deepEqual(matchLessons("tests/programming-learning.spec.ts"), ["programming-13", "conditionals", "loops"]);
-  assert.deepEqual(matchLessons("src/proxy.ts"), ["programming-13", "conditionals", "loops"]);
+  assert.deepEqual(matchLessons("src\\lib\\classroom\\programming-entry.ts"), ["programming-13", "conditionals", "loops", "functions"]);
+  assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops", "functions"]);
+  assert.deepEqual(matchLessons("tests/programming-learning.spec.ts"), ["programming-13", "conditionals", "loops", "functions"]);
+  assert.deepEqual(matchLessons("src/proxy.ts"), ["programming-13", "conditionals", "loops", "functions"]);
   for (const file of ["scripts/entryjs-cdn.mjs", "scripts/entryjs-cdn.json", "cloudflare/entry-cdn/wrangler.jsonc"]) {
-    assert.deepEqual(matchLessons(file), ["programming-13", "conditionals", "loops"]);
+    assert.deepEqual(matchLessons(file), ["programming-13", "conditionals", "loops", "functions"]);
   }
   assert.deepEqual(matchLessons("src/components/teacher/teacher.module.css"), []);
   assert.deepEqual(matchLessons("src/lib/classroom/conditionals-data.ts"), ["conditionals"]);
@@ -100,7 +100,7 @@ test("selectE2E classifies single lesson changes as affected", () => {
   // The shared Entry practice screen selects every Entry lesson's tests.
   const programming = selectE2E(["src/components/student/programming-lesson.tsx"]);
   assert.equal(programming.mode, "affected");
-  assert.deepEqual(programming.lessonIds, ["conditionals", "loops", "programming-13"]);
+  assert.deepEqual(programming.lessonIds, ["conditionals", "functions", "loops", "programming-13"]);
   assert.ok(programming.testFiles.includes("tests/conditionals.spec.ts"));
   assert.ok(programming.testFiles.includes("tests/programming-classroom.spec.ts"));
   assert.ok(programming.testFiles.includes("tests/entryjs-ui.spec.ts"));
@@ -130,7 +130,7 @@ test("selectE2E elevates to full if unmapped or shared code is modified", () => 
 });
 
 test("selectE2E maps concept pictures, Entry specs and logic-only tests", () => {
-  assert.deepEqual(matchLessons("src/components/student/concept-visual.module.css"), ["conditionals", "loops"]);
+  assert.deepEqual(matchLessons("src/components/student/concept-visual.module.css"), ["conditionals", "loops", "functions"]);
   assert.deepEqual(matchLessons("public/concepts/loops-repeat-triangle.png"), ["loops"]);
   assert.deepEqual(matchLessons("public/concepts/conditionals-nested-if.png"), ["conditionals"]);
   assert.deepEqual(matchLessons("public/concepts/other.png"), []);
@@ -139,8 +139,13 @@ test("selectE2E maps concept pictures, Entry specs and logic-only tests", () => 
 
   const picture = selectE2E(["src/components/student/concept-visual.tsx", "public/concepts/loops-repeat-until.png", "tests/lesson-feedback.test.ts"]);
   assert.equal(picture.mode, "affected");
-  assert.deepEqual(picture.lessonIds, ["conditionals", "loops"]);
-  assert.deepEqual(picture.testFiles, ["tests/conditionals.spec.ts", "tests/loops.spec.ts", "tests/teacher-lesson-preview.spec.ts"]);
+  assert.deepEqual(picture.lessonIds, ["conditionals", "functions", "loops"]);
+  assert.deepEqual(picture.testFiles, ["tests/conditionals.spec.ts", "tests/functions.spec.ts", "tests/loops.spec.ts", "tests/teacher-lesson-preview.spec.ts"]);
+  assert.deepEqual(matchLessons("src/lib/classroom/functions-data.ts"), ["functions"]);
+  assert.deepEqual(matchLessons("src/components/student/function-editing.ts"), ["functions"]);
+  assert.deepEqual(matchLessons("src/components/student/function-concepts.tsx"), ["functions"]);
+  assert.deepEqual(matchLessons("src/components/student/function-concepts.module.css"), ["functions"]);
+  assert.deepEqual(matchLessons("tests/fixtures/entry-function-export.json"), ["functions"]);
 
   // A logic test alone selects no lesson, so it stays on the conservative full path.
   assert.equal(selectE2E(["tests/lesson-feedback.test.ts"]).mode, "full");

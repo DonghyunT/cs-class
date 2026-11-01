@@ -7,6 +7,7 @@ import { ENTRY_PALETTE, TRUSTED_SPRITES } from "@/lib/classroom/entry-palette";
 import {
   entryBlockCategory,
   formatEntryNode,
+  functionNamesOf,
   missionById,
   parseProgrammingProject,
   programmingProjectLines,
@@ -34,7 +35,7 @@ const CATEGORY_LABELS: Record<EntryCategory, string> = {
   variable: "자료",
 };
 
-function BlockTree({ nodes, names }: { nodes: EntryNode[]; names: Readonly<Record<string, string>> }) {
+function BlockTree({ nodes, names, functionNames }: { nodes: EntryNode[]; names: Readonly<Record<string, string>>; functionNames: Readonly<Record<string, string>> }) {
   if (!nodes.length) return <p className={styles.entryEmptyBranch}>비어 있음</p>;
   return (
     <ol className={styles.entryBlockList}>
@@ -47,18 +48,18 @@ function BlockTree({ nodes, names }: { nodes: EntryNode[]; names: Readonly<Recor
           <li key={index} className={styles.entryBlockItem}>
             <div className={styles.entryBlockPill} data-category={category}>
               <span className={styles.entryBlockBadge}>{CATEGORY_LABELS[category]}</span>
-              <span className={styles.entryBlockText}>{formatEntryNode(node, names)}</span>
+              <span className={styles.entryBlockText}>{formatEntryNode(node, names, functionNames)}</span>
             </div>
             {branches.length > 0 && (
               <div className={styles.entryBranches} data-category={category}>
                 <div className={styles.entryBranch}>
-                  <BlockTree nodes={branches[0] ?? []} names={names} />
+                  <BlockTree nodes={branches[0] ?? []} names={names} functionNames={functionNames} />
                 </div>
                 {branches.length > 1 && (
                   <>
                     <div className={styles.entryElseDivider}>아니면</div>
                     <div className={styles.entryBranch}>
-                      <BlockTree nodes={branches[1] ?? []} names={names} />
+                      <BlockTree nodes={branches[1] ?? []} names={names} functionNames={functionNames} />
                     </div>
                   </>
                 )}
@@ -344,7 +345,7 @@ export function EntryProjectPreview({
             <iframe
               key={attempt}
               ref={frameRef}
-              src={`/entryjs/workspace.html?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${parsed.free ? "&free=1" : ""}`}
+              src={`/entryjs/workspace.html?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${missionById(missionId)?.functions ? "&fn=1" : ""}${parsed.free ? "&free=1" : ""}`}
               title={`${missionTitle} 교사 실행 작업실`}
               sandbox="allow-scripts"
               className={styles.entryRunnerFrame}
@@ -378,6 +379,19 @@ export function EntryProjectPreview({
       )}
 
       <div className={styles.entryObjectList}>
+        {parsed.functions.length > 0 && (
+          <section className={styles.entryObjectSection} aria-label="함수 블록 조립도">
+            <header className={styles.entryObjectHeader}><h4>함수</h4></header>
+            <div className={styles.entryThreads}>
+              {parsed.functions.map((fn) => (
+                <div key={fn.id} className={styles.entryThreadCard}>
+                  <div className={styles.entryThreadTitle}>{`함수 ‘${fn.name}’`}</div>
+                  <BlockTree nodes={fn.body} names={variableNames(parsed.variables)} functionNames={functionNamesOf(parsed.functions)} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
         {objects.map((object) => (
           <section key={object.id} className={styles.entryObjectSection} aria-label={`${object.name} 블록 조립도`}>
             {objects.length > 1 && (
@@ -398,7 +412,7 @@ export function EntryProjectPreview({
                         ? `시작 묶음 ${index + 1}`
                         : `블록 묶음 ${index + 1}`}
                     </div>
-                    <BlockTree nodes={thread} names={variableNames(parsed.variables)} />
+                    <BlockTree nodes={thread} names={variableNames(parsed.variables)} functionNames={functionNamesOf(parsed.functions)} />
                   </div>
                 ))}
               </div>

@@ -3,9 +3,10 @@ import { RELEASED_LESSONS } from "../src/lib/classroom/catalog";
 import { concepts, questions } from "../src/lib/classroom/programming-data";
 import { conditionalConcepts, conditionalQuestions } from "../src/lib/classroom/conditionals-data";
 import { loopConcepts, loopQuestions } from "../src/lib/classroom/loops-data";
+import { functionConcepts, functionQuestions } from "../src/lib/classroom/functions-data";
 import { UNIT_QUIZ_DATA } from "../src/lib/server/review-quiz.mjs";
 import { missionById } from "../src/lib/classroom/programming-entry";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const UNITS = { "review-abstraction": "abstraction", "review-sandwich": "algorithm", "review-flowchart": "flowchart" } as const;
 
@@ -16,6 +17,7 @@ test("공개 수업의 개념 확인·퀴즈 선택지 수와 정답 번호는 �
   for (const q of questions) correct[`programming-13:${q.id}`] = q.correct;
   for (const c of [...conditionalConcepts, ...conditionalQuestions]) correct[`conditionals:${c.id}`] = c.correct;
   for (const c of [...loopConcepts, ...loopQuestions]) correct[`loops:${c.id}`] = c.correct;
+  for (const c of [...functionConcepts, ...functionQuestions]) correct[`functions:${c.id}`] = c.correct;
   const reviewCorrect = (lesson: string, id: string) => UNIT_QUIZ_DATA[UNITS[lesson as keyof typeof UNITS]].questions.find((q) => String(q.id) === id)!.options.findIndex((o) => o.correct);
   const rows = RELEASED_LESSONS.map((lesson) => [lesson.id,
     lesson.concepts.map((c) => [c.id, c.question.options.length, correct[`${lesson.id}:${c.id}`] ?? 0]),
@@ -24,6 +26,7 @@ test("공개 수업의 개념 확인·퀴즈 선택지 수와 정답 번호는 �
     ["programming-13", [["pc4", 3, 0], ["pc0", 3, 0], ["pc1", 3, 2], ["pc2", 3, 1], ["pc3", 3, 1]], [["language", 3, 0], ["flow", 3, 2], ["variable", 3, 1], ["answer", 3, 0], ["signal", 3, 1]]],
     ["conditionals", [["cc0", 3, 0], ["cc1", 3, 1], ["cc2", 2, 0], ["cc3", 3, 1], ["cc4", 3, 0]], [["order", 3, 0], ["pass", 3, 0], ["and", 2, 1], ["multi", 3, 1], ["bug", 3, 0]]],
     ["loops", [["lc0", 3, 0], ["lc1", 3, 0], ["lc2", 3, 0], ["lc3", 3, 0], ["lc4", 3, 0]], [["distance", 3, 0], ["pentagon", 3, 0], ["counter", 3, 0], ["until", 3, 0], ["nested", 3, 0]]],
+    ["functions", [["fc0", 3, 0], ["fc1", 3, 0], ["fc2", 3, 0], ["fc3", 3, 0], ["fc4", 3, 0]], [["calls", 3, 0], ["repeat-call", 3, 0], ["edit-definition", 3, 0], ["reset-bug", 3, 0], ["missing-call", 3, 0]]],
     ["review-abstraction", [["essential", 2, 0], ["state", 2, 0], ["decompose", 2, 0]], [["1", 4, 1], ["2", 4, 2], ["3", 4, 0], ["4", 4, 0]]],
     ["review-sandwich", [["clear", 2, 0], ["finite", 2, 0], ["structure", 2, 0]], [["1", 4, 1], ["2", 4, 0], ["3", 4, 0], ["4", 4, 1]]],
     ["review-flowchart", [["symbols", 2, 0], ["branches", 2, 0], ["loop", 2, 0]], [["1", 4, 0], ["2", 4, 1], ["3", 4, 2], ["4", 4, 0]]],
@@ -31,7 +34,7 @@ test("공개 수업의 개념 확인·퀴즈 선택지 수와 정답 번호는 �
 });
 
 test("엔트리 수업의 개념 확인·퀴즈 정답은 화면에서 같은 자리에만 있지 않고, 보기는 빠짐없이 한 번씩 보인다", () => {
-  const correct = new Map<string, number>([...concepts.map((c, i) => [`pc${i}`, c.correct] as const), ...[...questions, ...conditionalQuestions, ...conditionalConcepts, ...loopConcepts, ...loopQuestions].map((q) => [q.id, q.correct] as const)]);
+  const correct = new Map<string, number>([...concepts.map((c, i) => [`pc${i}`, c.correct] as const), ...[...questions, ...conditionalQuestions, ...conditionalConcepts, ...loopConcepts, ...loopQuestions, ...functionConcepts, ...functionQuestions].map((q) => [q.id, q.correct] as const)]);
   for (const lesson of RELEASED_LESSONS.filter((item) => item.practice.type === "programming")) {
     for (const items of [lesson.concepts.map((c) => c.question), lesson.quiz]) {
       for (const item of items) expect([...item.options.map((o) => o.id)].sort(), `${lesson.id}:${item.id}`).toEqual(item.options.map((_, i) => String(i)));
@@ -48,8 +51,8 @@ const noAnswer = (text: string, label: string) => {
   expect(text.length, label).toBeLessThanOrEqual(170);
 };
 
-test("세 엔트리 수업 퀴즈의 모든 오답 보기에는 힌트·보기와 다른 이유 문구가 있고 정답 보기에는 없다", () => {
-  for (const q of [...questions, ...conditionalQuestions, ...loopQuestions]) {
+test("엔트리 수업 퀴즈의 모든 오답 보기에는 힌트·보기와 다른 이유 문구가 있고 정답 보기에는 없다", () => {
+  for (const q of [...questions, ...conditionalQuestions, ...loopQuestions, ...functionQuestions]) {
     const why: Record<string, string> = q.why;
     expect(Object.keys(why).sort(), q.id).toEqual(q.options.map((_, i) => String(i)).filter((id) => id !== String(q.correct)));
     for (const [id, text] of Object.entries(why)) {
@@ -63,7 +66,7 @@ test("세 엔트리 수업 퀴즈의 모든 오답 보기에는 힌트·보기�
 
 test("개념 확인 오답 되묻기는 개념마다 있고 힌트·설명과 다르다", () => {
   const lessonConcepts = RELEASED_LESSONS.flatMap((lesson) => lesson.concepts);
-  const retries = [...concepts.map((c, i) => [`pc${i}`, c.retry] as const), ...[...conditionalConcepts, ...loopConcepts].map((c) => [c.id, c.retry] as const)];
+  const retries = [...concepts.map((c, i) => [`pc${i}`, c.retry] as const), ...[...conditionalConcepts, ...loopConcepts, ...functionConcepts].map((c) => [c.id, c.retry] as const)];
   for (const [id, retry] of retries) {
     const concept = lessonConcepts.find((c) => c.id === id)!;
     noAnswer(retry, id);
@@ -151,4 +154,54 @@ test("반복 개념·퀴즈의 블록 이름은 팔레트 이름과 같고, 만�
   expect(loopQuestions.find((q) => q.id === "pentagon")!.scene).toContain("  └ 이동 방향으로 100만큼 움직이기");
   expect(missionById("tree")!.experiment).not.toContain("물뿌리개");
   expect(missionById("escape")!.experiment).toContain("1과 1");
+});
+
+test("함수 개념은 다섯 개 모두 직접 해 보는 체험이 있고, 설명은 한 문장 남짓으로 짧다", () => {
+  const source = readFileSync("src/components/student/function-concepts.tsx", "utf8");
+  const experiences = source.match(/const EXPERIENCES[^\n]*/)![0];
+  for (const c of functionConcepts) {
+    expect(experiences).toMatch(new RegExp(`\\b${c.id}: [A-Z]\\w+`));
+    expect(c.explanation.length).toBeLessThanOrEqual(60);
+  }
+  // The experience replaces the static picture, so no stale function picture stays behind.
+  expect(readFileSync("src/components/student/concept-visual.tsx", "utf8")).not.toMatch(/^\s*fc\d: \{/m);
+});
+
+test("함수 퀴즈는 문항마다 실제 엔트리 블록 캡처를 보여 주고, 글 코드는 화면 읽기용으로 함께 남는다", () => {
+  const quiz = RELEASED_LESSONS.find((lesson) => lesson.id === "functions")!.quiz;
+  for (const q of quiz) {
+    expect(q.captures?.length).toBeGreaterThan(0);
+    for (const c of q.captures!) expect(existsSync(`public/concepts/${c.src}.png`)).toBe(true);
+    // The text mirror reads in the same order as the pictures: definition first, then the start script.
+    expect(q.scene?.[0]).toMatch(/^함수 정의하기 \[/);
+  }
+});
+
+test("반복문 퀴즈도 문항마다 실제 엔트리 블록 캡처를 보여 준다", () => {
+  for (const q of RELEASED_LESSONS.find((lesson) => lesson.id === "loops")!.quiz) {
+    expect(q.captures?.length).toBeGreaterThan(0);
+    for (const c of q.captures!) expect(existsSync(`public/concepts/${c.src}.png`)).toBe(true);
+  }
+});
+
+test("함수 퀴즈 캡처는 문항끼리 겹치지 않고, 첫 문항은 키를 눌렀을 때도 함수를 부를 수 있음을 보인다", () => {
+  // A later item must not be answerable by remembering an earlier item's picture.
+  const sources = functionQuestions.flatMap((q) => q.captures.map((c) => c.src));
+  expect(new Set(sources).size).toBe(sources.length);
+  expect(functionQuestions.find((q) => q.id === "calls")!.scene).toContain("스페이스 키를 눌렀을 때");
+});
+
+test("고장 난 도형 힌트는 고치기 전에 증상과 까닭을 말하고, 실험 문장은 제출 조건 값으로 되돌리라고 말한다", () => {
+  // Steps still give the whole solution (entry-palette.test.ts); each repair starts from what the student sees.
+  const steps = missionById("fix-shapes")!.steps;
+  expect(steps.some((step) => step.startsWith("오각형이 사각형처럼 보이면: 360 ÷ 5 = 72°"))).toBe(true);
+  expect(steps.some((step) => step.startsWith("육각형이 안 보이면:"))).toBe(true);
+  expect(missionById("windows")!.experiment).toContain("50으로 되돌려");
+  expect(missionById("flower")!.experiment).toContain("6번·60°");
+  expect(missionById("fix-shapes")!.experiment).toContain("72°로 되돌려");
+});
+
+test("함수 개념 체험·예시와 퀴즈 코드는 미션 조립(창문 정사각형, 꽃잎, 고양이 걸음, 오각형 72°)을 그대로 보여 주지 않는다", () => {
+  expect(readFileSync("src/components/student/function-concepts.tsx", "utf8")).not.toMatch(/창문|꽃잎|고양이 걸음|72/);
+  for (const text of [...functionConcepts.map((c) => c.example), ...functionQuestions.flatMap((q) => q.scene)]) expect(text).not.toMatch(/창문|꽃잎|고양이 걸음|72°|90°만큼 회전/);
 });

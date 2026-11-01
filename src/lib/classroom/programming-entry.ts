@@ -1,12 +1,12 @@
 import { buildNameProject } from "./name-entry";
-import { CONTAINER_BLOCKS, ENTRYBOT_SPRITE, ENTRY_PALETTE, ENTRY_SPRITES, LIBRARY_SPRITES, MAX_ADDED_OBJECTS, MAX_FREE_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, TRUSTED_SPRITES, VALUE_BLOCKS, blockLabel, spritePictures } from "./entry-palette";
+import { CAT_SPRITE, CONTAINER_BLOCKS, ENTRYBOT_SPRITE, ENTRY_PALETTE, ENTRY_SPRITES, LIBRARY_SPRITES, MAX_ADDED_OBJECTS, MAX_FREE_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, TRUSTED_SPRITES, VALUE_BLOCKS, blockLabel, spritePictures } from "./entry-palette";
 
 // `variables` shows A·B on the stage; `keyEvents` keeps the run waiting for arrow keys.
 // `objects` missions grade every object's event code instead of only the dog's.
 // `hint` is the summary line, `steps` the folded assembly order and `tip` one 💡 reason. They write
 // block chips as `type: text` (the Entry block type and the filled-in block a student builds);
 // read them with `hintParts`/`hintPlain`. `failure` is the grader's plain failure message.
-export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; steps: readonly string[]; tip?: string; failure: string; experiment: string; optional?: true; variables?: true; keyEvents?: true; objects?: true };
+export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; steps: readonly string[]; tip?: string; failure: string; experiment: string; optional?: true; variables?: true; keyEvents?: true; objects?: true; functions?: true };
 
 // Every mission across lessons, keyed by an id no other lesson reuses. Grading and
 // saved records look missions up here; lessons list theirs in LESSON_MISSIONS.
@@ -26,6 +26,10 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "safe", title: "도전 · 비밀번호 금고", goal: "대답이 1234가 될 때까지 비밀번호를 묻고, 맞히면 ‘금고가 열렸어요!’를 말하게 해 주세요.", hint: "반복은 ‘흐름’, 비교는 ‘판단’ 꾸러미에 있어요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` → `repeat_while_true: 참이 될 때까지 반복하기`", "조건 칸에 `boolean_basic_operator: 대답 = 1234`, 반복 안에 `ask_and_wait: 비밀번호를 묻고 대답 기다리기`", "반복 아래(바깥)에 `dialog: 금고가 열렸어요!를 말하기`"], tip: "묻기가 반복 안에 있어야 틀릴 때마다 다시 물어요.", failure: "묻기가 반복 안에, ‘금고가 열렸어요!’ 말하기가 반복 아래(바깥)에 있는지 확인해 보세요.", experiment: "틀린 번호를 몇 번 넣은 뒤 1234를 넣어 보세요. 질문이 몇 번 나왔나요?", optional: true },
   { id: "escape", title: "도전 · 방탈출", goal: "1번·2번 문제를 풀었으면 1, 못 풀었으면 0을 묻고 A·B에 저장한 뒤, 하나라도 풀었으면 ‘탈출 성공!’, 아니면 ‘탈출 실패’를 말하게 해 주세요.", hint: "묻기·변수는 ‘자료’, 두 조건을 묶는 블록은 ‘판단’ 꾸러미에 있어요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 1번 결과 묻기 → `set_variable: A를 대답으로 정하기`", "2번 결과 묻기 → `set_variable: B를 대답으로 정하기`", "`if_else: 만일 참(이)라면 아니면` 조건 칸에 `boolean_and_or: 참 또는 거짓`", "‘또는’의 두 칸에 `boolean_basic_operator: A 값 = 1`, `boolean_basic_operator: B 값 = 1`", "위 칸에 `dialog: 탈출 성공!을 말하기`, 아래 칸에 `dialog: 탈출 실패를 말하기`"], tip: "‘또는’은 하나만 참이어도 참, ‘그리고’는 둘 다 참이어야 참이에요.", failure: "1과 0, 0과 1에서 ‘탈출 성공!’, 0과 0에서 ‘탈출 실패’가 나오는지 A·B 저장과 조건을 확인해 보세요.", experiment: "1과 0, 0과 1, 0과 0을 넣어 보세요. 여유가 있으면 1과 1에서 어떻게 될지 먼저 예상해 보세요.", optional: true, variables: true },
   { id: "ride", title: "도전 · 놀이기구 탑승", goal: "키와 나이를 묻고 A·B에 저장한 뒤, 키가 130 이상이고 나이가 10 이상이면 ‘탈 수 있어요’, 아니면 ‘탈 수 없어요’를 말하게 해 주세요.", hint: "묻기·변수는 ‘자료’, 두 조건을 묶는 블록은 ‘판단’ 꾸러미에 있어요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 키 묻기 → `set_variable: A를 대답으로 정하기`", "나이 묻기 → `set_variable: B를 대답으로 정하기`(A▾를 B로)", "`if_else: 만일 참(이)라면 아니면` 조건 칸에 `boolean_and_or: 참 그리고 참`", "‘그리고’의 두 칸에 `boolean_basic_operator: A 값 ≥ 130`, `boolean_basic_operator: B 값 ≥ 10`", "위 칸에 `dialog: 탈 수 있어요를 말하기`, 아래 칸에 `dialog: 탈 수 없어요를 말하기`"], tip: "130cm·10살도 탈 수 있으니 두 비교 모두 ‘≥’를 골라요.", failure: "130과 10에서 ‘탈 수 있어요’, 129와 10·130과 9에서 ‘탈 수 없어요’가 나오는지 A·B 저장과 ‘그리고’ 조건을 확인해 보세요.", experiment: "130과 10, 129와 10, 130과 9를 넣어 보세요. 기준과 같은 수에서는 어떤 말이 나와야 할까요?", optional: true, variables: true },
+  { id: "cat-walk", title: "고양이 걸음", goal: "‘고양이 걸음’ 함수에 ‘다음 모양으로 바꾸기’를 넣고, ←·→ 키를 누르면 그 방향으로 10만큼 움직인 뒤 고양이 걸음을 부르게 해 주세요.", hint: "함수는 ‘함수’ 꾸러미의 ‘함수 만들기’로 만들어요.", steps: ["‘함수 만들기’ → 이름 칸에 ‘고양이 걸음’ 쓰기", "함수 안에 `change_to_next_shape: 다음 모양으로 바꾸기` → 함수 편집 창의 ‘저장’", "`when_some_key_pressed: 오른쪽 화살표 키를 눌렀을 때` → `move_x: x 좌표를 10만큼 바꾸기`", "그 아래에 ‘함수’ 꾸러미의 ‘고양이 걸음’ 블록 끼우기", "왼쪽 화살표 키로 같은 줄을 만들고 10을 -10으로"], tip: "키는 블록의 ▾를 눌러 바꿔요.", failure: "←·→ 키마다 10만큼 움직이고, 두 키 모두 ‘고양이 걸음’ 함수를 부르는지 확인해 보세요.", experiment: "실행 후 무대를 클릭하고 ←·→ 키를 번갈아 눌러 보세요. 걸을 때마다 모양이 바뀌어요.", keyEvents: true, functions: true },
+  { id: "windows", title: "창문 두 개", goal: "‘창문 그리기’ 함수로 한 변이 50인 정사각형을 그리고, 위치를 옮겨 한 번 더 불러 서로 닿지 않는 창문 두 개를 만들어 주세요.", hint: "그리는 블록은 모두 ‘창문 그리기’ 함수 안에 넣어요.", steps: ["‘창문 그리기’ 함수 안: `start_drawing: 그리기 시작하기` → `repeat_basic: 4번 반복하기`", "반복 안에 `move_direction: 50만큼 움직이기`, `direction_relative: 90° 회전하기`", "반복 아래에 `stop_drawing: 그리기 멈추기` → 함수 편집 창의 ‘저장’", "`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 창문 그리기", "그 아래 `move_x: x 좌표를 100만큼 바꾸기` → 창문 그리기 한 번 더"], failure: "창문 그리기 함수를 위치를 옮겨 두 번 부르고, 선은 모두 함수 안에서 그렸는지 확인해 보세요.", experiment: "한 창문만 크게 하려면 함수 안의 50만 바꾸면 될까요? 먼저 예상하고 실행해 본 뒤, 제출 전에는 50으로 되돌려 주세요.", functions: true },
+  { id: "fix-shapes", title: "고장 난 도형 고치기", goal: "정호의 코드는 정사각형·정오각형·정육각형을 그려야 하는데 이상하게 그려져요. 디버깅해서 세 도형을 모두 완성해 주세요.", hint: "먼저 실행해 보고, 예상과 다른 곳을 찾아요.", steps: ["시작하기를 눌러 어느 도형이 이상한지 보기", "오각형이 사각형처럼 보이면: 360 ÷ 5 = 72° → `direction_relative: 72° 회전하기`", "육각형이 안 보이면: 시작하기 줄 맨 아래에 ‘육각형 그리기’ 끼우기", "다시 실행해 정사각형·정오각형·정육각형이 맞는지 확인하기"], tip: "함수 블록을 두 번 누르면 편집 창이 열려요.", failure: "세 도형이 모두 닫혔는지, 도형마다 자기 함수로 그리는지 확인해 보세요.", experiment: "오각형의 회전 각도를 다른 값으로 바꿔 보며 도형이 어떻게 달라지는지 보세요. 실험 뒤에는 72°로 되돌려 제출해 주세요.", functions: true },
+  { id: "flower", title: "도전 · 꽃 피우기", goal: "‘꽃잎’ 함수로 한 변이 50인 정사각형을 그리고, 반복 안에서 6번 부르며 부를 때마다 60°씩 돌아 꽃을 만들어 주세요.", hint: "‘창문 그리기’처럼 함수를 만들고 반복 안에서 불러요.", steps: ["‘꽃잎’ 함수 안: `start_drawing: 그리기 시작하기` → `repeat_basic: 4번 반복하기`", "반복 안에 `move_direction: 50만큼 움직이기`, `direction_relative: 90° 회전하기`", "반복 아래에 `stop_drawing: 그리기 멈추기` → 함수 편집 창의 ‘저장’", "`when_run_button_click: 시작하기 버튼을 클릭했을 때` → `repeat_basic: 6번 반복하기`", "반복 안에 꽃잎 → `direction_relative: 60° 회전하기`"], failure: "반복 안에서 ‘꽃잎’을 6번 부르고, 부를 때마다 60°씩 도는지 확인해 보세요.", experiment: "6과 60을 8과 45로 바꾸면 어떤 꽃이 될까요? 제출은 6번·60°로 해 주세요.", optional: true, functions: true },
 ];
 
 // A hint string split into plain text and `{ type, text }` block chips.
@@ -41,9 +45,10 @@ const LESSON_MISSIONS: Readonly<Record<string, { active: readonly string[]; reti
   // The escape-room challenge was replaced by the ride check; earlier escape work stays readable.
   conditionals: { active: ["average", "pass", "freethrow", "ride"], retired: ["escape"] },
   loops: { active: ["square", "polygon", "tree", "safe"] },
+  functions: { active: ["cat-walk", "windows", "fix-shapes", "flower"] },
 };
 // These lessons start without the dog: every object is equal and students pick from the Entry library.
-const FREE_MISSIONS: ReadonlySet<string> = new Set([...LESSON_MISSIONS.conditionals.active, ...LESSON_MISSIONS.conditionals.retired!, ...LESSON_MISSIONS.loops.active]);
+const FREE_MISSIONS: ReadonlySet<string> = new Set([...LESSON_MISSIONS.conditionals.active, ...LESSON_MISSIONS.conditionals.retired!, ...LESSON_MISSIONS.loops.active, ...LESSON_MISSIONS.functions.active]);
 export const isFreeMission = (id: string) => FREE_MISSIONS.has(id);
 // Starter objects the mission needs; they cannot be deleted.
 export const LOCKED_OBJECTS: Readonly<Record<string, readonly string[]>> = { tree: ["can", "tree"] };
@@ -102,9 +107,19 @@ export function missionStarter(missionId: string): string {
     placed("tree", "tree-growth", "나무", { x: 110, y: -10, scaleX: 0.8, scaleY: 0.8 }),
     placed("soil", "soil", "흙", { scaleX: 0.5, scaleY: 0.5 }),
   ], -1, true);
+  if (missionId === "cat-walk") return buildProgrammingProject(undefined, [placed("cat", CAT_SPRITE, "고양이", { scaleX: 0.5, scaleY: 0.5 })], -1);
+  // Jeongho's shapes (textbook p.133) with two bugs: the pentagon turns 90° and the hexagon is never called.
+  if (missionId === "fix-shapes") return buildProgrammingProject(undefined, [{ ...placed("bot", ENTRYBOT_SPRITE, "엔트리봇", { x: -200, scaleX: 0.3, scaleY: 0.3 }), threads: [[{ ...starterBlock("when_run_button_click", null), x: 40, y: 50 }, starterBlock("func_fsq1", null), starterBlock("move_x", starterNumber(130), null), starterBlock("func_fpe1", null), starterBlock("move_x", starterNumber(130), null)]] }], -1, false, [], [
+    { id: "fsq1", name: "사각형 그리기", body: polygonBody(4, 90) }, { id: "fpe1", name: "오각형 그리기", body: polygonBody(5, 90) }, { id: "fhx1", name: "육각형 그리기", body: polygonBody(6, 60) },
+  ]);
   if (isFreeMission(missionId)) return buildProgrammingProject(undefined, [placed("bot", ENTRYBOT_SPRITE, "엔트리봇", { scaleX: 0.4, scaleY: 0.4 })], -1);
   return buildProgrammingProject();
 }
+
+const starterBlock = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
+const starterNumber = (value: number, type = "number") => starterBlock(type, String(value));
+// Pen down, `sides` sides of 50 turning `turn`° each, pen up.
+const polygonBody = (sides: number, turn: number): EntryNode[] => [starterBlock("start_drawing", null), { ...starterBlock("repeat_basic", starterNumber(sides), null), statements: [[starterBlock("move_direction", starterNumber(50), null), starterBlock("direction_relative", starterNumber(turn, "angle"), null)]] }, starterBlock("stop_drawing", null)];
 
 // Same per-mission limit the server enforces on the normalized project.
 export const MAX_PROJECT_BYTES = 32_768;
@@ -119,6 +134,11 @@ export const LESSON_VARIABLES: readonly string[] = ["cs-A", "cs-B", COUNTER.id];
 // A variable a student made in the attribute tab. `object` is the owner of an ‘이 오브젝트에서 사용’ variable.
 export type StudentVariable = { id: string; name: string; value: string | number; visible: boolean; x: number; y: number; object: string | null };
 export const MAX_STUDENT_VARIABLES = 10;
+// A plain Entry function (no parameters, return value or local variables). Entry keeps the body
+// inside the definition block (`function_create.statements[0]`) and calls it as `func_<id>`.
+export type ProgramFunction = { id: string; name: string; body: EntryNode[] };
+export const MAX_FUNCTIONS = 10;
+export const functionCallId = (type: string): string | null => /^func_([\w-]{1,30})$/.exec(type)?.[1] ?? null;
 // Entry 4.0.23 `Entry.Utils.isNumber`.
 export const entryNumeric = (v: unknown) => typeof v === "number" || typeof v === "string" && /^-?\d+\.?\d*(?:[eE][+-]?\d+)?$/.test(v);
 // A variable's value as Entry keeps it after loading (`Entry.parseNumber`): numeric text becomes a number unless it
@@ -129,8 +149,9 @@ const variableId = (v: unknown): v is string => typeof v === "string" && /^[\w-]
 
 // Entry places variable boxes from the stage centre with y growing downward: A·B and 클릭 수 sit top-left, clear of the
 // answer box that opens along the bottom while a question waits.
-export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0, counter = false, variables: readonly StudentVariable[] = []): string {
+export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0, counter = false, variables: readonly StudentVariable[] = [], functions: readonly ProgramFunction[] = []): string {
   const p = JSON.parse(buildNameProject()!);
+  if (functions.length) p.functions = functions.map((f) => ({ id: f.id, type: "normal", localVariables: [], useLocalVariables: false, content: JSON.stringify([[{ type: "function_create", x: 50, y: 30, params: [{ type: "function_field_label", params: [f.name, null] }, null], statements: [f.body] }]]) }));
   p.variables.push(...["A", "B"].map((name, i) => ({ id: `cs-${name}`, name, variableType: "variable", value: 0, visible: false, x: -210, y: -112 + i * 30, object: null, isCloud: false, isRealTime: false })));
   if (counter) p.variables.push({ id: COUNTER.id, name: COUNTER.name, variableType: "variable", value: 0, visible: true, x: -210, y: -112, object: null, isCloud: false, isRealTime: false });
   p.variables.push(...variables.map((v) => ({ ...v, variableType: "variable", isCloud: false, isRealTime: false })));
@@ -147,7 +168,7 @@ export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObj
 // `key` compares whole saved works (validation/submission). `gradeKey` covers only
 // the graded code (the dog's, or every object's in a dog-free project); the app no
 // longer reads it since name-run records were dropped (#74).
-export function parseProgrammingProject(raw: unknown): { project: Record<string, unknown>; key: string; gradeKey: string; bytes: number; threads: EntryNode[][]; order: string[]; added: AddedObject[]; mainIndex: number; free: boolean; variables: StudentVariable[] } | null {
+export function parseProgrammingProject(raw: unknown): { project: Record<string, unknown>; key: string; gradeKey: string; bytes: number; threads: EntryNode[][]; order: string[]; added: AddedObject[]; mainIndex: number; free: boolean; variables: StudentVariable[]; functions: ProgramFunction[] } | null {
   if (typeof raw !== "string" || raw.length > MAX_RAW_PROJECT_CHARS) return null;
   try {
     const p = JSON.parse(raw);
@@ -178,6 +199,15 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     // The editor stops the add panel at MAX_STUDENT_VARIABLES, but copying an object copies its own variables, so the
     // count is left to MAX_PROJECT_BYTES, which tells the student to trim the work. Names are not checked: blocks use ids.
     if (new Set(variables.map((v) => v.id)).size < variables.length) return null;
+    const rawFunctions: unknown[] = Array.isArray(p.functions) ? p.functions : [];
+    if (rawFunctions.length > MAX_FUNCTIONS) return null;
+    // Entry keeps functions in a plain object, so an id like __proto__ would not survive its own export,
+    // and its editor strips a leading func_ from ids, so func_a would open a.
+    const functionId = (v: unknown): v is string => variableId(v) && !(v in Object.prototype) && !v.startsWith("func_");
+    const declared = new Set(rawFunctions.map((f) => object(f) && functionId(f.id) ? f.id : ""));
+    // Entry drops a call whose function is gone (on delete and on load); dropping it here keeps reloads stable.
+    const dangling = (n: unknown) => object(n) && typeof n.type === "string" && functionCallId(n.type) !== null && !declared.has(functionCallId(n.type)!);
+    const live = (list: unknown[]) => list.filter((n) => !dangling(n));
     // The original blocks must match their own branch. Letting a malformed one fall
     // through to the generic rule would hand the interpreter and teacher view a shape they cannot read.
     const legacy = new Set([...reporters, "when_run_button_click", "when_some_key_pressed", "ask_and_wait", "set_variable", "move_direction", "direction_absolute", "dialog_time"]);
@@ -198,6 +228,7 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
       else if (!expression && type === "set_variable" && variableId(params[0])) next = [params[0], expr(params[1]), null];
       else if (!expression && ["move_direction", "direction_absolute"].includes(type)) next = [expr(params[0]), null];
       else if (!expression && type === "dialog_time" && ["speak", "think"].includes(String(params[2]))) next = [expr(params[0]), expr(params[1]), params[2], null];
+      else if (!expression && declared.has(functionCallId(type) ?? "") && params.length <= 1 && params[0] == null) next = [null];
       // The branches above keep the original lesson blocks' saved shape and keys.
       // Other palette blocks keep their native params; only containers keep statements.
       else if (!legacy.has(type) && (PALETTE_BLOCKS.has(type) || VALUE_BLOCKS.has(type)) && params.length <= 8) {
@@ -206,7 +237,7 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
         if (lists) {
           const inner = value.statements ?? Array.from({ length: lists }, () => []);
           if (!Array.isArray(inner) || inner.length !== lists) throw Error();
-          statements = inner.map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return t.map((n) => clean(n, object(n) && reporters.includes(String(n.type)), depth + 1)); });
+          statements = inner.map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return live(t).map((n) => clean(n, object(n) && reporters.includes(String(n.type)), depth + 1)); });
         }
       }
       else throw Error();
@@ -215,8 +246,27 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     const scriptOf = (o: Record<string, unknown>): EntryNode[][] => {
       const script = typeof o.script === "string" ? JSON.parse(o.script) : o.script ?? [];
       if (!Array.isArray(script) || script.length > 16) throw Error();
-      return script.map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return t.map((n) => clean(n, object(n) && reporters.includes(String(n.type)))); });
+      // A line that held only dropped calls goes too, as in Entry.
+      return script.filter((t: unknown) => !Array.isArray(t) || !t.length || live(t).length).map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return live(t).map((n) => clean(n, object(n) && reporters.includes(String(n.type)))); });
     };
+    // Only plain functions: a ‘값 반환’ type, parameter fields or local variables are refused.
+    const functions: ProgramFunction[] = rawFunctions.map((f) => {
+      if (!object(f) || !functionId(f.id) || f.type !== "normal" || f.useLocalVariables === true || (Array.isArray(f.localVariables) && f.localVariables.length)) throw Error();
+      const content = typeof f.content === "string" ? JSON.parse(f.content) : f.content;
+      const head = Array.isArray(content) && Array.isArray(content[0]) ? content[0][0] : null;
+      if (!object(head) || head.type !== "function_create" || !Array.isArray(head.params)) throw Error();
+      let name = "", label: unknown = head.params[0];
+      for (let i = 0; label != null; i++, label = (label as Record<string, unknown[]>).params[1]) {
+        if (i > 10 || !object(label) || label.type !== "function_field_label" || !Array.isArray(label.params) || typeof label.params[0] !== "string") throw Error();
+        name = `${name} ${label.params[0]}`;
+      }
+      // An emptied name label reads as Entry's default name instead of refusing the work.
+      name = name.trim().slice(0, 20).trim() || "함수";
+      const body = Array.isArray(head.statements) ? head.statements[0] ?? [] : [];
+      if (!Array.isArray(body) || body.length > 40) throw Error();
+      return { id: f.id, name, body: live(body).map((n) => clean(n, object(n) && reporters.includes(String(n.type)))) };
+    });
+    if (declared.size < functions.length) return null;
     const threads = mainIndex < 0 ? [] : scriptOf(p.objects[mainIndex]);
     const ids = new Set<string>();
     // Entry flips scaleX negative for vertical rotation; keep the sign and limit the size.
@@ -250,15 +300,17 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     const counter = Array.isArray(p.variables) && p.variables.some((v: unknown) => object(v) && v.id === COUNTER.id);
     // An ‘이 오브젝트에서 사용’ variable belongs to an object in this project; the dog is always rebuilt as `entrybot`.
     if (variables.some((v) => v.object !== null && !(v.object === "entrybot" && mainIndex >= 0) && !ids.has(v.object))) return null;
-    const project = JSON.parse(buildProgrammingProject(threads, added, mainIndex, counter, variables));
+    const project = JSON.parse(buildProgrammingProject(threads, added, mainIndex, counter, variables, functions));
     // Projects with only the dog keep the original key so saved checks still match.
     // Dog-free projects grade every object's code.
     const free = mainIndex < 0;
     const gradeKey = JSON.stringify(free ? added.map((o) => code(o.threads)) : code(threads));
     // Entry lists new variables first, so the key sorts them to stay the same after a reload.
     const sorted = [...variables].sort((a, b) => a.id < b.id ? -1 : 1);
-    const key = added.length || variables.length ? JSON.stringify({ main: code(threads), mainIndex, added: added.map((o) => ({ ...o, threads: code(o.threads) })), ...(counter ? { counter } : {}), ...(variables.length ? { variables: sorted } : {}) }) : gradeKey;
-    return { project, threads, added, mainIndex, free, variables, order: [...threads, ...added.flatMap((o) => o.threads)].flatMap(flat), key, gradeKey, bytes: projectBytes(project) };
+    // Functions join the key only when the work has some, so works without them keep their key.
+    const functionKey = [...functions].sort((a, b) => a.id < b.id ? -1 : 1).map((f) => ({ id: f.id, name: f.name, body: f.body.map(semantic) }));
+    const key = added.length || variables.length || functions.length ? JSON.stringify({ main: code(threads), mainIndex, added: added.map((o) => ({ ...o, threads: code(o.threads) })), ...(counter ? { counter } : {}), ...(variables.length ? { variables: sorted } : {}), ...(functions.length ? { functions: functionKey } : {}) }) : gradeKey;
+    return { project, threads, added, mainIndex, free, variables, functions, order: [...threads, ...added.flatMap((o) => o.threads)].flatMap(flat), key, gradeKey, bytes: projectBytes(project) };
   } catch { return null; }
 }
 
@@ -300,8 +352,9 @@ const REPORTER_BLOCKS: ReadonlySet<string> = new Set([
 // Student variables are shown by the names in `names` (id → name, from `variableNames`); a deleted one as Entry shows it.
 const variableName = (id: string, names: Readonly<Record<string, string>> = {}) => Object.hasOwn(names, id) ? names[id] : id === COUNTER.id ? COUNTER.name : LESSON_VARIABLES.includes(id) ? id.replace("cs-", "변수 ") : "대상 없음";
 export const variableNames = (variables: readonly StudentVariable[]): Record<string, string> => Object.fromEntries(variables.map((v) => [v.id, v.name]));
+export const functionNamesOf = (functions: readonly ProgramFunction[]): Record<string, string> => Object.fromEntries(functions.map((f) => [f.id, f.name]));
 
-export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, string>> = {}): string {
+export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, string>> = {}, functionNames: Readonly<Record<string, string>> = {}): string {
   const keyName = (v: unknown) => v === null || v === undefined ? "( )" : KEY_LABELS[String(v)] ?? `${v}번`;
   const val = (n: EntryNode, index: number): string => {
     const v = n.params[index];
@@ -345,6 +398,8 @@ export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, 
     return blockLabel(n.type);
   };
   const line = (n: EntryNode): string => {
+    const callee = functionCallId(n.type);
+    if (callee) return `‘${functionNames[callee] ?? "함수"}’ 부르기`;
     if (n.type === "when_run_button_click") return "시작하기 버튼을 클릭했을 때";
     if (n.type === "when_some_key_pressed") return `${keyName(n.params[1])} 키를 눌렀을 때`;
     if (n.type === "ask_and_wait") return `${expression(n.params[0] as EntryNode)} · 묻고 대답 기다리기`;
@@ -388,14 +443,14 @@ export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, 
 export function programmingProjectLines(raw: unknown): string[] {
   const parsed = parseProgrammingProject(raw);
   if (!parsed) return ["작품을 읽지 못했어요. 저장된 원문은 보존돼요."];
-  const names = variableNames(parsed.variables);
+  const names = variableNames(parsed.variables), functionNames = functionNamesOf(parsed.functions);
   // Inner blocks of repeat/if are listed under their block with └.
   const lines = (thread: EntryNode[], depth: number): string[] => thread.flatMap((n) => [
-    `${depth ? `${"  ".repeat(depth - 1)}└ ` : ""}${formatEntryNode(n, names)}`,
+    `${depth ? `${"  ".repeat(depth - 1)}└ ` : ""}${formatEntryNode(n, names, functionNames)}`,
     ...(n.statements ?? []).flatMap((inner, i) => [...(i ? [`${"  ".repeat(depth)}아니면`] : []), ...lines(inner, depth + 1)]),
   ]);
-  // The dog's code comes first; added objects follow with their names.
-  return [...parsed.threads.flatMap((thread) => lines(thread, 0)), ...parsed.added.flatMap((o) => {
+  // Function definitions come first, then the dog's code; added objects follow with their names.
+  return [...parsed.functions.flatMap((f) => [`함수 ‘${f.name}’`, ...lines(f.body, 1)]), ...parsed.threads.flatMap((thread) => lines(thread, 0)), ...parsed.added.flatMap((o) => {
     const code = o.threads.flatMap((thread) => lines(thread, 0));
     return code.length ? code.map((text) => `[${o.name}] ${text}`) : [`[${o.name}] 코드 없음`];
   })];
@@ -420,7 +475,17 @@ export function missionBlockIssue(id: string, raw: unknown): string | null {
   const graded = mission?.objects
     ? [...p.threads, ...p.added.flatMap((o) => o.threads)].filter((t) => OBJECT_EVENTS.includes(t[0]?.type))
     : (p.free ? p.added.flatMap((o) => o.threads) : p.threads).filter(starts);
-  const outside = (n: EntryNode): string | undefined => allowed.has(n.type) ? [...n.params.filter((v): v is EntryNode => object(v) && typeof v.type === "string"), ...(n.statements ?? []).flat()].map(outside).find(Boolean) : n.type;
+  // A graded line's function calls are followed into their bodies, each function once.
+  const bodies = new Map(p.functions.map((f) => [f.id, f.body])), entered = new Set<string>();
+  const outside = (n: EntryNode): string | undefined => {
+    const callee = functionCallId(n.type);
+    if (callee) {
+      if (entered.has(callee) || !bodies.has(callee)) return undefined;
+      entered.add(callee);
+      return bodies.get(callee)!.map(outside).find(Boolean);
+    }
+    return allowed.has(n.type) ? [...n.params.filter((v): v is EntryNode => object(v) && typeof v.type === "string"), ...(n.statements ?? []).flat()].map(outside).find(Boolean) : n.type;
+  };
   const type = graded.flat().map(outside).find(Boolean);
   if (type) {
     const instead = SIMILAR_BLOCKS[type];
