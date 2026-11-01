@@ -198,19 +198,112 @@ test("고장 난 도형의 함수 블록을 두 번 누르면 그 함수의 편�
   expect(await workspaceFrame(page).evaluate(() => (window as unknown as { Entry: { Func: { targetFunc: { id: string } } } }).Entry.Func.targetFunc.id)).toBe("fsq1");
 });
 
-// Every concept has a picture, and every capture in it has loaded.
-test("함수 개념 다섯 개는 모두 그림을 보여 주고, 그림 속 엔트리 블록 캡처가 불러와진다", async ({ page }) => {
+// Each concept is a hands-on experience; finishing it offers the check question and moves focus there.
+async function openConcepts(page: Page) {
   await page.goto("about:blank");
   await readyStudent(page.request);
   await db.collection("csWork").doc(`student-20101__${id}`).delete();
   await db.collection("csClasses").doc("2-1").update({ currentLessonId: id, openedLessonIds: [id] });
   await page.goto(`/classroom/${id}?from=dashboard`);
-  for (let i = 0; i < 5; i++) {
-    const figure = page.locator("article figure[role=img]");
-    await expect(figure).toBeVisible();
-    for (const img of await figure.locator("img").all()) await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth)).toBeGreaterThan(0);
-    if (i < 4) await page.getByRole("button", { name: "다음 개념" }).click();
-  }
+  return page.getByRole("region", { name: "함수 개념 체험" });
+}
+async function toCheck(page: Page, conceptId: string) {
+  const experience = page.getByRole("region", { name: "함수 개념 체험" });
+  await experience.getByRole("button", { name: "확인 문제로" }).click();
+  await expect(page.locator(`#concept-${conceptId} input[type=radio]`).first()).toBeFocused();
+}
+
+test("함수 개념 다섯 개는 직접 해 보는 체험이고, 체험을 마치면 확인 문제로 초점이 이어진다", async ({ page }) => {
+  test.setTimeout(90_000);
+  const experience = await openConcepts(page);
+  const status = experience.getByRole("status").first();
+  // 1 · A beat chosen by the student plays in order, and its Entry blocks follow the choice.
+  await expect(experience.getByRole("button", { name: "확인 문제로" })).toHaveCount(0);
+  await experience.getByRole("button", { name: "3번째 동작 짝, 눌러서 바꾸기" }).click();
+  await expect(experience.getByText("쿵 말하기")).toHaveCount(3);
+  await experience.getByRole("button", { name: "“비트!” 부르기" }).click();
+  await expect(status).toContainText("쿵·쿵·쿵");
+  // Finishing the experience hands focus to the next step instead of dropping it.
+  await expect(experience.getByRole("button", { name: "확인 문제로" })).toBeFocused();
+  await toCheck(page, "fc0");
+  await page.getByRole("button", { name: "다음 개념" }).click();
+  // 2 · Make the function like in Entry (create, fill, save); then a definition alone runs nothing, a call runs it.
+  await expect(experience.getByRole("button", { name: "‘비트’ 블록 끼우기" })).toBeDisabled();
+  await experience.getByRole("button", { name: "함수 만들기" }).click();
+  await expect(experience.getByRole("button", { name: "쿵 말하기 넣기" })).toBeFocused();
+  await experience.getByRole("button", { name: "쿵 말하기 넣기" }).click();
+  await experience.getByRole("button", { name: "쿵 말하기 넣기" }).click();
+  await experience.getByRole("button", { name: "짝 말하기 넣기" }).click();
+  await experience.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(experience.getByRole("button", { name: "시작하기 실행" })).toBeFocused();
+  // The call opens only after seeing that a saved definition alone runs nothing.
+  await expect(experience.getByRole("button", { name: "‘비트’ 블록 끼우기" })).toBeDisabled();
+  await experience.getByRole("button", { name: "시작하기 실행" }).click();
+  await expect(status).toContainText("아무것도 실행되지 않았어요");
+  await experience.getByRole("button", { name: "‘비트’ 블록 끼우기" }).click();
+  await experience.getByRole("button", { name: "시작하기 실행" }).click();
+  await expect(status).toContainText("쿵·쿵·짝");
+  await toCheck(page, "fc1");
+  await page.getByRole("button", { name: "다음 개념" }).click();
+  // 3 · A score with a loop and separate calls, next to the one definition every call runs.
+  await expect(experience.getByText("함수 정의하기")).toBeVisible();
+  await experience.getByRole("button", { name: "연주하기" }).click();
+  await expect(status).toContainText("비트를 5번 불렀어요");
+  await experience.getByRole("button", { name: "비트 더하기" }).click();
+  await experience.getByRole("button", { name: "연주하기" }).click();
+  await expect(status).toContainText("비트를 6번 불렀어요");
+  // Removing a block with the keyboard keeps focus on a neighbouring control.
+  await experience.getByRole("button", { name: "4번째 블록 빼기" }).press("Enter");
+  await expect(experience.getByRole("button", { name: "3번째 블록 빼기" })).toBeFocused();
+  await toCheck(page, "fc2");
+  await page.getByRole("button", { name: "다음 개념" }).click();
+  // 4 · Run first, then edit, then re-run: the edit shows at both calls.
+  await expect(experience.getByRole("button", { name: "짝 하나 더하기" })).toBeDisabled();
+  await experience.getByRole("button", { name: "실행", exact: true }).click();
+  await experience.getByRole("button", { name: "짝 하나 더하기" }).click();
+  await expect(experience.getByText("고치기 전 연주예요")).toBeVisible();
+  await experience.getByRole("button", { name: "다시 실행", exact: true }).click();
+  await expect(status).toContainText("두 곳 모두 쿵·쿵·짝·짝");
+  await toCheck(page, "fc3");
+  await page.getByRole("button", { name: "다음 개념" }).click();
+  // 5 · Run, see the open shape, change one value, run again. The pen blocks are part of the code.
+  await expect(experience.getByText("그리기 시작하기")).toBeVisible();
+  await experience.getByRole("button", { name: "실행", exact: true }).click();
+  await expect(status).toContainText("열린 모양");
+  for (let i = 0; i < 3; i++) await experience.getByRole("button", { name: "각도 늘리기" }).click();
+  await expect(status).toContainText("다시 실행");
+  await experience.getByRole("button", { name: "다시 실행", exact: true }).click();
+  await expect(status).toContainText("정삼각형");
+  await toCheck(page, "fc4");
+  // Extra strokes after the triangle are named as overlaps, not as an open shape.
+  await experience.getByRole("button", { name: "반복 늘리기" }).click();
+  await experience.getByRole("button", { name: "다시 실행", exact: true }).click();
+  await expect(status).toContainText("더 그려 겹쳤어요");
+  await expect(experience.getByRole("img", { name: /겹/ })).toBeVisible();
+  for (let i = 0; i < 2; i++) await experience.getByRole("button", { name: "반복 늘리기" }).click();
+  await experience.getByRole("button", { name: "다시 실행", exact: true }).click();
+  await expect(status).toContainText("두 번 겹쳐");
+});
+
+test("체험 초기화는 체험만 처음으로 되돌리고, 이미 푼 개념에서는 확인 문제로가 다음 개념 버튼으로 이어진다", async ({ page }) => {
+  const experience = await openConcepts(page);
+  await experience.getByRole("button", { name: "1번째 동작 쿵, 눌러서 바꾸기" }).click();
+  await expect(experience.getByText("짝 말하기")).toHaveCount(2);
+  await page.getByRole("button", { name: "체험 초기화" }).click();
+  await expect(experience.getByText("짝 말하기")).toHaveCount(1);
+  // A student who moves to the answers during the run keeps that focus when the run ends.
+  await experience.getByRole("button", { name: "“비트!” 부르기" }).click();
+  const firstAnswer = page.locator("#concept-fc0 input[type=radio]").first();
+  await firstAnswer.focus();
+  await expect(experience.getByRole("button", { name: "확인 문제로" })).toBeVisible();
+  await expect(firstAnswer).toBeFocused();
+  // Solve the check, then the experience's shortcut lands on the next button instead of the locked choices.
+  await page.locator("#concept-fc0").getByRole("radio", { name: "4번" }).check();
+  await page.getByRole("button", { name: "정답 확인" }).click();
+  await expect(page.locator("#concept-next-fc0")).toBeFocused();
+  await experience.getByRole("button", { name: "“비트!” 부르기" }).click();
+  await experience.getByRole("button", { name: "확인 문제로" }).click();
+  await expect(page.locator("#concept-next-fc0")).toBeFocused();
 });
 
 test("퀴즈 코드에 같은 줄이 여러 번 나와도 줄이 빠지지 않고 화면 오류가 없다", async ({ page }) => {

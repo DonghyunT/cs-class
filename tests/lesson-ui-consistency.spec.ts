@@ -97,7 +97,7 @@ test("공개 7수업의 개념 확인·퀴즈 오답은 힌트와 다른 문구�
     expect((await page.getByText("확인 결과는 저장 버튼 없이 바로 저장돼요.", { exact: true }).boundingBox())!.y - feedbackBox.y - feedbackBox.height, lesson.id).toBeGreaterThanOrEqual(11);
     const list = page.getByRole("navigation", { name: "개념 목록", exact: true });
     // Only lessons with a hands-on concept experience invite students to change things.
-    if (["conditionals", "loops", "functions"].includes(lesson.id)) { await expect(list).toContainText("예시를 읽고 결과를 예상한 뒤"); await expect(list).not.toContainText("직접 바꾸고"); }
+    if (["conditionals", "loops"].includes(lesson.id)) { await expect(list).toContainText("예시를 읽고 결과를 예상한 뒤"); await expect(list).not.toContainText("직접 바꾸고"); }
     else await expect(list).toContainText("직접 바꾸고");
     await page.getByRole("tab", { name: /^퀴즈/ }).click();
     await expect(page.getByText("힌트 보기", { exact: true })).toBeVisible();

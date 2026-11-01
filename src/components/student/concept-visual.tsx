@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import styles from "./concept-visual.module.css";
 
-// Small static pictures for the common concept screen of the conditionals, loops and functions lessons.
+// Small static pictures for the common concept screen of the conditionals and loops lessons.
+// The functions lesson shows hands-on experiences instead (function-concepts.tsx).
 // Keyed by concept id; lessons without an entry (reviews, programming-13) show nothing.
 const Tile = ({ tone = "blue", sub, children }: { tone?: "blue" | "true" | "false" | "purple"; sub?: string; children: ReactNode }) => <b className={styles.tile} data-tone={tone}>{children}{sub && <small>{sub}</small>}</b>;
 // `word` ops (AND, OR) are words: a `+` there read like addition.
-// `down` puts the arrow on its own row, for pictures too wide to sit side by side.
-const Op = ({ children, word, down }: { children: ReactNode; word?: true; down?: true }) => <span className={word ? styles.opWord : down ? styles.opDown : styles.op}>{children}</span>;
+const Op = ({ children, word }: { children: ReactNode; word?: true }) => <span className={word ? styles.opWord : styles.op}>{children}</span>;
 const Card = ({ title, children }: { title: string; children: ReactNode }) => <div className={styles.card}><strong>{title}</strong>{children}</div>;
 const Row = ({ children }: { children: ReactNode }) => <div className={styles.row}>{children}</div>;
 // Entry-like block: `kind` picks the block category colour (flow, brush).
@@ -31,16 +31,6 @@ const flow = { stroke: "#526173", strokeWidth: 2, fill: "none", markerEnd: "url(
 function Tree({ stage, clicks }: { stage: number; clicks: string }) {
   const crown = [5, 9][stage], trunk = [8, 14][stage];
   return <div className={styles.tree}><svg viewBox="0 0 70 80" width="70" height="80"><rect x="31" y={72 - trunk} width="8" height={trunk} rx="2" fill="#8a6a4a" /><circle cx="35" cy={72 - trunk - crown + 4} r={crown} fill="#4fae7b" /><ellipse cx="35" cy="73" rx="22" ry="5" fill="#d9c3a4" /></svg><small>{clicks}</small></div>;
-}
-
-// A function block chip, in a darker shade of Entry's function orange so white text stays readable.
-const Fn = ({ children }: { children: ReactNode }) => <b className={styles.fn}>{children}</b>;
-// What ‘비트 → 비트’ plays with the given definition; `added` marks the beat the edit added.
-const Beats = ({ label, beats, added }: { label: string; beats: string[]; added?: number }) => <div className={styles.beats}><small>{label}</small><div>{[0, 1].map((round) => <span key={round}>{beats.map((beat, i) => <i key={i} data-tone={beat === "짝" ? "purple" : undefined} data-new={i === added ? "" : undefined}>{beat}</i>)}</span>)}</div></div>;
-// The expected equilateral triangle, or what three 90° turns draw instead. Entry starts facing right
-// and turns clockwise, so the triangle points down.
-function Outline({ label, open }: { label: string; open?: true }) {
-  return <div className={styles.outline} data-open={open ? "" : undefined}><svg viewBox="0 0 76 66" width="76" height="66" aria-hidden="true"><path d={open ? "M14 9H62V57H14" : "M14 12H62L38 53.6z"} fill="none" stroke={open ? "#c2410c" : "#376fc8"} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" /></svg><small>{label}</small></div>;
 }
 
 export const CONCEPT_VISUALS: Record<string, { label: string; node: ReactNode }> = {
@@ -72,33 +62,6 @@ export const CONCEPT_VISUALS: Record<string, { label: string; node: ReactNode }>
   lc4: { label: "마우스를 클릭했을 때(무대를 클릭할 때마다) 클릭 수에 1만큼 더하고, 클릭 수 값이 5가 되면 나무가 다음 모양으로 바뀌어 한 단계 자람", node: <>
     <Capture src="loops-count-variable" width={367} height={172} />
     <Tree stage={0} clicks="클릭 수 0" /><Op>→</Op><Tree stage={1} clicks="클릭 수 5" /></> },
-  // The functions lesson starts from the class beat game, then shows the same idea as Entry's own blocks.
-  // fc0 shows one beat so it does not answer its own question; captures avoid the mission assemblies.
-  fc0: { label: "교실에서는 【비트】를 쿵·쿵·짝으로 정해 두고, 엔트리에서는 함수 정의하기 [비트] 안에 쿵, 쿵, 짝을 말하는 블록 세 개를 넣어 같은 묶음을 만듦", node: <>
-    <Card title="교실의 【비트】"><Row><Tile>쿵</Tile><Tile>쿵</Tile><Tile tone="purple">짝</Tile></Row></Card>
-    <Op>=</Op>
-    <Card title="엔트리의 함수 ‘비트’"><Capture src="functions-beat-define" width={326} height={159} /></Card></> },
-  fc1: { label: "① 정의: 함수 만들기를 눌러 이름과 블록을 넣고 저장하면 함수 정의하기 [비트]가 생기지만 아직 실행되지는 않음. ② 호출: 시작하기 버튼을 클릭했을 때 아래에 생긴 비트 블록을 끼우면 그곳에서 실행됨", node: <>
-    <Card title="① 정의 · 만들어 두기"><Capture src="functions-beat-define" width={326} height={159} /><small>함수 만들기 → 이름·블록 넣기 → ‘저장’</small></Card>
-    <Op>→</Op>
-    <Card title="② 호출 · 불러서 실행"><Capture src="functions-beat-call" width={253} height={85} /><small>끼운 곳에서 실행돼요</small></Card></> },
-  fc2: { label: "시작하기 아래 4번 반복하기 안에서 비트를 부르고, 반복 밖에서 브레이크와 비트를 부름. 연주는 비트 네 번, 브레이크, 비트 순서이고, 다섯 번의 비트는 모두 같은 비트 함수를 부른 것", node: <>
-    <Capture src="functions-beat-score" width={253} height={206} />
-    <Op down>↓</Op>
-    <Card title="연주 순서"><div className={styles.strip}>
-      <span className={styles.group}><Fn>비트</Fn><Fn>비트</Fn><Fn>비트</Fn><Fn>비트</Fn><small>반복 안의 비트 호출 4번</small></span>
-      <Fn>브레이크</Fn>
-      <span className={styles.solo}><Fn>비트</Fn><small>반복 밖의 비트 호출</small></span></div></Card></> },
-  fc3: { label: "【비트】 정의를 쿵·쿵·짝에서 쿵·쿵·짝·짝으로 고치고 다시 실행하면, 비트를 두 번 부른 연주가 쿵·쿵·짝 두 번에서 쿵·쿵·짝·짝 두 번으로 모두 바뀜. 함수 블록을 두 번 눌러 고치고 저장함", node: <>
-    <Card title="고치기 전"><Capture src="functions-beat-define" width={326} height={159} /><Beats label="실행하면: 비트 → 비트" beats={["쿵", "쿵", "짝"]} /></Card>
-    <Op down>↓</Op>
-    <Card title="정의에 짝 하나 더"><Capture src="functions-beat-define-edited" width={326} height={194} /><Beats label="다시 실행하면: 비트 → 비트" beats={["쿵", "쿵", "짝", "짝"]} added={3} /><small>함수 블록을 두 번 눌러 고치고 ‘저장’</small></Card></> },
-  // The debugging picture stops at the question: it shows the symptom and the code, not the fix.
-  fc4: { label: "디버깅 네 단계. ① 오류 찾기: 정삼각형을 예상했는데 한쪽이 열린 모양이 나옴. ② 원인 생각하기: 시작하기 아래 그리기 시작하기, 3번 반복하기 안의 이동 방향으로 50만큼 움직이기와 90° 회전하기, 그리기 멈추기 가운데 어느 블록 때문인지 생각함. ③ 고치기: 원인이 된 블록 하나를 고침. ④ 다시 실행해 확인: 예상과 같아졌는지 봄", node: <>
-    <Card title="① 오류 찾기"><Row><Outline label="예상" /><Outline label="실제" open /></Row></Card>
-    <Card title="② 원인 생각하기"><Capture src="functions-debug-triangle" width={327} height={240} /><small>어느 블록 때문일까?</small></Card>
-    <Card title="③ 고치기"><small>원인이 된 블록 하나 고치기</small></Card>
-    <Card title="④ 다시 실행해 확인"><small>예상과 같아졌나요?</small></Card></> },
 };
 
 export function ConceptVisual({ conceptId }: { conceptId: string }) {

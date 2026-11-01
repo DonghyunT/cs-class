@@ -156,13 +156,15 @@ test("반복 개념·퀴즈의 블록 이름은 팔레트 이름과 같고, 만�
   expect(missionById("escape")!.experiment).toContain("1과 1");
 });
 
-test("함수 개념은 다섯 개 모두 그림이 있고, 설명은 한 문장 남짓으로 짧으며, 그림 속 캡처 파일이 있다", () => {
-  const source = readFileSync("src/components/student/concept-visual.tsx", "utf8");
+test("함수 개념은 다섯 개 모두 직접 해 보는 체험이 있고, 설명은 한 문장 남짓으로 짧다", () => {
+  const source = readFileSync("src/components/student/function-concepts.tsx", "utf8");
+  const experiences = source.match(/const EXPERIENCES[^\n]*/)![0];
   for (const c of functionConcepts) {
-    expect(source).toMatch(new RegExp(`^\\s*${c.id}: \\{ label: "`, "m"));
+    expect(experiences).toMatch(new RegExp(`\\b${c.id}: [A-Z]\\w+`));
     expect(c.explanation.length).toBeLessThanOrEqual(60);
   }
-  for (const [, src] of source.matchAll(/<Capture src="(functions-[\w-]+)"/g)) expect(existsSync(`public/concepts/${src}.png`)).toBe(true);
+  // The experience replaces the static picture, so no stale function picture stays behind.
+  expect(readFileSync("src/components/student/concept-visual.tsx", "utf8")).not.toMatch(/^\s*fc\d: \{/m);
 });
 
 test("함수 퀴즈는 문항마다 실제 엔트리 블록 캡처를 보여 주고, 글 코드는 화면 읽기용으로 함께 남는다", () => {
@@ -192,7 +194,7 @@ test("고장 난 도형 힌트는 고치기 전에 증상과 까닭을 말하고
   expect(missionById("fix-shapes")!.experiment).toContain("72°로 되돌려");
 });
 
-test("함수 개념 그림·예시와 퀴즈 코드는 미션 조립(창문 정사각형, 꽃잎, 고양이 걸음, 오각형 72°)을 그대로 보여 주지 않는다", () => {
-  const labels = [...readFileSync("src/components/student/concept-visual.tsx", "utf8").matchAll(/^\s*fc\d: \{ label: "([^"]+)"/gm)].map((m) => m[1]);
-  for (const text of [...labels, ...functionConcepts.map((c) => c.example), ...functionQuestions.flatMap((q) => q.scene)]) expect(text).not.toMatch(/창문|꽃잎|고양이 걸음|72°|90°만큼 회전/);
+test("함수 개념 체험·예시와 퀴즈 코드는 미션 조립(창문 정사각형, 꽃잎, 고양이 걸음, 오각형 72°)을 그대로 보여 주지 않는다", () => {
+  expect(readFileSync("src/components/student/function-concepts.tsx", "utf8")).not.toMatch(/창문|꽃잎|고양이 걸음|72/);
+  for (const text of [...functionConcepts.map((c) => c.example), ...functionQuestions.flatMap((q) => q.scene)]) expect(text).not.toMatch(/창문|꽃잎|고양이 걸음|72°|90°만큼 회전/);
 });
