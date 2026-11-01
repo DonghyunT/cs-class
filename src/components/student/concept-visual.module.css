@@ -11,6 +11,7 @@
 .tile[data-tone="false"] { border-color: #efb3b3; background: #fdecec; color: #a03a3a; }
 .tile[data-tone="purple"] { border-color: #cdbbe6; background: #f1eafa; color: #6d47a3; }
 .op { font-size: 22px; font-weight: 700; color: #7a8aa6; }
+.opDown { flex-basis: 100%; text-align: center; font-size: 22px; font-weight: 700; color: #7a8aa6; line-height: 1; }
 .opWord { font-size: 15px; font-weight: 800; letter-spacing: 0.04em; color: #4b5b7a; }
 .block { padding: 7px 14px; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 650; white-space: nowrap; }
 .block[data-kind="flow"] { background: #0284c7; }
@@ -22,4 +23,23 @@
 .tree small { font-size: 14px; font-weight: 700; color: #1d6b5a; }
 /* lc1 needs about 466px in one row (314 + 18 + 20 + 18 + 96); narrower, stack it as capture, ↓, triangle. */
 @container (max-width: 479px) { .capture + .op { flex-basis: 100%; font-size: 0; text-align: center; } .capture + .op::after { content: "↓"; font-size: 22px; } }
+.fn { padding: 6px 12px; border-radius: 10px; background: #c2410c; color: #fff; font-size: 15px; font-weight: 650; white-space: nowrap; }
+.strip { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; gap: 8px; }
+.group, .solo { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 8px; border-radius: 12px; }
+.group { border: 2px solid #0284c7; }
+.solo { border: 2px dashed #c2410c; }
+.group > small, .solo > small { flex-basis: 100%; text-align: center; font-size: 14px; font-weight: 700; color: #0c5a85; }
+.solo > small { color: #9a3412; }
+.beats { display: grid; justify-items: center; gap: 6px; }
+.beats > small { font-size: 14px; color: #526173; }
+.beats > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.beats span { display: flex; gap: 3px; padding: 4px; border-radius: 8px; background: #fff3ea; }
+.beats i { display: inline-grid; place-items: center; min-width: 30px; height: 30px; border-radius: 6px; background: #eaf2ff; color: #2e5fab; font-size: 15px; font-style: normal; font-weight: 700; }
+.beats i[data-tone="purple"] { background: #f1eafa; color: #6d47a3; }
+.beats i[data-new] { outline: 2px solid #c2410c; outline-offset: 1px; }
+.outline { display: grid; justify-items: center; gap: 2px; }
+.outline small { font-size: 14px; font-weight: 700; color: #2e5fab; }
+.outline[data-open] small { color: #9a3412; }
+/* A card holding a capture takes the whole row when it would otherwise shrink the blocks; the arrow after it turns down. */
+@container (max-width: 719px) { .card:has(> .capture) { flex-basis: 100%; } .card:has(> .capture) + .op { flex-basis: 100%; font-size: 0; text-align: center; } .card:has(> .capture) + .op::after { content: "↓"; font-size: 22px; } }
 @media (max-width: 600px) { .visual { padding: 16px 12px; } .card { min-width: 0; flex: 1 1 130px; } }

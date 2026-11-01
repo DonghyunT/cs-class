@@ -6,7 +6,7 @@ import { loopConcepts, loopQuestions } from "../src/lib/classroom/loops-data";
 import { functionConcepts, functionQuestions } from "../src/lib/classroom/functions-data";
 import { UNIT_QUIZ_DATA } from "../src/lib/server/review-quiz.mjs";
 import { missionById } from "../src/lib/classroom/programming-entry";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const UNITS = { "review-abstraction": "abstraction", "review-sandwich": "algorithm", "review-flowchart": "flowchart" } as const;
 
@@ -154,4 +154,45 @@ test("반복 개념·퀴즈의 블록 이름은 팔레트 이름과 같고, 만�
   expect(loopQuestions.find((q) => q.id === "pentagon")!.scene).toContain("  └ 이동 방향으로 100만큼 움직이기");
   expect(missionById("tree")!.experiment).not.toContain("물뿌리개");
   expect(missionById("escape")!.experiment).toContain("1과 1");
+});
+
+test("함수 개념은 다섯 개 모두 그림이 있고, 설명은 한 문장 남짓으로 짧으며, 그림 속 캡처 파일이 있다", () => {
+  const source = readFileSync("src/components/student/concept-visual.tsx", "utf8");
+  for (const c of functionConcepts) {
+    expect(source).toMatch(new RegExp(`^\\s*${c.id}: \\{ label: "`, "m"));
+    expect(c.explanation.length).toBeLessThanOrEqual(60);
+  }
+  for (const [, src] of source.matchAll(/<Capture src="(functions-[\w-]+)"/g)) expect(existsSync(`public/concepts/${src}.png`)).toBe(true);
+});
+
+test("함수 퀴즈는 문항마다 실제 엔트리 블록 캡처를 보여 주고, 글 코드는 화면 읽기용으로 함께 남는다", () => {
+  const quiz = RELEASED_LESSONS.find((lesson) => lesson.id === "functions")!.quiz;
+  for (const q of quiz) {
+    expect(q.captures?.length).toBeGreaterThan(0);
+    for (const c of q.captures!) expect(existsSync(`public/concepts/${c.src}.png`)).toBe(true);
+    // The text mirror reads in the same order as the pictures: definition first, then the start script.
+    expect(q.scene?.[0]).toMatch(/^함수 정의하기 \[/);
+  }
+});
+
+test("함수 퀴즈 캡처는 문항끼리 겹치지 않고, 첫 문항은 키를 눌렀을 때도 함수를 부를 수 있음을 보인다", () => {
+  // A later item must not be answerable by remembering an earlier item's picture.
+  const sources = functionQuestions.flatMap((q) => q.captures.map((c) => c.src));
+  expect(new Set(sources).size).toBe(sources.length);
+  expect(functionQuestions.find((q) => q.id === "calls")!.scene).toContain("스페이스 키를 눌렀을 때");
+});
+
+test("고장 난 도형 힌트는 고치기 전에 증상과 까닭을 말하고, 실험 문장은 제출 조건 값으로 되돌리라고 말한다", () => {
+  // Steps still give the whole solution (entry-palette.test.ts); each repair starts from what the student sees.
+  const steps = missionById("fix-shapes")!.steps;
+  expect(steps.some((step) => step.startsWith("오각형이 사각형처럼 보이면: 360 ÷ 5 = 72°"))).toBe(true);
+  expect(steps.some((step) => step.startsWith("육각형이 안 보이면:"))).toBe(true);
+  expect(missionById("windows")!.experiment).toContain("50으로 되돌려");
+  expect(missionById("flower")!.experiment).toContain("6번·60°");
+  expect(missionById("fix-shapes")!.experiment).toContain("72°로 되돌려");
+});
+
+test("함수 개념 그림·예시와 퀴즈 코드는 미션 조립(창문 정사각형, 꽃잎, 고양이 걸음, 오각형 72°)을 그대로 보여 주지 않는다", () => {
+  const labels = [...readFileSync("src/components/student/concept-visual.tsx", "utf8").matchAll(/^\s*fc\d: \{ label: "([^"]+)"/gm)].map((m) => m[1]);
+  for (const text of [...labels, ...functionConcepts.map((c) => c.example), ...functionQuestions.flatMap((q) => q.scene)]) expect(text).not.toMatch(/창문|꽃잎|고양이 걸음|72°|90°만큼 회전/);
 });

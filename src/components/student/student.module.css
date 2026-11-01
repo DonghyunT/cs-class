@@ -176,7 +176,7 @@
 .quizTop .learningNav>button[aria-current="step"]{border-color:var(--stage-quiz);background:var(--stage-quiz-soft);color:var(--stage-quiz-ink)}
 .quizBody .quizCard{padding:26px 30px;border-radius:20px}
 .quizCard h3{font-size:26px;line-height:1.4;margin:0 0 18px}
-.quizScene{display:grid;gap:6px;border-radius:14px;background:var(--stage-quiz-soft);padding:16px 18px;margin:0 0 18px}.quizScene code{font-size:18px;font-weight:500;line-height:1.7;color:var(--stage-quiz-ink);white-space:pre-wrap;overflow-wrap:anywhere}
+.quizScene{display:grid;gap:6px;border-radius:14px;background:var(--stage-quiz-soft);padding:16px 18px;margin:0 0 18px}.quizScene code{font-size:18px;font-weight:500;line-height:1.7;color:var(--stage-quiz-ink);white-space:pre-wrap;overflow-wrap:anywhere}.quizScene[data-captures]{position:relative;display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px 20px}.quizScene img{max-width:100%;height:auto}
 .quizCard .answers{display:grid;gap:10px}
 .quizCard .answers label{margin:0;padding:12px 16px;min-height:50px}
 .quizCard h3:focus{outline:3px solid #376fc8;outline-offset:5px}

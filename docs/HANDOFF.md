@@ -10,7 +10,7 @@
 
 ## 최근 반영
 
-- **함수 수업 추가** (11/1, `feat/functions-lesson`): 엔트리 정규 수업 `functions`([PRD §4.1.4](PRD.md#414-정규-수업-나만의-명령-함수), [계획](archive/cs-class/2026-11-01-completed-plans/functions-lesson.md)). 이 수업만 엔트리 함수를 켜고 저장·채점·편집 중 보호를 더함. 검증: typecheck·lint·build, 단위 26·로직 95, 파일 지정 E2E 112 중 111 통과(1개 단독 재실행 통과), 세 검토자 만족, 전체 E2E 미실행.
+- **함수 수업 추가** (11/1, `feat/functions-lesson`): 엔트리 정규 수업 `functions`([PRD §4.1.4](PRD.md#414-정규-수업-나만의-명령-함수), [계획](archive/cs-class/2026-11-01-completed-plans/functions-lesson.md)). 이 수업만 엔트리 함수·편집 중 보호를 켬. 개념·퀴즈는 엔트리 블록 캡처 그림 위주(학생 입장 검토 3명 만족). 검증: build·단위 26·로직 76, 파일 지정 E2E 9개 스펙 80 통과, 전체 E2E 미실행.
 - **#99 수행평가 진행률** (10/30): 교사 메뉴 `수행평가`에서 고른 정규 수업의 학생별 진행률·점수(100% 30점, 5%마다 −2점, 최저 6점)를 보고 CSV로 받음([PRD §5.6](PRD.md#수행평가-진행률)). 학생·교사 진행률 고리도 개념·퀴즈·실습 1/3 평균(내림)으로 바뀜. 검증: typecheck·lint, 단위 26·16·로직 76, 파일 지정 E2E 24개 스펙 190 중 179 통과·8 건너뜀·3 실패(기대값 갱신 등, 재실행 통과), 로컬 화면 1280·390px 확인, 전체 E2E(GitHub, `1efcc65`) 450 통과·14 건너뜀. 리뷰 반영으로 CSV 링크를 문서에 붙여 누름(Firefox 미확인).
 - **#97·#98 엔트리 라이브러리 Cloudflare CDN** (10/30): 운영 빌드만 작업실 HTML의 `/entryjs/vendor/` 주소를 Cloudflare Workers 정적 파일 `cs-class-entry`로 바꿈(CDN에 같은 지문이 없으면 Vercel 파일 유지, 작업실 `workspace.*`·작품 그림은 Vercel). 첫 작업실의 Vercel 요청 약 93→5건(가짜 CDN E2E). 검증: 단위 26, 파일 지정 E2E 8개 스펙 59 통과, 실제 CDN 파일 555개 대조·엔트리 E2E 4 통과, 학교 PC 접속 확인, 전체 E2E 미실행. 끄기·라이브러리 교체 순서는 [CDN 절차](FIREBASE_SETUP.md#엔트리-라이브러리-cdn), 계획은 [보관 원문](archive/cs-class/2026-10-30-completed-plans/entry-assets-cloudflare.md).
 - **#96 문서·코드 정리** (10/30): #94·#95 뒤 문서를 현재 상태로 맞추고, `src/proxy.ts`를 엔트리 선별 E2E에 연결, 배포 제외에 `private` 추가, 쓰지 않는 코드·낡은 주석 제거. 검증: typecheck·lint, 단위 21·72, 파일 지정 E2E 6개 스펙 40 통과, 전체 E2E 미실행.

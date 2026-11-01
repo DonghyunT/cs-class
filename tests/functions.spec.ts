@@ -198,6 +198,21 @@ test("고장 난 도형의 함수 블록을 두 번 누르면 그 함수의 편�
   expect(await workspaceFrame(page).evaluate(() => (window as unknown as { Entry: { Func: { targetFunc: { id: string } } } }).Entry.Func.targetFunc.id)).toBe("fsq1");
 });
 
+// Every concept has a picture, and every capture in it has loaded.
+test("함수 개념 다섯 개는 모두 그림을 보여 주고, 그림 속 엔트리 블록 캡처가 불러와진다", async ({ page }) => {
+  await page.goto("about:blank");
+  await readyStudent(page.request);
+  await db.collection("csWork").doc(`student-20101__${id}`).delete();
+  await db.collection("csClasses").doc("2-1").update({ currentLessonId: id, openedLessonIds: [id] });
+  await page.goto(`/classroom/${id}?from=dashboard`);
+  for (let i = 0; i < 5; i++) {
+    const figure = page.locator("article figure[role=img]");
+    await expect(figure).toBeVisible();
+    for (const img of await figure.locator("img").all()) await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth)).toBeGreaterThan(0);
+    if (i < 4) await page.getByRole("button", { name: "다음 개념" }).click();
+  }
+});
+
 test("퀴즈 코드에 같은 줄이 여러 번 나와도 줄이 빠지지 않고 화면 오류가 없다", async ({ page }) => {
   const keyErrors: string[] = [];
   page.on("console", (message) => { if (message.type() === "error" && message.text().includes("same key")) keyErrors.push(message.text()); });
@@ -212,7 +227,12 @@ test("퀴즈 코드에 같은 줄이 여러 번 나와도 줄이 빠지지 않�
   let stars = 0;
   for (let i = 0; i < 5; i++) {
     await expect(scene).toBeVisible();
-    if (await page.getByRole("heading", { name: "이 코드를 실행하면 도장은 몇 번 찍힐까요?" }).isVisible()) stars = await scene.getByText("└ 별 찍기").count();
+    // Students read Entry's own blocks; the code lines stay for screen readers only.
+    const pictures = scene.locator("img");
+    expect(await pictures.count()).toBeGreaterThan(0);
+    for (const img of await pictures.all()) await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth)).toBeGreaterThan(0);
+    expect(await scene.locator("code").first().evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
+    if (await page.getByRole("heading", { name: "스페이스 키를 한 번 누르면 도장은 몇 번 찍힐까요?" }).isVisible()) stars = await scene.getByText("└ 별 찍기").count();
     // The last question shows another button instead of ‘다음 문제’.
     const next = page.getByRole("button", { name: "다음 문제" });
     if (!await next.count()) break;
