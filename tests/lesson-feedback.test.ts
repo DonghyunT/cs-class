@@ -177,6 +177,13 @@ test("함수 퀴즈는 문항마다 실제 엔트리 블록 캡처를 보여 주
   }
 });
 
+test("반복문 퀴즈도 문항마다 실제 엔트리 블록 캡처를 보여 준다", () => {
+  for (const q of RELEASED_LESSONS.find((lesson) => lesson.id === "loops")!.quiz) {
+    expect(q.captures?.length).toBeGreaterThan(0);
+    for (const c of q.captures!) expect(existsSync(`public/concepts/${c.src}.png`)).toBe(true);
+  }
+});
+
 test("함수 퀴즈 캡처는 문항끼리 겹치지 않고, 첫 문항은 키를 눌렀을 때도 함수를 부를 수 있음을 보인다", () => {
   // A later item must not be answerable by remembering an earlier item's picture.
   const sources = functionQuestions.flatMap((q) => q.captures.map((c) => c.src));
