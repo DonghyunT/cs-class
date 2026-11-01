@@ -60,6 +60,8 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     const bodies = new Map(p!.functions.map((f) => [f.id, f.body]));
     const calls: CallRecord[] = [], loopStack: number[] = [], loopPasses: number[] = [], shapes: { call: number | null }[] = [];
     let current: number | null = null, callDepth = 0;
+    // Entry keeps 방향 at 0 unless the object rotates freely (회전 방식), so ‘방향 회전’ then moves nothing.
+    let rotationLocked = false;
     // The strokes drawn inside each running loop, marked `repeated` when that loop ends having drawn on two or more passes.
     const open: Stroke[][] = [];
     const step = () => { if (++steps > MAX_STEPS) throw new MissionError("실행이 너무 길어요. 반복이나 조건을 다시 확인해 주세요."); };
@@ -160,14 +162,14 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         else if (n.type === "direction_absolute") direction = number(evaluate(n.params[0] as EntryNode).value);
         else if (n.type === "move_direction") { const distance = number(evaluate(n.params[0] as EntryNode).value), angle = (direction + rotation) * Math.PI / 180; goTo(x + Math.sin(angle) * distance, y + Math.cos(angle) * distance); }
         else if (n.type === "direction_relative") direction += number(evaluate(n.params[0] as EntryNode).value);
-        else if (n.type === "rotate_relative") rotation += number(evaluate(n.params[0] as EntryNode).value);
+        else if (n.type === "rotate_relative") { const turn = number(evaluate(n.params[0] as EntryNode).value); if (!rotationLocked) rotation += turn; }
         else if (n.type === "locate_xy") goTo(number(evaluate(n.params[0] as EntryNode).value), number(evaluate(n.params[1] as EntryNode).value));
         else if (n.type === "move_x") goTo(x + number(evaluate(n.params[0] as EntryNode).value), y);
         else if (n.type === "move_y") goTo(x, y + number(evaluate(n.params[0] as EntryNode).value));
         // Timed moves and turns end where Entry's frames end; the seconds do not change the result.
         else if (n.type === "move_xy_time") goTo(x + number(evaluate(n.params[1] as EntryNode).value), y + number(evaluate(n.params[2] as EntryNode).value));
         else if (n.type === "locate_xy_time") goTo(number(evaluate(n.params[1] as EntryNode).value), number(evaluate(n.params[2] as EntryNode).value));
-        else if (n.type === "rotate_by_time") rotation += number(evaluate(n.params[1] as EntryNode).value);
+        else if (n.type === "rotate_by_time") { const turn = number(evaluate(n.params[1] as EntryNode).value); if (!rotationLocked) rotation += turn; }
         else if (n.type === "direction_relative_duration") direction += number(evaluate(n.params[1] as EntryNode).value);
         // ‘( ) 방향으로 ( )만큼 움직이기’ ignores the object's direction.
         else if (n.type === "move_to_angle") { const angle = number(evaluate(n.params[0] as EntryNode).value) * Math.PI / 180, distance = number(evaluate(n.params[1] as EntryNode).value); goTo(x + Math.sin(angle) * distance, y + Math.cos(angle) * distance); }
@@ -211,8 +213,8 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     return {
       result, variables,
       run(list: EntryNode[], who: Actor | null) { actor = who; exec(list); },
-      // Start from an object's saved 이동 방향 and 방향 instead of Entry's defaults.
-      orient(moving: number, turned: number) { direction = moving; rotation = turned; },
+      // Start from an object's saved 이동 방향, 방향 and 회전 방식 instead of Entry's defaults.
+      orient(moving: number, turned: number, method: string) { rotationLocked = method !== "free"; direction = moving; rotation = rotationLocked ? 0 : turned; },
       // One more watch of every forever loop, as frames passing on the stage.
       frames() { for (const { body, actor: who } of [...forevers]) { actor = who; let left = FRAMES; loop(body, () => left-- > 0); } },
     };
@@ -310,6 +312,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     const moves: Record<string, number> = { 39: 10, 37: -10 }, chains: string[][] = [];
     for (const order of [["39", "37", "39", "39", "37"], ["37", "37", "39", "37", "39"]]) {
       const m = machine([]), who = actorOf(owner.id, owner.sprite, owner.picture);
+      m.orient(owner.entity.direction, owner.entity.rotation, owner.rotateMethod);
       for (const key of order) {
         const { x, y, shapes } = m.result(), changes = shapes.length, r = run(key, [], m, who);
         if (Math.abs(r.x - x - moves[key]) > 0.0001 || Math.abs(r.y - y) > 0.0001 || r.shapes.length !== changes + 1) return false;
@@ -326,7 +329,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   // A drawing mission's start line, run from its owner's saved heading (touching shapes depend on it).
   const drawing = () => {
     const m = machine([]), owner = p!.added.find((o) => o.threads.some((t) => t[0]?.type === "when_run_button_click"));
-    if (owner) m.orient(owner.entity.direction, owner.entity.rotation);
+    if (owner) m.orient(owner.entity.direction, owner.entity.rotation, owner.rotateMethod);
     return insideFunctions(run("click", [], m));
   };
   // Two calls of one function each draw a side-50 square, and the squares do not touch.

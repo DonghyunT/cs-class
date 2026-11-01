@@ -201,8 +201,9 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     if (new Set(variables.map((v) => v.id)).size < variables.length) return null;
     const rawFunctions: unknown[] = Array.isArray(p.functions) ? p.functions : [];
     if (rawFunctions.length > MAX_FUNCTIONS) return null;
-    // Entry keeps functions in a plain object, so an id like __proto__ would not survive its own export.
-    const functionId = (v: unknown): v is string => variableId(v) && !(v in Object.prototype);
+    // Entry keeps functions in a plain object, so an id like __proto__ would not survive its own export,
+    // and its editor strips a leading func_ from ids, so func_a would open a.
+    const functionId = (v: unknown): v is string => variableId(v) && !(v in Object.prototype) && !v.startsWith("func_");
     const declared = new Set(rawFunctions.map((f) => object(f) && functionId(f.id) ? f.id : ""));
     // Entry drops a call whose function is gone (on delete and on load); dropping it here keeps reloads stable.
     const dangling = (n: unknown) => object(n) && typeof n.type === "string" && functionCallId(n.type) !== null && !declared.has(functionCallId(n.type)!);

@@ -1118,3 +1118,24 @@ test("QA: 이름 칸을 비운 함수는 기본 이름 ‘함수’로 읽는다
 test("QA: 고장 난 도형 미션은 이미 있는 함수를 여는 방법을 알려 준다", () => {
   expect(missionById("fix-shapes")!.tip).toContain("두 번");
 });
+
+test("QA2: 고양이 걸음은 고양이의 저장된 방향으로 움직임을 판단한다", () => {
+  const step = fnOf("step", [node("change_to_next_shape", "next", null)]);
+  const cat = (direction: number) => buildProgrammingProject(undefined, [{ ...newAddedObject(CAT, 0, true)!, id: "cat", threads: [keyLine("39", forward(number("10")), callOf("step")), keyLine("37", forward(number("-10")), callOf("step"))], entity: { ...newAddedObject(CAT, 0, true)!.entity, direction } }], -1, false, [], [step]);
+  expect(checkProgrammingMission("cat-walk", cat(90)).passed).toBe(true);
+  // Facing 45°, Entry moves the cat diagonally, about 7.07 on each axis.
+  expect(checkProgrammingMission("cat-walk", cat(45)).passed).toBe(false);
+});
+
+test("QA2: 회전 방식이 자유가 아니면 ‘방향 회전’은 그리는 방향을 바꾸지 않는다", () => {
+  const spinning = fnOf("win", [node("start_drawing", null), loopOf(number("4"), [forward(number("50")), turn(node("angle", "90"), "rotate_relative")]), node("stop_drawing", null)]);
+  const windowsWith = (rotateMethod: AddedObject["rotateMethod"]) => buildProgrammingProject(undefined, [{ ...newAddedObject(ENTRYBOT_SPRITE, 0, true)!, id: "actor", rotateMethod, threads: [[start(), callOf("win"), moveX("100"), callOf("win")]] }], -1, false, [], [spinning]);
+  expect(checkProgrammingMission("windows", windowsWith("free")).passed).toBe(true);
+  expect(checkProgrammingMission("windows", windowsWith("none")).passed).toBe(false);
+  expect(checkProgrammingMission("windows", windowsWith("vertical")).passed).toBe(false);
+});
+
+test("QA2: func_로 시작하는 함수 id는 읽지 않는다", () => {
+  const raw = withFunctionEdit((p, fn) => { fn.id = "func_a"; p.objects[0].script = p.objects[0].script.replaceAll("func_win1", "func_func_a"); });
+  expect(parseProgrammingProject(raw)).toBeNull();
+});
