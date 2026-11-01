@@ -197,3 +197,27 @@ test("고장 난 도형의 함수 블록을 두 번 누르면 그 함수의 편�
   await expect.poll(() => editing(page)).toBe(true);
   expect(await workspaceFrame(page).evaluate(() => (window as unknown as { Entry: { Func: { targetFunc: { id: string } } } }).Entry.Func.targetFunc.id)).toBe("fsq1");
 });
+
+test("퀴즈 코드에 같은 줄이 여러 번 나와도 줄이 빠지지 않고 화면 오류가 없다", async ({ page }) => {
+  const keyErrors: string[] = [];
+  page.on("console", (message) => { if (message.type() === "error" && message.text().includes("same key")) keyErrors.push(message.text()); });
+  await page.goto("about:blank");
+  await readyStudent(page.request);
+  await db.collection("csWork").doc(`student-20101__${id}`).delete();
+  await db.collection("csClasses").doc("2-1").update({ currentLessonId: id, openedLessonIds: [id] });
+  const work: Work = await (await page.request.get(endpoint)).json();
+  expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "quiz" } } })).status()).toBe(200);
+  await page.goto(`/classroom/${id}?from=dashboard`);
+  const scene = page.getByRole("group", { name: "읽어 볼 코드" });
+  let stars = 0;
+  for (let i = 0; i < 5; i++) {
+    await expect(scene).toBeVisible();
+    if (await page.getByRole("heading", { name: "이 코드를 실행하면 도장은 몇 번 찍힐까요?" }).isVisible()) stars = await scene.getByText("└ 별 찍기").count();
+    // The last question shows another button instead of ‘다음 문제’.
+    const next = page.getByRole("button", { name: "다음 문제" });
+    if (!await next.count()) break;
+    await next.click();
+  }
+  expect(stars).toBe(3);
+  expect(keyErrors).toEqual([]);
+});
