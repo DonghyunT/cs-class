@@ -60,6 +60,8 @@ test("함수 편집 중에는 저장·검증·이동이 멈추고, 편집 창을
   await frame.locator("#entryCategoryfunc").click();
   await press(page, frame.locator("tspan", { hasText: "함수 만들기" }));
   await expect.poll(() => editing(page)).toBe(true);
+  // The editor menu offers only plain functions: no parameter fields, no properties panel.
+  for (const hidden of ["문자/숫자값", "판단값", "함수 속성 보기"]) await expect(frame.getByText(hidden, { exact: true }), hidden).not.toBeVisible();
   const before = await status(page).textContent();
   const revision = async () => ((await (await page.request.get(endpoint)).json()) as Work).revision;
   const saved = await revision();
@@ -102,6 +104,8 @@ test("함수 안에서만 그린 선이 실행 뒤 남는다", async ({ page }) 
   await open(page, id, "windows", windows);
   await entryStart(page).click();
   await expect(page.getByText("정지하면 무대가 처음 상태로 돌아가고", { exact: false }).first()).toBeVisible({ timeout: 15000 });
+  // keepsDrawing reads a function body through its Code's block list.
+  expect(await workspaceFrame(page).evaluate(() => typeof (window as unknown as { Entry: { variableContainer: { functions_: Record<string, { content: { getBlockList?: unknown } }> } } }).Entry.variableContainer.functions_.win1.content.getBlockList)).toBe("function");
   const drawn = await workspaceFrame(page).evaluate(() => {
     const entry = (window as unknown as { Entry: { container: { getAllObjects: () => { entity: { shapes: unknown[] } }[] } } }).Entry;
     return entry.container.getAllObjects().some((object) => object.entity.shapes.length > 0);
