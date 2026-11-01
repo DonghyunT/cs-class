@@ -7,6 +7,7 @@
 - **운영:** 설정·배포 게이트 상태는 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)을 봅니다.
 - **실제 학생 계정:** 등록 현황과 입장 방식(10/21부터 반 공통 첫 입장 코드)은 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)에 있습니다. 명부 CSV·등록 직후 백업은 등록에 쓴 PC의 Git 제외 `private/`에만 있습니다.
 - **진행 중 브랜치(원격):** `feat/festival-character-v7`(축제 캐릭터 초안 보존, 게임 미적용).
+- **진행 중 계획:** [함수 수업](plans/functions-lesson.md)
 
 ## 최근 반영
 
@@ -14,7 +15,7 @@
 - **#97·#98 엔트리 라이브러리 Cloudflare CDN** (10/30): 운영 빌드만 작업실 HTML의 `/entryjs/vendor/` 주소를 Cloudflare Workers 정적 파일 `cs-class-entry`로 바꿈(CDN에 같은 지문이 없으면 Vercel 파일 유지, 작업실 `workspace.*`·작품 그림은 Vercel). 첫 작업실의 Vercel 요청 약 93→5건(가짜 CDN E2E). 검증: 단위 26, 파일 지정 E2E 8개 스펙 59 통과, 실제 CDN 파일 555개 대조·엔트리 E2E 4 통과, 학교 PC 접속 확인, 전체 E2E 미실행. 끄기·라이브러리 교체 순서는 [CDN 절차](FIREBASE_SETUP.md#엔트리-라이브러리-cdn), 계획은 [보관 원문](archive/cs-class/2026-10-30-completed-plans/entry-assets-cloudflare.md).
 - **#96 문서·코드 정리** (10/30): #94·#95 뒤 문서를 현재 상태로 맞추고, `src/proxy.ts`를 엔트리 선별 E2E에 연결, 배포 제외에 `private` 추가, 쓰지 않는 코드·낡은 주석 제거. 검증: typecheck·lint, 단위 21·72, 파일 지정 E2E 6개 스펙 40 통과, 전체 E2E 미실행.
 - **#95 엔트리 프록시를 사전 요청에만** (10/29): Vercel 함수 호출 76%·Active CPU 78%의 주원인으로 본 `src/proxy.ts`가 `/entryjs/` 모든 파일 요청마다 함수로 돌던 것을, `access-control-request-method` 헤더가 있는 사전 요청에만 돌게 함. 검증: typecheck·lint·build, 빈 캐시 수업 1회+2분에 프록시 실행 92→2회(소리 정상), 단위 21, 파일 지정 E2E 24 통과·1 실패(단독 3회 통과), 전체 E2E 미실행.
-- **#94 엔트리 정적 파일 브라우저 캐시** (10/29): Vercel CDN 요청 한도의 75%가 쓰였고 6시간 표본의 85%가 `/entryjs/` 정적 파일이라, `next.config.ts`가 `public/entryjs/vendor/`·`sprites/`에 하루 브라우저 캐시(`max-age=86400`)를 붙임([개발 안내 §4.1](DEVELOPMENT.md#41-entryjs-4023-실습-환경)의 지연 전제). 로컬에서 작업실 재진입 요청 70→2건. 검증: Tier 1~1.5(단위 21), 파일 지정 E2E `programming-classroom` 16(1개는 20초 대기 검사가 단독 재실행에서 통과)·`lesson-smoke` 6 통과, 로컬 `build`, 전체 E2E 미실행, 운영 응답 헤더(`max-age=86400`)는 공개 뒤 확인함.
+- **#94 엔트리 정적 파일 브라우저 캐시** (10/29): Vercel CDN 요청 한도의 75%가 쓰였고 6시간 표본의 85%가 `/entryjs/` 정적 파일이라, `next.config.ts`가 `public/entryjs/vendor/`·`sprites/`에 하루 브라우저 캐시(`max-age=86400`)를 붙임([개발 안내 §4.1](DEVELOPMENT.md#41-entryjs-4023-실습-환경)의 지연 전제). 로컬에서 작업실 재진입 요청 70→2건. 검증: Tier 1~1.5(단위 21), 파일 지정 E2E `programming-classroom` 16·`lesson-smoke` 6 통과, 로컬 `build`, 전체 E2E 미실행, 운영 응답 헤더(`max-age=86400`)는 공개 뒤 확인함.
 
 ## 다음에 이어갈 작업
 
