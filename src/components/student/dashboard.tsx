@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingSpinner, LoadingState, Skeleton } from "@/components/ui/loading-state";
 import { useSession } from "@/components/session-provider";
 import { classroomApi } from "@/lib/classroom/client";
+import { STUDENT_CLASS_POLL_MS } from "@/lib/classroom/features";
 import { prioritizedLessons, resumeLabelFor } from "@/lib/classroom/lesson-navigation";
 import { progressFor } from "@/lib/classroom/progress";
 import { remainingFor } from "@/lib/classroom/achievements";
@@ -41,7 +42,7 @@ export function StudentDashboardView() {
     const visibleRefresh = () => { if (document.visibilityState === "visible") void refresh(); };
     // Every open lesson's work costs a read, so the poll checks only the class and reloads work when the teacher changed it.
     const check = () => { if (document.visibilityState === "visible") void classroomApi.studentClassroom().then(({ classroom }) => { if (alive.current && classroom.revision !== revision.current) void refresh(); }, () => { if (alive.current) void refresh(); }); };
-    const timer = window.setInterval(check, 30_000);
+    const timer = window.setInterval(check, STUDENT_CLASS_POLL_MS);
     const focused = () => { if (Date.now() - fetchedAt.current >= 30_000) visibleRefresh(); };
     window.addEventListener("focus", focused);
     return () => { alive.current = false; clearInterval(timer); window.removeEventListener("focus", focused); };

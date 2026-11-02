@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { body, failure, failureResponse, json } from "@/lib/server/http";
 import { isConfigured } from "@/lib/server/firebase";
+import { MAX_ACTIVITY_AGE_MS } from "@/lib/classroom/features";
 import { changePassword, changeOwnPassword, loginGoogle, loginGuest, loginPassword, logout, readProfile, readSession, touchSession, updateNickname } from "@/lib/server/auth";
 import { ServiceError } from "@/lib/server/errors";
 import { guestLoginEnabled } from "@/lib/server/guest-mode";
@@ -42,7 +43,7 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const parsed = z.object({ currentPassword: z.string().min(1).max(128), password: z.string().max(128) }).strict().parse(input);
       return json({ session: await changeOwnPassword(parsed.currentPassword, parsed.password) });
     }
-    if (action === "activity") { operation = "auth.activity"; return json({ session: await touchSession(z.object({ idleForMs: z.number().int().min(0).max(60000) }).strict().parse(input).idleForMs) }); }
+    if (action === "activity") { operation = "auth.activity"; return json({ session: await touchSession(z.object({ idleForMs: z.number().int().min(0).max(MAX_ACTIVITY_AGE_MS) }).strict().parse(input).idleForMs) }); }
     if (action === "logout") { operation = "auth.logout"; await logout(); return json({ ok: true }); }
     return failureResponse({ message: "찾을 수 없는 요청입니다." }, 404, { operation });
   } catch (error) { return failure(error, { operation }); }

@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { classroomApi, setExpectedUser } from "@/lib/classroom/client";
+import { MAX_ACTIVITY_AGE_MS, SESSION_ACTIVITY_MS } from "@/lib/classroom/features";
 import styles from "./session-provider.module.css";
 import type { Session } from "@/lib/classroom/types";
 
@@ -83,7 +84,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (channel) channel.onmessage = (event) => { if (event.data?.uid === uid && typeof event.data.at === "number" && event.data.at <= Date.now() + 1000) activity.current = Math.max(activity.current, event.data.at); };
     const events = ["pointerdown", "keydown", "input", "scroll", "touchstart", "message"];
     events.forEach((name) => window.addEventListener(name, onActivity, { passive: true, capture: true }));
-    let tick = 0;
+    let tick = 0, retryAt = 0;
     const timer = window.setInterval(async () => {
       const value = current.current; if (!value) return;
       const now = Date.now(); const left = value.idleTimeoutMs - (now - activity.current);
@@ -94,16 +95,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (busy.current) return;
-      if (activity.current > lastSent.current && now - lastSent.current >= 30_000 && now - activity.current < 60_000) {
+      // Unsent activity always goes out, with its real age, so the server never times out a student the page still counts as active.
+      if (activity.current > lastSent.current && now - lastSent.current >= SESSION_ACTIVITY_MS && now >= retryAt) {
         busy.current = true;
         const started = generation.current;
-        try { const touched = await classroomApi.touch(Math.max(0, now - activity.current)); if (started === generation.current) { lastSent.current = Date.now() - touched.session.idleMs; current.current = touched.session; setSession(touched.session); checked.current = Date.now(); } }
-        catch { /* A later interaction retries; 401 is handled by the central event. */ }
+        try { const touched = await classroomApi.touch(Math.min(MAX_ACTIVITY_AGE_MS, Math.max(0, now - activity.current))); if (started === generation.current) { lastSent.current = Date.now() - touched.session.idleMs; current.current = touched.session; setSession(touched.session); checked.current = Date.now(); } }
+        catch { retryAt = Date.now() + 30_000; /* 401 is handled by the central event. */ }
         finally { busy.current = false; }
-      } else if (++tick % 30 === 0 && document.visibilityState === "visible" && now - checked.current >= 30_000) { busy.current = true; try { await refresh(); } finally { busy.current = false; } }
+      } else if (++tick % (SESSION_ACTIVITY_MS / 1000) === 0 && document.visibilityState === "visible" && now - checked.current >= SESSION_ACTIVITY_MS) { busy.current = true; try { await refresh(); } finally { busy.current = false; } }
     }, 1000);
     const onFocus = async () => {
-      if (busy.current || Date.now() - checked.current < 30_000) return;
+      if (busy.current || Date.now() - checked.current < SESSION_ACTIVITY_MS) return;
       busy.current = true; try { await refresh(); } finally { busy.current = false; }
     }; window.addEventListener("focus", onFocus);
     return () => { window.clearInterval(timer); channel?.close(); events.forEach((name) => window.removeEventListener(name, onActivity, true)); window.removeEventListener("focus", onFocus); };

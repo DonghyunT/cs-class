@@ -63,7 +63,7 @@ test("Entry 작업실 안에서만 블록을 옮겨도 10분 자동 로그아웃
     await expect(page.getByText("곧 자동 로그아웃돼요."), `${minute}분째 경고`).toBeHidden();
     const box = (await block.boundingBox())!, dx = minute % 2 ? -40 : 40;
     await page.mouse.move(box.x + 50, box.y + 15); await page.mouse.down(); await page.mouse.move(box.x + 50 + dx, box.y + 15, { steps: 4 }); await page.mouse.up();
-    // A touch goes out 30 seconds after the last one while the latest activity is under a minute old.
+    // A touch goes out once 3 minutes have passed since the last one; each step lets it finish.
     await page.clock.fastForward(31_000); await expect.poll(() => open).toBe(0);
     await page.clock.fastForward(29_000); await expect.poll(() => open).toBe(0);
   }

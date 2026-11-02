@@ -118,6 +118,10 @@ test("조회·자동 저장은 비활동 시간을 연장하지 않음 · 만료
   expect((await request.post("/api/auth/activity", { headers, data: { idleForMs: 5000 } })).status()).toBe(200);
   const touched = (await ref.get()).data()!.session.lastActivityAt;
   expect(touched).toBeGreaterThan(before); expect(touched).toBeLessThan(Date.now() - 4000);
+  // Reports wait up to 3 minutes, so an older activity age is accepted up to the 10-minute timeout.
+  expect((await request.post("/api/auth/activity", { headers, data: { idleForMs: 3 * 60_000 } })).status()).toBe(200);
+  expect((await ref.get()).data()!.session.lastActivityAt).toBe(touched);
+  expect((await request.post("/api/auth/activity", { headers, data: { idleForMs: 10 * 60_000 + 1 } })).status()).toBe(400);
   await ref.update({ "session.lastActivityAt": Date.now() - 11 * 60_000 });
   expect((await request.get("/api/classroom/student")).status()).toBe(401);
   expect((await request.post("/api/auth/activity", { headers, data: { idleForMs: 0 } })).status()).toBe(401);
