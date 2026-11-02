@@ -5,6 +5,7 @@ import { cookies, headers } from "next/headers";
 import type { Transaction } from "firebase-admin/firestore";
 import type { UserRecord } from "firebase-admin/auth";
 import type { Role, Session } from "../classroom/types";
+import { STUDENT_IDLE_TIMEOUT_MS } from "../classroom/features";
 import { admin } from "./firebase";
 import { guestLoginEnabled } from "./guest-mode";
 import { createTemporaryPassword, passwordDigest } from "./temporary-password.mjs";
@@ -22,7 +23,7 @@ export interface Account {
 }
 export interface Identity { uid: string; secret: string }
 export function hash(value: string) { return createHash("sha256").update(value).digest("hex"); }
-export function timeoutFor(role: Role) { return role === "student" ? 10 * 60_000 : 4 * 60 * 60_000; }
+export function timeoutFor(role: Role) { return role === "student" ? STUDENT_IDLE_TIMEOUT_MS : 4 * 60 * 60_000; }
 export function publicSession(account: Account): Session {
   return { uid: account.uid, ...(account.nickname ? { nickname: account.nickname } : {}), role: account.role, studentId: account.studentId, classId: account.classId, classIds: account.classIds, mustChangePassword: account.mustChangePassword, lastActivityAt: account.session!.lastActivityAt, idleMs: Math.max(0, Date.now() - account.session!.lastActivityAt), idleTimeoutMs: timeoutFor(account.role) };
 }

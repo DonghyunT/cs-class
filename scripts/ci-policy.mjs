@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { matchLesson, selectE2E } from "./e2e-scope.mjs";
+import { matchLesson, selectE2E, smokeRelatedTests } from "./e2e-scope.mjs";
 
 export function isDocument(file) {
   return file === "README.md" || file === "AGENTS.md" || /^docs\/.+\.md$/.test(file);
@@ -82,7 +82,7 @@ function smokeScope(reason, base = null, files = []) {
   const related = selectE2E(files.filter(file => matchLesson(file)));
   return { mode: "smoke", reason: `${reason}; full E2E requires workflow_dispatch`, base,
     lessonIds: related.mode === "affected" ? related.lessonIds : [],
-    testFiles: [...new Set([...(related.mode === "affected" ? related.testFiles : []), "tests/lesson-smoke.spec.ts"])] };
+    testFiles: [...new Set([...(related.mode === "affected" ? related.testFiles : []), ...smokeRelatedTests(files), "tests/lesson-smoke.spec.ts"])] };
 }
 
 export async function selectScope(env, baseline = findBaseline, diff = changedFiles) {

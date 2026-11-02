@@ -1,9 +1,9 @@
-import { CLASSROOM_HELP_ENABLED } from "../src/lib/classroom/features";
+import { CLASSROOM_HELP_ENABLED, SESSION_ACTIVITY_MS, STUDENT_CLASS_POLL_MS } from "../src/lib/classroom/features";
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page, type Request } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import type { HelpRequest } from "../src/lib/classroom/help";
-import { db, lessonId, readyStudent, readyTeacher } from "./emulator";
+import { db, lessonId, readyStudent, readyTeacher, serverIdleSession } from "./emulator";
 
 const lesson = LESSONS.find(item => item.id === lessonId)!;
 const classroom = (id: string) => ({ id, name: `2학년 ${id.slice(2)}반`, revision: 0, currentLessonId: lessonId, openedLessonIds: [lessonId] });
@@ -15,6 +15,8 @@ function gate() {
 }
 async function painted(page: Page) { await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))); }
 async function tick(page: Page, ms: number) { await page.clock.runFor(ms); await painted(page); }
+// Students sign out after 10 idle minutes, so a long wait clicks halfway to stay signed in.
+async function busyWait(page: Page, ms: number) { await tick(page, ms / 2); await page.locator("h1").first().click(); await tick(page, ms / 2); }
 
 test("학생 수업 설정 API는 본인 반·공개 수업만 반환하고 작품과 교사 접근을 제외한다", async ({ page }) => {
   await readyStudent(page.request);
@@ -29,7 +31,7 @@ test("학생 수업 설정 API는 본인 반·공개 수업만 반환하고 작�
   expect((await page.request.get("/api/classroom/student/class")).status()).toBe(403);
 });
 
-test("학생 수업 안내는 전체 작품 대신 반 설정을 30초마다 조회한다", async ({ page }) => {
+test("학생 수업 안내는 전체 작품 대신 반 설정을 10분마다 조회한다", async ({ page }) => {
   await readyStudent(page.request);
   await page.clock.install();
   let fullReads = 0, classReads = 0;
@@ -43,12 +45,14 @@ test("학생 수업 안내는 전체 작품 대신 반 설정을 30초마다 조
   expect(fullReads).toBe(0);
   const initialReads = classReads;
   expect(initialReads).toBeGreaterThan(0);
-  await tick(page, 30_000);
+  await busyWait(page, STUDENT_CLASS_POLL_MS - 1000);
+  expect(classReads).toBe(initialReads);
+  await tick(page, 1000);
   await expect.poll(() => classReads).toBe(initialReads + 1);
   expect(fullReads).toBe(0);
 });
 
-for (const path of ["/student", "/student/lessons"]) test(`학생 ${path} 화면은 30초마다 반 설정만 확인하고 반이 바뀔 때만 전체 기록을 다시 읽는다`, async ({ page }) => {
+for (const path of ["/student", "/student/lessons"]) test(`학생 ${path} 화면은 10분마다 반 설정만 확인하고 반이 바뀔 때만 전체 기록을 다시 읽는다`, async ({ page }) => {
   await readyStudent(page.request);
   await page.clock.install();
   let fullReads = 0, classReads = 0;
@@ -61,20 +65,20 @@ for (const path of ["/student", "/student/lessons"]) test(`학생 ${path} 화면
   await expect.poll(() => fullReads).toBe(1);
   await expect(page.getByRole("button", { name: "수업 새로고침" })).toBeVisible();
   await painted(page);
-  await tick(page, 30_000);
+  await busyWait(page, STUDENT_CLASS_POLL_MS);
   await expect.poll(() => classReads).toBe(1);
-  await tick(page, 30_000);
+  await busyWait(page, STUDENT_CLASS_POLL_MS);
   await expect.poll(() => classReads).toBe(2);
   expect(fullReads).toBe(1);
   // A teacher change bumps the class revision, which the next check notices.
   const classroom = db.doc("csClasses/2-1");
   await classroom.update({ revision: ((await classroom.get()).data()!.revision as number) + 1 });
-  await tick(page, 30_000);
+  await busyWait(page, STUDENT_CLASS_POLL_MS);
   await expect.poll(() => fullReads).toBe(2);
   expect(classReads).toBe(3);
 });
 
-test("창 포커스 재조회는 30초 안에서는 생략하고, 활동 기록 직후에는 세션을 다시 읽지 않는다", async ({ page }) => {
+test("수업 화면의 창 포커스 재조회는 반 설정 10분·세션 3분 안에서는 생략하고, 활동 기록 직후에는 세션을 다시 읽지 않는다", async ({ page }) => {
   await readyStudent(page.request);
   const session = (await (await page.request.get("/api/auth/session")).json()).session;
   await page.clock.install();
@@ -91,17 +95,17 @@ test("창 포커스 재조회는 30초 안에서는 생략하고, 활동 기록 
   await painted(page);
   const focus = () => page.evaluate(() => window.dispatchEvent(new Event("focus")));
   const initial = { classReads, sessionReads };
-  // Returning from the Entry iframe or another window within 30 seconds reuses the last check.
+  // Returning from the Entry iframe or another window soon after loading reuses the last checks.
   await focus(); await focus(); await painted(page);
   expect({ classReads, sessionReads }).toEqual(initial);
-  // An activity touch already confirms the session, so the 30-second session read is skipped.
-  for (let i = 0; i < 4; i++) { await page.locator("h1").first().click(); await tick(page, 30_000); }
+  // An activity touch already confirms the session, so the 3-minute session read is skipped.
+  for (let i = 0; i < 4; i++) { await page.locator("h1").first().click(); await tick(page, SESSION_ACTIVITY_MS); }
   await expect.poll(() => touches).toBeGreaterThanOrEqual(3);
   expect(sessionReads).toBeLessThanOrEqual(initial.sessionReads + 1);
-  await expect.poll(() => classReads).toBe(initial.classReads + 4);
-  // After a hidden stretch longer than 30 seconds, focus checks both again right away.
+  await expect.poll(() => classReads).toBe(initial.classReads + 1);
+  // After a hidden stretch past both waits (one click keeps the student signed in), focus checks both again right away.
   await page.evaluate(() => Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" }));
-  await tick(page, 60_000);
+  await busyWait(page, STUDENT_CLASS_POLL_MS);
   const hidden = { classReads, sessionReads };
   await page.evaluate(() => { Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" }); });
   // Back-to-back focus events while the first check is in flight send one request each.
@@ -110,6 +114,67 @@ test("창 포커스 재조회는 30초 안에서는 생략하고, 활동 기록 
   await expect.poll(() => sessionReads).toBe(hidden.sessionReads + 1);
   await page.waitForTimeout(500);
   expect({ classReads, sessionReads }).toEqual({ classReads: hidden.classReads + 1, sessionReads: hidden.sessionReads + 1 });
+});
+
+// Activity reports wait SESSION_ACTIVITY_MS, so a click can be minutes old by the time it is sent.
+test("보내지 않은 조작은 1분이 지나도 다음 활동 기록에 실제 나이를 담아 보낸다", async ({ page }) => {
+  await readyStudent(page.request);
+  const session = await serverIdleSession(page);
+  await page.clock.install();
+  const ages: number[] = [];
+  await page.route("**/api/auth/activity", async route => { ages.push(route.request().postDataJSON().idleForMs); await route.fulfill({ json: { session: { ...session, idleMs: 0 } } }); });
+  await page.goto(`/classroom/${lessonId}`);
+  await expect(page.getByRole("button", { name: "저장", exact: true })).toBeVisible();
+  await painted(page);
+  // Loading counts as activity and input within a second of it is ignored, so the click comes later.
+  await tick(page, 2000);
+  await page.locator("h1").first().click();
+  await tick(page, SESSION_ACTIVITY_MS - 10_000);
+  expect(ages).toEqual([]);
+  await tick(page, 20_000);
+  await expect.poll(() => ages.length).toBe(1);
+  // A report holding only activity under a minute old would leave the server timing out a student the page counts as active.
+  expect(ages[0]).toBeGreaterThan(SESSION_ACTIVITY_MS - 15_000);
+  expect(ages[0]).toBeLessThanOrEqual(SESSION_ACTIVITY_MS + 15_000);
+});
+
+test("활동 기록이 실패하면 매초가 아니라 30초 뒤에 다시 보낸다", async ({ page }) => {
+  await readyStudent(page.request);
+  await serverIdleSession(page);
+  await page.clock.install();
+  let attempts = 0, open = 0;
+  await page.route("**/api/auth/activity", async route => { attempts++; open++; await route.fulfill({ status: 503, json: { code: "UNAVAILABLE", message: "잠시 후 다시 시도해 주세요." } }); open--; });
+  await page.goto(`/classroom/${lessonId}`);
+  await expect(page.getByRole("button", { name: "저장", exact: true })).toBeVisible();
+  await painted(page);
+  // Loading counts as activity and input within a second of it is ignored, so the click comes later.
+  await tick(page, 2000);
+  await page.locator("h1").first().click();
+  await tick(page, SESSION_ACTIVITY_MS + 10_000);
+  await expect.poll(() => attempts).toBe(1);
+  // One virtual second at a time, letting each failed report settle before the next tick.
+  for (let i = 0; i < 65; i++) { await page.clock.runFor(1000); await expect.poll(() => open).toBe(0); }
+  expect(attempts).toBeGreaterThanOrEqual(2);
+  expect(attempts).toBeLessThanOrEqual(3);
+});
+
+test("조작이 없으면 공통 세션 확인을 3분마다 한다", async ({ page }) => {
+  await readyStudent(page.request);
+  await page.clock.install();
+  let sessionReads = 0;
+  page.on("request", request => { if (new URL(request.url()).pathname === "/api/auth/session") sessionReads++; });
+  await page.goto(`/classroom/${lessonId}`);
+  await expect(page.getByRole("button", { name: "저장", exact: true })).toBeVisible();
+  await painted(page);
+  const initial = sessionReads;
+  await tick(page, SESSION_ACTIVITY_MS - 10_000);
+  expect(sessionReads).toBe(initial);
+  await tick(page, 20_000);
+  await expect.poll(() => sessionReads).toBe(initial + 1);
+  await tick(page, SESSION_ACTIVITY_MS - 30_000);
+  expect(sessionReads).toBe(initial + 1);
+  await tick(page, 60_000);
+  await expect.poll(() => sessionReads).toBe(initial + 2);
 });
 
 test("학생 손들기는 평상시 60초·대기 중 30초이며 상태 전환 직후 재조회하지 않는다", async ({ page }) => {
@@ -245,9 +310,9 @@ test("홈 대시보드는 느린 조회를 합치되 반 전환은 즉시 조회
 
 // School PCs can run minutes off the server clock; the heartbeat must still pace itself by the PC's own clock.
 async function skewedClock(page: Page, offsetMs: number) {
-  // Virtual seconds pass faster than the real server clock, so each test starts a minute after the last
-  // recorded activity and watches less than the 30-second session re-check.
-  await db.doc("csAccounts/student-20101").update({ "session.lastActivityAt": Date.now() - 60_000 });
+  // Virtual seconds pass faster than the real server clock, so each test starts one activity interval after the last
+  // recorded activity and watches less than the 3-minute session re-check.
+  await db.doc("csAccounts/student-20101").update({ "session.lastActivityAt": Date.now() - SESSION_ACTIVITY_MS - 60_000 });
   await page.clock.install({ time: Date.now() + offsetMs });
   const count = { touches: 0, open: 0, statuses: [] as number[] };
   const touch = (request: Request) => new URL(request.url()).pathname === "/api/auth/activity";
@@ -273,7 +338,7 @@ for (const minutes of [5, 11]) test(`PC 시계가 서버보다 ${minutes}분 빨
   await expect(page.getByText("곧 자동 로그아웃돼요.")).toBeHidden();
   await page.locator("h1").first().click();
   await seconds(5);
-  // A second click within 30 seconds waits for the next touch.
+  // A second click within 3 minutes waits for the next touch.
   await page.locator("h1").first().click();
   await seconds(5);
   expect(count.touches).toBe(1);

@@ -70,6 +70,18 @@ test("shared changes retain related lesson tests and all registered lesson smoke
   assert.deepEqual(common.testFiles, ["tests/lesson-smoke.spec.ts"]);
 });
 
+test("automatic smoke runs the specs that pin session and polling timing", async () => {
+  const timing = ["tests/classroom-api.spec.ts", "tests/manual-save-entry.spec.ts", "tests/read-polling.spec.ts"];
+  for (const file of ["src/components/session-provider.tsx", "src/app/api/auth/[action]/route.ts", "src/lib/classroom/features.ts",
+    "src/components/student/lesson-workspace.tsx", "src/components/student/dashboard.tsx", "src/components/dashboard/dashboard.tsx", "tests/read-polling.spec.ts"]) {
+    const plan = await selectScope(env, async () => sha, () => [file]);
+    assert.equal(plan.mode, "smoke", file);
+    assert.deepEqual(new Set(plan.testFiles), new Set([...timing, "tests/lesson-smoke.spec.ts"]), file);
+  }
+  // Locally these shared files still need the user's full-suite decision.
+  assert.equal((await selectScope({}, undefined, () => ["src/components/session-provider.tsx"])).mode, "full");
+});
+
 test("local common changes still require a full-suite decision by the user", async () => {
   assert.equal((await selectScope({}, undefined, () => ["src/components/student/use-work.ts"])).mode, "full");
 });

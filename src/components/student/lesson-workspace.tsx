@@ -3,6 +3,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { classroomApi } from "@/lib/classroom/client";
+import { STUDENT_CLASS_POLL_MS } from "@/lib/classroom/features";
 import type { Lesson, StudentDashboard, Work, WorkDraft } from "@/lib/classroom/types";
 import { LessonShell } from "./lesson-shell";
 import { LessonEditor, type LessonFrame, type WorkspaceView } from "./lesson-editor";
@@ -32,9 +33,9 @@ export function LessonWorkspace({ lesson, uid, returnOrigin, workspaceWide, prac
       finally { fetching = false; }
     };
     void refresh();
-    const timer = setInterval(() => { void refresh(); }, 30_000);
-    // Returning from the Entry iframe also fires focus; the 30-second poll bounds the delay.
-    const focused = () => { if (Date.now() - fetchedAt >= 30_000) void refresh(); };
+    const timer = setInterval(() => { void refresh(); }, STUDENT_CLASS_POLL_MS);
+    // Returning from the Entry iframe also fires focus, so it waits as long as the poll.
+    const focused = () => { if (Date.now() - fetchedAt >= STUDENT_CLASS_POLL_MS) void refresh(); };
     window.addEventListener("focus", focused);
     return () => { cancelled = true; clearInterval(timer); window.removeEventListener("focus", focused); };
   }, []);

@@ -1,5 +1,5 @@
 import { expect, test, type Request } from "@playwright/test";
-import { db, headers, readyStudent, entryReset, entryStart, entryStop } from "./emulator";
+import { db, headers, readyStudent, entryReset, entryStart, entryStop, serverIdleSession } from "./emulator";
 import { buildProgrammingProject, parseProgrammingProject } from "../src/lib/classroom/programming-entry";
 const id="programming-13", endpoint=`/api/classroom/work/${id}`;
 let originalClass: FirebaseFirestore.DocumentData | undefined;
@@ -63,7 +63,7 @@ test("Entry 작업실 안에서만 블록을 옮겨도 10분 자동 로그아웃
     await expect(page.getByText("곧 자동 로그아웃돼요."), `${minute}분째 경고`).toBeHidden();
     const box = (await block.boundingBox())!, dx = minute % 2 ? -40 : 40;
     await page.mouse.move(box.x + 50, box.y + 15); await page.mouse.down(); await page.mouse.move(box.x + 50 + dx, box.y + 15, { steps: 4 }); await page.mouse.up();
-    // A touch goes out 30 seconds after the last one while the latest activity is under a minute old.
+    // A touch goes out once 3 minutes have passed since the last one; each step lets it finish.
     await page.clock.fastForward(31_000); await expect.poll(() => open).toBe(0);
     await page.clock.fastForward(29_000); await expect.poll(() => open).toBe(0);
   }
@@ -74,6 +74,7 @@ test("Entry 작업실 안에서만 블록을 옮겨도 10분 자동 로그아웃
 });
 // The frame's own startup and replies to this page must not count as work, or shared PCs never sign out.
 test("Entry 작업실을 열어 두기만 하면 10분 뒤 자동 로그아웃한다", async ({ page }) => {
+  await serverIdleSession(page);
   await page.clock.install(); await page.reload(); await page.locator("iframe").scrollIntoViewIfNeeded(); await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
   for (let minute = 0; minute < 11; minute++) await page.clock.fastForward(60_000);
   await expect(page.getByText("오랫동안 사용하지 않아 로그아웃됐어요.", { exact: false })).toBeVisible();
