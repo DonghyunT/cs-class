@@ -40,11 +40,16 @@ const PROGRAMMING_PALETTE = [
   { category: "variable", blocks: ["ask_and_wait", "get_canvas_input_value", "set_visible_answer", "get_variable", "change_variable", "set_variable", "show_variable", "hide_variable"] },
 ];
 // The lesson page that embeds this iframe. Production serves this file from the Entry CDN, so the page's origin comes
-// from the referrer the page sends (the iframe sets referrerPolicy="origin"); the app's own copy falls back to itself.
-// Messages go only to that origin and are accepted only from it, and this sandbox holds nothing but what it is sent.
+// from the referrer the page sends (the iframe sets referrerPolicy="origin"), or the browser's ancestor list when a
+// referrer was stripped. Only an opaque sandbox trusts them: it holds nothing but what it is sent. Unsandboxed, this
+// document runs with its server's own origin, so it talks only to that origin, as any other site could frame it.
+// Messages go only to that origin and are accepted only from it.
 const APP_ORIGIN = (() => {
-  try { const url = new URL(document.referrer); if (url.protocol === "https:" || url.protocol === "http:") return url.origin; }
-  catch { /* No referrer: the page and this file share the app's origin. */ }
+  if (self.origin !== "null") return location.origin;
+  for (const candidate of [document.referrer, location.ancestorOrigins?.[0]]) {
+    try { const url = new URL(candidate); if (url.protocol === "https:" || url.protocol === "http:") return url.origin; }
+    catch { /* Missing or not a URL: try the next one. */ }
+  }
   return location.origin;
 })();
 const send = (type, details = {}) => { if (!disposed) parent.postMessage({ channel: CHANNEL, type, ...details }, APP_ORIGIN); };

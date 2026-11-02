@@ -4,7 +4,8 @@
 // CDN layout:
 //   /<vendor fingerprint 16>/…               Entry vendor files of one scripts/entryjs-assets.json version
 //   /v/<bridge 16>-<vendor 16>/workspace.*   the bridge (workspace.html/js/css), several versions side by side
-//   /entryjs/…                               the app's /entryjs/ files: saved projects name pictures by that path
+//   /entryjs/…                               the app's /entryjs/ files: saved projects name pictures by that path;
+//                                            /entryjs/cdn-version.txt names the mirror and vendor fingerprints
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -23,6 +24,7 @@ export const LOCAL_WORKSPACE = "/entryjs/workspace.html";
 export const BRIDGE_FILES = ["workspace.html", "workspace.js", "workspace.css"];
 // Bridge versions kept on the CDN, so a page opened before an upload or a rolled-back deployment still finds its own.
 export const KEPT_BRIDGES = 20;
+export const MIRROR_VERSION = "entryjs/cdn-version.txt";
 // Workers Free static asset limits (developers.cloudflare.com/workers/platform/limits/#static-assets).
 const MAX_FILES = 20_000, MAX_FILE_BYTES = 25 * 1024 * 1024;
 
@@ -49,6 +51,26 @@ export function bridgeFingerprint(files) {
   return hash.digest("hex");
 }
 
+async function listFiles(directory) {
+  const entries = await readdir(directory, { recursive: true, withFileTypes: true });
+  return entries.filter((entry) => entry.isFile()).map((entry) => path.join(entry.parentPath, entry.name));
+}
+
+// Hashes what the /entryjs/ mirror serves besides the vendor copy (named by its own fingerprint) and the bridge, so a
+// build whose sprites the CDN does not have yet keeps the app's files. Every file gets CRLF folded byte for byte,
+// binary ones too, so a Windows checkout and Vercel's Linux checkout agree.
+export async function mirrorFingerprint(source = entryjs) {
+  const files = (await listFiles(source)).map((file) => path.relative(source, file).split(path.sep).join("/"))
+    .filter((file) => !file.startsWith("vendor/") && !BRIDGE_FILES.includes(file)).sort();
+  const hash = createHash("sha256");
+  for (const file of files) {
+    hash.update(`${file}\0`);
+    hash.update((await readFile(path.join(source, file), "latin1")).replaceAll("\r\n", "\n"), "latin1");
+    hash.update("\0");
+  }
+  return hash.digest("hex");
+}
+
 export function rewriteWorkspace(html, prefix) {
   const rewritten = html.replaceAll('"/entryjs/vendor/', `"${prefix}/`);
   if (!rewritten.includes(`"${prefix}/entry/dist/entry.min.js"`)) throw new Error("workspace.html no longer loads entry.min.js from /entryjs/vendor/");
@@ -62,13 +84,16 @@ const readText = (fetchImpl, url) => fetchImpl(url, { signal: AbortSignal.timeou
 // Returns the workspace HTML to ship and the address the lesson iframe opens. Anything but a production build with a
 // configured base that the CDN already serves keeps the local files, so a deployment that reaches Vercel before its
 // CDN upload cannot break lessons; it only keeps using Vercel requests until the next build.
-export async function workspaceForBuild({ html, bridge, vercelEnv, base, fingerprint, fetchImpl = fetch }) {
+export async function workspaceForBuild({ html, bridge, mirror, vercelEnv, base, fingerprint, fetchImpl = fetch }) {
   if (vercelEnv !== "production" || !base) return { html, src: LOCAL_WORKSPACE, reason: "local" };
   const prefix = cdnPrefix(base, fingerprint);
   if ((await readText(fetchImpl, `${prefix}/version.txt`)).trim() !== fingerprint) return { html, src: LOCAL_WORKSPACE, reason: `missing ${prefix}/version.txt` };
   const rewritten = rewriteWorkspace(html, prefix);
   const bridged = bridgePrefix(base, bridge, fingerprint);
   if ((await readText(fetchImpl, `${bridged}/version.txt`)).trim() !== `${bridge} ${fingerprint}`) return { html: rewritten, src: LOCAL_WORKSPACE, reason: `${prefix}, missing ${bridged}/version.txt` };
+  // Sprites added or changed in this build must already be on the CDN before the iframe moves there.
+  const mirrored = `${cdnOrigin(base)}/${MIRROR_VERSION}`;
+  if ((await readText(fetchImpl, mirrored)).trim() !== `${mirror} ${fingerprint}`) return { html: rewritten, src: LOCAL_WORKSPACE, reason: `${prefix}, ${bridged}, stale ${mirrored}` };
   return { html: rewritten, src: `${bridged}/workspace.html`, reason: `${prefix}, ${bridged}` };
 }
 
@@ -101,11 +126,6 @@ export function cdnHeaders(fingerprint) {
   ].join("\n") + "\n";
 }
 
-async function listFiles(directory) {
-  const entries = await readdir(directory, { recursive: true, withFileTypes: true });
-  return entries.filter((entry) => entry.isFile()).map((entry) => path.join(entry.parentPath, entry.name));
-}
-
 // Writes the whole CDN folder. `out` must be a folder that holds only generated files: it is emptied first.
 export async function writeBundle({ out, base, fingerprint, versions, source = entryjs }) {
   await rm(out, { recursive: true, force: true });
@@ -115,6 +135,7 @@ export async function writeBundle({ out, base, fingerprint, versions, source = e
   await writeFile(path.join(vendorTarget, "version.txt"), fingerprint);
   // Everything else the app serves under /entryjs/; the bridge itself only lives under /v/.
   await cp(source, path.join(out, "entryjs"), { recursive: true, filter: (file) => path.basename(file) !== ".prepared" && !(path.dirname(file) === source && BRIDGE_FILES.includes(path.basename(file))) });
+  await writeFile(path.join(out, MIRROR_VERSION), `${await mirrorFingerprint(source)} ${fingerprint}`);
   const vendorPrefix = cdnPrefix(base, fingerprint);
   for (const [bridge, files] of versions) {
     const target = path.join(out, new URL(bridgePrefix(base, bridge, fingerprint)).pathname);
@@ -139,7 +160,7 @@ async function main(mode) {
   const current = Object.fromEntries(BRIDGE_FILES.map((name) => [name, readFileSync(path.join(entryjs, name), "utf8")]));
   if (mode === "html") {
     const html = current["workspace.html"];
-    const result = await workspaceForBuild({ html, bridge: bridgeFingerprint(current), vercelEnv: process.env.VERCEL_ENV, base, fingerprint });
+    const result = await workspaceForBuild({ html, bridge: bridgeFingerprint(current), mirror: await mirrorFingerprint(), vercelEnv: process.env.VERCEL_ENV, base, fingerprint });
     // Rewritten in place: only Vercel's throwaway build checkout reaches these branches.
     if (result.html !== html) await writeFile(workspace, result.html);
     if (result.src !== LOCAL_WORKSPACE) await writeFile(workspaceSrc, `${JSON.stringify({ src: result.src }, null, 2)}\n`);
@@ -151,6 +172,11 @@ async function main(mode) {
     const git = (args) => execFileSync("git", args, { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
     // Every upload replaces the whole CDN, so start from the deployed history: production runs a version from origin/main.
     git(["fetch", "--quiet", "origin", "main"]);
+    // The mirror replaces what production reads under /entryjs/, so it must hold everything already on main and only
+    // committed files: an older branch would drop merged sprites, uncommitted edits would reach no build.
+    try { git(["merge-base", "--is-ancestor", "origin/main", "HEAD"]); }
+    catch { throw new Error("Upload from a checkout that contains origin/main (merge or rebase it first)"); }
+    if (git(["status", "--porcelain", "--", "public/entryjs"]).trim()) throw new Error("Commit or discard the changes under public/entryjs before uploading");
     const versions = bridgeVersions({ current, git });
     const count = await writeBundle({ out: bundle, base, fingerprint, versions });
     console.log(`Entry CDN bundle ready: scratch/entry-cdn (${count} files, ${versions.size} bridge versions, current ${bridgePrefix(base, bridgeFingerprint(current), fingerprint)})`);

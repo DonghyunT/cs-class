@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { BRIDGE_FILES, LOCAL_WORKSPACE, bridgeFingerprint, bridgePrefix, bridgeVersions, cdnHeaders, cdnPrefix, rewriteWorkspace, workspaceForBuild, writeBundle } from "../scripts/entryjs-cdn.mjs";
+import { BRIDGE_FILES, LOCAL_WORKSPACE, bridgeFingerprint, bridgePrefix, bridgeVersions, cdnHeaders, cdnPrefix, mirrorFingerprint, rewriteWorkspace, workspaceForBuild, writeBundle } from "../scripts/entryjs-cdn.mjs";
 
 // As git and Vercel store it; a Windows checkout has CRLF.
 const html = readFileSync(new URL("../public/entryjs/workspace.html", import.meta.url), "utf8").replaceAll("\r\n", "\n");
@@ -12,6 +12,8 @@ const bridge = "fedcba9876543210".repeat(4);
 const base = "https://entry-cdn.test";
 const prefix = "https://entry-cdn.test/0123456789abcdef";
 const bridged = "https://entry-cdn.test/v/fedcba9876543210-0123456789abcdef";
+const mirror = "1111222233334444".repeat(4);
+const mirrored = "https://entry-cdn.test/entryjs/cdn-version.txt";
 const serving = (bodies) => async (url) => url in bodies ? { ok: true, text: async () => bodies[url] } : { ok: false, text: async () => "" };
 
 test("the committed CDN base is empty or a bare https origin", () => {
@@ -75,8 +77,35 @@ test("workspaceForBuild moves the vendor files first and the bridge only once th
   // A bridge uploaded with another vendor version is not this build's.
   const otherVendor = await workspaceForBuild({ html, bridge, vercelEnv: "production", base, fingerprint, fetchImpl: serving({ [`${prefix}/version.txt`]: fingerprint, [`${bridged}/version.txt`]: `${bridge} ${"f".repeat(64)}` }) });
   assert.equal(otherVendor.src, LOCAL_WORKSPACE);
-  const ready = await workspaceForBuild({ html, bridge, vercelEnv: "production", base, fingerprint, fetchImpl: serving({ [`${prefix}/version.txt`]: fingerprint, [`${bridged}/version.txt`]: `${bridge} ${fingerprint}\n` }) });
+  const served = { [`${prefix}/version.txt`]: fingerprint, [`${bridged}/version.txt`]: `${bridge} ${fingerprint}\n` };
+  // The bridge alone is not enough: this build's sprites may not be on the CDN yet.
+  for (const version of [undefined, `${mirror} ${fingerprint}`.replace(/^./, "0"), `${mirror} ${"f".repeat(64)}`]) {
+    const result = await workspaceForBuild({ html, bridge, mirror, vercelEnv: "production", base, fingerprint, fetchImpl: serving(version ? { ...served, [mirrored]: version } : served) });
+    assert.equal(result.html, rewriteWorkspace(html, prefix));
+    assert.equal(result.src, LOCAL_WORKSPACE, String(version));
+    assert.match(result.reason, /stale .*cdn-version\.txt$/);
+  }
+  const ready = await workspaceForBuild({ html, bridge, mirror, vercelEnv: "production", base, fingerprint, fetchImpl: serving({ ...served, [mirrored]: `${mirror} ${fingerprint}\n` }) });
   assert.deepEqual(ready, { html: rewriteWorkspace(html, prefix), src: `${bridged}/workspace.html`, reason: `${prefix}, ${bridged}` });
+});
+
+test("mirrorFingerprint follows every mirrored file but not the vendor copy, the bridge or line endings", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "entry-mirror-"));
+  try {
+    const put = (file, text) => { mkdirSync(path.dirname(path.join(dir, file)), { recursive: true }); writeFileSync(path.join(dir, file), text); };
+    put("sprites/tree.svg", "<svg>\n</svg>\n"); put("name-dog.svg", "<svg/>"); put("vendor/entry.js", "a"); put("workspace.js", "a");
+    const key = await mirrorFingerprint(dir);
+    assert.match(key, /^[0-9a-f]{64}$/);
+    put("sprites/tree.svg", "<svg>\r\n</svg>\r\n"); put("vendor/entry.js", "b"); put("workspace.js", "b");
+    assert.equal(await mirrorFingerprint(dir), key);
+    put("sprites/new.svg", "<svg/>");
+    const added = await mirrorFingerprint(dir);
+    assert.notEqual(added, key);
+    put("sprites/new.svg", "<svg />");
+    assert.notEqual(await mirrorFingerprint(dir), added);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("bridgeVersions keeps the checkout first, then distinct referrer-aware versions from origin/main", () => {
@@ -142,7 +171,8 @@ test("writeBundle lays out the vendor, every bridge version and the app's /entry
       assert.equal(bridgeFingerprint({ "workspace.html": html, "workspace.js": read(`${folder}/workspace.js`), "workspace.css": read(`${folder}/workspace.css`) }), key);
     }
     assert.equal(read("_headers"), cdnHeaders(fingerprint));
-    assert.equal(count, 14);
+    assert.equal(read("entryjs/cdn-version.txt"), `${await mirrorFingerprint(source)} ${fingerprint}`);
+    assert.equal(count, 15);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
