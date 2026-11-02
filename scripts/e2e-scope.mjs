@@ -26,6 +26,25 @@ const ENTRY_SHARED = [
 // The concept-screen pictures; only conditionals and loops have entries, and the teacher preview shows them too.
 const CONCEPT_VISUAL = /^src\/components\/student\/concept-visual(?:\.tsx|\.module\.css)$/;
 
+// Shared session and polling files stay unmapped, so local runs still need the full suite; automatic CI's smoke
+// fallback adds the specs that pin their timing.
+export const SMOKE_RELATED = [{
+  patterns: [
+    /^src\/components\/session-provider\.tsx$/,
+    /^src\/app\/api\/auth\/\[action\]\/route\.ts$/,
+    /^src\/lib\/classroom\/features\.ts$/,
+    /^src\/components\/student\/(?:lesson-workspace|dashboard)\.tsx$/,
+    /^src\/components\/dashboard\/dashboard\.tsx$/,
+    /^tests\/(?:read-polling|manual-save-entry|classroom-api)\.spec\.ts$/
+  ],
+  tests: ["tests/read-polling.spec.ts", "tests/manual-save-entry.spec.ts", "tests/classroom-api.spec.ts"]
+}];
+
+export function smokeRelatedTests(files) {
+  const normalized = files.map(file => file.replaceAll("\\", "/"));
+  return SMOKE_RELATED.filter(group => normalized.some(file => group.patterns.some(pattern => pattern.test(file)))).flatMap(group => group.tests);
+}
+
 // Logic tests run in the unit job (test:review), so on their own they need no E2E.
 const LOGIC_ONLY = [/^tests\/lesson-feedback\.test\.ts$/];
 

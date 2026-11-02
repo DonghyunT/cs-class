@@ -1,5 +1,5 @@
 import { expect, test, type Request } from "@playwright/test";
-import { db, headers, readyStudent, entryReset, entryStart, entryStop } from "./emulator";
+import { db, headers, readyStudent, entryReset, entryStart, entryStop, serverIdleSession } from "./emulator";
 import { buildProgrammingProject, parseProgrammingProject } from "../src/lib/classroom/programming-entry";
 const id="programming-13", endpoint=`/api/classroom/work/${id}`;
 let originalClass: FirebaseFirestore.DocumentData | undefined;
@@ -74,6 +74,7 @@ test("Entry 작업실 안에서만 블록을 옮겨도 10분 자동 로그아웃
 });
 // The frame's own startup and replies to this page must not count as work, or shared PCs never sign out.
 test("Entry 작업실을 열어 두기만 하면 10분 뒤 자동 로그아웃한다", async ({ page }) => {
+  await serverIdleSession(page);
   await page.clock.install(); await page.reload(); await page.locator("iframe").scrollIntoViewIfNeeded(); await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
   for (let minute = 0; minute < 11; minute++) await page.clock.fastForward(60_000);
   await expect(page.getByText("오랫동안 사용하지 않아 로그아웃됐어요.", { exact: false })).toBeVisible();

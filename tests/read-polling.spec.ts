@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test, type Page, type Request } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import type { HelpRequest } from "../src/lib/classroom/help";
-import { db, lessonId, readyStudent, readyTeacher } from "./emulator";
+import { db, lessonId, readyStudent, readyTeacher, serverIdleSession } from "./emulator";
 
 const lesson = LESSONS.find(item => item.id === lessonId)!;
 const classroom = (id: string) => ({ id, name: `2학년 ${id.slice(2)}반`, revision: 0, currentLessonId: lessonId, openedLessonIds: [lessonId] });
@@ -114,6 +114,67 @@ test("수업 화면의 창 포커스 재조회는 반 설정 10분·세션 3분 
   await expect.poll(() => sessionReads).toBe(hidden.sessionReads + 1);
   await page.waitForTimeout(500);
   expect({ classReads, sessionReads }).toEqual({ classReads: hidden.classReads + 1, sessionReads: hidden.sessionReads + 1 });
+});
+
+// Activity reports wait SESSION_ACTIVITY_MS, so a click can be minutes old by the time it is sent.
+test("보내지 않은 조작은 1분이 지나도 다음 활동 기록에 실제 나이를 담아 보낸다", async ({ page }) => {
+  await readyStudent(page.request);
+  const session = await serverIdleSession(page);
+  await page.clock.install();
+  const ages: number[] = [];
+  await page.route("**/api/auth/activity", async route => { ages.push(route.request().postDataJSON().idleForMs); await route.fulfill({ json: { session: { ...session, idleMs: 0 } } }); });
+  await page.goto(`/classroom/${lessonId}`);
+  await expect(page.getByRole("button", { name: "저장", exact: true })).toBeVisible();
+  await painted(page);
+  // Loading counts as activity and input within a second of it is ignored, so the click comes later.
+  await tick(page, 2000);
+  await page.locator("h1").first().click();
+  await tick(page, SESSION_ACTIVITY_MS - 10_000);
+  expect(ages).toEqual([]);
+  await tick(page, 20_000);
+  await expect.poll(() => ages.length).toBe(1);
+  // A report holding only activity under a minute old would leave the server timing out a student the page counts as active.
+  expect(ages[0]).toBeGreaterThan(SESSION_ACTIVITY_MS - 15_000);
+  expect(ages[0]).toBeLessThanOrEqual(SESSION_ACTIVITY_MS + 15_000);
+});
+
+test("활동 기록이 실패하면 매초가 아니라 30초 뒤에 다시 보낸다", async ({ page }) => {
+  await readyStudent(page.request);
+  await serverIdleSession(page);
+  await page.clock.install();
+  let attempts = 0, open = 0;
+  await page.route("**/api/auth/activity", async route => { attempts++; open++; await route.fulfill({ status: 503, json: { code: "UNAVAILABLE", message: "잠시 후 다시 시도해 주세요." } }); open--; });
+  await page.goto(`/classroom/${lessonId}`);
+  await expect(page.getByRole("button", { name: "저장", exact: true })).toBeVisible();
+  await painted(page);
+  // Loading counts as activity and input within a second of it is ignored, so the click comes later.
+  await tick(page, 2000);
+  await page.locator("h1").first().click();
+  await tick(page, SESSION_ACTIVITY_MS + 10_000);
+  await expect.poll(() => attempts).toBe(1);
+  // One virtual second at a time, letting each failed report settle before the next tick.
+  for (let i = 0; i < 65; i++) { await page.clock.runFor(1000); await expect.poll(() => open).toBe(0); }
+  expect(attempts).toBeGreaterThanOrEqual(2);
+  expect(attempts).toBeLessThanOrEqual(3);
+});
+
+test("조작이 없으면 공통 세션 확인을 3분마다 한다", async ({ page }) => {
+  await readyStudent(page.request);
+  await page.clock.install();
+  let sessionReads = 0;
+  page.on("request", request => { if (new URL(request.url()).pathname === "/api/auth/session") sessionReads++; });
+  await page.goto(`/classroom/${lessonId}`);
+  await expect(page.getByRole("button", { name: "저장", exact: true })).toBeVisible();
+  await painted(page);
+  const initial = sessionReads;
+  await tick(page, SESSION_ACTIVITY_MS - 10_000);
+  expect(sessionReads).toBe(initial);
+  await tick(page, 20_000);
+  await expect.poll(() => sessionReads).toBe(initial + 1);
+  await tick(page, SESSION_ACTIVITY_MS - 30_000);
+  expect(sessionReads).toBe(initial + 1);
+  await tick(page, 60_000);
+  await expect.poll(() => sessionReads).toBe(initial + 2);
 });
 
 test("학생 손들기는 평상시 60초·대기 중 30초이며 상태 전환 직후 재조회하지 않는다", async ({ page }) => {
