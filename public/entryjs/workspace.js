@@ -39,7 +39,15 @@ const PROGRAMMING_PALETTE = [
   { category: "calc", blocks: ["calc_basic", "calc_rand", "coordinate_mouse", "coordinate_object", "quotient_and_mod", "calc_operation", "get_project_timer_value", "choose_project_timer_action", "set_visible_project_timer", "get_date", "distance_something", "length_of_string", "count_match_string", "combine_something", "char_at", "substring", "index_of_string", "replace_string", "reverse_of_string", "change_string_case"] },
   { category: "variable", blocks: ["ask_and_wait", "get_canvas_input_value", "set_visible_answer", "get_variable", "change_variable", "set_variable", "show_variable", "hide_variable"] },
 ];
-const send = (type, details = {}) => { if (!disposed) parent.postMessage({ channel: CHANNEL, type, ...details }, location.origin); };
+// The lesson page that embeds this iframe. Production serves this file from the Entry CDN, so the page's origin comes
+// from the referrer the page sends (the iframe sets referrerPolicy="origin"); the app's own copy falls back to itself.
+// Messages go only to that origin and are accepted only from it, and this sandbox holds nothing but what it is sent.
+const APP_ORIGIN = (() => {
+  try { const url = new URL(document.referrer); if (url.protocol === "https:" || url.protocol === "http:") return url.origin; }
+  catch { /* No referrer: the page and this file share the app's origin. */ }
+  return location.origin;
+})();
+const send = (type, details = {}) => { if (!disposed) parent.postMessage({ channel: CHANNEL, type, ...details }, APP_ORIGIN); };
 let loading = false;
 let locked = false;
 let original = null;
@@ -115,6 +123,9 @@ async function stop(reason) {
 }
 
 try {
+  // PreloadJS adds X-Requested-With to files it thinks share this page's host, which forces a CORS preflight from the
+  // opaque sandbox; the Entry CDN answers OPTIONS with 405. Every request from this sandbox is cross-origin anyway.
+  if (typeof window.createjs?.RequestUtils?.isCrossDomain === "function") window.createjs.RequestUtils.isCrossDomain = () => true;
   // Entry's canvas controls omit CORS when loading their images. An opaque
   // sandbox needs anonymous requests so EaselJS can read pixels for hit tests.
   window.Image = new Proxy(window.Image, {
@@ -355,7 +366,7 @@ try {
   });
   Entry.addEventListener("stop", () => { send("running", { running: false }); });
   window.addEventListener("message", async (event) => {
-    if (disposed || event.source !== parent || event.origin !== location.origin || event.data?.channel !== CHANNEL) return;
+    if (disposed || event.source !== parent || event.origin !== APP_ORIGIN || event.data?.channel !== CHANNEL) return;
     const message = event.data;
     try {
       if (message.type === "load") {

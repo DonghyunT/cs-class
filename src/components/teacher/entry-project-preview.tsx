@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Play, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ENTRY_PALETTE, TRUSTED_SPRITES } from "@/lib/classroom/entry-palette";
+import entryWorkspace from "@/lib/classroom/entry-workspace.json";
 import {
   entryBlockCategory,
   formatEntryNode,
@@ -345,8 +346,9 @@ export function EntryProjectPreview({
             <iframe
               key={attempt}
               ref={frameRef}
-              src={`/entryjs/workspace.html?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${missionById(missionId)?.functions ? "&fn=1" : ""}${parsed.free ? "&free=1" : ""}`}
+              src={`${entryWorkspace.src}?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${missionById(missionId)?.functions ? "&fn=1" : ""}${parsed.free ? "&free=1" : ""}`}
               title={`${missionTitle} 교사 실행 작업실`}
+              referrerPolicy="origin"
               sandbox="allow-scripts"
               className={styles.entryRunnerFrame}
               inert={phase !== "ready"}

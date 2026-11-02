@@ -128,7 +128,7 @@ cs-class/
 ├─ tests/                 # Playwright E2E 검증 및 단위 테스트 스위트
 ├─ public/entryjs/        # EntryJS 4.0.23 편집기 및 브라우저 정적 자산 (sprites/library: 엔트리 공식 오브젝트 묶음)
 ├─ public/concepts/       # 개념·퀴즈 화면의 엔트리 블록 이미지 캡처(조건·반복·함수 수업)
-├─ cloudflare/entry-cdn/  # 엔트리 라이브러리를 올리는 Cloudflare Workers 정적 CDN 설정(절차는 FIREBASE_SETUP)
+├─ cloudflare/entry-cdn/  # 엔트리 작업실(라이브러리·브리지·그림)을 올리는 Cloudflare Workers 정적 CDN 설정(절차는 FIREBASE_SETUP)
 ├─ scripts/               # 에뮬레이터 시드, 선별 검증기, 문서 검사 스크립트
 ├─ teaching-materials/    # 교사용 독립 자료 (로그인·DB 미사용)
 │  ├─ festival-romance/   # 3차시 개념 수업 투사 자료(자체 빌드 build.cjs가 public/festival-romance.html도 만듦)

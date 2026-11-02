@@ -100,12 +100,12 @@ Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 �
 ### 엔트리 라이브러리 CDN
 <a id="엔트리-라이브러리-cdn"></a>
 
-엔트리 라이브러리(`public/entryjs/vendor/`)는 Cloudflare Workers 정적 파일 `cs-class-entry`([`cloudflare/entry-cdn/wrangler.jsonc`](../cloudflare/entry-cdn/wrangler.jsonc))에서도 제공해 Vercel CDN 요청을 줄입니다. 서버 코드가 없는 정적 파일만이라 [무료 플랜에서도 요청이 무료·무제한](https://developers.cloudflare.com/workers/platform/pricing/)이고, 한 버전 20,000개·파일당 25MiB 한도 안입니다. 주소 전환 규칙은 [개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)에 있습니다.
+엔트리 작업실 전체(라이브러리 `public/entryjs/vendor/`, 브리지 `workspace.html`·`workspace.js`·`workspace.css`, 그림 `sprites/` 등 `/entryjs/`의 나머지)는 Cloudflare Workers 정적 파일 `cs-class-entry`([`cloudflare/entry-cdn/wrangler.jsonc`](../cloudflare/entry-cdn/wrangler.jsonc))에서 열어 Vercel CDN 요청을 줄입니다. 서버 코드가 없는 정적 파일만이라 [무료 플랜에서도 요청이 무료·무제한](https://developers.cloudflare.com/workers/platform/pricing/)이고, [한도](https://developers.cloudflare.com/workers/platform/limits/#static-assets)(한 버전 20,000개·파일당 25MiB·`_headers` 규칙 100개) 안입니다(11/2 묶음 1,853개, 넘으면 묶음 단계가 멈춤). 주소 전환·CDN 구조·교체 순서는 [개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)에 있습니다.
 
-1. **올리기(사용자 승인 필요):** `npx wrangler login`(사용자 로그인) 뒤 `npm run deploy:entry-cdn`. `scratch/entry-cdn/<지문 16자>/`와 `_headers`(CORS `*`, 1년 `immutable`, `nosniff`, `noindex`)를 만들어 올립니다. 주소는 `https://cs-class-entry.cs-class.workers.dev`이고 버전별 미리보기 주소는 끕니다(`preview_urls: false`). 새 하위 주소는 처음 몇 분간 TLS 연결이 끊길 수 있습니다. 올릴 때마다 그 묶음만 남아 지난 지문의 파일은 사라지므로, 라이브러리를 바꿀 때는 [개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)의 순서(병합 → 올리기 → 재배포)를 지킵니다.
-2. **확인:** `https://<주소>/<지문 16자>/version.txt`가 `.prepared`와 같은 값이고 `entry/dist/entry.min.js` 응답에 `Access-Control-Allow-Origin: *`가 있는지 봅니다. 학교 PC에서도 같은 주소가 열려야 합니다.
-3. **켜기:** `scripts/entryjs-cdn.json`의 `base`에 `https://` 주소(경로 없이)를 넣어 PR로 병합합니다. Vercel 설정은 바꾸지 않습니다. 공개 뒤 빌드 로그의 `Entry vendor files:` 줄과 작업실의 라이브러리 요청 주소를 확인합니다.
-4. **되돌리기:** `base`를 비워 병합·배포하면 Vercel 파일로 돌아갑니다. 이미 열린 탭은 새로고침해야 바뀝니다. CDN 장애 때 자동으로 돌아가지 않습니다. Vercel 롤백으로 지문이 다른 옛 배포를 되살리면 그 지문이 CDN에 없어 작업실이 열리지 않으므로, 그때는 `base`를 비운 배포로 되돌립니다.
+1. **올리기(사용자 승인 필요):** `npx wrangler login`(사용자 로그인) 뒤 `npm run deploy:entry-cdn`. 묶음 단계가 `git fetch origin main`으로 운영 브리지 이력을 받고 `scratch/entry-cdn/`에 라이브러리, 브리지(지금 파일 + `origin/main`의 최근 20개), `/entryjs/` 사본, `_headers`(CORS `*`, `nosniff`, `noindex`, 지문 경로는 1년 `immutable`, `/entryjs/`는 하루)를 만들어 올립니다. 올릴 때마다 그 묶음만 남으므로 이 명령으로만 올립니다. 브리지가 바뀐 PR은 CI 통과 뒤 PR 브랜치에서 올리고 병합하며, 라이브러리를 바꿀 때는 [개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)의 순서(병합 → 올리기 → 재배포)를 지킵니다. 주소는 `https://cs-class-entry.cs-class.workers.dev`이고 버전별 미리보기 주소는 끄고(`preview_urls: false`), `.html`을 확장자 없는 주소로 돌리지 않습니다(`html_handling: none`).
+2. **확인:** 묶음 단계가 출력한 브리지 주소의 `version.txt`가 `<브리지 지문> <라이브러리 지문>`이고, `workspace.html`이 리디렉트 없이 200, `/entryjs/name-dog.svg`에 `Access-Control-Allow-Origin: *`와 `Cache-Control: public, max-age=86400` 하나만 있는지 봅니다. 학교 PC에서도 같은 주소가 열려야 합니다(10/30 확인).
+3. **켜기:** `scripts/entryjs-cdn.json`의 `base`에 `https://` 주소(경로 없이)를 넣어 PR로 병합합니다. Vercel 설정은 바꾸지 않습니다. 공개 뒤 빌드 로그의 `Entry vendor files:` 줄에 브리지 주소(`/v/…`)가 있는지, Vercel Observability의 수업 시간 경로별 요청에서 `/entryjs/`가 사라졌는지 확인합니다.
+4. **되돌리기:** `base`를 비워 병합·배포하면 Vercel 파일로 돌아갑니다. 이미 열린 탭은 새로고침해야 바뀝니다. CDN 장애 때 자동으로 돌아가지 않습니다. Vercel 롤백은 그 배포의 브리지가 최근 20개 안이면 그대로 열리고, 라이브러리 지문이 다른 옛 배포는 CDN에 없어 작업실이 열리지 않으므로 그때는 `base`를 비운 배포로 되돌립니다.
 
 ### 복습 AI 서버 설정
 

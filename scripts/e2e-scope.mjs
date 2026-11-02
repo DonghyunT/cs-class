@@ -9,8 +9,9 @@ const ENTRY_SHARED = [
   /^tests\/(?:entry-palette\.test\.ts|entry-legacy-(?:inputs|objects)\.ts|fixtures\/entry-legacy-(?:keys|objects)\.json)$/,
   /^public\/entryjs\/.+$/,
   /^scripts\/prepare-entryjs\.mjs$/,
-  // Moves the vendor files to the Entry CDN on production builds; programming-classroom's entry-cdn check covers it.
+  // Moves the workspace to the Entry CDN on production builds; programming-classroom's entry-cdn check covers it.
   /^scripts\/entryjs-cdn\.(?:mjs|json)$/,
+  /^src\/lib\/classroom\/entry-workspace\.json$/,
   /^cloudflare\/entry-cdn\/.+$/,
   // Answers the sandboxed iframe's CORS preflights. Remove this entry if the matcher grows beyond /entryjs/.
   /^src\/proxy\.ts$/,
