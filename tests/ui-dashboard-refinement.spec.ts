@@ -98,9 +98,11 @@ test('학생 이번 수업 우선·구체적 이어갈 곳과 다음 일정 5개
   await expect(cards.first()).toContainText(programming.title);
   await expect(cards.first()).toContainText('이어갈 곳: 실습 · 곱셈 계산기');
   // Newest regular lesson next; a review stays under its own heading after every regular lesson, even when worked on recently.
-  await expect(cards.nth(1)).toContainText(RELEASED_LESSONS.find((item) => item.id === 'loops')!.title);
+  // Lessons are added weekly, so positions come from the catalog instead of fixed lesson IDs.
+  const regular = RELEASED_LESSONS.filter((item) => item.mode !== 'review');
+  await expect(cards.nth(1)).toContainText(regular.at(-1)!.title);
   await expect(page.getByRole('heading', { name: '선택 복습', exact: true })).toBeVisible();
-  await expect(cards.nth(3)).toContainText(recentReview.title);
+  await expect(cards.nth(regular.length)).toContainText(recentReview.title);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('student-current-first-390.png'), fullPage: true });
