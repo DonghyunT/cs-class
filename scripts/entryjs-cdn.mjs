@@ -56,12 +56,28 @@ async function listFiles(directory) {
   return entries.filter((entry) => entry.isFile()).map((entry) => path.join(entry.parentPath, entry.name));
 }
 
+// Vercel builds without the files .vercelignore names (sprites/library/NOTICE.md through `*.md`), so the mirror and
+// its fingerprint leave them out too. Patterns with a slash match from the repository root, others any path segment.
+export function vercelIgnored(file, patterns) {
+  const glob = (pattern) => new RegExp(`^${pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll("*", "[^/]*")}$`);
+  const segments = file.split("/");
+  return patterns.some((pattern) => pattern.includes("/")
+    ? segments.some((_, i) => glob(pattern.replace(/\/$/, "")).test(segments.slice(0, i + 1).join("/")))
+    : segments.some((segment) => glob(pattern).test(segment)));
+}
+
+const ignorePatterns = () => existsSync(path.join(root, ".vercelignore"))
+  ? readFileSync(path.join(root, ".vercelignore"), "utf8").split(/\r?\n/).map((line) => line.trim()).filter((line) => line && !line.startsWith("#"))
+  : [];
+// A file under `source` as the repository names it, for .vercelignore.
+const repoPath = (source, file) => path.relative(root, path.join(source, file)).split(path.sep).join("/");
+
 // Hashes what the /entryjs/ mirror serves besides the vendor copy (named by its own fingerprint) and the bridge, so a
 // build whose sprites the CDN does not have yet keeps the app's files. Every file gets CRLF folded byte for byte,
 // binary ones too, so a Windows checkout and Vercel's Linux checkout agree.
-export async function mirrorFingerprint(source = entryjs) {
+export async function mirrorFingerprint(source = entryjs, patterns = ignorePatterns()) {
   const files = (await listFiles(source)).map((file) => path.relative(source, file).split(path.sep).join("/"))
-    .filter((file) => !file.startsWith("vendor/") && !BRIDGE_FILES.includes(file)).sort();
+    .filter((file) => !file.startsWith("vendor/") && !BRIDGE_FILES.includes(file) && !vercelIgnored(repoPath(source, file), patterns)).sort();
   const hash = createHash("sha256");
   for (const file of files) {
     hash.update(`${file}\0`);
@@ -93,7 +109,7 @@ export async function workspaceForBuild({ html, bridge, mirror, vercelEnv, base,
   if ((await readText(fetchImpl, `${bridged}/version.txt`)).trim() !== `${bridge} ${fingerprint}`) return { html: rewritten, src: LOCAL_WORKSPACE, reason: `${prefix}, missing ${bridged}/version.txt` };
   // Sprites added or changed in this build must already be on the CDN before the iframe moves there.
   const mirrored = `${cdnOrigin(base)}/${MIRROR_VERSION}`;
-  if ((await readText(fetchImpl, mirrored)).trim() !== `${mirror} ${fingerprint}`) return { html: rewritten, src: LOCAL_WORKSPACE, reason: `${prefix}, ${bridged}, stale ${mirrored}` };
+  if ((await readText(fetchImpl, mirrored)).trim() !== `${mirror} ${fingerprint}`) return { html: rewritten, src: LOCAL_WORKSPACE, reason: `${prefix}, ${bridged}, stale ${mirrored} (this build: ${mirror.slice(0, 16)})` };
   return { html: rewritten, src: `${bridged}/workspace.html`, reason: `${prefix}, ${bridged}` };
 }
 
@@ -134,8 +150,9 @@ export async function writeBundle({ out, base, fingerprint, versions, source = e
   await cp(path.join(source, "vendor"), vendorTarget, { recursive: true, filter: (file) => path.basename(file) !== ".prepared" });
   await writeFile(path.join(vendorTarget, "version.txt"), fingerprint);
   // Everything else the app serves under /entryjs/; the bridge itself only lives under /v/.
-  await cp(source, path.join(out, "entryjs"), { recursive: true, filter: (file) => path.basename(file) !== ".prepared" && !(path.dirname(file) === source && BRIDGE_FILES.includes(path.basename(file))) });
-  await writeFile(path.join(out, MIRROR_VERSION), `${await mirrorFingerprint(source)} ${fingerprint}`);
+  const patterns = ignorePatterns();
+  await cp(source, path.join(out, "entryjs"), { recursive: true, filter: (file) => path.basename(file) !== ".prepared" && !(path.dirname(file) === source && BRIDGE_FILES.includes(path.basename(file))) && !vercelIgnored(repoPath(source, path.relative(source, file)), patterns) });
+  await writeFile(path.join(out, MIRROR_VERSION), `${await mirrorFingerprint(source, patterns)} ${fingerprint}`);
   const vendorPrefix = cdnPrefix(base, fingerprint);
   for (const [bridge, files] of versions) {
     const target = path.join(out, new URL(bridgePrefix(base, bridge, fingerprint)).pathname);

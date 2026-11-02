@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { BRIDGE_FILES, LOCAL_WORKSPACE, bridgeFingerprint, bridgePrefix, bridgeVersions, cdnHeaders, cdnPrefix, mirrorFingerprint, rewriteWorkspace, workspaceForBuild, writeBundle } from "../scripts/entryjs-cdn.mjs";
+import { BRIDGE_FILES, LOCAL_WORKSPACE, bridgeFingerprint, bridgePrefix, bridgeVersions, cdnHeaders, cdnPrefix, mirrorFingerprint, rewriteWorkspace, vercelIgnored, workspaceForBuild, writeBundle } from "../scripts/entryjs-cdn.mjs";
 
 // As git and Vercel store it; a Windows checkout has CRLF.
 const html = readFileSync(new URL("../public/entryjs/workspace.html", import.meta.url), "utf8").replaceAll("\r\n", "\n");
@@ -83,7 +83,7 @@ test("workspaceForBuild moves the vendor files first and the bridge only once th
     const result = await workspaceForBuild({ html, bridge, mirror, vercelEnv: "production", base, fingerprint, fetchImpl: serving(version ? { ...served, [mirrored]: version } : served) });
     assert.equal(result.html, rewriteWorkspace(html, prefix));
     assert.equal(result.src, LOCAL_WORKSPACE, String(version));
-    assert.match(result.reason, /stale .*cdn-version\.txt$/);
+    assert.match(result.reason, /stale .*cdn-version\.txt \(this build: 1111222233334444\)$/);
   }
   const ready = await workspaceForBuild({ html, bridge, mirror, vercelEnv: "production", base, fingerprint, fetchImpl: serving({ ...served, [mirrored]: `${mirror} ${fingerprint}\n` }) });
   assert.deepEqual(ready, { html: rewriteWorkspace(html, prefix), src: `${bridged}/workspace.html`, reason: `${prefix}, ${bridged}` });
@@ -103,6 +103,10 @@ test("mirrorFingerprint follows every mirrored file but not the vendor copy, the
     assert.notEqual(added, key);
     put("sprites/new.svg", "<svg />");
     assert.notEqual(await mirrorFingerprint(dir), added);
+    // Vercel builds without what .vercelignore names, so those files must not change the fingerprint (11/2 #102).
+    const kept = await mirrorFingerprint(dir, ["*.md"]);
+    put("sprites/NOTICE.md", "attribution");
+    assert.equal(await mirrorFingerprint(dir, ["*.md"]), kept);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -176,4 +180,14 @@ test("writeBundle lays out the vendor, every bridge version and the app's /entry
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("vercelIgnored reads .vercelignore the way Vercel drops files before the build", () => {
+  const patterns = readFileSync(new URL("../.vercelignore", import.meta.url), "utf8").split(/\r?\n/).map((line) => line.trim()).filter((line) => line && !line.startsWith("#"));
+  assert.ok(vercelIgnored("public/entryjs/sprites/library/NOTICE.md", patterns));
+  for (const file of ["public/entryjs/sprites/tree-1.svg", "public/entryjs/name-dog.svg", "public/entryjs/sprites/library/thumb/a.png"]) assert.ok(!vercelIgnored(file, patterns), file);
+  assert.ok(vercelIgnored(".git/config", patterns));
+  assert.ok(vercelIgnored("public/entryjs/docs/a.svg", ["docs"]));
+  assert.ok(!vercelIgnored("public/entryjs/docsx.svg", ["docs", ".git/config"]));
+  assert.ok(vercelIgnored("public/.env.local", [".env*"]));
 });
