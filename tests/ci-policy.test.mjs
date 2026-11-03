@@ -4,11 +4,13 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { changedFiles, classify, findBaseline, ignoreBuild, selectScope } from "../scripts/ci-policy.mjs";
+import { changedFiles, classify, findBaseline, findVerifiedRun, ignoreBuild, selectScope } from "../scripts/ci-policy.mjs";
 
 const sha = "a".repeat(40);
 const env = { GITHUB_EVENT_NAME: "push", GITHUB_REF: "refs/heads/main", GITHUB_TOKEN: "test-only",
   GITHUB_REPOSITORY: "example/project", GITHUB_RUN_ID: "9", GITHUB_SHA: "b".repeat(40) };
+// main pushes look for a pull_request run that already tested the same tree; these tests have none.
+const unverified = async () => null;
 
 test("only explicit documentation paths are light checks", () => {
   assert.equal(classify(["README.md", "AGENTS.md", "docs/HANDOFF.md", "docs/archive/old.md"]), "docs");
@@ -47,10 +49,10 @@ test("scope compares all changes since last success, including failed code befor
   assert.equal((await selectScope(env, baseline, () => ["docs/HANDOFF.md"])).mode, "docs");
   assert.equal((await selectScope(env, baseline, (base) => {
     assert.equal(base, sha); return ["src/lib/save.ts", "docs/HANDOFF.md"];
-  })).mode, "smoke");
+  }, unverified)).mode, "smoke");
 
   // Single lesson affected scope
-  const sandwichScope = await selectScope(env, baseline, () => ["src/components/student/review/sandwich.tsx"]);
+  const sandwichScope = await selectScope(env, baseline, () => ["src/components/student/review/sandwich.tsx"], unverified);
   assert.equal(sandwichScope.mode, "affected");
   assert.deepEqual(sandwichScope.lessonIds, ["review-sandwich"]);
   assert.ok(sandwichScope.testFiles.length > 0);
@@ -65,16 +67,20 @@ test("shared changes retain related lesson tests and all registered lesson smoke
   assert.deepEqual(plan.lessonIds, ["review-sandwich"]);
   assert.deepEqual(new Set(plan.testFiles), new Set(["tests/review-sandwich.spec.ts", "tests/sandwich-conversation.spec.ts",
     "tests/review-practice-ui.spec.ts", "tests/lesson-feedback-workspace.spec.ts", "tests/lesson-smoke.spec.ts"]));
-  const common = await selectScope(env, async () => sha, () => ["src/components/student/use-work.ts"]);
+  const common = await selectScope(env, async () => sha, () => ["src/components/student/use-work.ts"], unverified);
   assert.equal(common.mode, "smoke");
   assert.deepEqual(common.testFiles, ["tests/lesson-smoke.spec.ts"]);
+  // Hosting the Entry workspace (with its unit test) needs only programming-classroom, not every Entry lesson.
+  const hosting = await selectScope(env, async () => sha, () => ["scripts/entryjs-cdn.mjs", "tests/entryjs-cdn.test.mjs"], unverified);
+  assert.equal(hosting.mode, "smoke");
+  assert.deepEqual(hosting.testFiles, ["tests/programming-classroom.spec.ts", "tests/lesson-smoke.spec.ts"]);
 });
 
 test("automatic smoke runs the specs that pin session and polling timing", async () => {
   const timing = ["tests/classroom-api.spec.ts", "tests/manual-save-entry.spec.ts", "tests/read-polling.spec.ts"];
   for (const file of ["src/components/session-provider.tsx", "src/app/api/auth/[action]/route.ts", "src/lib/classroom/features.ts",
     "src/components/student/lesson-workspace.tsx", "src/components/student/dashboard.tsx", "src/components/dashboard/dashboard.tsx", "tests/read-polling.spec.ts"]) {
-    const plan = await selectScope(env, async () => sha, () => [file]);
+    const plan = await selectScope(env, async () => sha, () => [file], unverified);
     assert.equal(plan.mode, "smoke", file);
     assert.deepEqual(new Set(plan.testFiles), new Set([...timing, "tests/lesson-smoke.spec.ts"]), file);
   }
@@ -96,6 +102,30 @@ test("baseline rejects failed/canceled/manual/current/nonancestor runs", async (
   await assert.rejects(findBaseline(env, async () => ({ ok: false })));
   await assert.rejects(findBaseline(env, async () => ({ ok: true, json: async () => ({}) })));
   assert.equal(await findBaseline({}), null);
+});
+
+test("main reuses only a passed pull_request run on the same tree, and never on pull requests or docs", async () => {
+  const tree = "d".repeat(40);
+  const passed = { id: 7, event: "pull_request", conclusion: "success", status: "completed", head_commit: { tree_id: tree } };
+  const lookup = (runs) => findVerifiedRun(env, async () => ({ ok: true, json: async () => ({ workflow_runs: runs }) }), () => tree);
+  assert.equal(await lookup([{ ...passed, id: 1, conclusion: "failure" }, { ...passed, id: 2, event: "push" },
+    { ...passed, id: 3, status: "in_progress" }, { ...passed, id: 4, head_commit: { tree_id: "e".repeat(40) } }, passed]), 7);
+  assert.equal(await lookup([{ ...passed, head_commit: null }]), null);
+  await assert.rejects(findVerifiedRun(env, async () => ({ ok: false }), () => tree));
+  assert.equal(await findVerifiedRun({}), null);
+
+  const lesson = () => ["src/components/student/review/sandwich.tsx"];
+  const reused = await selectScope(env, async () => sha, lesson, async () => 7);
+  assert.equal(reused.mode, "verified");
+  assert.match(reused.reason, /run 7/);
+  assert.equal(reused.base, sha);
+  assert.deepEqual(reused.testFiles, []);
+  // Shared code too: the pull_request run already ran its smoke scope on this tree.
+  assert.equal((await selectScope(env, async () => sha, () => ["src/components/student/use-work.ts"], async () => 7)).mode, "verified");
+
+  assert.equal((await selectScope({ ...env, GITHUB_EVENT_NAME: "pull_request" }, async () => sha, lesson, async () => 7)).mode, "affected");
+  assert.equal((await selectScope(env, async () => sha, () => ["docs/HANDOFF.md"], async () => 7)).mode, "docs");
+  assert.equal((await selectScope(env, async () => sha, lesson, async () => { throw new Error("API failure"); })).mode, "affected");
 });
 
 test("Vercel skips only proven docs; missing baseline/history builds", () => {
