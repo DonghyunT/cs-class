@@ -415,8 +415,8 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 - **Stitch 디자인 연동:** API 키는 `STITCH_API_KEY` 환경변수로만 관리하며(설정 스크립트 `scripts/Set-StitchApiKey.ps1`) 저장소나 로그에 노출하지 않습니다.
 - **Claude Code 전용 설정:** `.claude/`는 Claude Code만 읽으며, 다른 에이전트의 동작과 공통 규칙은 [AGENTS](../AGENTS.md)를 따릅니다.
   - `settings.json`은 `.env*.local`·서비스 계정 키 읽기와 Firestore 삭제·Firebase 배포 도구를 막습니다.
-  - 매번 확인받는 것: Firebase MCP 도구 전체, GitHub 도구의 직접 쓰기, Vercel 승격·배포, 강제 push(`--force`, `-f`, `+` 참조), 원격 브랜치 삭제(`git push`의 `--delete`·`-d`, `gh pr merge`의 `--delete-branch`·`-d`), `--mirror`·`--prune` push, `gh pr merge --admin`.
-  - 일반 `git push`와 `gh pr merge`는 확인 없이 실행됩니다. 언제 해도 되는지는 [AGENTS의 승인 범위](../AGENTS.md#검증-및-배포-규칙)가 정합니다.
+  - 매번 확인받는 것: Firebase MCP 도구 전체와 `firebase deploy` 명령, GitHub 도구의 직접 쓰기·삭제·이슈와 댓글 쓰기, Vercel 승격·배포·롤백·별칭·환경변수 추가·수정과 값 조회·프로젝트 설정·일시 중지, 강제 push(`--force`, `-f`, `+` 참조), 원격 브랜치 삭제(`git push`의 `--delete`·`-d`), `--mirror`·`--prune` push, `gh pr merge --admin`.
+  - 일반 `git push`와 `gh pr merge`는 확인 없이 실행됩니다. 병합한 그 PR의 브랜치만 지우는 `gh pr merge`의 `--delete-branch`·`-d`도 병합 승인에 들어 있어 확인하지 않습니다. 언제 해도 되는지는 [AGENTS의 승인 범위](../AGENTS.md#검증-및-배포-규칙)가 정합니다. `main` push는 따로 확인하지 않고 `app` 검사(배포 게이트)에 맡기며, 확인받는 Vercel 도구는 그 게이트를 거치지 않고 운영을 바꾸는 것들입니다.
   - 이 규칙은 명령 문자열만 비교하는 실수 방지 장치입니다. 다른 형태로 쓴 명령(예: 콜론으로 원격 브랜치를 지우는 `git push origin :이름`, `-uf`처럼 묶어 쓴 짧은 옵션)은 잡지 못하므로 보안 경계로 여기지 않습니다.
   - `launch.json`은 내장 미리보기용 `dev:emulator` 실행 설정입니다.
 
