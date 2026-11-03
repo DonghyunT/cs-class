@@ -9,14 +9,7 @@ const ENTRY_SHARED = [
   /^tests\/(?:entry-palette\.test\.ts|entry-legacy-(?:inputs|objects)\.ts|fixtures\/entry-legacy-(?:keys|objects)\.json)$/,
   /^public\/entryjs\/.+$/,
   /^scripts\/prepare-entryjs\.mjs$/,
-  // Moves the workspace to the Entry CDN on production builds; programming-classroom's entry-cdn check covers it.
-  /^scripts\/entryjs-cdn\.(?:mjs|json)$/,
   /^src\/lib\/classroom\/entry-workspace(?:\.json|-frame\.ts)$/,
-  // Only the Entry workspace's headers and its host's redirect live here; remove this entry if the config grows.
-  /^next\.config\.ts$/,
-  /^cloudflare\/entry-cdn\/.+$/,
-  // Answers the sandboxed iframe's CORS preflights. Remove this entry if the matcher grows beyond /entryjs/.
-  /^src\/proxy\.ts$/,
   // The teacher runner boots the same iframe for every Entry lesson; its E2E check lives in programming-learning.
   /^src\/components\/teacher\/entry-project-preview\.tsx$/,
   /^tests\/programming-learning\.spec\.ts$/,
@@ -164,11 +157,33 @@ export const LESSON_MAPPINGS = {
   }
 };
 
+// Where production serves the Entry workspace (host, CDN, headers). Every Entry lesson boots that workspace the same way,
+// so programming-classroom's entry-assets, entry-cdn and entry-host checks cover these without each lesson's missions.
+const ENTRY_HOSTING = {
+  lessonId: "programming-13",
+  patterns: [
+    // Moves the workspace to the Entry CDN on production builds.
+    /^scripts\/entryjs-cdn\.(?:mjs|json)$/,
+    /^cloudflare\/entry-cdn\/.+$/,
+    // Only the Entry workspace's headers and its host's redirect live here; remove this entry if the config grows.
+    /^next\.config\.ts$/,
+    // Answers the sandboxed iframe's CORS preflights. Remove this entry if the matcher grows beyond /entryjs/.
+    /^src\/proxy\.ts$/
+  ],
+  tests: ["tests/programming-classroom.spec.ts"]
+};
+
+const MAPPINGS = [...Object.values(LESSON_MAPPINGS), ENTRY_HOSTING];
+
 // Shared files (the Entry interpreter, palette, iframe) belong to every lesson that lists them.
-export function matchLessons(file) {
+function matchMappings(file) {
   // Normalize Windows backslashes to POSIX
   const normalized = file.replaceAll("\\", "/");
-  return Object.values(LESSON_MAPPINGS).filter(mapping => mapping.patterns.some(pattern => pattern.test(normalized))).map(mapping => mapping.lessonId);
+  return MAPPINGS.filter(mapping => mapping.patterns.some(pattern => pattern.test(normalized)));
+}
+
+export function matchLessons(file) {
+  return [...new Set(matchMappings(file).map(mapping => mapping.lessonId))];
 }
 
 export function matchLesson(file) {
@@ -190,13 +205,13 @@ export function selectE2E(files) {
   // Filter out documentation files to see the functional changes
   const codeFiles = normalizedFiles.filter(f => !isDocument(f) && !LOGIC_ONLY.some(pattern => pattern.test(f)));
 
-  const matchedLessons = new Set();
+  const matchedMappings = new Set();
   let unmapped = null;
 
   for (const file of codeFiles) {
-    const lessons = matchLessons(file);
-    if (lessons.length) {
-      lessons.forEach(lesson => matchedLessons.add(lesson));
+    const mappings = matchMappings(file);
+    if (mappings.length) {
+      mappings.forEach(mapping => matchedMappings.add(mapping));
     } else {
       unmapped = file;
       break;
@@ -204,7 +219,7 @@ export function selectE2E(files) {
   }
 
   // If any code file is not strictly mapped to a lesson, elevate to full
-  if (unmapped || matchedLessons.size === 0) {
+  if (unmapped || matchedMappings.size === 0) {
     return {
       mode: "full",
       reason: unmapped ? `unmapped file: ${unmapped}` : "no lesson matched",
@@ -213,16 +228,8 @@ export function selectE2E(files) {
     };
   }
 
-  const lessonIds = Array.from(matchedLessons).sort();
-  const testFilesSet = new Set();
-
-  for (const id of lessonIds) {
-    for (const test of LESSON_MAPPINGS[id].tests) {
-      testFilesSet.add(test);
-    }
-  }
-
-  const testFiles = Array.from(testFilesSet).sort();
+  const lessonIds = [...new Set([...matchedMappings].map(mapping => mapping.lessonId))].sort();
+  const testFiles = [...new Set([...matchedMappings].flatMap(mapping => mapping.tests))].sort();
 
   return {
     mode: "affected",
