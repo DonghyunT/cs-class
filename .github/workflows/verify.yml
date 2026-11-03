@@ -10,7 +10,7 @@ permissions:
   actions: read
 concurrency:
   group: verify-${{ github.event_name }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'push' }}
+  cancel-in-progress: true
 jobs:
   app:
     runs-on: ubuntu-latest
@@ -59,12 +59,13 @@ jobs:
         run: npm run test:review
       - if: steps.scope.outputs.mode != 'docs'
         run: npm run build
+      # verified: a pull_request run already passed E2E on the same file tree (scripts/ci-policy.mjs).
       - uses: actions/setup-java@v4
-        if: steps.scope.outputs.mode != 'docs'
+        if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         with:
           distribution: temurin
           java-version: '21'
-      - if: steps.scope.outputs.mode != 'docs'
+      - if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         run: npx playwright install --with-deps chromium
-      - if: steps.scope.outputs.mode != 'docs'
+      - if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         run: npm run test:e2e:scope

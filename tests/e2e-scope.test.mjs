@@ -60,9 +60,11 @@ test("matchLesson matches lesson specific files accurately", () => {
   assert.deepEqual(matchLessons("src\\lib\\classroom\\programming-entry.ts"), ["programming-13", "conditionals", "loops", "functions"]);
   assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops", "functions"]);
   assert.deepEqual(matchLessons("tests/programming-learning.spec.ts"), ["programming-13", "conditionals", "loops", "functions"]);
-  assert.deepEqual(matchLessons("src/proxy.ts"), ["programming-13", "conditionals", "loops", "functions"]);
-  for (const file of ["scripts/entryjs-cdn.mjs", "scripts/entryjs-cdn.json", "cloudflare/entry-cdn/wrangler.jsonc", "next.config.ts", "src/lib/classroom/entry-workspace-frame.ts"]) {
-    assert.deepEqual(matchLessons(file), ["programming-13", "conditionals", "loops", "functions"]);
+  for (const file of ["src/lib/classroom/entry-workspace-frame.ts", "src/lib/classroom/entry-workspace.json"]) {
+    assert.deepEqual(matchLessons(file), ["programming-13", "conditionals", "loops", "functions"], file);
+  }
+  for (const file of ["scripts/entryjs-cdn.mjs", "scripts/entryjs-cdn.json", "cloudflare/entry-cdn/wrangler.jsonc", "next.config.ts", "src/proxy.ts"]) {
+    assert.deepEqual(matchLessons(file), ["programming-13"], file);
   }
   assert.deepEqual(matchLessons("src/components/teacher/teacher.module.css"), []);
   assert.deepEqual(matchLessons("src/lib/classroom/conditionals-data.ts"), ["conditionals"]);
@@ -104,6 +106,13 @@ test("selectE2E classifies single lesson changes as affected", () => {
   assert.ok(programming.testFiles.includes("tests/conditionals.spec.ts"));
   assert.ok(programming.testFiles.includes("tests/programming-classroom.spec.ts"));
   assert.ok(programming.testFiles.includes("tests/entryjs-ui.spec.ts"));
+
+  // Where production serves the workspace is checked once, not through every Entry lesson's missions.
+  const hosting = selectE2E(["scripts/entryjs-cdn.mjs", "next.config.ts", "src/proxy.ts"]);
+  assert.equal(hosting.mode, "affected");
+  assert.deepEqual(hosting.lessonIds, ["programming-13"]);
+  assert.deepEqual(hosting.testFiles, ["tests/programming-classroom.spec.ts"]);
+  assert.deepEqual(selectE2E(["next.config.ts", "public/entryjs/workspace.js"]).testFiles, programming.testFiles);
 });
 
 test("selectE2E classifies multiple lesson changes as affected union", () => {

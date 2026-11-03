@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-11-02(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-11-03(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -79,7 +79,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 
 | 경로 | 대상 | 절차 |
 | :--- | :--- | :--- |
-| **PR 경로** | 표 아래 'PR 경로 대상'과, 직접 push 대상에 없는 모든 변경 | 작업 브랜치 → 로컬 검증(§3의 Tier 1~2) → GitHub PR(자동 리뷰·CI) → squash 병합 → [공개 후 확인](FIREBASE_SETUP.md#ci와-운영-공개) |
+| **PR 경로** | 표 아래 'PR 경로 대상'과, 직접 push 대상에 없는 모든 변경 | 작업 브랜치 → 로컬 검증(§3.2의 PR 경로 기준) → GitHub PR(자동 리뷰·CI) → squash 병합 → [공개 후 확인](FIREBASE_SETUP.md#ci와-운영-공개) |
 | **직접 push 경로** | 아래 '직접 push 대상'의 작은 변경만 | 로컬 검증(§3의 Tier 1~2, 문서만 바꾸면 `node scripts/check-docs.mjs`와 `git diff --check origin/main`만) → `main`에 직접 push → `main` CI 결과 확인. CI는 `main`에서 한 번 실행됩니다 |
 
 **PR 경로 대상:**
@@ -198,7 +198,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 | :--- | :--- | :--- | :--- |
 | **Tier 1: 초경량 단위 검증** | 순수 로직, 문서, 정책 | `npm run test:scope`<br>`npm run test:review`<br>`node scripts/check-docs.mjs`<br>`git diff --check origin/main`<br>`node --test tests/documentation.test.mjs`(문서 검사 스크립트를 바꿀 때) | 커밋 전(문서만 바꾼 커밋은 `check-docs`·`git diff --check`만) |
 | **Tier 1.5: 정적 검사** | 타입 안정성, 린트 | `npm run lint`<br>`npm run typecheck` | 커밋 전 필수(문서만 바꾼 커밋은 생략) |
-| **Tier 2: 선별 E2E (Scoped)** | 변경된 수업 + 공통 스모크 | `npm run test:e2e:scope:running` (서버 구동 중)<br>`npm run test:e2e:scope` (원스톱) | push 전(문서만 바꾼 커밋은 생략) |
+| **Tier 2: 선별 E2E (Scoped)** | 변경된 수업 + 공통 스모크 | `npm run test:e2e:scope:running` (서버 구동 중)<br>`npm run test:e2e:scope` (원스톱) | push 전(문서만 바꾼 커밋은 생략, PR 경로는 §3.2 기준으로 줄임) |
 | **Tier 3: 전체 E2E (Full Suite)** | 전체 회귀 검증 | `npm run test:e2e` | **사용자 승인 시에만** (아래 §3.2) |
 
 `test:review`는 기존 Node 리뷰 검사와 [`playwright.logic.config.ts`](../playwright.logic.config.ts)의 `tests/*.test.ts`를 실행합니다. 이 TypeScript 검사 경로는 브라우저 fixture를 쓰지 않으며 앱 서버·에뮬레이터를 시작하지 않습니다.
@@ -211,7 +211,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 | 구분 | 로컬 에이전트 실행 | 깃허브 CI 실행 (`.github/workflows/verify.yml`) |
 | :--- | :--- | :--- |
 | **직접 push 경로** | Tier 1~2를 통과시키고 결과를 커밋 본문에 적습니다(문서만 바꾸면 [§2.1](#위험도별-반영-경로)의 문서 검사만). 등록 수업 변경은 선별 E2E(`test:e2e:scope:running`)를 돌리고, 미분류 파일이 섞이면 아래 안내대로 검사 파일을 직접 고릅니다 | `main` push에서 한 번 실행합니다. 마지막 성공 main CI 이후 변경을 누적 비교해 문서만이면 E2E를 생략하고, 등록 수업 변경이면 해당 E2E와 공통 스모크를, 미분류 파일이 있으면 아래 `smoke` 모드를 실행합니다 |
-| **PR 경로** | 직접 push 경로와 같은 로컬 검사를 돌리고 결과는 PR 설명에 적습니다. 전체 E2E 실행 여부는 작업을 시작할 때 사용자와 정합니다 | PR과 `main` push에서 각각 실행합니다. `main` 실행은 배포 게이트 신호이기도 합니다 |
+| **PR 경로** | Tier 1~1.5를 통과시키고, E2E는 바꾼 기능의 검사 파일만 지정해 돌립니다(`npm run test:e2e:running -- tests/<파일>.spec.ts`). 등록 수업의 나머지 선별 검사는 PR CI가 돌립니다. 미분류 파일이 섞이면 CI가 관련 검사를 고르지 않으므로 아래 직접 선택 순서를 그대로 따릅니다. 결과는 PR 설명에 적고, 전체 E2E 실행 여부는 작업을 시작할 때 사용자와 정합니다 | PR과 `main` push에서 각각 실행하고, 같은 PR에 새 커밋을 올리면 이전 실행은 취소됩니다. `main` 실행은 배포 게이트 신호이기도 합니다. `main`의 파일 트리(squash 병합 결과)가 성공한 PR 실행의 PR 커밋과 같으면 E2E만 건너뛰고(`verified` 모드) 정책·lint·타입·단위 검사와 빌드는 돌립니다. 병합 전에 `main`이 움직여 트리가 다르면 E2E를 다시 돌리므로, 최신 `main`을 PR 브랜치에 합쳐 PR CI를 통과시킨 뒤 병합하면 중복을 피합니다 |
 | **미분류 파일(서버·공통·설정·검사 파일)이 있을 때** | 로컬 선별 도구는 `full`을 내고 멈추므로, 아래 안내대로 검사 파일을 직접 고릅니다 | `smoke` 모드로 전체 등록 수업 스모크와 확인된 관련 수업 검사를 실행합니다. 세션·학생 화면 조회 파일은 `scripts/e2e-scope.mjs`의 `SMOKE_RELATED`가 정한 시간 검사(`read-polling`·`manual-save-entry`·`classroom-api`)도 함께 돌립니다. 비교 기준이 없거나 조회에 실패해도 전체 검사로 승격하지 않습니다 |
 | **전체 E2E** | **사용자의 명시적 요청 또는 에이전트 질문 후 사전 승인 시에만 실행** | **GitHub Actions의 `workflow_dispatch` 수동 실행으로만 수행** |
 
@@ -223,7 +223,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 
 `:running` 명령은 3000번에 떠 있는 앱을 그대로 씁니다. `npm run dev:emulator`로 띄운 앱은 `CS_TIMETABLE_FIXTURE` 없이 가짜 시간표 서버를 켜지 않아 `timetable` 검사가 실패하고 실제 시간표 사이트로 요청이 갈 수 있습니다. 직접 고른 검사에 `timetable`이 있으면 앱과 에뮬레이터를 모두 끄고(3000·8080·9099 비움) `npx.cmd firebase emulators:exec --only auth,firestore --project demo-cs-class "npx playwright test tests/<파일>.spec.ts"`로 돌립니다(Playwright가 가짜 시간표 서버와 함께 앱을 띄웁니다).
 
-자동 CI의 `app`에는 비문서 변경의 정책·단위 검사, lint, typecheck, 빌드와 위 선별/스모크 검사가 포함됩니다. 스모크 성공을 전체 회귀 검증 성공으로 해석하지 않습니다. PR 경로에서 전체 검사가 필요하면 별도로 승인받아 병합 전에 PR 브랜치에서 `gh workflow run verify.yml --ref <브랜치>`로 실행합니다(`main`에서 돌리면 실패를 공개 뒤에 압니다). `main`에서 돌려야 하면 운영 반영을 확인한 뒤 실행합니다(같은 SHA에 `app` 실행이 하나 더 생겨 배포 대기가 늘 수 있음). 수동 실행 결과는 PR에 실행 SHA·범위와 함께 기록합니다. `main` push의 `app` 성공은 Vercel 운영 반영의 조건이기도 하며, 그 규칙(`[skip ci]` 금지·검사 이름 변경 순서 등)은 [서버 안내](FIREBASE_SETUP.md#ci와-운영-공개)가 단일 기준입니다.
+자동 CI의 `app`에는 비문서 변경의 정책·단위 검사, lint, typecheck, 빌드와 위 선별/스모크 검사(`verified`이면 PR 실행 결과로 대신)가 포함됩니다. 스모크 성공을 전체 회귀 검증 성공으로 해석하지 않습니다. PR 경로에서 전체 검사가 필요하면 별도로 승인받아 병합 전에 PR 브랜치에서 `gh workflow run verify.yml --ref <브랜치>`로 실행합니다(`main`에서 돌리면 실패를 공개 뒤에 압니다). `main`에서 돌려야 하면 운영 반영을 확인한 뒤 실행합니다(같은 SHA에 `app` 실행이 하나 더 생겨 배포 대기가 늘 수 있음). 수동 실행 결과는 PR에 실행 SHA·범위와 함께 기록합니다. `main` push의 `app` 성공은 Vercel 운영 반영의 조건이기도 하며, 그 규칙(`[skip ci]` 금지·검사 이름 변경 순서 등)은 [서버 안내](FIREBASE_SETUP.md#ci와-운영-공개)가 단일 기준입니다.
 
 [`run-selected-e2e.mjs`](../scripts/run-selected-e2e.mjs)는 자동 GitHub 실행에서 `full` 계획과 알 수 없는 모드를 거절하고, 로컬에서는 범위를 매번 새로 계산하며(`--plan`이나 `CS_E2E_PLAN_PATH`를 명시하지 않으면 남은 `scratch/ci/e2e-plan.json`을 읽지 않음) 결과가 `full`이면 이유만 출력하고 멈춥니다. 사용자 승인 후에만 `--full`을 붙여 실행합니다(예: `npm run test:e2e:scope -- --full`). `smoke` 모드는 수업 필터를 해제해 전체 등록 수업을 확인하고, 등록 수업만의 `affected` 모드는 해당 수업에 한정합니다.
 
