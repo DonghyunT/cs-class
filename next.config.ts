@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 import entryCdn from "./scripts/entryjs-cdn.json";
 
-// The Entry workspace host (scripts/entryjs-cdn.json) serves only /entryjs/; anything else there goes to the app.
+// The Entry workspace host (scripts/entryjs-cdn.json) serves only /entryjs/; anything else there goes to the app,
+// except /_next/ (public build files), which Next.js never redirects.
 const { workspaceHost, appHost } = entryCdn;
 const onWorkspaceHost = workspaceHost ? [{ type: "host" as const, value: workspaceHost.replaceAll(".", "\\.") }] : [];
 
