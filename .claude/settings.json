@@ -48,6 +48,7 @@
       "mcp__610a77cd-f15a-4119-8703-60e767de575a__assign_alias",
       "mcp__610a77cd-f15a-4119-8703-60e767de575a__create_project_env",
       "mcp__610a77cd-f15a-4119-8703-60e767de575a__edit_project_env",
+      "mcp__610a77cd-f15a-4119-8703-60e767de575a__get_project_env",
       "mcp__610a77cd-f15a-4119-8703-60e767de575a__update_project",
       "mcp__610a77cd-f15a-4119-8703-60e767de575a__pause_project"
     ],
