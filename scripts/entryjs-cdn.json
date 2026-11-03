@@ -1,3 +1,5 @@
 {
-  "base": "https://cs-class-entry.cs-class.workers.dev"
+  "base": "",
+  "workspaceHost": "cs-class-sigma.vercel.app",
+  "appHost": "cs-class-donghyunt.vercel.app"
 }

@@ -39,13 +39,12 @@ const PROGRAMMING_PALETTE = [
   { category: "calc", blocks: ["calc_basic", "calc_rand", "coordinate_mouse", "coordinate_object", "quotient_and_mod", "calc_operation", "get_project_timer_value", "choose_project_timer_action", "set_visible_project_timer", "get_date", "distance_something", "length_of_string", "count_match_string", "combine_something", "char_at", "substring", "index_of_string", "replace_string", "reverse_of_string", "change_string_case"] },
   { category: "variable", blocks: ["ask_and_wait", "get_canvas_input_value", "set_visible_answer", "get_variable", "change_variable", "set_variable", "show_variable", "hide_variable"] },
 ];
-// The lesson page that embeds this iframe. Production serves this file from the Entry CDN, so the page's origin comes
-// from the referrer the page sends (the iframe sets referrerPolicy="origin"), or the browser's ancestor list when a
-// referrer was stripped. Only an opaque sandbox trusts them: it holds nothing but what it is sent. Unsandboxed, this
-// document runs with its server's own origin, so it talks only to that origin, as any other site could frame it.
-// Messages go only to that origin and are accepted only from it.
+// The lesson page that embeds this iframe. Production serves this file from the workspace host or the Entry CDN, so
+// the page's origin comes from the referrer the page sends (the iframe sets referrerPolicy="origin"), or the browser's
+// ancestor list when a referrer was stripped. Any site may frame this file, so wherever it runs it must hold nothing
+// but what it is sent: the app's copy always runs in an opaque sandbox (next.config.ts sends a CSP sandbox), and the
+// workspace host and the CDN serve nothing else. Messages go only to that origin and are accepted only from it.
 const APP_ORIGIN = (() => {
-  if (self.origin !== "null") return location.origin;
   for (const candidate of [document.referrer, location.ancestorOrigins?.[0]]) {
     try { const url = new URL(candidate); if (url.protocol === "https:" || url.protocol === "http:") return url.origin; }
     catch { /* Missing or not a URL: try the next one. */ }
@@ -140,12 +139,12 @@ try {
       return image;
     },
   });
-  // EntryJS reads editor preferences from localStorage during initialization.
-  // An opaque sandbox cannot access site storage, so preferences stay in memory.
-  try { window.localStorage.getItem("entryjs"); }
-  catch {
+  // EntryJS reads editor preferences from localStorage during initialization and saves its panel layout on unload.
+  // An opaque sandbox has no site storage, and on the workspace host nothing may outlive one open (or reach another
+  // lesson), so preferences always stay in memory.
+  {
     const preferences = new Map();
-    Object.defineProperty(window, "localStorage", { value: {
+    Object.defineProperty(window, "localStorage", { configurable: true, value: {
       getItem: (key) => preferences.get(String(key)) ?? null,
       setItem: (key, value) => { preferences.set(String(key), String(value)); },
       removeItem: (key) => { preferences.delete(String(key)); },

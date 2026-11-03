@@ -316,6 +316,67 @@ test("entry-cdn: 작업실을 CDN에서 열어도 실행·저장되고 작품에
   expect(errors).toEqual([]);
 });
 
+test("entry-host: 작업실을 다른 주소에서 자기 출처로 열어도 실행·저장되고, 앱의 사본은 늘 격리된다", async ({ page, baseURL }) => {
+  test.setTimeout(60000);
+  const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
+  const host = "https://entry-host.test";
+  const { workspaceHost, appHost } = JSON.parse(readFileSync("scripts/entryjs-cdn.json", "utf8"));
+  // next.config.ts: the app's copy carries a CSP sandbox; the workspace host serves /entryjs/ as is and sends the rest on.
+  expect((await page.request.get("/entryjs/workspace.html")).headers()["content-security-policy"]).toBe("sandbox allow-scripts");
+  const onHost = { headers: { host: workspaceHost }, maxRedirects: 0 };
+  const hosted = await page.request.get("/entryjs/workspace.html", onHost);
+  expect(hosted.status()).toBe(200);
+  expect(hosted.headers()["content-security-policy"]).toBeUndefined();
+  for (const pathname of ["/", "/login?next=%2Fstudent", "/api/classroom/student"]) {
+    const moved = await page.request.get(pathname, onHost);
+    expect(moved.status(), pathname).toBe(307);
+    expect(moved.headers().location, pathname).toBe(`https://${appHost}${pathname}`);
+  }
+  const app: string[] = [], failed: string[] = [];
+  let served = 0;
+  page.on("requestfailed", (request) => failed.push(`${request.url()} ${request.failure()?.errorText}`));
+  page.on("console", (message) => { if (message.type() === "error") failed.push(`console: ${message.text()}`); });
+  page.on("request", (request) => { const url = new URL(request.url()); if (url.origin !== host && url.pathname.startsWith("/entryjs/")) app.push(url.pathname); });
+  // A production build points the iframes at the workspace host with allow-same-origin (entry-workspace-frame.ts);
+  // here the page swaps both as React sets them.
+  await page.addInitScript((target) => {
+    const setAttribute = Element.prototype.setAttribute;
+    Element.prototype.setAttribute = function (name: string, value: string) {
+      if (this instanceof HTMLIFrameElement && name === "src" && value.startsWith("/entryjs/workspace.html")) value = target + value;
+      if (this instanceof HTMLIFrameElement && name === "sandbox" && value === "allow-scripts") value = "allow-scripts allow-same-origin";
+      return setAttribute.call(this, name, value);
+    };
+  }, host);
+  // The host is this same app, as Vercel serves one deployment on both domains; Playwright fetches it, so the iframe never
+  // reaches localhost (Local Network Access), and drops the CSP header the app host sends, as the workspace host does.
+  await page.route((url) => url.origin === host || url.pathname.startsWith("/entryjs/"), async (route) => {
+    const url = new URL(route.request().url());
+    if (url.origin !== host) return route.fulfill({ status: 404 });
+    served++;
+    const response = await route.fetch({ url: `${baseURL}${url.pathname}${url.search}` });
+    return route.fulfill({ response, headers: Object.fromEntries(Object.entries(response.headers()).filter(([name]) => name !== "content-security-policy")) });
+  });
+  await prepare(page, "name", nameProject);
+  const frame = page.frames().find((item) => item.url().startsWith(`${host}/entryjs/workspace.html?`))!;
+  expect(await frame.evaluate(() => self.origin)).toBe(host);
+  await entryStart(page).click();
+  const input = page.frameLocator("iframe").getByLabel("강아지 이름 대답");
+  await clickAnswerCanvas(page); await expect(input).toBeFocused();
+  await page.keyboard.insertText("별이"); await page.keyboard.press("Enter");
+  await expect(page.getByRole("status").filter({ hasText: "마지막 말: 별이" })).toBeVisible();
+  await expect(entryStart(page)).toBeEnabled();
+  await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+  await expect(page.locator("#practice-feedback")).toHaveText("목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요.");
+  await saveDraft(page);
+  expect(JSON.stringify((await stored(page)).draft.programming!.projects.name)).not.toContain("entry-host.test");
+  // Entry saves its panel layout on unload; with a real origin that must still stay in memory.
+  expect(await frame.evaluate(() => { localStorage.setItem("workspace-interface", "{}"); return Object.getOwnPropertyDescriptor(window, "localStorage")?.value !== undefined; })).toBe(true);
+  expect(served).toBeGreaterThan(50);
+  expect(app).toEqual([]);
+  expect(failed).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
 test("entry-flicker: 대답 완료와 수동 정지 뒤 숨은 질문칸을 무대에 다시 그리지 않는다", async ({ page }) => {
   test.setTimeout(45000);
   const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));

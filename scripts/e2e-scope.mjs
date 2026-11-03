@@ -11,7 +11,9 @@ const ENTRY_SHARED = [
   /^scripts\/prepare-entryjs\.mjs$/,
   // Moves the workspace to the Entry CDN on production builds; programming-classroom's entry-cdn check covers it.
   /^scripts\/entryjs-cdn\.(?:mjs|json)$/,
-  /^src\/lib\/classroom\/entry-workspace\.json$/,
+  /^src\/lib\/classroom\/entry-workspace(?:\.json|-frame\.ts)$/,
+  // Only the Entry workspace's headers and its host's redirect live here; remove this entry if the config grows.
+  /^next\.config\.ts$/,
   /^cloudflare\/entry-cdn\/.+$/,
   // Answers the sandboxed iframe's CORS preflights. Remove this entry if the matcher grows beyond /entryjs/.
   /^src\/proxy\.ts$/,

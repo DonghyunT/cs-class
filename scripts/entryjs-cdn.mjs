@@ -1,5 +1,5 @@
-// Serves the Entry workspace from Cloudflare instead of Vercel (docs/FIREBASE_SETUP.md, "엔트리 라이브러리 CDN").
-//   node scripts/entryjs-cdn.mjs html    (prebuild) on Vercel production builds, point the lesson iframe at the CDN
+// Serves the Entry workspace from its own host or from Cloudflare (docs/FIREBASE_SETUP.md, "엔트리 작업실 주소").
+//   node scripts/entryjs-cdn.mjs html    (prebuild) on Vercel production builds, point the lesson iframe there
 //   node scripts/entryjs-cdn.mjs bundle  write scratch/entry-cdn/ for `wrangler deploy`
 // CDN layout:
 //   /<vendor fingerprint 16>/…               Entry vendor files of one scripts/entryjs-assets.json version
@@ -32,6 +32,13 @@ function cdnOrigin(base) {
   const url = new URL(base);
   if (url.protocol !== "https:" || url.pathname !== "/" || url.search || url.hash) throw new Error(`Entry CDN base must be a bare https origin: ${base}`);
   return url.origin;
+}
+
+// A second production domain of this Vercel project that serves only /entryjs/ (next.config.ts redirects the rest).
+export function workspaceHostSrc(host) {
+  const url = new URL(`https://${host}`);
+  if (url.host !== host || url.port) throw new Error(`Entry workspaceHost must be a bare host name: ${host}`);
+  return `https://${host}${LOCAL_WORKSPACE}`;
 }
 
 // The vendor files of one scripts/entryjs-assets.json version live under their own path, so versions never mix.
@@ -98,10 +105,17 @@ export function rewriteWorkspace(html, prefix) {
 const readText = (fetchImpl, url) => fetchImpl(url, { signal: AbortSignal.timeout(10_000) }).then((response) => response.ok ? response.text() : "").catch(() => "");
 
 // Returns the workspace HTML to ship and the address the lesson iframe opens. Anything but a production build with a
-// configured base that the CDN already serves keeps the local files, so a deployment that reaches Vercel before its
-// CDN upload cannot break lessons; it only keeps using Vercel requests until the next build.
-export async function workspaceForBuild({ html, bridge, mirror, vercelEnv, base, fingerprint, fetchImpl = fetch }) {
-  if (vercelEnv !== "production" || !base) return { html, src: LOCAL_WORKSPACE, reason: "local" };
+// configured host or base that already serves the workspace keeps the local files, so a build that runs before the
+// domain is set up or the CDN upload cannot break lessons; it only keeps using the app's own copy until the next build.
+export async function workspaceForBuild({ html, bridge, mirror, vercelEnv, base, workspaceHost, fingerprint, fetchImpl = fetch }) {
+  if (vercelEnv !== "production" || (!base && !workspaceHost)) return { html, src: LOCAL_WORKSPACE, reason: "local" };
+  if (!base) {
+    // The host serves the same deployment as the app, so its vendor paths stay as they are. A domain that still
+    // redirects to the app would open the app's own sandboxed copy and gain nothing.
+    const src = workspaceHostSrc(workspaceHost);
+    const status = await fetchImpl(src, { redirect: "manual", signal: AbortSignal.timeout(10_000) }).then((response) => response.status).catch(() => 0);
+    return status === 200 ? { html, src, reason: `workspace host ${workspaceHost}` } : { html, src: LOCAL_WORKSPACE, reason: `${workspaceHost} answered ${status || "nothing"} for ${LOCAL_WORKSPACE}` };
+  }
   const prefix = cdnPrefix(base, fingerprint);
   if ((await readText(fetchImpl, `${prefix}/version.txt`)).trim() !== fingerprint) return { html, src: LOCAL_WORKSPACE, reason: `missing ${prefix}/version.txt` };
   const rewritten = rewriteWorkspace(html, prefix);
@@ -173,11 +187,11 @@ export async function writeBundle({ out, base, fingerprint, versions, source = e
 async function main(mode) {
   if (!existsSync(path.join(root, "scripts/entryjs-cdn.mjs"))) throw new Error("Run scripts/entryjs-cdn.mjs from the repository root");
   const fingerprint = (await readFile(path.join(vendor, ".prepared"), "utf8")).trim();
-  const { base } = JSON.parse(await readFile(path.join(root, "scripts/entryjs-cdn.json"), "utf8"));
+  const { base, workspaceHost } = JSON.parse(await readFile(path.join(root, "scripts/entryjs-cdn.json"), "utf8"));
   const current = Object.fromEntries(BRIDGE_FILES.map((name) => [name, readFileSync(path.join(entryjs, name), "utf8")]));
   if (mode === "html") {
     const html = current["workspace.html"];
-    const result = await workspaceForBuild({ html, bridge: bridgeFingerprint(current), mirror: await mirrorFingerprint(), vercelEnv: process.env.VERCEL_ENV, base, fingerprint });
+    const result = await workspaceForBuild({ html, bridge: bridgeFingerprint(current), mirror: await mirrorFingerprint(), vercelEnv: process.env.VERCEL_ENV, base, workspaceHost, fingerprint });
     // Rewritten in place: only Vercel's throwaway build checkout reaches these branches.
     if (result.html !== html) await writeFile(workspace, result.html);
     if (result.src !== LOCAL_WORKSPACE) await writeFile(workspaceSrc, `${JSON.stringify({ src: result.src }, null, 2)}\n`);
