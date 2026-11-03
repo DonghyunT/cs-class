@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { BRIDGE_FILES, LOCAL_WORKSPACE, bridgeFingerprint, bridgePrefix, bridgeVersions, cdnHeaders, cdnPrefix, mirrorFingerprint, rewriteWorkspace, vercelIgnored, workspaceForBuild, writeBundle } from "../scripts/entryjs-cdn.mjs";
+import { BRIDGE_FILES, LOCAL_WORKSPACE, bridgeFingerprint, bridgePrefix, bridgeVersions, cdnHeaders, cdnPrefix, mirrorFingerprint, rewriteWorkspace, vercelIgnored, workspaceForBuild, workspaceHostSrc, writeBundle } from "../scripts/entryjs-cdn.mjs";
 
 // As git and Vercel store it; a Windows checkout has CRLF.
 const html = readFileSync(new URL("../public/entryjs/workspace.html", import.meta.url), "utf8").replaceAll("\r\n", "\n");
@@ -19,6 +19,30 @@ const serving = (bodies) => async (url) => url in bodies ? { ok: true, text: asy
 test("the committed CDN base is empty or a bare https origin", () => {
   const { base: committed } = JSON.parse(readFileSync(new URL("../scripts/entryjs-cdn.json", import.meta.url), "utf8"));
   if (committed) assert.doesNotThrow(() => cdnPrefix(committed, fingerprint));
+});
+
+test("the committed workspace host is a bare host name other than the app's", () => {
+  const { workspaceHost, appHost } = JSON.parse(readFileSync(new URL("../scripts/entryjs-cdn.json", import.meta.url), "utf8"));
+  if (!workspaceHost) return;
+  assert.equal(workspaceHostSrc(workspaceHost), `https://${workspaceHost}${LOCAL_WORKSPACE}`);
+  // The workspace keeps its host's origin there, so that host must never be the app's (next.config.ts redirects to it).
+  assert.ok(appHost && appHost !== workspaceHost);
+  for (const bad of ["https://entry-host.test", "entry-host.test/path", "entry-host.test:8080", "Entry-Host.test"]) assert.throws(() => workspaceHostSrc(bad), bad);
+});
+
+test("workspaceForBuild opens the workspace host only on production builds and once it serves the workspace itself", async () => {
+  const host = "entry-host.test", src = `https://${host}${LOCAL_WORKSPACE}`, requests = [];
+  const answering = (status) => async (url, options) => { requests.push([url, options.redirect]); if (status instanceof Error) throw status; return { status }; };
+  for (const vercelEnv of [undefined, "preview"]) {
+    assert.deepEqual(await workspaceForBuild({ html, bridge, fingerprint, vercelEnv, base: "", workspaceHost: host, fetchImpl: answering(200) }), { html, src: LOCAL_WORKSPACE, reason: "local" });
+  }
+  assert.deepEqual(requests, []);
+  assert.deepEqual(await workspaceForBuild({ html, bridge, fingerprint, vercelEnv: "production", base: "", workspaceHost: host, fetchImpl: answering(200) }), { html, src, reason: `workspace host ${host}` });
+  // A domain that still redirects to the app, or none at all, keeps the app's own copy.
+  for (const [status, said] of [[307, "307"], [404, "404"], [new Error("offline"), "nothing"]]) {
+    assert.deepEqual(await workspaceForBuild({ html, bridge, fingerprint, vercelEnv: "production", base: "", workspaceHost: host, fetchImpl: answering(status) }), { html, src: LOCAL_WORKSPACE, reason: `${host} answered ${said} for ${LOCAL_WORKSPACE}` });
+  }
+  assert.ok(requests.every(([url, redirect]) => url === src && redirect === "manual"));
 });
 
 test("the committed lesson iframe address is the app's own copy; only production builds change it", () => {

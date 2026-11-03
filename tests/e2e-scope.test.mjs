@@ -61,7 +61,7 @@ test("matchLesson matches lesson specific files accurately", () => {
   assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops", "functions"]);
   assert.deepEqual(matchLessons("tests/programming-learning.spec.ts"), ["programming-13", "conditionals", "loops", "functions"]);
   assert.deepEqual(matchLessons("src/proxy.ts"), ["programming-13", "conditionals", "loops", "functions"]);
-  for (const file of ["scripts/entryjs-cdn.mjs", "scripts/entryjs-cdn.json", "cloudflare/entry-cdn/wrangler.jsonc"]) {
+  for (const file of ["scripts/entryjs-cdn.mjs", "scripts/entryjs-cdn.json", "cloudflare/entry-cdn/wrangler.jsonc", "next.config.ts", "src/lib/classroom/entry-workspace-frame.ts"]) {
     assert.deepEqual(matchLessons(file), ["programming-13", "conditionals", "loops", "functions"]);
   }
   assert.deepEqual(matchLessons("src/components/teacher/teacher.module.css"), []);

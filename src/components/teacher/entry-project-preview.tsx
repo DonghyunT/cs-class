@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Play, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ENTRY_PALETTE, TRUSTED_SPRITES } from "@/lib/classroom/entry-palette";
-import entryWorkspace from "@/lib/classroom/entry-workspace.json";
+import { ENTRY_WORKSPACE_SANDBOX, ENTRY_WORKSPACE_SRC, entryFrameOrigin } from "@/lib/classroom/entry-workspace-frame";
 import {
   entryBlockCategory,
   formatEntryNode,
@@ -168,7 +168,7 @@ export function EntryProjectPreview({
   useEffect(() => {
     if (!workspaceOpen) return;
     function receive(event: MessageEvent) {
-      if (event.source !== frameRef.current?.contentWindow || event.origin !== "null" || event.data?.channel !== CHANNEL) return;
+      if (!frameRef.current || event.source !== frameRef.current.contentWindow || event.origin !== entryFrameOrigin(frameRef.current) || event.data?.channel !== CHANNEL) return;
       const message = event.data;
       if (message.type === "ready") setBootReady(true);
       else if (message.type === "loaded") setPhase("ready");
@@ -346,10 +346,10 @@ export function EntryProjectPreview({
             <iframe
               key={attempt}
               ref={frameRef}
-              src={`${entryWorkspace.src}?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${missionById(missionId)?.functions ? "&fn=1" : ""}${parsed.free ? "&free=1" : ""}`}
+              src={`${ENTRY_WORKSPACE_SRC}?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${missionById(missionId)?.functions ? "&fn=1" : ""}${parsed.free ? "&free=1" : ""}`}
               title={`${missionTitle} 교사 실행 작업실`}
               referrerPolicy="origin"
-              sandbox="allow-scripts"
+              sandbox={ENTRY_WORKSPACE_SANDBOX}
               className={styles.entryRunnerFrame}
               inert={phase !== "ready"}
             />
