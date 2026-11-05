@@ -217,6 +217,10 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 | **미분류 파일(서버·공통·설정·검사 파일)이 있을 때** | 로컬 선별 도구는 `full`을 내고 멈추므로, 아래 안내대로 검사 파일을 직접 고릅니다 | `smoke` 모드로 전체 등록 수업 스모크와 확인된 관련 수업 검사를 실행합니다. 세션·학생 화면 조회 파일은 `scripts/e2e-scope.mjs`의 `SMOKE_RELATED`가 정한 시간 검사(`read-polling`·`manual-save-entry`·`classroom-api`)도 함께 돌립니다. 비교 기준이 없거나 조회에 실패해도 전체 검사로 승격하지 않습니다 |
 | **전체 E2E** | **사용자의 명시적 요청 또는 에이전트 질문 후 사전 승인 시에만 실행** | **GitHub Actions의 `workflow_dispatch` 수동 실행으로만 수행** |
 
+**전체 E2E를 권하는 기준:** 인증·권한(`src/lib/server/auth.ts`), 작업 저장 흐름(`useWork`·`work-recovery`), 공통 API 요청(`src/lib/classroom/client.ts`), `LessonShell`을 바꾸는 PR은 실행 여부를 정할 때 에이전트가 실행을 권합니다. 그 밖에는 먼저 권하지 않습니다. 권하는 것은 승인이 아니므로 실행은 사용자가 정합니다.
+
+**로컬 전체 실행:** 변경 범위와 관계없이 전체를 돌리는 명령은 `npm run test:e2e`입니다(`--full`은 선별 결과가 `full`일 때 실행을 허용할 뿐입니다). 앱과 에뮬레이터를 끄고 3000·8080·9099를 비운 뒤 실행합니다. 로컬은 `next dev`, CI는 빌드한 `next start`로 돌기 때문에 결과는 GitHub 실행과 구분해 실행 SHA와 함께 적습니다(PR 경로는 PR 설명, 그 밖에는 HANDOFF 남은 한계).
+
 **미분류 파일이 있을 때의 로컬 검사:** 로컬 선별 도구(`npm run test:e2e:scope`)는 수업에 매핑되지 않은 파일(서버·공통·설정·검사 파일 등)이 하나라도 있으면 `full`을 내고 멈춥니다. CI는 같은 경우 `smoke`로 낮춥니다. 이때는 전체 E2E를 돌리지 않고 아래 순서로 검사 파일을 직접 골라 돌립니다.
 
 1. 바꾼 코드를 직접 쓰는 검사와, 바꾼 파일 이름·API 경로(예: `/api/classroom/classes`)를 `git grep -l "<이름>" -- tests`로 찾아 나온 검사를 모두 고릅니다(예: `src/lib/server/auth.ts` → `auth-security`·`settings`·`guest-login`·`first-entry`·`roster-off-list`, 수업 설정 → `classroom-api`·`teacher-class-management`).
