@@ -38,6 +38,47 @@ async function prepareAction(page: Page, type: WorkAction["type"]) {
   return work;
 }
 
+for (const committed of [false, true]) test(`65초 응답 대기는 입력을 보존하고 ${committed ? "이미 처리된 제출을 조회로 복구" : "저장을 수동 재시도"}`, async ({ page }) => {
+  const before = committed ? await prepareAction(page, "submit-practice") : await stored(page);
+  if (!committed) await chooseConcept(page);
+  await page.clock.install();
+  // AbortSignal.timeout is native, outside Playwright's virtual timers. Keep its real delay but drive it with the clock.
+  await page.evaluate(() => {
+    AbortSignal.timeout = (ms: number) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(new DOMException("Synthetic deadline", "TimeoutError")), ms);
+      return controller.signal;
+    };
+  });
+  const path = committed ? `${endpoint}/action` : endpoint;
+  let started!: () => void, release!: () => void, posts = 0;
+  const pending = new Promise<void>(resolve => { started = resolve; });
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route(`**${path}`, async route => {
+    if (route.request().method() !== "POST") return route.continue();
+    posts++;
+    if (committed) await route.fetch();
+    started(); await gate;
+    await route.abort("failed").catch(() => undefined);
+  });
+  try {
+    await page.getByRole("button", { name: committed ? "작품 제출" : "저장", exact: true }).click();
+    await pending;
+    await page.clock.fastForward(65_001);
+    await expect(page.locator(committed ? "#work-action-error" : "#work-save-error")).toBeVisible();
+    expect(posts).toBe(1);
+    if (!committed) await expect(page.getByRole("radio", { name: "컵에 물을 200mL 따른다", exact: true })).toBeChecked();
+  } finally { release(); await page.unroute(`**${path}`); }
+  await page.getByRole("button", { name: committed ? "결과 다시 확인" : "저장 다시 확인", exact: true }).click();
+  await expect(page.locator(committed ? "#work-action-error" : "#work-save-error")).toHaveCount(0);
+  const after = await stored(page);
+  expect(after.revision).toBe(before.revision + 1);
+  if (committed) expect(after.submission?.id).toBeTruthy();
+  else expect(after.draft.conceptAnswers.algorithm).toBe("clear");
+  await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
+  await expect(page).toHaveURL(/\/student\/lessons$/);
+});
+
 for (const status of [200, 503, 409]) {
   test(`명시 저장 대기 안내·중복 저장 차단·입력 보존 (${status})`, async ({ page }) => {
     let started!: () => void, release!: () => void, posts = 0;
