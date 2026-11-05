@@ -197,9 +197,9 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 | 서버 함수 지역 | Vercel `cs-class` Production 배포가 `icn1`(서울) | 2026-10-18, #44 배포 정보 |
 | 운영 도메인 | `cs-class-donghyunt.vercel.app`, Firebase Authentication 허용 목록에 등록 | 2026-09-28 사용자 승인으로 등록 |
 | Production 환경변수 | Firebase 웹 설정 3개·관리자 JSON·교사 허용 목록·초기/초기화 비밀번호 7개(Production 전용 Secret), `CRON_SECRET`, `UPSTAGE_API_KEY`·`CS_AI_COMMAND_SECRET`(Production 전용 Sensitive) | 2026-10-13판 문서 기록 |
-| 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-19 `app` 실패가 Production을 막음을 확인, 2026-10-20 `d0dacec`까지 `app` 성공 3~4초 뒤 공개 |
+| 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-19 `app` 실패가 Production을 막음을 확인, 2026-11-05 `767a2ff`에서 `app` 성공 3초 뒤 공개 |
 | 실행 설정 `NODE_OPTIONS` | Preview·Production에 `--experimental-require-module` | 2026-09-30 보관 인계 기록(재확인 안 함) |
-| Firestore 규칙 | 전체 거부(서버 전용), 운영 적용본 대조 미확인 | 확인 안 함 |
+| Firestore 규칙 | 전체 거부(서버 전용). 운영 적용본은 저장소 `firestore.rules`와 주석만 다름(주석은 9/28 `ba0dbc7` 판본) | 2026-11-05 사용자 승인으로 기본 DB 규칙을 읽어 대조 |
 | 배포 보존 기간 | Build and Deployment의 Deployment Retention Policy 네 항목 모두 1주. Hobby 롤백은 직전 Production까지만 되므로 늘리지 않음 | 2026-10-18 대시보드 확인(Deployment Storage 4.97/10 GB) |
 | 시간표 Cron | Production 일일 예약 Enabled | 2026-10-13판 문서 기록 |
 | 결제·AI TTL | 결제 계정 연결, `csAiCache`·`csAiRequests`의 `expiresAt` TTL 인덱스 적용 | 2026-10-13판 문서 기록 |
