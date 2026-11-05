@@ -19,11 +19,15 @@
 - lint·typecheck·demo 환경의 `npm.cmd run build` 통과. 문서 링크·공백 검사 통과.
 - 파일 지정 E2E 11개 스펙: 120개 통과·4개 건너뜀(일시 중지된 손들기 검사, 통과로 세지 않음). 별도 활동 메시지 빈도·합성 입력 무시·JavaScript 오류 검사 1개도 통과했습니다.
 - 대상: `functions`, `manual-save-entry`, `work-action-recovery`, `auth-security`, `settings`, `first-entry`, `read-polling`, `classroom-api`, `programming-name-mission`, `programming-classroom`, `manual-save`의 `.spec.ts`. 명령은 `npx.cmd playwright test tests/<이름>.spec.ts ... --output=scratch/audit-e2e-isolated`, 추가 검사는 `tests/functions.spec.ts --grep '초당 한 번'`입니다.
+- [PR #107](https://github.com/DonghyunT/cs-class/pull/107)의 첫 자동 CI는 정적·로직·빌드 검사를 통과했지만, 선별 E2E는 110개 통과·1개 실패했습니다. 함수 편집 버튼을 좌표로 누른 직후 편집 상태가 되기를 기다리는 준비 단계가 실패했습니다. SVG 그룹의 안정화를 기다려 클릭하고 드래그 대상을 ‘함수 정의하기’로 명시했습니다. 활동·로그아웃 검증은 유지했습니다. 로컬 production 빌드에서 해당 검사 `--repeat-each=3`은 3개 모두 통과했습니다(`scratch/ci-editor-stable`).
+- 이어서 `tests/functions.spec.ts --grep '실제 조작만|실행 중 방향키만'` 2개, lint·typecheck·문서 단위 3개·링크·공백 검사도 통과했습니다. 수정본의 자동 CI 결과는 PR의 `app` 검사를 확인합니다.
 
 ## 환경과 남은 범위
 
 초기 선별 실행은 다른 로컬 프로젝트의 에뮬레이터 포트 점유·Auth 기본 프로젝트 불일치 때문에 중단했습니다. 사용자 승인으로 백업·임시 전환 후 `demo-cs-class` 전용 에뮬레이터에서 재검증했고, 초기 실행은 통과 결과로 세지 않습니다. 초기 검사에서 다른 데모에 생성된 합성 계정 2개는 검사 시각·해당 스펙과 대조해 정리했습니다. 원본 백업은 보존하고 기존 프로젝트를 원래 설정으로 다시 실행했습니다.
 
 복원 후 기존 6개 계정의 인증 정보·프로필과 Auth 설정을 값 출력 없이 대조했고, Firestore 데이터 파일의 SHA-256도 일치했습니다. Auth 가져오기에서 재생성되는 `validSince`·`passwordUpdatedAt`·`lastRefreshAt`과 누락 시 `false`인 `disabled`의 표현은 대조에서 정규화했습니다. 로컬 앱에서 재로그인이 필요할 수 있습니다. 비교 도구의 첫 실패 출력에 가상 계정 값이 포함되어 원문을 출력하는 단언을 제거하고, 이후에는 일치 여부·차이 필드 이름만 출력했습니다.
+
+CI 재현을 위한 두 번째 임시 전환도 마치고, 최신 백업 `scratch/pycraft-backup-ci-recheck-20261105`에서 원래 프로젝트를 복원했습니다. 계정 6개·Auth 설정은 일치했습니다. Firestore 전체 파일 해시는 내보내기 순서 때문에 달랐으나, 파일 전체의 6개 레코드를 끝까지 분리해 각각 SHA-256을 구한 뒤 정렬한 결과는 모두 일치했습니다. 재검증 내보내기는 `scratch/pycraft-restored-ci-final-20261105`, 값 비공개 비교 명령은 `node scratch/verify-pycraft-ci-restore.mjs scratch/pycraft-backup-ci-recheck-20261105 scratch/pycraft-restored-ci-final-20261105`입니다.
 
 독립 읽기 전용 코드 리뷰에서 실질 회귀 지적은 없었고, 활동 메시지 빈도 검사 보완을 반영했습니다. 전체 E2E, 실제 학교 PC, 운영 로그인·학생 데이터, 유료 AI 호출은 확인하지 않습니다.

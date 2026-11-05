@@ -89,7 +89,7 @@ for (const keysOnly of [false, true]) test(`${keysOnly ? "실행 중 방향키�
     await entryStart(page).click();
   } else {
     await frame.locator("#entryCategoryfunc").click();
-    await press(page, frame.locator("tspan", { hasText: "함수 만들기" }));
+    await frame.locator("g.block").filter({ hasText: "함수 만들기" }).click();
     await expect.poll(() => editing(page)).toBe(true);
   }
   const touches: number[] = [];
@@ -100,7 +100,7 @@ for (const keysOnly of [false, true]) test(`${keysOnly ? "실행 중 방향키�
     touches.push(route.request().postDataJSON().idleForMs);
     return route.fulfill({ json: { session: { ...session, idleMs: 0 } } });
   });
-  const block = frame.locator("g.block").filter({ hasText: "함수" }).last();
+  const block = frame.locator("g.block").filter({ hasText: "함수 정의하기" });
   for (let minute = 0; minute < 11; minute++) {
     if (keysOnly) await page.keyboard.press("ArrowRight");
     else {
