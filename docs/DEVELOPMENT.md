@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-11-03(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-11-05(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -181,6 +181,8 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 | [`HelpButton`](../src/components/classroom/help-button.tsx) | 손들기 요청 시 현재 작품의 exact 스냅샷을 먼저 서버에 저장 후 도움 요청 POST 전송 |
 | [`LessonShell`](../src/components/student/lesson-shell.tsx) | 저장 버튼과 상태 배지 노출; `useWork`와 Entry 브리지가 창/iframe 단축키를 같은 `save`로 전달 |
 
+공통 API 요청은 응답 본문 읽기까지 일반 65초(classroom 서버의 60초 실행 한도보다 길게), AI 50초로 제한합니다. 성공 응답의 본문을 읽지 못하면 빈 저장본으로 처리하지 않고 입력을 보존합니다. 시간 초과는 서버 미처리를 뜻하지 않으므로 자동 재전송하지 않습니다. 저장은 수동 재시도하고, 채점·제출은 기존 결과 확인·동일 revision 재전송 절차를 따릅니다.
+
 ---
 
 ## 3. 검증 및 테스트 체계 (Verification & Testing Matrix)
@@ -257,6 +259,8 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 <a id="운영-프로그래밍-수업"></a>
 <a id="코드-위치와-역할"></a>
 
+- **작업실 활동:** iframe의 실제 키·포인터·입력·스크롤·터치 조작을 `activity` 메시지로 초당 최대 한 번 부모 화면에 알립니다. 함수 편집 중에도 작품 내보내기와 별도로 전달하며, 합성 이벤트나 실행 타이머는 활동으로 보내지 않습니다. 서버 활동 보고 간격은 공통 세션 설정을 그대로 사용합니다.
+
 - **자산 및 무결성:** `npm ci` 시 `scripts/prepare-entryjs.mjs`가 SHA-512 검증 후 `public/entryjs/vendor/`에 브라우저 자산을 준비합니다. `next.config.ts`는 `public/entryjs/vendor/`·`sprites/`에 `Cache-Control: public, max-age=86400`을 붙여 브라우저가 하루 동안 다시 받지 않게 하므로(파일 이름에 버전이 없음), 엔트리 패키지 버전을 올리거나 `sprites/`의 그림을 제자리에서 바꾸면 이미 열어 본 PC에는 최대 하루 뒤에 반영됩니다(`workspace.html`·`workspace.js`·`workspace.css`는 매번 확인, CDN의 `/entryjs/` 사본도 하루 캐시). 수업이 없는 날에 올리거나 바꾼 파일의 이름을 바꿉니다. `workspace.html`은 `workspace.js`·`workspace.css`를 상대 주소로 불러야 CDN 폴더에서도 같은 버전을 엽니다.
 - **작업실 주소:** 크롬은 출처 없는 격리 iframe(`sandbox="allow-scripts"`) 안의 파일을 브라우저 캐시에서 다시 쓰지 않아(11/2 크롬 156 실험, 같은 그림을 4번 열면 4번 받음) 작업실을 열 때마다 라이브러리·브리지·그림을 모두 다시 받습니다. 그래서 운영은 작업실을 같은 Vercel 프로젝트의 두 번째 운영 도메인(`scripts/entryjs-cdn.json`의 `workspaceHost`, [설정 절차](FIREBASE_SETUP.md#엔트리-작업실-주소))에서 `allow-same-origin`을 더해 엽니다. 다른 사이트라 앱의 쿠키·저장소에 닿지 못하면서 그 주소의 출처를 가져 캐시를 다시 씁니다(11/3 크롬 156 실험: 다른 사이트 + `allow-same-origin`은 4번 열면 1번, 출처 없는 격리는 같은 사이트·다른 사이트 모두 4번). 11/2~11/3에는 Cloudflare CDN([올리기 절차](FIREBASE_SETUP.md#엔트리-라이브러리-cdn))에서 열었지만, 11/3 수업 중 한국 접속이 Cloudflare LA(`colo=LAX`)로 가 17.8MB 라이브러리 한 파일에 7~11분이 걸려 `base`를 비워 껐습니다(무료 요금제는 데이터센터를 고를 수 없음). Playwright의 Chromium은 캐시를 다시 써서 검사로는 이 차이가 보이지 않습니다.
   - **작업실 도메인으로 바꾸기:** Vercel 운영 빌드(`VERCEL_ENV=production`)에서 `base`가 비고 `workspaceHost`가 있으면, `prebuild`의 [`scripts/entryjs-cdn.mjs`](../scripts/entryjs-cdn.mjs)가 `https://<workspaceHost>/entryjs/workspace.html`이 리디렉트 없이 200으로 답할 때만 수업 iframe 주소를 그곳으로 바꿉니다(도메인이 아직 앱으로 넘기면 로컬 파일 그대로). 그 도메인은 앱과 같은 배포를 내주므로 `workspace.html`의 상대 주소와 저장된 그림 경로가 그대로 맞고, 버전 맞추기나 올리기가 없습니다. [`next.config.ts`](../next.config.ts)는 그 도메인에서 `/entryjs/` 밖의 요청을 `appHost`로 307 이동시키고(그 도메인에서 로그인할 수 없음), 다른 모든 주소의 `workspace.html`에 `Content-Security-Policy: sandbox allow-scripts`를 붙여 앱의 사본은 늘 출처 없이 돌게 합니다. 엔트리가 `localStorage`에 남기는 화면 배치는 `workspace.js`가 늘 메모리에만 둡니다.
@@ -327,7 +331,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
   - **도형 판정:** 도형은 이어진 같은 방향의 선을 하나로(‘두 바퀴 이상 그린 반복 안’ 여부는 모든 조각의 그리고), 앞서 그린 선과 겹치는 선은 빼고 판정하되(겹친 선이 반복 밖이면 남은 선도 반복 밖으로 봄), 정다각형은 합친 선 수가 변 수의 배수일 때만 겹친 선을 빼서 고정 반복 횟수가 통과하지 못하게 합니다(숨은 변 수 3~8의 최소공배수 840이 선 상한 200을 넘음). 모든 변이 두 바퀴 이상에서 선을 그린 반복 안에서 그려지고(`repeated`, 반복이 끝날 때 그 안에서 그린 선에 표시하므로 한 바퀴에만 그린 반복은 반복으로 치지 않음), 어느 반복이든 두 번째 바퀴부터 그린 변이 하나는 있어야 합니다(`again`; 통과 기준은 [PRD §4.1.2](PRD.md#412-정규-수업-반복으로-똑똑하게)).
   - **방향키 미션:** 한 기계에서 네 키 줄을 두 가지 순서로 차례로 실행해 키마다의 x·y 변화를 봅니다.
   - **재채점과 안내 문구:** 통과하지 못하면 `생각하기`를 말로 치고 한 번 더 채점해 통과하면 ‘생각하기’ 안내를 내고, 결과 미션(`RESULT_WORDS`)은 `wordingOnly`로 다시 채점해(`branchesRight`: 숫자를 뺀 뒤 모든 경우에 같은 줄은 빼고, 결과 낱말이 있는 줄이 한 결과의 경우에서만 나오며, 경우마다 결과 낱말이 있는 첫 줄이 기대한 낱말을 품음) 통과하면 목표의 결과 말(`RESULT_PHRASES`)을 인용한 `wordingMessage`를 냅니다. 시작 줄이 0개면 그 시작 블록(‘시작하기 버튼을 클릭했을 때’, 방향키는 ‘위쪽 화살표 키를 눌렀을 때’ 등) 아래에 연결하라고, 2개 이상이면 한 줄로 이으라고 안내하며, 0개일 때의 문구는 `entry-legacy-keys.json`이 고정합니다.
-  - **실행 기록과 질문 대기:** `workspace.js`의 실행 기록(`nameRun`, 옛 이름 미션에서 온 이름)도 `dialog`를 `dialog_time`처럼 다루고 `HARMLESS_BLOCKS`는 기록 없이 건너뜁니다. 이 기록은 수업 화면이 읽지 않으며, 질문 대기는 이 기록과 관계없이 모든 오브젝트의 질문(이벤트로 시작한 질문 포함)에서 15초 강제 종료 시간에서 빼되, `코드 멈추기`로 끝난 질문 줄은 대답 칸이 남아도 빼지 않습니다.
+  - **질문 대기:** `workspace.js`는 모든 오브젝트의 질문(이벤트로 시작한 질문 포함)을 기다리는 시간을 15초 강제 종료 시간에서 빼되, `코드 멈추기`로 끝난 질문 줄은 대답 칸이 남아도 빼지 않습니다.
 
 ### 4.2 알고리즘 복습 연구소
 <a id="알고리즘-복습-수업"></a>

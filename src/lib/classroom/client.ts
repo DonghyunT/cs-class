@@ -13,11 +13,12 @@ export async function api<T>(path: string, body?: unknown, method = body === und
   if (path.startsWith("classroom/") && !expectedUser) throw new ApiError("SIGNED_OUT", "다시 로그인해 주세요.", 401);
   const requestingUser = expectedUser;
   const requestingEpoch = sessionEpoch;
-  let response: Response;
+  let response: Response, payload;
   try {
-    response = await fetch(`/api/${path}`, { method, ...(path === "classroom/ai" ? { signal: AbortSignal.timeout(50000) } : {}), cache: "no-store", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CS-Class": "1", ...(expectedUser ? { "X-CS-User": expectedUser } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
+    // Classroom handlers can run for 60 seconds; keep the deadline through reading the body too.
+    response = await fetch(`/api/${path}`, { method, signal: AbortSignal.timeout(path === "classroom/ai" ? 50_000 : 65_000), cache: "no-store", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CS-Class": "1", ...(expectedUser ? { "X-CS-User": expectedUser } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
+    payload = await response.json().catch((error) => { if (response.ok) throw error; return {}; });
   } catch { throw new ApiError("NETWORK", "서버에 연결하지 못했어요. 연결을 확인하고 다시 시도해 주세요.", 0); }
-  const payload = await response.json().catch(() => ({}));
   if (requestingUser !== expectedUser || requestingEpoch !== sessionEpoch) throw new ApiError("SESSION_REPLACED", "계정이 바뀌어 이전 요청을 중단했어요.", 401);
   if (!response.ok) {
     const error = new ApiError(payload.code ?? "SERVER", payload.message ?? "처리하지 못했어요. 잠시 후 다시 시도해 주세요.", response.status);

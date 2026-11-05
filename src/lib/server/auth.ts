@@ -11,6 +11,7 @@ import { guestLoginEnabled } from "./guest-mode";
 import { createTemporaryPassword, passwordDigest } from "./temporary-password.mjs";
 import { requireCondition, ServiceError } from "./errors";
 import { isTrialStudentId } from "../classroom/roster";
+import { passwordFailureIsWrongCredentials } from "./password-response";
 
 export const SESSION_COOKIE = "cs_session";
 export interface Account {
@@ -172,15 +173,12 @@ export async function updateFirstEntry(classId: string, input: unknown) {
     return { code, expiresAt };
   });
 }
-// Firebase는 차단·설정 오류도 4xx로 알리므로 문서에 있는 자격 증명 오류만 비밀번호 오답으로 봅니다.
-const wrongCredentials = ["EMAIL_NOT_FOUND", "INVALID_PASSWORD", "USER_DISABLED", "INVALID_LOGIN_CREDENTIALS"];
 async function signInWithPassword(email: string, password: string): Promise<{ idToken: string } | null> {
   const host = process.env.FIREBASE_AUTH_EMULATOR_HOST;
   const endpoint = host ? `http://${host}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword` : "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword";
   const response = await fetch(`${endpoint}?key=${encodeURIComponent(process.env.FIREBASE_WEB_API_KEY!)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, returnSecureToken: true }), cache: "no-store", signal: AbortSignal.timeout(15000) });
   if (response.ok) return response.json();
-  const reason = /^[A-Z_]+/.exec(String((await response.json().catch(() => null))?.error?.message ?? ""))?.[0];
-  requireCondition(reason && wrongCredentials.includes(reason), 503, "PASSWORD_VERIFY", "비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.");
+  requireCondition(passwordFailureIsWrongCredentials(response.status, await response.json().catch(() => null)), 503, "PASSWORD_VERIFY", "비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.");
   return null;
 }
 export async function loginGoogle(idToken: string) {

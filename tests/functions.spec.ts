@@ -55,6 +55,73 @@ test("다른 엔트리 수업에는 함수 메뉴가 없다", async ({ page }) =
   await expect(frame.locator("#entryCategoryfunc")).toHaveCount(0);
 });
 
+test("작업실 활동 메시지는 실제 조작만 초당 한 번 보내고 JavaScript 오류가 없다", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  const frame = await open(page, id, "cat-walk");
+  await frame.locator("#entryCategoryfunc").click();
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now() + 2000)));
+  await page.evaluate(() => {
+    const state = window as unknown as { activityMessages: number };
+    state.activityMessages = 0;
+    window.addEventListener("message", event => {
+      if (event.data?.channel === "cs-class-entryjs" && event.data.type === "activity") state.activityMessages++;
+    });
+  });
+  const count = () => page.evaluate(() => (window as unknown as { activityMessages: number }).activityMessages);
+  for (let i = 0; i < 6; i++) await page.keyboard.press("Shift");
+  await expect.poll(count).toBe(1);
+  await page.clock.fastForward(1000);
+  await workspaceFrame(page).evaluate(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Shift", bubbles: true })));
+  expect(await count()).toBe(1);
+  await page.keyboard.press("Shift");
+  await expect.poll(count).toBe(2);
+  expect(errors).toEqual([]);
+});
+
+for (const keysOnly of [false, true]) test(`${keysOnly ? "실행 중 방향키만 눌러도" : "함수 편집 창에서 블록만 움직여도"} 활동을 전달하고, 멈추면 자동 로그아웃한다`, async ({ page }) => {
+  const frame = await open(page, id, "cat-walk", keysOnly ? solutions["cat-walk"] : missionStarter("cat-walk"));
+  await page.clock.install();
+  await page.reload();
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+  if (keysOnly) {
+    await entryStart(page).click();
+  } else {
+    await frame.locator("#entryCategoryfunc").click();
+    await frame.locator("g.block").filter({ hasText: "함수 만들기" }).click();
+    await expect.poll(() => editing(page)).toBe(true);
+  }
+  const touches: number[] = [];
+  const session = (await (await page.request.get("/api/auth/session")).json()).session;
+  // Keep the emulator's real clock from refreshing the page's virtual idle time.
+  await page.route("**/api/auth/session", route => route.fulfill({ json: { session: { ...session, idleMs: 9 * 60_000 }, configured: true } }));
+  await page.route("**/api/auth/activity", route => {
+    touches.push(route.request().postDataJSON().idleForMs);
+    return route.fulfill({ json: { session: { ...session, idleMs: 0 } } });
+  });
+  const block = frame.locator("g.block").filter({ hasText: "함수 정의하기" });
+  for (let minute = 0; minute < 11; minute++) {
+    if (keysOnly) await page.keyboard.press("ArrowRight");
+    else {
+      const box = (await block.boundingBox())!;
+      await page.mouse.move(box.x + 20, box.y + 12);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 20 + (minute % 2 ? -10 : 10), box.y + 12, { steps: 3 });
+      await page.mouse.up();
+    }
+    await page.clock.fastForward(30_000);
+    await page.clock.fastForward(30_000);
+    await expect(page.getByText("곧 자동 로그아웃돼요.")).toBeHidden();
+    await expect(page.getByText("오랫동안 사용하지 않아 로그아웃됐어요.", { exact: false })).toBeHidden();
+    if (!keysOnly) expect(await editing(page)).toBe(true);
+  }
+  expect(touches.length).toBeGreaterThan(0);
+  expect(touches.length).toBeLessThanOrEqual(4);
+  for (let minute = 0; minute < 11; minute++) await page.clock.fastForward(60_000);
+  await expect(page.getByText("오랫동안 사용하지 않아 로그아웃됐어요.", { exact: false })).toBeVisible();
+});
+
 test("함수 편집 중에는 저장·검증·이동이 멈추고, 편집 창을 닫으면 바로 된다", async ({ page }) => {
   const frame = await open(page, id, "cat-walk");
   await frame.locator("#entryCategoryfunc").click();
