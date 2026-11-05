@@ -1,6 +1,6 @@
 # Firebase·Vercel 운영 설정과 배포
 
-갱신: 2026-11-03(Asia/Seoul). 운영 Firebase·Vercel의 설정·배포·복구 절차입니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다. 지금 설정이 어떤 상태인지는 끝의 [운영 환경 현황](#운영-환경-현황)에 모읍니다.
+갱신: 2026-11-05(Asia/Seoul). 운영 Firebase·Vercel의 설정·배포·복구 절차입니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다. 지금 설정이 어떤 상태인지는 끝의 [운영 환경 현황](#운영-환경-현황)에 모읍니다.
 
 ## 연결 기준
 
@@ -60,7 +60,7 @@ Preview와 Production 양쪽에 일반 설정 `NODE_OPTIONS=--experimental-requi
 
 main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Deployment Checks에 GitHub `app` 검사를 Production 조건으로 연결하며, 성공 전에는 새 배포를 운영 도메인에 연결하지 않습니다. 실패·취소·대기는 기존 운영 버전을 유지합니다. 불안정한 검사 때문에 `app`이 실패하면 Production 배포가 `failure`로 표시되며, 실패한 단계만 재실행(`gh run rerun <run-id> --failed`)해 성공하면 같은 SHA가 운영에 반영됩니다. 이 설정은 Vercel 대시보드에서만 바꿀 수 있어 코드나 문서만으로는 현재 상태를 알 수 없습니다. 빌드 READY와 운영 별칭 연결을 구분합니다. 게이트의 연결 상태는 [운영 환경 현황](#운영-환경-현황)에 두며, 게이트를 추가·제거하면 같은 작업에서 이 절과 현황 표를 함께 고칩니다.
 
-자동 `app` 범위와 전체 E2E 실행 조건은 [검증](DEVELOPMENT.md#검증)을 따르며, 배포 검사 통과를 전체 E2E 통과로 기록하지 않습니다. 같은 파일 트리를 PR 실행이 이미 통과해 `main`의 `app`이 E2E를 건너뛴 경우(`verified`)도 성공한 `app`이므로 게이트를 통과합니다.
+자동 `app` 범위와 전체 E2E 실행 조건은 [검증](DEVELOPMENT.md#검증)을 따르며, 배포 검사 통과를 전체 E2E 통과로 기록하지 않습니다. 같은 파일 트리를 PR 실행이 이미 통과해 `main`의 `app`이 E2E를 건너뛴 경우(`verified`)도 성공한 `app`이므로 게이트를 통과합니다. 그 PR 실행 자신이 `verified`여도 문서를 뺀 파일이 모두 같은 앞선 PR 실행이 E2E를 통과했다는 뜻입니다.
 
 게이트와 workflow는 `app`이라는 검사 이름으로 맺어져 있어 아래를 함께 지킵니다.
 

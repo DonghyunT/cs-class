@@ -59,7 +59,7 @@ jobs:
         run: npm run test:review
       - if: steps.scope.outputs.mode != 'docs'
         run: npm run build
-      # verified: a pull_request run already passed E2E on the same file tree (scripts/ci-policy.mjs).
+      # verified: a pull_request run already passed E2E on the same code (scripts/ci-policy.mjs).
       - uses: actions/setup-java@v4
         if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         with:
@@ -69,3 +69,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         run: npm run test:e2e:scope
+      # The next pull_request run reads this name (findTestedRun in scripts/ci-policy.mjs). Last, so everything above passed.
+      - name: Record tested code ${{ steps.scope.outputs.code }}
+        if: steps.scope.outputs.code != ''
+        run: echo "These non-document files passed this run"
