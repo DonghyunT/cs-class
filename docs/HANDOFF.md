@@ -1,12 +1,12 @@
 # 이어갈 작업
 
-갱신: 2026-11-03(Asia/Seoul). 현재 상태와 다음 작업만 짧게 둡니다([문서 작성 기준](DEVELOPMENT.md#문서-작성-기준)). 주제별 기준 문서는 [AGENTS](../AGENTS.md)의 색인을 따릅니다.
+갱신: 2026-11-05(Asia/Seoul). [작성 기준](DEVELOPMENT.md#문서-작성-기준)·[주제별 문서](../AGENTS.md).
 
 ## 현재 작업 상태
 
 - **운영:** 설정·배포 게이트 상태는 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)을 봅니다.
 - **실제 학생 계정:** 등록 현황과 입장 방식(10/21부터 반 공통 첫 입장 코드)은 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)에 있습니다. 명부 CSV·등록 직후 백업은 등록에 쓴 PC의 Git 제외 `private/`에만 있습니다.
-- **진행 중 브랜치(원격):** `feat/festival-character-v7`(축제 캐릭터 초안 보존, 게임 미적용).
+- **작업 브랜치:** `feat/festival-character-v7`(캐릭터 초안 보존), `fix/classroom-activity-recovery`([감사 후속·검증](reference/2026-11-05-audit-fixes.md), PR까지만 승인).
 
 ## 최근 반영
 

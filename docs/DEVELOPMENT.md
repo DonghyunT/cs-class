@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-11-03(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-11-05(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -183,6 +183,8 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 
 ---
 
+공통 API 요청은 응답 본문 읽기까지 일반 65초(classroom 서버의 60초 실행 한도보다 길게), AI 50초로 제한합니다. 성공 응답의 본문을 읽지 못하면 빈 저장본으로 처리하지 않고 입력을 보존합니다. 시간 초과는 서버 미처리를 뜻하지 않으므로 자동 재전송하지 않습니다. 저장은 수동 재시도하고, 채점·제출은 기존 결과 확인·동일 revision 재전송 절차를 따릅니다.
+
 ## 3. 검증 및 테스트 체계 (Verification & Testing Matrix)
 <a id="검증"></a>
 <a id="용어와-현재-자동화"></a>
@@ -256,6 +258,8 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 <a id="entryjs-실습"></a>
 <a id="운영-프로그래밍-수업"></a>
 <a id="코드-위치와-역할"></a>
+
+- **작업실 활동:** iframe의 실제 키·포인터·입력·스크롤·터치 조작을 `activity` 메시지로 초당 최대 한 번 부모 화면에 알립니다. 함수 편집 중에도 작품 내보내기와 별도로 전달하며, 합성 이벤트나 실행 타이머는 활동으로 보내지 않습니다. 서버 활동 보고 간격은 공통 세션 설정을 그대로 사용합니다.
 
 - **자산 및 무결성:** `npm ci` 시 `scripts/prepare-entryjs.mjs`가 SHA-512 검증 후 `public/entryjs/vendor/`에 브라우저 자산을 준비합니다. `next.config.ts`는 `public/entryjs/vendor/`·`sprites/`에 `Cache-Control: public, max-age=86400`을 붙여 브라우저가 하루 동안 다시 받지 않게 하므로(파일 이름에 버전이 없음), 엔트리 패키지 버전을 올리거나 `sprites/`의 그림을 제자리에서 바꾸면 이미 열어 본 PC에는 최대 하루 뒤에 반영됩니다(`workspace.html`·`workspace.js`·`workspace.css`는 매번 확인, CDN의 `/entryjs/` 사본도 하루 캐시). 수업이 없는 날에 올리거나 바꾼 파일의 이름을 바꿉니다. `workspace.html`은 `workspace.js`·`workspace.css`를 상대 주소로 불러야 CDN 폴더에서도 같은 버전을 엽니다.
 - **작업실 주소:** 크롬은 출처 없는 격리 iframe(`sandbox="allow-scripts"`) 안의 파일을 브라우저 캐시에서 다시 쓰지 않아(11/2 크롬 156 실험, 같은 그림을 4번 열면 4번 받음) 작업실을 열 때마다 라이브러리·브리지·그림을 모두 다시 받습니다. 그래서 운영은 작업실을 같은 Vercel 프로젝트의 두 번째 운영 도메인(`scripts/entryjs-cdn.json`의 `workspaceHost`, [설정 절차](FIREBASE_SETUP.md#엔트리-작업실-주소))에서 `allow-same-origin`을 더해 엽니다. 다른 사이트라 앱의 쿠키·저장소에 닿지 못하면서 그 주소의 출처를 가져 캐시를 다시 씁니다(11/3 크롬 156 실험: 다른 사이트 + `allow-same-origin`은 4번 열면 1번, 출처 없는 격리는 같은 사이트·다른 사이트 모두 4번). 11/2~11/3에는 Cloudflare CDN([올리기 절차](FIREBASE_SETUP.md#엔트리-라이브러리-cdn))에서 열었지만, 11/3 수업 중 한국 접속이 Cloudflare LA(`colo=LAX`)로 가 17.8MB 라이브러리 한 파일에 7~11분이 걸려 `base`를 비워 껐습니다(무료 요금제는 데이터센터를 고를 수 없음). Playwright의 Chromium은 캐시를 다시 써서 검사로는 이 차이가 보이지 않습니다.

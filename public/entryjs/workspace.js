@@ -58,9 +58,6 @@ let original = null;
 let monitor = null;
 let startedAt = 0;
 let lastSpeech = "";
-// The lesson no longer reads name-run records. A record closes when the start lines finish; the 15-second
-// limit does not use it and instead checks on every tick whether a running line waits on a question.
-let nameRun = null;
 let activeTime = 0;
 let lastTick = 0;
 // Event lines keep a run open after the start lines finish, so students can
@@ -118,7 +115,6 @@ function result(reason) {
   const speech = speechNow();
   if (speech) lastSpeech = speech;
   send("result", { x: entity.getX(), y: entity.getY(), speech: lastSpeech, reason });
-  if (traced && nameRun) { send("name-run", { run: { ...nameRun, reason: nameRun.failed ? "error" : reason } }); nameRun = null; }
 }
 
 async function stop(reason) {
@@ -194,37 +190,14 @@ try {
     const ask = Entry.block?.ask_and_wait?.func;
     if (typeof ask === "function") {
       Entry.block.ask_and_wait.func = function (entity, script) {
-        try {
-          const first = !script.isInit;
-          const input = Entry.container.inputValue;
-          const answered = script.isInit && input.complete && input.sprite === entity && Entry.stage.inputField?._isHidden;
-          // Only the dog's question and answer belong to the name mission's run record.
-          if (nameRun && entity.parent?.id === "entrybot") {
-            if (!script.isInit) nameRun.steps.push({ kind: "ask", value: String(script.getValue("VALUE", script)) });
-            if (answered) nameRun.steps.push({ kind: "answer", value: String(Entry.container.getInputValue()) });
-          }
-          const result = ask.call(this, entity, script);
-          if (first) {
-            const field = Entry.stage.inputField;
-            field._hiddenInput.setAttribute("aria-label", free ? "질문 대답" : programming && mission !== "name" ? "강아지 질문 대답" : "강아지 이름 대답");
-            field._hiddenInput.maxLength = 180;
-          }
-          return result;
-        } catch (error) { if (nameRun) nameRun.failed = true; throw error; }
-      };
-    }
-    // Both speech blocks count for the name mission. ‘말하기’ runs once; the timed one
-    // runs every frame until its time is up, so only its first frame is recorded.
-    for (const type of ["dialog_time", "dialog"]) {
-      const say = Entry.block?.[type]?.func;
-      if (typeof say !== "function") continue;
-      Entry.block[type].func = function (entity, script) {
-        try {
-          const first = !script.isStart;
-          const result = say.call(this, entity, script);
-          if (first && nameRun && entity.parent?.id === "entrybot") nameRun.steps.push({ kind: "say", value: String(entity.dialog?.message_ ?? "") });
-          return result;
-        } catch (error) { if (nameRun) nameRun.failed = true; throw error; }
+        const first = !script.isInit;
+        const result = ask.call(this, entity, script);
+        if (first) {
+          const field = Entry.stage.inputField;
+          field._hiddenInput.setAttribute("aria-label", free ? "질문 대답" : programming && mission !== "name" ? "강아지 질문 대답" : "강아지 이름 대답");
+          field._hiddenInput.maxLength = 180;
+        }
+        return result;
       };
     }
   }
@@ -325,6 +298,15 @@ try {
   document.addEventListener("touchstart", resetActiveTime, true);
   document.addEventListener("mouseup", () => queueMicrotask(changed));
   document.addEventListener("touchend", () => queueMicrotask(changed));
+  // Frame input never bubbles to the lesson, and function editing deliberately sends no draft changes.
+  let lastActivity = 0;
+  const reportActivity = (event) => {
+    const now = Date.now();
+    if (!event.isTrusted || now - lastActivity < 1000 || loading || locked) return;
+    lastActivity = now;
+    send("activity");
+  };
+  for (const type of ["pointerdown", "keydown", "input", "scroll", "touchstart"]) document.addEventListener(type, reportActivity, { passive: true, capture: true });
   Entry.addEventListener("run", () => {
     if (locked || loading) { void stop("stopped"); return; }
     if (!traced) changed();
@@ -332,9 +314,7 @@ try {
       // The run event fires during the engine transition. A full export here
       // calls toggleStop; capture the code without changing engine state.
       captureScripts();
-      nameRun = { id: crypto.randomUUID(), project: JSON.stringify(original), steps: [] };
       activeTime = 0; lastTick = Date.now();
-      send("name-start", { id: nameRun.id, project: nameRun.project });
     }
     lastSpeech = "";
     reported = false;
