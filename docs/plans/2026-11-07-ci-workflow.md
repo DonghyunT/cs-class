@@ -35,7 +35,7 @@
 - [x] `SMOKE_RELATED`에 실제 교사 파일을 명시적으로 연결합니다. 공유 교사 파일은 필요한 그룹 모두에 연결합니다.
 - [x] `test:scope`에 문서 검사 3개를 포함하고 `check`에 `test:scope → lint → typecheck → test:review → check-docs → git diff --check origin/main`을 연결합니다. 기존 문서 전용 단축 절차는 유지합니다.
 - [x] `npm run check`와 교사 4그룹·학생 스모크의 명시적 선별 E2E를 실행합니다. 실패 0과 실행 개수를 기록하고 diff·민감정보·문서를 검토합니다.
-- [ ] 첫 PR의 CI·자동 리뷰를 확인하고 squash 병합합니다. main CI·운영 SHA·별칭·익명 API·로그인 화면을 확인합니다.
+- [x] 첫 PR의 CI·자동 리뷰를 확인하고 squash 병합합니다. main CI·운영 SHA·별칭·익명 API·로그인 화면을 확인합니다.
 
 ## 작업 2 — 검사 지문에 따른 재사용과 중복 단계 생략
 
@@ -43,9 +43,9 @@
 
 **Interfaces:** `findVerifiedRun(env, request = fetch, fingerprint = codeFingerprint)`가 같은 저장소의 성공한 PR 실행 중 현재 지문에 맞는 성공 기록을 찾습니다. `findTestedRun`의 같은 브랜치 마지막 성공 실행만 조회하는 정책은 유지하고 기록 확인만 공유합니다.
 
-- [ ] 성공 기록·포크/기록 누락/실패/조회 오류·문서/코드 변경·workflow 생략 조건 테스트를 먼저 추가해 실패를 확인합니다.
-- [ ] PR·main의 기록 확인을 작은 공통 함수로 맞추고 main의 원본 tree 비교와 shortcut을 제거합니다. 기록은 성공한 `app` 작업의 마지막 성공 step에서만 인정합니다.
-- [ ] verified에서 npm/Next 캐시·설치·lint·타입·로직·빌드·E2E를 생략하고 정책·문서 검사와 마지막 지문 기록은 유지합니다.
+- [x] 성공 기록·포크/기록 누락/실패/조회 오류·문서/코드 변경·workflow 생략 조건 테스트를 먼저 추가해 실패를 확인합니다.
+- [x] PR·main의 기록 확인을 작은 공통 함수로 맞추고 main의 원본 tree 비교와 shortcut을 제거합니다. 기록은 성공한 `app` 작업의 마지막 성공 step에서만 인정합니다.
+- [x] verified에서 npm/Next 캐시·설치·lint·타입·로직·빌드·E2E를 생략하고 정책·문서 검사와 마지막 지문 기록은 유지합니다.
 - [ ] `npm run check`로 관련 검사를 확인합니다. 문서 커밋을 추가한 실제 PR 실행에서 verified와 step 생략을 확인합니다.
 - [ ] 완료 계획을 내용 그대로 보관하고 문서를 정리해 두 번째 PR을 squash 병합합니다. main도 실제 지문으로 재사용하고 운영 공개가 정상인지 확인합니다.
 
