@@ -28,10 +28,10 @@ const DRAWING = " 그린 결과를 다 봤으면 무대 아래 ‘정지하기�
 const withoutWaiting = (text: string) => [WAITING, DRAWING].reduce((rest, notice) => rest.endsWith(notice) ? rest.slice(0, -notice.length) : rest, text);
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
-export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, actionsBlocked = false, update, runAction, exportRef, mission, saveLabel, saveState, workspaceWide, practiceFocused = false, mode = "student", onWorkspaceWideChange, onSave, onReadyChange }: {
+export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, actionsBlocked = false, update, runAction, exportRef, mission, saveLabel, saveState, workspaceWide, practiceFocused = false, mode = "student", onWorkspaceWideChange, onSave, onReadyChange, onFunctionEditingChange }: {
   lesson: Lesson; work: Work; draft: WorkDraft; locked: boolean; busy: boolean;
   actionsBlocked?: boolean;
-  onSave?: () => Promise<boolean>; onReadyChange?: (ready: boolean) => void;
+  onSave?: () => Promise<boolean>; onReadyChange?: (ready: boolean) => void; onFunctionEditingChange?: (editing: boolean) => void;
   update: (next: WorkDraft) => void;
   runAction: (action: WorkAction, focusId: string) => Promise<void>;
   exportRef: RefObject<EntryExport | null>;
@@ -78,6 +78,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   const validation = practiceMatches(draft, work.validation) ? work.validation : null;
   const submitted = practiceMatches(draft, work.submission);
   useEffect(() => { onReadyChange?.(phase === "ready"); return () => onReadyChange?.(false); }, [onReadyChange, phase]);
+  useEffect(() => () => onFunctionEditingChange?.(false), [onFunctionEditingChange]);
 
   function send(type: string, details: Record<string, unknown> = {}) {
     frame.current?.contentWindow?.postMessage({ channel: CHANNEL, type, ...details }, "*");
@@ -119,8 +120,9 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
     function receive(event: MessageEvent) {
       if (!frame.current || event.source !== frame.current.contentWindow || event.origin !== entryFrameOrigin(frame.current) || event.data?.channel !== CHANNEL) return;
       const message = event.data;
+      const markFunctionEditing = (editing: boolean) => { functionEditing.current = editing; onFunctionEditingChange?.(editing); };
       if (message.type === "save-request") { if (mode === "student" && phase === "ready" && !locked && !preparing && !actionsBlocked) void onSave?.(); }
-      else if (message.type === "ready") { functionEditing.current = false; setBootReady(true); }
+      else if (message.type === "ready") { markFunctionEditing(false); setBootReady(true); }
       else if (message.type === "loaded") { window.clearTimeout(bootTimer.current); setPhase("ready"); setError(""); }
       else if (message.type === "changed" && typeof message.project === "string" && !locked) {
         const next = parse(message.project);
@@ -134,11 +136,11 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         setError(!next ? "이번 미션의 블록과 입력값을 확인해 주세요. 읽지 못한 입력은 화면에 유지하고 있어요." : "bytes" in next && next.bytes > MAX_PROJECT_BYTES ? "작품이 저장 한도를 넘었어요. 쓰지 않는 블록이나 오브젝트를 지워 주세요." : "");
       } else if (message.type === "exported" && message.refused === "function-editing" && pending.current && pending.current.id === message.id) {
         // The editor opened between the check and the export.
-        functionEditing.current = true;
+        markFunctionEditing(true);
         setResult(FUNCTION_EDITING_MESSAGE);
         window.clearTimeout(pending.current.timer); pending.current.reject(new FunctionEditingError()); pending.current = null;
       } else if (message.type === "function-editing" && typeof message.editing === "boolean") {
-        functionEditing.current = message.editing;
+        markFunctionEditing(message.editing);
         if (!message.editing) setResult((text) => text === FUNCTION_EDITING_MESSAGE ? "블록을 연결한 뒤 실행해 보세요." : text);
       } else if (message.type === "exported" && typeof message.project === "string" && pending.current && pending.current.id === message.id) {
         window.clearTimeout(pending.current.timer); pending.current.resolve(message.project); pending.current = null;
@@ -178,7 +180,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
     }
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
-  }, [draft, locked, update, mission, parse, program, mode, phase, preparing, actionsBlocked, onSave, asksQuestion, free, toasts]);
+  }, [draft, locked, update, mission, parse, program, mode, phase, preparing, actionsBlocked, onSave, onFunctionEditingChange, asksQuestion, free, toasts]);
 
   useEffect(() => {
     const element = frame.current;

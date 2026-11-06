@@ -43,6 +43,7 @@ async function open(page: Page, lesson: string, mission: string, project = missi
 const workspaceFrame = (page: Page) => page.frames().find((frame) => frame.url().includes("/entryjs/workspace.html"))!;
 const editing = (page: Page) => workspaceFrame(page).evaluate(() => (window as unknown as { Entry: { Func: { isEdit: boolean } } }).Entry.Func.isEdit);
 const status = (page: Page) => page.locator("[data-lesson-shell] header [role=status]");
+const EDITING_STATUS = "함수 편집 중 · 저장 전";
 // Entry draws these buttons in SVG under an overlay, so press them where they are on screen.
 async function press(page: Page, target: ReturnType<ReturnType<Page["frameLocator"]>["locator"]>) {
   const box = (await target.boundingBox())!;
@@ -129,7 +130,8 @@ test("함수 편집 중에는 저장·검증·이동이 멈추고, 편집 창을
   await expect.poll(() => editing(page)).toBe(true);
   // The editor menu offers only plain functions: no parameter fields, no properties panel.
   for (const hidden of ["문자/숫자값", "판단값", "함수 속성 보기"]) await expect(frame.getByText(hidden, { exact: true }), hidden).not.toBeVisible();
-  const before = await status(page).textContent();
+  // The save below is refused, so the header must not keep saying the work is saved.
+  await expect(status(page)).toHaveText(EDITING_STATUS);
   const revision = async () => ((await (await page.request.get(endpoint)).json()) as Work).revision;
   const saved = await revision();
 
@@ -137,9 +139,9 @@ test("함수 편집 중에는 저장·검증·이동이 멈추고, 편집 창을
   await frame.locator("#entryCategoryfunc").click();
   await page.keyboard.press("Control+s");
   await expect(page.getByText(EDITING).first()).toBeVisible();
-  await expect(status(page)).toHaveText(before ?? "");
+  await expect(status(page)).toHaveText(EDITING_STATUS);
   await page.getByRole("button", { name: "저장", exact: true }).click();
-  await expect(status(page)).toHaveText(before ?? "");
+  await expect(status(page)).toHaveText(EDITING_STATUS);
   // Leaving by link stops at reading the work, so the page stays.
   await page.getByRole("link", { name: /수업 나가기/ }).click();
   await expect(page).toHaveURL(new RegExp(`/classroom/${id}`));
@@ -157,6 +159,8 @@ test("함수 편집 중에는 저장·검증·이동이 멈추고, 편집 창을
   await press(page, frame.locator("text.entryFunctionButton", { hasText: "저장" }));
   await expect.poll(() => editing(page)).toBe(false);
   await expect(page.getByText(EDITING)).toHaveCount(0);
+  // The function editor's own button only closes the editor; the work still needs the lesson's save.
+  await expect(status(page)).toHaveText("저장하지 않은 변경 있음");
   // Ctrl+S from the workspace saves once the editor is closed.
   await frame.locator("#entryCategoryfunc").click();
   await page.keyboard.press("Control+s");
