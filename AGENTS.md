@@ -5,7 +5,7 @@
 ## 핵심 실행 명령 (Commands)
 - 설치: `npm ci` (다른 PC·앱이 올린 커밋을 받은 뒤 `npm ls --depth=0`에 `invalid`가 있으면 다시 실행)
 - 로컬 개발 실행: `npm run dev:emulator` (Windows PowerShell 차단 시 `npm.cmd`·`npx.cmd`)
-- 단위/문서 검증: `npm run test:scope`, `npm run test:review`, `node scripts/check-docs.mjs`, `git diff --check origin/main`
+- 로컬 통합 검증(Tier 1~1.5): `npm run check` (단위·문서 검사, 린트·타입 검사 포함. 문서만 수정하면 `node scripts/check-docs.mjs`·`git diff --check origin/main`만)
 - 린트·타입·빌드: `npm run lint`, `npm run typecheck`, `npm run build`
 - 선별 E2E 검증: `npm run test:e2e:scope` (에뮬레이터 실행 중일 때: `npm run test:e2e:scope:running`)
 - 전체 E2E는 아래 [먼저 묻는 일](#검증-및-배포-규칙)입니다.

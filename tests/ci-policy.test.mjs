@@ -100,6 +100,29 @@ test("local common changes still require a full-suite decision by the user", asy
   assert.equal((await selectScope({}, undefined, () => ["src/components/student/use-work.ts"])).mode, "full");
 });
 
+test("teacher CI adds each role's specs and preserves student smoke for mixed and duplicate changes", async () => {
+  for (const event of [env, prEnv]) {
+    for (const [file, expected] of [["assessment.tsx", "teacher-assessment"], ["work-details.tsx", "teacher-review-workflow"],
+      ["dashboard.tsx", "teacher-class-management"], ["lesson-preview.tsx", "teacher-preview-api"]]) {
+      const plan = await selectScope(event, async () => sha, () => [`src/components/teacher/${file}`], unverified, unverified);
+      assert.equal(plan.mode, "smoke");
+      assert.ok(plan.testFiles.includes(`tests/${expected}.spec.ts`));
+      assert.ok(plan.testFiles.includes("tests/lesson-smoke.spec.ts"));
+    }
+  }
+  const files = ["src/components/teacher/assessment.tsx", "src/components/teacher/dashboard.tsx",
+    "src/components/teacher/dialogs.tsx", "src/components/teacher/work-details.tsx", "src/components/teacher/lesson-preview.tsx",
+    "src/components/student/review/sandwich.tsx", "src/lib/server/classroom.ts", "src/components/teacher/dashboard.tsx"];
+  const plan = await selectScope(prEnv, async () => sha, () => files, unverified, unverified);
+  assert.equal(plan.mode, "smoke");
+  for (const spec of ["teacher-assessment", "teacher-review-workflow", "teacher-class-management", "teacher-lesson-preview",
+    "teacher-preview-api", "classroom-api", "teacher-preparation", "ui-teacher-refinement", "review-sandwich", "lesson-smoke"]) {
+    assert.ok(plan.testFiles.includes(`tests/${spec}.spec.ts`), spec);
+  }
+  assert.equal(plan.testFiles.length, new Set(plan.testFiles).size);
+  assert.deepEqual(plan.lessonIds, ["review-sandwich"]);
+});
+
 test("baseline rejects failed/canceled/manual/current/nonancestor runs", async () => {
   const success = { id: 1, event: "push", head_branch: "main", head_sha: sha, conclusion: "success", status: "completed" };
   const runs = [{ ...success, conclusion: "cancelled" }, { ...success, conclusion: "failure" },

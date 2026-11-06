@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-11-05(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-11-07(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -194,16 +194,18 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 <a id="ci-개선-후속-작업"></a>
 
 ### 3.1 계층형 검증 티어 (Tiered Verification)
-빠른 개발 피드백을 위해 검증은 가벼운 순서대로 계층화되어 있습니다:
+빠른 개발 피드백을 위해 검증은 가벼운 순서대로 계층화되어 있습니다. **Tier 1~1.5는 `npm run check` 한 번으로 순차 실행**합니다(`test:scope` → lint → typecheck → `test:review` → `check-docs` → `git diff --check origin/main`). 실패하면 다음 단계로 넘어가지 않습니다. 문서만 수정한 경우에는 기존처럼 `check-docs`와 `git diff --check`만 실행합니다:
 
 | 티어 | 검증 범위 | 실행 명령 | 실행 시점 |
 | :--- | :--- | :--- | :--- |
-| **Tier 1: 초경량 단위 검증** | 순수 로직, 문서, 정책 | `npm run test:scope`<br>`npm run test:review`<br>`node scripts/check-docs.mjs`<br>`git diff --check origin/main`<br>`node --test tests/documentation.test.mjs`(문서 검사 스크립트를 바꿀 때) | 커밋 전(문서만 바꾼 커밋은 `check-docs`·`git diff --check`만) |
+| **Tier 1: 초경량 단위 검증** | 순수 로직, 문서, 정책 | `npm run test:scope`<br>`npm run test:review`<br>`node scripts/check-docs.mjs`<br>`git diff --check origin/main` | 커밋 전(문서만 바꾼 커밋은 `check-docs`·`git diff --check`만) |
 | **Tier 1.5: 정적 검사** | 타입 안정성, 린트 | `npm run lint`<br>`npm run typecheck` | 커밋 전 필수(문서만 바꾼 커밋은 생략) |
 | **Tier 2: 선별 E2E (Scoped)** | 변경된 수업 + 공통 스모크 | `npm run test:e2e:scope:running` (서버 구동 중)<br>`npm run test:e2e:scope` (원스톱) | push 전(문서만 바꾼 커밋은 생략, PR 경로는 §3.2 기준으로 줄임) |
 | **Tier 3: 전체 E2E (Full Suite)** | 전체 회귀 검증 | `npm run test:e2e` | **사용자 승인 시에만** (아래 §3.2) |
 
-`test:review`는 기존 Node 리뷰 검사와 [`playwright.logic.config.ts`](../playwright.logic.config.ts)의 `tests/*.test.ts`를 실행합니다. 이 TypeScript 검사 경로는 브라우저 fixture를 쓰지 않으며 앱 서버·에뮬레이터를 시작하지 않습니다.
+`test:scope`는 CI 정책·선별 범위·문서 검사기·엔트리 CDN의 Node 단위 검사를 포함합니다.
+
+`test:review`는 기존 Node 리뷰 검사와 [`playwright.logic.config.ts`](../playwright.logic.config.ts)의 `tests/*.test.ts`를 실행합니다. 이 TypeScript 검사 경로는 브라우저 fixture를 쓰지 않으며 앱 서버·에뮬레이터를 시작하지 않습니다. `check`·`test:review`와 E2E는 기본 `test-results/`를 공유하므로 동시에 실행하지 않습니다. 병렬 실행이 필요하면 Playwright의 `--output`으로 산출물 경로를 나눕니다.
 
 검사 개수는 `npx playwright test --list`로 현재 E2E 목록을 조회하고, 순수 TypeScript 목록은 `npx playwright test --config=playwright.logic.config.ts --list`로 확인합니다. 실행 시간은 검사 범위·PC/CI 환경·캐시·에뮬레이터 준비 상태에 따라 달라지므로 고정된 상한으로 안내하지 않습니다. 검증 범위와 결과는 직접 push는 커밋 본문, PR 경로는 PR 설명에 남기고, HANDOFF에는 §6.2 기준의 요약만 적습니다.
 
@@ -214,7 +216,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 | :--- | :--- | :--- |
 | **직접 push 경로** | Tier 1~2를 통과시키고 결과를 커밋 본문에 적습니다(문서만 바꾸면 [§2.1](#위험도별-반영-경로)의 문서 검사만). 등록 수업 변경은 선별 E2E(`test:e2e:scope:running`)를 돌리고, 미분류 파일이 섞이면 아래 안내대로 검사 파일을 직접 고릅니다 | `main` push에서 한 번 실행합니다. 마지막 성공 main CI 이후 변경을 누적 비교해 문서만이면 E2E를 생략하고, 등록 수업 변경이면 해당 E2E와 공통 스모크를, 미분류 파일이 있으면 아래 `smoke` 모드를 실행합니다 |
 | **PR 경로** | Tier 1~1.5를 통과시키고, E2E는 바꾼 기능의 검사 파일만 지정해 돌립니다(`npm run test:e2e:running -- tests/<파일>.spec.ts`). 등록 수업의 나머지 선별 검사는 PR CI가 돌립니다. 미분류 파일이 섞이면 CI가 관련 검사를 고르지 않으므로 아래 직접 선택 순서를 그대로 따릅니다. 결과는 PR 설명에 적고, 전체 E2E 실행 여부는 작업을 시작할 때 사용자와 정합니다 | PR과 `main` push에서 각각 실행하고, 같은 PR에 새 커밋을 올리면 이전 실행은 취소됩니다. `main` 실행은 배포 게이트 신호이기도 합니다. `verified` 모드는 E2E만 건너뛰고 정책·lint·타입·단위 검사와 빌드는 돌리며, 두 경우에 씁니다. (1) PR 실행: 병합 결과에서 문서를 뺀 파일이 같은 브랜치의 마지막 성공 실행과 모두 같을 때입니다. 문서만 고친 커밋이나 문서만 바뀐 `main`이 여기에 해당하고, 코드가 바뀌거나 `main`의 코드가 움직이면 E2E를 돌립니다. 비교를 위해 PR 실행은 마지막 단계 `Record tested code <지문>`으로 그 파일들의 지문을 남기며, `docs` 모드 실행과 비교 기준 없이 스모크만 돌린 실행은 남기지 않습니다. 기록이 없거나 조회에 실패하면 E2E를 돌리고, 포크 PR의 기록은 믿지 않습니다. (2) `main` 실행: 파일 트리(squash 병합 결과)가 성공한 PR 실행의 PR 커밋과 같을 때입니다. 병합 전에 `main`이 움직여 트리가 다르면 E2E를 다시 돌리므로, 최신 `main`을 PR 브랜치에 합쳐 PR CI를 통과시킨 뒤 병합하면 중복을 피합니다 |
-| **미분류 파일(서버·공통·설정·검사 파일)이 있을 때** | 로컬 선별 도구는 `full`을 내고 멈추므로, 아래 안내대로 검사 파일을 직접 고릅니다 | `smoke` 모드로 전체 등록 수업 스모크와 확인된 관련 수업 검사를 실행합니다. 세션·학생 화면 조회 파일은 `scripts/e2e-scope.mjs`의 `SMOKE_RELATED`가 정한 시간 검사(`read-polling`·`manual-save-entry`·`classroom-api`)도 함께 돌립니다. 비교 기준이 없거나 조회에 실패해도 전체 검사로 승격하지 않습니다 |
+| **미분류 파일(서버·공통·설정·검사 파일)이 있을 때** | 로컬 선별 도구는 `full`을 내고 멈추므로, 아래 안내대로 검사 파일을 직접 고릅니다 | `smoke` 모드로 전체 등록 수업 스모크와 확인된 관련 수업 검사를 실행합니다. 세션·학생 화면 조회 파일은 `scripts/e2e-scope.mjs`의 `SMOKE_RELATED`가 정한 시간 검사(`read-polling`·`manual-save-entry`·`classroom-api`)도 함께 돌립니다. 교사 파일은 같은 목록의 역할별 그룹에 따라 수업 관리·미리보기·수행평가·작품 검토의 관련 검사를 추가하고 전체 학생 스모크를 유지합니다. 로컬의 교사 파일 자동 선별은 추가하지 않았으므로 아래 직접 선택 순서를 따릅니다. 비교 기준이 없거나 조회에 실패해도 전체 검사로 승격하지 않습니다 |
 | **전체 E2E** | **사용자의 명시적 요청 또는 에이전트 질문 후 사전 승인 시에만 실행** | **GitHub Actions의 `workflow_dispatch` 수동 실행으로만 수행** |
 
 **전체 E2E를 권하는 기준:** 인증·권한(`src/lib/server/auth.ts`), 작업 저장 흐름(`useWork`·`work-recovery`), 공통 API 요청(`src/lib/classroom/client.ts`), `LessonShell`을 바꾸는 PR은 실행 여부를 정할 때 에이전트가 실행을 권합니다. 그 밖에는 먼저 권하지 않습니다. 권하는 것은 승인이 아니므로 실행은 사용자가 정합니다.
