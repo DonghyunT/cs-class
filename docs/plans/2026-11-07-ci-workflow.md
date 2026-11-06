@@ -39,7 +39,7 @@
 
 ## 작업 2 — 검사 지문에 따른 재사용과 중복 단계 생략
 
-**Files:** `scripts/ci-policy.mjs`, `tests/ci-policy.test.mjs`, `.github/workflows/verify.yml`, `docs/DEVELOPMENT.md`, `docs/FIREBASE_SETUP.md`, `docs/HANDOFF.md`, 완료 계획 보관함.
+**Files:** `scripts/ci-policy.mjs`, `tests/ci-policy.test.mjs`, `scripts/e2e-scope.mjs`와 그 단위 검사(공유 표시 함수의 수행평가 호출부 보완), `.github/workflows/verify.yml`, `docs/DEVELOPMENT.md`, `docs/FIREBASE_SETUP.md`, `docs/HANDOFF.md`, 완료 계획 보관함.
 
 **Interfaces:** `findVerifiedRun(env, request = fetch, fingerprint = codeFingerprint)`가 같은 저장소의 성공한 PR 실행 중 현재 지문에 맞는 성공 기록을 찾습니다. `findTestedRun`의 같은 브랜치 마지막 성공 실행만 조회하는 정책은 유지하고 기록 확인만 공유합니다.
 
