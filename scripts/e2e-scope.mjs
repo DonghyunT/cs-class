@@ -34,6 +34,28 @@ export const SMOKE_RELATED = [{
     /^tests\/(?:read-polling|manual-save-entry|classroom-api)\.spec\.ts$/
   ],
   tests: ["tests/read-polling.spec.ts", "tests/manual-save-entry.spec.ts", "tests/classroom-api.spec.ts"]
+}, {
+  patterns: [
+    /^src\/components\/teacher\/(?:(?:dashboard|dialogs)\.tsx|presentation\.ts)$/,
+    /^src\/components\/teacher\/(?:class-preparation-table|class-progress|teacher-toolbar)(?:\.tsx|\.module\.css)$/,
+    /^src\/components\/teacher\/teacher\.module\.css$/
+  ],
+  tests: ["tests/teacher-class-management.spec.ts", "tests/classroom-api.spec.ts", "tests/teacher-preparation.spec.ts", "tests/ui-teacher-refinement.spec.ts"]
+}, {
+  patterns: [/^src\/components\/teacher\/(?:lesson-preview\.tsx|use-preview-work\.ts)$/],
+  tests: ["tests/teacher-lesson-preview.spec.ts", "tests/teacher-preview-api.spec.ts"]
+}, {
+  patterns: [
+    /^src\/components\/teacher\/(?:assessment|teacher-toolbar)(?:\.tsx|\.module\.css)$/,
+    /^src\/components\/teacher\/teacher\.module\.css$/
+  ],
+  tests: ["tests/teacher-assessment.spec.ts"]
+}, {
+  patterns: [
+    /^src\/components\/teacher\/(?:dashboard|dialogs|work-details)\.tsx$/,
+    /^src\/components\/teacher\/(?:presentation\.ts|teacher\.module\.css)$/
+  ],
+  tests: ["tests/teacher-review-workflow.spec.ts", "tests/ui-teacher-refinement.spec.ts"]
 }];
 
 export function smokeRelatedTests(files) {

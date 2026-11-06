@@ -18,7 +18,8 @@
     "test:e2e": "firebase emulators:exec --only auth,firestore --project demo-cs-class \"playwright test\"",
     "test:e2e:running": "playwright test",
     "dev:emulator": "firebase emulators:exec --only auth,firestore --project demo-cs-class \"node scripts/dev-emulator.mjs\"",
-    "test:scope": "node --test tests/ci-policy.test.mjs tests/e2e-scope.test.mjs tests/entryjs-cdn.test.mjs",
+    "test:scope": "node --test tests/ci-policy.test.mjs tests/e2e-scope.test.mjs tests/documentation.test.mjs tests/entryjs-cdn.test.mjs",
+    "check": "npm run test:scope && npm run lint && npm run typecheck && npm run test:review && node scripts/check-docs.mjs && git diff --check origin/main",
     "test:e2e:scope": "node scripts/run-selected-e2e.mjs",
     "test:e2e:scope:running": "node scripts/run-selected-e2e.mjs --running"
   },

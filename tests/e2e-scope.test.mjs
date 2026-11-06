@@ -4,7 +4,30 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { selectE2E, matchLesson, matchLessons } from "../scripts/e2e-scope.mjs";
+import { selectE2E, matchLesson, matchLessons, smokeRelatedTests } from "../scripts/e2e-scope.mjs";
+
+test("teacher smoke groups cover management, previews, assessment and work review without narrowing local scope", () => {
+  const groups = [
+    ["dashboard.tsx", ["teacher-class-management", "classroom-api", "teacher-preparation", "ui-teacher-refinement", "teacher-review-workflow"]],
+    ["lesson-preview.tsx", ["teacher-lesson-preview", "teacher-preview-api"]],
+    ["use-preview-work.ts", ["teacher-lesson-preview", "teacher-preview-api"]],
+    ["assessment.tsx", ["teacher-assessment"]],
+    ["assessment.module.css", ["teacher-assessment"]],
+    ["work-details.tsx", ["teacher-review-workflow", "ui-teacher-refinement"]],
+  ];
+  for (const [name, specs] of groups) {
+    const file = `src/components/teacher/${name}`;
+    assert.deepEqual(new Set(smokeRelatedTests([file])), new Set(specs.map(spec => `tests/${spec}.spec.ts`)), name);
+    assert.equal(selectE2E([file]).mode, "full", "local manual selection remains required");
+  }
+  const shared = smokeRelatedTests(["src\\components\\teacher\\teacher.module.css", "src/components/teacher/teacher-toolbar.tsx"]);
+  for (const spec of ["teacher-class-management", "teacher-assessment", "teacher-review-workflow"]) {
+    assert.ok(shared.includes(`tests/${spec}.spec.ts`), spec);
+  }
+  assert.deepEqual(smokeRelatedTests(["src/lib/server/classroom.ts", "src/app/api/classroom/[...path]/route.ts",
+    "src/components/teacher/assessment-helper.ts", "src/components/teacher/dashboard.ts", "src/components/teacher/new-feature.tsx"]), []);
+  assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops", "functions"]);
+});
 
 function runRunner({ plan, planFile = "plan.json", args = [], event = "push", setup } = {}) {
   const directory = mkdtempSync(path.join(tmpdir(), "cs-class-e2e-plan-"));
