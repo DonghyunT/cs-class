@@ -24,6 +24,7 @@ test("teacher smoke groups cover management, previews, assessment and work revie
   for (const spec of ["teacher-class-management", "teacher-assessment", "teacher-review-workflow"]) {
     assert.ok(shared.includes(`tests/${spec}.spec.ts`), spec);
   }
+  assert.ok(smokeRelatedTests(["src/components/teacher/presentation.ts"]).includes("tests/teacher-assessment.spec.ts"));
   assert.deepEqual(smokeRelatedTests(["src/lib/server/classroom.ts", "src/app/api/classroom/[...path]/route.ts",
     "src/components/teacher/assessment-helper.ts", "src/components/teacher/dashboard.ts", "src/components/teacher/new-feature.tsx"]), []);
   assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops", "functions"]);

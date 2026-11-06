@@ -38,28 +38,28 @@ jobs:
             git show --check --format= HEAD
           fi
       - uses: actions/cache@v4
-        if: steps.scope.outputs.mode != 'docs'
+        if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node24-npm-${{ hashFiles('package-lock.json') }}
       - uses: actions/cache@v4
-        if: steps.scope.outputs.mode != 'docs'
+        if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         with:
           path: .next/cache
           key: ${{ runner.os }}-node24-next-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-node24-next-${{ hashFiles('package-lock.json') }}-
-      - if: steps.scope.outputs.mode != 'docs'
+      - if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         run: npm ci
-      - if: steps.scope.outputs.mode != 'docs'
+      - if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         run: npm run lint
-      - if: steps.scope.outputs.mode != 'docs'
+      - if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         run: npm run typecheck
-      - if: steps.scope.outputs.mode != 'docs'
+      - if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         run: npm run test:review
-      - if: steps.scope.outputs.mode != 'docs'
+      - if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         run: npm run build
-      # verified: a pull_request run already passed E2E on the same code (scripts/ci-policy.mjs).
+      # verified: a trusted pull_request record already passed app checks on this code (scripts/ci-policy.mjs).
       - uses: actions/setup-java@v4
         if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         with:
@@ -69,7 +69,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - if: steps.scope.outputs.mode != 'docs' && steps.scope.outputs.mode != 'verified'
         run: npm run test:e2e:scope
-      # The next pull_request run reads this name (findTestedRun in scripts/ci-policy.mjs). Last, so everything above passed.
+      # PR and main runs read this name (scripts/ci-policy.mjs). Last, so all required checks above passed.
       - name: Record tested code ${{ steps.scope.outputs.code }}
         if: steps.scope.outputs.code != ''
         run: echo "These non-document files passed this run"

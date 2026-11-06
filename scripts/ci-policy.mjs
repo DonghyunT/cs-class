@@ -91,18 +91,19 @@ export async function findBaseline(env, request = fetch, ancestor = (sha) => {
   return null;
 }
 
-// A main commit whose files match a pull_request run that passed needs no second E2E. That run may itself be `verified`:
-// findTestedRun lets it pass only on the non-document files of an earlier run that ran E2E, so the proof still holds.
-// shortcut: a pull_request run tests the PR merged into main at that moment, not its head. The two differ only when main
-// moved before the run; that move also changes the squash result, so the match fails and main runs E2E, unless main
-// reverted it before the merge. Compare the fingerprint that run recorded (findTestedRun) if that case ever matters.
-export async function findVerifiedRun(env, request = fetch, tree = () => git("rev-parse", "HEAD^{tree}")) {
+// Main can reuse a trusted PR's actual tested code, even when only documents changed after that run.
+export async function findVerifiedRun(env, request = fetch, fingerprint = codeFingerprint) {
   if (!canReadRuns(env)) return null;
-  const head = tree();
-  const run = (await listRuns(env, "event=pull_request&status=success&per_page=100", request)).find(candidate =>
-    candidate.event === "pull_request" && candidate.conclusion === "success" && candidate.status === "completed"
-    && candidate.head_commit?.tree_id === head);
-  return run?.id ?? null;
+  const code = fingerprint();
+  const [latest, ...previous] = await listRuns(env, "event=pull_request&status=success&per_page=100", request);
+  if (await hasTestedCode(env, latest, code, request)) return latest.id;
+  for (let start = 0; start < previous.length; start += 10) {
+    const batch = previous.slice(start, start + 10);
+    const matches = await Promise.all(batch.map(run => hasTestedCode(env, run, code, request)));
+    const index = matches.indexOf(true);
+    if (index !== -1) return batch[index].id;
+  }
+  return null;
 }
 
 // What E2E can see: the checked-out merge commit's paths, modes and contents, without documents. It compares what was
@@ -117,11 +118,17 @@ export function codeFingerprint() {
 export async function findTestedRun(env, request = fetch, fingerprint = codeFingerprint) {
   if (!canReadRuns(env) || !env.GITHUB_HEAD_REF) return null;
   const [run] = await listRuns(env, `branch=${encodeURIComponent(env.GITHUB_HEAD_REF)}&event=pull_request&status=success&per_page=1`, request);
-  if (run?.event !== "pull_request" || run.conclusion !== "success" || run.status !== "completed" || String(run.id) === env.GITHUB_RUN_ID
-    || run.head_branch !== env.GITHUB_HEAD_REF || run.head_repository?.full_name !== env.GITHUB_REPOSITORY) return null;
+  if (run?.head_branch !== env.GITHUB_HEAD_REF) return null;
+  return await hasTestedCode(env, run, fingerprint(), request) ? run.id : null;
+}
+
+async function hasTestedCode(env, run, code, request) {
+  if (run?.event !== "pull_request" || run.conclusion !== "success" || run.status !== "completed"
+    || String(run.id) === env.GITHUB_RUN_ID || run.head_repository?.full_name !== env.GITHUB_REPOSITORY) return false;
   const { jobs } = await readActions(env, `runs/${run.id}/jobs`, request);
-  const record = `Record tested code ${fingerprint()}`;
-  return jobs.some(job => job.steps.some(step => step.name === record && step.conclusion === "success")) ? run.id : null;
+  const record = `Record tested code ${code}`;
+  return jobs.some(job => job.name === "app" && job.conclusion === "success"
+    && job.steps.some(step => step.name === record && step.conclusion === "success"));
 }
 
 // Docs runs skip E2E, and a run without a baseline tried smoke alone, so neither may stand in for a later commit's scope.
@@ -153,7 +160,7 @@ export async function selectScope(env, baseline = findBaseline, diff = changedFi
       const plan = selectE2E(files);
       const reuse = { push: verified, pull_request: tested }[env.GITHUB_EVENT_NAME];
       if (plan.mode !== "docs" && reuse) {
-        // Without that proof, or when the lookup fails, this run does its own E2E.
+        // Without that proof, or when the lookup fails, this run does its own app checks.
         const run = await reuse(env).catch(() => null);
         if (run) return { mode: "verified", reason: `pull_request run ${run} already passed on this code`, base, lessonIds: [], testFiles: [] };
       }

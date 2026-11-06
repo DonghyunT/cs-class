@@ -9,15 +9,15 @@ import { changedFiles, classify, codeFingerprint, codeToRecord, findBaseline, fi
 const sha = "a".repeat(40);
 const env = { GITHUB_EVENT_NAME: "push", GITHUB_REF: "refs/heads/main", GITHUB_TOKEN: "test-only",
   GITHUB_REPOSITORY: "example/project", GITHUB_RUN_ID: "9", GITHUB_SHA: "b".repeat(40) };
-// main pushes look for a pull_request run that already tested the same tree; these tests have none.
+// Main pushes look for a trusted pull_request record of the same code; these tests have none.
 const unverified = async () => null;
 
 const prEnv = { ...env, GITHUB_EVENT_NAME: "pull_request", GITHUB_REF: "refs/pull/5/merge", GITHUB_HEAD_REF: "fix/work" };
 const passedRun = { id: 7, event: "pull_request", status: "completed", conclusion: "success", head_branch: "fix/work",
   head_repository: { full_name: "example/project" } };
-const recorded = (code, conclusion = "success") => [{ name: "app", steps: [{ name: "Run npm run build", conclusion: "success" },
+const recorded = (code, conclusion = "success") => [{ name: "app", conclusion: "success", steps: [{ name: "Run npm run build", conclusion: "success" },
   { name: `Record tested code ${code}`, conclusion }] }];
-// Answers both calls findTestedRun makes: the branch's run list, then that run's jobs.
+// Answers the run list and the candidate run's jobs.
 const ciApi = (runs, jobs) => async (url) => ({ ok: true, json: async () => url.includes("/jobs") ? { jobs } : { workflow_runs: runs } });
 
 test("only explicit documentation paths are light checks", () => {
@@ -135,14 +135,34 @@ test("baseline rejects failed/canceled/manual/current/nonancestor runs", async (
   assert.equal(await findBaseline({}), null);
 });
 
-test("main reuses only a passed pull_request run on the same tree, and never on pull requests or docs", async () => {
-  const tree = "d".repeat(40);
-  const passed = { id: 7, event: "pull_request", conclusion: "success", status: "completed", head_commit: { tree_id: tree } };
-  const lookup = (runs) => findVerifiedRun(env, async () => ({ ok: true, json: async () => ({ workflow_runs: runs }) }), () => tree);
-  assert.equal(await lookup([{ ...passed, id: 1, conclusion: "failure" }, { ...passed, id: 2, event: "push" },
-    { ...passed, id: 3, status: "in_progress" }, { ...passed, id: 4, head_commit: { tree_id: "e".repeat(40) } }, passed]), 7);
-  assert.equal(await lookup([{ ...passed, head_commit: null }]), null);
-  await assert.rejects(findVerifiedRun(env, async () => ({ ok: false }), () => tree));
+test("main reuses trusted successful records of the tested code, independent of the PR head tree", async () => {
+  const code = "c".repeat(64);
+  const lookup = (runs, jobs = recorded(code)) => findVerifiedRun(env, ciApi(runs, jobs), () => code);
+  assert.equal(await lookup([passedRun]), 7);
+  assert.equal(await lookup([{ ...passedRun, head_commit: { tree_id: "d".repeat(40) } }]), 7);
+  assert.equal(await lookup([{ ...passedRun, head_commit: null }]), 7);
+  for (const other of [{ conclusion: "failure" }, { conclusion: "cancelled" }, { status: "in_progress" }, { event: "push" },
+    { event: "workflow_dispatch" }, { head_repository: { full_name: "someone/fork" } }, { head_repository: null }, { id: 9 }]) {
+    assert.equal(await lookup([{ ...passedRun, ...other }]), null, JSON.stringify(other));
+  }
+  for (const jobs of [[], recorded("d".repeat(64)), recorded(code, "skipped"), recorded(code, "failure"),
+    [{ ...recorded(code)[0], name: "another-job" }], [{ ...recorded(code)[0], conclusion: "failure" }],
+    [{ name: "app", conclusion: "success", steps: [{ name: "Run npm run build", conclusion: "success" }] }]]) {
+    assert.equal(await lookup([passedRun], jobs), null);
+  }
+  const urls = [];
+  const request = async (url) => {
+    urls.push(url);
+    return { ok: true, json: async () => url.includes("/jobs")
+      ? { jobs: recorded(url.includes("/runs/6/") ? "d".repeat(64) : code) }
+      : { workflow_runs: [{ ...passedRun, id: 6 }, passedRun] } };
+  };
+  assert.equal(await findVerifiedRun(env, request, () => code), 7);
+  assert.match(urls[0], /verify\.yml\/runs\?event=pull_request&status=success&per_page=100$/);
+  assert.equal(urls.length, 3, "a newer different-code run does not hide a matching older run");
+  assert.equal(await lookup([]), null);
+  await assert.rejects(findVerifiedRun(env, async () => ({ ok: false }), () => code));
+  await assert.rejects(findVerifiedRun(env, async (url) => url.includes("/jobs") ? { ok: false } : ciApi([passedRun], recorded(code))(url), () => code));
   assert.equal(await findVerifiedRun({}), null);
 
   const lesson = () => ["src/components/student/review/sandwich.tsx"];
@@ -151,12 +171,36 @@ test("main reuses only a passed pull_request run on the same tree, and never on 
   assert.match(reused.reason, /run 7/);
   assert.equal(reused.base, sha);
   assert.deepEqual(reused.testFiles, []);
-  // Shared code too: the pull_request run already ran its smoke scope on this tree.
   assert.equal((await selectScope(env, async () => sha, () => ["src/components/student/use-work.ts"], async () => 7)).mode, "verified");
-
   assert.equal((await selectScope({ ...env, GITHUB_EVENT_NAME: "pull_request" }, async () => sha, lesson, async () => 7)).mode, "affected");
   assert.equal((await selectScope(env, async () => sha, () => ["docs/HANDOFF.md"], async () => 7)).mode, "docs");
-  assert.equal((await selectScope(env, async () => sha, lesson, async () => { throw new Error("API failure"); })).mode, "affected");
+  const unavailable = (runEnv) => findVerifiedRun(runEnv, async () => ({ ok: false }), () => code);
+  assert.equal((await selectScope(env, async () => sha, lesson, unavailable)).mode, "affected");
+});
+
+test("main checks the latest record first, then batches older jobs with bounded concurrency", async () => {
+  const code = "c".repeat(64);
+  const runs = Array.from({ length: 21 }, (_, index) => ({ ...passedRun, id: 100 + index }));
+  let active = 0, peak = 0;
+  const requested = [];
+  const request = async (url) => {
+    if (!url.includes("/jobs")) return { ok: true, json: async () => ({ workflow_runs: runs }) };
+    const id = Number(url.match(/runs\/(\d+)\/jobs/)[1]);
+    requested.push(id);
+    peak = Math.max(peak, ++active);
+    await new Promise(resolve => setImmediate(resolve));
+    active--;
+    return { ok: true, json: async () => ({ jobs: recorded(id === 109 ? code : "d".repeat(64)) }) };
+  };
+  assert.equal(await findVerifiedRun(env, request, () => code), 109);
+  assert.equal(peak, 10);
+  assert.deepEqual(requested, Array.from({ length: 11 }, (_, index) => 100 + index));
+  requested.length = 0;
+  peak = 0;
+  runs[0] = { ...passedRun, id: 109 };
+  assert.equal(await findVerifiedRun(env, request, () => code), 109);
+  assert.deepEqual(requested, [109], "the common latest-match case reads only one job");
+  assert.equal(peak, 1);
 });
 
 test("a pull_request run reuses the last passed run of its branch only when that run recorded the same code", async () => {
@@ -243,6 +287,20 @@ test("the workflow records tested code last, under the name the next run looks f
   assert.match(workflow.slice(step), /\n\s+if: steps\.scope\.outputs\.code != ''\s/);
 });
 
+test("verified skips repeated caches and app checks while policy and the final record remain", () => {
+  const workflow = readFileSync(new URL("../.github/workflows/verify.yml", import.meta.url), "utf8");
+  const steps = workflow.split(/(?=^ {6}- )/m);
+  const repeated = steps.filter(step => /actions\/cache@v4|run: npm (?:ci|run (?:lint|typecheck|test:review|build))\s*$/m.test(step));
+  assert.equal(repeated.length, 7);
+  for (const step of repeated) {
+    assert.match(step, /if: steps\.scope\.outputs\.mode != 'docs' && steps\.scope\.outputs\.mode != 'verified'/);
+  }
+  const policy = steps.find(step => step.includes('name: Verify policy and documentation'));
+  assert.ok(policy.includes('node --test'));
+  assert.ok(policy.includes('node scripts/check-docs.mjs'));
+  assert.doesNotMatch(policy, /^\s+if:/m);
+});
+
 test("the fingerprint changes with every non-document file and with nothing else", () => {
   const root = mkdtempSync(path.join(tmpdir(), "cs-class-code-"));
   const previous = process.cwd();
@@ -265,7 +323,7 @@ test("the fingerprint changes with every non-document file and with nothing else
     assert.equal(codeFingerprint(), first);
 
     // What classify treats as code stays code, wherever it lives.
-    for (const file of ["docs/example.ts", "notes.md", "src/README.md", "docs/guide.md.bak"]) {
+    for (const file of ["docs/example.ts", "notes.md", "src/README.md", "docs/guide.md.bak", ".github/workflows/verify.yml"]) {
       write(file, "x\n"); commit();
       assert.notEqual(codeFingerprint(), first, file);
       rmSync(path.join(root, file)); commit();
@@ -348,6 +406,15 @@ test("a chain of pull_request runs stays tied to the code that last passed E2E",
     runGit("checkout", "-q", "work");
     runGit("reset", "-q", "--hard", firstCode);
     assert.equal(await prRun(), "smoke", "force-push to older code");
+
+    runGit("checkout", "-q", "main");
+    runGit(...identity, "merge", "-q", "--squash", "work");
+    runGit(...identity, "commit", "-qm", "squash");
+    commitFile("docs/after-squash.md", "main-only documents\n");
+    const verified = () => findVerifiedRun(env, ciApi([passedRun], last));
+    assert.equal((await selectScope(env, async () => base, changedFiles, verified)).mode, "verified", "main matches the actual merge's code after squash and docs");
+    commitFile("src/main.ts", "untested code\n");
+    assert.equal((await selectScope(env, async () => base, changedFiles, verified)).mode, "smoke", "a new main code tree runs its own checks");
   } finally { process.chdir(previous); rmSync(root, { recursive: true, force: true }); }
 });
 

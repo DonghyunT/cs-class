@@ -3,6 +3,13 @@
   "baseline": "98781bd6e506e3ab5b1be08c39677e658215dba9",
   "records": [
     {
+      "source": "docs/plans/2026-11-07-ci-workflow.md",
+      "archive": "docs/archive/cs-class/2026-11-07-ci-workflow/2026-11-07-ci-workflow.md",
+      "origin": "completed-plan-archived-20261107",
+      "baseCommit": "2f14db17de8e49250b73f1199041fcb7fcd3627a",
+      "sha256": "03ca7a59f81d2e0fc85fdd23ed7c7d99f2b42db4f3c086808e21c223d048a818"
+    },
+    {
       "source": "docs/plans/functions-lesson.md",
       "archive": "docs/archive/cs-class/2026-11-01-completed-plans/functions-lesson.md",
       "origin": "completed-plan-archived-20261101",
