@@ -43,7 +43,7 @@
 
 **Interfaces:** `findVerifiedRun(env, request = fetch, fingerprint = codeFingerprint)`가 같은 저장소의 성공한 PR 실행 중 현재 지문에 맞는 성공 기록을 찾습니다. `findTestedRun`의 같은 브랜치 마지막 성공 실행만 조회하는 정책은 유지하고 기록 확인만 공유합니다.
 
-- [x] 성공 기록·포크/기록 누락/실패/조회 오류·문서/코드 변경·workflow 생략 조건 테스트를 먼저 추가해 실패를 확인합니다.
+- [x] 성공 기록·포크/기록 누락/실패/조회 오류·문서/코드 변경·workflow 생략 조건·최신 우선/동시 조회 10개 제한 테스트를 먼저 추가해 실패를 확인합니다.
 - [x] PR·main의 기록 확인을 작은 공통 함수로 맞추고 main의 원본 tree 비교와 shortcut을 제거합니다. 기록은 성공한 `app` 작업의 마지막 성공 step에서만 인정합니다.
 - [x] verified에서 npm/Next 캐시·설치·lint·타입·로직·빌드·E2E를 생략하고 정책·문서 검사와 마지막 지문 기록은 유지합니다.
 - [ ] `npm run check`로 관련 검사를 확인합니다. 문서 커밋을 추가한 실제 PR 실행에서 verified와 step 생략을 확인합니다.

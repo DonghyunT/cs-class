@@ -95,8 +95,13 @@ export async function findBaseline(env, request = fetch, ancestor = (sha) => {
 export async function findVerifiedRun(env, request = fetch, fingerprint = codeFingerprint) {
   if (!canReadRuns(env)) return null;
   const code = fingerprint();
-  for (const run of await listRuns(env, "event=pull_request&status=success&per_page=100", request)) {
-    if (await hasTestedCode(env, run, code, request)) return run.id;
+  const [latest, ...previous] = await listRuns(env, "event=pull_request&status=success&per_page=100", request);
+  if (await hasTestedCode(env, latest, code, request)) return latest.id;
+  for (let start = 0; start < previous.length; start += 10) {
+    const batch = previous.slice(start, start + 10);
+    const matches = await Promise.all(batch.map(run => hasTestedCode(env, run, code, request)));
+    const index = matches.indexOf(true);
+    if (index !== -1) return batch[index].id;
   }
   return null;
 }

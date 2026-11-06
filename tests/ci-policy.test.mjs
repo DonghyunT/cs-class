@@ -178,6 +178,31 @@ test("main reuses trusted successful records of the tested code, independent of 
   assert.equal((await selectScope(env, async () => sha, lesson, unavailable)).mode, "affected");
 });
 
+test("main checks the latest record first, then batches older jobs with bounded concurrency", async () => {
+  const code = "c".repeat(64);
+  const runs = Array.from({ length: 21 }, (_, index) => ({ ...passedRun, id: 100 + index }));
+  let active = 0, peak = 0;
+  const requested = [];
+  const request = async (url) => {
+    if (!url.includes("/jobs")) return { ok: true, json: async () => ({ workflow_runs: runs }) };
+    const id = Number(url.match(/runs\/(\d+)\/jobs/)[1]);
+    requested.push(id);
+    peak = Math.max(peak, ++active);
+    await new Promise(resolve => setImmediate(resolve));
+    active--;
+    return { ok: true, json: async () => ({ jobs: recorded(id === 109 ? code : "d".repeat(64)) }) };
+  };
+  assert.equal(await findVerifiedRun(env, request, () => code), 109);
+  assert.equal(peak, 10);
+  assert.deepEqual(requested, Array.from({ length: 11 }, (_, index) => 100 + index));
+  requested.length = 0;
+  peak = 0;
+  runs[0] = { ...passedRun, id: 109 };
+  assert.equal(await findVerifiedRun(env, request, () => code), 109);
+  assert.deepEqual(requested, [109], "the common latest-match case reads only one job");
+  assert.equal(peak, 1);
+});
+
 test("a pull_request run reuses the last passed run of its branch only when that run recorded the same code", async () => {
   const code = "c".repeat(64);
   const lookup = (runs, jobs, runEnv = prEnv) => findTestedRun(runEnv, ciApi(runs, jobs), () => code);
@@ -383,7 +408,7 @@ test("a chain of pull_request runs stays tied to the code that last passed E2E",
     assert.equal(await prRun(), "smoke", "force-push to older code");
 
     runGit("checkout", "-q", "main");
-    runGit("merge", "-q", "--squash", "work");
+    runGit(...identity, "merge", "-q", "--squash", "work");
     runGit(...identity, "commit", "-qm", "squash");
     commitFile("docs/after-squash.md", "main-only documents\n");
     const verified = () => findVerifiedRun(env, ciApi([passedRun], last));

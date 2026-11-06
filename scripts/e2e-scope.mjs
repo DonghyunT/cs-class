@@ -47,6 +47,7 @@ export const SMOKE_RELATED = [{
 }, {
   patterns: [
     /^src\/components\/teacher\/(?:assessment|teacher-toolbar)(?:\.tsx|\.module\.css)$/,
+    /^src\/components\/teacher\/presentation\.ts$/,
     /^src\/components\/teacher\/teacher\.module\.css$/
   ],
   tests: ["tests/teacher-assessment.spec.ts"]
