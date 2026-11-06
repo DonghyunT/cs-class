@@ -80,6 +80,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   const [quizQuestionId, setQuizQuestionId] = useState(() => shownQuizIds(lesson, initial).find((id) => initial.quizRoundGraded ? !initial.quizFeedback[id]?.correct : !initial.draft.quizAnswers[id]) ?? shownQuizIds(lesson, initial)[0] ?? lesson.quiz[0]?.id);
   const [experienceVersion, setExperienceVersion] = useState(0);
   const [nativeReady, setNativeReady] = useState(false);
+  const [functionEditing, setFunctionEditing] = useState(false);
   const needsNative = draft.stage === "practice" && (lesson.practice.type === "entryjs" || lesson.practice.type === "programming");
   useEffect(() => { onWorkspaceStageChange(draft.stage); }, [draft.stage, onWorkspaceStageChange]);
   const locked = busy || switchingTo !== null;
@@ -94,7 +95,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     setFocusRequest({ id: "concept-experience-reset", preventScroll: true });
   }
   function moveQuestion(id: string) { setQuizQuestionId(id); setFocusRequest({ id: "quiz-question-title" }); }
-  const saveLabel = mode === "preview" ? error ? "체험 작품 확인 필요" : "이 창에서 체험 중" : switchingTo ? "입력 확인 후 이동 중…" : controller.conflict ? "저장 기록 충돌" : saveState === "saved" ? work.updatedAt ? "저장 완료" : "아직 학습 기록이 없어요" : saveState === "saving" ? "저장 중…" : saveState === "failed" ? "저장 확인 필요" : "저장하지 않은 변경 있음";
+  const saveLabel = mode === "preview" ? error ? "체험 작품 확인 필요" : "이 창에서 체험 중" : switchingTo ? "입력 확인 후 이동 중…" : controller.conflict ? "저장 기록 충돌" : functionEditing && (saveState === "saved" || saveState === "dirty") ? "함수 편집 중 · 저장 전" : saveState === "saved" ? work.updatedAt ? "저장 완료" : "아직 학습 기록이 없어요" : saveState === "saving" ? "저장 중…" : saveState === "failed" ? "저장 확인 필요" : "저장하지 않은 변경 있음";
   const switchStage = useCallback(async (stage: Stage, focusTab = false) => {
     if (switchingTo || busy || actionBlocked) return;
     setSwitchingTo(stage);
@@ -173,7 +174,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     {controller.remote && <section className={styles.conflictPanel} aria-label="저장 충돌 비교"><h2>어떤 입력으로 이어갈까요?</h2><p>서버의 완료·제출 기록은 유지돼요. 입력 내용은 아래에서 직접 선택하세요.</p><div className={styles.comparisonGrid}><div><h3>이 화면의 입력</h3><DraftComparison lesson={lesson} draft={draft} /></div><div><h3>서버에 저장된 입력</h3><DraftComparison lesson={lesson} draft={controller.remote.draft} /></div></div><div className={styles.actions}><Button disabled={busy} onClick={() => void controller.resolve(true)}>현재 입력을 새 버전으로 저장</Button><Button variant="outline" disabled={busy} onClick={() => void controller.resolve(false)}>서버 기록으로 이어하기</Button></div></section>}
 
 
-    {lesson.practice.type === "programming" && <ProgrammingLearningStage mode={mode} practiceFocused={practiceFocused} lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} conceptId={conceptId} onConceptChange={setConceptId} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} onEditorReady={setNativeReady} />}
+    {lesson.practice.type === "programming" && <ProgrammingLearningStage mode={mode} practiceFocused={practiceFocused} lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} conceptId={conceptId} onConceptChange={setConceptId} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} onEditorReady={setNativeReady} onFunctionEditingChange={setFunctionEditing} />}
 
     {!(lesson.practice.type === "programming" && hasCustomLearning(lesson)) && draft.stage === "concept" && <LessonConceptPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} conceptId={conceptId} experienceVersion={experienceVersion} onResetExperience={resetExperience} onSelectConcept={selectConcept} />}
 

@@ -15,7 +15,7 @@ import { PracticeGuidance } from "./practice-guidance";
 import type { WorkController, LessonMode } from "./work-controller";
 import styles from "./programming-lesson.module.css";
 
-type Props = { lesson: Lesson; controller: WorkController; mode?: LessonMode; locked: boolean; runAction: (action: WorkAction, focusId: string | readonly string[]) => Promise<void>; focus: (id: string) => void; next: (stage: WorkDraft["stage"]) => void; exportRef: RefObject<EntryExport | null>; workspaceWide: boolean; practiceFocused: boolean; onWorkspaceWideChange: (wide: boolean) => void; saveLabel: string; conceptId: string; onConceptChange: (id: string) => void; onEditorReady?: (ready: boolean) => void };
+type Props = { lesson: Lesson; controller: WorkController; mode?: LessonMode; locked: boolean; runAction: (action: WorkAction, focusId: string | readonly string[]) => Promise<void>; focus: (id: string) => void; next: (stage: WorkDraft["stage"]) => void; exportRef: RefObject<EntryExport | null>; workspaceWide: boolean; practiceFocused: boolean; onWorkspaceWideChange: (wide: boolean) => void; saveLabel: string; conceptId: string; onConceptChange: (id: string) => void; onEditorReady?: (ready: boolean) => void; onFunctionEditingChange?: (editing: boolean) => void };
 
 // Hint text with its block chips coloured by Entry category; screen readers read the chips as plain words.
 // ▾ has a wide glyph box, so it gets a trimmed span to read ‘A▾를’ as one word.
@@ -51,7 +51,7 @@ function ProgrammingConcept({ lesson, controller, locked, focus, runAction, next
   }} onCheck={() => void runAction({ type: "check-concept", conceptId: id }, ["concept-next", "concept-feedback"])} serverFeedback={draft.conceptAnswers[id] === work.draft.conceptAnswers[id] ? work.conceptFeedback[id]?.message : undefined} serverCorrect={work.conceptFeedback[id]?.correct} retryConcepts={concepts.map((_, i) => i).filter((i) => !work.conceptSolved.includes(`pc${i}`) && work.conceptFeedback[`pc${i}`]?.correct === false)} />;
 }
 
-function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exportRef, workspaceWide, practiceFocused, onWorkspaceWideChange, saveLabel, mode = "student", onEditorReady }: Props) {
+function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exportRef, workspaceWide, practiceFocused, onWorkspaceWideChange, saveLabel, mode = "student", onEditorReady, onFunctionEditingChange }: Props) {
   const { work, draft, update } = controller;
   const [switching, setSwitching] = useState(false);
   const missions = missionsFor(lesson.id);
@@ -92,7 +92,7 @@ function ProgrammingPractice({ lesson, controller, locked, runAction, focus, exp
         <div className={styles.experiment}><h4><Lightbulb size={17} aria-hidden="true" />만든 뒤 확인하기</h4><p>{mission.experiment}</p></div></PracticeGuidance>
       </aside>
       <div className={styles.workArea}>
-        <EntryPracticeWorkspace mode={mode} key={mission.id} mission={mission} lesson={lesson} work={{ ...work, validation: current.validation, submission: current.submission }} draft={{ ...draft, entryProject: raw, practiceOrder: [] }} locked={locked || switching || controller.capturing} busy={controller.busy} exportRef={exportRef} onSave={mode === "student" ? controller.save : undefined} onReadyChange={onEditorReady} runAction={runPracticeAction} workspaceWide={workspaceWide} practiceFocused={practiceFocused} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} saveState={controller.saveState} actionsBlocked={controller.actionBlocked} update={(next) => {
+        <EntryPracticeWorkspace mode={mode} key={mission.id} mission={mission} lesson={lesson} work={{ ...work, validation: current.validation, submission: current.submission }} draft={{ ...draft, entryProject: raw, practiceOrder: [] }} locked={locked || switching || controller.capturing} busy={controller.busy} exportRef={exportRef} onSave={mode === "student" ? controller.save : undefined} onReadyChange={onEditorReady} onFunctionEditingChange={onFunctionEditingChange} runAction={runPracticeAction} workspaceWide={workspaceWide} practiceFocused={practiceFocused} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} saveState={controller.saveState} actionsBlocked={controller.actionBlocked} update={(next) => {
           const current = controller.getDraft();
           if (current.programming && next.entryProject) update({ ...current, programming: { ...current.programming, projects: { ...current.programming.projects, [mission.id]: next.entryProject } } });
         }} />
