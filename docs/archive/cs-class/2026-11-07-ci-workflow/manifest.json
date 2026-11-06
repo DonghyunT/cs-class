@@ -1,0 +1,12 @@
+{
+  "archivedAt": "2026-11-07 Asia/Seoul",
+  "sourceCommit": "2f14db17de8e49250b73f1199041fcb7fcd3627a",
+  "files": [
+    {
+      "source": "docs/plans/2026-11-07-ci-workflow.md",
+      "archived": "2026-11-07-ci-workflow.md",
+      "bytes": 5493,
+      "sha256": "9701f8f32c247a99516deca5da35906e4b54015783998aa6ff5c2a4fb21f2036"
+    }
+  ]
+}
