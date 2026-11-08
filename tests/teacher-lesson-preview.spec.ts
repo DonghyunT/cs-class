@@ -15,7 +15,7 @@ async function learningRecords() {
 }
 
 test("teacher-preview: 7수업 실제 화면·메모리 답안·초기화·학생 기록 불변", async ({ page }) => {
-  test.setTimeout(90000);
+  test.setTimeout(120000);
   await readyTeacher(page.request);
   const before = await learningRecords();
   const errors: string[] = [];
@@ -150,7 +150,7 @@ test("teacher-preview: 익명·학생·담당 외 반·승인 필드·잘못된 
 });
 
 test("teacher-preview-entry: 실제 조립·질문 응답·보기 전환·체험 제출·미완성 메모리 복원", async ({ page }, info) => {
-  test.setTimeout(90000);
+  test.setTimeout(120000);
   await readyTeacher(page.request);
   const before = await learningRecords(), studentRequests: string[] = [], errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));

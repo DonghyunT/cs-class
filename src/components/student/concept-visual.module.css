@@ -15,6 +15,9 @@
 .block { padding: 7px 14px; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 650; white-space: nowrap; }
 .block[data-kind="flow"] { background: #0284c7; }
 .block[data-kind="brush"] { background: #ea580c; }
+.block[data-kind="moving"] { background: #7c3aed; }
+.block[data-kind="looks"] { background: #e11d48; }
+.block[data-kind="variable"] { background: #c026d3; }
 .nest { display: grid; gap: 8px; padding: 10px; border-radius: 14px; background: #0284c7; color: #fff; font-size: 15px; font-weight: 650; text-align: left; }
 .nest > div:first-child { padding: 2px 6px; }
 .nest .inner { display: grid; gap: 8px; padding: 10px; border-radius: 10px; background: rgba(255, 255, 255, .92); color: #0c5a85; }

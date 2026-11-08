@@ -5,6 +5,9 @@ import { COUNTER, KEY_LABELS, entryNumeric, functionCallId, missionBlockIssue, m
 class MissionError extends Error {}
 // Thrown by ‘반복 중단하기’ and caught by the nearest loop.
 class StopRepeat extends Error {}
+class StopObject extends Error {
+  constructor(readonly target: string) { super(); }
+}
 
 // One run may evaluate at most this many blocks, keep this long a text and say this many lines.
 const MAX_STEPS = 20_000, MAX_TEXT = 500, MAX_SPEECH = 50, MAX_REPEAT = 1000, MAX_SEGMENTS = 200, MAX_CALL_DEPTH = 20;
@@ -34,7 +37,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   const issue = missionBlockIssue(id, raw);
   if (issue) return fail(issue);
   // An object running code: its shapes (by index) and what it said.
-  type Actor = { id: string; count: number; index: number; said: string[] };
+  type Actor = { id: string; count: number; index: number; said: string[]; visible?: boolean };
   // A failed check is run once more with ‘생각하기’ counted as speech, to say why it failed,
   // and a failed decision once more with only the wording relaxed (`wordingOnly`).
   let thinkSpeaks = false, wordingOnly = false;
@@ -46,8 +49,10 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     // The first answer stored in each variable, so a result saved over A later still counts.
     const firstInput: Record<string, Value> = {};
     let actor: Actor | null = null;
-    const forevers: { body: EntryNode[]; actor: Actor | null }[] = [];
-    let answer = "", asks = 0, x = 0, y = 0, direction = 90;
+    const forevers: { body: EntryNode[]; actor: Actor | null; active: boolean }[] = [];
+    let currentForever: { body: EntryNode[]; actor: Actor | null; active: boolean } | null = null;
+    let answer = "", asks = 0, x = 0, y = 0, direction = 90, mouseX = 0, mouseY = 0, bouncedWall = false, stopped: string | null = null;
+    let touching = new Set<string>();
     let steps = 0, speeches = 0, usedLogic = false, rotation = 0, drawing = false, loopDepth = 0, asksInLoop = 0;
     // True from a loop's second pass on: a stroke drawn then is drawn by repetition.
     let again = false;
@@ -82,6 +87,12 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       if (n.type === "get_pictures") return { value: String(n.params[0] ?? ""), input: false };
       // No mouse button is held between the simulated clicks.
       if (n.type === "is_clicked") return { value: false, input: false };
+      if (n.type === "coordinate_mouse") return { value: n.params[1] === "y" ? mouseY : mouseX, input: false };
+      if (n.type === "reach_something") {
+        const target = String(n.params[1] ?? "");
+        const hit = (actor ? touching.has(`${actor.id}:${target}`) : false) || touching.has(target) || ((target === "wall" || target === "edge") && ["wall_up", "wall_down", "wall_right", "wall_left"].some((w) => touching.has(w)));
+        return { value: actor?.visible !== false && hit, input: false };
+      }
       // Any logic block that looks at A·B counts; the inputs decide whether it is right.
       if ((n.type === "boolean_not" || n.type === "boolean_and_or") && usesAB(n)) usedLogic = true;
       if (n.type === "boolean_not") return { value: !evaluate(n.params[1] as EntryNode).value, input: false };
@@ -126,13 +137,16 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       x = nextX; y = nextY;
     };
     function loop(body: EntryNode[], next: () => boolean, forever = false) {
-      if (forever && observe) { forevers.push({ body, actor }); let left = FRAMES; next = () => left-- > 0; }
+      let tracked = currentForever;
+      if (forever && observe) { tracked = { body, actor, active: true }; forevers.push(tracked); let left = FRAMES; next = () => left-- > 0; }
+      const prevForever = currentForever; currentForever = tracked;
       loopDepth++;
       // `drew` counts the passes that drew: a loop drawing on one pass only is not repetition.
       const outer = again, drawn: Stroke[] = [], loopId = loopPasses.push(0) - 1; let passes = 0, drew = 0;
       open.push(drawn); loopStack.push(loopId);
-      try { while (next()) { step(); again = outer || passes++ > 0; const before = drawn.length; try { exec(body); } catch (error) { if (error instanceof StopRepeat) break; throw error; } finally { if (drawn.length > before) drew++; } } }
-      finally { loopDepth--; again = outer; open.pop(); loopStack.pop(); loopPasses[loopId] = passes; if (drew > 1) for (const s of drawn) s.repeated = true; }
+      try { while (next()) { step(); again = outer || passes++ > 0; const before = drawn.length; try { exec(body); } catch (error) { if (error instanceof StopRepeat) { if (loopDepth === 1 && tracked) tracked.active = false; break; } throw error; } finally { if (drawn.length > before) drew++; } } }
+      finally { currentForever = prevForever; loopDepth--; again = outer; open.pop(); loopStack.pop(); loopPasses[loopId] = passes; if (drew > 1) for (const s of drawn) s.repeated = true; }
+
     }
     function exec(list: EntryNode[]) {
       for (const n of list) {
@@ -164,6 +178,12 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         else if (n.type === "direction_relative") direction += number(evaluate(n.params[0] as EntryNode).value);
         else if (n.type === "rotate_relative") { const turn = number(evaluate(n.params[0] as EntryNode).value); if (!rotationLocked) rotation += turn; }
         else if (n.type === "locate_xy") goTo(number(evaluate(n.params[0] as EntryNode).value), number(evaluate(n.params[1] as EntryNode).value));
+        else if (n.type === "locate_x") goTo(number(evaluate(n.params[0] as EntryNode).value), y);
+        else if (n.type === "bounce_wall") {
+          bouncedWall = true;
+          if (touching.has("wall_up") || touching.has("wall_down")) direction = 180 - direction;
+          if (touching.has("wall_left") || touching.has("wall_right") || touching.has("wall") || touching.has("edge")) direction = -direction;
+        }
         else if (n.type === "move_x") goTo(x + number(evaluate(n.params[0] as EntryNode).value), y);
         else if (n.type === "move_y") goTo(x, y + number(evaluate(n.params[0] as EntryNode).value));
         // Timed moves and turns end where Entry's frames end; the seconds do not change the result.
@@ -175,6 +195,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         else if (n.type === "move_to_angle") { const angle = number(evaluate(n.params[0] as EntryNode).value) * Math.PI / 180, distance = number(evaluate(n.params[1] as EntryNode).value); goTo(x + Math.sin(angle) * distance, y + Math.cos(angle) * distance); }
         else if (n.type === "start_drawing" || n.type === "stop_drawing") drawing = n.type === "start_drawing";
         else if (n.type === "brush_erase_all") segments = [];
+        else if (n.type === "hide" || n.type === "show") { if (actor) actor.visible = n.type === "show"; }
         else if (HARMLESS_BLOCKS.has(n.type)) continue;
         else if (n.type === "repeat_basic") {
           const count = number(evaluate(n.params[0] as EntryNode).value);
@@ -206,17 +227,30 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         // Following the mouse does not change what is graded.
         else if (n.type === "locate") continue;
         else if (n.type === "stop_repeat") { if (!loopDepth) throw new MissionError("‘반복 중단하기’는 반복 블록 안에 넣어 주세요."); throw new StopRepeat(); }
+        else if (n.type === "stop_object") {
+          const mode = String(n.params[0] ?? "all");
+          if (mode === "thisOnly") { for (const f of forevers) if (f !== currentForever && f.actor === actor) f.active = false; }
+          else if (mode === "otherThread" || mode === "other_objects") { for (const f of forevers) if (f.actor !== actor) f.active = false; }
+          else {
+            stopped = mode;
+            if (mode === "all") for (const f of forevers) f.active = false;
+            else if (currentForever) currentForever.active = false;
+            throw new StopObject(mode);
+          }
+        }
         else throw new MissionError("시작 블록은 맨 위에 두고 동작을 아래로 연결해 주세요.");
       }
     }
-    const result = () => ({ variables, firstInput, asks, x, y, usedLogic, segments, asksInLoop, sayings, calls, loopPasses, shapes });
+    const result = () => ({ variables, firstInput, asks, x, y, direction, rotation, usedLogic, segments, asksInLoop, sayings, calls, loopPasses, shapes, stopped, bouncedWall, foreversStopped: forevers.length > 0 && forevers.every((f) => !f.active) });
     return {
       result, variables,
-      run(list: EntryNode[], who: Actor | null) { actor = who; exec(list); },
+      run(list: EntryNode[], who: Actor | null) { actor = who; try { exec(list); } catch (error) { if (!(error instanceof StopObject)) throw error; } },
       // Start from an object's saved 이동 방향, 방향 and 회전 방식 instead of Entry's defaults.
       orient(moving: number, turned: number, method: string) { rotationLocked = method !== "free"; direction = moving; rotation = rotationLocked ? 0 : turned; },
       // One more watch of every forever loop, as frames passing on the stage.
-      frames() { for (const { body, actor: who } of [...forevers]) { actor = who; let left = FRAMES; loop(body, () => left-- > 0); } },
+      frames(passes = FRAMES) { for (const item of [...forevers]) { if (stopped === "all") break; if (!item.active) continue; actor = item.actor; currentForever = item; let left = passes; try { loop(item.body, () => item.active && left-- > 0); } catch (error) { if (!(error instanceof StopObject)) throw error; } finally { currentForever = null; } } },
+      place(px: number, py: number) { x = px; y = py; },
+      sense(mx: number, my: number, hits: readonly string[] = []) { mouseX = mx; mouseY = my; touching = new Set(hits); bouncedWall = false; },
     };
   }
   function run(signal: string, inputs: string[], m = machine(inputs), who: Actor | null = null) {
@@ -380,6 +414,108 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   };
   // Every case asks once and says only the expected result.
   const decides = (cases: [number, string][]) => { const runs = cases.map(([input]) => run("click", [String(input)])); return runs.every((r) => r.asks === 1) && saysOnly(runs, cases.map((c) => c[1])); };
+  const normAngle = (deg: number) => ((deg % 360) + 360) % 360;
+  const angleDiff = (a: number, b: number) => { const d = Math.abs(normAngle(a) - normAngle(b)); return Math.min(d, 360 - d); };
+  function gradePaddle() {
+    if (p!.threads.length) run("click", [], machine([], true));
+    const pad = p!.added.find((o) => o.id === "paddle" || o.sprite === "paddle");
+    if (!pad) return false;
+    const starts = pad.threads.filter((t) => t[0]?.type === "when_run_button_click");
+    if (!starts.length) return false;
+    const m = machine([], true), who = actorOf(pad.id, pad.sprite, pad.picture);
+    m.orient(pad.entity.direction, pad.entity.rotation, pad.rotateMethod);
+    m.place(pad.entity.x, pad.entity.y);
+    m.sense(-180, 40);
+    for (const t of starts) m.run(t.slice(1), who);
+    if (Math.abs(m.result().x - -180) > 0.0001 || Math.abs(m.result().y - pad.entity.y) > 0.0001) return false;
+    for (const mx of [-75, 0, 65, 190]) {
+      m.sense(mx, -30);
+      m.frames();
+      if (Math.abs(m.result().x - mx) > 0.0001 || Math.abs(m.result().y - pad.entity.y) > 0.0001) return false;
+    }
+    return true;
+  }
+  function gradeBall(checkBricks = false) {
+    if (p!.threads.length) run("click", [], machine([], true));
+    const ballObj = p!.added.find((o) => o.id === "ball" || o.sprite === "ball");
+    if (!ballObj) return false;
+    const starts = ballObj.threads.filter((t) => t[0]?.type === "when_run_button_click" || t[0]?.type === "when_object_click");
+    if (!starts.length) return false;
+    const m = machine([], true), who = actorOf(ballObj.id, ballObj.sprite, ballObj.picture);
+    m.orient(ballObj.entity.direction, ballObj.entity.rotation, ballObj.rotateMethod);
+    m.place(ballObj.entity.x, ballObj.entity.y);
+    m.sense(0, 0, []);
+    for (const t of starts) m.run(t.slice(1), who);
+    const r0 = m.result(), startHeading = ballObj.entity.direction + (ballObj.rotateMethod === "free" ? ballObj.entity.rotation : 0);
+    if (Math.hypot(r0.x - ballObj.entity.x, r0.y - ballObj.entity.y) < 1 || !r0.bouncedWall || r0.stopped !== null || angleDiff(r0.direction + r0.rotation, startHeading) > 0.01) return false;
+    m.sense(0, 0, []);
+    m.frames(1);
+    const r1 = m.result();
+    if (Math.hypot(r1.x - r0.x, r1.y - r0.y) < 0.5 || !r1.bouncedWall || r1.stopped !== null || angleDiff(r1.direction + r1.rotation, startHeading) > 0.01) return false;
+    const targets = ["paddle", ...(checkBricks ? ["brick1", "brick2", "brick3"] : [])];
+    for (const target of targets) {
+      const before = m.result().direction + m.result().rotation;
+      m.sense(0, 0, [target, `${ballObj.id}:${target}`]);
+      m.frames(1);
+      let after = m.result();
+      if (angleDiff(after.direction + after.rotation, before) < 1) {
+        m.orient(before + 90, 0, ballObj.rotateMethod);
+        m.sense(0, 0, [target, `${ballObj.id}:${target}`]);
+        m.frames(1);
+        after = m.result();
+        if (angleDiff(after.direction + after.rotation, before + 90) < 1) return false;
+      }
+      if (after.stopped !== null) return false;
+    }
+    for (const wall of ["wall_up", "wall_left", "wall_right"]) { m.sense(0, 0, [wall]); m.frames(1); if (m.result().stopped !== null) return false; }
+    m.sense(0, 0, ["wall_down", `${ballObj.id}:wall_down`]);
+    m.frames(1);
+    if (m.result().stopped !== "all") {
+      const pos = m.result();
+      m.sense(0, 0, []);
+      m.frames(1);
+      if (Math.hypot(m.result().x - pos.x, m.result().y - pos.y) > 0.0001) return false;
+    }
+    return true;
+  }
+  function gradeBrick() {
+    if (p!.threads.length) run("click", [], machine([], true));
+    const brickIds = ["brick1", "brick2", "brick3"] as const;
+    if (!brickIds.every((bid) => p!.added.some((o) => o.id === bid))) return false;
+    const scoreId = p!.variables.find((v) => v.id === "score" || v.name === "점수")?.id ?? "score";
+    const winWords = ["성공", "승리", "이겼", "완성", "클리어", "축하", "win", "clear"];
+    const hasWin = (lines: { text: string }[]) => lines.some((s) => { const low = s.text.toLowerCase(); return winWords.some((w) => low.includes(w) || letters(s.text).includes(w)); });
+    const runOrder = (order: readonly string[]) => {
+      const cast = p!.added.map((o) => ({ actor: { ...actorOf(o.id, o.sprite, o.picture), visible: o.entity.visible }, obj: o }));
+      const m = machine([], true);
+      if (!Object.hasOwn(m.variables, scoreId)) return { ok: false, won: false };
+      m.sense(0, 0, []);
+      for (const c of cast) {
+        m.orient(c.obj.entity.direction, c.obj.entity.rotation, c.obj.rotateMethod);
+        m.place(c.obj.entity.x, c.obj.entity.y);
+        for (const t of c.obj.threads) if (t[0]?.type === "when_run_button_click") m.run(t.slice(1), c.actor);
+      }
+      m.frames(1);
+      if (Number(m.variables[scoreId].value) !== 0 || hasWin(m.result().sayings) || m.result().stopped !== null) return { ok: false, won: false };
+      if (brickIds.some((bid) => cast.find((c) => c.actor.id === bid)!.actor.visible === false)) return { ok: false, won: false };
+      for (let i = 0; i < order.length; i++) {
+        const targetBrick = order[i];
+        m.sense(0, 0, [`${targetBrick}:ball`, `ball:${targetBrick}`]);
+        m.frames();
+        const scoreNow = Number(m.variables[scoreId].value);
+        const brickActor = cast.find((c) => c.actor.id === targetBrick)!.actor;
+        if (scoreNow !== i + 1 || brickActor.visible !== false) return { ok: false, won: false };
+        if (i < order.length - 1 && (hasWin(m.result().sayings) || m.result().stopped !== null)) return { ok: false, won: false };
+      }
+      m.sense(0, 0, []);
+      m.frames(1);
+      const won = hasWin(m.result().sayings) && (m.result().stopped !== null || m.result().foreversStopped);
+      return { ok: true, won };
+    };
+    const a = runOrder(["brick1", "brick2", "brick3"]);
+    const b = runOrder(["brick2", "brick3", "brick1"]);
+    return a.ok && b.ok && (a.won || b.won);
+  }
   function grade(): boolean {
     if (id === "name") return ["초코", "보리"].every((value) => { const r = run("click", [value]); return r.asks === 1 && r.sayings.some((s) => s.input && s.text.includes(value)); });
     // The change challenge subtracts the price from the money paid and says it with ‘원’ in one line.
@@ -411,6 +547,10 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     if (id === "windows") return windows();
     if (id === "fix-shapes") return fixShapes();
     if (id === "flower") return flower();
+    if (id === "paddle") return gradePaddle();
+    if (id === "ball") return gradeBall(false);
+    if (id === "brick") return gradeBrick();
+    if (id === "brick-bounce") return gradeBrick() && gradeBall(true);
     if (id === "move") { const r = run("click", []); return Math.abs(r.x - 10) < 0.0001 && Math.abs(r.y) < 0.0001; }
     // The keys mission grades only the four arrow keys; the carried-over start line is optional. The
     // keys are pressed one after another in two orders, as on the stage, so a key that relies on the

@@ -12,13 +12,15 @@ import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
 import { LOOPS_LESSON } from "../src/lib/classroom/loops-lesson";
 import { FUNCTIONS_LESSON } from "../src/lib/classroom/functions-lesson";
+import { BRICK_BREAKER_LESSON } from "../src/lib/classroom/brick-breaker-lesson";
+
 import { emptyWork } from "../src/lib/classroom/progress";
 import type { WorkDraft } from "../src/lib/classroom/types";
 
 test("처음 여는 수업의 첫 미션 작품은 수업 유형에 맞는 시작 작품이다", () => {
   const first = (lesson: Parameters<typeof emptyWork>[0]) => { const { mission, projects } = emptyWork(lesson).draft.programming!; return parseProgrammingProject(projects[mission])!; };
   expect(first(PROGRAMMING_LESSON).free).toBe(false);
-  for (const lesson of [CONDITIONALS_LESSON, LOOPS_LESSON, FUNCTIONS_LESSON]) expect(first(lesson).free, lesson.id).toBe(true);
+  for (const lesson of [CONDITIONALS_LESSON, LOOPS_LESSON, FUNCTIONS_LESSON, BRICK_BREAKER_LESSON]) expect(first(lesson).free, lesson.id).toBe(true);
 });
 
 const legacy: Record<string, { key: string | null; order: string[] | null; project: string | null; lines: string[]; checks: Record<string, { passed: boolean; message: string }> }> = legacyKeys;
@@ -267,6 +269,7 @@ const CHIP_WORDS: Record<string, RegExp> = {
   boolean_and_or: /^참 (그리고|또는) /, if_else: /^만일 .+라면 아니면$/, _if: /^만일 .+라면$/, repeat_basic: /^.+번 반복하기$/, repeat_while_true: /될 때까지 반복하기$/,
   move_direction: /^\d+만큼 움직이기$/, direction_relative: /^.+° 회전하기$/, direction_absolute: /^이동 방향을 \d+°로 정하기$/,
   move_x: /^x 좌표를 -?\d+만큼 바꾸기$/, start_drawing: /^그리기 시작하기$/, stop_drawing: /^그리기 멈추기$/, locate_xy: /^x: -?\d+ y: -?\d+ 위치로 이동하기$/, change_to_next_shape: /^다음 모양으로 바꾸기$/,
+  repeat_inf: /^계속 반복하기$/, locate_x: /^x: .+ 위치로 이동하기$/, coordinate_mouse: /^마우스 [xy] 좌표$/, bounce_wall: /^화면 끝에 닿으면 튕기기$/, reach_something: /^.+에 닿았는가\?$/, stop_object: /^.+ 멈추기$/, hide: /^모양 숨기기$/,
 };
 // Functions come first: students make a function before they call it.
 const walkProject = (raw: string, walk: (v: unknown) => void) => { const p = JSON.parse(raw); walk(p.functions ?? []); walk({ ...p, functions: [] }); };
@@ -532,6 +535,19 @@ test("엔트리 오브젝트 묶음은 파일·분류·크기가 맞고 위험�
   }
 });
 
+const withBrickThreads = (missionId: string, objectId: string, threads: EntryNode[][]) => {
+  const p = parseProgrammingProject(missionStarter(missionId))!;
+  return buildProgrammingProject(undefined, p.added.map((o) => o.id === objectId ? { ...o, threads } : o), -1, false, p.variables);
+};
+const touchOf = (target: string) => node("reach_something", null, target, null);
+const stopAllOf = () => node("stop_object", "all", null);
+const brickBallSteps = () => [forward(number("10")), node("bounce_wall", null), { ...node("_if", touchOf("paddle"), null), statements: [[turn(node("angle", "90"))]] }, { ...node("_if", touchOf("wall_down"), null), statements: [[stopAllOf()]] }];
+const BRICK_SOLUTIONS = {
+  paddle: withBrickThreads("paddle", "paddle", [[start(), forever([node("locate_x", node("coordinate_mouse", null, "x", null), null)])]]),
+  ball: withBrickThreads("ball", "ball", [[start(), forever(brickBallSteps())]]),
+  brick: withBrickThreads("brick", "brick1", [[start(), forever([{ ...node("_if", touchOf("ball"), null), statements: [[node("change_variable", "score", number("1"), null), node("hide", null)]] }, { ...node("_if", compare(node("get_variable", "score"), "EQUAL", number("3")), null), statements: [[speak("성공!"), stopAllOf()]] }])]]),
+  "brick-bounce": withBrickThreads("brick-bounce", "ball", [[start(), forever([...brickBallSteps(), ...(["brick1", "brick2", "brick3"] as const).map((bid) => ({ ...node("_if", touchOf(bid), null), statements: [[turn(node("angle", "180"))]] }))])]]),
+};
 // Solutions built in the order of each mission's `steps` (plan appendix D); guidance and grading must agree.
 test("조립 순서대로 만든 미션 해답(정사각형은 두 회전 블록 모두)은 채점을 통과한다", () => {
   const sayTimed = (value: EntryNode) => node("dialog_time", value, number("2"), "speak", null);
@@ -557,9 +573,13 @@ test("조립 순서대로 만든 미션 해답(정사각형은 두 회전 블록
     ["windows", oneObject([[start(), callOf("win"), moveX("100"), callOf("win")]], [{ id: "win", name: "창문 그리기", body: penBody(4) }])],
     ["fix-shapes", repairedShapes()],
     ["flower", oneObject([[start(), loopOf(number("6"), [callOf("petal"), turn(node("angle", "60"))])]], [{ id: "petal", name: "꽃잎", body: penBody(4) }])],
+    ["paddle", BRICK_SOLUTIONS.paddle],
+    ["ball", BRICK_SOLUTIONS.ball],
+    ["brick", BRICK_SOLUTIONS.brick],
+    ["brick-bounce", BRICK_SOLUTIONS["brick-bounce"]],
   ];
   // Every mission a lesson still offers has a solution; retired ones (escape) are no longer graded.
-  expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(["programming-13", "conditionals", "loops", "functions"].flatMap((lesson) => missionsFor(lesson).map((mission) => mission.id))));
+  expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(["programming-13", "conditionals", "loops", "functions", "brick-breaker"].flatMap((lesson) => missionsFor(lesson).map((mission) => mission.id))));
   // The steps name the values and slots these solutions use.
   expect(hintPlain(missionById("polygon")!.steps[1])).toContain("70만큼 움직이기");
   // After drawing, the pen lifts and Entrybot steps aside so it does not hide the shape.
@@ -571,7 +591,7 @@ test("조립 순서대로 만든 미션 해답(정사각형은 두 회전 블록
   const typesIn = (raw: string) => { const out = new Set<string>(); const walk = (v: unknown): void => { if (typeof v === "string" && v.startsWith("[")) { try { walk(JSON.parse(v)); } catch { /* plain text */ } } else if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") { const t = (v as { type?: unknown }).type; if (typeof t === "string" && PALETTE_BLOCKS.has(t)) out.add(t); Object.values(v).forEach(walk); } }; walkProject(raw, walk); return out; };
   // Values each solution uses, as the hint writes them (palette symbols; Entry key codes 37–40 as key names).
   const SYMBOL: Record<string, string> = { GREATER_OR_EQUAL: "≥", EQUAL: "=", MULTI: "x", DIVIDE: "/", PLUS: "+", MINUS: "-" }, KEY: Record<string, string> = { 37: "왼쪽", 38: "위쪽", 39: "오른쪽", 40: "아래쪽" };
-  const VARIABLE: Record<string, string> = { "cs-A": "A", "cs-B": "B", "cs-clicks": "클릭 수" };
+  const VARIABLE: Record<string, string> = { "cs-A": "A", "cs-B": "B", "cs-clicks": "클릭 수", score: "점수" };
   // The tree's later thresholds are written in words instead of four more chips.
   const VALUE_IN_WORDS: Record<string, RegExp> = { "tree 클릭 수 값 = 10": /5를 10으로/, ...Object.fromEntries(["15", "20", "25"].map((n) => [`tree 클릭 수 값 = ${n}`, /15·20·25도/])) };
   const LOGIC: Record<string, string> = { AND: "그리고", OR: "또는" };
@@ -804,13 +824,13 @@ test("채점 표: 같은 뜻으로 만든 작품은 통과하고, 결과가 틀�
 // misleading ‘시작 블록은 맨 위에…’ message.
 test("미션이 받는 모든 동작 블록은 해석기에서 실행된다", () => {
   const STARTS = new Set(["when_run_button_click", "when_some_key_pressed", "mouse_clicked", "when_object_click"]);
-  const REPORTERS = new Set(["get_canvas_input_value", "get_variable", "combine_something", "calc_basic", "boolean_basic_operator", "boolean_and_or", "boolean_not", "quotient_and_mod", "is_clicked"]);
+  const REPORTERS = new Set(["get_canvas_input_value", "get_variable", "combine_something", "calc_basic", "boolean_basic_operator", "boolean_and_or", "boolean_not", "quotient_and_mod", "is_clicked", "reach_something", "coordinate_mouse"]);
   const n = number("1"), color = node("color", "#FF0000"), yes = node("True", null);
   const DEFAULTS: Record<string, unknown[]> = {
     ask_and_wait: [text("?"), null], dialog_time: [text("안녕"), n, "speak", null], dialog: [text("안녕"), "speak", null], set_variable: ["cs-A", n, null],
-    move_direction: [n, null], move_x: [n, null], move_y: [n, null], move_xy_time: [n, n, n, null], locate_xy_time: [n, n, n, null], move_to_angle: [n, n, null], locate_xy: [n, n, null], locate: ["mouse", null],
+    move_direction: [n, null], bounce_wall: [null], move_x: [n, null], move_y: [n, null], move_xy_time: [n, n, n, null], locate_x: [n, null], locate_xy_time: [n, n, n, null], move_to_angle: [n, n, null], locate_xy: [n, n, null], locate: ["mouse", null],
     direction_absolute: [n, null], direction_relative: [n, null], rotate_relative: [n, null], rotate_by_time: [n, n, null], direction_relative_duration: [n, n, null],
-    start_drawing: [null], stop_drawing: [null], brush_erase_all: [null], repeat_basic: [n, null], repeat_while_true: [yes, "until", null], repeat_inf: [null, null], stop_repeat: [null], _if: [yes, null], if_else: [yes, null, null],
+    start_drawing: [null], stop_drawing: [null], brush_erase_all: [null], repeat_basic: [n, null], repeat_while_true: [yes, "until", null], repeat_inf: [null, null], stop_repeat: [null], stop_object: ["all", null], _if: [yes, null], if_else: [yes, null, null],
     change_variable: ["cs-clicks", n, null], change_to_next_shape: ["next", null], change_to_some_shape: [node("get_pictures", "tree-pic2"), null],
     wait_second: [n, null], remove_dialog: [null], show: [null], hide: [null], set_visible_answer: ["HIDE", null], show_variable: ["cs-A", null], hide_variable: ["cs-A", null],
     set_color: [color, null], change_thickness: [n, null], set_thickness: [n, null], set_random_color: [null], set_fill_color: [color, null], start_fill: [null], stop_fill: [null],
@@ -1138,4 +1158,49 @@ test("QA2: 회전 방식이 자유가 아니면 ‘방향 회전’은 그리는
 test("QA2: func_로 시작하는 함수 id는 읽지 않는다", () => {
   const raw = withFunctionEdit((p, fn) => { fn.id = "func_a"; p.objects[0].script = p.objects[0].script.replaceAll("func_win1", "func_func_a"); });
   expect(parseProgrammingProject(raw)).toBeNull();
+});
+
+
+test("벽돌 깨기 4개 미션은 시작 작품 구조·변수·채점 조건을 정확히 검사한다", () => {
+  for (const id of ["paddle", "ball", "brick", "brick-bounce"]) {
+    const starter = missionStarter(id);
+    const parsed = parseProgrammingProject(starter)!;
+    expect(parsed.free, id).toBe(true);
+    expect(new Set(parsed.added.map((o) => o.id)), id).toEqual(new Set(["paddle", "ball", "brick1", "brick2", "brick3"]));
+    expect(parsed.variables.map((v) => [v.id, v.name, v.value]), id).toEqual([["score", "점수", 0]]);
+    expect(checkProgrammingMission(id, starter).passed, id).toBe(false);
+  }
+  const withObjectThreads = (missionId: string, objectId: string, threads: EntryNode[][]) => {
+    const p = parseProgrammingProject(missionStarter(missionId))!;
+    return buildProgrammingProject(undefined, p.added.map((o) => o.id === objectId ? { ...o, threads } : o), -1, false, p.variables);
+  };
+  const mouseX = () => node("coordinate_mouse", null, "x", null);
+  const mouseY = () => node("coordinate_mouse", null, "y", null);
+  expect(checkProgrammingMission("paddle", BRICK_SOLUTIONS.paddle).passed).toBe(true);
+  expect(checkProgrammingMission("paddle", withObjectThreads("paddle", "paddle", [[start(), node("locate_x", mouseX(), null)]])).passed).toBe(false);
+  expect(checkProgrammingMission("paddle", withObjectThreads("paddle", "paddle", [[start(), forever([node("locate_x", number("10"), null)])]])).passed).toBe(false);
+  expect(checkProgrammingMission("paddle", withObjectThreads("paddle", "paddle", [[start(), forever([node("locate_x", mouseY(), null)])]])).passed).toBe(false);
+  expect(checkProgrammingMission("paddle", withObjectThreads("paddle", "paddle", [[start(), forever([node("locate_xy", mouseX(), mouseY(), null)])]])).passed).toBe(false);
+  expect(missionBlockIssue("paddle", withObjectThreads("paddle", "paddle", [[start(), forever([node("move_x", number("10"), null)])]]))).toContain("대신 ‘x: ( ) 위치로 이동하기’");
+
+  expect(checkProgrammingMission("ball", BRICK_SOLUTIONS.ball).passed).toBe(true);
+  const touch = (target: string) => node("reach_something", null, target, null);
+  const stopAll = () => node("stop_object", "all", null);
+  expect(checkProgrammingMission("ball", withObjectThreads("ball", "ball", [[node("when_object_click", null), forever([forward(number("10")), node("bounce_wall", null), when(touch("paddle"), [turn(node("angle", "180"))]), when(touch("wall_down"), [stopAll()])])]])).passed).toBe(true);
+  expect(checkProgrammingMission("ball", withObjectThreads("ball", "ball", [[start(), forever([forward(number("10")), when(touch("paddle"), [turn(node("angle", "90"))]), when(touch("wall_down"), [stopAll()])])]])).passed).toBe(false);
+  expect(checkProgrammingMission("ball", withObjectThreads("ball", "ball", [[start(), forever([forward(number("10")), node("bounce_wall", null), turn(node("angle", "90")), when(touch("wall_down"), [stopAll()])])]])).passed).toBe(false);
+  expect(checkProgrammingMission("ball", withObjectThreads("ball", "ball", [[start(), forever([forward(number("10")), node("bounce_wall", null), when(touch("paddle"), [turn(node("angle", "90"))]), when(touch("wall_up"), [stopAll()])])]])).passed).toBe(false);
+
+  expect(checkProgrammingMission("brick", BRICK_SOLUTIONS.brick).passed).toBe(true);
+  const addScore = () => node("change_variable", "score", number("1"), null);
+  const hide = () => node("hide", null);
+  const scoreEq = (op: string, val: string) => compare(node("get_variable", "score"), op, number(val));
+  expect(checkProgrammingMission("brick", withObjectThreads("brick", "brick1", [[start(), forever([when(touch("ball"), [addScore(), hide(), when(scoreEq("EQUAL", "3"), [speak("You win!"), stopAll()])])])]])).passed).toBe(true);
+  expect(checkProgrammingMission("brick", withObjectThreads("brick", "brick1", [[start(), forever([when(touch("ball"), [addScore()]), when(scoreEq("EQUAL", "3"), [speak("성공!"), stopAll()])])]])).passed).toBe(false);
+  expect(checkProgrammingMission("brick", withObjectThreads("brick", "brick1", [[start(), forever([when(touch("ball"), [addScore(), hide()]), when(scoreEq("GREATER", "3"), [speak("성공!"), stopAll()])])]])).passed).toBe(false);
+  expect(checkProgrammingMission("brick", withObjectThreads("brick", "brick1", [[start(), forever([when(touch("ball"), [addScore(), hide()]), when(scoreEq("EQUAL", "1"), [speak("성공!"), stopAll()])])]])).passed).toBe(false);
+
+  expect(checkProgrammingMission("brick-bounce", BRICK_SOLUTIONS["brick-bounce"]).passed).toBe(true);
+  const onlyTwoBricks = [[start(), forever([forward(number("10")), node("bounce_wall", null), when(touch("paddle"), [turn(node("angle", "90"))]), when(touch("wall_down"), [stopAll()]), when(touch("brick1"), [turn(node("angle", "180"))]), when(touch("brick2"), [turn(node("angle", "180"))])])]];
+  expect(checkProgrammingMission("brick-bounce", withObjectThreads("brick-bounce", "ball", onlyTwoBricks)).passed).toBe(false);
 });

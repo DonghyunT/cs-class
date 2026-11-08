@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import styles from "./concept-visual.module.css";
 
-// Small static pictures for the common concept screen of the conditionals and loops lessons.
+// Small static pictures for the common concept screen of the conditionals, loops and brick-breaker lessons.
 // The functions lesson shows hands-on experiences instead (function-concepts.tsx).
 // Keyed by concept id; lessons without an entry (reviews, programming-13) show nothing.
 const Tile = ({ tone = "blue", sub, children }: { tone?: "blue" | "true" | "false" | "purple"; sub?: string; children: ReactNode }) => <b className={styles.tile} data-tone={tone}>{children}{sub && <small>{sub}</small>}</b>;
@@ -9,8 +9,9 @@ const Tile = ({ tone = "blue", sub, children }: { tone?: "blue" | "true" | "fals
 const Op = ({ children, word }: { children: ReactNode; word?: true }) => <span className={word ? styles.opWord : styles.op}>{children}</span>;
 const Card = ({ title, children }: { title: string; children: ReactNode }) => <div className={styles.card}><strong>{title}</strong>{children}</div>;
 const Row = ({ children }: { children: ReactNode }) => <div className={styles.row}>{children}</div>;
-// Entry-like block: `kind` picks the block category colour (flow, brush).
-const Block = ({ kind = "flow", children }: { kind?: "flow" | "brush"; children: ReactNode }) => <div className={styles.block} data-kind={kind}>{children}</div>;
+
+// Entry-like block: `kind` picks the block category colour (flow, brush, moving, looks, variable).
+const Block = ({ kind = "flow", children }: { kind?: "flow" | "brush" | "moving" | "looks" | "variable"; children: ReactNode }) => <div className={styles.block} data-kind={kind}>{children}</div>;
 // Entry's own rendering of a block thread, exported at 3x (public/concepts/) and shown at
 // 1.226x its CSS size like cc4; the figure's aria-label carries the meaning.
 const Capture = ({ src, width, height }: { src: string; width: number; height: number }) =>
@@ -62,6 +63,22 @@ export const CONCEPT_VISUALS: Record<string, { label: string; node: ReactNode }>
   lc4: { label: "마우스를 클릭했을 때(무대를 클릭할 때마다) 클릭 수에 1만큼 더하고, 클릭 수 값이 5가 되면 나무가 다음 모양으로 바뀌어 한 단계 자람", node: <>
     <Capture src="loops-count-variable" width={367} height={172} />
     <Tree stage={0} clicks="클릭 수 0" /><Op>→</Op><Tree stage={1} clicks="클릭 수 5" /></> },
+  bc0: { label: "시작할 때 점수 0에서 벽돌에 닿을 때마다 점수에 1만큼 더하기를 실행해 1, 2로 차곡차곡 쌓이는 과정", node: <>
+    <Card title="시작"><Tile sub="점수">0</Tile></Card>
+    <Op>→</Op>
+    <Card title="벽돌 1개 깸"><Block kind="variable">점수에 1만큼 더하기</Block><Tile tone="purple" sub="점수">1</Tile></Card>
+    <Op>→</Op>
+    <Card title="벽돌 2개 깸"><Block kind="variable">점수에 1만큼 더하기</Block><Tile tone="true" sub="점수">2</Tile></Card></> },
+  bc1: { label: "계속 반복하기 안에서 x: 마우스 x 좌표 위치로 이동하기를 실행하면 막대는 y = -115 높이를 유지한 채 마우스의 가로 위치만 따라감", node: <>
+    <Card title="무대 좌표"><svg viewBox="0 0 180 104" width="180" height="104" aria-hidden="true"><defs>{flowHead}</defs><rect x="6" y="6" width="168" height="92" rx="8" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" /><circle cx="132" cy="34" r="5" fill="#376fc8" /><text x="132" y="23" textAnchor="middle" fontSize="14" fontWeight="700" fill="#2e5fab">마우스 x</text><path d="M132 41V66" stroke="#376fc8" strokeWidth="1.5" strokeDasharray="3 3" /><rect x="16" y="68" width="44" height="10" rx="5" fill="#fca5a5" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="2 2" /><path d="M64 73H104" {...flow} /><rect x="110" y="68" width="44" height="10" rx="5" fill="#ef4444" /><text x="90" y="92" textAnchor="middle" fontSize="14" fontWeight="600" fill="#526173">y 고정</text></svg></Card>
+    <Card title="막대 코드"><Nest head="계속 반복하기"><Block kind="moving">x: (마우스 x 좌표) 위치로 이동하기</Block></Nest></Card></> },
+  bc2: { label: "위·양옆 벽과 막대에서는 튕기고 아래쪽 벽에 닿았을 때는 모든 코드 멈추기로 게임을 끝내는 흐름", node: <>
+    <Card title="벽·막대에 닿으면"><svg viewBox="0 0 110 84" width="110" height="84" aria-hidden="true"><defs>{flowHead}</defs><rect x="10" y="8" width="90" height="68" rx="6" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" /><rect x="33" y="62" width="44" height="8" rx="4" fill="#ef4444" /><circle cx="55" cy="54" r="6" fill="#2f3a4a" /><path d="M32 32L50 50" {...flow} /><path d="M60 50L78 28" {...flow} /></svg><Tile tone="true">방향 회전·튕기기</Tile></Card>
+    <Card title="아래쪽 벽에 닿으면"><Nest head="만일 (아래쪽 벽에 닿았는가?)"><Block>모든 코드 멈추기</Block></Nest><Tile tone="false">게임 끝</Tile></Card></> },
+  bc3: { label: "공에 닿은 벽돌은 점수를 1 올리고 모양을 숨겨 사라지고, 점수가 목표와 같아지면 승리 말을 출력함", node: <>
+    <Card title="공에 닿았을 때"><Nest head="만일 (공에 닿았는가?)"><Block kind="variable">점수에 1만큼 더하기</Block><Block kind="looks">모양 숨기기</Block></Nest></Card>
+    <Op>→</Op>
+    <Card title="모두 깼을 때"><Row><Tile sub="조건">점수 값 = 목표</Tile><Op>→</Op><Tile tone="true">성공!</Tile></Row></Card></> },
 };
 
 export function ConceptVisual({ conceptId }: { conceptId: string }) {

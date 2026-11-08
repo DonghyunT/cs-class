@@ -37,6 +37,8 @@ const VARIABLES = ["set_variable", "get_variable"];
 const MOVE = [...START, "move_direction", "move_x", "move_y", "move_xy_time", "move_to_angle", "direction_absolute", "angle"];
 const PEN = [...MOVE, ...SAY, "start_drawing", "stop_drawing", "repeat_basic", "direction_relative", "rotate_relative", "rotate_by_time", "direction_relative_duration", "locate_xy", "locate_xy_time", "brush_erase_all"];
 const CHOICE = [...NAME, ...VARIABLES, "_if", "if_else", "boolean_basic_operator", "boolean_and_or", "boolean_not", "True", "False", "calc_basic", "quotient_and_mod"];
+const BRICK_MOVE = [...START, "repeat_inf", "locate_x", "locate_xy", "locate_xy_time", "coordinate_mouse", "locate"];
+const BRICK_BALL = [...BRICK_MOVE, "when_object_click", "move_x", "move_direction", "bounce_wall", "_if", "if_else", "reach_something", "direction_relative", "direction_absolute", "rotate_relative", "angle", "stop_object", "stop_repeat", ...SAY, ...VARIABLES, "change_variable", "boolean_basic_operator", "boolean_and_or", "boolean_not", "calc_basic", "True", "False"];
 const mission = (blocks: string[]) => new Set([...blocks, ...HARMLESS_BLOCKS]);
 // Same-meaning moves and timed turns the interpreter also accepts. The block list shown to
 // students leaves them out (with the harmless set) so it keeps the blocks the mission is about.
@@ -63,6 +65,10 @@ export const MISSION_BLOCKS: Readonly<Record<string, ReadonlySet<string>>> = {
   "fix-shapes": mission(PEN),
   flower: mission(PEN),
   tree: mission(["when_run_button_click", "mouse_clicked", "when_object_click", "text", "number", "True", "False", "change_variable", ...VARIABLES, "_if", "if_else", "boolean_basic_operator", "boolean_and_or", "calc_basic", "change_to_next_shape", "change_to_some_shape", "get_pictures", ...SAY, "repeat_inf", "locate", "is_clicked"]),
+  paddle: mission(BRICK_MOVE),
+  ball: mission(BRICK_BALL),
+  brick: mission(BRICK_BALL),
+  "brick-bounce": mission(BRICK_BALL),
 };
 
 export const BLOCK_LABELS: Readonly<Record<string, string>> = {
@@ -97,6 +103,8 @@ export const LESSON_SPRITES = [
   { id: "watering-can", name: "물뿌리개", file: "/entryjs/sprites/watering-can-1.png", width: 377, height: 253,
     pictures: [{ file: "/entryjs/sprites/watering-can-1.png", width: 377, height: 253 }, { file: "/entryjs/sprites/watering-can-2.png", width: 275, height: 242 }] },
   { id: "soil", name: "흙", file: "/entryjs/sprites/soil.png", width: 960, height: 540 },
+  { id: "paddle", name: "막대", file: "/entryjs/sprites/paddle.svg", width: 140, height: 24 },
+  { id: "brick", name: "벽돌", file: "/entryjs/sprites/brick.svg", width: 100, height: 32 },
 ] as const;
 export type EntrySprite = { id: string; name: string; file: string; width: number; height: number; pictures?: readonly { file: string; width: number; height: number }[] };
 // Official Entry objects bundled by scripts/fetch-entry-library.mjs for the dog-free lessons
@@ -124,15 +132,22 @@ export const blockLabel = (type: string) => BLOCK_LABELS[type] ?? "기타 블록
 // name the first one and how many there are.
 export const PALETTE_TEXT: Readonly<Record<string, string>> = {
   when_run_button_click: "시작하기 버튼을 클릭했을 때", when_some_key_pressed: "위쪽 화살표 키를 눌렀을 때", mouse_clicked: "마우스를 클릭했을 때", when_object_click: "오브젝트를 클릭했을 때",
-  repeat_basic: "10 번 반복하기", repeat_inf: "계속 반복하기", repeat_while_true: "참 이 될 때까지 반복하기", stop_repeat: "반복 중단하기", _if: "만일 참 (이)라면", if_else: "만일 참 (이)라면 아니면",
-  move_direction: "이동 방향으로 10 만큼 움직이기", locate_xy: "x: 0 y: 0 위치로 이동하기", locate: "마우스포인터 위치로 이동하기", rotate_relative: "방향을 90° 만큼 회전하기", direction_relative: "이동 방향을 90° 만큼 회전하기", direction_absolute: "이동 방향을 90° (으)로 정하기",
-  change_to_some_shape: "(모양 이름) 모양으로 바꾸기", change_to_next_shape: "다음 모양으로 바꾸기", dialog_time: "안녕! 을(를) 4 초 동안 말하기", dialog: "안녕! 을(를) 말하기",
+  repeat_basic: "10 번 반복하기", repeat_inf: "계속 반복하기", repeat_while_true: "참 이 될 때까지 반복하기", stop_repeat: "반복 중단하기", _if: "만일 참 (이)라면", if_else: "만일 참 (이)라면 아니면", stop_object: "모든 코드 멈추기",
+  move_direction: "이동 방향으로 10 만큼 움직이기", bounce_wall: "화면 끝에 닿으면 튕기기", locate_x: "x: 10 위치로 이동하기", locate_xy: "x: 0 y: 0 위치로 이동하기", locate: "마우스포인터 위치로 이동하기", rotate_relative: "방향을 90° 만큼 회전하기", direction_relative: "이동 방향을 90° 만큼 회전하기", direction_absolute: "이동 방향을 90° (으)로 정하기",
+  hide: "모양 숨기기", change_to_some_shape: "(모양 이름) 모양으로 바꾸기", change_to_next_shape: "다음 모양으로 바꾸기", dialog_time: "안녕! 을(를) 4 초 동안 말하기", dialog: "안녕! 을(를) 말하기",
   start_drawing: "그리기 시작하기", stop_drawing: "그리기 멈추기", brush_erase_all: "모든 붓 지우기",
-  is_clicked: "마우스를 클릭했는가?", boolean_basic_operator: "10 = 10 (비교 6가지)", boolean_and_or: "참 그리고 참 · 참 또는 거짓", boolean_not: "참 (이)가 아니다",
-  calc_basic: "10 + 10 (사칙연산 4가지)", quotient_and_mod: "10 / 10 의 몫", combine_something: "안녕! 과(와) 엔트리 을(를) 합친 값",
+  is_clicked: "마우스를 클릭했는가?", reach_something: "마우스포인터 에 닿았는가?", boolean_basic_operator: "10 = 10 (비교 6가지)", boolean_and_or: "참 그리고 참 · 참 또는 거짓", boolean_not: "참 (이)가 아니다",
+  calc_basic: "10 + 10 (사칙연산 4가지)", coordinate_mouse: "마우스 x 좌표", quotient_and_mod: "10 / 10 의 몫", combine_something: "안녕! 과(와) 엔트리 을(를) 합친 값",
   ask_and_wait: "안녕! 을(를) 묻고 대답 기다리기", get_canvas_input_value: "대답", get_variable: "A 값", change_variable: "A 에 10 만큼 더하기", set_variable: "A 를 10 (으)로 정하기",
 };
 // Accepted but not listed for these missions: drawing is not about speech.
-const UNLISTED: Readonly<Record<string, readonly string[]>> = { square: SAY, polygon: SAY, windows: SAY, "fix-shapes": SAY, flower: SAY };
+const UNLISTED: Readonly<Record<string, readonly string[]>> = {
+  square: SAY, polygon: SAY, windows: SAY, "fix-shapes": SAY, flower: SAY,
+  paddle: ["locate", "locate_xy"],
+  ball: ["when_object_click", "locate_x", "locate_xy", "coordinate_mouse", "locate", "stop_repeat", ...SAY, ...VARIABLES, "change_variable", "boolean_basic_operator", "boolean_and_or", "boolean_not", "calc_basic"],
+  brick: ["when_object_click", "locate_x", "locate_xy", "coordinate_mouse", "locate", "move_direction", "bounce_wall", "direction_relative", "direction_absolute", "rotate_relative", "stop_repeat"],
+  "brick-bounce": ["when_object_click", "locate_x", "locate_xy", "coordinate_mouse", "locate", "stop_repeat"],
+};
+const LISTED_HARMLESS: Readonly<Record<string, readonly string[]>> = { brick: ["hide"], "brick-bounce": ["hide"] };
 // Mission blocks shown to students in palette order; literal inputs, the harmless extras and same-meaning extras are left out.
-export const missionBlockTypes = (id: string): string[] => ENTRY_PALETTE.flatMap((group) => group.blocks).filter((type) => MISSION_BLOCKS[id]?.has(type) && !HARMLESS_BLOCKS.has(type) && !ALSO_ACCEPTED.has(type) && !UNLISTED[id]?.includes(type));
+export const missionBlockTypes = (id: string): string[] => ENTRY_PALETTE.flatMap((group) => group.blocks).filter((type) => MISSION_BLOCKS[id]?.has(type) && (!HARMLESS_BLOCKS.has(type) || LISTED_HARMLESS[id]?.includes(type)) && !ALSO_ACCEPTED.has(type) && !UNLISTED[id]?.includes(type));

@@ -228,7 +228,7 @@ try {
     }
     // The lesson's own variables are rebuilt on save, so they cannot be deleted or renamed. Copy of
     // LESSON_VARIABLES and MAX_STUDENT_VARIABLES in src/lib/classroom/programming-entry.ts.
-    const LESSON_VARIABLES = ["cs-A", "cs-B", "cs-clicks"];
+    const LESSON_VARIABLES = ["cs-A", "cs-B", "cs-clicks", "score"];
     const variables = Entry.variableContainer;
     const removeVariable = variables?.removeVariable, renameVariable = variables?.changeVariableName, addVariable = variables?._addVariable;
     if (typeof removeVariable === "function") variables.removeVariable = function (variable, ...rest) {

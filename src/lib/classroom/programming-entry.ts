@@ -30,6 +30,10 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "windows", title: "창문 두 개", goal: "‘창문 그리기’ 함수로 한 변이 50인 정사각형을 그리고, 위치를 옮겨 한 번 더 불러 서로 닿지 않는 창문 두 개를 만들어 주세요.", hint: "그리는 블록은 모두 ‘창문 그리기’ 함수 안에 넣어요.", steps: ["‘창문 그리기’ 함수 안: `start_drawing: 그리기 시작하기` → `repeat_basic: 4번 반복하기`", "반복 안에 `move_direction: 50만큼 움직이기`, `direction_relative: 90° 회전하기`", "반복 아래에 `stop_drawing: 그리기 멈추기` → 함수 편집 창의 ‘저장’", "`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 창문 그리기", "그 아래 `move_x: x 좌표를 100만큼 바꾸기` → 창문 그리기 한 번 더"], failure: "창문 그리기 함수를 위치를 옮겨 두 번 부르고, 선은 모두 함수 안에서 그렸는지 확인해 보세요.", experiment: "한 창문만 크게 하려면 함수 안의 50만 바꾸면 될까요? 먼저 예상하고 실행해 본 뒤, 제출 전에는 50으로 되돌려 주세요.", functions: true },
   { id: "fix-shapes", title: "고장 난 도형 고치기", goal: "정호의 코드는 정사각형·정오각형·정육각형을 그려야 하는데 이상하게 그려져요. 디버깅해서 세 도형을 모두 완성해 주세요.", hint: "먼저 실행해 보고, 예상과 다른 곳을 찾아요.", steps: ["시작하기를 눌러 어느 도형이 이상한지 보기", "오각형이 사각형처럼 보이면: 360 ÷ 5 = 72° → `direction_relative: 72° 회전하기`", "육각형이 안 보이면: 시작하기 줄 맨 아래에 ‘육각형 그리기’ 끼우기", "다시 실행해 정사각형·정오각형·정육각형이 맞는지 확인하기"], tip: "함수 블록을 두 번 누르면 편집 창이 열려요.", failure: "세 도형이 모두 닫혔는지, 도형마다 자기 함수로 그리는지 확인해 보세요.", experiment: "오각형의 회전 각도를 다른 값으로 바꿔 보며 도형이 어떻게 달라지는지 보세요. 실험 뒤에는 72°로 되돌려 제출해 주세요.", functions: true },
   { id: "flower", title: "도전 · 꽃 피우기", goal: "‘꽃잎’ 함수로 한 변이 50인 정사각형을 그리고, 반복 안에서 6번 부르며 부를 때마다 60°씩 돌아 꽃을 만들어 주세요.", hint: "‘창문 그리기’처럼 함수를 만들고 반복 안에서 불러요.", steps: ["‘꽃잎’ 함수 안: `start_drawing: 그리기 시작하기` → `repeat_basic: 4번 반복하기`", "반복 안에 `move_direction: 50만큼 움직이기`, `direction_relative: 90° 회전하기`", "반복 아래에 `stop_drawing: 그리기 멈추기` → 함수 편집 창의 ‘저장’", "`when_run_button_click: 시작하기 버튼을 클릭했을 때` → `repeat_basic: 6번 반복하기`", "반복 안에 꽃잎 → `direction_relative: 60° 회전하기`"], failure: "반복 안에서 ‘꽃잎’을 6번 부르고, 부를 때마다 60°씩 도는지 확인해 보세요.", experiment: "6과 60을 8과 45로 바꾸면 어떤 꽃이 될까요? 제출은 6번·60°로 해 주세요.", optional: true, functions: true },
+  { id: "paddle", title: "막대 움직이기", goal: "시작하기를 누르면 막대가 마우스의 x 좌표를 계속 따라가게 만들어요.", hint: "시작하기 아래 `repeat_inf: 계속 반복하기` 안에서 마우스 x로 이동해요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 아래에 `repeat_inf: 계속 반복하기`를 붙여요", "반복 안에 `locate_x: x: 10 위치로 이동하기`를 넣고 `coordinate_mouse: 마우스 x 좌표`를 넣어요"], tip: "x만 바꾸면 막대 높이는 그대로예요.", failure: "시작하기 아래 ‘계속 반복하기’ 안에서 ‘x: (마우스 x 좌표) 위치로 이동하기’를 실행해 막대가 마우스 x 좌표를 따라가게 해 주세요.", experiment: "시작하기를 누르고 무대 위에서 마우스를 좌우·위아래로 움직여 막대가 가로로만 따라오는지 확인해 보세요.", objects: true },
+  { id: "ball", title: "통통 튀는 공 만들기", goal: "공이 벽과 막대에서 튕기고, 아래쪽 벽에 닿으면 모든 코드를 멈추게 해요.", hint: "계속 움직이며 벽·막대에서 튕기고 바닥이면 멈춰요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 아래에 `repeat_inf: 계속 반복하기`를 붙여요", "반복 안에 `move_direction: 10만큼 움직이기`와 `bounce_wall: 화면 끝에 닿으면 튕기기`를 넣어요", "`_if: 만일 참이라면`에 `reach_something: 막대에 닿았는가?`를 넣고 안에는 `direction_relative: 90° 회전하기`를 넣어요", "그 아래 `_if: 만일 아래쪽 벽에 닿았는가?라면` 안에 `stop_object: 모든 코드 멈추기`를 넣어요"], tip: "오브젝트 목록에서 ‘공’을 고른 뒤 조립해요.", failure: "공의 ‘계속 반복하기’ 안에 이동·화면 끝 튕기기와 ‘막대에 닿았는가?’ 회전, ‘아래쪽 벽에 닿았는가?’ 모든 코드 멈추기를 모두 넣어 주세요.", experiment: "시작하기를 누르고 마우스로 막대를 움직여 공을 받아 내고, 일부러 공을 놓쳐 바닥에 닿았을 때 멈추는지 확인해 보세요.", objects: true },
+  { id: "brick", title: "벽돌 깨고 점수 올리기", goal: "벽돌1이 공에 닿으면 점수를 1 올리고 숨기며, 점수가 3이 되면 ‘성공!’을 말하고 멈춰요.", hint: "공에 닿으면 점수를 올리고 숨긴 뒤 3점이면 끝내요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 아래에 `repeat_inf: 계속 반복하기`를 붙여요", "반복 안에 `_if: 만일 참이라면`을 넣고 조건에 `reach_something: 공에 닿았는가?`를 넣어요", "그 안에 `change_variable: 점수에 1만큼 더하기`와 `hide: 모양 숨기기`를 차례로 넣어요", "아래 `_if: 만일 참이라면`에 `boolean_basic_operator: 점수 값 = 3`과 `dialog: 성공!을 말하기`를 넣어요", "말하기 바로 아래에 `stop_object: 모든 코드 멈추기`를 이어 붙여 완성해요"], tip: "벽돌2를 눌러 완성된 예시 코드를 볼 수 있어요.", failure: "벽돌1이 공에 닿으면 점수를 1 올리고 숨기며, 점수가 3이 되었을 때 ‘성공!’을 말하고 모든 코드를 멈추는지 확인해 보세요.", experiment: "시작하기를 눌러 벽돌 3개를 모두 깨서 점수가 3이 될 때 ‘성공!’을 말하며 멈추는지 확인해 보세요.", objects: true },
+  { id: "brick-bounce", title: "도전 · 벽돌에서도 튕기는 공", goal: "공이 벽돌1·벽돌2·벽돌3에 닿았을 때도 방향을 회전해 통통 튕기며 깨게 만들어요.", hint: "공의 `repeat_inf: 계속 반복하기` 안에 벽돌에 닿을 때 회전을 더해요.", steps: ["공의 반복 안에 `_if: 만일 참이라면`과 `reach_something: 벽돌1에 닿았는가?`를 넣어요", "그 안에 `direction_relative: 180° 회전하기`를 넣어 벽돌에서 튕기게 해요", "아래에 벽돌2·벽돌3에 닿았을 때 180° 회전하는 만일도 더해요"], tip: "90°나 180° 회전 모두 벽돌에서 튕길 수 있어요.", failure: "공이 벽돌1·벽돌2·벽돌3에 닿았을 때도 이동 방향을 회전해 튕기도록 공의 반복 안에 조건을 넣어 주세요.", experiment: "시작하기를 눌러 공이 벽돌1·벽돌2·벽돌3을 깰 때마다 방향을 바꿔 튕겨 나오는지 확인해 보세요.", optional: true, objects: true },
 ];
 
 // A hint string split into plain text and `{ type, text }` block chips.
@@ -46,12 +50,14 @@ const LESSON_MISSIONS: Readonly<Record<string, { active: readonly string[]; reti
   conditionals: { active: ["average", "pass", "freethrow", "ride"], retired: ["escape"] },
   loops: { active: ["square", "polygon", "tree", "safe"] },
   functions: { active: ["cat-walk", "windows", "fix-shapes", "flower"] },
+  "brick-breaker": { active: ["paddle", "ball", "brick", "brick-bounce"] },
 };
 // These lessons start without the dog: every object is equal and students pick from the Entry library.
-const FREE_MISSIONS: ReadonlySet<string> = new Set([...LESSON_MISSIONS.conditionals.active, ...LESSON_MISSIONS.conditionals.retired!, ...LESSON_MISSIONS.loops.active, ...LESSON_MISSIONS.functions.active]);
+const FREE_MISSIONS: ReadonlySet<string> = new Set([...LESSON_MISSIONS.conditionals.active, ...LESSON_MISSIONS.conditionals.retired!, ...LESSON_MISSIONS.loops.active, ...LESSON_MISSIONS.functions.active, ...LESSON_MISSIONS["brick-breaker"].active]);
 export const isFreeMission = (id: string) => FREE_MISSIONS.has(id);
 // Starter objects the mission needs; they cannot be deleted.
-export const LOCKED_OBJECTS: Readonly<Record<string, readonly string[]>> = { tree: ["can", "tree"] };
+const BRICK_OBJECTS = ["paddle", "ball", "brick1", "brick2", "brick3"] as const;
+export const LOCKED_OBJECTS: Readonly<Record<string, readonly string[]>> = { tree: ["can", "tree"], paddle: BRICK_OBJECTS, ball: BRICK_OBJECTS, brick: BRICK_OBJECTS, "brick-bounce": BRICK_OBJECTS };
 export const missionById = (id: string) => PROGRAMMING_MISSIONS.find((m) => m.id === id);
 export const missionsFor = (lessonId: string) => (LESSON_MISSIONS[lessonId]?.active ?? []).map((id) => missionById(id)!);
 export const requiredMissionsFor = (lessonId: string) => missionsFor(lessonId).filter((m) => !m.optional);
@@ -112,6 +118,7 @@ export function missionStarter(missionId: string): string {
   if (missionId === "fix-shapes") return buildProgrammingProject(undefined, [{ ...placed("bot", ENTRYBOT_SPRITE, "엔트리봇", { x: -200, scaleX: 0.3, scaleY: 0.3 }), threads: [[{ ...starterBlock("when_run_button_click", null), x: 40, y: 50 }, starterBlock("func_fsq1", null), starterBlock("move_x", starterNumber(130), null), starterBlock("func_fpe1", null), starterBlock("move_x", starterNumber(130), null)]] }], -1, false, [], [
     { id: "fsq1", name: "사각형 그리기", body: polygonBody(4, 90) }, { id: "fpe1", name: "오각형 그리기", body: polygonBody(5, 90) }, { id: "fhx1", name: "육각형 그리기", body: polygonBody(6, 60) },
   ]);
+  if (BRICK_STARTERS[missionId]) return BRICK_STARTERS[missionId]();
   if (isFreeMission(missionId)) return buildProgrammingProject(undefined, [placed("bot", ENTRYBOT_SPRITE, "엔트리봇", { scaleX: 0.4, scaleY: 0.4 })], -1);
   return buildProgrammingProject();
 }
@@ -120,6 +127,19 @@ const starterBlock = (type: string, ...params: unknown[]): EntryNode => ({ type,
 const starterNumber = (value: number, type = "number") => starterBlock(type, String(value));
 // Pen down, `sides` sides of 50 turning `turn`° each, pen up.
 const polygonBody = (sides: number, turn: number): EntryNode[] => [starterBlock("start_drawing", null), { ...starterBlock("repeat_basic", starterNumber(sides), null), statements: [[starterBlock("move_direction", starterNumber(50), null), starterBlock("direction_relative", starterNumber(turn, "angle"), null)]] }, starterBlock("stop_drawing", null)];
+const SCORE_VARIABLE: StudentVariable = { id: "score", name: "점수", value: 0, visible: true, x: -210, y: -112, object: null };
+const brickPaddle = (threads: EntryNode[][] = []) => ({ ...placed("paddle", "paddle", "막대", { x: 0, y: -115, scaleX: 0.75, scaleY: 0.75 }), threads });
+const brickBall = (threads: EntryNode[][] = []) => ({ ...placed("ball", "ball", "공", { x: 40, y: 0, scaleX: 0.3, scaleY: 0.3, direction: 225 }), threads });
+const brickItem = (n: 1 | 2 | 3, threads: EntryNode[][] = []) => ({ ...placed(`brick${n}`, "brick", `벽돌${n}`, { x: (n - 2) * 130, y: 90, scaleX: 0.85, scaleY: 0.85 }), threads });
+const paddleStarterThread = (): EntryNode[] => [{ ...starterBlock("when_run_button_click", null), x: 40, y: 50 }, { ...starterBlock("repeat_inf", null, null), statements: [[starterBlock("locate_x", starterBlock("coordinate_mouse", null, "x", null), null)]] }];
+const ballStarterThread = (): EntryNode[] => [{ ...starterBlock("when_run_button_click", null), x: 40, y: 50 }, { ...starterBlock("repeat_inf", null, null), statements: [[starterBlock("move_direction", starterNumber(10), null), starterBlock("bounce_wall", null), { ...starterBlock("_if", starterBlock("reach_something", null, "paddle", null), null), statements: [[starterBlock("direction_relative", starterNumber(90, "angle"), null)]] }, { ...starterBlock("_if", starterBlock("reach_something", null, "wall_down", null), null), statements: [[starterBlock("stop_object", "all", null)]] }]] }];
+const brickStarterThread = (win = false, delay = false): EntryNode[] => [{ ...starterBlock("when_run_button_click", null), x: 40, y: 50 }, { ...starterBlock("repeat_inf", null, null), statements: [[{ ...starterBlock("_if", starterBlock("reach_something", null, "ball", null), null), statements: [[...(delay ? [starterBlock("wait_second", starterNumber(0.05), null)] : []), starterBlock("change_variable", "score", starterNumber(1), null), starterBlock("hide", null)]] }, ...(win ? [{ ...starterBlock("_if", starterBlock("boolean_basic_operator", starterBlock("get_variable", "score"), "EQUAL", starterNumber(3)), null), statements: [[starterBlock("dialog", starterBlock("text", "성공!"), "speak", null), starterBlock("stop_object", "all", null)]] }] : [])]] }];
+const BRICK_STARTERS: Readonly<Record<string, () => string>> = {
+  paddle: () => buildProgrammingProject(undefined, [brickPaddle(), brickBall(), brickItem(1), brickItem(2), brickItem(3)], -1, false, [SCORE_VARIABLE]),
+  ball: () => buildProgrammingProject(undefined, [brickBall(), brickPaddle([paddleStarterThread()]), brickItem(1), brickItem(2), brickItem(3)], -1, false, [SCORE_VARIABLE]),
+  brick: () => buildProgrammingProject(undefined, [brickItem(1), brickItem(2, [brickStarterThread()]), brickItem(3, [brickStarterThread()]), brickBall([ballStarterThread()]), brickPaddle([paddleStarterThread()])], -1, false, [SCORE_VARIABLE]),
+  "brick-bounce": () => buildProgrammingProject(undefined, [brickBall([ballStarterThread()]), brickItem(1, [brickStarterThread(true, true)]), brickItem(2, [brickStarterThread(false, true)]), brickItem(3, [brickStarterThread(false, true)]), brickPaddle([paddleStarterThread()])], -1, false, [SCORE_VARIABLE]),
+};
 
 // Same per-mission limit the server enforces on the normalized project.
 export const MAX_PROJECT_BYTES = 32_768;
@@ -298,6 +318,7 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     const code = (list: EntryNode[][]) => list.map((t) => t.map(semantic));
     // The click counter exists only in projects that started with it (the tree mission).
     const counter = Array.isArray(p.variables) && p.variables.some((v: unknown) => object(v) && v.id === COUNTER.id);
+    if (ids.has("paddle") && !variables.some((v) => v.id === SCORE_VARIABLE.id)) variables.push(SCORE_VARIABLE);
     // An ‘이 오브젝트에서 사용’ variable belongs to an object in this project; the dog is always rebuilt as `entrybot`.
     if (variables.some((v) => v.object !== null && !(v.object === "entrybot" && mainIndex >= 0) && !ids.has(v.object))) return null;
     const project = JSON.parse(buildProgrammingProject(threads, added, mainIndex, counter, variables, functions));
@@ -329,8 +350,10 @@ const DROPDOWN_LABELS: Readonly<Record<string, string>> = {
   WIDTH: "가로", HEIGHT: "세로", width: "가로", height: "세로",
   speak: "말하기", think: "생각하기",
   START: "시작", STOP: "정지", RESET: "초기화", SHOW: "보이기", HIDE: "숨기기",
-  self: "자신", entrybot: "강아지", mouse: "마우스 포인터", wall: "벽", edge: "화면 끝", all: "모든 코드",
-  thisThread: "이 코드", thisOnly: "이 오브젝트의 다른 코드", otherThread: "다른 오브젝트의 코드",
+  self: "자신", entrybot: "강아지", mouse: "마우스 포인터", wall: "벽", wall_up: "위쪽 벽", wall_down: "아래쪽 벽", wall_right: "오른쪽 벽", wall_left: "왼쪽 벽", edge: "화면 끝", all: "모든 코드",
+  thisThread: "이 코드", thisOnly: "이 오브젝트의 다른 코드", otherThread: "다른 오브젝트의 코드", other_objects: "다른 오브젝트의 코드",
+  paddle: "막대", ball: "공", brick1: "벽돌1", brick2: "벽돌2", brick3: "벽돌3",
+
   FRONT: "맨 앞", FORWARD: "앞으로", BACKWARD: "뒤로", BACK: "맨 뒤",
   QUOTIENT: "몫", MOD: "나머지",
   square: "제곱", root: "제곱근", sin: "사인", cos: "코사인", tan: "탄젠트", abs: "절댓값", floor: "버림", ceil: "올림", round: "반올림",
@@ -350,7 +373,7 @@ const REPORTER_BLOCKS: ReadonlySet<string> = new Set([
 ]);
 
 // Student variables are shown by the names in `names` (id → name, from `variableNames`); a deleted one as Entry shows it.
-const variableName = (id: string, names: Readonly<Record<string, string>> = {}) => Object.hasOwn(names, id) ? names[id] : id === COUNTER.id ? COUNTER.name : LESSON_VARIABLES.includes(id) ? id.replace("cs-", "변수 ") : "대상 없음";
+const variableName = (id: string, names: Readonly<Record<string, string>> = {}) => Object.hasOwn(names, id) ? names[id] : id === COUNTER.id ? COUNTER.name : id === SCORE_VARIABLE.id ? SCORE_VARIABLE.name : LESSON_VARIABLES.includes(id) ? id.replace("cs-", "변수 ") : "대상 없음";
 export const variableNames = (variables: readonly StudentVariable[]): Record<string, string> => Object.fromEntries(variables.map((v) => [v.id, v.name]));
 export const functionNamesOf = (functions: readonly ProgramFunction[]): Record<string, string> => Object.fromEntries(functions.map((f) => [f.id, f.name]));
 
@@ -361,7 +384,7 @@ export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, 
     if (v === null || v === undefined) return "( )";
     if (object(v) && typeof v.type === "string") return expression(v as EntryNode);
     const s = String(v);
-    if (s.startsWith("cs-") || Object.hasOwn(names, s)) return variableName(s, names);
+    if (s.startsWith("cs-") || s === SCORE_VARIABLE.id || Object.hasOwn(names, s)) return variableName(s, names);
     return DROPDOWN_LABELS[s] ?? s;
   };
   const expression = (n: EntryNode): string => {
@@ -458,7 +481,7 @@ export function programmingProjectLines(raw: unknown): string[] {
 
 // Blocks students often reach for instead of the mission block.
 // Absolute moves and ‘방향을 정하기’ (the object's rotation) do not mean the same in Entry.
-const SIMILAR_BLOCKS: Record<string, string> = { locate_x: "move_x", locate_y: "move_y", rotate_absolute: "direction_absolute" };
+const SIMILAR_BLOCKS: Record<string, string> = { locate_x: "move_x", move_x: "locate_x", locate_y: "move_y", rotate_absolute: "direction_absolute" };
 
 // Graded lines start with a signal this mission's interpreter runs. Loose blocks
 // and other event lines stay in the work but are not graded.
