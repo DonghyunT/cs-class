@@ -183,6 +183,8 @@ export const LESSON_MAPPINGS = {
     patterns: [
       ...ENTRY_SHARED,
       /^src\/lib\/classroom\/brick-breaker-(?:lesson|data)\.ts$/,
+      /^src\/components\/student\/(?:brick-concept-play|concept-assemble)\.tsx$/,
+      /^src\/lib\/classroom\/assemble\.ts$/,
       /^tests\/brick-breaker\.spec\.ts$/,
       CONCEPT_VISUAL
     ],

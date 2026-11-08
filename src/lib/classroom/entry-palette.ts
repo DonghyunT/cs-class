@@ -38,7 +38,7 @@ const MOVE = [...START, "move_direction", "move_x", "move_y", "move_xy_time", "m
 const PEN = [...MOVE, ...SAY, "start_drawing", "stop_drawing", "repeat_basic", "direction_relative", "rotate_relative", "rotate_by_time", "direction_relative_duration", "locate_xy", "locate_xy_time", "brush_erase_all"];
 const CHOICE = [...NAME, ...VARIABLES, "_if", "if_else", "boolean_basic_operator", "boolean_and_or", "boolean_not", "True", "False", "calc_basic", "quotient_and_mod"];
 const BRICK_MOVE = [...START, "repeat_inf", "locate_x", "locate_xy", "locate_xy_time", "coordinate_mouse", "locate"];
-const BRICK_BALL = [...BRICK_MOVE, "when_object_click", "move_x", "move_direction", "bounce_wall", "_if", "if_else", "reach_something", "direction_relative", "direction_absolute", "rotate_relative", "angle", "stop_object", "stop_repeat", ...SAY, ...VARIABLES, "change_variable", "boolean_basic_operator", "boolean_and_or", "boolean_not", "calc_basic", "True", "False"];
+const BRICK_BALL = [...BRICK_MOVE, "when_object_click", "move_x", "move_direction", "bounce_wall", "_if", "if_else", "reach_something", "direction_relative", "direction_absolute", "rotate_relative", "rotate_absolute", "coordinate_object", "calc_rand", "angle", "stop_object", "stop_repeat", ...SAY, ...VARIABLES, "change_variable", "boolean_basic_operator", "boolean_and_or", "boolean_not", "calc_basic", "True", "False"];
 const mission = (blocks: string[]) => new Set([...blocks, ...HARMLESS_BLOCKS]);
 // Same-meaning moves and timed turns the interpreter also accepts. The block list shown to
 // students leaves them out (with the harmless set) so it keeps the blocks the mission is about.
@@ -78,7 +78,7 @@ export const BLOCK_LABELS: Readonly<Record<string, string>> = {
   show: "모양 보이기", hide: "모양 숨기기", change_to_some_shape: "( ) 모양으로 바꾸기", change_to_next_shape: "다음 모양으로 바꾸기", dialog_time: "( )을(를) ( )초 동안 말하기", dialog: "( )을(를) 말하기", remove_dialog: "말풍선 지우기", add_effect_amount: "효과를 ( )만큼 주기", change_effect_amount: "효과를 ( )(으)로 정하기", erase_all_effects: "효과 모두 지우기", change_scale_size: "크기를 ( )만큼 바꾸기", set_scale_size: "크기를 ( )(으)로 정하기", stretch_scale_size: "크기를 ( )만큼 늘이기", reset_scale_size: "원래 크기로 되돌리기", flip_x: "상하 모양 뒤집기", flip_y: "좌우 모양 뒤집기", change_object_index: "앞뒤 순서 바꾸기",
   brush_stamp: "도장 찍기", start_drawing: "그리기 시작하기", stop_drawing: "그리기 멈추기", set_color: "그리기 색 정하기", change_thickness: "그리기 굵기를 ( )만큼 바꾸기", set_thickness: "그리기 굵기를 ( )(으)로 정하기", start_fill: "채우기 시작하기", stop_fill: "채우기 멈추기", set_fill_color: "채우기 색 정하기", set_random_color: "붓의 색을 무작위로 정하기", change_brush_transparency: "붓의 투명도를 ( )%만큼 바꾸기", set_brush_tranparency: "붓의 투명도를 ( )%로 정하기", brush_erase_all: "모든 붓 지우기",
   is_clicked: "마우스를 클릭했는가?", is_object_clicked: "오브젝트를 클릭했는가?", is_press_some_key: "키가 눌러져 있는가?", reach_something: "( )에 닿았는가?", is_type: "( )이(가) ( )인가?", boolean_basic_operator: "( ) 비교 ( )", boolean_and_or: "( ) 그리고/또는 ( )", boolean_not: "( )(이)가 아니다",
-  calc_basic: "( ) 사칙연산 ( )", calc_rand: "( )부터 ( ) 사이의 무작위 수", coordinate_mouse: "마우스 좌표", coordinate_object: "오브젝트의 좌표·값", quotient_and_mod: "( ) / ( )의 몫·나머지", calc_operation: "( )의 수학 연산", get_project_timer_value: "초시계 값", choose_project_timer_action: "초시계 시작·정지·초기화", set_visible_project_timer: "초시계 보이기·숨기기", get_date: "현재 날짜·시간", distance_something: "( )까지의 거리", length_of_string: "( )의 글자 수", count_match_string: "( )에서 ( )의 개수", combine_something: "( )과(와) ( )을(를) 합친 값", char_at: "( )의 ( )번째 글자", substring: "( )의 ( )~( )번째 글자", index_of_string: "( )에서 ( )의 위치", replace_string: "( )의 ( )을(를) ( )(으)로 바꾸기", reverse_of_string: "( ) 뒤집기", change_string_case: "( )의 대소문자 바꾸기",
+  calc_basic: "( ) 사칙연산 ( )", calc_rand: "( )부터 ( ) 사이의 무작위 수", coordinate_mouse: "마우스 좌푯값", coordinate_object: "오브젝트의 좌표·값", quotient_and_mod: "( ) / ( )의 몫·나머지", calc_operation: "( )의 수학 연산", get_project_timer_value: "초시계 값", choose_project_timer_action: "초시계 시작·정지·초기화", set_visible_project_timer: "초시계 보이기·숨기기", get_date: "현재 날짜·시간", distance_something: "( )까지의 거리", length_of_string: "( )의 글자 수", count_match_string: "( )에서 ( )의 개수", combine_something: "( )과(와) ( )을(를) 합친 값", char_at: "( )의 ( )번째 글자", substring: "( )의 ( )~( )번째 글자", index_of_string: "( )에서 ( )의 위치", replace_string: "( )의 ( )을(를) ( )(으)로 바꾸기", reverse_of_string: "( ) 뒤집기", change_string_case: "( )의 대소문자 바꾸기",
   ask_and_wait: "( )을(를) 묻고 대답 기다리기", get_canvas_input_value: "대답", set_visible_answer: "대답 보이기·숨기기", get_variable: "변수 값", change_variable: "변수에 ( )만큼 더하기", set_variable: "변수를 ( )(으)로 정하기", show_variable: "변수 보이기", hide_variable: "변수 숨기기",
   text: "글자", number: "숫자", angle: "각도", True: "참", False: "거짓", color: "색", get_pictures: "모양",
 };
@@ -105,6 +105,7 @@ export const LESSON_SPRITES = [
   { id: "soil", name: "흙", file: "/entryjs/sprites/soil.png", width: 960, height: 540 },
   { id: "paddle", name: "막대", file: "/entryjs/sprites/paddle.svg", width: 140, height: 24 },
   { id: "brick", name: "벽돌", file: "/entryjs/sprites/brick.svg", width: 100, height: 32 },
+  { id: "you-win", name: "You win!", file: "/entryjs/sprites/you-win.svg", width: 300, height: 96 },
 ] as const;
 export type EntrySprite = { id: string; name: string; file: string; width: number; height: number; pictures?: readonly { file: string; width: number; height: number }[] };
 // Official Entry objects bundled by scripts/fetch-entry-library.mjs for the dog-free lessons
@@ -137,16 +138,16 @@ export const PALETTE_TEXT: Readonly<Record<string, string>> = {
   hide: "모양 숨기기", change_to_some_shape: "(모양 이름) 모양으로 바꾸기", change_to_next_shape: "다음 모양으로 바꾸기", dialog_time: "안녕! 을(를) 4 초 동안 말하기", dialog: "안녕! 을(를) 말하기",
   start_drawing: "그리기 시작하기", stop_drawing: "그리기 멈추기", brush_erase_all: "모든 붓 지우기",
   is_clicked: "마우스를 클릭했는가?", reach_something: "마우스포인터 에 닿았는가?", boolean_basic_operator: "10 = 10 (비교 6가지)", boolean_and_or: "참 그리고 참 · 참 또는 거짓", boolean_not: "참 (이)가 아니다",
-  calc_basic: "10 + 10 (사칙연산 4가지)", coordinate_mouse: "마우스 x 좌표", quotient_and_mod: "10 / 10 의 몫", combine_something: "안녕! 과(와) 엔트리 을(를) 합친 값",
+  calc_basic: "10 + 10 (사칙연산 4가지)", coordinate_mouse: "마우스 x 좌푯값", quotient_and_mod: "10 / 10 의 몫", combine_something: "안녕! 과(와) 엔트리 을(를) 합친 값",
   ask_and_wait: "안녕! 을(를) 묻고 대답 기다리기", get_canvas_input_value: "대답", get_variable: "A 값", change_variable: "A 에 10 만큼 더하기", set_variable: "A 를 10 (으)로 정하기",
 };
 // Accepted but not listed for these missions: drawing is not about speech.
 const UNLISTED: Readonly<Record<string, readonly string[]>> = {
   square: SAY, polygon: SAY, windows: SAY, "fix-shapes": SAY, flower: SAY,
   paddle: ["locate", "locate_xy"],
-  ball: ["when_object_click", "locate_x", "locate_xy", "coordinate_mouse", "locate", "stop_repeat", ...SAY, ...VARIABLES, "change_variable", "boolean_basic_operator", "boolean_and_or", "boolean_not", "calc_basic"],
-  brick: ["when_object_click", "locate_x", "locate_xy", "coordinate_mouse", "locate", "move_direction", "bounce_wall", "direction_relative", "direction_absolute", "rotate_relative", "stop_repeat"],
-  "brick-bounce": ["when_object_click", "locate_x", "locate_xy", "coordinate_mouse", "locate", "stop_repeat"],
+  ball: ["rotate_absolute", "coordinate_object", "calc_rand", "locate_x", "locate_xy", "coordinate_mouse", "locate", "stop_repeat", ...SAY, ...VARIABLES, "change_variable", "boolean_basic_operator", "boolean_and_or", "boolean_not", "calc_basic"],
+  brick: ["rotate_absolute", "coordinate_object", "calc_rand", "when_object_click", "locate_x", "locate_xy", "coordinate_mouse", "locate", "move_direction", "bounce_wall", "direction_relative", "direction_absolute", "rotate_relative", "stop_repeat"],
+  "brick-bounce": ["rotate_absolute", "coordinate_object", "calc_rand", "when_object_click", "locate_x", "locate_xy", "coordinate_mouse", "locate", "stop_repeat"],
 };
 const LISTED_HARMLESS: Readonly<Record<string, readonly string[]>> = { brick: ["hide"], "brick-bounce": ["hide"] };
 // Mission blocks shown to students in palette order; literal inputs, the harmless extras and same-meaning extras are left out.

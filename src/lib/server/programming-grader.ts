@@ -86,6 +86,10 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       // No mouse button is held between the simulated clicks.
       if (n.type === "is_clicked") return { value: false, input: false };
       if (n.type === "coordinate_mouse") return { value: n.params[1] === "y" ? mouseY : mouseX, input: false };
+      // shortcut: reads the object that is running, the only target these missions use; add other targets if a mission needs them.
+      if (n.type === "coordinate_object") { const field = n.params[3]; return { value: field === "x" ? x : field === "y" ? y : field === "direction" ? direction : rotation, input: false }; }
+      // The same input must always grade the same, so a random value is the middle of its range.
+      if (n.type === "calc_rand") return { value: (number(evaluate(n.params[1] as EntryNode).value) + number(evaluate(n.params[3] as EntryNode).value)) / 2, input: false };
       if (n.type === "reach_something") {
         const target = String(n.params[1] ?? "");
         const hit = (actor ? touching.has(`${actor.id}:${target}`) : false) || touching.has(target) || ((target === "wall" || target === "edge") && ["wall_up", "wall_down", "wall_right", "wall_left"].some((w) => touching.has(w)));
@@ -172,6 +176,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         else if (n.type === "move_direction") { const distance = number(evaluate(n.params[0] as EntryNode).value), angle = (direction + rotation) * Math.PI / 180; goTo(x + Math.sin(angle) * distance, y + Math.cos(angle) * distance); }
         else if (n.type === "direction_relative") direction += number(evaluate(n.params[0] as EntryNode).value);
         else if (n.type === "rotate_relative") { const turn = number(evaluate(n.params[0] as EntryNode).value); if (!rotationLocked) rotation += turn; }
+        else if (n.type === "rotate_absolute") { const to = number(evaluate(n.params[0] as EntryNode).value); if (!rotationLocked) rotation = to; }
         else if (n.type === "locate_xy") goTo(number(evaluate(n.params[0] as EntryNode).value), number(evaluate(n.params[1] as EntryNode).value));
         else if (n.type === "locate_x") goTo(number(evaluate(n.params[0] as EntryNode).value), y);
         else if (n.type === "bounce_wall") {
@@ -222,8 +227,8 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         // Following the mouse does not change what is graded.
         else if (n.type === "locate") continue;
         else if (n.type === "stop_repeat") { if (!loopDepth) throw new MissionError("‘반복 중단하기’는 반복 블록 안에 넣어 주세요."); throw new StopRepeat(); }
-        // shortcut: every ‘코드 멈추기’ target ends the whole simulated run; model each target before a mission accepts anything but ‘모든 코드’.
-        else if (n.type === "stop_object") { stopped = String(n.params[0] ?? "all"); throw new StopObject(); }
+        // shortcut: ‘이 코드’ ends its own line and every other target ends the whole simulated run; model each target before a mission accepts more than ‘모든 코드’.
+        else if (n.type === "stop_object") { const target = String(n.params[0] ?? "all"); if (target !== "thisThread") stopped = target; throw new StopObject(); }
         else throw new MissionError("시작 블록은 맨 위에 두고 동작을 아래로 연결해 주세요.");
       }
     }
@@ -234,7 +239,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       // Start from an object's saved 이동 방향, 방향 and 회전 방식 instead of Entry's defaults.
       orient(moving: number, turned: number, method: string) { rotationLocked = method !== "free"; direction = moving; rotation = rotationLocked ? 0 : turned; },
       // One more watch of every forever loop, as frames passing on the stage.
-      frames(passes = FRAMES) { for (const { body, actor: who } of [...forevers]) { if (stopped) break; actor = who; let left = passes; try { loop(body, () => left-- > 0); } catch (error) { if (!(error instanceof StopObject)) throw error; } } },
+      frames(passes = FRAMES) { for (const item of [...forevers]) { if (stopped) break; actor = item.actor; let left = passes; try { loop(item.body, () => left-- > 0); } catch (error) { if (!(error instanceof StopObject)) throw error; if (!stopped) forevers.splice(forevers.indexOf(item), 1); } } },
       place(px: number, py: number) { x = px; y = py; },
       sense(mx: number, my: number, hits: readonly string[] = []) { mouseX = mx; mouseY = my; touching = new Set(hits); bouncedWall = false; },
     };
@@ -460,10 +465,9 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     const brickIds = ["brick1", "brick2", "brick3"] as const;
     if (!brickIds.every((bid) => p!.added.some((o) => o.id === bid))) return false;
     const scoreId = p!.variables.find((v) => v.id === "score" || v.name === "점수")?.id ?? "score";
-    const winWords = ["성공", "승리", "이겼", "완성", "클리어", "축하", "win", "clear"];
-    const hasWin = (lines: { text: string }[]) => lines.some((s) => { const low = s.text.toLowerCase(); return winWords.some((w) => low.includes(w) || letters(s.text).includes(w)); });
     const runOrder = (order: readonly string[]) => {
       const cast = p!.added.map((o) => ({ actor: { ...actorOf(o.id, o.sprite, o.picture), visible: o.entity.visible }, obj: o }));
+      const shown = () => cast.find((c) => c.actor.id === "youwin")?.actor.visible === true;
       const m = machine([], true);
       if (!Object.hasOwn(m.variables, scoreId)) return { ok: false, won: false };
       m.sense(0, 0, []);
@@ -473,7 +477,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         for (const t of c.obj.threads) if (t[0]?.type === "when_run_button_click") m.run(t.slice(1), c.actor);
       }
       m.frames(1);
-      if (Number(m.variables[scoreId].value) !== 0 || hasWin(m.result().sayings) || m.result().stopped !== null) return { ok: false, won: false };
+      if (Number(m.variables[scoreId].value) !== 0 || shown() || m.result().stopped !== null) return { ok: false, won: false };
       if (brickIds.some((bid) => cast.find((c) => c.actor.id === bid)!.actor.visible === false)) return { ok: false, won: false };
       for (let i = 0; i < order.length; i++) {
         const targetBrick = order[i];
@@ -482,11 +486,11 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         const scoreNow = Number(m.variables[scoreId].value);
         const brickActor = cast.find((c) => c.actor.id === targetBrick)!.actor;
         if (scoreNow !== i + 1 || brickActor.visible !== false) return { ok: false, won: false };
-        if (i < order.length - 1 && (hasWin(m.result().sayings) || m.result().stopped !== null)) return { ok: false, won: false };
+        if (i < order.length - 1 && (shown() || m.result().stopped !== null)) return { ok: false, won: false };
       }
       m.sense(0, 0, []);
       m.frames(1);
-      const won = hasWin(m.result().sayings) && m.result().stopped === "all";
+      const won = shown() && m.result().stopped === "all";
       return { ok: true, won };
     };
     const a = runOrder(["brick1", "brick2", "brick3"]);

@@ -7,6 +7,7 @@ import { functionConcepts, functionQuestions } from "../src/lib/classroom/functi
 import { brickBreakerConcepts, brickBreakerQuestions } from "../src/lib/classroom/brick-breaker-data";
 import { UNIT_QUIZ_DATA } from "../src/lib/server/review-quiz.mjs";
 import { missionById } from "../src/lib/classroom/programming-entry";
+import { BRICK_ASSEMBLY } from "../src/lib/server/brick-assembly";
 import { existsSync, readFileSync } from "node:fs";
 
 const UNITS = { "review-abstraction": "abstraction", "review-sandwich": "algorithm", "review-flowchart": "flowchart" } as const;
@@ -19,7 +20,7 @@ test("공개 수업의 개념 확인·퀴즈 선택지 수와 정답 번호는 �
   for (const c of [...conditionalConcepts, ...conditionalQuestions]) correct[`conditionals:${c.id}`] = c.correct;
   for (const c of [...loopConcepts, ...loopQuestions]) correct[`loops:${c.id}`] = c.correct;
   for (const c of [...functionConcepts, ...functionQuestions]) correct[`functions:${c.id}`] = c.correct;
-  for (const c of [...brickBreakerConcepts, ...brickBreakerQuestions]) correct[`brick-breaker:${c.id}`] = c.correct;
+  for (const c of brickBreakerQuestions) correct[`brick-breaker:${c.id}`] = c.correct;
   const reviewCorrect = (lesson: string, id: string) => UNIT_QUIZ_DATA[UNITS[lesson as keyof typeof UNITS]].questions.find((q) => String(q.id) === id)!.options.findIndex((o) => o.correct);
   const rows = RELEASED_LESSONS.map((lesson) => [lesson.id,
     lesson.concepts.map((c) => [c.id, c.question.options.length, correct[`${lesson.id}:${c.id}`] ?? 0]),
@@ -29,7 +30,7 @@ test("공개 수업의 개념 확인·퀴즈 선택지 수와 정답 번호는 �
     ["conditionals", [["cc0", 3, 0], ["cc1", 3, 1], ["cc2", 2, 0], ["cc3", 3, 1], ["cc4", 3, 0]], [["order", 3, 0], ["pass", 3, 0], ["and", 2, 1], ["multi", 3, 1], ["bug", 3, 0]]],
     ["loops", [["lc0", 3, 0], ["lc1", 3, 0], ["lc2", 3, 0], ["lc3", 3, 0], ["lc4", 3, 0]], [["distance", 3, 0], ["pentagon", 3, 0], ["counter", 3, 0], ["until", 3, 0], ["nested", 3, 0]]],
     ["functions", [["fc0", 3, 0], ["fc1", 3, 0], ["fc2", 3, 0], ["fc3", 3, 0], ["fc4", 3, 0]], [["calls", 3, 0], ["repeat-call", 3, 0], ["edit-definition", 3, 0], ["reset-bug", 3, 0], ["missing-call", 3, 0]]],
-    ["brick-breaker", [["bc0", 3, 0], ["bc1", 3, 0], ["bc2", 3, 0], ["bc3", 3, 0]], [["bq1", 3, 0], ["bq2", 3, 0], ["bq3", 3, 0], ["bq4", 3, 0], ["bq5", 3, 0]]],
+    ["brick-breaker", [["bc0", 0, 0], ["bc1", 0, 0], ["bc2", 0, 0], ["bc3", 0, 0]], [["bq1", 3, 0], ["bq2", 3, 0], ["bq3", 3, 0], ["bq4", 3, 0], ["bq5", 3, 0]]],
     ["review-abstraction", [["essential", 2, 0], ["state", 2, 0], ["decompose", 2, 0]], [["1", 4, 1], ["2", 4, 2], ["3", 4, 0], ["4", 4, 0]]],
     ["review-sandwich", [["clear", 2, 0], ["finite", 2, 0], ["structure", 2, 0]], [["1", 4, 1], ["2", 4, 0], ["3", 4, 0], ["4", 4, 1]]],
     ["review-flowchart", [["symbols", 2, 0], ["branches", 2, 0], ["loop", 2, 0]], [["1", 4, 0], ["2", 4, 1], ["3", 4, 2], ["4", 4, 0]]],
@@ -37,9 +38,9 @@ test("공개 수업의 개념 확인·퀴즈 선택지 수와 정답 번호는 �
 });
 
 test("엔트리 수업의 개념 확인·퀴즈 정답은 화면에서 같은 자리에만 있지 않고, 보기는 빠짐없이 한 번씩 보인다", () => {
-  const correct = new Map<string, number>([...concepts.map((c, i) => [`pc${i}`, c.correct] as const), ...[...questions, ...conditionalQuestions, ...conditionalConcepts, ...loopConcepts, ...loopQuestions, ...functionConcepts, ...functionQuestions, ...brickBreakerConcepts, ...brickBreakerQuestions].map((q) => [q.id, q.correct] as const)]);
+  const correct = new Map<string, number>([...concepts.map((c, i) => [`pc${i}`, c.correct] as const), ...[...questions, ...conditionalQuestions, ...conditionalConcepts, ...loopConcepts, ...loopQuestions, ...functionConcepts, ...functionQuestions, ...brickBreakerQuestions].map((q) => [q.id, q.correct] as const)]);
   for (const lesson of RELEASED_LESSONS.filter((item) => item.practice.type === "programming")) {
-    for (const items of [lesson.concepts.map((c) => c.question), lesson.quiz]) {
+    for (const items of [lesson.concepts.map((c) => c.question).filter((q) => !q.assemble), lesson.quiz].filter((list) => list.length)) {
       for (const item of items) expect([...item.options.map((o) => o.id)].sort(), `${lesson.id}:${item.id}`).toEqual(item.options.map((_, i) => String(i)));
       const shown = items.map((item) => item.options.findIndex((o) => o.id === String(correct.get(item.id))));
       expect(shown.every((i) => i >= 0), lesson.id).toBe(true);
@@ -77,6 +78,21 @@ test("개념 확인 오답 되묻기는 개념마다 있고 힌트·설명과 �
     expect(retry, id).not.toBe(concept.explanation);
   }
   expect(new Set(retries.map(([, retry]) => retry)).size).toBe(retries.length);
+});
+
+test("벽돌 깨기 개념 조립은 답 순서를 화면 데이터에 두지 않고, 칸마다 맞는 블록과 필요 없는 블록이 하나씩 더 있다", () => {
+  for (const concept of RELEASED_LESSONS.find((lesson) => lesson.id === "brick-breaker")!.concepts) {
+    const { blocks, slots } = concept.question.assemble!;
+    const answer = BRICK_ASSEMBLY[concept.id].split(",");
+    expect(answer, concept.id).toHaveLength(slots.length);
+    expect(blocks, concept.id).toHaveLength(slots.length + 1);
+    expect(answer.every((id) => blocks.some((block) => block.id === id)), concept.id).toBe(true);
+    expect(blocks.slice(0, slots.length).map((block) => block.id), concept.id).not.toEqual(answer);
+  }
+});
+
+test("개념 화면의 핵심 줄은 한눈에 읽히는 길이다", () => {
+  for (const lesson of RELEASED_LESSONS.filter((item) => item.id !== "programming-13")) for (const concept of lesson.concepts) expect((concept.keyPoint ?? concept.explanation).length, concept.id).toBeLessThanOrEqual(60);
 });
 
 test("복습 퀴즈 12문항의 오답 문구는 서로 다르고 미리 보이는 힌트와 다르다", () => {

@@ -116,8 +116,9 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
   2. 미션: `PROGRAMMING_MISSIONS`·`LESSON_MISSIONS`([§4.1](#41-entryjs-4023-실습-환경)의 수업별 미션), 미션별 허용 블록 `MISSION_BLOCKS`, 강아지 없는 미션 `FREE_MISSIONS`에 등록합니다.
   3. 채점 규칙: `programming-grader.ts`. 규칙이 없는 미션은 통과하지 않습니다.
   4. 개념·퀴즈 정답: 서버 `solutions.ts`에 넣습니다.
-  5. 개념 그림: [`concept-visual.tsx`](../src/components/student/concept-visual.tsx)의 `CONCEPT_VISUALS`에 개념 ID로 등록합니다(없으면 그림 없이 표시). 함수 수업은 그림 대신 [`function-concepts.tsx`](../src/components/student/function-concepts.tsx)의 조작 체험을 씁니다([DESIGN](DESIGN.md)의 '함수 수업 개념 체험').
-  6. 첫 작품: 따로 등록하지 않습니다. `emptyWork`가 `missionStarter`로 만듭니다.
+  5. 핵심 한 줄: 설명이 60자를 넘으면 개념에 `keyPoint`를 넣고 `*-lesson.ts`에서 함께 넘깁니다(작성 규칙은 [설계 기록](reference/2026-11-08-concept-key-point.md)).
+  6. 개념 그림: [`concept-visual.tsx`](../src/components/student/concept-visual.tsx)의 `CONCEPT_VISUALS`에 개념 ID로 등록합니다(없으면 그림 없이 표시). 함수 수업은 그림 대신 [`function-concepts.tsx`](../src/components/student/function-concepts.tsx)의 조작 체험을 씁니다([DESIGN](DESIGN.md)의 '함수 수업 개념 체험').
+  7. 첫 작품: 따로 등록하지 않습니다. `emptyWork`가 `missionStarter`로 만듭니다.
 - **수업 내용 점검:** 개념·퀴즈·미션 문구와 피드백은 [PRD §3.1](PRD.md#31-수업-3단계-라이프사이클-및-진도-측정)·[§3.4](PRD.md#수업-내용-기준)와 [DESIGN §2.2·§5.1](DESIGN.md#22-타이포그래피-스케일-typography-rules)로 점검합니다.
 
 #### 2단계: 저장 상태 연동 (`useWork`)
@@ -325,6 +326,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
   - **채점기:** 호출마다 호출 기록(함수 id·부른 호출·그때 돌던 반복)을 남기고 선과 모양 바뀜에 바로 그 호출 번호를 붙이며, 도형은 호출과 그 안의 호출이 그린 선을 `visible`로 합쳐 `closedRegular`(기하만)로 봅니다. 호출 깊이 20(`MAX_CALL_DEPTH`)을 넘으면 실패하고, 키 미션(`cat-walk`)은 방향키 줄을 가진 오브젝트를 실행 주체로 넘깁니다. 함수 미션의 채점은 시작 줄(고양이는 방향키 줄)을 가진 오브젝트의 저장된 이동 방향·방향·회전 방식에서 시작하며(`orient`), 회전 방식이 자유가 아니면 엔트리처럼 방향을 0으로 두고 ‘방향 회전’ 블록이 그리는 방향을 바꾸지 않습니다(다른 수업 채점은 그대로).
   - **실행 감시:** `keepsDrawing`은 실행 줄이 부르는 함수 본문의 붓 블록까지 보고(`drawsIn`), 실행 중 내보내기(`captureScripts`)도 `getFunctionJSON()`으로 함수를 새로 담습니다.
 - **함수 편집 중 보호:** `workspace.js`는 `Entry.Func.edit`·`endEdit`를 감싸 `function-editing`을 알리고, 편집 중에는 `changed`를 보내지 않으며(끝날 때 한 번 보냄) `export` 요청에 `refused: "function-editing"`으로 답합니다(엔트리는 편집 중에도 내보내므로). 부모의 `readProject`가 유일한 거절 지점으로, 편집 상태면 묻지 않고 `FunctionEditingError`(`function-editing.ts`)로 실패하고 무대 아래 안내 줄에 문구를 띄웁니다(토스트는 편집 창의 저장·취소 버튼을 가려 쓰지 않음). 저장·Ctrl+S·검증·제출·미션/단계 바꾸기·'저장 후 나가기'가 모두 이 지점을 거칩니다. `use-work.ts`의 `captureDraft`·`flush`·`switchStage`·`prepareLeave`는 이 오류에 `fail()`을 부르지 않고(`flush`는 저장 전 상태로 되돌림) 멈추며, 실습 버튼의 `act`는 `finally`에서 `preparing`을 풉니다. 진짜 실패·충돌은 지금대로 처리합니다. 작업실 연결은 `EntryExport { read, editing }`(`read-editor-draft.ts`)이고, `useWork`의 `editorBusy`가 `editing()`을 이탈 확인의 `isDirty`에 넣어 뒤로 가기·새로고침도 편집 중인 함수를 미저장으로 봅니다(앱 안 링크는 `prepareLeave`의 작품 읽기에서 먼저 멈춤). 편집 상태는 작업실을 다시 불러오거나(`retry`) 새 iframe이 `ready`를 보내면 풀리고, 교사 미리보기(`use-preview-work.ts`)도 이 오류를 실패로 표시하지 않습니다.
+- **블록 조립 개념 확인:** `Question.assemble`(`blocks`·칸 들여쓰기 `slots`)이 있으면 `options`는 비우고, 답은 블록 id를 쉼표로 이은 문자열로 `conceptAnswers`에 저장합니다. 맞는 순서는 서버 `brick-assembly.ts`에만 둡니다.
 - **개념·퀴즈 그림 캡처:** `public/concepts/`의 엔트리 블록 캡처를 다시 만드는 방법입니다(그림 규격은 [DESIGN](DESIGN.md)의 '개념 화면 그림').
   - **방법:** Windows에서 로컬 `/entryjs/workspace.html?exercise=programming`을 최상위로 열어 `Entry.loadProject`로 `buildProgrammingProject` 예시를 불러오고, 개념 블록(이벤트가 개념이면 시작 블록)의 `block.view.getDataUrl()` SVG에서 `<image>` 아이콘을 data URL로 바꾼 뒤 (너비+2)·(높이+2)의 3배 캔버스에 그려 PNG로 저장합니다(이 방법으로 `cc4`가 바이트 단위로 같게 재현됨).
   - **함수 정의 블록:** 함수 정의 블록을 캡처할 때는 함수 편집 창에만 그려지므로 `Entry.Func.edit` 뒤 `overlayBoard`의 정의 블록을 같은 방법으로 캡처합니다(함수 퀴즈).
@@ -332,7 +334,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 - **채점 범위:**
   - **미션 밖 블록:** `missionBlockIssue`가 미션 신호로 시작하는 줄(값 블록·반복 안쪽 포함)에서 미션 밖 블록을 찾아 이름표로 안내하고, 서버 인터프리터는 그 뒤에만 실행합니다.
   - **받는 블록 목록:** 모든 미션의 `MISSION_BLOCKS`에는 `HARMLESS_BLOCKS`가 더해지고, 학생에게 보이는 블록 목록(`missionBlockTypes`)에서는 이 묶음과 같은 뜻으로 받는 움직임·시간 회전 블록(`ALSO_ACCEPTED`), 미션별로 받지만 알리지 않는 블록(`UNLISTED`, 정사각형·정다각형의 말하기)이 빠집니다. `MISSION_BLOCKS`에 넣는 동작 블록은 해석기 분기가 있어야 하며(없으면 ‘시작 블록은 맨 위에…’로 떨어짐), `tests/entry-palette.test.ts`의 안전장치 테스트가 블록마다 확인합니다.
-  - **넣지 않는 블록:** 움직임 미션(`move`·`keys`)에는 절대 위치 블록(`locate_x`·`locate_y`·`locate_xy(_time)`)을 넣지 않고(해석기가 늘 (0, 0)에서 시작해 절대 이동이 통과함), 벽돌 깨기 `paddle` 미션은 마우스 x 좌표를 따라가도록 `locate_x`와 `coordinate_mouse`를 허용하되 `move_x`를 쓰면 `SIMILAR_BLOCKS`로 `locate_x`를 안내합니다. `rotate_absolute`는 오브젝트 방향을 정하므로 `direction_absolute`와 같게 보지 않으며, `move`·`keys`·`square`에는 묻기를 넣지 않습니다(`asksQuestion`이 실행 결과 표시를 말하기로 바꿈).
+  - **넣지 않는 블록:** 움직임 미션(`move`·`keys`)에는 절대 위치 블록(`locate_x`·`locate_y`·`locate_xy(_time)`)을 넣지 않고(해석기가 늘 (0, 0)에서 시작해 절대 이동이 통과함), 벽돌 깨기 `paddle` 미션은 마우스 x 좌푯값을 따라가도록 `locate_x`와 `coordinate_mouse`를 허용하되 `move_x`를 쓰면 `SIMILAR_BLOCKS`로 `locate_x`를 안내합니다. `rotate_absolute`는 오브젝트 방향을 정하므로 `direction_absolute`와 같게 보지 않으며, `move`·`keys`·`square`에는 묻기를 넣지 않습니다(`asksQuestion`이 실행 결과 표시를 말하기로 바꿈).
   - **말 판정:** 말은 글자·숫자만 남겨 결과별 핵심어로 보고(다른 결과 낱말이 이 낱말을 품으면 먼저 지움), 마지막 질문 뒤에 말한 줄 전체로 판정합니다(질문 전 인사는 입력과 무관하므로 제외). 이름은 입력에서 온 줄, 곱셈·평균은 입력으로 계산한 마지막 줄, A·B는 처음 저장한 입력값, 금고는 마지막 질문 뒤의 ‘열렸’ 한 줄과 반복 안의 질문(첫 질문만 반복 앞 허용)을 봅니다.
   - **도형 판정:** 도형은 이어진 같은 방향의 선을 하나로(‘두 바퀴 이상 그린 반복 안’ 여부는 모든 조각의 그리고), 앞서 그린 선과 겹치는 선은 빼고 판정하되(겹친 선이 반복 밖이면 남은 선도 반복 밖으로 봄), 정다각형은 합친 선 수가 변 수의 배수일 때만 겹친 선을 빼서 고정 반복 횟수가 통과하지 못하게 합니다(숨은 변 수 3~8의 최소공배수 840이 선 상한 200을 넘음). 모든 변이 두 바퀴 이상에서 선을 그린 반복 안에서 그려지고(`repeated`, 반복이 끝날 때 그 안에서 그린 선에 표시하므로 한 바퀴에만 그린 반복은 반복으로 치지 않음), 어느 반복이든 두 번째 바퀴부터 그린 변이 하나는 있어야 합니다(`again`; 통과 기준은 [PRD §4.1.2](PRD.md#412-정규-수업-반복으로-똑똑하게)).
   - **방향키 미션:** 한 기계에서 네 키 줄을 두 가지 순서로 차례로 실행해 키마다의 x·y 변화를 봅니다.

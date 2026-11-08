@@ -3,7 +3,6 @@ import { brickBreakerConcepts, brickBreakerQuestions } from "./brick-breaker-dat
 
 // Every answer is option 0 in the data, so show options in this order instead; ids keep the data index so saved answers do not move.
 const SHOWN: Record<string, number[]> = {
-  bc0: [1, 0, 2], bc1: [0, 1, 2], bc2: [2, 1, 0], bc3: [1, 2, 0],
   bq1: [1, 0, 2], bq2: [2, 1, 0], bq3: [0, 1, 2], bq4: [2, 0, 1], bq5: [1, 2, 0],
 };
 const options = (id: string, labels: readonly string[]) => (SHOWN[id] ?? labels.map((_, i) => i)).map((i) => ({ id: String(i), label: labels[i] }));
@@ -14,11 +13,11 @@ export const BRICK_BREAKER_LESSON: Lesson = {
   category: "프로그래밍 · 변수와 게임 설계",
   description: "마우스를 따라 움직이는 막대, 통통 튀는 공, 점수가 오르며 사라지는 벽돌을 차례로 조립해 게임을 완성해요.",
   concepts: brickBreakerConcepts.map((c) => ({
-    id: c.id, title: c.title, explanation: c.explanation, example: c.example,
-    question: { id: c.id, prompt: c.prompt, options: options(c.id, c.options), hint: c.hint },
+    id: c.id, title: c.title, explanation: c.explanation, keyPoint: c.keyPoint, example: c.example,
+    question: { id: c.id, prompt: c.prompt, options: [], assemble: { head: c.head, blocks: c.blocks.map((block) => ({ ...block })), slots: [...c.slots] }, hint: c.hint },
   })),
   quiz: brickBreakerQuestions.map((q) => ({
-    id: q.id, prompt: q.prompt, scene: [...q.scene], options: options(q.id, q.options), hint: q.hint,
+    id: q.id, prompt: q.prompt, scene: [...q.scene], captures: q.captures.map((c) => ({ ...c })), options: options(q.id, q.options), hint: q.hint,
   })),
   practice: {
     type: "programming",

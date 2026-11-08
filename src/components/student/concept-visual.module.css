@@ -15,9 +15,55 @@
 .block { padding: 7px 14px; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 650; white-space: nowrap; }
 .block[data-kind="flow"] { background: #0284c7; }
 .block[data-kind="brush"] { background: #ea580c; }
-.block[data-kind="moving"] { background: #7c3aed; white-space: normal; }
-.block[data-kind="looks"] { background: #e11d48; }
-.block[data-kind="variable"] { background: #c026d3; }
+.assemble { display: grid; gap: 12px; }
+.ebCode button, .assembleTray button { padding: 0; border: 0; background: none; cursor: pointer; text-align: left; }
+.ebCode button:focus-visible, .assembleTray button:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; border-radius: 10px; }
+.ebCode button:disabled, .assembleTray button:disabled { cursor: default; }
+.assemblePrompt { margin: 0; font-size: 18px; font-weight: 650; line-height: 1.5; }
+.assembleGuide { margin: 0; color: #526173; font-size: 14px; }
+/* Blocks drawn like Entry's: a notch on top, a tab below, a round right end and a category icon. Colours stay a little deeper than Entry's for text contrast. */
+.ebCode { --surface: #f1f6fd; min-width: 0; display: grid; justify-items: start; padding: 16px; border-radius: 14px; background: var(--surface); overflow-x: auto; }
+.eb, .ebWrap { --c: #94a3b8; --d: #64748b; }
+.eb[data-kind="flow"], .ebWrap[data-kind="flow"] { --c: #0369a1; --d: #075985; }
+.eb[data-kind="moving"], .ebWrap[data-kind="moving"] { --c: #7c3aed; --d: #5b21b6; }
+.eb[data-kind="looks"], .ebWrap[data-kind="looks"] { --c: #e11d48; --d: #a50f33; }
+.eb[data-kind="variable"], .ebWrap[data-kind="variable"] { --c: #c026d3; --d: #8d1a9c; }
+.ebWrap[data-kind="empty"] { --c: #c5d2e4; }
+.eb, .ebHat { position: relative; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 40px; padding: 5px 7px 5px 16px; color: #fff; font-size: 16px; font-weight: 700; line-height: 1.25; }
+.eb { border-radius: 0 20px 20px 0; background: var(--c); }
+.eb::before, .eb::after, .ebHat::after { content: ""; position: absolute; left: 9px; border: 6px solid transparent; border-bottom-width: 0; }
+.eb::before { top: 0; border-top-color: var(--surface, #fff); }
+.eb::after { top: 100%; z-index: 1; border-top-color: var(--c); }
+.ebHat { padding-left: 8px; padding-right: 18px; border-radius: 20px 20px 20px 0; background: #15803d; }
+.ebHat::after { top: 100%; z-index: 1; border-top-color: #15803d; }
+.ebPlay { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #fff; color: #15803d; }
+.ebIcon { display: grid; place-items: center; flex: none; width: 28px; height: 28px; margin-left: 4px; border-radius: 50%; background: var(--d); }
+.ebNumber { min-width: 28px; padding: 1px 8px; border: 2px solid #f59e0b; border-radius: 14px; background: #ffd974; color: #1f2937; text-align: center; }
+.ebDrop { white-space: nowrap; padding: 3px 8px; border-radius: 6px; background: var(--d); color: #fff; }
+.ebHex { display: inline-flex; align-items: center; gap: 5px; padding: 4px 18px; background: #4338ca; clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 11px 100%, 0 50%); }
+.ebHex .ebDrop { background: #312e81; }
+.ebValue { --d: #92400e; display: inline-flex; align-items: center; gap: 5px; padding: 2px 10px; border-radius: 16px; background: #b45309; color: #fff; }
+.ebEmpty { display: inline-flex; align-items: center; min-width: 190px; min-height: 40px; padding: 0 16px; border: 2px dashed #a9bcd8; border-radius: 0 20px 20px 0; background: #fff; color: #526173; font-size: 15px; }
+.ebWrap { display: grid; justify-items: start; }
+.ebBody { display: grid; justify-items: start; min-height: 40px; padding-left: 0; margin-left: 0; border-left: 18px solid var(--c); }
+.ebFoot { width: 150px; height: 16px; border-radius: 0 10px 10px 0; background: var(--c); }
+.assembleTray { --surface: #fff; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 14px; padding: 14px; border: 1px solid #dce5f2; border-radius: 14px; }
+.assembleTray button:nth-child(odd) { transform: rotate(-1.5deg) translateY(4px); }
+.assembleTray button:nth-child(3n) { transform: rotate(1.5deg); }
+.assembleTray button[aria-pressed="true"] { opacity: .5; }
+.assembleTray button:disabled { opacity: .55; }
+.play { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; width: 100%; min-width: 0; }
+.play .ebCode { flex: 2 1 420px; min-width: 0; --surface: #fff; }
+.playRow { position: relative; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.playRow[data-lit] .eb { outline: 3px solid #f59e0b; outline-offset: 1px; }
+.playRan { padding: 2px 8px; border-radius: 8px; background: #fef3c7; color: #92400e; font-size: 14px; font-weight: 700; }
+.playSide { flex: 1 1 240px; display: grid; gap: 12px; min-width: 0; }
+.playValues { display: flex; flex-wrap: wrap; gap: 8px; }
+.playValues span { display: grid; gap: 2px; min-width: 96px; padding: 8px 12px; border: 2px solid #c4d5f2; border-radius: 12px; background: #fff; }
+.playValues small { color: #526173; font-size: 14px; }
+.playValues b { color: #1e3a8a; font-size: 20px; }
+.playSay { margin: 0; color: #17202e; font-size: 17px; font-weight: 700; line-height: 1.5; word-break: keep-all; }
+.playButtons { display: flex; flex-wrap: wrap; gap: 8px; }
 .nest { display: grid; gap: 8px; padding: 10px; border-radius: 14px; background: #0284c7; color: #fff; font-size: 15px; font-weight: 650; text-align: left; }
 .nest > div:first-child { padding: 2px 6px; }
 .nest .inner { display: grid; gap: 8px; padding: 10px; border-radius: 10px; background: rgba(255, 255, 255, .92); color: #0c5a85; }

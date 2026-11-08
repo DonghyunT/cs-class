@@ -8,6 +8,7 @@ import { checkProgrammingMission } from "./programming-grader";
 import { practiceMatches, submissionTimes } from "../classroom/progress";
 import { requireCondition } from "./errors";
 import { getLessonSolution } from "./solutions";
+import { assembledIds, validAssembly } from "../classroom/assemble";
 import { basicReviewCheck, frozenReviewProject, isReviewType, reviewMissionIds, reviewProjectSchema, sameReviewProject } from "../classroom/review/project";
 
 export const revisionSchema = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
@@ -36,7 +37,8 @@ export function sameOrder(a: string[], b: string[]) {
 
 export function validateDraft(draft: z.infer<typeof draftSchema>, lesson: Lesson) {
   for (const [id, value] of Object.entries(draft.conceptAnswers)) {
-    requireCondition(lesson.concepts.find((c) => c.id === id)?.question.options.some((option) => option.id === value), 400, "INVALID_ANSWER", "개념 답안을 확인해 주세요.");
+    const question = lesson.concepts.find((c) => c.id === id)?.question;
+    requireCondition(question?.assemble ? validAssembly(question.assemble, value) : question?.options.some((option) => option.id === value), 400, "INVALID_ANSWER", "개념 답안을 확인해 주세요.");
   }
   for (const [id, value] of Object.entries(draft.quizAnswers)) {
     requireCondition(lesson.quiz.find((q) => q.id === id)?.options.some((option) => option.id === value), 400, "INVALID_ANSWER", "퀴즈 답안을 확인해 주세요.");
@@ -128,7 +130,10 @@ export function applyAction(work: Work, action: WorkAction, lesson: Lesson): Wor
     const answer = next.draft.conceptAnswers[concept.id];
     requireCondition(answer, 400, "ANSWER_REQUIRED", "답을 먼저 선택해 주세요.");
     const correct = solution.conceptAnswers[concept.id] === answer;
-    next.conceptFeedback[concept.id] = { correct, message: correct ? concept.explanation : solution.conceptRetry?.[concept.id] ?? concept.question.hint };
+    const retry = solution.conceptRetry?.[concept.id] ?? concept.question.hint, expected = assembledIds(solution.conceptAnswers[concept.id]);
+    // Naming the first wrong slot keeps a student from being stuck without giving the block away.
+    const wrongSlot = concept.question.assemble && !correct ? assembledIds(answer).findIndex((id, i) => id !== expected[i]) : -1;
+    next.conceptFeedback[concept.id] = { correct, message: correct ? concept.explanation : wrongSlot >= 0 ? `${wrongSlot + 1}번 칸부터 다시 볼까요? ${retry}` : retry };
     if (correct && !next.conceptSolved.includes(concept.id)) next.conceptSolved.push(concept.id);
   } else if (action.type === "grade-quiz") {
     requireCondition(!next.quizRoundGraded, 409, "ROUND_GRADED", "이미 확인한 풀이예요. 틀린 문제 다시 풀기를 선택해 주세요.");

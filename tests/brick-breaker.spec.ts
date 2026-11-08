@@ -8,6 +8,8 @@ import {
   type EntryNode
 } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission } from "../src/lib/server/programming-grader";
+import { BRICK_ASSEMBLY } from "../src/lib/server/brick-assembly";
+import { blockText } from "../src/lib/classroom/assemble";
 import type { Work } from "../src/lib/classroom/types";
 import { db, headers, readyStudent, readyTeacher, entryReset, entryStart, entryStop } from "./emulator";
 
@@ -27,11 +29,11 @@ function onBrickStarter(mission: string, byObject: Record<string, EntryNode[][]>
 
 const paddleThread: EntryNode[] = [start(), forever([node("locate_x", node("coordinate_mouse", null, "x", null), null)])];
 const ballThread: EntryNode[] = [
-  start(),
+  node("when_object_click", null),
   forever([
-    node("move_direction", number("3"), null),
+    node("move_direction", number("4"), null),
     node("bounce_wall", null),
-    ifNode(node("reach_something", null, "paddle", null), [node("direction_relative", node("angle", "90"), null), node("move_direction", number("20"), null)]),
+    ifNode(node("reach_something", null, "paddle", null), [node("func_pbounce", null)]),
     ifNode(node("reach_something", null, "wall_down", null), [node("stop_object", "all", null)])
   ])
 ];
@@ -44,12 +46,11 @@ const brickHitThread: EntryNode[] = [
     ])
   ])
 ];
-const paddleWinThread: EntryNode[] = [
+const youWinThread: EntryNode[] = [
   start(),
   forever([
-    node("locate_x", node("coordinate_mouse", null, "x", null), null),
     ifNode(node("boolean_basic_operator", node("get_variable", "score"), "EQUAL", number("3")), [
-      node("dialog", text("성공!"), "speak", null),
+      node("show", null),
       node("stop_object", "all", null)
     ])
   ])
@@ -70,7 +71,7 @@ const ballBrickBounceThread: EntryNode[] = [
 const solutions: Record<string, string> = {
   paddle: onBrickStarter("paddle", { paddle: [paddleThread] }),
   ball: onBrickStarter("ball", { paddle: [paddleThread], ball: [ballThread] }),
-  brick: onBrickStarter("brick", { paddle: [paddleWinThread], ball: [ballThread], brick1: [brickHitThread] }),
+  brick: onBrickStarter("brick", { youwin: [youWinThread], ball: [ballThread], brick1: [brickHitThread] }),
   "brick-bounce": onBrickStarter("brick-bounce", { ball: [ballBrickBounceThread] })
 };
 
@@ -87,9 +88,19 @@ async function open(page: Page, mission: string, project = missionStarter(missio
   return page.frameLocator("iframe");
 }
 
+const OBJECT_NAMES = ["You win!", "공", "막대", "벽돌1", "벽돌2", "벽돌3"];
+// Assembles one concept through the real buttons and checks it.
+async function solveConcept(page: Page, conceptId: string) {
+  const assemble = RELEASED_LESSONS.find((lesson) => lesson.id === id)!.concepts.find((concept) => concept.id === conceptId)!.question.assemble!;
+  const tray = page.getByRole("group", { name: "블록 모음" });
+  for (const blockId of BRICK_ASSEMBLY[conceptId].split(",")) await tray.getByRole("button", { name: blockText(assemble.blocks.find((block) => block.id === blockId)!.label), exact: true }).click();
+  await page.getByRole("button", { name: "정답 확인", exact: true }).click();
+  await expect(page.locator(`#concept-feedback-${conceptId}`)).toContainText("맞았어요");
+}
+
 const workspaceFrame = (page: Page) => page.frames().find((frame) => frame.url().includes("/entryjs/workspace.html"))!;
 
-test("벽돌 깨기 수업은 공개되어 미션 네 개(필수 셋·도전 하나)와 다섯 오브젝트·점수 변수를 제공한다", () => {
+test("벽돌 깨기 수업은 공개되어 미션 네 개(필수 셋·도전 하나)와 여섯 오브젝트·점수 변수를 제공한다", () => {
   expect(RELEASED_LESSONS.some((lesson) => lesson.id === id)).toBe(true);
   expect(missionsFor(id).map((mission) => [mission.id, !!mission.optional])).toEqual([
     ["paddle", false],
@@ -99,7 +110,7 @@ test("벽돌 깨기 수업은 공개되어 미션 네 개(필수 셋·도전 하
   ]);
   for (const mission of ["paddle", "ball", "brick", "brick-bounce"]) {
     const parsed = parseProgrammingProject(missionStarter(mission))!;
-    expect([...parsed.added.map((o) => o.name)].sort()).toEqual(["공", "막대", "벽돌1", "벽돌2", "벽돌3"]);
+    expect([...parsed.added.map((o) => o.name)].sort()).toEqual(OBJECT_NAMES);
     expect(parsed.variables.some((v) => v.id === "score" && v.name === "점수" && v.value === 0)).toBe(true);
   }
 });
@@ -115,7 +126,7 @@ test("벽돌 깨기 채점기는 흔한 오개념(일회성 이동·고정 좌�
   const fixedPaddle = onBrickStarter("paddle", { paddle: [[start(), forever([node("locate_x", number("100"), null)])]] });
   expect(checkProgrammingMission("paddle", fixedPaddle)).toMatchObject({
     passed: false,
-    message: expect.stringContaining("마우스 x 좌표")
+    message: expect.stringContaining("마우스 x 좌푯값")
   });
   const moveXPaddle = onBrickStarter("paddle", { paddle: [[start(), forever([node("move_x", node("coordinate_mouse", null, "x", null), null)])]] });
   expect(checkProgrammingMission("paddle", moveXPaddle)).toMatchObject({
@@ -249,21 +260,21 @@ test("개념 도식 네 개와 퀴즈 다섯 문항의 코드 장면이 오류 �
   await page.goto(`/classroom/${id}?from=dashboard`);
 
   for (let i = 0; i < 4; i++) {
-    const figure = page.locator("figure[role=img]").first();
+    const figure = page.locator("figure").first();
     await expect(figure).toBeVisible();
     for (const svgText of await figure.locator("svg text").all()) {
       expect(await svgText.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(14);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
     const next = page.getByRole("button", { name: "다음 개념" });
-    if (i < 3) await next.click();
+    if (i < 3) { await expect(next).toBeDisabled(); await solveConcept(page, `bc${i}`); await next.click(); }
   }
 
   await page.getByRole("tab", { name: /^퀴즈/ }).click();
   const scene = page.getByRole("group", { name: "읽어 볼 코드" });
   for (let i = 0; i < 5; i++) {
-    await expect(scene).toBeVisible();
-    expect(await scene.locator("code").count()).toBeGreaterThan(0);
+    await expect(scene.locator("img")).toBeVisible();
+    expect(await scene.locator("img").evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
     const next = page.getByRole("button", { name: "다음 문제" });
     if (!await next.count()) break;
     await next.click();
@@ -279,19 +290,61 @@ test("개념 그림은 좁은 화면(375px)에서도 페이지를 넘치게 하�
   await db.collection("csClasses").doc("2-1").update({ currentLessonId: id, openedLessonIds: [id] });
   await page.goto(`/classroom/${id}?from=dashboard`);
   for (let i = 0; i < 4; i++) {
-    await expect(page.locator("figure[role=img]").first()).toBeVisible();
+    await expect(page.locator("figure").first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), `concept ${i}`).toBeLessThanOrEqual(1);
-    if (i < 3) await page.getByRole("button", { name: "다음 개념" }).click();
+    if (i < 3) { await solveConcept(page, `bc${i}`); await page.getByRole("button", { name: "다음 개념" }).click(); }
   }
 });
 
-test("세 벽돌을 깨면 막대의 ‘성공!’ 말풍선과 점수가 정지하기 전까지 무대에 남는다", async ({ page }) => {
+test("개념 조립은 틀리면 틀린 칸을 알려 주고, 맞혀야 다음 개념이 열린다", async ({ page }) => {
+  await page.goto("about:blank");
+  await readyStudent(page.request);
+  await db.collection("csWork").doc(`student-20101__${id}`).delete();
+  await db.collection("csClasses").doc("2-1").update({ currentLessonId: id, openedLessonIds: [id] });
+  await page.goto(`/classroom/${id}?from=dashboard`);
+  const assemble = RELEASED_LESSONS.find((lesson) => lesson.id === id)!.concepts[0].question.assemble!;
+  const tray = page.getByRole("group", { name: "블록 모음" }), check = page.getByRole("button", { name: "정답 확인", exact: true });
+  await expect(check).toBeDisabled();
+  for (const block of assemble.blocks.slice(0, assemble.slots.length)) await tray.getByRole("button", { name: blockText(block.label), exact: true }).click();
+  await check.click();
+  await expect(page.locator("#concept-feedback-bc0")).toContainText("1번 칸부터");
+  await expect(page.getByRole("button", { name: "다음 개념" })).toBeDisabled();
+  await page.getByRole("button", { name: "모두 빼기" }).click();
+  await solveConcept(page, "bc0");
+  await expect(page.getByRole("button", { name: "다음 개념" })).toBeEnabled();
+  await page.reload();
+  await expect(page.getByRole("navigation", { name: "개념 목록", exact: true }).getByRole("button", { name: /변수로 게임 점수/ })).toContainText("확인 완료");
+});
+
+test("개념 체험은 눌러 보면 값과 설명이 바뀌고, 저장하지 않으며 새로 고치면 처음으로 돌아간다", async ({ page }) => {
+  await page.goto("about:blank");
+  await readyStudent(page.request);
+  await db.collection("csWork").doc(`student-20101__${id}`).delete();
+  await db.collection("csClasses").doc("2-1").update({ currentLessonId: id, openedLessonIds: [id] });
+  await page.goto(`/classroom/${id}?from=dashboard`);
+  const play = page.locator("figure").first(), saves: string[] = [];
+  page.on("request", (request) => { if (request.method() === "POST" && request.url().includes("/api/classroom/work/")) saves.push(request.url()); });
+  await expect(page.locator("#concept-bc0").getByText("점수는 처음 한 번만 0", { exact: false })).toBeVisible();
+  await play.getByRole("button", { name: "벽돌에 닿았을 때" }).click();
+  await expect(play.getByRole("status")).toHaveText("먼저 [시작하기]를 눌러 보세요.");
+  await play.getByRole("button", { name: "시작하기" }).click();
+  await expect(play.getByRole("status")).toHaveText("시작할 때 한 번만 0이 돼요.");
+  await play.getByRole("button", { name: "벽돌에 닿았을 때" }).click();
+  await play.getByRole("button", { name: "벽돌에 닿았을 때" }).click();
+  await expect(play.getByText("실행!")).toHaveCount(2);
+  await expect(play.locator("b", { hasText: /^2$/ })).toBeVisible();
+  expect(saves).toEqual([]);
+  await page.reload();
+  await expect(page.locator("figure").first().locator("b", { hasText: "정하기 전" })).toBeVisible();
+});
+
+test("세 벽돌을 깨면 You win!과 점수가 정지하기 전까지 무대에 남는다", async ({ page }) => {
   await open(page, "brick", solutions.brick);
   const frame = workspaceFrame(page);
   const ending = () => frame.evaluate(() => {
     const E = (window as unknown as { Entry: Record<string, any> }).Entry; // eslint-disable-line @typescript-eslint/no-explicit-any
-    const paddle = E.container.getAllObjects().find((o: { id: string }) => o.id === "paddle").entity;
-    return { state: E.engine.state, score: Number(E.variableContainer.variables_.find((v: { getName: () => string }) => v.getName() === "점수").getValue()), bubble: paddle.dialog?.message_ ?? null, bubbleVisible: paddle.dialog?.object?.visible ?? null };
+    const win = E.container.getAllObjects().find((o: { id: string }) => o.id === "youwin").entity;
+    return { state: E.engine.state, score: Number(E.variableContainer.variables_.find((v: { getName: () => string }) => v.getName() === "점수").getValue()), shown: win.getVisible() };
   });
   await entryStart(page).click();
   // The ball is moved onto each brick: this test is about the ending, not about catching the ball.
@@ -304,16 +357,16 @@ test("세 벽돌을 깨면 막대의 ‘성공!’ 말풍선과 점수가 정지
       return false;
     }, brick)).toBe(true);
   }
-  await expect.poll(ending).toMatchObject({ score: 3, bubble: "성공!", bubbleVisible: true });
+  await expect.poll(ending).toMatchObject({ score: 3, shown: true });
   await page.waitForTimeout(1000);
-  expect(await ending()).toMatchObject({ state: "run", score: 3, bubble: "성공!", bubbleVisible: true });
+  expect(await ending()).toMatchObject({ state: "run", score: 3, shown: true });
   await expect(page.getByText("결과를 다 봤으면").first()).toBeVisible();
   await entryStop(page).click();
   await expect.poll(async () => (await ending()).score).toBe(0);
 });
 
 for (const mission of Object.keys(solutions)) {
-  test(`${mission}: 시작 오브젝트 다섯 개와 점수 변수는 잠겨 있고, 완성 작품은 검증·제출·새로고침 후에도 유지된다`, async ({ page }) => {
+  test(`${mission}: 시작 오브젝트 여섯 개와 점수 변수는 잠겨 있고, 완성 작품은 검증·제출·새로고침 후에도 유지된다`, async ({ page }) => {
     await open(page, mission, solutions[mission]);
     const workspaceInfo = await workspaceFrame(page).evaluate(() => {
       const entry = (window as unknown as {
@@ -327,7 +380,7 @@ for (const mission of Object.keys(solutions)) {
         variables: entry.variableContainer.variables_.map((v) => v.getName())
       };
     });
-    expect(workspaceInfo.objects).toEqual(["공", "막대", "벽돌1", "벽돌2", "벽돌3"]);
+    expect(workspaceInfo.objects).toEqual(OBJECT_NAMES);
     expect(workspaceInfo.variables).toContain("점수");
 
     await page.getByRole("button", { name: "조건 검증", exact: true }).click();
@@ -344,7 +397,7 @@ for (const mission of Object.keys(solutions)) {
           .map((o) => o.name)
           .sort()
       )
-    ).toEqual(["공", "막대", "벽돌1", "벽돌2", "벽돌3"]);
+    ).toEqual(OBJECT_NAMES);
   });
 }
 

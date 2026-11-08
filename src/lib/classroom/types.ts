@@ -30,6 +30,9 @@ export interface Question {
   // Entry's own rendering of the scene (public/concepts/); then `scene` stays as its screen-reader text.
   captures?: { src: string; width: number; height: number }[];
   options: { id: string; label: string }[];
+  // A concept check answered by assembling blocks under the fixed `head`; `options` stays empty and `slots` holds each slot's indent.
+  // Labels may mark Entry's parts (see BLOCK_PARTS in assemble.ts).
+  assemble?: { head: string; blocks: { id: string; label: string; kind: "flow" | "moving" | "looks" | "variable" }[]; slots: number[] };
   hint: string;
 }
 import type { ReviewProject } from "./review/project";
@@ -60,7 +63,7 @@ export interface Lesson {
   description: string;
   category?: string;
   mode?: "review";
-  concepts: { id: string; title: string; explanation: string; example: string; question: Question }[];
+  concepts: { id: string; title: string; explanation: string; keyPoint?: string; example: string; question: Question }[];
   quiz: Question[];
   practice: PracticeDef;
 }

@@ -335,7 +335,7 @@ try {
       const idle = Entry.container.getAllObjects().every((item) => item.script.executors.length === 0);
       if (idle && !(programming && keyMission)) {
         if (!waitsForEvents && !keepsDrawing && !keepsResult) void stop("finished");
-        else if (!reported) { result("finished"); reported = true; send("waiting", { drawing: !waitsForEvents, result: keepsResult && !waitsForEvents }); }
+        else if (!reported) { result("finished"); reported = true; send("waiting", { drawing: !waitsForEvents, result: keepsResult }); }
       }
       if (monitor === null) return;
       if (traced) {

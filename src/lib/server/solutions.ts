@@ -6,6 +6,7 @@ import { conditionalConcepts, conditionalQuestions } from "../classroom/conditio
 import { loopConcepts, loopQuestions } from "../classroom/loops-data";
 import { functionConcepts, functionQuestions } from "../classroom/functions-data";
 import { brickBreakerConcepts, brickBreakerQuestions } from "../classroom/brick-breaker-data";
+import { BRICK_ASSEMBLY } from "./brick-assembly";
 import { UNIT_QUIZ_DATA } from "./review-quiz.mjs";
 import { REVIEW_LESSONS } from "../classroom/review/lessons";
 
@@ -86,7 +87,7 @@ export const SOLUTIONS: Record<string, LessonSolution> = {
   },
   "brick-breaker": {
     lessonId: "brick-breaker",
-    conceptAnswers: Object.fromEntries(brickBreakerConcepts.map((c) => [c.id, String(c.correct)])),
+    conceptAnswers: BRICK_ASSEMBLY,
     quizAnswers: Object.fromEntries(brickBreakerQuestions.map((q) => [q.id, String(q.correct)])),
     quizFeedback: Object.fromEntries(brickBreakerQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
     conceptRetry: Object.fromEntries(brickBreakerConcepts.map((c) => [c.id, c.retry])),

@@ -1,5 +1,6 @@
 "use client";
 
+import { assembledIds } from "@/lib/classroom/assemble";
 import { memo, useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { ArrowRight, ArrowDown, ArrowUp, BookOpen, Check, CheckCircle2, Layers3, Send } from "lucide-react";
 import { Toast } from "@base-ui/react/toast";
@@ -34,7 +35,7 @@ export type LessonFrame = { stage: Stage; saveLabel: string; save?: () => Promis
 export type WorkspaceView = { returnOrigin: LessonOrigin; workspaceWide: boolean; practiceFocused: boolean; onPracticeFocusedChange: (focused: boolean) => void; onWorkspaceWideChange: (wide: boolean) => void; onWorkspaceStageChange: (stage: Stage) => void };
 
 function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }) {
-  const label = (question: Question, answer?: string) => question.options.find((option) => option.id === answer)?.label ?? "미응답";
+  const label = (question: Question, answer?: string) => question.assemble && answer ? `블록 ${assembledIds(answer).length}개 조립` : question.options.find((option) => option.id === answer)?.label ?? "미응답";
   return <ul className={styles.comparisonList}>
     <li><strong>이어갈 단계</strong>{stages.find((stage) => stage.id === draft.stage)?.label}</li>
     {lesson.concepts.map((concept, i) => <li key={concept.id}><strong>개념 {i + 1}</strong>{label(concept.question, draft.conceptAnswers[concept.id])}</li>)}

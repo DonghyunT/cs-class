@@ -100,6 +100,7 @@
 .stageHeading>span{color:#526173;background:#edf1f6;font-size:13px;font-weight:600;padding:6px 11px;border-radius:8px;white-space:nowrap}
 .solved{display:inline-flex;align-items:center;gap:5px;color:#2e5fab;background:#eaf2ff;border-radius:8px;padding:4px 9px;font-size:12px;font-weight:650;margin-left:auto}
 .explanation{font-size:16px;line-height:1.9;margin:20px 0;max-width:830px;word-break:keep-all;overflow-wrap:anywhere}
+.keyPoint{margin:0 0 16px;color:#17202e;font-size:20px;font-weight:750;line-height:1.5;word-break:keep-all;overflow-wrap:anywhere}
 .example{background:var(--warm-surface);border-left:3px solid var(--warm-border);padding:16px 20px;border-radius:0 10px 10px 0;margin-bottom:23px}
 .example>span{color:#526173;font-size:12px;font-weight:650}.example p{margin:4px 0 0;line-height:1.85;font-size:15px}
 .checkArea{border-top:1px solid #e3e8ef;padding-top:23px}
