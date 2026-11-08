@@ -1,90 +1,95 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import type { Question } from "@/lib/classroom/types";
-import { BlockCode, EntryBlock } from "./concept-assemble";
 import styles from "./concept-visual.module.css";
 
-type Kind = NonNullable<Question["assemble"]>["blocks"][number]["kind"];
-type Values = Record<string, string>;
-type Press = { values: Values; lit: number[]; say: string };
-type Scene = { head: string; rows: { kind: Kind; label: string; indent: number }[]; start: Values; buttons: { label: string; press: (values: Values) => Press }[] };
+// Ungraded and unsaved on purpose: only local state, so playing never touches the student's work.
+// No Entry blocks here: the code to build is the concept check's answer.
+type Point = { x: number; y: number };
+const ARROWS: Record<string, Point> = { ArrowLeft: { x: -20, y: 0 }, ArrowRight: { x: 20, y: 0 }, ArrowUp: { x: 0, y: 20 }, ArrowDown: { x: 0, y: -20 } };
+const label = { fontSize: 24, fontWeight: 700, fill: "#526173" };
 
-const SCENES: Record<string, Scene> = {
-  bc0: {
-    head: "시작하기 버튼을 클릭했을 때",
-    rows: [
-      { kind: "variable", label: "[점수]를 {0}(으)로 정하기", indent: 0 },
-      { kind: "flow", label: "계속 반복하기", indent: 0 },
-      { kind: "flow", label: "만일 <벽돌|에 닿았는가?> (이)라면", indent: 1 },
-      { kind: "variable", label: "[점수]에 {1}만큼 더하기", indent: 2 },
-    ],
-    start: { 점수: "정하기 전" },
-    buttons: [
-      { label: "시작하기", press: () => ({ values: { 점수: "0" }, lit: [0], say: "시작할 때 한 번만 0이 돼요." }) },
-      { label: "벽돌에 닿았을 때", press: (v) => { if (v.점수 === "정하기 전") return { values: v, lit: [], say: "먼저 [시작하기]를 눌러 보세요." }; const score = Number(v.점수) + 1; return { values: { 점수: String(score) }, lit: [2, 3], say: `반복하며 확인하다가 닿으면 1을 더해요. 지금 점수는 ${score}점이에요.` }; } },
-    ],
-  },
-  bc1: {
-    head: "시작하기 버튼을 클릭했을 때",
-    rows: [
-      { kind: "flow", label: "계속 반복하기", indent: 0 },
-      { kind: "moving", label: "x: ~마우스|x|좌푯값~ 위치로 이동하기", indent: 1 },
-    ],
-    start: { "마우스 x": "0", "마우스 y": "0", "막대 x": "0", "막대 y": "-115" },
-    buttons: [
-      { label: "마우스 왼쪽 위", press: () => ({ values: { "마우스 x": "-80", "마우스 y": "60", "막대 x": "-80", "막대 y": "-115" }, lit: [1], say: "마우스 x가 -80이라 막대 x도 -80이에요. y는 그대로예요." }) },
-      { label: "마우스 오른쪽 아래", press: () => ({ values: { "마우스 x": "80", "마우스 y": "-60", "막대 x": "80", "막대 y": "-115" }, lit: [1], say: "마우스 x가 80이라 막대 x도 80이에요. y는 그대로예요." }) },
-      { label: "반복 빼 보기", press: () => ({ values: { "마우스 x": "80", "마우스 y": "0", "막대 x": "0", "막대 y": "-115" }, lit: [], say: "반복을 빼면, 마우스 x는 80인데 막대 x는 0 그대로예요. 한 번만 움직이고 끝나기 때문이에요." }) },
-    ],
-  },
-  bc2: {
-    head: "오브젝트를 클릭했을 때",
-    rows: [
-      { kind: "flow", label: "계속 반복하기", indent: 0 },
-      { kind: "moving", label: "① 이동 방향으로 {4}만큼 움직이기", indent: 1 },
-      { kind: "moving", label: "② 화면 끝에 닿으면 튕기기", indent: 1 },
-      { kind: "flow", label: "③ 만일 <아래쪽 벽|에 닿았는가?> (이)라면", indent: 1 },
-      { kind: "flow", label: "[모든] 코드 멈추기", indent: 2 },
-    ],
-    start: { "공 위치": "빈 곳", "아래쪽 벽에 닿았는가?": "거짓" },
-    buttons: [
-      { label: "공이 빈 곳에", press: () => ({ values: { "공 위치": "빈 곳", "아래쪽 벽에 닿았는가?": "거짓" }, lit: [1, 2, 3], say: "①움직였어요. 벽이 없어서 ②튕기지 않고, ③도 거짓이에요." }) },
-      { label: "공이 옆 벽에", press: () => ({ values: { "공 위치": "옆 벽", "아래쪽 벽에 닿았는가?": "거짓" }, lit: [1, 2, 3], say: "①움직이고 ②벽에서 방향이 바뀌었어요. ③은 아래쪽 벽이 아니라 거짓이에요." }) },
-      { label: "공이 아래쪽 벽에", press: () => ({ values: { "공 위치": "아래쪽 벽", "아래쪽 벽에 닿았는가?": "참" }, lit: [1, 2, 3, 4], say: "③아래쪽 벽이라 참! 모든 코드가 멈춰요." }) },
-    ],
-  },
-  bc3: {
-    head: "시작하기 버튼을 클릭했을 때",
-    rows: [
-      { kind: "flow", label: "계속 반복하기", indent: 0 },
-      { kind: "flow", label: "만일 <공|에 닿았는가?> (이)라면", indent: 1 },
-      { kind: "variable", label: "① [점수]에 {1}만큼 더하기", indent: 2 },
-      { kind: "looks", label: "② 모양 숨기기", indent: 2 },
-    ],
-    start: { 점수: "0", 벽돌: "있어요" },
-    buttons: [
-      { label: "공이 벽돌에 닿았을 때", press: (v) => v.벽돌 === "있어요"
-        ? { values: { 점수: String(Number(v.점수) + 1), 벽돌: "사라졌어요" }, lit: [1, 2, 3], say: "점수를 먼저 올리고, 그다음 벽돌이 사라져요." }
-        : { values: v, lit: [1], say: "벽돌이 숨어서 이제 닿지 않아요. 점수는 그대로예요." } },
-    ],
-  },
-};
+// Entry's stage in Entry's own numbers (x -240 to 240, y -135 to 135). Screen y runs down, so pictures draw at -y.
+function Stage({ name, at, inset = 0, onMove, children }: { name: string; at: Point; inset?: number; onMove: (point: Point) => void; children: ReactNode }) {
+  const go = (x: number, y: number) => onMove({ x: Math.round(Math.max(inset - 240, Math.min(240 - inset, x))), y: Math.round(Math.max(inset - 135, Math.min(135 - inset, y))) });
+  const follow = (event: PointerEvent<SVGSVGElement>) => { const box = event.currentTarget.getBoundingClientRect(); go((event.clientX - box.left) / box.width * 480 - 240, 135 - (event.clientY - box.top) / box.height * 270); };
+  const press = (event: KeyboardEvent<SVGSVGElement>) => { const step = ARROWS[event.key]; if (step) { event.preventDefault(); go(at.x + step.x, at.y + step.y); } };
+  return <svg className={styles.stage} viewBox="-240 -135 480 270" width="480" height="270" role="application" aria-label={name} tabIndex={0} onPointerMove={follow} onPointerDown={follow} onKeyDown={press}>
+    <path d="M-240 0H240M0-135V135" stroke="#dbe4f0" strokeWidth="2" />
+    <text x="222" y="-8" {...label}>x</text>
+    <text x="8" y="-110" {...label}>y</text>
+    {children}
+  </svg>;
+}
 
-// Ungraded and unsaved on purpose: only local state, so pressing never touches the student's work.
-export function BrickConceptPlay({ id }: { id: string }) {
-  const scene = SCENES[id];
-  const [state, setState] = useState<Press>({ values: scene.start, lit: [], say: "아래 버튼을 눌러 어떤 블록이 실행되는지 보세요." });
-  return <div className={styles.play}>
-    <BlockCode head={scene.head} slots={scene.rows.map((row) => row.indent)} kindOf={(i) => scene.rows[i].kind} renderSlot={(i) => <span className={styles.playRow} data-lit={state.lit.includes(i) || undefined}><EntryBlock kind={scene.rows[i].kind} label={scene.rows[i].label} />{state.lit.includes(i) && <span className={styles.playRan}>실행!</span>}</span>} />
-    <div className={styles.playSide}>
-      <div className={styles.playValues}>{Object.entries(state.values).map(([name, value]) => <span key={name}><small>{name}</small><b>{value}</b></span>)}</div>
-      <p className={styles.playSay} role="status">{state.say}</p>
-      <div className={styles.playButtons}>
-        {scene.buttons.map((button) => <Button key={button.label} onClick={() => setState(button.press(state.values))}>{button.label}</Button>)}
-        <Button variant="ghost" onClick={() => setState({ values: scene.start, lit: [], say: "처음 상태로 돌아왔어요." })}>처음으로</Button>
-      </div>
+const Values = ({ values }: { values: Record<string, string | number> }) => <div className={styles.playValues}>{Object.entries(values).map(([name, value]) => <span key={name}><small>{name}</small><b>{value}</b></span>)}</div>;
+
+function ScorePlay() {
+  const [score, setScore] = useState<number | null>(null);
+  const say = score === null ? "[시작하기]부터 눌러 보세요." : score === 0 ? "시작할 때 한 번 0이 됐어요." : `변수가 값을 기억해서 ${score}점까지 쌓였어요.`;
+  return <div className={styles.playSide}>
+    <Values values={{ 점수: score ?? "정하기 전" }} />
+    <p className={styles.playSay} role="status">{say}</p>
+    <div className={styles.playButtons}>
+      <Button onClick={() => setScore(0)}>시작하기</Button>
+      <Button disabled={score === null} onClick={() => setScore((score ?? 0) + 1)}>벽돌 깨기</Button>
     </div>
   </div>;
 }
+
+function MousePlay() {
+  const [mouse, setMouse] = useState<Point>({ x: 0, y: 0 });
+  return <div className={styles.play}>
+    <Stage name="무대. 마우스나 방향키로 움직여 보세요." at={mouse} onMove={setMouse}>
+      <path d={`M${mouse.x} ${-mouse.y}L${mouse.x} 107`} stroke="#376fc8" strokeWidth="2" strokeDasharray="6 6" />
+      <circle cx={mouse.x} cy={-mouse.y} r="10" fill="#376fc8" />
+      <rect x={mouse.x - 45} y="107" width="90" height="16" rx="8" fill="#ef4444" />
+    </Stage>
+    <div className={styles.playSide}>
+      <div role="status"><Values values={{ "마우스 x": mouse.x, "마우스 y": mouse.y, "막대 x": mouse.x, "막대 y": -115 }} /></div>
+      <p className={styles.playSay}>파란 점이 마우스예요. 무대 위에서 움직여 보세요.</p>
+    </div>
+  </div>;
+}
+
+function WallPlay() {
+  const [ball, setBall] = useState<Point>({ x: 0, y: 0 });
+  const bottom = ball.y <= -111, wall = !bottom && (Math.abs(ball.x) >= 216 || ball.y >= 111);
+  return <div className={styles.play}>
+    <Stage name="무대. 마우스나 방향키로 공을 벽에 갖다 대 보세요." at={ball} inset={16} onMove={setBall}>
+      <rect x="-240" y="125" width="480" height="10" fill="#ef4444" />
+      <text x="-226" y="116" {...label} fill="#b91c1c">아래쪽 벽</text>
+      <circle cx={ball.x} cy={-ball.y} r="16" fill={bottom ? "#ef4444" : "#376fc8"} />
+    </Stage>
+    <div className={styles.playSide}>
+      <Values values={{ "아래쪽 벽에 닿았는가?": bottom ? "참" : "거짓" }} />
+      <p className={styles.playSay} role="status">{bottom ? "참이 됐어요. 이때 게임이 끝나요." : wall ? "화면 끝에서는 튕겨요. 아래쪽 벽이 아니라서 거짓이에요." : "마우스로 공을 벽에 갖다 대 보세요."}</p>
+    </div>
+  </div>;
+}
+
+function BrickPlay() {
+  const bricks = [1, 2, 3];
+  const [gone, setGone] = useState<number[]>([]);
+  const [say, setSay] = useState("벽돌을 눌러 공이 닿았다고 해 보세요.");
+  const won = gone.length === bricks.length;
+  const hit = (brick: number) => {
+    if (gone.includes(brick)) return setSay("숨긴 벽돌에는 공이 닿지 않아요. 점수는 그대로예요.");
+    setGone([...gone, brick]);
+    setSay(gone.length + 1 === bricks.length ? "점수 값과 목표 개수가 같아져서 승리했어요!" : "점수가 오르고 벽돌이 숨었어요. 같은 벽돌을 다시 눌러 보세요.");
+  };
+  return <div className={styles.playSide}>
+    <div className={styles.playBricks}>
+      {bricks.map((brick) => <button key={brick} type="button" data-gone={gone.includes(brick) || undefined} aria-label={`벽돌 ${brick}${gone.includes(brick) ? ", 숨김" : ""}`} onClick={() => hit(brick)}>{gone.includes(brick) ? "숨김" : `벽돌 ${brick}`}</button>)}
+    </div>
+    <div className={styles.playButtons}>
+      <Values values={{ 점수: gone.length, "목표 개수": bricks.length }} />
+      {won && <b className={styles.tile} data-tone="true">You win!</b>}
+    </div>
+    <p className={styles.playSay} role="status">{say}</p>
+    {gone.length > 0 && <div className={styles.playButtons}><Button variant="ghost" onClick={() => { setGone([]); setSay("벽돌을 눌러 공이 닿았다고 해 보세요."); }}>다시 하기</Button></div>}
+  </div>;
+}
+
+export const BrickConceptPlay = ({ id }: { id: "bc0" | "bc1" | "bc2" | "bc3" }) => ({ bc0: <ScorePlay />, bc1: <MousePlay />, bc2: <WallPlay />, bc3: <BrickPlay /> })[id];

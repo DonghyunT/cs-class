@@ -13,7 +13,7 @@ export const BRICK_BREAKER_LESSON: Lesson = {
   category: "프로그래밍 · 변수와 게임 설계",
   description: "마우스를 따라 움직이는 막대, 통통 튀는 공, 점수가 오르며 사라지는 벽돌을 차례로 조립해 게임을 완성해요.",
   concepts: brickBreakerConcepts.map((c) => ({
-    id: c.id, title: c.title, explanation: c.explanation, keyPoint: c.keyPoint, example: c.example,
+    id: c.id, title: c.title, explanation: c.explanation, keyPoint: c.keyPoint, example: "",
     question: { id: c.id, prompt: c.prompt, options: [], assemble: { head: c.head, blocks: c.blocks.map((block) => ({ ...block })), slots: [...c.slots] }, hint: c.hint },
   })),
   quiz: brickBreakerQuestions.map((q) => ({

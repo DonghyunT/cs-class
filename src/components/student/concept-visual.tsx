@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { BrickConceptPlay } from "./brick-concept-play";
 import styles from "./concept-visual.module.css";
 
-// Small pictures for the common concept screen of the conditionals and loops lessons; brick-breaker's hold a hands-on play area.
+// Small pictures for the common concept screen of the conditionals and loops lessons; brick-breaker's are small things to play with.
 // The functions lesson shows hands-on experiences instead (function-concepts.tsx).
 // Keyed by concept id; lessons without an entry (reviews, programming-13) show nothing.
 const Tile = ({ tone = "blue", sub, children }: { tone?: "blue" | "true" | "false" | "purple"; sub?: string; children: ReactNode }) => <b className={styles.tile} data-tone={tone}>{children}{sub && <small>{sub}</small>}</b>;
@@ -64,14 +64,10 @@ export const CONCEPT_VISUALS: Record<string, { label: string; node: ReactNode; i
   lc4: { label: "마우스를 클릭했을 때(무대를 클릭할 때마다) 클릭 수에 1만큼 더하고, 클릭 수 값이 5가 되면 나무가 다음 모양으로 바뀌어 한 단계 자람", node: <>
     <Capture src="loops-count-variable" width={367} height={172} />
     <Tree stage={0} clicks="클릭 수 0" /><Op>→</Op><Tree stage={1} clicks="클릭 수 5" /></> },
-  bc0: { interactive: true, label: "점수를 시작할 때 0으로 정하고 벽돌에 닿을 때마다 1을 더하는 코드를 직접 눌러 보는 체험", node: <BrickConceptPlay id="bc0" /> },
-  bc1: { interactive: true, label: "막대가 마우스의 x 좌표만 따라가고 y는 그대로인 것을 직접 눌러 보는 체험", node: <>
-    <BrickConceptPlay id="bc1" />
-    <Card title="무대 좌표"><svg viewBox="0 0 180 104" width="180" height="104" aria-hidden="true"><defs>{flowHead}</defs><rect x="6" y="6" width="168" height="92" rx="8" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" /><circle cx="132" cy="34" r="5" fill="#376fc8" /><text x="132" y="23" textAnchor="middle" fontSize="14" fontWeight="700" fill="#2e5fab">마우스 x</text><path d="M132 41V66" stroke="#376fc8" strokeWidth="1.5" strokeDasharray="3 3" /><rect x="16" y="68" width="44" height="10" rx="5" fill="#fca5a5" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="2 2" /><path d="M64 73H104" {...flow} /><rect x="110" y="68" width="44" height="10" rx="5" fill="#ef4444" /><text x="90" y="92" textAnchor="middle" fontSize="14" fontWeight="600" fill="#526173">y 고정</text></svg></Card></> },
-  bc2: { interactive: true, label: "공이 움직이고 벽에서 튕기다가 아래쪽 벽에 닿으면 모든 코드가 멈추는 것을 직접 눌러 보는 체험", node: <BrickConceptPlay id="bc2" /> },
-  bc3: { interactive: true, label: "공에 닿은 벽돌이 점수를 1 올리고 사라지며, 점수가 목표와 같아지면 You win!이 나타나는 것을 보는 체험", node: <>
-    <BrickConceptPlay id="bc3" />
-    <Card title="모두 깼을 때"><Row><Tile sub="조건">점수 값 = 목표 개수</Tile><Op>→</Op><Tile tone="true">You win!</Tile></Row></Card></> },
+  bc0: { interactive: true, label: "시작하면 점수가 0이 되고 벽돌을 깰 때마다 1씩 쌓이는 것을 눌러 보는 체험", node: <BrickConceptPlay id="bc0" /> },
+  bc1: { interactive: true, label: "무대 위에서 마우스를 움직이면 막대가 x만 따라가고 y는 그대로인 것을 보는 체험", node: <BrickConceptPlay id="bc1" /> },
+  bc2: { interactive: true, label: "공을 벽에 갖다 대면 아래쪽 벽에서만 참이 되는 것을 보는 체험", node: <BrickConceptPlay id="bc2" /> },
+  bc3: { interactive: true, label: "벽돌을 누르면 점수가 오르고 벽돌이 숨으며, 모두 깨면 You win!이 나타나는 체험", node: <BrickConceptPlay id="bc3" /> },
 };
 
 export function ConceptVisual({ conceptId }: { conceptId: string }) {

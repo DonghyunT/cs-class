@@ -274,7 +274,7 @@ test("개념 도식 네 개와 퀴즈 다섯 문항의 코드 장면이 오류 �
   const scene = page.getByRole("group", { name: "읽어 볼 코드" });
   for (let i = 0; i < 5; i++) {
     await expect(scene.locator("img")).toBeVisible();
-    expect(await scene.locator("img").evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+    await expect.poll(() => scene.locator("img").evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
     const next = page.getByRole("button", { name: "다음 문제" });
     if (!await next.count()) break;
     await next.click();
@@ -316,7 +316,7 @@ test("개념 조립은 틀리면 틀린 칸을 알려 주고, 맞혀야 다음 �
   await expect(page.getByRole("navigation", { name: "개념 목록", exact: true }).getByRole("button", { name: /변수로 게임 점수/ })).toContainText("확인 완료");
 });
 
-test("개념 체험은 눌러 보면 값과 설명이 바뀌고, 저장하지 않으며 새로 고치면 처음으로 돌아간다", async ({ page }) => {
+test("개념 체험은 답이 되는 블록을 보이지 않고, 움직이면 값이 바뀌며, 저장하지 않고 새로 고치면 처음으로 돌아간다", async ({ page }) => {
   await page.goto("about:blank");
   await readyStudent(page.request);
   await db.collection("csWork").doc(`student-20101__${id}`).delete();
@@ -324,18 +324,31 @@ test("개념 체험은 눌러 보면 값과 설명이 바뀌고, 저장하지 �
   await page.goto(`/classroom/${id}?from=dashboard`);
   const play = page.locator("figure").first(), saves: string[] = [];
   page.on("request", (request) => { if (request.method() === "POST" && request.url().includes("/api/classroom/work/")) saves.push(request.url()); });
-  await expect(page.locator("#concept-bc0").getByText("점수는 처음 한 번만 0", { exact: false })).toBeVisible();
-  await play.getByRole("button", { name: "벽돌에 닿았을 때" }).click();
-  await expect(play.getByRole("status")).toHaveText("먼저 [시작하기]를 눌러 보세요.");
+  const tile = (name: string) => play.locator("span", { hasText: name }).locator("b");
+  await expect(page.locator("#concept-bc0").getByText("변수는 게임 중에 바뀌는 값", { exact: false })).toBeVisible();
+  await expect(play.locator("[data-kind]")).toHaveCount(0);
+  await expect(play.getByRole("button", { name: "벽돌 깨기" })).toBeDisabled();
   await play.getByRole("button", { name: "시작하기" }).click();
-  await expect(play.getByRole("status")).toHaveText("시작할 때 한 번만 0이 돼요.");
-  await play.getByRole("button", { name: "벽돌에 닿았을 때" }).click();
-  await play.getByRole("button", { name: "벽돌에 닿았을 때" }).click();
-  await expect(play.getByText("실행!")).toHaveCount(2);
-  await expect(play.locator("b", { hasText: /^2$/ })).toBeVisible();
+  await play.getByRole("button", { name: "벽돌 깨기" }).click();
+  await play.getByRole("button", { name: "벽돌 깨기" }).click();
+  await expect(tile("점수")).toHaveText("2");
+  expect(saves).toEqual([]);
+  await solveConcept(page, "bc0");
+  await page.getByRole("button", { name: "다음 개념" }).click();
+  saves.length = 0;
+
+  const stage = play.getByRole("application");
+  await stage.scrollIntoViewIfNeeded();
+  const box = (await stage.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.25);
+  await expect(tile("막대 x")).toHaveText("120");
+  await expect(tile("마우스 y")).not.toHaveText("0");
+  await expect(tile("막대 y")).toHaveText("-115");
+  await stage.press("ArrowRight");
+  await expect(tile("막대 x")).toHaveText("140");
   expect(saves).toEqual([]);
   await page.reload();
-  await expect(page.locator("figure").first().locator("b", { hasText: "정하기 전" })).toBeVisible();
+  await expect(page.locator("figure").first().locator("span", { hasText: "막대 x" }).locator("b")).toHaveText("0");
 });
 
 test("세 벽돌을 깨면 You win!과 점수가 정지하기 전까지 무대에 남는다", async ({ page }) => {

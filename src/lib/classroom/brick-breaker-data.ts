@@ -3,14 +3,13 @@
 // Each check is answered by assembling blocks: `slots` holds each slot's indent, and one block in `blocks` is not needed.
 // The order that counts as right stays on the server (solutions.ts).
 type AssembleBlock = { id: string; label: string; kind: "flow" | "moving" | "looks" | "variable" };
-export const brickBreakerConcepts: { id: string; title: string; tag: string; keyPoint: string; explanation: string; example: string; prompt: string; head: string; blocks: AssembleBlock[]; slots: number[]; hint: string; retry: string }[] = [
+export const brickBreakerConcepts: { id: string; title: string; tag: string; keyPoint: string; explanation: string; prompt: string; head: string; blocks: AssembleBlock[]; slots: number[]; hint: string; retry: string }[] = [
   {
     id: "bc0",
-    keyPoint: "점수는 처음 한 번만 0, 닿을 때마다 더해요.",
+    keyPoint: "변수는 게임 중에 바뀌는 값을 기억해요.",
     title: "변수로 게임 점수 기억하기",
     tag: "변수",
-    explanation: "변수는 게임이 돌아가는 동안 바뀌는 값을 담아 두는 상자예요. 시작할 때 0으로 정해 두고, 벽돌을 깰 때마다 ‘점수에 1만큼 더하기’를 실행하면 점수가 차곡차곡 쌓여요.",
-    example: "‘시작하기 버튼을 클릭했을 때’ 아래에서 점수를 0으로 정하고, 황금 벽돌에 닿을 때마다 ‘점수에 10만큼 더하기’를 실행하면 황금 벽돌 2개를 깼을 때 점수는 20이 돼요.",
+    explanation: "딱 한 번 할 일은 반복 밖에, 게임 내내 확인할 일은 반복 안에 둬요.",
     head: "시작하기 버튼을 클릭했을 때",
     prompt: "점수를 먼저 0으로 정하고, 황금 벽돌에 닿을 때마다 점수가 10씩 오르도록 블록을 조립해 보세요.",
     blocks: [
@@ -26,11 +25,10 @@ export const brickBreakerConcepts: { id: string; title: string; tag: string; key
   },
   {
     id: "bc1",
-    keyPoint: "막대는 x만 마우스를 따라가요. y는 그대로예요.",
+    keyPoint: "x는 가로 위치, y는 세로 위치예요.",
     title: "마우스를 따라 움직이는 좌표",
     tag: "좌표",
-    explanation: "무대의 가로 위치는 x 좌표, 세로 위치는 y 좌표로 나타내요. ‘계속 반복하기’ 안에서 ‘x: (마우스 x 좌푯값) 위치로 이동하기’를 실행하면 세로 높이는 그대로 둔 채 좌우로만 마우스를 따라다녀요.",
-    example: "y 좌표가 -115인 막대가 ‘계속 반복하기’ 안에서 ‘x: (마우스 x 좌푯값) 위치로 이동하기’를 실행하면, 마우스를 어디로 옮겨도 막대는 바닥 근처(y = -115)에서 좌우로만 움직여요.",
+    explanation: "이동 블록은 적힌 좌표만 바꿔요. 마우스를 계속 따라가려면 이동을 쉬지 않고 되풀이해야 해요.",
     head: "시작하기 버튼을 클릭했을 때",
     prompt: "막대가 높이는 그대로 둔 채 마우스를 좌우로만 계속 따라가도록 블록을 조립해 보세요.",
     blocks: [
@@ -44,11 +42,10 @@ export const brickBreakerConcepts: { id: string; title: string; tag: string; key
   },
   {
     id: "bc2",
-    keyPoint: "움직이고 튕기다가, 아래쪽 벽에 닿으면 끝나요.",
+    keyPoint: "‘닿았는가?’는 참 또는 거짓으로 답해요.",
     title: "닿았는가 판단과 튕기기",
     tag: "판단·움직임",
-    explanation: "‘공에 닿았는가?’ 같은 블록은 정말 닿았을 때만 ‘참’이 되는 판단 블록이에요. 공은 ‘화면 끝에 닿으면 튕기기’로 벽에서 튕기고, 막대에 닿으면 ‘막대에서 튕기기’ 함수로 방향을 바꿔 다시 위로 올라가요.",
-    example: "‘계속 반복하기’ 안에서 공이 ‘이동 방향으로 4만큼 움직이기’와 ‘화면 끝에 닿으면 튕기기’를 함께 실행하면, 무대 밖으로 사라지지 않고 벽을 칠 때마다 방향을 바꿔 계속 튀어요.",
+    explanation: "참일 때만 ‘만일’ 안쪽 블록이 실행돼요. 공은 화면 끝에서 튕겨서 밖으로 나가지 않아요.",
     head: "오브젝트를 클릭했을 때",
     prompt: "공이 움직인 다음 화면 끝에서 튕기기를 되풀이하고, 아래쪽 벽에 닿으면 게임이 끝나도록 블록을 조립해 보세요.",
     blocks: [
@@ -65,11 +62,10 @@ export const brickBreakerConcepts: { id: string; title: string; tag: string; key
   },
   {
     id: "bc3",
-    keyPoint: "공에 닿으면 점수를 올리고, 벽돌을 숨겨요.",
+    keyPoint: "숨긴 오브젝트에는 더 이상 닿지 않아요.",
     title: "벽돌 숨기기와 승리 조건 비교",
     tag: "비교·완성",
-    explanation: "벽돌이 공에 닿았을 때 점수를 올리고 ‘모양 숨기기’를 실행하면 화면에서 사라져요. 숨겨진 오브젝트는 더 이상 공에 닿지 않아서 점수가 한 번만 오르고, ‘점수 값 = 목표 개수’가 참이 되면 승리해요!",
-    example: "벽돌이 공에 닿았을 때 ‘점수에 1만큼 더하기’ 뒤 ‘모양 숨기기’를 실행하면, 깨진 벽돌 자리로 공이 다시 지나가도 점수가 중복으로 오르지 않아요.",
+    explanation: "그래서 벽돌 하나로 점수가 한 번만 올라요. ‘점수 값 = 목표 개수’가 참이 되면 승리해요.",
     head: "시작하기 버튼을 클릭했을 때",
     prompt: "벽돌이 공에 닿으면 점수를 1 올린 다음 화면에서 사라지도록 블록을 조립해 보세요.",
     blocks: [

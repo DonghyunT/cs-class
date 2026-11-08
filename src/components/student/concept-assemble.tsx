@@ -26,7 +26,7 @@ function BlockParts({ label }: { label: string }) {
   return <>{out}</>;
 }
 
-export const EntryBlock = ({ kind, label }: { kind: Kind; label: string }) =>
+const EntryBlock = ({ kind, label }: { kind: Kind; label: string }) =>
   <span className={styles.eb} data-kind={kind}><BlockParts label={label} /><span className={styles.ebIcon} aria-hidden="true">{ICONS[kind]}</span></span>;
 
 // Draws code like Entry: a slot followed by deeper slots is a container, wrapped around them.

@@ -52,16 +52,20 @@
 .assembleTray button:nth-child(3n) { transform: rotate(1.5deg); }
 .assembleTray button[aria-pressed="true"] { opacity: .5; }
 .assembleTray button:disabled { opacity: .55; }
-.play { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; width: 100%; min-width: 0; }
-.play .ebCode { flex: 2 1 420px; min-width: 0; --surface: #fff; }
-.playRow { position: relative; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.playRow[data-lit] .eb { outline: 3px solid #f59e0b; outline-offset: 1px; }
-.playRan { padding: 2px 8px; border-radius: 8px; background: #fef3c7; color: #92400e; font-size: 14px; font-weight: 700; }
+.play { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; width: 100%; min-width: 0; }
+/* pan-y keeps the page scrollable on a phone; sideways drags still reach the stage. */
+.stage { flex-basis: 360px; width: 100%; border: 2px solid #cbd5e1; border-radius: 12px; background: #fff; cursor: crosshair; touch-action: pan-y; }
+.stage:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
 .playSide { flex: 1 1 240px; display: grid; gap: 12px; min-width: 0; }
+.playBricks { display: flex; gap: 8px; }
+.playBricks button { flex: 1; min-height: 56px; padding: 0 8px; border: 2px solid #b45309; border-radius: 10px; background: #fbbf24; color: #1f2937; font-size: 16px; font-weight: 700; cursor: pointer; }
+.playBricks button[data-gone] { border-style: dashed; border-color: #94a3b8; background: transparent; color: #526173; }
+.playBricks button:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
 .playValues { display: flex; flex-wrap: wrap; gap: 8px; }
 .playValues span { display: grid; gap: 2px; min-width: 96px; padding: 8px 12px; border: 2px solid #c4d5f2; border-radius: 12px; background: #fff; }
 .playValues small { color: #526173; font-size: 14px; }
 .playValues b { color: #1e3a8a; font-size: 20px; }
+.playSide [role="status"] .playValues { display: grid; grid-template-columns: 1fr 1fr; }
 .playSay { margin: 0; color: #17202e; font-size: 17px; font-weight: 700; line-height: 1.5; word-break: keep-all; }
 .playButtons { display: flex; flex-wrap: wrap; gap: 8px; }
 .nest { display: grid; gap: 8px; padding: 10px; border-radius: 14px; background: #0284c7; color: #fff; font-size: 15px; font-weight: 650; text-align: left; }
