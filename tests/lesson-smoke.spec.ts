@@ -9,7 +9,8 @@ const ALL_LESSON_IDS = [
   "programming-13",
   "conditionals",
   "loops",
-  "functions"
+  "functions",
+  "brick-breaker"
 ];
 
 function getSelectedLessonIds(): string[] {
@@ -133,6 +134,23 @@ test.describe("선별 수업 스모크 검증 (Lesson Smoke)", () => {
       await db.collection("csWork").doc("student-20101__functions").delete();
       const marker = `함수 스모크 소감 ${Date.now()}`;
       await page.goto("/classroom/functions?from=lessons");
+      await page.getByRole("tab", { name: /실습/ }).click();
+
+      const textarea = page.getByRole("textbox", { name: "오늘 발견한 것을 한 줄로 남겨볼까요?" });
+      await textarea.fill(marker);
+      await saveDraft(page);
+
+      await page.reload();
+      await page.getByRole("tab", { name: /실습/ }).click();
+      await expect(page.getByRole("textbox", { name: "오늘 발견한 것을 한 줄로 남겨볼까요?" })).toHaveValue(marker);
+    });
+  }
+
+  if (selectedLessons.includes("brick-breaker")) {
+    test("벽돌 깨기 수업: 후기 입력 후 저장 및 새로고침 복원", async ({ page }) => {
+      await db.collection("csWork").doc("student-20101__brick-breaker").delete();
+      const marker = `벽돌 깨기 스모크 소감 ${Date.now()}`;
+      await page.goto("/classroom/brick-breaker?from=lessons");
       await page.getByRole("tab", { name: /실습/ }).click();
 
       const textarea = page.getByRole("textbox", { name: "오늘 발견한 것을 한 줄로 남겨볼까요?" });

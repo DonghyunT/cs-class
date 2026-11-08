@@ -19,7 +19,7 @@ const ENTRY_SHARED = [
   /^scripts\/(?:fetch-entry-library\.mjs|entry-library-picks\.json)$/
 ];
 
-// The concept-screen pictures; only conditionals and loops have entries, and the teacher preview shows them too.
+// The concept-screen pictures; conditionals, loops and brick-breaker have entries, and the teacher preview shows them too.
 const CONCEPT_VISUAL = /^src\/components\/student\/concept-visual(?:\.tsx|\.module\.css)$/;
 
 // Shared session and polling files stay unmapped, so local runs still need the full suite; automatic CI's smoke
@@ -175,6 +175,21 @@ export const LESSON_MAPPINGS = {
     ],
     tests: [
       "tests/functions.spec.ts",
+      "tests/teacher-lesson-preview.spec.ts"
+    ]
+  },
+  "brick-breaker": {
+    lessonId: "brick-breaker",
+    patterns: [
+      ...ENTRY_SHARED,
+      /^src\/lib\/classroom\/brick-breaker-(?:lesson|data)\.ts$/,
+      /^src\/components\/student\/(?:brick-concept-play|concept-assemble)\.tsx$/,
+      /^src\/lib\/classroom\/assemble\.ts$/,
+      /^tests\/brick-breaker\.spec\.ts$/,
+      CONCEPT_VISUAL
+    ],
+    tests: [
+      "tests/brick-breaker.spec.ts",
       "tests/teacher-lesson-preview.spec.ts"
     ]
   }

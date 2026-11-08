@@ -90,6 +90,7 @@ test('학생 이번 수업 우선·구체적 이어갈 곳과 다음 일정 5개
   await expect(agenda.locator('ul > li')).toHaveCount(5);
   await expect(agenda.getByRole('link', { name: '외 2개 · 전체 보기' })).toBeVisible();
   const lessonProgress = page.getByRole('region', { name: '수업별 학습 진도', exact: true });
+  await expect(lessonProgress.getByRole('article')).toHaveCount(3);
   const firstLesson = lessonProgress.getByRole('article').first();
   await expect(firstLesson).toContainText(programming.title);
   await expect(firstLesson.getByRole('link', { name: `${programming.title} · 실습 · 곱셈 계산기`, exact: true })).toHaveAttribute('href', `/classroom/${programming.id}?from=dashboard`);

@@ -79,6 +79,8 @@ function drawsIn(blocks, seen = new Set()) {
 }
 let waitsForEvents = false;
 let keepsDrawing = false;
+// A game that ends with ‘코드 멈추기’ keeps its last frame, because Entry's stop resets score, shapes and bubbles.
+let keepsResult = false;
 let reported = false;
 
 function captureScripts() {
@@ -227,8 +229,9 @@ try {
       };
     }
     // The lesson's own variables are rebuilt on save, so they cannot be deleted or renamed. Copy of
-    // LESSON_VARIABLES and MAX_STUDENT_VARIABLES in src/lib/classroom/programming-entry.ts.
-    const LESSON_VARIABLES = ["cs-A", "cs-B", "cs-clicks"];
+    // LESSON_VARIABLES and MAX_STUDENT_VARIABLES in src/lib/classroom/programming-entry.ts, plus brick-breaker's "score",
+    // which the server keeps as a student variable and restores in parseProgrammingProject.
+    const LESSON_VARIABLES = ["cs-A", "cs-B", "cs-clicks", "score"];
     const variables = Entry.variableContainer;
     const removeVariable = variables?.removeVariable, renameVariable = variables?.changeVariableName, addVariable = variables?._addVariable;
     if (typeof removeVariable === "function") variables.removeVariable = function (variable, ...rest) {
@@ -295,6 +298,7 @@ try {
   const resetActiveTime = () => { if (traced && monitor !== null) { activeTime = 0; lastTick = Date.now(); } };
   document.addEventListener("keydown", resetActiveTime, true);
   document.addEventListener("mousedown", resetActiveTime, true);
+  document.addEventListener("mousemove", resetActiveTime, true);
   document.addEventListener("touchstart", resetActiveTime, true);
   document.addEventListener("mouseup", () => queueMicrotask(changed));
   document.addEventListener("touchend", () => queueMicrotask(changed));
@@ -321,6 +325,7 @@ try {
     waitsForEvents = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => EVENT_STARTS.includes(thread.getFirstBlock()?.type)));
     // Only lines that run (a start or event block first) count; a loose pen block on the board does not.
     keepsDrawing = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => RUN_STARTS.includes(thread.getFirstBlock()?.type) && typeof thread.getBlockList === "function" && drawsIn(thread.getBlockList())));
+    keepsResult = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => RUN_STARTS.includes(thread.getFirstBlock()?.type) && typeof thread.getBlockList === "function" && thread.getBlockList().some((block) => block.type === "stop_object")));
     startedAt = Date.now();
     send("running", { running: true });
     clearInterval(monitor);
@@ -329,8 +334,8 @@ try {
       if (speech) lastSpeech = speech;
       const idle = Entry.container.getAllObjects().every((item) => item.script.executors.length === 0);
       if (idle && !(programming && keyMission)) {
-        if (!waitsForEvents && !keepsDrawing) void stop("finished");
-        else if (!reported) { result("finished"); reported = true; send("waiting", { drawing: !waitsForEvents }); }
+        if (!waitsForEvents && !keepsDrawing && !keepsResult) void stop("finished");
+        else if (!reported) { result("finished"); reported = true; send("waiting", { drawing: !waitsForEvents, result: keepsResult }); }
       }
       if (monitor === null) return;
       if (traced) {
