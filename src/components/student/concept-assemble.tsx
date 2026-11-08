@@ -67,7 +67,7 @@ export function ConceptAssemble({ question, answer, disabled, solved, onChange }
     <p className={styles.assemblePrompt}>{question.prompt}</p>
     <div role="group" aria-label="조립 칸"><BlockCode head={head} slots={slots} kindOf={(i) => placed[i] ? blockOf(placed[i]).kind : "empty"} renderSlot={slot} /></div>
     {!solved && <>
-      <p className={styles.assembleGuide}>시작 블록 바로 아래가 1번 칸이에요. 아래 블록을 누르면 빈칸에 차례로 들어가고, 넣은 블록을 다시 누르면 빠져요.</p>
+      <p className={styles.assembleGuide}>시작 블록 바로 아래가 1번 칸이에요. 아래 블록을 누르면 빈칸에 차례로 들어가고, 넣은 블록을 다시 누르면 빠져요. 블록 하나는 쓰지 않아요.</p>
       <div className={styles.assembleTray} role="group" aria-label="블록 모음">{blocks.map((block) => {
         const used = placed.includes(block.id);
         return <button key={block.id} id={trayId(block.id)} type="button" aria-label={blockText(block.label)} aria-pressed={used} disabled={disabled || (!used && full)} onClick={() => toggle(block.id)}><EntryBlock kind={block.kind} label={block.label} /></button>;

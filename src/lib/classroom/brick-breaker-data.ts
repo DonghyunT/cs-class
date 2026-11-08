@@ -16,7 +16,7 @@ export const brickBreakerConcepts: { id: string; title: string; tag: string; key
       { id: "a", label: "[점수]에 {10}만큼 더하기", kind: "variable" },
       { id: "c", label: "만일 <황금 벽돌|에 닿았는가?> (이)라면", kind: "flow" },
       { id: "d", label: "[점수]를 {0}(으)로 정하기", kind: "variable" },
-      { id: "e", label: "모양 숨기기", kind: "looks" },
+      { id: "e", label: "모양 보이기", kind: "looks" },
       { id: "f", label: "계속 반복하기", kind: "flow" },
     ],
     slots: [0, 0, 1, 2],
@@ -58,7 +58,7 @@ export const brickBreakerConcepts: { id: string; title: string; tag: string; key
     ],
     slots: [0, 1, 1, 1, 2],
     hint: "게임이 끝나는 조건과 그때 할 일을 짝지어 보세요. 움직이는 일은 계속 되풀이돼야 해요.",
-    retry: "움직이고 튕기는 일은 반복 안에서 되풀이하고, 아래쪽 벽에 닿았을 때 할 일은 ‘만일’ 안쪽에 넣어요.",
+    retry: "움직이고 튕기는 일은 반복 안에서 되풀이하고, 아래쪽 벽에 닿았을 때 할 일은 ‘만일’ 안쪽에 넣어요. 게임을 끝내는 블록은 ‘모든 코드 멈추기’예요.",
   },
   {
     id: "bc3",

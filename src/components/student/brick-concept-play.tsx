@@ -64,7 +64,7 @@ function WallPlay() {
     </Stage>
     <div className={styles.playSide}>
       <Values values={{ "아래쪽 벽에 닿았는가?": bottom ? "참" : "거짓" }} />
-      <p className={styles.playSay} role="status">{bottom ? "참이 됐어요. 이때 게임이 끝나요." : wall ? "화면 끝에서는 튕겨요. 아래쪽 벽이 아니라서 거짓이에요." : "마우스로 공을 벽에 갖다 대 보세요."}</p>
+      <p className={styles.playSay} role="status">{bottom ? "참이 됐어요. 이때 ‘모든 코드 멈추기’로 게임을 끝내요." : wall ? "화면 끝에서는 튕겨요. 아래쪽 벽이 아니라서 거짓이에요." : "마우스로 공을 벽에 갖다 대 보세요."}</p>
     </div>
   </div>;
 }
