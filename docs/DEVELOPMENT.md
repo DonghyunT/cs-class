@@ -282,8 +282,8 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 - **저장 파서와 기존 키:** `parseProgrammingProject`는 원래 12종 블록을 기존 분기 그대로 정제하고, 그 밖의 팔레트 블록만 일반 규칙(원래 `params`, 반복·조건 블록에만 `statements`)으로 보존합니다. 이 순서를 바꾸면 기존 작품의 `key`가 달라져 검증·제출 기록이 어긋납니다. `tests/fixtures/entry-legacy-keys.json`이 기존 키·정규화·채점 결과를 고정하며, 이 파일과 `entry-legacy-objects.json`을 다시 만들거나 고치는 변경은 `tests/`만 바꾸더라도 PR 경로로 합니다. 의도한 형식 변경이 아닌데 검사가 실패하면 고정 파일이 아니라 파서를 고칩니다.
 - **실행·이벤트 및 내부 패치 방어:**
   - **실행 버튼:** 프로그래밍 수업은 툴바 실행 버튼 없이 엔트리의 "시작하기/정지하기"를 씁니다(`entry-bot-lab`은 툴바 버튼 유지).
-  - **감시기:** 모든 오브젝트의 실행 코드가 비면 끝내되, 이벤트로 시작하는 줄이 있으면 결과와 이름 실행 기록을 `finished`로 한 번 보내고 `waiting`을 알린 뒤 정지·15초까지 유지합니다. 실행되는 줄(시작·이벤트 블록으로 시작하는 줄)에 붓 블록(`start_drawing`·`start_fill`)이 있는 실행도 시작 줄이 끝난 뒤 정지하지 않고 같은 대기 상태로 두며(`waiting`의 `drawing`), 엔트리는 정지할 때 선·채우기·위치·말풍선을 처음 상태로 되돌리기 때문입니다(도장은 남으므로 대상이 아님).
-  - **15초 강제 종료:** 타이머(`activeTime`)는 매 틱 유휴 여부(`idle`)를 먼저 판정해 질문 블록에 머문 실행 줄(`asking`)과 이벤트 대기(`waitingIdle`)를 시간 누적에서 제외하며, 사용자 입력(`keydown`, `mousedown`, `touchstart`, 부모 창의 `key` 메시지)이 들어오면 `activeTime`을 0으로 초기화합니다.
+  - **감시기:** 모든 오브젝트의 실행 코드가 비면 끝내되, 이벤트로 시작하는 줄이 있으면 결과와 이름 실행 기록을 `finished`로 한 번 보내고 `waiting`을 알린 뒤 정지·15초까지 유지합니다. 실행되는 줄(시작·이벤트 블록으로 시작하는 줄)에 붓 블록(`start_drawing`·`start_fill`)이 있는 실행도 시작 줄이 끝난 뒤 정지하지 않고 같은 대기 상태로 두며(`waiting`의 `drawing`), 엔트리는 정지할 때 선·채우기·위치·말풍선을 처음 상태로 되돌리기 때문입니다(도장은 남으므로 대상이 아님). `stop_object`가 있는 실행 줄(벽돌 깨기)도 같은 까닭으로 모든 코드가 끝나면 승패 화면을 남기고 `waiting`의 `result`로 알립니다.
+  - **15초 강제 종료:** 타이머(`activeTime`)는 매 틱 유휴 여부(`idle`)를 먼저 판정해 질문 블록에 머문 실행 줄(`asking`)과 이벤트 대기(`waitingIdle`)를 시간 누적에서 제외하며, 사용자 입력(`keydown`, `mousedown`, `mousemove`, `touchstart`, 부모 창의 `key` 메시지)이 들어오면 `activeTime`을 0으로 초기화합니다.
   - **내부 패치:** `workspace.js`에서 EntryJS 내부 함수(`CanvasInput.prototype.render`, `Entry.block.*.func`/`def`, `Entry.container.*`)를 패치할 때는 `typeof ... === "function"` 존재 검사를 먼저 거칩니다.
   - **이름 실행 기록:** 강아지(`entity.parent.id === "entrybot"`)의 묻기·말하기만 남깁니다.
   - **테스트:** `tests/emulator.ts`의 `entryStart`·`entryStop`·`entryReset` 도우미를 씁니다.

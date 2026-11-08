@@ -25,7 +25,8 @@ const CHANNEL = "cs-class-entryjs";
 const WAITING = " 키를 누르거나 무대·오브젝트를 클릭해 보세요. 다 해 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 조건을 검증할 수 있어요.";
 // Entry's stop resets the stage, so drawing runs stay until the student stops them.
 const DRAWING = " 그린 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가고, 그다음 조건을 검증할 수 있어요.";
-const withoutWaiting = (text: string) => [WAITING, DRAWING].reduce((rest, notice) => rest.endsWith(notice) ? rest.slice(0, -notice.length) : rest, text);
+const RESULT = " 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가고, 그다음 조건을 검증할 수 있어요.";
+const withoutWaiting = (text: string) => [WAITING, DRAWING, RESULT].reduce((rest, notice) => rest.endsWith(notice) ? rest.slice(0, -notice.length) : rest, text);
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
 export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, actionsBlocked = false, update, runAction, exportRef, mission, saveLabel, saveState, workspaceWide, practiceFocused = false, mode = "student", onWorkspaceWideChange, onSave, onReadyChange, onFunctionEditingChange }: {
@@ -160,7 +161,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         else setResult(`${finish} 현재 위치 X ${Math.round(message.x * 100) / 100} · Y ${Math.round(message.y * 100) / 100}${message.speech ? ` · 마지막 말: ${message.speech.slice(0, 80)}` : ""}`);
       } else if (message.type === "error") { window.clearTimeout(bootTimer.current); setPhase("failed"); setError("작업실을 불러오지 못했어요. 입력한 작품은 이 화면에 유지하고 있어요."); }
       else if (message.type === "focus-return") document.getElementById(mission ? "entry-reset" : "entry-run")?.focus();
-      else if (mission && message.type === "waiting") setResult((text) => `${withoutWaiting(text)}${message.drawing === true ? DRAWING : WAITING}`);
+      else if (mission && message.type === "waiting") setResult((text) => `${withoutWaiting(text)}${message.result === true ? RESULT : message.drawing === true ? DRAWING : WAITING}`);
       else if (mission && message.type === "waiting-ended") setResult((text) => `${withoutWaiting(text)} ${message.reason === "timeout" ? "15초가 지나 실행을 멈췄어요." : "실행을 멈췄어요."}`);
       else if (free && message.type === "clone-blocked") setResult(`오브젝트는 ${MAX_FREE_OBJECTS}개까지 둘 수 있어요.`);
       else if (mission && message.type === "clone-blocked") setResult(message.reason === "main" ? "강아지는 복제할 수 없어요. ‘오브젝트 추가하기’로 새 오브젝트를 더해 주세요." : `오브젝트는 강아지 말고 ${MAX_ADDED_OBJECTS}개까지 추가할 수 있어요.`);

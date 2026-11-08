@@ -5,9 +5,8 @@ import { COUNTER, KEY_LABELS, entryNumeric, functionCallId, missionBlockIssue, m
 class MissionError extends Error {}
 // Thrown by ‘반복 중단하기’ and caught by the nearest loop.
 class StopRepeat extends Error {}
-class StopObject extends Error {
-  constructor(readonly target: string) { super(); }
-}
+// Thrown by ‘코드 멈추기’ and caught where the line was started.
+class StopObject extends Error {}
 
 // One run may evaluate at most this many blocks, keep this long a text and say this many lines.
 const MAX_STEPS = 20_000, MAX_TEXT = 500, MAX_SPEECH = 50, MAX_REPEAT = 1000, MAX_SEGMENTS = 200, MAX_CALL_DEPTH = 20;
@@ -49,8 +48,7 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     // The first answer stored in each variable, so a result saved over A later still counts.
     const firstInput: Record<string, Value> = {};
     let actor: Actor | null = null;
-    const forevers: { body: EntryNode[]; actor: Actor | null; active: boolean }[] = [];
-    let currentForever: { body: EntryNode[]; actor: Actor | null; active: boolean } | null = null;
+    const forevers: { body: EntryNode[]; actor: Actor | null }[] = [];
     let answer = "", asks = 0, x = 0, y = 0, direction = 90, mouseX = 0, mouseY = 0, bouncedWall = false, stopped: string | null = null;
     let touching = new Set<string>();
     let steps = 0, speeches = 0, usedLogic = false, rotation = 0, drawing = false, loopDepth = 0, asksInLoop = 0;
@@ -137,16 +135,13 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       x = nextX; y = nextY;
     };
     function loop(body: EntryNode[], next: () => boolean, forever = false) {
-      let tracked = currentForever;
-      if (forever && observe) { tracked = { body, actor, active: true }; forevers.push(tracked); let left = FRAMES; next = () => left-- > 0; }
-      const prevForever = currentForever; currentForever = tracked;
+      if (forever && observe) { forevers.push({ body, actor }); let left = FRAMES; next = () => left-- > 0; }
       loopDepth++;
       // `drew` counts the passes that drew: a loop drawing on one pass only is not repetition.
       const outer = again, drawn: Stroke[] = [], loopId = loopPasses.push(0) - 1; let passes = 0, drew = 0;
       open.push(drawn); loopStack.push(loopId);
-      try { while (next()) { step(); again = outer || passes++ > 0; const before = drawn.length; try { exec(body); } catch (error) { if (error instanceof StopRepeat) { if (loopDepth === 1 && tracked) tracked.active = false; break; } throw error; } finally { if (drawn.length > before) drew++; } } }
-      finally { currentForever = prevForever; loopDepth--; again = outer; open.pop(); loopStack.pop(); loopPasses[loopId] = passes; if (drew > 1) for (const s of drawn) s.repeated = true; }
-
+      try { while (next()) { step(); again = outer || passes++ > 0; const before = drawn.length; try { exec(body); } catch (error) { if (error instanceof StopRepeat) break; throw error; } finally { if (drawn.length > before) drew++; } } }
+      finally { loopDepth--; again = outer; open.pop(); loopStack.pop(); loopPasses[loopId] = passes; if (drew > 1) for (const s of drawn) s.repeated = true; }
     }
     function exec(list: EntryNode[]) {
       for (const n of list) {
@@ -227,28 +222,19 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
         // Following the mouse does not change what is graded.
         else if (n.type === "locate") continue;
         else if (n.type === "stop_repeat") { if (!loopDepth) throw new MissionError("‘반복 중단하기’는 반복 블록 안에 넣어 주세요."); throw new StopRepeat(); }
-        else if (n.type === "stop_object") {
-          const mode = String(n.params[0] ?? "all");
-          if (mode === "thisOnly") { for (const f of forevers) if (f !== currentForever && f.actor === actor) f.active = false; }
-          else if (mode === "otherThread" || mode === "other_objects") { for (const f of forevers) if (f.actor !== actor) f.active = false; }
-          else {
-            stopped = mode;
-            if (mode === "all") for (const f of forevers) f.active = false;
-            else if (currentForever) currentForever.active = false;
-            throw new StopObject(mode);
-          }
-        }
+        // shortcut: every ‘코드 멈추기’ target ends the whole simulated run; model each target before a mission accepts anything but ‘모든 코드’.
+        else if (n.type === "stop_object") { stopped = String(n.params[0] ?? "all"); throw new StopObject(); }
         else throw new MissionError("시작 블록은 맨 위에 두고 동작을 아래로 연결해 주세요.");
       }
     }
-    const result = () => ({ variables, firstInput, asks, x, y, direction, rotation, usedLogic, segments, asksInLoop, sayings, calls, loopPasses, shapes, stopped, bouncedWall, foreversStopped: forevers.length > 0 && forevers.every((f) => !f.active) });
+    const result = () => ({ variables, firstInput, asks, x, y, direction, rotation, usedLogic, segments, asksInLoop, sayings, calls, loopPasses, shapes, stopped, bouncedWall });
     return {
       result, variables,
       run(list: EntryNode[], who: Actor | null) { actor = who; try { exec(list); } catch (error) { if (!(error instanceof StopObject)) throw error; } },
       // Start from an object's saved 이동 방향, 방향 and 회전 방식 instead of Entry's defaults.
       orient(moving: number, turned: number, method: string) { rotationLocked = method !== "free"; direction = moving; rotation = rotationLocked ? 0 : turned; },
       // One more watch of every forever loop, as frames passing on the stage.
-      frames(passes = FRAMES) { for (const item of [...forevers]) { if (stopped === "all") break; if (!item.active) continue; actor = item.actor; currentForever = item; let left = passes; try { loop(item.body, () => item.active && left-- > 0); } catch (error) { if (!(error instanceof StopObject)) throw error; } finally { currentForever = null; } } },
+      frames(passes = FRAMES) { for (const { body, actor: who } of [...forevers]) { if (stopped) break; actor = who; let left = passes; try { loop(body, () => left-- > 0); } catch (error) { if (!(error instanceof StopObject)) throw error; } } },
       place(px: number, py: number) { x = px; y = py; },
       sense(mx: number, my: number, hits: readonly string[] = []) { mouseX = mx; mouseY = my; touching = new Set(hits); bouncedWall = false; },
     };
@@ -417,7 +403,6 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   const normAngle = (deg: number) => ((deg % 360) + 360) % 360;
   const angleDiff = (a: number, b: number) => { const d = Math.abs(normAngle(a) - normAngle(b)); return Math.min(d, 360 - d); };
   function gradePaddle() {
-    if (p!.threads.length) run("click", [], machine([], true));
     const pad = p!.added.find((o) => o.id === "paddle" || o.sprite === "paddle");
     if (!pad) return false;
     const starts = pad.threads.filter((t) => t[0]?.type === "when_run_button_click");
@@ -436,7 +421,6 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     return true;
   }
   function gradeBall(checkBricks = false) {
-    if (p!.threads.length) run("click", [], machine([], true));
     const ballObj = p!.added.find((o) => o.id === "ball" || o.sprite === "ball");
     if (!ballObj) return false;
     const starts = ballObj.threads.filter((t) => t[0]?.type === "when_run_button_click" || t[0]?.type === "when_object_click");
@@ -470,16 +454,9 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     for (const wall of ["wall_up", "wall_left", "wall_right"]) { m.sense(0, 0, [wall]); m.frames(1); if (m.result().stopped !== null) return false; }
     m.sense(0, 0, ["wall_down", `${ballObj.id}:wall_down`]);
     m.frames(1);
-    if (m.result().stopped !== "all") {
-      const pos = m.result();
-      m.sense(0, 0, []);
-      m.frames(1);
-      if (Math.hypot(m.result().x - pos.x, m.result().y - pos.y) > 0.0001) return false;
-    }
-    return true;
+    return m.result().stopped === "all";
   }
   function gradeBrick() {
-    if (p!.threads.length) run("click", [], machine([], true));
     const brickIds = ["brick1", "brick2", "brick3"] as const;
     if (!brickIds.every((bid) => p!.added.some((o) => o.id === bid))) return false;
     const scoreId = p!.variables.find((v) => v.id === "score" || v.name === "점수")?.id ?? "score";
@@ -509,12 +486,12 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       }
       m.sense(0, 0, []);
       m.frames(1);
-      const won = hasWin(m.result().sayings) && (m.result().stopped !== null || m.result().foreversStopped);
+      const won = hasWin(m.result().sayings) && m.result().stopped === "all";
       return { ok: true, won };
     };
     const a = runOrder(["brick1", "brick2", "brick3"]);
     const b = runOrder(["brick2", "brick3", "brick1"]);
-    return a.ok && b.ok && (a.won || b.won);
+    return a.ok && b.ok && a.won && b.won;
   }
   function grade(): boolean {
     if (id === "name") return ["초코", "보리"].every((value) => { const r = run("click", [value]); return r.asks === 1 && r.sayings.some((s) => s.input && s.text.includes(value)); });

@@ -9,7 +9,7 @@ import {
 } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission } from "../src/lib/server/programming-grader";
 import type { Work } from "../src/lib/classroom/types";
-import { db, headers, readyStudent, readyTeacher, entryReset } from "./emulator";
+import { db, headers, readyStudent, readyTeacher, entryReset, entryStart, entryStop } from "./emulator";
 
 const id = "brick-breaker", endpoint = `/api/classroom/work/${id}`;
 const node = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
@@ -29,9 +29,9 @@ const paddleThread: EntryNode[] = [start(), forever([node("locate_x", node("coor
 const ballThread: EntryNode[] = [
   start(),
   forever([
-    node("move_direction", number("10"), null),
+    node("move_direction", number("3"), null),
     node("bounce_wall", null),
-    ifNode(node("reach_something", null, "paddle", null), [node("direction_relative", node("angle", "90"), null)]),
+    ifNode(node("reach_something", null, "paddle", null), [node("direction_relative", node("angle", "90"), null), node("move_direction", number("20"), null)]),
     ifNode(node("reach_something", null, "wall_down", null), [node("stop_object", "all", null)])
   ])
 ];
@@ -41,7 +41,13 @@ const brickHitThread: EntryNode[] = [
     ifNode(node("reach_something", null, "ball", null), [
       node("change_variable", "score", number("1"), null),
       node("hide", null)
-    ]),
+    ])
+  ])
+];
+const paddleWinThread: EntryNode[] = [
+  start(),
+  forever([
+    node("locate_x", node("coordinate_mouse", null, "x", null), null),
     ifNode(node("boolean_basic_operator", node("get_variable", "score"), "EQUAL", number("3")), [
       node("dialog", text("성공!"), "speak", null),
       node("stop_object", "all", null)
@@ -64,8 +70,8 @@ const ballBrickBounceThread: EntryNode[] = [
 const solutions: Record<string, string> = {
   paddle: onBrickStarter("paddle", { paddle: [paddleThread] }),
   ball: onBrickStarter("ball", { paddle: [paddleThread], ball: [ballThread] }),
-  brick: onBrickStarter("brick", { paddle: [paddleThread], ball: [ballThread], brick1: [brickHitThread] }),
-  "brick-bounce": onBrickStarter("brick-bounce", { paddle: [paddleThread], ball: [ballBrickBounceThread] })
+  brick: onBrickStarter("brick", { paddle: [paddleWinThread], ball: [ballThread], brick1: [brickHitThread] }),
+  "brick-bounce": onBrickStarter("brick-bounce", { ball: [ballBrickBounceThread] })
 };
 
 async function open(page: Page, mission: string, project = missionStarter(mission)) {
@@ -184,7 +190,7 @@ test("벽돌 깨기 채점기는 흔한 오개념(일회성 이동·고정 좌�
   });
   expect(checkProgrammingMission("brick", noHideBrick)).toMatchObject({
     passed: false,
-    message: expect.stringContaining("숨기며")
+    message: expect.stringContaining("숨기는지")
   });
   const greaterThanThreeBrick = onBrickStarter("brick", {
     brick1: [[
@@ -203,7 +209,7 @@ test("벽돌 깨기 채점기는 흔한 오개념(일회성 이동·고정 좌�
   });
   expect(checkProgrammingMission("brick", greaterThanThreeBrick)).toMatchObject({
     passed: false,
-    message: expect.stringContaining("성공!")
+    message: expect.stringContaining("점수 값 = 3")
   });
   expect(checkProgrammingMission("brick", solutions.brick).passed).toBe(true);
 
@@ -263,6 +269,47 @@ test("개념 도식 네 개와 퀴즈 다섯 문항의 코드 장면이 오류 �
     await next.click();
   }
   expect(errors).toEqual([]);
+});
+
+test("개념 그림은 좁은 화면(375px)에서도 페이지를 넘치게 하지 않는다", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("about:blank");
+  await readyStudent(page.request);
+  await db.collection("csWork").doc(`student-20101__${id}`).delete();
+  await db.collection("csClasses").doc("2-1").update({ currentLessonId: id, openedLessonIds: [id] });
+  await page.goto(`/classroom/${id}?from=dashboard`);
+  for (let i = 0; i < 4; i++) {
+    await expect(page.locator("figure[role=img]").first()).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), `concept ${i}`).toBeLessThanOrEqual(1);
+    if (i < 3) await page.getByRole("button", { name: "다음 개념" }).click();
+  }
+});
+
+test("세 벽돌을 깨면 막대의 ‘성공!’ 말풍선과 점수가 정지하기 전까지 무대에 남는다", async ({ page }) => {
+  await open(page, "brick", solutions.brick);
+  const frame = workspaceFrame(page);
+  const ending = () => frame.evaluate(() => {
+    const E = (window as unknown as { Entry: Record<string, any> }).Entry; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const paddle = E.container.getAllObjects().find((o: { id: string }) => o.id === "paddle").entity;
+    return { state: E.engine.state, score: Number(E.variableContainer.variables_.find((v: { getName: () => string }) => v.getName() === "점수").getValue()), bubble: paddle.dialog?.message_ ?? null, bubbleVisible: paddle.dialog?.object?.visible ?? null };
+  });
+  await entryStart(page).click();
+  // The ball is moved onto each brick: this test is about the ending, not about catching the ball.
+  for (const brick of ["brick1", "brick2", "brick3"]) {
+    await expect.poll(() => frame.evaluate((target) => {
+      const objects = (window as unknown as { Entry: { container: { getAllObjects: () => { id: string; entity: { getX: () => number; getY: () => number; setX: (v: number) => void; setY: (v: number) => void; getVisible: () => boolean } }[] } } }).Entry.container.getAllObjects();
+      const item = objects.find((o) => o.id === target)!.entity, ball = objects.find((o) => o.id === "ball")!.entity;
+      if (!item.getVisible()) return true;
+      ball.setX(item.getX()); ball.setY(item.getY());
+      return false;
+    }, brick)).toBe(true);
+  }
+  await expect.poll(ending).toMatchObject({ score: 3, bubble: "성공!", bubbleVisible: true });
+  await page.waitForTimeout(1000);
+  expect(await ending()).toMatchObject({ state: "run", score: 3, bubble: "성공!", bubbleVisible: true });
+  await expect(page.getByText("결과를 다 봤으면").first()).toBeVisible();
+  await entryStop(page).click();
+  await expect.poll(async () => (await ending()).score).toBe(0);
 });
 
 for (const mission of Object.keys(solutions)) {

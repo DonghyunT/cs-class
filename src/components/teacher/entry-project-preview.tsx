@@ -21,7 +21,8 @@ const CHANNEL = "cs-class-entryjs";
 const WAITING = " 키를 누르거나 무대·오브젝트를 클릭해 보세요. 다 해 봤으면 무대 아래 ‘정지하기’를 눌러 주세요.";
 // Entry's stop resets the stage, so drawing runs stay until the teacher stops them.
 const DRAWING = " 그린 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가요.";
-const withoutWaiting = (text: string) => [WAITING, DRAWING].reduce((rest, notice) => rest.endsWith(notice) ? rest.slice(0, -notice.length) : rest, text);
+const RESULT = " 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가요.";
+const withoutWaiting = (text: string) => [WAITING, DRAWING, RESULT].reduce((rest, notice) => rest.endsWith(notice) ? rest.slice(0, -notice.length) : rest, text);
 
 type EntryCategory = (typeof ENTRY_PALETTE)[number]["category"];
 
@@ -207,7 +208,7 @@ export function EntryProjectPreview({
           `${finish} 현재 위치 X ${Math.round(message.x * 100) / 100} · Y ${Math.round(message.y * 100) / 100} · 마지막 말: ${message.speech.slice(0, 80) || "아직 없음"}`,
         );
       } else if (message.type === "waiting") {
-        setResult((text) => `${withoutWaiting(text)}${message.drawing === true ? DRAWING : WAITING}`);
+        setResult((text) => `${withoutWaiting(text)}${message.result === true ? RESULT : message.drawing === true ? DRAWING : WAITING}`);
       } else if (message.type === "waiting-ended") {
         setResult((text) => `${withoutWaiting(text)} ${message.reason === "timeout" ? "15초가 지나 실행을 멈췄어요." : "실행을 멈췄어요."}`);
       } else if (message.type === "error") {
