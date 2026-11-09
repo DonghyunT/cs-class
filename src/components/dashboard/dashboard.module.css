@@ -26,7 +26,6 @@
 .classPicker :global([data-slot="select-trigger"]) { width: auto; max-width: 100%; }
 .headingTools { display: flex; align-items: center; justify-content: end; gap: 8px; flex-shrink: 0; }
 .page .refresh[data-slot="button"] { min-height: 44px; min-width: 44px; width: 44px; height: 44px; padding: 0; color: #526173; border-radius: 10px; }
-.sectionTools { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 12px; margin-left: auto; max-width: 100%; }
 .page .compactControl[data-slot="button"] { min-height: 44px; min-width: 44px; padding: 8px 10px; gap: 6px; font-size: 13px; border-radius: 10px; color: #526173; white-space: nowrap; }
 .current { position: relative; isolation: isolate; overflow: hidden; border: 1px solid #d7e3f7; border-radius: 22px; background: linear-gradient(112deg, #eaf2ff 0%, #f1f4ff 68%, var(--plum-soft) 100%); box-shadow: 0 18px 38px -34px #376fc8; padding: 24px 28px; display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 26px; }
 .current::before { content: ""; position: absolute; right: 12%; top: -145px; width: 280px; height: 280px; border: 1px solid #fff; border-radius: 50%; background: #ffffff52; pointer-events: none; }
@@ -47,7 +46,7 @@
 .watchPanel { --accent-soft: var(--gold-soft); border-color: #eee3c0; }
 .todoPanel, .schedulePanel { --accent-soft: var(--plum-soft); border-color: #f1dde8; }
 .actionsPanel, .watchPanel, .todoPanel, .schedulePanel { background: linear-gradient(var(--accent-soft), #fff 56px); }
-.panel h2, .eventForm h2 { font-size: 19px; font-weight: 700; line-height: 1.5; letter-spacing: -.025em; }
+.panel h2 { font-size: 19px; font-weight: 700; line-height: 1.5; letter-spacing: -.025em; }
 .sectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 15px; }
 .sectionTitle { display: inline-flex; align-items: center; gap: 11px; min-width: 0; }
 .titleIcon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; }
@@ -76,6 +75,7 @@
 .rowActions button { display: grid; place-items: center; width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 10px; background: transparent; color: #526173; cursor: pointer; }
 .rowActions button:hover { background: #f0f5ff; color: #376fc8; }
 .rowActions button:disabled { opacity: .45; cursor: default; }
+.classPicker b { font-weight: 700; }
 .addTodo { margin-top: 20px; }
 .addTodo > label { display: block; color: #526173; font-size: 13px; margin-bottom: 8px; }
 .addTodo > div { display: flex; gap: 8px; }
@@ -103,13 +103,28 @@
 .eventList li > div:not(.rowActions) { min-width: 0; flex: 1; }
 .eventList strong { display: block; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
 .eventList .rowActions { margin-left: auto; }
-.timetableNotice { display: flex; gap: 16px; align-items: center; justify-content: space-between; background: #fff8f3; border: 1px solid #efdfd7; border-radius: 16px; padding: 16px; margin: 12px 0; }
-.timetableNotice > div { min-width: 0; }
-.timetableNotice strong { font-size: 14px; }
-.timetableNotice p { color: #526173; font-size: 12px; margin: 6px 0; overflow-wrap: anywhere; }
-.timetableNotice a { color: #2e5fab; display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; }
-.timetableNotice > button { flex-shrink: 0; }
-.eventList small.timetableChanged { color: #8e4b2c; font-weight: 650; }
+.scheduleList .eventList > li { align-items: center; padding: 14px 0; }
+.eventList .dateTile { display: grid; justify-items: center; width: 60px; padding: 7px 0; border-radius: 14px; background: var(--plum-soft); color: var(--plum-ink); line-height: 1.3; }
+.eventList .dateTile small { color: inherit; font-weight: 600; }
+.dateTile b { font-size: 22px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.eventList .dateTile[aria-current="date"] { background: #376fc8; color: #fff; }
+.scheduleHistory .eventList .dateTile { background: #f1f3f7; color: #526173; }
+.eventMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 5px; color: #526173; font-size: 13px; }
+.eventMeta > span { display: inline-flex; align-items: center; gap: 4px; }
+.eventMeta > .tag { padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 650; }
+.schoolTag { color: #2e5fab; background: #eaf2ff; }
+.classTag { color: var(--plum-ink); background: var(--plum-soft); }
+.changedTag { color: var(--warm-foreground); background: var(--warm-surface); }
+.panelNote { margin: -6px 0 14px; color: #526173; font-size: 13px; word-break: keep-all; }
+.timetableFacts { margin: 0 0 12px; font-size: 14px; }
+.timetableFacts > div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid #e3e8ef; }
+.timetableFacts dt { color: #526173; flex-shrink: 0; }
+.timetableFacts dd { margin: 0; font-weight: 600; text-align: right; word-break: keep-all; font-variant-numeric: tabular-nums; }
+.timetableActions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+.timetableActions a { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; color: #2e5fab; font-size: 14px; font-weight: 600; }
+.timetableActions a:hover { text-decoration: underline; }
+.timetableActions + .panelNote { margin: 4px 0 0; font-size: 12px; }
+.actionsPanel .saveStatus:empty { min-height: 0; margin: 0; }
 .monthCalendar { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 2px 4px; margin: 2px 0 12px; }
 .monthCalendar caption { text-align: left; padding: 0 0 10px; }
 .monthCalendar caption > span:first-child { font-size: 15px; font-weight: 700; color: #202b3a; }
@@ -125,10 +140,16 @@
 .calendarDot { position: absolute; bottom: 4px; width: 5px; height: 5px; border-radius: 50%; background: #c9714d; }
 .monthCalendar time[aria-current="date"] .calendarDot { background: #fff; }
 .allLessons { display: flex; align-items: center; justify-content: end; gap: 10px; min-height: 44px; color: #2e5fab; font-size: 14px; margin-top: 22px; }
-.eventForm { background: white; border: 1px solid #e3e8ef; border-radius: 20px; padding: 24px; margin-top: 28px; }
-.eventForm h2 { margin: 0 0 20px; }
+.formReveal { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .28s ease, opacity .2s ease; }
+.formReveal[data-open="true"] { grid-template-rows: 1fr; opacity: 1; }
+.formReveal > div { min-height: 0; overflow: hidden; }
+.eventForm { margin: 0 0 14px; padding: 18px; border: 1px solid var(--plum-line); border-radius: 16px; background: #fff; }
+.eventForm h3 { margin: 0; font-size: 16px; font-weight: 700; }
+.eventForm .panelNote { margin: 2px 0 14px; }
 .eventForm label { display: grid; gap: 8px; font-size: 14px; font-weight: 600; }
-.formColumns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 18px; }
+.eventForm input { scroll-margin: 96px 0; }
+.formColumns { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px 18px; margin-top: 14px; }
+@media (prefers-reduced-motion: reduce) { .formReveal { transition: none; } }
 .formActions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
 @media (max-width: 1100px) { .columns { grid-template-columns: 1fr; } .sideColumn { gap: 12px; } }
 @media (max-width: 600px) {
@@ -146,13 +167,10 @@
   .todoList .rowActions { margin-left: auto; }
   .todoText, .completed { flex: 1; }
   .todoList .rowActions { margin-top: -4px; }
-  .formColumns { grid-template-columns: 1fr; }
-  .eventForm { padding: 20px 16px; }
   .eventList > li { flex-wrap: wrap; gap: 6px 12px; }
   .eventList time { width: auto; }
   .eventList .rowActions { flex-basis: 100%; justify-content: end; }
   .classPicker { flex-wrap: wrap; }
-  .timetableNotice { flex-direction: column; align-items: start; }
   .allLessons { justify-content: start; }
 }
 .helpJump{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;margin:-8px 0 18px;font-size:13px;color:#627087}.helpJump a{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:#966024;font-weight:650;overflow-wrap:anywhere}.helpJump a:focus-visible{outline:3px solid #376fc8;outline-offset:3px;border-radius:4px}.helpJump small{font-size:12px}

@@ -142,7 +142,7 @@ export async function refreshTimetable(cron = false) {
   const acquired = await db.runTransaction(async (tx) => {
     const previous = (await tx.get(ref)).data() as Cache | undefined;
     if (cron && previous?.cronDay === day) return false;
-    requireCondition((previous?.leaseUntil ?? 0) <= now, 409, "TIMETABLE_BUSY", "학교 시간표를 갱신하고 있어요. 잠시 후 일정을 다시 불러와 주세요.");
+    requireCondition((previous?.leaseUntil ?? 0) <= now, 409, "TIMETABLE_BUSY", "학교 시간표를 갱신하고 있어요. 잠시 후 다시 시도해 주세요.");
     if (cron && previous?.checkedAt && now - previous.checkedAt < 5 * 60_000 && !previous.error) {
       tx.set(ref, { cronDay: day }, { merge: true }); return false;
     }
