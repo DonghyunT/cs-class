@@ -289,9 +289,14 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
   - **이름 실행 기록:** 강아지(`entity.parent.id === "entrybot"`)의 묻기·말하기만 남깁니다.
   - **테스트:** `tests/emulator.ts`의 `entryStart`·`entryStop`·`entryReset` 도우미를 씁니다.
 - **오브젝트 추가:** 프로그래밍 수업에서만 `objectEditable`·`objectaddable`·`objectdeletable`을 켭니다. `objectEditable`이 켜져 있어야 `objectaddable`이 동작합니다. 엔트리 추가 버튼의 `openSpriteManager`를 `add-object-request`로 전달하면 수업 화면이 `ENTRY_SPRITES` 대화상자를 열고, 고른 그림으로 만든 모델을 `add-object`로 보냅니다. `removeObject`는 불러오는 중이 아니면 `entrybot` 삭제를 막습니다. 엔트리는 새 오브젝트를 목록 맨 앞에 넣으므로 파서는 강아지를 `id`로 찾고, 추가 오브젝트의 그림은 목록 파일과 일치할 때만 받아 다시 조립합니다. 오브젝트가 강아지뿐이면 키·정규화는 이전과 같습니다.
-- **강아지 없는 작품(조건·반복·함수 수업):** `isFreeMission` 미션은 `workspace.html?...&free=1&locked=…`으로 열고 `pictureeditable`(모양 탭)을 켭니다. 그림판(`.entryPlaygroundPainter`)은 CSS로 숨기고 `openPictureManager`·`clonePicture`·`_removePicture`·`painter.newPicture`(‘새로 그리기’는 관리자 창을 거치지 않고 믿을 수 없는 빈 그림을 바로 더함)는 `picture-locked`로 막습니다. `LOCKED_OBJECTS`의 오브젝트와 마지막 오브젝트는 지울 수 없습니다. 파서는 `entrybot`이 없고 그림이 신뢰 목록에 있는 작품을 `free`(`mainIndex -1`)로 읽어 모든 오브젝트를 같은 방식으로 다시 조립합니다(최대 `MAX_FREE_OBJECTS` 12개). 채점과 `missionBlockIssue`는 시작 줄을 가진 한 오브젝트를 보고, 여러 오브젝트에 나뉘면 같은 문구로 화면 토스트와 검증 실패를 냅니다.
+- **강아지 없는 작품(조건·반복·함수·벽돌 깨기·햄스터S 수업):** `isFreeMission` 미션은 `workspace.html?...&free=1&locked=…`으로 열고 `pictureeditable`(모양 탭)을 켭니다. 그림판(`.entryPlaygroundPainter`)은 CSS로 숨기고 `openPictureManager`·`clonePicture`·`_removePicture`·`painter.newPicture`(‘새로 그리기’는 관리자 창을 거치지 않고 믿을 수 없는 빈 그림을 바로 더함)는 `picture-locked`로 막습니다. `LOCKED_OBJECTS`의 오브젝트와 마지막 오브젝트는 지울 수 없습니다. 파서는 `entrybot`이 없고 그림이 신뢰 목록에 있는 작품을 `free`(`mainIndex -1`)로 읽어 모든 오브젝트를 같은 방식으로 다시 조립합니다(최대 `MAX_FREE_OBJECTS` 12개). 채점과 `missionBlockIssue`는 시작 줄을 가진 한 오브젝트를 보고, 여러 오브젝트에 나뉘면 같은 문구로 화면 토스트와 검증 실패를 냅니다.
 - **엔트리 오브젝트 묶음:** 그림은 `public/entryjs/sprites/library/`, 목록은 `src/lib/classroom/entry-library.json`(`LIBRARY_SPRITES`)입니다. 바꾸려면 `scripts/entry-library-picks.json`(분류별 엔트리 오브젝트 id)을 고친 뒤 `node scripts/fetch-entry-library.mjs`를 돌려 커밋합니다. 스크립트는 엔트리 사이트의 오브젝트 목록을 읽어 모양 10장까지 내려받고 위험한 SVG를 버립니다. 앱은 실행 중 엔트리 사이트에 접속하지 않습니다. 출처 조건은 같은 폴더의 `NOTICE.md`에 있습니다.
 - **정규화·복제 제약:** 원래 12종 블록이 자기 분기 조건에 맞지 않으면 일반 규칙으로 넘기지 않고 거부합니다(교사 작품 보기 오류 방지). 파서는 정규화가 한 번에 수렴하도록 이름을 자른 뒤 다시 다듬고, 엔트리가 음수로 뒤집은 크기는 부호를 유지합니다. 서버는 받은 원문 대신 자체 정규화본을 저장하고 `MAX_PROJECT_BYTES`(32,768)를 클라이언트와 공유합니다. 파서 결과의 `key`(작품 전체)는 검증·제출 비교에 씁니다. `gradeKey`(채점 대상 코드만, 강아지 없는 작품은 모든 오브젝트 코드)는 이름 미션 실행 기록 비교가 없어진(#74) 뒤 앱에서 읽지 않습니다. 엔트리의 복제·붙여넣기(`addCloneObject`)는 강아지 복제를 막고, 오브젝트 수가 강아지 수업은 6개·강아지 없는 수업은 12개를 넘지 않게 합니다. ‘오브젝트 추가하기’ 직후에는 강아지 수업은 강아지를, 강아지 없는 수업은 새 오브젝트를 선택합니다. 채점 오류 중 인터프리터가 의도한 `MissionError`만 학생에게 보이고, 나머지는 미션의 채점 실패 문구(`failure`)로 대신합니다.
+- **햄스터S 수업:** `robot: true` 미션만 학생 작업실과 교사 실행 작업실을 `&robot=1`·iframe `allow="serial"`로 열어 엔트리의 웹 시리얼 연결(`HamsterSLite`, 모듈 `020E01`)을 켭니다. 다른 수업은 `allow`가 없어 포트를 쓸 수 없습니다.
+  - **팔레트:** `ROBOT_PALETTE`(`entry-palette.ts`, `workspace.js`에 복사본)의 첫 항목이 연결 버튼이고 나머지 7종이 로봇 블록입니다. 포트 선택 창은 작업실 안 `햄스터S 연결하기` 클릭에서만 열립니다.
+  - **로드 순서:** 하드웨어 모드는 팔레트 블록을 잠시 x -99999에 두고 지연 정렬합니다. 그 사이에 끌면 블록이 보드 밖에 놓이므로 정렬을 기다린 뒤 `loaded`를 보냅니다.
+  - **채점:** `programming-grader.ts`의 `robotLine`이 블록 순서를 봅니다. 해석기로 실행하지 않습니다.
+  - **검사의 한계:** 실물 없이 자동 검사로 확인할 수 있는 것은 포트 권한(`getPorts`)까지이고, `requestPort`는 포트가 없어 `NotFoundError`로 끝납니다.
 - **수업별 미션:** 미션 정의는 `programming-entry.ts`의 `PROGRAMMING_MISSIONS` 한 곳에 두고, 미션 ID는 수업이 달라도 겹치지 않게 짓습니다.
   - **필드:** `hint`는 화면의 한 줄 요약, `steps`는 접힌 번호 조립 순서, `tip`은 💡 한 줄(선택), `failure`는 채점 실패 문구(필수, 칩 없는 평문)입니다. `tests/fixtures/entry-legacy-keys.json`이 name·multiply·average·move·keys의 실패 문구를 고정하므로 이 다섯 `failure`는 바꾸지 않습니다.
   - **힌트 문구:** 블록 칩을 `` `블록종류: 보이는 글자` ``(예: `` `set_variable: A를 대답으로 정하기` ``)로 쓰고 화면은 `hintParts`, 평문 비교는 `hintPlain`으로 읽습니다(문구 기준은 [DESIGN §5.1](DESIGN.md#프로그래밍-13차시--경험-검토용-표현)).
@@ -402,7 +407,7 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 
 1. **수업 전:** 실제 학년도·명부·대상 반을 확인합니다. 이미 등록한 반은 다시 하지 않고, 아직 등록하지 않은 반만 명부 CSV·관리자 키가 있는 PC에서 위 변환·검증·계획·등록을 합니다. 교사의 `수업 관리`에서 해당 반의 공개 수업과 이번 수업을 확인합니다.
 2. **수업 직전:** 해당 반을 [명부 절차](#실학생-명부-준비와-반별-발급) 4단계 중 사용자가 정한 방법(`issue`, 교사 화면 학생별 초기화·일괄 발급, 또는 반 공통 `첫 입장 열기`)으로 입장시키고, 개별 임시값은 완료된 것만 학생별로 전달합니다. 학생은 최초 입장에서 본인 비밀번호를 정하고 배정된 반과 이번 수업 제목을 확인합니다. 만료·입장 실패는 교사가 계정 상태를 확인하며, 예전 공통 비밀번호(`CS_INITIAL_PASSWORD` 등)로 우회하지 않습니다.
-3. **수업 중:** 학생 한 명의 학교 브라우저에서 개념·퀴즈·실습 진입과 실제 엔트리 블록 입력·실행·정지를 확인합니다. 엔트리 수업은 기본 미션(기초 4개, 조건·반복·함수·벽돌 깨기 각 3개)과 선택 도전을 구분하고 `저장 완료`·검증 통과·제출 완료를 각각 확인합니다.
+3. **수업 중:** 학생 한 명의 학교 브라우저에서 개념·퀴즈·실습 진입과 실제 엔트리 블록 입력·실행·정지를 확인합니다. 엔트리 수업은 기본 미션(기초 4개, 조건·반복·함수·벽돌 깨기 각 3개, 햄스터S 2개)과 선택 도전을 구분하고 `저장 완료`·검증 통과·제출 완료를 각각 확인합니다.
 4. **저장 확인:** 저장 실패 때 입력이 남는지, 재시도 뒤 같은 작업을 이어가는지 확인합니다. 학교망·실제 입력기·로그아웃 후 재접속은 로컬 에뮬레이터 결과와 따로 기록합니다. 학생 비밀번호·작품 원문을 공개 화면이나 로그에 남기지 않습니다.
 5. **수업 종료 전:** 교사의 `학생 현황·계정`에서 진행과 제출을 확인합니다(제출 학생 수와 작품 수를 구분). 발견한 문제는 범위·환경과 함께 [HANDOFF](HANDOFF.md#남은-한계와-다음-결정)에 남깁니다.
 

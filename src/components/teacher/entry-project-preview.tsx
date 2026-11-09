@@ -347,8 +347,9 @@ export function EntryProjectPreview({
             <iframe
               key={attempt}
               ref={frameRef}
-              src={`${ENTRY_WORKSPACE_SRC}?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${missionById(missionId)?.functions ? "&fn=1" : ""}${parsed.free ? "&free=1" : ""}`}
+              src={`${ENTRY_WORKSPACE_SRC}?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${missionById(missionId)?.functions ? "&fn=1" : ""}${missionById(missionId)?.robot ? "&robot=1" : ""}${parsed.free ? "&free=1" : ""}`}
               title={`${missionTitle} 교사 실행 작업실`}
+              allow={missionById(missionId)?.robot ? "serial" : undefined}
               referrerPolicy="origin"
               sandbox={ENTRY_WORKSPACE_SANDBOX}
               className={styles.entryRunnerFrame}

@@ -16,7 +16,11 @@ export const ENTRY_PALETTE = [
 // The functions lesson adds Entry's function category: its ‘함수 만들기’ button, then each function's block.
 export const FUNCTION_PALETTE = { category: "func", blocks: ["functionAddButton"] } as const;
 
-export const PALETTE_BLOCKS: ReadonlySet<string> = new Set(ENTRY_PALETTE.flatMap((group) => group.blocks));
+// The robot lesson adds Entry's hardware category: the connect button first, then the Hamster-S blocks.
+export const ROBOT_PALETTE = { category: "arduino", blocks: ["arduino_lite_reconnect", "hamsterlite_move_forward_for_secs", "hamsterlite_move_backward_for_secs", "hamsterlite_turn_for_secs", "hamsterlite_stop", "hamsterlite_set_led_to", "hamsterlite_clear_led", "hamsterlite_beep"] } as const;
+const ROBOT_BLOCKS: readonly string[] = ROBOT_PALETTE.blocks.slice(1);
+
+export const PALETTE_BLOCKS: ReadonlySet<string> = new Set([...ENTRY_PALETTE.flatMap((group) => group.blocks), ...ROBOT_BLOCKS]);
 // Literal inputs EntryJS nests inside other blocks.
 // `get_pictures` is the shape dropdown inside ‘( ) 모양으로 바꾸기’.
 export const VALUE_BLOCKS: ReadonlySet<string> = new Set(["text", "number", "angle", "True", "False", "color", "get_pictures"]);
@@ -69,6 +73,8 @@ export const MISSION_BLOCKS: Readonly<Record<string, ReadonlySet<string>>> = {
   ball: mission(BRICK_BALL),
   brick: mission(BRICK_BALL),
   "brick-bounce": mission(BRICK_BALL),
+  "robot-go": mission([...START, ...ROBOT_BLOCKS]),
+  "robot-signal": mission([...START, ...ROBOT_BLOCKS]),
 };
 
 export const BLOCK_LABELS: Readonly<Record<string, string>> = {
@@ -81,6 +87,7 @@ export const BLOCK_LABELS: Readonly<Record<string, string>> = {
   calc_basic: "( ) 사칙연산 ( )", calc_rand: "( )부터 ( ) 사이의 무작위 수", coordinate_mouse: "마우스 좌푯값", coordinate_object: "오브젝트의 좌표·값", quotient_and_mod: "( ) / ( )의 몫·나머지", calc_operation: "( )의 수학 연산", get_project_timer_value: "초시계 값", choose_project_timer_action: "초시계 시작·정지·초기화", set_visible_project_timer: "초시계 보이기·숨기기", get_date: "현재 날짜·시간", distance_something: "( )까지의 거리", length_of_string: "( )의 글자 수", count_match_string: "( )에서 ( )의 개수", combine_something: "( )과(와) ( )을(를) 합친 값", char_at: "( )의 ( )번째 글자", substring: "( )의 ( )~( )번째 글자", index_of_string: "( )에서 ( )의 위치", replace_string: "( )의 ( )을(를) ( )(으)로 바꾸기", reverse_of_string: "( ) 뒤집기", change_string_case: "( )의 대소문자 바꾸기",
   ask_and_wait: "( )을(를) 묻고 대답 기다리기", get_canvas_input_value: "대답", set_visible_answer: "대답 보이기·숨기기", get_variable: "변수 값", change_variable: "변수에 ( )만큼 더하기", set_variable: "변수를 ( )(으)로 정하기", show_variable: "변수 보이기", hide_variable: "변수 숨기기",
   text: "글자", number: "숫자", angle: "각도", True: "참", False: "거짓", color: "색", get_pictures: "모양",
+  hamsterlite_move_forward_for_secs: "앞으로 ( )초 이동하기", hamsterlite_move_backward_for_secs: "뒤로 ( )초 이동하기", hamsterlite_turn_for_secs: "( )으로 ( )초 돌기", hamsterlite_stop: "정지하기", hamsterlite_set_led_to: "( ) LED를 ( )으로 정하기", hamsterlite_clear_led: "( ) LED 끄기", hamsterlite_beep: "삐 소리내기",
 };
 
 // Sprites students can add as objects. Saved objects must use one of these files.
@@ -137,6 +144,7 @@ export const PALETTE_TEXT: Readonly<Record<string, string>> = {
   move_direction: "이동 방향으로 10 만큼 움직이기", bounce_wall: "화면 끝에 닿으면 튕기기", locate_x: "x: 10 위치로 이동하기", locate_xy: "x: 0 y: 0 위치로 이동하기", locate: "마우스포인터 위치로 이동하기", rotate_relative: "방향을 90° 만큼 회전하기", direction_relative: "이동 방향을 90° 만큼 회전하기", direction_absolute: "이동 방향을 90° (으)로 정하기",
   hide: "모양 숨기기", change_to_some_shape: "(모양 이름) 모양으로 바꾸기", change_to_next_shape: "다음 모양으로 바꾸기", dialog_time: "안녕! 을(를) 4 초 동안 말하기", dialog: "안녕! 을(를) 말하기",
   start_drawing: "그리기 시작하기", stop_drawing: "그리기 멈추기", brush_erase_all: "모든 붓 지우기",
+  hamsterlite_move_forward_for_secs: "앞으로 1 초 이동하기", hamsterlite_move_backward_for_secs: "뒤로 1 초 이동하기", hamsterlite_turn_for_secs: "왼쪽 으로 1 초 돌기", hamsterlite_stop: "정지하기", hamsterlite_set_led_to: "왼쪽 LED를 빨간색 으로 정하기", hamsterlite_clear_led: "왼쪽 LED 끄기", hamsterlite_beep: "삐 소리내기",
   is_clicked: "마우스를 클릭했는가?", reach_something: "마우스포인터 에 닿았는가?", boolean_basic_operator: "10 = 10 (비교 6가지)", boolean_and_or: "참 그리고 참 · 참 또는 거짓", boolean_not: "참 (이)가 아니다",
   calc_basic: "10 + 10 (사칙연산 4가지)", coordinate_mouse: "마우스 x 좌푯값", quotient_and_mod: "10 / 10 의 몫", combine_something: "안녕! 과(와) 엔트리 을(를) 합친 값",
   ask_and_wait: "안녕! 을(를) 묻고 대답 기다리기", get_canvas_input_value: "대답", get_variable: "A 값", change_variable: "A 에 10 만큼 더하기", set_variable: "A 를 10 (으)로 정하기",
@@ -151,4 +159,4 @@ const UNLISTED: Readonly<Record<string, readonly string[]>> = {
 };
 const LISTED_HARMLESS: Readonly<Record<string, readonly string[]>> = { brick: ["hide"], "brick-bounce": ["hide"] };
 // Mission blocks shown to students in palette order; literal inputs, the harmless extras and same-meaning extras are left out.
-export const missionBlockTypes = (id: string): string[] => ENTRY_PALETTE.flatMap((group) => group.blocks).filter((type) => MISSION_BLOCKS[id]?.has(type) && (!HARMLESS_BLOCKS.has(type) || LISTED_HARMLESS[id]?.includes(type)) && !ALSO_ACCEPTED.has(type) && !UNLISTED[id]?.includes(type));
+export const missionBlockTypes = (id: string): string[] => [...ENTRY_PALETTE.flatMap((group) => group.blocks), ...ROBOT_BLOCKS].filter((type) => MISSION_BLOCKS[id]?.has(type) && (!HARMLESS_BLOCKS.has(type) || LISTED_HARMLESS[id]?.includes(type)) && !ALSO_ACCEPTED.has(type) && !UNLISTED[id]?.includes(type));

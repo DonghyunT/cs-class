@@ -200,6 +200,18 @@ export const LESSON_MAPPINGS = {
       "tests/brick-breaker.spec.ts",
       "tests/teacher-lesson-preview.spec.ts"
     ]
+  },
+  "hamster-robot": {
+    lessonId: "hamster-robot",
+    patterns: [
+      ...ENTRY_SHARED,
+      /^src\/lib\/classroom\/hamster-robot-(?:lesson|data)\.ts$/,
+      /^tests\/hamster-robot\.spec\.ts$/
+    ],
+    tests: [
+      "tests/hamster-robot.spec.ts",
+      "tests/teacher-lesson-preview.spec.ts"
+    ]
   }
 };
 

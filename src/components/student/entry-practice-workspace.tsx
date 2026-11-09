@@ -56,7 +56,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
   const [running, setRunning] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState("블록을 연결한 뒤 실행해 보세요.");
+  const [result, setResult] = useState(mission?.robot ? "USB 동글을 꽂고 로봇을 켠 뒤, ‘하드웨어’ 꾸러미의 ‘햄스터S 연결하기’를 눌러 동글을 골라 주세요." : "블록을 연결한 뒤 실행해 보세요.");
   const startOnly = useRef(false);
   const [picking, setPicking] = useState(false);
   // Dog-free lessons pick from the Entry library and warn, without undoing, when work leaves the mission's intent.
@@ -157,7 +157,8 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         if (message.reason === "finished" && startOnly.current) {
           const nextBlock = mission?.id === "name" ? "질문 블록" : mission?.variables ? "두 수를 묻고 변수에 대답을 저장하는 블록" : asksQuestion ? "질문 블록과 ‘만일’ 블록" : "이동 블록";
           setResult(`시작 신호가 준비됐어요. 시작하기 아래에 ${nextBlock}을 연결해 보세요.`);
-        } else if (asksQuestion) setResult(`${finish} 마지막 말: ${message.speech.slice(0, 80) || "아직 없음"}`);
+        } else if (mission?.robot) setResult(`${finish} 로봇이 코드대로 움직였는지 확인해 보세요.`);
+        else if (asksQuestion) setResult(`${finish} 마지막 말: ${message.speech.slice(0, 80) || "아직 없음"}`);
         else setResult(`${finish} 현재 위치 X ${Math.round(message.x * 100) / 100} · Y ${Math.round(message.y * 100) / 100}${message.speech ? ` · 마지막 말: ${message.speech.slice(0, 80)}` : ""}`);
       } else if (message.type === "error") { window.clearTimeout(bootTimer.current); setPhase("failed"); setError("작업실을 불러오지 못했어요. 입력한 작품은 이 화면에 유지하고 있어요."); }
       else if (message.type === "focus-return") document.getElementById(mission ? "entry-reset" : "entry-run")?.focus();
@@ -255,7 +256,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
       </div>}
       <div className={styles.frameScroll} tabIndex={0} role="region" aria-label="엔트리 작업실 가로 이동" aria-describedby="entry-help" aria-busy={phase === "loading"}>
         {phase === "loading" && <p className={styles.loading} role="status">엔트리 작업실을 불러오는 중…</p>}
-        <iframe key={attempt} ref={frame} src={mission ? `${ENTRY_WORKSPACE_SRC}?exercise=programming&mission=${mission.id}${mission.variables ? "&vars=1" : ""}${mission.keyEvents ? "&keys=1" : ""}${mission.functions ? "&fn=1" : ""}${free ? `&free=1&locked=${(LOCKED_OBJECTS[mission.id] ?? []).join(",")}` : ""}` : ENTRY_WORKSPACE_SRC} referrerPolicy="origin" title={mission ? `${mission.title} 엔트리 작업실` : "엔트리봇 블록 편집기와 실행 무대"} sandbox={ENTRY_WORKSPACE_SANDBOX} className={styles.frame} inert={locked || preparing || phase !== "ready"} />
+        <iframe key={attempt} ref={frame} src={mission ? `${ENTRY_WORKSPACE_SRC}?exercise=programming&mission=${mission.id}${mission.variables ? "&vars=1" : ""}${mission.keyEvents ? "&keys=1" : ""}${mission.functions ? "&fn=1" : ""}${mission.robot ? "&robot=1" : ""}${free ? `&free=1&locked=${(LOCKED_OBJECTS[mission.id] ?? []).join(",")}` : ""}` : ENTRY_WORKSPACE_SRC} allow={mission?.robot ? "serial" : undefined} referrerPolicy="origin" title={mission ? `${mission.title} 엔트리 작업실` : "엔트리봇 블록 편집기와 실행 무대"} sandbox={ENTRY_WORKSPACE_SANDBOX} className={styles.frame} inert={locked || preparing || phase !== "ready"} />
       </div>
       <p className={styles.result} role="status">{result}</p>
       {mission?.keyEvents && <div className={styles.keyPad} aria-label="방향키 실행">{[["38", "↑ 위"], ["37", "← 왼쪽"], ["40", "↓ 아래"], ["39", "→ 오른쪽"]].map(([key, label]) => <Button key={key} variant="outline" size="sm" disabled={!running || locked} onClick={() => send("key", { key })}>{label}</Button>)}</div>}
@@ -264,7 +265,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         <span><strong>검증</strong>{validation ? validation.passed ? "검증 통과" : "조건 보완 필요" : work.validation ? "다시 검증 필요" : "검증 전"}</span>
         <span><strong>{mode === "preview" ? "체험 제출" : "제출"}</strong>{submitted ? mode === "preview" ? "현재 작품 체험 제출 확인" : "현재 작품 제출 완료" : work.submission ? mode === "preview" ? "이전 체험 제출 유지 · 수정 중" : "이전 제출 유지 · 수정 중" : mode === "preview" ? "체험 제출 전" : "아직 제출 전"}</span>
       </div>
-      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} {free ? "무대 아래 ‘시작하기’로 실행해요. ‘오브젝트 추가하기’로 엔트리 오브젝트와 배경을 더하고, 고른 오브젝트에 코드를 만들어요. 시작하기 코드는 한 오브젝트에만 두면 그 오브젝트의 코드로 검증해요. ‘모양’ 탭에서 오브젝트의 모양을 볼 수 있어요." : mission ? "무대 아래 ‘시작하기’로 실행하고, ‘오브젝트 추가하기’로 공·별 같은 오브젝트를 더할 수 있어요. 검증은 강아지의 코드로만 해요." : ""} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 {mission ? "무대 초기화" : "실행"} 버튼으로 돌아와요.</p></details>
+      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} {free ? "무대 아래 ‘시작하기’로 실행해요. ‘오브젝트 추가하기’로 엔트리 오브젝트와 배경을 더하고, 고른 오브젝트에 코드를 만들어요. 시작하기 코드는 한 오브젝트에만 두면 그 오브젝트의 코드로 검증해요. ‘모양’ 탭에서 오브젝트의 모양을 볼 수 있어요." : mission ? "무대 아래 ‘시작하기’로 실행하고, ‘오브젝트 추가하기’로 공·별 같은 오브젝트를 더할 수 있어요. 검증은 강아지의 코드로만 해요." : ""} {mission?.robot ? "로봇 연결은 PC의 Chrome·Edge·웨일에서 할 수 있어요. 연결이 안 되면 동글과 로봇 전원을 확인하고 ‘햄스터S 연결하기’를 다시 눌러 주세요." : ""} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 {mission ? "무대 초기화" : "실행"} 버튼으로 돌아와요.</p></details>
       {free && <Dialog open={picking} onOpenChange={setPicking}><DialogContent className={styles.libraryDialog}><DialogHeader><DialogTitle>오브젝트 추가하기</DialogTitle><DialogDescription>분류를 고르거나 이름으로 찾아요. 오브젝트는 {MAX_FREE_OBJECTS}개까지 둘 수 있어요.</DialogDescription></DialogHeader>
         <EntryLibraryPicker onPick={(sprite) => {
           const added = newAddedObject(sprite.id, objectCount(editorProject.current ?? draft.entryProject), true);

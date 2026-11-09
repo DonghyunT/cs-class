@@ -5,7 +5,7 @@ import legacyKeys from "./fixtures/entry-legacy-keys.json";
 import functionExport from "./fixtures/entry-function-export.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { readEntryDraft } from "../src/components/student/read-editor-draft";
-import { CONTAINER_BLOCKS, ENTRY_PALETTE, FUNCTION_PALETTE, MISSION_BLOCKS, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
+import { CONTAINER_BLOCKS, ENTRY_PALETTE, FUNCTION_PALETTE, MISSION_BLOCKS, ROBOT_PALETTE, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
 import { MAX_FUNCTIONS, functionCallId, MAX_PROJECT_BYTES, PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, functionNamesOf, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode, type ProgramFunction } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission, wordingMessage } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
@@ -79,6 +79,9 @@ test("workspace.js의 팔레트 복사본은 공유 목록과 같다", () => {
   const functions = source.match(/const FUNCTION_PALETTE = (\{.*\});/)?.[1];
   expect(functions).toBeTruthy();
   expect(new Function(`return ${functions}`)()).toEqual({ category: FUNCTION_PALETTE.category, blocks: [...FUNCTION_PALETTE.blocks] });
+  const robot = source.match(/const ROBOT_PALETTE = (\{.*\});/)?.[1];
+  expect(robot).toBeTruthy();
+  expect(new Function(`return ${robot}`)()).toEqual({ category: ROBOT_PALETTE.category, blocks: [...ROBOT_PALETTE.blocks] });
 });
 
 test("팔레트 블록·반복 안쪽·값 블록·미완성 드롭다운을 저장하고 다시 읽어도 같다", () => {
@@ -266,6 +269,7 @@ test("비슷한 블록과 다른 오브젝트에 만든 시작 줄을 구체적�
 
 // Words each chip must keep so students can find that one block on the palette (and not its look-alike).
 const CHIP_WORDS: Record<string, RegExp> = {
+  hamsterlite_move_forward_for_secs: /^앞으로 \d+초 이동하기$/, hamsterlite_move_backward_for_secs: /^뒤로 \d+초 이동하기$/, hamsterlite_set_led_to: /LED를 .+으로 정하기$/, hamsterlite_clear_led: /LED 끄기$/, hamsterlite_beep: /^삐 소리내기$/,
   when_run_button_click: /^시작하기 버튼을 클릭했을 때$/, when_some_key_pressed: /^.+ 키를 눌렀을 때$/, mouse_clicked: /^마우스를 클릭했을 때$/, ask_and_wait: /^.+[을를] 묻고 대답 기다리기$/,
   dialog: /^.+[을를] 말하기$/, set_variable: /^[AB]를 .+로 정하기$/, change_variable: /^.+에 \d+만큼 더하기$/, calc_basic: / [+\-x/] /, combine_something: /^.+ 과\(와\) .+ 을\(를\) 합친 값$/, boolean_basic_operator: /^.+ (=|!=|>|<|≥|≤) .+$/,
   boolean_and_or: /^참 (그리고|또는) /, if_else: /^만일 .+라면 아니면$/, _if: /^만일 .+라면$/, repeat_basic: /^.+번 반복하기$/, repeat_while_true: /될 때까지 반복하기$/,
@@ -581,9 +585,11 @@ test("조립 순서대로 만든 미션 해답(정사각형은 두 회전 블록
     ["ball", BRICK_SOLUTIONS.ball],
     ["brick", BRICK_SOLUTIONS.brick],
     ["brick-bounce", BRICK_SOLUTIONS["brick-bounce"]],
+    ["robot-go", oneObject([[start(), node("hamsterlite_move_forward_for_secs", text("1"), null), node("hamsterlite_move_backward_for_secs", text("1"), null)]], [])],
+    ["robot-signal", oneObject([[start(), node("hamsterlite_set_led_to", "BOTH", "2", null), node("hamsterlite_move_forward_for_secs", text("1"), null), node("hamsterlite_beep", null), node("hamsterlite_clear_led", "BOTH", null)]], [])],
   ];
   // Every mission a lesson still offers has a solution; retired ones (escape) are no longer graded.
-  expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(["programming-13", "conditionals", "loops", "functions", "brick-breaker"].flatMap((lesson) => missionsFor(lesson).map((mission) => mission.id))));
+  expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(["programming-13", "conditionals", "loops", "functions", "brick-breaker", "hamster-robot"].flatMap((lesson) => missionsFor(lesson).map((mission) => mission.id))));
   // The steps name the values and slots these solutions use.
   expect(hintPlain(missionById("polygon")!.steps[1])).toContain("70만큼 움직이기");
   // After drawing, the pen lifts and Entrybot steps aside so it does not hide the shape.
@@ -827,6 +833,7 @@ test("채점 표: 같은 뜻으로 만든 작품은 통과하고, 결과가 틀�
 // Every block a mission accepts must run in the interpreter; an unknown one falls to the
 // misleading ‘시작 블록은 맨 위에…’ message.
 test("미션이 받는 모든 동작 블록은 해석기에서 실행된다", () => {
+  // Robot missions are graded from their blocks in programming-grader.ts; the interpreter never runs them.
   const STARTS = new Set(["when_run_button_click", "when_some_key_pressed", "mouse_clicked", "when_object_click"]);
   const REPORTERS = new Set(["get_canvas_input_value", "get_variable", "combine_something", "calc_basic", "boolean_basic_operator", "boolean_and_or", "boolean_not", "quotient_and_mod", "is_clicked", "reach_something", "coordinate_mouse", "coordinate_object", "calc_rand"]);
   const n = number("1"), color = node("color", "#FF0000"), yes = node("True", null);
@@ -841,7 +848,7 @@ test("미션이 받는 모든 동작 블록은 해석기에서 실행된다", ()
     change_brush_transparency: [n, null], set_brush_tranparency: [n, null], brush_stamp: [null], add_effect_amount: ["color", n, null], change_effect_amount: ["color", n, null], erase_all_effects: [null],
     change_scale_size: [n, null], set_scale_size: [n, null], stretch_scale_size: ["WIDTH", n, null], reset_scale_size: [null], flip_x: [null], flip_y: [null], change_object_index: ["FRONT", null],
   };
-  for (const [id, allowed] of Object.entries(MISSION_BLOCKS)) {
+  for (const [id, allowed] of Object.entries(MISSION_BLOCKS).filter(([mission]) => !missionById(mission)?.robot)) {
     for (const type of [...allowed].filter((t) => !STARTS.has(t) && !REPORTERS.has(t) && !VALUE_BLOCKS.has(t))) {
       expect(DEFAULTS[type], `${type}: add its Entry default params here`).toBeTruthy();
       const lists = CONTAINER_BLOCKS[type];

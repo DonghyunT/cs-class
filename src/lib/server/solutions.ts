@@ -7,6 +7,7 @@ import { loopConcepts, loopQuestions } from "../classroom/loops-data";
 import { functionConcepts, functionQuestions } from "../classroom/functions-data";
 import { brickBreakerConcepts, brickBreakerQuestions } from "../classroom/brick-breaker-data";
 import { BRICK_ASSEMBLY } from "./brick-assembly";
+import { hamsterConcepts, hamsterQuestions } from "../classroom/hamster-robot-data";
 import { UNIT_QUIZ_DATA } from "./review-quiz.mjs";
 import { REVIEW_LESSONS } from "../classroom/review/lessons";
 
@@ -91,6 +92,14 @@ export const SOLUTIONS: Record<string, LessonSolution> = {
     quizAnswers: Object.fromEntries(brickBreakerQuestions.map((q) => [q.id, String(q.correct)])),
     quizFeedback: Object.fromEntries(brickBreakerQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
     conceptRetry: Object.fromEntries(brickBreakerConcepts.map((c) => [c.id, c.retry])),
+    practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
+  },
+  "hamster-robot": {
+    lessonId: "hamster-robot",
+    conceptAnswers: Object.fromEntries(hamsterConcepts.map((c) => [c.id, String(c.correct)])),
+    quizAnswers: Object.fromEntries(hamsterQuestions.map((q) => [q.id, String(q.correct)])),
+    quizFeedback: Object.fromEntries(hamsterQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
+    conceptRetry: Object.fromEntries(hamsterConcepts.map((c) => [c.id, c.retry])),
     practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
   },
   "sequence-lab": {

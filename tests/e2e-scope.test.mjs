@@ -27,7 +27,7 @@ test("teacher smoke groups cover management, previews, assessment and work revie
   assert.ok(smokeRelatedTests(["src/components/teacher/presentation.ts"]).includes("tests/teacher-assessment.spec.ts"));
   assert.deepEqual(smokeRelatedTests(["src/lib/server/classroom.ts", "src/app/api/classroom/[...path]/route.ts",
     "src/components/teacher/assessment-helper.ts", "src/components/teacher/dashboard.ts", "src/components/teacher/new-feature.tsx"]), []);
-  assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops", "functions", "brick-breaker"]);
+  assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops", "functions", "brick-breaker", "hamster-robot"]);
 });
 
 function runRunner({ plan, planFile = "plan.json", args = [], event = "push", setup } = {}) {
@@ -81,11 +81,11 @@ test("matchLesson matches lesson specific files accurately", () => {
   assert.equal(matchLesson("tests/entry-palette.test.ts"), "programming-13");
   assert.equal(matchLesson("tests/fixtures/entry-legacy-keys.json"), "programming-13");
   assert.equal(matchLesson("src/lib/server/programming-grader.ts"), "programming-13");
-  assert.deepEqual(matchLessons("src\\lib\\classroom\\programming-entry.ts"), ["programming-13", "conditionals", "loops", "functions", "brick-breaker"]);
-  assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops", "functions", "brick-breaker"]);
-  assert.deepEqual(matchLessons("tests/programming-learning.spec.ts"), ["programming-13", "conditionals", "loops", "functions", "brick-breaker"]);
+  assert.deepEqual(matchLessons("src\\lib\\classroom\\programming-entry.ts"), ["programming-13", "conditionals", "loops", "functions", "brick-breaker", "hamster-robot"]);
+  assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops", "functions", "brick-breaker", "hamster-robot"]);
+  assert.deepEqual(matchLessons("tests/programming-learning.spec.ts"), ["programming-13", "conditionals", "loops", "functions", "brick-breaker", "hamster-robot"]);
   for (const file of ["src/lib/classroom/entry-workspace-frame.ts", "src/lib/classroom/entry-workspace.json"]) {
-    assert.deepEqual(matchLessons(file), ["programming-13", "conditionals", "loops", "functions", "brick-breaker"], file);
+    assert.deepEqual(matchLessons(file), ["programming-13", "conditionals", "loops", "functions", "brick-breaker", "hamster-robot"], file);
   }
   for (const file of ["scripts/entryjs-cdn.mjs", "scripts/entryjs-cdn.json", "cloudflare/entry-cdn/wrangler.jsonc", "next.config.ts", "src/proxy.ts"]) {
     assert.deepEqual(matchLessons(file), ["programming-13"], file);
@@ -126,7 +126,7 @@ test("selectE2E classifies single lesson changes as affected", () => {
   // The shared Entry practice screen selects every Entry lesson's tests.
   const programming = selectE2E(["src/components/student/programming-lesson.tsx"]);
   assert.equal(programming.mode, "affected");
-  assert.deepEqual(programming.lessonIds, ["brick-breaker", "conditionals", "functions", "loops", "programming-13"]);
+  assert.deepEqual(programming.lessonIds, ["brick-breaker", "conditionals", "functions", "hamster-robot", "loops", "programming-13"]);
   assert.ok(programming.testFiles.includes("tests/conditionals.spec.ts"));
   assert.ok(programming.testFiles.includes("tests/programming-classroom.spec.ts"));
   assert.ok(programming.testFiles.includes("tests/entryjs-ui.spec.ts"));

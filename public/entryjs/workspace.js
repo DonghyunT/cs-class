@@ -13,6 +13,8 @@ const showVariables = params.get("vars") === "1";
 const functionsEnabled = programming && params.get("fn") === "1";
 // Dog-free lessons: every object is equal, a few starter objects stay, shapes can be viewed.
 const free = programming && params.get("free") === "1";
+// The robot lesson shows Entry's browser (Web Serial) connection for Hamster-S.
+const robot = programming && params.get("robot") === "1";
 const lockedIds = (params.get("locked") ?? "").split(",").filter(Boolean);
 const maxObjects = free ? 12 : 6;
 // The dog when there is one, otherwise the object being edited.
@@ -27,6 +29,8 @@ const speechNow = () => {
 let disposed = false;
 // Copy of FUNCTION_PALETTE in src/lib/classroom/entry-palette.ts, kept equal by tests/entry-palette.test.ts.
 const FUNCTION_PALETTE = { category: "func", blocks: ["functionAddButton"] };
+// Copy of ROBOT_PALETTE in src/lib/classroom/entry-palette.ts, kept equal by tests/entry-palette.test.ts.
+const ROBOT_PALETTE = { category: "arduino", blocks: ["arduino_lite_reconnect", "hamsterlite_move_forward_for_secs", "hamsterlite_move_backward_for_secs", "hamsterlite_turn_for_secs", "hamsterlite_stop", "hamsterlite_set_led_to", "hamsterlite_clear_led", "hamsterlite_beep"] };
 // Copy of ENTRY_PALETTE in src/lib/classroom/entry-palette.ts. This sandboxed
 // script cannot import it; tests/entry-palette.test.ts keeps both lists equal.
 const PROGRAMMING_PALETTE = [
@@ -166,7 +170,12 @@ try {
     // A block shows unless every class in isNotFor is banned, so these get one class that stays banned.
     for (const type of ["function_field_string", "function_field_boolean", "showFunctionPropsButton", "function_name"]) if (Entry.block?.[type]) Entry.block[type].isNotFor = ["csClassHidden"];
   }
-  EntryStatic.getAllBlocks = () => programming ? (functionsEnabled ? [...PROGRAMMING_PALETTE, FUNCTION_PALETTE] : PROGRAMMING_PALETTE) : [
+  if (robot) {
+    // Entry hides a robot's blocks until it connects; students assemble first, and work without a robot still opens.
+    for (const type of ROBOT_PALETTE.blocks.slice(1)) if (Entry.block?.[type]) Entry.block[type].isNotFor = [];
+    if (Entry.block?.arduino_lite_reconnect?.params?.[0]) Entry.block.arduino_lite_reconnect.params[0].text = "햄스터S 연결하기";
+  }
+  EntryStatic.getAllBlocks = () => programming ? (robot ? [...PROGRAMMING_PALETTE, ROBOT_PALETTE] : functionsEnabled ? [...PROGRAMMING_PALETTE, FUNCTION_PALETTE] : PROGRAMMING_PALETTE) : [
     { category: "start", blocks: ["when_run_button_click"] },
     { category: "moving", blocks: ["move_direction"] },
     { category: "looks", blocks: ["dialog_time"] },
@@ -181,7 +190,7 @@ try {
     projectsaveable: false, objectEditable: programming, objectaddable: programming,
     objectdeletable: programming, pictureeditable: free, soundeditable: false,
     sceneEditable: false, variableEnable: programming, listEnable: false,
-    functionEnable: functionsEnabled, messageEnable: false, hardwareEnable: false,
+    functionEnable: functionsEnabled, messageEnable: false, hardwareEnable: robot,
     aiLearningEnable: false, aiUtilizeDisable: true, expansionDisable: true,
     textCodingEnable: false, backpackDisable: true, exportObjectEnable: false,
     blockSaveImageEnable: false, iframeDomAccess: "none", fullScreenEnable: false,
@@ -368,11 +377,19 @@ try {
           if (["cs-A", "cs-B"].includes(variable.id)) variable.visible = showVariables;
         }
         Entry.loadProject(message.project);
+        // Selecting the module shows the connect button; the browser's port chooser opens only from that click.
+        if (robot && Entry.hwLite?.getStatus() !== "connected") Entry.do("objectAddHardwareLiteBlocks", Entry.HARDWARE_LITE_LIST["020E01"]);
         if (traced) Entry.playground.blockMenu.setMenu();
         // The workspace redraw schedules a second palette redraw. Drain both
         // before exposing the editor, since selectMenu closes active inputs.
         Entry.getMainWS().dReDraw.flush();
         Entry.playground.blockMenu.reDraw.flush();
+        // Hardware mode parks palette blocks at x -99999 until a delayed align; one dragged sooner lands off the board, so wait before opening the editor.
+        if (robot) {
+          const palette = () => Entry.playground.blockMenu.code.getThreads().map((thread) => thread.getFirstBlock()).find((block) => block?.type === "when_run_button_click");
+          for (let wait = 0; wait < 60 && palette()?.x < -9999; wait++) await new Promise((resolve) => setTimeout(resolve, 50));
+          if (disposed) return;
+        }
         // This Entry version aligns freshly created threads on load. Restore authored
         // anchors after that redraw; imported projects without anchors keep its layout.
         // Added objects come first in Entry's list; the dog is found by id and shown first.

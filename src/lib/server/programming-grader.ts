@@ -497,7 +497,18 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     const b = runOrder(["brick2", "brick3", "brick1"]);
     return a.ok && b.ok && a.won && b.won;
   }
+  // The server cannot see a robot move, so robot missions check the blocks and their order; the teacher checks the robot.
+  function robotLine(types: readonly string[], check: (found: EntryNode[]) => boolean = () => true) {
+    return p!.added.flatMap((o) => o.threads).filter((t) => t[0]?.type === "when_run_button_click").some((line) => {
+      let from = 0;
+      const found = types.map((type) => { const at = line.findIndex((n, i) => i >= from && n.type === type); from = at + 1; return at < 0 ? null : line[at]; });
+      return found.every(Boolean) && check(found as EntryNode[]);
+    });
+  }
+  const seconds = (n: EntryNode) => { const value = (n.params[0] as EntryNode | null)?.params?.[0]; return entryNumeric(value) ? Number(value) : NaN; };
   function grade(): boolean {
+    if (id === "robot-go") return robotLine(["hamsterlite_move_forward_for_secs", "hamsterlite_move_backward_for_secs"], ([ahead, back]) => seconds(ahead) > 0 && seconds(ahead) === seconds(back));
+    if (id === "robot-signal") return robotLine(["hamsterlite_set_led_to", "hamsterlite_move_forward_for_secs", "hamsterlite_beep", "hamsterlite_clear_led"]);
     if (id === "name") return ["초코", "보리"].every((value) => { const r = run("click", [value]); return r.asks === 1 && r.sayings.some((s) => s.input && s.text.includes(value)); });
     // The change challenge subtracts the price from the money paid and says it with ‘원’ in one line.
     if (id === "multiply" || id === "average" || id === "change") return (id === "change" ? [[5000, 3200], [10000, 7500], [1000, 1000], [3000, 450]] : [[6, 4], [3, 7], [-2, 5], [0, 9]]).every(([a, b]) => {
