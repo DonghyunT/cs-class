@@ -57,6 +57,14 @@ export const SMOKE_RELATED = [{
     /^src\/components\/teacher\/(?:presentation\.ts|teacher\.module\.css)$/
   ],
   tests: ["tests/teacher-review-workflow.spec.ts", "tests/ui-teacher-refinement.spec.ts"]
+}, {
+  patterns: [
+    /^src\/lib\/(?:classroom|server)\/timetable\.ts$/,
+    /^src\/lib\/server\/timetable-protocol\.ts$/,
+    /^scripts\/timetable-fixture\.mjs$/,
+    /^tests\/timetable(?:-parser\.test|\.spec)\.ts$/
+  ],
+  tests: ["tests/timetable.spec.ts"]
 }];
 
 export function smokeRelatedTests(files) {

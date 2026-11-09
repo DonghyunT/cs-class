@@ -150,6 +150,13 @@ test("selectE2E classifies multiple lesson changes as affected union", () => {
   assert.ok(result.testFiles.includes("tests/review-abstraction.spec.ts"));
 });
 
+test("timetable changes add its spec to the smoke fallback without narrowing local scope", () => {
+  for (const file of ["src/lib/classroom/timetable.ts", "src/lib/server/timetable.ts", "src/lib/server/timetable-protocol.ts", "scripts/timetable-fixture.mjs"]) {
+    assert.deepEqual(smokeRelatedTests([file]), ["tests/timetable.spec.ts"], file);
+    assert.equal(selectE2E([file]).mode, "full", file);
+  }
+});
+
 test("selectE2E elevates to full if unmapped or shared code is modified", () => {
   const shared = selectE2E([
     "src/components/student/review/sandwich.tsx",

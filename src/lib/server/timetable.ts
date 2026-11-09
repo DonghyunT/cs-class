@@ -1,8 +1,9 @@
 import "server-only";
-import { createDecipheriv, createHash, createHmac, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Transaction } from "firebase-admin/firestore";
-import { parseTimetableWeek } from "../classroom/timetable";
+import { parseTimetableWeek, type TimetableFields } from "../classroom/timetable";
+import { decryptPayload, deobfuscate, extractPayload, readTimetableFields } from "./timetable-protocol";
 import { seoulToday, TIMETABLE_SCHOOL, type ClassTimetable, type TimetableSnapshot } from "../classroom/planner";
 import { admin } from "./firebase";
 import { requireCondition, ServiceError } from "./errors";
@@ -12,65 +13,6 @@ interface Cache extends Partial<TimetableSnapshot> {
 }
 const cacheRef = () => admin().db.collection("csTimetables").doc(TIMETABLE_SCHOOL.code);
 const refreshFailure = "학교 시간표를 갱신하지 못했어요. 마지막으로 확인한 시간표를 표시합니다.";
-
-function deobfuscate(array: [number, string][], key: number): string {
-  let s = "";
-  for (let i = 0; i < array.length; i++) {
-    const [flag, str] = array[i];
-    if (flag) {
-      s += str;
-      continue;
-    }
-    for (let j = 0; j < str.length; j += 4) {
-      const code = parseInt(str.slice(j, j + 4), 16) ^ ((key + (j / 4) * 13) & 255);
-      s += String.fromCharCode(code);
-    }
-  }
-  return s;
-}
-
-function extractPayload(source: string, marker: string): { array: [number, string][]; key: number; nextIdx: number } | null {
-  try {
-    const markerIdx = source.indexOf(marker);
-    if (markerIdx === -1) return null;
-    const startParen = source.indexOf("})([", markerIdx);
-    if (startParen === -1) return null;
-    const arrayStart = startParen + 3;
-    const closeParen = source.indexOf(");", arrayStart);
-    if (closeParen === -1) return null;
-    const comma = source.lastIndexOf(",", closeParen);
-    const key = parseInt(source.slice(comma + 1, closeParen).trim(), 10);
-    if (Number.isNaN(key)) return null;
-    const rawArray = source.slice(arrayStart, comma).trim();
-    const array = JSON.parse(rawArray) as [number, string][];
-    if (!Array.isArray(array)) return null;
-    return { array, key, nextIdx: closeParen + 2 };
-  } catch {
-    return null;
-  }
-}
-
-function decryptPayload(raw: string, aesKey?: Buffer): string {
-  const trimmed = raw.replace(/\x00+$/, "");
-  if (!trimmed.startsWith("enc5:") && !trimmed.startsWith("enc1:")) return trimmed;
-  if (!aesKey) throw new Error("TIMETABLE_CRYPTO");
-  const parts = trimmed.split(":");
-  if (parts.length !== 4) throw new Error("TIMETABLE_CRYPTO");
-  const isBase64 = parts[0] === "enc5";
-  const iv = Buffer.from(parts[1], isBase64 ? "base64" : "hex");
-  const ciphertext = Buffer.from(parts[2], isBase64 ? "base64" : "hex");
-  const tag = parts[3];
-
-  const hmacKey = createHash("sha256").update(aesKey).digest();
-  const computedTag = createHmac("sha256", hmacKey).update(parts.slice(0, 3).join(":")).digest(isBase64 ? "base64" : "hex");
-  if (computedTag !== tag) throw new Error("TIMETABLE_AUTH");
-
-  const decipher = createDecipheriv("aes-256-cbc", aesKey, iv);
-  decipher.setAutoPadding(true);
-  let decrypted = decipher.update(ciphertext, undefined, "utf8");
-  decrypted += decipher.final("utf8");
-  return decrypted.replace(/\x00+$/, "");
-}
 
 export async function readClassTimetable(tx: Transaction, classId: string): Promise<ClassTimetable> {
   const cached = (await tx.get(cacheRef())).data() as Cache | undefined;
@@ -120,6 +62,7 @@ async function fetchSchoolTimetable(): Promise<TimetableSnapshot> {
   let schoolQuery = "";
   let weekQuery: (index: number) => string;
   let aesKey: Buffer | undefined;
+  let fields: TimetableFields | undefined;
   let apiHeaders: Record<string, string> = {};
 
   if (page.includes("/* hour-obfuscated-v2 */")) {
@@ -141,11 +84,13 @@ async function fetchSchoolTimetable(): Promise<TimetableSnapshot> {
     const timetablePrefix = /sc_data\(['"](\d+_)['"]/.exec(decoded2)?.[1];
     const permMatch = /return\s+a\[(\d)\]\+a\[(\d)\]\+a\[(\d)\]\+a\[(\d)\]/.exec(inner1);
     const keyPartsMatch = /\(\['([0-9a-f]+)',\s*'([0-9a-f]+)',\s*'([0-9a-f]+)',\s*'([0-9a-f]+)'\]\)/.exec(inner1);
-    if (!ep || !searchPrefix || !timetablePrefix || !permMatch || !keyPartsMatch) throw new Error("TIMETABLE_PROTOCOL");
+    const liveFields = readTimetableFields(decoded1);
+    if (!ep || !searchPrefix || !timetablePrefix || !permMatch || !keyPartsMatch || !liveFields) throw new Error("TIMETABLE_PROTOCOL");
 
     const rawParts = [keyPartsMatch[1], keyPartsMatch[2], keyPartsMatch[3], keyPartsMatch[4]];
     const hexKey = rawParts[Number(permMatch[1])] + rawParts[Number(permMatch[2])] + rawParts[Number(permMatch[3])] + rawParts[Number(permMatch[4])];
     aesKey = Buffer.from(hexKey, "hex");
+    fields = liveFields;
     endpoint = ep;
     schoolQuery = encodeURIComponent(Buffer.from(`${searchPrefix}${encodeURIComponent(TIMETABLE_SCHOOL.name.slice(0, 2))}_enc5`).toString("base64"));
     weekQuery = (index) => encodeURIComponent(Buffer.from(`${timetablePrefix}${TIMETABLE_SCHOOL.code}_0_${index}_enc5`).toString("base64"));
@@ -179,7 +124,7 @@ async function fetchSchoolTimetable(): Promise<TimetableSnapshot> {
   );
   if (!found) throw new Error("TIMETABLE_SCHOOL");
 
-  const week = async (index: number) => parseTimetableWeek(await json(`/${endpoint}?${weekQuery(index)}`));
+  const week = async (index: number) => parseTimetableWeek(await json(`/${endpoint}?${weekQuery(index)}`), fields);
   const first = await week(1);
   const results = [first];
   if (!first.weeks.some(([index]) => index === 1) || new Set(first.weeks.map(([index]) => index)).size !== first.weeks.length) throw new Error("TIMETABLE_WEEKS");
