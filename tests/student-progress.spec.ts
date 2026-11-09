@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import { emptyWork } from "../src/lib/classroom/progress";
-import { buildProgrammingProject } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, missionsFor } from "../src/lib/classroom/programming-entry";
 import type { StudentDashboard, Work, WorkAction } from "../src/lib/classroom/types";
 import { auth, clearLoginLimit, db, headers, initialPassword, localOnly, loginStudent, resetStudent, studentPassword } from "./emulator";
 
@@ -768,6 +768,44 @@ test("완료 알림·배지: 마지막 활동을 마치면 완료 카드와 받�
   await page.reload();
   await expect(all).toContainText("11종 중 6종 받음");
   await expect(all.getByText("새로 받음", { exact: true })).toHaveCount(0);
+});
+
+test("배지의 받은 수업은 최신 세 개만 보이고 나머지는 키보드로 펼쳐 본다", async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+  const lessons = LESSONS.filter(lesson => lesson.practice.type === "programming");
+  const work = Object.fromEntries(lessons.map(lesson => [lesson.id, {
+    ...emptyWork(lesson), updatedAt: Date.now(),
+    conceptSolved: lesson.concepts.map(concept => concept.id), quizSolved: lesson.quiz.map(question => question.id),
+    missions: Object.fromEntries(missionsFor(lesson.id).map(mission => [mission.id, { validation: null, submission: submission(mission.id) }])),
+  }]));
+  await showDashboardFixture(page, lessons, lessons.at(-1)!.id, work);
+  await page.goto("/student/badges");
+  const allClear = page.locator('[data-badge="all-clear"][data-earned="true"]');
+  const newest = [...lessons].reverse();
+  await expect(allClear.locator("p").filter({ hasText: /^받은 수업:/ })).toHaveText(`받은 수업: ${newest.slice(0, 3).map(lesson => lesson.title).join(", ")}`);
+  await expect(allClear).toContainText(`${lessons.length}개 수업에서 받음`);
+  const more = allClear.locator("summary");
+  await expect(more).toHaveText(`나머지 ${lessons.length - 3}개 보기`);
+  const older = allClear.locator("details p");
+  await expect(older).toBeHidden();
+  await more.focus(); await page.keyboard.press("Enter");
+  await expect(older).toBeVisible();
+  await expect(older).toHaveText(newest.slice(3).map(lesson => lesson.title).join(", "));
+  await allClear.screenshot({ path: info.outputPath("badge-lessons-expanded.png") });
+  await page.keyboard.press("Enter");
+  await expect(older).toBeHidden();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await allClear.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath("badge-lessons-mobile.png"), fullPage: false });
+  await showDashboardFixture(page, lessons.slice(0, 3), lessons[2].id, work);
+  await page.goto("/student/badges");
+  await expect(allClear).toContainText("3개 수업에서 받음");
+  await expect(allClear.locator("details")).toHaveCount(0);
+  await expect(allClear.locator("p").filter({ hasText: /^받은 수업:/ })).toHaveText(`받은 수업: ${lessons.slice(0, 3).reverse().map(lesson => lesson.title).join(", ")}`);
+  expect(errors).toEqual([]);
 });
 
 test("희귀·깜짝 배지·토스트: 수업 중 배지를 받으면 토스트로 알리고, 희귀 배지만 반짝인다", async ({ page }) => {

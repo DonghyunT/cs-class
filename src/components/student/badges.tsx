@@ -33,6 +33,7 @@ function BadgeCard({ badge, fresh }: { badge: Badge; fresh: boolean }) {
     : badge.kind === "common" ? badge.earned ? "받음" : "아직"
     : badge.id === "challenge" ? `도전 미션 ${badge.count}개 제출` : badge.id === "stamps" ? `도장 ${badge.count}개` : `${badge.count}개 수업`;
   const step = badge.next === null ? null : badge.next - badge.count;
+  const lessons = [...badge.lessons].reverse();
   return <li className={styles.badge} data-badge={badge.id} data-kind={badge.kind} data-earned={badge.earned} data-stars={badge.stars} data-fresh={fresh || undefined}>
     <span className={styles.medal}><Icon size={22} aria-hidden="true" /></span>
     <div>
@@ -42,7 +43,10 @@ function BadgeCard({ badge, fresh }: { badge: Badge; fresh: boolean }) {
       <strong>{count}</strong>
       {(badge.kind === "tiered" || badge.kind === "level") && <span className={styles.next}><span className={styles.bar} aria-hidden="true"><span style={{ width: `${step === null ? 100 : Math.round(badge.count / badge.next! * 100)}%` }} /></span>{step === null ? "최고 단계" : `다음 별까지 ${step}개`}</span>}
       {!hidden && <p>{badge.how}</p>}
-      {!hidden && badge.lessons.length > 0 && <p className={styles.where}>{badge.id === "first-step" ? "개념을 확인한 수업" : "받은 수업"}: {badge.lessons.join(", ")}</p>}
+      {!hidden && lessons.length > 0 && <>
+        <p className={styles.where}>{badge.id === "first-step" ? "개념을 확인한 수업" : "받은 수업"}: {lessons.slice(0, 3).join(", ")}</p>
+        {lessons.length > 3 && <details className={styles.older}><summary>나머지 {lessons.length - 3}개 보기</summary><p className={styles.where}>{lessons.slice(3).join(", ")}</p></details>}
+      </>}
     </div>
   </li>;
 }
