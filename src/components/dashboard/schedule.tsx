@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, CalendarDays, Clock, ExternalLink, Pencil, Plus, RefreshCw, School, Trash2 } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, ExternalLink, Minus, Pencil, Plus, RefreshCw, School, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { useSession, useTeacherClass } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
@@ -147,7 +147,7 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
         <div className={styles.sectionHeading}>
           <div className={styles.sectionTitle}>{scheduleIcon}<h2 id="schedule-heading">오늘 이후 일정</h2></div>
           {teacher
-            ? list.data && <Button ref={openForm} variant="outline" aria-expanded={formOpen} aria-controls="schedule-form" onClick={toggleForm}><Plus size={15} aria-hidden="true" />일정 등록</Button>
+            ? list.data && <Button ref={openForm} variant="outline" aria-expanded={formOpen} aria-controls="schedule-form" title={!formOpen ? "일정 등록 펼치기" : draft.id || draft.title.trim() ? "입력 중이라 접히지 않아요" : "일정 등록 접기"} onClick={toggleForm}>{formOpen ? <Minus size={15} aria-hidden="true" /> : <Plus size={15} aria-hidden="true" />}일정 등록</Button>
             : <Button variant="ghost" className={styles.compactControl} aria-label="일정 새로고침" title="일정 새로고침" disabled={locked} onClick={() => void list.refresh()}><RefreshCw size={15} aria-hidden="true" />새로고침</Button>}
         </div>
         {teacher && list.data && <p role="status" className={styles.panelNote}>{list.saving ? "일정을 저장하고 있어요." : list.error ? "아직 저장하지 못했어요." : list.loadError ? "마지막 조회 자료 · 최신 기록 확인 필요" : list.saved ? "저장 완료" : "담당 선생님이 관리하는 반 일정이에요."}</p>}
