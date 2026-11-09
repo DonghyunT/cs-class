@@ -1,6 +1,6 @@
 # Firebase·Vercel 운영 설정과 배포
 
-갱신: 2026-11-07(Asia/Seoul). 운영 Firebase·Vercel의 설정·배포·복구 절차입니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다. 지금 설정이 어떤 상태인지는 끝의 [운영 환경 현황](#운영-환경-현황)에 모읍니다.
+갱신: 2026-11-09(Asia/Seoul). 운영 Firebase·Vercel의 설정·배포·복구 절차입니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다. 지금 설정이 어떤 상태인지는 끝의 [운영 환경 현황](#운영-환경-현황)에 모읍니다.
 
 ## 연결 기준
 
@@ -197,7 +197,7 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 | 서버 함수 지역 | Vercel `cs-class` Production 배포가 `icn1`(서울) | 2026-10-18, #44 배포 정보 |
 | 운영 도메인 | `cs-class-donghyunt.vercel.app`, Firebase Authentication 허용 목록에 등록 | 2026-09-28 사용자 승인으로 등록 |
 | Production 환경변수 | Firebase 웹 설정 3개·관리자 JSON·교사 허용 목록·초기/초기화 비밀번호 7개(Production 전용 Secret), `CRON_SECRET`, `UPSTAGE_API_KEY`·`CS_AI_COMMAND_SECRET`(Production 전용 Sensitive) | 2026-10-13판 문서 기록 |
-| 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-19 실패 차단 확인. 2026-11-07 `444850f`의 READY·운영 별칭 미연결 → `app` 성공 뒤 연결, `f7a214d`의 `verified` 성공·공개 확인 |
+| 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-19 실패 차단 확인. 2026-11-07 `444850f`의 READY·운영 별칭 미연결 → `app` 성공 뒤 연결, `f7a214d`의 `verified` 성공·공개 확인. 2026-11-09 `bd547a2`는 `app`(19초)이 빌드 READY보다 먼저 끝난 뒤 8분간 `Waiting for checks`로 멈췄고, 사용자 승인으로 `gh run rerun` 하자 성공 3초 뒤 연결 |
 | 실행 설정 `NODE_OPTIONS` | Preview·Production에 `--experimental-require-module` | 2026-09-30 보관 인계 기록(재확인 안 함) |
 | Firestore 규칙 | 전체 거부(서버 전용). 운영 적용본은 저장소 `firestore.rules`와 주석만 다름(주석은 9/28 `ba0dbc7` 판본) | 2026-11-05 사용자 승인으로 기본 DB 규칙을 읽어 대조 |
 | 배포 보존 기간 | Build and Deployment의 Deployment Retention Policy 네 항목 모두 1주. Hobby 롤백은 직전 Production까지만 되므로 늘리지 않음 | 2026-10-18 대시보드 확인(Deployment Storage 4.97/10 GB) |
