@@ -117,6 +117,8 @@ test.describe("학교 시간표 연동", () => {
       await schedule.delete(); await readyTeacher(page.request); await page.goto("/teacher/schedule?classId=2-1");
       const refresh = page.getByRole("button", { name: "학교 시간표 지금 갱신", exact: true });
       await expect(refresh).toBeVisible(); await expect(page.getByText("아직 가져온 시간표가 없어요.")).toBeVisible();
+      await expect(page.getByRole("link", { name: /학교 시간표 보기/ })).toHaveAttribute("href", "http://comci.net:4082/st");
+      await expect(page.getByRole("button", { name: "일정 새로고침", exact: true })).toHaveCount(0);
       await page.getByLabel("일정 제목", { exact: true }).fill("미전송 제목을 보존");
       await refresh.focus(); await page.keyboard.press("Enter");
       await expect(page.getByText("학교 시간표를 갱신했어요.", { exact: true })).toBeVisible();
@@ -142,6 +144,7 @@ test.describe("학교 시간표 연동", () => {
       await readyStudent(page.request); await page.goto("/student/schedule");
       await expect(page.getByText("정보 · 2교시", { exact: true })).toHaveCount(2);
       await expect(page.getByRole("button", { name: "학교 시간표 지금 갱신", exact: true })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "일정 새로고침", exact: true })).toBeVisible();
       await page.screenshot({ path: "outputs/classroom-readiness/timetable-student-1440-demo.png", fullPage: true });
       await page.goto("/student"); await expect(page.getByRole("table", { name: /일정 달력/ })).toBeVisible();
       await expect(page.locator('time[data-event="true"]').first()).toBeVisible(); expect(errors).toEqual([]);
