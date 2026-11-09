@@ -1,5 +1,5 @@
 import "server-only";
-import { randomUUID } from "node:crypto";
+import { createDecipheriv, createHash, createHmac, randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Transaction } from "firebase-admin/firestore";
 import { parseTimetableWeek } from "../classroom/timetable";
@@ -13,6 +13,65 @@ interface Cache extends Partial<TimetableSnapshot> {
 const cacheRef = () => admin().db.collection("csTimetables").doc(TIMETABLE_SCHOOL.code);
 const refreshFailure = "학교 시간표를 갱신하지 못했어요. 마지막으로 확인한 시간표를 표시합니다.";
 
+function deobfuscate(array: [number, string][], key: number): string {
+  let s = "";
+  for (let i = 0; i < array.length; i++) {
+    const [flag, str] = array[i];
+    if (flag) {
+      s += str;
+      continue;
+    }
+    for (let j = 0; j < str.length; j += 4) {
+      const code = parseInt(str.slice(j, j + 4), 16) ^ ((key + (j / 4) * 13) & 255);
+      s += String.fromCharCode(code);
+    }
+  }
+  return s;
+}
+
+function extractPayload(source: string, marker: string): { array: [number, string][]; key: number; nextIdx: number } | null {
+  try {
+    const markerIdx = source.indexOf(marker);
+    if (markerIdx === -1) return null;
+    const startParen = source.indexOf("})([", markerIdx);
+    if (startParen === -1) return null;
+    const arrayStart = startParen + 3;
+    const closeParen = source.indexOf(");", arrayStart);
+    if (closeParen === -1) return null;
+    const comma = source.lastIndexOf(",", closeParen);
+    const key = parseInt(source.slice(comma + 1, closeParen).trim(), 10);
+    if (Number.isNaN(key)) return null;
+    const rawArray = source.slice(arrayStart, comma).trim();
+    const array = JSON.parse(rawArray) as [number, string][];
+    if (!Array.isArray(array)) return null;
+    return { array, key, nextIdx: closeParen + 2 };
+  } catch {
+    return null;
+  }
+}
+
+function decryptPayload(raw: string, aesKey?: Buffer): string {
+  const trimmed = raw.replace(/\x00+$/, "");
+  if (!trimmed.startsWith("enc5:") && !trimmed.startsWith("enc1:")) return trimmed;
+  if (!aesKey) throw new Error("TIMETABLE_CRYPTO");
+  const parts = trimmed.split(":");
+  if (parts.length !== 4) throw new Error("TIMETABLE_CRYPTO");
+  const isBase64 = parts[0] === "enc5";
+  const iv = Buffer.from(parts[1], isBase64 ? "base64" : "hex");
+  const ciphertext = Buffer.from(parts[2], isBase64 ? "base64" : "hex");
+  const tag = parts[3];
+
+  const hmacKey = createHash("sha256").update(aesKey).digest();
+  const computedTag = createHmac("sha256", hmacKey).update(parts.slice(0, 3).join(":")).digest(isBase64 ? "base64" : "hex");
+  if (computedTag !== tag) throw new Error("TIMETABLE_AUTH");
+
+  const decipher = createDecipheriv("aes-256-cbc", aesKey, iv);
+  decipher.setAutoPadding(true);
+  let decrypted = decipher.update(ciphertext, undefined, "utf8");
+  decrypted += decipher.final("utf8");
+  return decrypted.replace(/\x00+$/, "");
+}
+
 export async function readClassTimetable(tx: Transaction, classId: string): Promise<ClassTimetable> {
   const cached = (await tx.get(cacheRef())).data() as Cache | undefined;
   return {
@@ -23,38 +82,106 @@ export async function readClassTimetable(tx: Transaction, classId: string): Prom
     items: (cached?.items ?? []).filter((item) => item.classId === classId),
   };
 }
+
 async function fetchSchoolTimetable(): Promise<TimetableSnapshot> {
   // The fixture is available only to the exact local demo runtime, never a deployment.
   const fixture = process.env.CS_TIMETABLE_FIXTURE === "1" && !process.env.VERCEL && process.env.FIREBASE_PROJECT_ID === "demo-cs-class"
     && process.env.FIREBASE_AUTH_EMULATOR_HOST === "127.0.0.1:9099" && process.env.FIRESTORE_EMULATOR_HOST === "127.0.0.1:8080";
   const base = fixture ? "http://127.0.0.1:4781" : "http://comci.net:4082";
   const signal = AbortSignal.timeout(45_000);
-  async function text(path: string, encoding = "utf-8") {
-    const response = await fetch(`${base}${path}`, { signal, redirect: "error", cache: "no-store", headers: { Referer: `${base}/st`, "X-Requested-With": "XMLHttpRequest" } });
+
+  async function text(path: string, encoding = "utf-8", headers?: HeadersInit) {
+    const response = await fetch(`${base}${path}`, {
+      signal,
+      redirect: "error",
+      cache: "no-store",
+      headers: { Referer: `${base}/st`, "X-Requested-With": "XMLHttpRequest", ...headers },
+    });
     if (!response.ok || !response.body) throw new Error("TIMETABLE_RESPONSE");
-    const reader = response.body.getReader(); const chunks: Uint8Array[] = []; let length = 0;
+    const cookie = response.headers.getSetCookie?.()?.[0]?.split(";")?.[0]
+      ?? response.headers.get("set-cookie")?.split(";")?.[0] ?? "";
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let length = 0;
     while (true) {
-      const part = await reader.read(); if (part.done) break;
+      const part = await reader.read();
+      if (part.done) break;
       length += part.value.byteLength;
       if (length > 1_000_000) { await reader.cancel(); throw new Error("TIMETABLE_SIZE"); }
       chunks.push(part.value);
     }
-    return new TextDecoder(encoding, { fatal: true }).decode(Buffer.concat(chunks));
+    const decoded = new TextDecoder(encoding, { fatal: true }).decode(Buffer.concat(chunks));
+    return { text: decoded, cookie };
   }
+
+  const { text: page, cookie } = await text("/st", "euc-kr");
+
+  let endpoint = "";
+  let schoolQuery = "";
+  let weekQuery: (index: number) => string;
+  let aesKey: Buffer | undefined;
+  let apiHeaders: Record<string, string> = {};
+
+  if (page.includes("/* hour-obfuscated-v2 */")) {
+    const token = /window\.__HourRequestToken\s*=\s*['"]([^'"]+)['"]/.exec(page)?.[1] ?? "";
+    const p1 = extractPayload(page, "/* hour-obfuscated-v2 */");
+    const p2 = p1 ? extractPayload(page.slice(p1.nextIdx), "/* hour-obfuscated-v2 */") : null;
+    if (!p1 || !p2) throw new Error("TIMETABLE_PROTOCOL");
+    const decoded1 = deobfuscate(p1.array, p1.key);
+    const decoded2 = deobfuscate(p2.array, p2.key);
+
+    const a1 = extractPayload(decoded1, "/* hour-ajax-obfuscated-v1 */");
+    const a2 = a1 ? extractPayload(decoded1.slice(a1.nextIdx), "/* hour-ajax-obfuscated-v1 */") : null;
+    if (!a1 || !a2) throw new Error("TIMETABLE_PROTOCOL");
+    const inner0 = deobfuscate(a1.array, a1.key);
+    const inner1 = deobfuscate(a2.array, a2.key);
+
+    const ep = /url:['"]\.\/(\d+)\?\s*'\s*\+/g.exec(inner0)?.[1];
+    const searchPrefix = /btoa\(['"](\d+l)['"]\s*\+/g.exec(inner0)?.[1];
+    const timetablePrefix = /sc_data\(['"](\d+_)['"]/.exec(decoded2)?.[1];
+    const permMatch = /return\s+a\[(\d)\]\+a\[(\d)\]\+a\[(\d)\]\+a\[(\d)\]/.exec(inner1);
+    const keyPartsMatch = /\(\['([0-9a-f]+)',\s*'([0-9a-f]+)',\s*'([0-9a-f]+)',\s*'([0-9a-f]+)'\]\)/.exec(inner1);
+    if (!ep || !searchPrefix || !timetablePrefix || !permMatch || !keyPartsMatch) throw new Error("TIMETABLE_PROTOCOL");
+
+    const rawParts = [keyPartsMatch[1], keyPartsMatch[2], keyPartsMatch[3], keyPartsMatch[4]];
+    const hexKey = rawParts[Number(permMatch[1])] + rawParts[Number(permMatch[2])] + rawParts[Number(permMatch[3])] + rawParts[Number(permMatch[4])];
+    aesKey = Buffer.from(hexKey, "hex");
+    endpoint = ep;
+    schoolQuery = encodeURIComponent(Buffer.from(`${searchPrefix}${encodeURIComponent(TIMETABLE_SCHOOL.name.slice(0, 2))}_enc5`).toString("base64"));
+    weekQuery = (index) => encodeURIComponent(Buffer.from(`${timetablePrefix}${TIMETABLE_SCHOOL.code}_0_${index}_enc5`).toString("base64"));
+    apiHeaders = {
+      ...(token ? { "X-Hour-Token": token } : {}),
+      ...(cookie ? { Cookie: cookie } : {}),
+    };
+  } else {
+    const ep = /url:['"]\.\/(\d+)\?17384l/.exec(page)?.[1];
+    const prefix = /sc_data\('(\d+)_',sc,/.exec(page)?.[1];
+    if (!ep || !prefix) throw new Error("TIMETABLE_PROTOCOL");
+    endpoint = ep;
+    schoolQuery = "17384l%B1%DD%BF%C1";
+    weekQuery = (index) => Buffer.from(`${prefix}_${TIMETABLE_SCHOOL.code}_0_${index}`).toString("base64");
+  }
+
   async function json(path: string) {
-    const source = await text(path); const end = source.lastIndexOf("}");
-    if (end < 0 || !/^[\x00 \t\r\n]*$/.test(source.slice(end + 1))) throw new Error("TIMETABLE_JSON");
-    return JSON.parse(source.slice(0, end + 1)) as unknown;
+    const { text: source } = await text(path, "utf-8", apiHeaders);
+    const decrypted = decryptPayload(source, aesKey);
+    const end = decrypted.lastIndexOf("}");
+    if (end < 0 || !/^[\x00 \t\r\n]*$/.test(decrypted.slice(end + 1))) throw new Error("TIMETABLE_JSON");
+    return JSON.parse(decrypted.slice(0, end + 1)) as unknown;
   }
-  const page = await text("/st", "euc-kr");
-  const endpoint = /url:['"]\.\/(\d+)\?17384l/.exec(page)?.[1];
-  const prefix = /sc_data\('(\d+)_',sc,/.exec(page)?.[1];
-  if (!endpoint || !prefix) throw new Error("TIMETABLE_PROTOCOL");
-  // Comcigan's public school search uses EUC-KR query bytes and UTF-8 JSON.
-  const schools = z.object({ 학교검색: z.array(z.tuple([z.number(), z.string(), z.string(), z.number()])).max(50) }).parse(await json(`/${endpoint}?17384l%B1%DD%BF%C1`));
-  if (!schools.학교검색.some((school) => school[1] === "서울" && school[2] === TIMETABLE_SCHOOL.name && String(school[3]) === TIMETABLE_SCHOOL.code)) throw new Error("TIMETABLE_SCHOOL");
-  const week = async (index: number) => parseTimetableWeek(await json(`/${endpoint}?${Buffer.from(`${prefix}_${TIMETABLE_SCHOOL.code}_0_${index}`).toString("base64")}`));
-  const first = await week(1); const results = [first];
+
+  const schools = z.object({
+    학교검색: z.array(z.array(z.union([z.number(), z.string()]))).max(50),
+  }).parse(await json(`/${endpoint}?${schoolQuery}`));
+
+  const found = schools.학교검색.some((school) =>
+    school[1] === "서울" && school[2] === TIMETABLE_SCHOOL.name && school.slice(3).some((code) => String(code) === TIMETABLE_SCHOOL.code)
+  );
+  if (!found) throw new Error("TIMETABLE_SCHOOL");
+
+  const week = async (index: number) => parseTimetableWeek(await json(`/${endpoint}?${weekQuery(index)}`));
+  const first = await week(1);
+  const results = [first];
   if (!first.weeks.some(([index]) => index === 1) || new Set(first.weeks.map(([index]) => index)).size !== first.weeks.length) throw new Error("TIMETABLE_WEEKS");
   for (const [index] of first.weeks) if (index !== 1) results.push(await week(index));
   if (results.some((result) => result.updatedAt !== first.updatedAt)) throw new Error("TIMETABLE_CHANGED_DURING_REFRESH");
@@ -63,6 +190,7 @@ async function fetchSchoolTimetable(): Promise<TimetableSnapshot> {
   const items = results.flatMap((result) => result.items).sort((a, b) => a.date.localeCompare(b.date) || a.period - b.period || a.classId.localeCompare(b.classId));
   return { checkedAt: Date.now(), sourceUpdatedAt: first.updatedAt, rangeStart: starts[0], rangeEnd: results.map((result) => result.end).sort().at(-1)!, items };
 }
+
 export async function refreshTimetable(cron = false) {
   requireCondition(!process.env.VERCEL || process.env.VERCEL_ENV === "production", 403, "PREVIEW_DISABLED", "시간표 갱신은 운영 환경에서 사용할 수 있어요.");
   const { db } = admin(); const ref = cacheRef(); const lease = randomUUID(); const now = Date.now(); const day = seoulToday();
