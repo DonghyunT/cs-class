@@ -292,7 +292,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         })}</ul>
       </div></PracticeGuidance>
       <div className={styles.actions}>
-        <Button variant={validation?.passed && !submitted ? "outline" : "default"} disabled={locked || actionsBlocked || preparing || running || phase !== "ready" || !program} onClick={() => void act({ type: "validate-practice" }, "practice-feedback")}>{busy || preparing ? "확인 중…" : "조건 검증"}</Button>
+        <Button variant={validation?.passed || submitted ? "outline" : "default"} disabled={locked || actionsBlocked || preparing || running || phase !== "ready" || !program} onClick={() => void act({ type: "validate-practice" }, "practice-feedback")}>{busy || preparing ? "확인 중…" : "조건 검증"}</Button>
         {validation && <p id="practice-feedback" tabIndex={-1} role="status" className={validation.passed ? common.feedbackGood : common.feedbackRetry}>{validation.message}</p>}
         <Button variant={validation?.passed && !submitted ? "default" : "outline"} disabled={locked || actionsBlocked || preparing || running || phase !== "ready" || !validation?.passed || submitted} onClick={() => void act({ type: "submit-practice" }, "submitted-heading")}><Send size={16} />{submitted ? mode === "preview" ? "체험 제출 확인" : "이 작품 제출 완료" : mode === "preview" ? "체험 제출" : work.submission ? "수정한 작품 제출" : "작품 제출"}</Button>
         {!work.submission && validation?.passed && <p className={common.smallNote}>검증 통과 · 아직 제출 전이에요.</p>}

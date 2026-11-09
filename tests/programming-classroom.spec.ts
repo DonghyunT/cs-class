@@ -51,6 +51,34 @@ test("entry-guidance: 이름 미션은 실행 없이 바로 검증하고, 고친
   expect(parseProgrammingProject((await stored(page)).draft.programming!.projects.name)?.threads[0][2].params[1]).toMatchObject({ type: "number", params: ["0.3"] });
 });
 
+test("제출한 미션은 검증을 다시 강조하지 않고 수정하면 재검증을 안내한다", async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+  const frame = await prepare(page, "name", nameProject);
+  const validate = page.getByRole("button", { name: "조건 검증", exact: true });
+  await expect(validate).toHaveClass(/bg-primary/);
+  await validate.click();
+  const submit = page.getByRole("button", { name: "작품 제출", exact: true });
+  await expect(submit).toBeEnabled();
+  await expect(submit).toHaveClass(/bg-primary/);
+  await expect(validate).not.toHaveClass(/bg-primary/);
+  await submit.click();
+  await expect(page.getByRole("button", { name: "이 작품 제출 완료", exact: true })).toBeDisabled();
+  await expect(validate).not.toHaveClass(/bg-primary/);
+  await expect(page.locator("#programming-next-mission")).toBeFocused();
+  await page.screenshot({ path: info.outputPath("submitted-mission.png"), fullPage: true });
+  await page.reload();
+  await expect(page.getByRole("button", { name: "이 작품 제출 완료", exact: true })).toBeDisabled();
+  await expect(validate).not.toHaveClass(/bg-primary/);
+  await frame.locator("#entryWorkspaceBoard").getByText("0.2", { exact: true }).first().locator("..").click();
+  const duration = frame.locator("input.entry-widget-input-field:visible");
+  await duration.fill("0.3"); await duration.press("Enter");
+  await expect(validate).toHaveClass(/bg-primary/);
+  await expect(page.getByRole("button", { name: "수정한 작품 제출", exact: true })).toBeDisabled();
+  expect(errors).toEqual([]);
+});
+
 test("entry-guidance: 시작 블록의 다음 행동과 위아래 위치를 정확히 안내한다", async ({ page }) => {
   await prepare(page);
   await entryStart(page).click();
