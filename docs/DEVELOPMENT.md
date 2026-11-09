@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-11-08(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-11-09(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -366,6 +366,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 <a id="학교-시간표-연동"></a>
 
 - 자동 테스트는 `CS_TIMETABLE_FIXTURE=1`로 실제 컴시간 서버(`comci.net`) 대신 `scripts/timetable-fixture.mjs`의 `127.0.0.1:4781` 합성 서버를 씁니다. Playwright `webServer`가 이 값으로 앱을 띄우며, 데모 프로젝트·로컬 에뮬레이터에서만 켜지고 Vercel에서는 켜지지 않습니다.
+- 합성 서버는 v1 형식이라 v2 암호화·난독화 해제는 `tests/timetable-parser.test.ts`의 단위 검사로만 고정합니다. 컴시간은 `자료###` 번호를 바꾸므로 코드에 고정하지 않고 화면 코드에서 읽습니다(`readTimetableFields`).
 
 ---
 
