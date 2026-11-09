@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, CalendarDays, CalendarPlus, Clock, ExternalLink, Pencil, Plus, RefreshCw, School, Trash2 } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, ExternalLink, Pencil, Plus, RefreshCw, School, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { useSession, useTeacherClass } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
@@ -28,18 +28,30 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
   const list = useSavedList<ClassEvent, ScheduleData>(path, `classroom/schedule/${classId ?? ""}`, uid);
   const [draft, setDraft] = useState<{ id: string | null; title: string; date: string; lessonId: string | null }>({ id: null, title: "", date: seoulToday(), lessonId: null });
   const [focus, setFocus] = useState(0);
+  const [formOpen, setFormOpen] = useState(false);
   const [refreshingTimetable, setRefreshingTimetable] = useState(false);
   const [timetableMessage, setTimetableMessage] = useState("");
   const [timetableError, setTimetableError] = useState("");
   const form = useRef<HTMLFormElement>(null);
   const title = useRef<HTMLInputElement>(null);
+  const openForm = useRef<HTMLButtonElement>(null);
   const { register, beforeLeave } = useNavigationGuard();
   const router = useRouter();
   const { send, flush, isDirty } = list;
   const home = teacher ? "/teacher" : "/student";
   useEffect(() => {
-    if (focus) { title.current?.focus(); title.current?.scrollIntoView({ block: "center" }); }
-  }, [focus]);
+    if (!focus) return;
+    if (!formOpen) { openForm.current?.focus({ preventScroll: true }); return; }
+    title.current?.focus({ preventScroll: true }); title.current?.scrollIntoView({ block: "nearest" });
+  }, [focus, formOpen]);
+  // A typed or in-progress edit keeps the form open, so hidden input can never block leaving the page.
+  function toggleForm() {
+    if (formOpen && !draft.id && !draft.title.trim()) { setFormOpen(false); return; }
+    setFormOpen(true); setFocus((value) => value + 1);
+  }
+  function closeForm() {
+    setDraft({ id: null, title: "", date: seoulToday(), lessonId: null }); setFormOpen(false); setFocus((value) => value + 1);
+  }
   function submit() {
     if (!draft.title.trim() || (!draft.id && list.items.length >= PLANNER_LIMIT) || !form.current?.reportValidity()) return false;
     const item: ClassEvent = { ...draft, id: draft.id ?? crypto.randomUUID(), title: draft.title.trim() };
@@ -86,7 +98,7 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
       {list.changes.some((change) => change.id === item.id) && <small>{list.error ? "저장 실패 · 변경 보관 중" : "저장 중"}</small>}
     </div>
     {!summary && teacher && !item.slot && <div className={styles.rowActions}>
-      <button type="button" title="수정" aria-label={`${item.title} 수정`} disabled={locked} onClick={() => { setDraft({ id: item.id, title: item.title, date: item.date, lessonId: item.lessonId }); setFocus((value) => value + 1); }}><Pencil size={16} aria-hidden="true" /></button>
+      <button type="button" title="수정" aria-label={`${item.title} 수정`} disabled={locked} onClick={() => { setDraft({ id: item.id, title: item.title, date: item.date, lessonId: item.lessonId }); setFormOpen(true); setFocus((value) => value + 1); }}><Pencil size={16} aria-hidden="true" /></button>
       <button type="button" title="삭제" aria-label={`${item.title} 삭제`} disabled={locked} onClick={() => { send({ id: item.id, item: null }); setFocus((value) => value + 1); }}><Trash2 size={16} aria-hidden="true" /></button>
     </div>}
   </li>)}</ul>;
@@ -135,11 +147,15 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
         <div className={styles.sectionHeading}>
           <div className={styles.sectionTitle}>{scheduleIcon}<h2 id="schedule-heading">오늘 이후 일정</h2></div>
           {teacher
-            ? list.data && <Button variant="outline" onClick={() => setFocus((value) => value + 1)}><Plus size={15} aria-hidden="true" />일정 등록</Button>
+            ? list.data && <Button ref={openForm} variant="outline" aria-expanded={formOpen} aria-controls="schedule-form" onClick={toggleForm}><Plus size={15} aria-hidden="true" />일정 등록</Button>
             : <Button variant="ghost" className={styles.compactControl} aria-label="일정 새로고침" title="일정 새로고침" disabled={locked} onClick={() => void list.refresh()}><RefreshCw size={15} aria-hidden="true" />새로고침</Button>}
         </div>
+        {teacher && list.data && <p role="status" className={styles.panelNote}>{list.saving ? "일정을 저장하고 있어요." : list.error ? "아직 저장하지 못했어요." : list.loadError ? "마지막 조회 자료 · 최신 기록 확인 필요" : list.saved ? "저장 완료" : "담당 선생님이 관리하는 반 일정이에요."}</p>}
         {loadState}
         {list.data && <>
+          {teacher && <div id="schedule-form" className={styles.formReveal} data-open={formOpen} inert={!formOpen}><div><ScheduleForm key={resolvedClassId} resolvedClassId={resolvedClassId} draft={draft} setDraft={setDraft} form={form} title={title} locked={locked} lessons={list.data.lessons} submit={submit} cancel={closeForm} /></div></div>}
+          {teacher && list.items.length >= PLANNER_LIMIT && <p className={styles.muted}>파일럿은 반 일정 {PLANNER_LIMIT}개까지 저장해요. 필요 없는 일정을 지워 주세요.</p>}
+          {list.error && <div className={styles.error} role="alert"><p>{list.error} 등록·수정·삭제 의도를 보관했어요. 재시도하면 같은 항목에는 내 변경을 적용해요.</p><Button variant="outline" onClick={() => void list.retry()}>최신 기록에 내 변경 재시도</Button></div>}
           {emptyMessage}
           {renderEvents(items)}
           {past.length > 0 && <details className={styles.scheduleHistory}><summary>지난 일정 {past.length}개</summary>{renderEvents(past)}</details>}
@@ -163,11 +179,6 @@ export function ScheduleList({ uid, teacher, classId, summary = false }: { uid: 
           {timetable.stale && <p className={styles.muted}>시간표 갱신이 늦어지고 있어요. 마지막 확인 시각을 확인해 주세요.</p>}
           <p role="status" className={styles.saveStatus}>{refreshingTimetable ? "학교의 공개 시간표를 가져오고 있어요." : timetableMessage}</p>
         </section>}
-        {teacher && <ScheduleForm key={resolvedClassId} resolvedClassId={resolvedClassId} draft={draft} setDraft={setDraft} form={form} title={title} locked={locked} lessons={list.data.lessons} submit={submit} cancel={() => { setDraft({ id: null, title: "", date: seoulToday(), lessonId: null }); setFocus((value) => value + 1); }}>
-          {list.items.length >= PLANNER_LIMIT && <p className={styles.muted}>파일럿은 반 일정 {PLANNER_LIMIT}개까지 저장해요. 필요 없는 일정을 지워 주세요.</p>}
-          <p role="status" className={styles.saveStatus}>{list.saving ? "일정을 저장하고 있어요." : list.error ? "아직 저장하지 못했어요." : list.loadError ? "마지막 조회 자료 · 최신 기록 확인 필요" : list.saved ? "저장 완료" : "담당 선생님이 관리하는 반 일정이에요."}</p>
-          {list.error && <div className={styles.error} role="alert"><p>{list.error} 등록·수정·삭제 의도를 보관했어요. 재시도하면 같은 항목에는 내 변경을 적용해요.</p><Button variant="outline" type="button" onClick={() => void list.retry()}>최신 기록에 내 변경 재시도</Button></div>}
-        </ScheduleForm>}
       </div>}
     </div>
   </div>;
@@ -193,19 +204,18 @@ function MonthCalendar({ today, events, pending }: { today: string; events: Pick
   </table>;
 }
 
-function ScheduleForm({ resolvedClassId, draft, setDraft, form, title, locked, lessons, submit, cancel, children }: {
+function ScheduleForm({ resolvedClassId, draft, setDraft, form, title, locked, lessons, submit, cancel }: {
   resolvedClassId?: string;
   draft: { id: string | null; title: string; date: string; lessonId: string | null };
   setDraft: (value: typeof draft) => void;
   form: React.RefObject<HTMLFormElement | null>; title: React.RefObject<HTMLInputElement | null>;
-  locked: boolean; lessons: ScheduleData["lessons"]; submit: () => boolean; cancel: () => void; children: React.ReactNode;
+  locked: boolean; lessons: ScheduleData["lessons"]; submit: () => boolean; cancel: () => void;
 }) {
-  return <form ref={form} className={`${styles.panel} ${styles.schedulePanel} ${styles.eventForm}`} onSubmit={(event) => { event.preventDefault(); submit(); }}>
-    <div className={styles.sectionHeading}><div className={styles.sectionTitle}><span className={`${styles.titleIcon} ${styles.scheduleIcon}`}><CalendarPlus size={19} aria-hidden="true" /></span><h2>{draft.id ? "일정 수정" : "일정 등록"}</h2></div></div>
+  return <form ref={form} className={styles.eventForm} onSubmit={(event) => { event.preventDefault(); submit(); }}>
+    <h3>{draft.id ? "일정 수정" : "일정 등록"}</h3>
     <p className={styles.panelNote}>저장하면 이 반 학생의 일정에도 보여요.</p>
     <label>일정 제목<input ref={title} required autoComplete="off" maxLength={120} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter" && composing(event)) event.preventDefault(); if (event.key === "Escape" && !composing(event)) { event.preventDefault(); cancel(); } }} /></label>
     <div className={styles.formColumns}><label>날짜 · 한국 시간<input required type="date" min="2000-01-01" max="2100-12-31" value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} /></label><label>연결할 수업 · 선택<Select label="연결할 수업 · 선택" value={draft.lessonId ?? ""} onValueChange={(value) => setDraft({ ...draft, lessonId: value || null })} options={[{ value: "", label: "연결하지 않음" }, ...lessons.map((lesson) => ({ value: lesson.id, label: lesson.title }))]} /></label></div>
-    <div className={styles.formActions}><Button type="submit" disabled={locked || !resolvedClassId || !draft.title.trim()}>{draft.id ? "일정 수정 저장" : "일정 저장"}</Button>{draft.id && <Button variant="outline" type="button" onClick={cancel}>수정 취소</Button>}</div>
-    {children}
+    <div className={styles.formActions}><Button type="submit" disabled={locked || !resolvedClassId || !draft.title.trim()}>{draft.id ? "일정 수정 저장" : "일정 저장"}</Button><Button variant="outline" type="button" onClick={cancel}>{draft.id ? "수정 취소" : "닫기"}</Button></div>
   </form>;
 }

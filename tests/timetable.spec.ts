@@ -119,6 +119,7 @@ test.describe("학교 시간표 연동", () => {
       await expect(refresh).toBeVisible(); await expect(page.getByText("아직 가져온 시간표가 없어요.")).toBeVisible();
       await expect(page.getByRole("link", { name: /학교 시간표 보기/ })).toHaveAttribute("href", "http://comci.net:4082/st");
       await expect(page.getByRole("button", { name: "일정 새로고침", exact: true })).toHaveCount(0);
+      await page.getByRole("button", { name: "일정 등록", exact: true }).click();
       await page.getByLabel("일정 제목", { exact: true }).fill("미전송 제목을 보존");
       await refresh.focus(); await page.keyboard.press("Enter");
       await expect(page.getByText("학교 시간표를 갱신했어요.", { exact: true })).toBeVisible();

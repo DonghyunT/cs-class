@@ -46,7 +46,7 @@
 .watchPanel { --accent-soft: var(--gold-soft); border-color: #eee3c0; }
 .todoPanel, .schedulePanel { --accent-soft: var(--plum-soft); border-color: #f1dde8; }
 .actionsPanel, .watchPanel, .todoPanel, .schedulePanel { background: linear-gradient(var(--accent-soft), #fff 56px); }
-.panel h2, .eventForm h2 { font-size: 19px; font-weight: 700; line-height: 1.5; letter-spacing: -.025em; }
+.panel h2 { font-size: 19px; font-weight: 700; line-height: 1.5; letter-spacing: -.025em; }
 .sectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 15px; }
 .sectionTitle { display: inline-flex; align-items: center; gap: 11px; min-width: 0; }
 .titleIcon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; }
@@ -140,8 +140,16 @@
 .calendarDot { position: absolute; bottom: 4px; width: 5px; height: 5px; border-radius: 50%; background: #c9714d; }
 .monthCalendar time[aria-current="date"] .calendarDot { background: #fff; }
 .allLessons { display: flex; align-items: center; justify-content: end; gap: 10px; min-height: 44px; color: #2e5fab; font-size: 14px; margin-top: 22px; }
+.formReveal { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .28s ease, opacity .2s ease; }
+.formReveal[data-open="true"] { grid-template-rows: 1fr; opacity: 1; }
+.formReveal > div { min-height: 0; overflow: hidden; }
+.eventForm { margin: 0 0 14px; padding: 18px; border: 1px solid var(--plum-line); border-radius: 16px; background: #fff; }
+.eventForm h3 { margin: 0; font-size: 16px; font-weight: 700; }
+.eventForm .panelNote { margin: 2px 0 14px; }
 .eventForm label { display: grid; gap: 8px; font-size: 14px; font-weight: 600; }
-.formColumns { display: grid; gap: 18px; margin-top: 18px; }
+.eventForm input { scroll-margin: 96px 0; }
+.formColumns { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px 18px; margin-top: 14px; }
+@media (prefers-reduced-motion: reduce) { .formReveal { transition: none; } }
 .formActions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
 @media (max-width: 1100px) { .columns { grid-template-columns: 1fr; } .sideColumn { gap: 12px; } }
 @media (max-width: 600px) {
