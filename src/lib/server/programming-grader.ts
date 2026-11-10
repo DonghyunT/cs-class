@@ -508,7 +508,8 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
   const seconds = (n: EntryNode) => { const value = (n.params[0] as EntryNode | null)?.params?.[0]; return entryNumeric(value) ? Number(value) : NaN; };
   function grade(): boolean {
     if (id === "robot-go") return robotLine(["hamsterlite_move_forward_for_secs", "hamsterlite_move_backward_for_secs"], ([ahead, back]) => seconds(ahead) > 0 && seconds(ahead) === seconds(back));
-    if (id === "robot-signal") return robotLine(["hamsterlite_set_led_to", "hamsterlite_move_forward_for_secs", "hamsterlite_beep", "hamsterlite_clear_led"]);
+    // Zero seconds does not move and Entry drives backward on a negative number, so ‘앞으로’ needs a positive time.
+    if (id === "robot-signal") return robotLine(["hamsterlite_set_led_to", "hamsterlite_move_forward_for_secs", "hamsterlite_beep", "hamsterlite_clear_led"], ([, ahead]) => seconds(ahead) > 0);
     if (id === "name") return ["초코", "보리"].every((value) => { const r = run("click", [value]); return r.asks === 1 && r.sayings.some((s) => s.input && s.text.includes(value)); });
     // The change challenge subtracts the price from the money paid and says it with ‘원’ in one line.
     if (id === "multiply" || id === "average" || id === "change") return (id === "change" ? [[5000, 3200], [10000, 7500], [1000, 1000], [3000, 450]] : [[6, 4], [3, 7], [-2, 5], [0, 9]]).every(([a, b]) => {

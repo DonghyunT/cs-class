@@ -120,7 +120,8 @@ function result(reason) {
   if (!entity) return;
   const speech = speechNow();
   if (speech) lastSpeech = speech;
-  send("result", { x: entity.getX(), y: entity.getY(), speech: lastSpeech, reason });
+  // A run without a robot looks the same on the stage, so robot lessons also report the connection.
+  send("result", { x: entity.getX(), y: entity.getY(), speech: lastSpeech, reason, ...(robot ? { robotConnected: Entry.hwLite?.getStatus() === "connected" } : {}) });
 }
 
 async function stop(reason) {

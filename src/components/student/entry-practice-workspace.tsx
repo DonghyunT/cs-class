@@ -157,7 +157,9 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         if (message.reason === "finished" && startOnly.current) {
           const nextBlock = mission?.id === "name" ? "질문 블록" : mission?.variables ? "두 수를 묻고 변수에 대답을 저장하는 블록" : asksQuestion ? "질문 블록과 ‘만일’ 블록" : "이동 블록";
           setResult(`시작 신호가 준비됐어요. 시작하기 아래에 ${nextBlock}을 연결해 보세요.`);
-        } else if (mission?.robot) setResult(`${finish} 로봇이 코드대로 움직였는지 확인해 보세요.`);
+        // Robot: a run without a connection finishes just the same, so say why the robot stayed still; only a finished run asks to watch it.
+        // An older workspace.js sends no robotConnected and keeps the plain message.
+        } else if (mission?.robot) setResult(message.reason === "reset" ? finish : message.robotConnected === false ? `${finish} 로봇이 연결되지 않았어요. ‘하드웨어’ 꾸러미의 ‘햄스터S 연결하기’를 먼저 눌러 주세요.` : message.reason === "finished" ? `${finish} 로봇이 코드대로 움직였는지 확인해 보세요.` : finish);
         else if (asksQuestion) setResult(`${finish} 마지막 말: ${message.speech.slice(0, 80) || "아직 없음"}`);
         else setResult(`${finish} 현재 위치 X ${Math.round(message.x * 100) / 100} · Y ${Math.round(message.y * 100) / 100}${message.speech ? ` · 마지막 말: ${message.speech.slice(0, 80)}` : ""}`);
       } else if (message.type === "error") { window.clearTimeout(bootTimer.current); setPhase("failed"); setError("작업실을 불러오지 못했어요. 입력한 작품은 이 화면에 유지하고 있어요."); }

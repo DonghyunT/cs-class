@@ -175,6 +175,11 @@ test("교사 작품 보기는 팔레트 블록 입력값과 반복 안쪽을 들
   expect(formatEntryNode(node("change_object_index", "FORWARD", null))).toBe("앞으로 보내기");
   expect(formatEntryNode(node("is_type", node("text", "가나다"), null, "ko"))).toBe("가나다이(가) 한글인가? · 아직 연결하지 않은 블록");
   expect(formatEntryNode(node("stop_object", "thisThread", null))).toBe("이 코드 멈추기");
+  // Robot dropdowns are saved as codes; the teacher's list names them as the blocks do.
+  expect(formatEntryNode(node("hamsterlite_set_led_to", "BOTH", "2", null))).toBe("양쪽 LED를 초록색으로 정하기");
+  expect(formatEntryNode(node("hamsterlite_turn_for_secs", "LEFT", node("text", "1"), null))).toBe("왼쪽으로 1초 돌기");
+  expect(formatEntryNode(node("hamsterlite_clear_led", "RIGHT", null))).toBe("오른쪽 LED 끄기");
+  expect(formatEntryNode(node("hamsterlite_move_backward_for_secs", node("text", "2"), null))).toBe("뒤로 2초 이동하기");
   expect(entryBlockCategory("when_run_button_click")).toBe("start");
   expect(entryBlockCategory("repeat_basic")).toBe("flow");
   expect(entryBlockCategory("set_variable")).toBe("variable");

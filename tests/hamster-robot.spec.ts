@@ -47,6 +47,8 @@ test("로봇 수업은 공개 목록에 있고 미션 두 개는 블록 순서�
   expect(signal([[start, led, forward(), beep, off]])).toBe(true);
   expect(signal([[start, led, beep, forward(), off]]), "소리가 먼저").toBe(false);
   expect(signal([[start, led, forward(), beep]]), "LED를 끄지 않음").toBe(false);
+  expect(signal([[start, led, forward("0"), beep, off]]), "0초라 움직이지 않음").toBe(false);
+  expect(signal([[start, led, forward("-1"), beep, off]]), "음수 초는 뒤로 감").toBe(false);
 });
 
 test("로봇 작업실은 연결 버튼과 로봇 블록을 보여 주고, 로봇 없이도 검증·제출할 수 있다", async ({ page }) => {
@@ -62,8 +64,14 @@ test("로봇 작업실은 연결 버튼과 로봇 블록을 보여 주고, 로�
   await expect(palette).not.toContainText("하드웨어를 찾을 수 없습니다");
   await expect(editor.locator("#entryWorkspaceBoard g.block").filter({ hasText: "뒤로" }).first()).toBeVisible();
 
+  // A run without a connection still finishes, so the page says why the robot stayed still.
   await entryStart(page).click();
-  await expect(page.getByRole("status").filter({ hasText: "로봇이 코드대로 움직였는지" })).toBeVisible({ timeout: 20000 });
+  await expect(page.getByRole("status").filter({ hasText: "로봇이 연결되지 않았어요" })).toBeVisible({ timeout: 20000 });
+  await entryReset(page).click();
+  await expect(page.getByRole("status").filter({ hasText: /^무대를 처음 위치로 돌렸어요\.$/ })).toBeVisible();
+  // No robot here, so the result workspace.js reports after a connected run is sent by hand.
+  await frame.evaluate('send("result", { x: 0, y: 0, speech: "", reason: "finished", robotConnected: true })');
+  await expect(page.getByRole("status").filter({ hasText: "실행을 마쳤어요. 로봇이 코드대로 움직였는지" })).toBeVisible();
 
   await page.getByRole("button", { name: "조건 검증", exact: true }).click();
   await expect(page.locator("#practice-feedback")).toContainText("목표 조건을 확인했어요");

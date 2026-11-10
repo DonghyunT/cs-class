@@ -34,7 +34,7 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "ball", title: "통통 튀는 공 만들기", goal: "공을 클릭하면 움직이기 시작해 벽과 막대에서 튕기고, 아래쪽 벽에 닿으면 모든 코드를 멈추게 해요. 막대에서는 준비된 함수 ‘막대에서 튕기기’를 불러요.", hint: "공을 클릭하면 계속 움직이며 튕기고 아래쪽 벽에 닿으면 멈춰요.", steps: ["`when_object_click: 오브젝트를 클릭했을 때` 아래에 `repeat_inf: 계속 반복하기`를 붙여요", "반복 안에 `move_direction: 4만큼 움직이기`(10을 4로)와 `bounce_wall: 화면 끝에 닿으면 튕기기`를 넣어요", "반복 안 `_if: 만일 참(이)라면`에 `reach_something: 마우스포인터에 닿았는가?`(▾를 막대로)를 넣어요", "그 안에 ‘함수’ 꾸러미의 ‘막대에서 튕기기’를 넣어요", "반복 맨 아래 `_if: 만일 참(이)라면`에 `reach_something: 아래쪽 벽에 닿았는가?`, 안에 `stop_object: 모든 코드 멈추기`"], tip: "시작하기를 누른 뒤 공을 클릭해야 움직여요.", failure: "공의 ‘계속 반복하기’ 안에 이동·화면 끝 튕기기와 ‘막대에 닿았는가?’(▾를 막대로)일 때 ‘막대에서 튕기기’, ‘아래쪽 벽에 닿았는가?’일 때 ‘모든 코드 멈추기’를 모두 넣어 주세요.", experiment: "시작하기를 누르고 공을 클릭한 뒤 막대로 공을 받아 보세요. 일부러 놓쳐 아래쪽 벽에서 멈추는지도 확인해 보세요. 여유가 있으면 4를 5로 바꿔 더 빠르게 해 봐요.", objects: true, functions: true },
   { id: "brick", title: "벽돌 깨고 점수 올리기", goal: "벽돌1이 공에 닿으면 점수를 1 올리고 숨겨요. You win!의 승리 조건도 벽돌 수인 3으로 고쳐요.", hint: "공에 닿으면 점수를 올리고 숨겨요. You win!의 99는 3으로 고쳐요.", steps: ["벽돌1에 `when_run_button_click: 시작하기 버튼을 클릭했을 때`와 `repeat_inf: 계속 반복하기`를 붙여요", "반복 안 `_if: 만일 참(이)라면`에 `reach_something: 마우스포인터에 닿았는가?`(▾를 공으로)를 넣어요", "그 안에 `change_variable: A에 10만큼 더하기`(A▾를 점수로, 10을 1로)를 넣어요", "이어서 `hide: 모양 숨기기`를 넣어요", "오브젝트 목록에서 You win!을 눌러 `boolean_basic_operator: 점수 값 = 99`의 99를 3으로 고쳐요"], tip: "점수는 0에서 시작해요. 벽돌2를 눌러 완성된 코드를 보세요.", failure: "벽돌1이 공에 닿으면(▾를 공으로) 점수를 1 올리고 숨기는지, You win!의 99를 3으로 고쳐 승리 조건이 ‘점수 값 = 3’이고 ‘모든 코드 멈추기’로 끝나는지 확인해 보세요.", experiment: "시작하기를 누르고 공을 클릭해 벽돌 3개를 모두 깨면 You win!이 나타나며 멈추는지 확인해 보세요.", objects: true, functions: true },
   { id: "robot-go", title: "앞으로 갔다가 돌아오기", goal: "시작하기 버튼을 누르면 햄스터S가 앞으로 갔다가, 같은 시간만큼 뒤로 돌아오게 해 주세요.", hint: "‘하드웨어’ 꾸러미에서 ‘햄스터S 연결하기’를 먼저 눌러요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 아래에 이동 블록을 붙여요", "`hamsterlite_move_forward_for_secs: 앞으로 1초 이동하기`", "`hamsterlite_move_backward_for_secs: 뒤로 1초 이동하기`"], tip: "같은 시간만큼 움직여야 처음 자리로 돌아와요.", failure: "시작하기 아래에 ‘앞으로’ 블록과 ‘뒤로’ 블록을 차례로 붙이고, 두 블록의 초를 같게 맞춰 주세요.", experiment: "초를 바꾸면 얼마나 멀리 갈까요? 바닥을 바꿔도 처음 자리로 돌아올까요?", robot: true },
-  { id: "robot-signal", title: "LED와 소리로 신호 보내기", goal: "LED를 켜고 앞으로 간 다음, 삐 소리를 내고 LED를 꺼서 출발과 도착을 알려 주세요.", hint: "출력 네 가지를 위에서 아래로 차례로 붙여요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 아래에 `hamsterlite_set_led_to: 양쪽 LED를 초록색으로 정하기`", "`hamsterlite_move_forward_for_secs: 앞으로 1초 이동하기`", "`hamsterlite_beep: 삐 소리내기`", "`hamsterlite_clear_led: 양쪽 LED 끄기`"], tip: "LED와 소리는 로봇의 출력이에요.", failure: "시작하기 아래에 LED 켜기, 앞으로 이동, 삐 소리, LED 끄기 블록을 이 순서로 붙여 주세요.", experiment: "색이나 초를 바꾸면 어떤 신호처럼 보일까요?", robot: true },
+  { id: "robot-signal", title: "LED와 소리로 신호 보내기", goal: "LED를 켜고 앞으로 간 다음, 삐 소리를 내고 LED를 꺼서 출발과 도착을 알려 주세요.", hint: "출력 네 가지를 위에서 아래로 차례로 붙여요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 아래에 `hamsterlite_set_led_to: 양쪽 LED를 초록색으로 정하기`", "`hamsterlite_move_forward_for_secs: 앞으로 1초 이동하기`", "`hamsterlite_beep: 삐 소리내기`", "`hamsterlite_clear_led: 양쪽 LED 끄기`"], tip: "LED와 소리는 로봇의 출력이에요.", failure: "시작하기 아래에 LED 켜기, 앞으로 이동, 삐 소리, LED 끄기 블록을 이 순서로 붙여 주세요. 앞으로 이동하는 초는 0보다 커야 해요.", experiment: "색이나 초를 바꾸면 어떤 신호처럼 보일까요?", robot: true },
   { id: "brick-bounce", title: "도전 · 벽돌에서도 튕기는 공", goal: "공이 벽돌1·벽돌2·벽돌3에 닿았을 때도 방향을 회전해 통통 튕기며 깨게 만들어요.", hint: "공의 `repeat_inf: 계속 반복하기` 안에 벽돌에 닿을 때 회전을 더해요.", steps: ["공의 반복 안에 `_if: 만일 참(이)라면`과 `reach_something: 마우스포인터에 닿았는가?`(▾를 벽돌1로)", "그 안에 `direction_relative: 180° 회전하기`를 넣어 벽돌에서 튕기게 해요", "아래에 벽돌2·벽돌3에 닿았을 때 180° 회전하는 만일도 더해요"], tip: "90°나 180° 회전 모두 벽돌에서 튕길 수 있어요.", failure: "공이 벽돌1·벽돌2·벽돌3에 닿았을 때도 이동 방향을 회전해 튕기도록 공의 반복 안에 조건을 넣어 주세요.", experiment: "시작하기를 누르고 공을 클릭해 공이 벽돌1·벽돌2·벽돌3을 깰 때마다 방향을 바꿔 튕겨 나오는지 확인해 보세요.", optional: true, objects: true, functions: true },
 ];
 
@@ -368,6 +368,9 @@ const DROPDOWN_LABELS: Readonly<Record<string, string>> = {
   number: "숫자", string: "문자", en: "영문", ko: "한글",
 };
 export const KEY_LABELS: Readonly<Record<string, string>> = { "37": "왼쪽", "38": "위쪽", "39": "오른쪽", "40": "아래쪽", "32": "스페이스", "13": "엔터" };
+// Hamster-S dropdowns are saved as these codes; the names are the ones Entry shows on the blocks.
+const ROBOT_SIDES: Readonly<Record<string, string>> = { LEFT: "왼쪽", RIGHT: "오른쪽", BOTH: "양쪽" };
+const LED_COLORS: Readonly<Record<string, string>> = { "4": "빨간색", "6": "노란색", "2": "초록색", "3": "하늘색", "1": "파란색", "5": "자주색", "7": "하얀색" };
 const COMPARE_LABELS: Readonly<Record<string, string>> = {
   EQUAL: "=", NOT_EQUAL: "≠", GREATER: ">", LESS: "<", SMALLER: "<", GREATER_OR_EQUAL: "≥", LESS_OR_EQUAL: "≤", SMALLER_OR_EQUAL: "≤",
 };
@@ -463,6 +466,11 @@ export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, 
     if (n.type === "hide_variable") return `${n.params[0] ? variableName(String(n.params[0]), names) : "변수"} 숨기기`;
     if (n.type === "choose_project_timer_action" || n.type === "set_visible_project_timer") return n.params[1] ? `초시계 ${val(n, 1)}` : blockLabel(n.type);
     if (n.type === "set_visible_answer") return n.params[0] ? `대답 ${val(n, 0)}` : blockLabel(n.type);
+    // The robot blocks with a dropdown: the rule below fills one blank only and would show the saved code.
+    const picked = (labels: Readonly<Record<string, string>>, index: number) => Object.hasOwn(labels, String(n.params[index])) ? labels[String(n.params[index])] : val(n, index);
+    if (n.type === "hamsterlite_turn_for_secs") return `${picked(ROBOT_SIDES, 0)}으로 ${val(n, 1)}초 돌기`;
+    if (n.type === "hamsterlite_set_led_to") return `${picked(ROBOT_SIDES, 0)} LED를 ${picked(LED_COLORS, 1)}으로 정하기`;
+    if (n.type === "hamsterlite_clear_led") return `${picked(ROBOT_SIDES, 0)} LED 끄기`;
     const label = blockLabel(n.type);
     return label.includes("( )") ? label.replace("( )", val(n, 0)) : label;
   };

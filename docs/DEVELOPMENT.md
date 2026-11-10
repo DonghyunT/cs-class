@@ -296,7 +296,8 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
   - **팔레트:** `ROBOT_PALETTE`(`entry-palette.ts`, `workspace.js`에 복사본)의 첫 항목이 연결 버튼이고 나머지 7종이 로봇 블록입니다. 포트 선택 창은 작업실 안 `햄스터S 연결하기` 클릭에서만 열립니다.
   - **로드 순서:** 하드웨어 모드는 팔레트 블록을 잠시 x -99999에 두고 지연 정렬합니다. 그 사이에 끌면 블록이 보드 밖에 놓이므로 정렬을 기다린 뒤 `loaded`를 보냅니다.
   - **채점:** `programming-grader.ts`의 `robotLine`이 블록 순서를 봅니다. 해석기로 실행하지 않습니다.
-  - **검사의 한계:** 실물 없이 자동 검사로 확인할 수 있는 것은 포트 권한(`getPorts`)까지이고, `requestPort`는 포트가 없어 `NotFoundError`로 끝납니다.
+  - **실행 결과:** `workspace.js`는 로봇 미션의 `result` 메시지에만 `robotConnected`를 함께 보냅니다. 학생 화면은 `false`일 때 연결 안내를, 연결된 채 끝났을 때 로봇 확인 안내를 보여 줍니다.
+  - **검사의 한계:** 실물 없이 자동 검사로 확인할 수 있는 것은 포트 권한(`getPorts`)까지이고, `requestPort`는 포트가 없어 `NotFoundError`로 끝납니다. 연결된 실행은 E2E가 그 `result` 메시지를 직접 보내 화면 문구만 확인하며, 실제 연결 상태 읽기(`Entry.hwLite.getStatus()`)는 실물로 확인해야 합니다.
 - **수업별 미션:** 미션 정의는 `programming-entry.ts`의 `PROGRAMMING_MISSIONS` 한 곳에 두고, 미션 ID는 수업이 달라도 겹치지 않게 짓습니다.
   - **필드:** `hint`는 화면의 한 줄 요약, `steps`는 접힌 번호 조립 순서, `tip`은 💡 한 줄(선택), `failure`는 채점 실패 문구(필수, 칩 없는 평문)입니다. `tests/fixtures/entry-legacy-keys.json`이 name·multiply·average·move·keys의 실패 문구를 고정하므로 이 다섯 `failure`는 바꾸지 않습니다.
   - **힌트 문구:** 블록 칩을 `` `블록종류: 보이는 글자` ``(예: `` `set_variable: A를 대답으로 정하기` ``)로 쓰고 화면은 `hintParts`, 평문 비교는 `hintPlain`으로 읽습니다(문구 기준은 [DESIGN §5.1](DESIGN.md#프로그래밍-13차시--경험-검토용-표현)).

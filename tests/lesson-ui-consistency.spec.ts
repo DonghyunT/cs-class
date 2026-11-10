@@ -1,12 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { db, headers, readyStudent } from "./emulator";
-import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { REVIEW_LESSONS } from "../src/lib/classroom/review/lessons";
 import { RELEASED_LESSONS } from "../src/lib/classroom/catalog";
-import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
-import { LOOPS_LESSON } from "../src/lib/classroom/loops-lesson";
-import { FUNCTIONS_LESSON } from "../src/lib/classroom/functions-lesson";
-import { BRICK_BREAKER_LESSON } from "../src/lib/classroom/brick-breaker-lesson";
 import { emptyWork } from "../src/lib/classroom/progress";
 import { concepts, questions } from "../src/lib/classroom/programming-data";
 import { conditionalConcepts, conditionalQuestions } from "../src/lib/classroom/conditionals-data";
@@ -16,7 +11,8 @@ import { brickBreakerQuestions } from "../src/lib/classroom/brick-breaker-data";
 import { hamsterConcepts, hamsterQuestions } from "../src/lib/classroom/hamster-robot-data";
 import { UNIT_QUIZ_DATA } from "../src/lib/server/review-quiz.mjs";
 import type { Work } from "../src/lib/classroom/types";
-const lessons = [PROGRAMMING_LESSON, CONDITIONALS_LESSON, LOOPS_LESSON, FUNCTIONS_LESSON, BRICK_BREAKER_LESSON, ...REVIEW_LESSONS];
+// Every lesson a class can open, so a new lesson is checked without being listed here.
+const lessons = RELEASED_LESSONS;
 let originalClass: FirebaseFirestore.DocumentData | undefined;
 test.beforeEach(async () => { originalClass = (await db.doc("csClasses/2-1").get()).data(); });
 test.afterEach(async ({ page }) => {
