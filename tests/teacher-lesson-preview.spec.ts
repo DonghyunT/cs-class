@@ -14,7 +14,7 @@ async function learningRecords() {
   return result;
 }
 
-test("teacher-preview: 7수업 실제 화면·메모리 답안·초기화·학생 기록 불변", async ({ page }) => {
+test("teacher-preview: 모든 수업 실제 화면·메모리 답안·초기화·학생 기록 불변", async ({ page }) => {
   test.setTimeout(120000);
   await readyTeacher(page.request);
   const before = await learningRecords();

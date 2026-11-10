@@ -1,13 +1,13 @@
 # 이어갈 작업
 
-갱신: 2026-11-09(Asia/Seoul). [작성 기준](DEVELOPMENT.md#문서-작성-기준)·[주제별 문서](../AGENTS.md).
+갱신: 2026-11-10(Asia/Seoul). [작성 기준](DEVELOPMENT.md#문서-작성-기준)·[주제별 문서](../AGENTS.md).
 
 ## 현재 작업 상태
 
 - **운영:** 설정·배포 게이트 상태는 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)을 봅니다.
 - **실제 학생 계정:** 등록 현황과 입장 방식(10/21부터 반 공통 첫 입장 코드)은 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)에 있습니다. 명부 CSV·등록 직후 백업은 등록에 쓴 PC의 Git 제외 `private/`에만 있습니다.
 - **보존 브랜치(원격):** `feat/festival-character-v7`(축제 캐릭터 초안, 게임 미적용).
-- **진행 중:** `feat/hamster-robot-prototype`(햄스터S 수업, PR 전). 남은 일: 학교 PC에서 동글·실제 로봇 확인(미확인), 사용자 피드백 반영, PR(전체 E2E 여부 결정).
+- **진행 중:** `feat/hamster-robot-prototype`(햄스터S 수업, PR 전). 남은 일: 학교 PC에서 동글·실제 로봇과 연결 전·후 실행 안내 확인(미확인), 사용자 피드백 반영, PR(전체 E2E 여부 결정).
 
 ## 최근 반영
 
@@ -30,7 +30,7 @@
 ## 남은 한계와 다음 결정
 
 - **전체 E2E:** GitHub 마지막 성공은 11/2 #102 브랜치 `d610ac7`(469 통과·14 건너뜀), `main`은 10/18 `7264de7`입니다. 로컬은 11/9 #112 브랜치에서 `next dev`로 485 통과·13 건너뜀(손들기)입니다. 실패 4(시험 시간표 서버 없이 재사용한 서버 3, 시간 초과 1)는 새 서버 재실행에서 통과했습니다. Firebase 5xx·차단 응답 E2E는 없습니다(#44).
-- **CI·로컬 검사 불안정:** `main` CI의 10초 대기 검사가 재실행으로 통과한 일이 두 번 있었습니다(10/19 `programming-classroom`, 10/21 `conditionals`의 `마지막 말`). 로컬에서는 `programming-classroom`의 `entry-assets` 검사(새로 켠 서버의 첫 실행)·`flowchart-auto-completion`(#67)·`review-flowchart`의 빈 기호 검사·`programming-classroom`의 정지 뒤 저장 상태 검사(#95)가 실패했다가 단독 재실행에서 통과합니다(원인 미확정, 반복되면 대기 시간 기준 점검). 설치된 크롬으로 `manual-save-entry` 전체를 돌리면 실행 중 저장 검사만 실패하고 단독으로는 통과합니다(11/2, #102 전 코드도 같음).
+- **CI·로컬 검사 불안정:** `main` CI의 10초 대기 검사가 재실행으로 통과한 일이 두 번 있었습니다(10/19 `programming-classroom`, 10/21 `conditionals`의 `마지막 말`). 로컬에서는 `programming-classroom`의 `entry-assets` 검사(새로 켠 서버의 첫 실행)·`flowchart-auto-completion`(#67)·`review-flowchart`의 빈 기호 검사·`programming-classroom`의 정지 뒤 저장 상태 검사(#95)가 실패했다가 단독 재실행에서 통과합니다(원인 미확정, 반복되면 11/10 `entryjs-ui`를 고친 [대기 기준](DEVELOPMENT.md#34-디버깅-및-flaky-방지-원칙)부터 점검). 설치된 크롬으로 `manual-save-entry` 전체를 돌리면 실행 중 저장 검사만 실패하고 단독으로는 통과합니다(11/2, #102 전 코드도 같음).
 - **의존성:** 10/21 `npm audit` 24건은 운영 화면 경로가 아닌 개발 도구이고, `@grpc/grpc-js` 권고(GHSA-m9gg-hp2v-232j)는 서버 `firebase-admin`만 Firestore를 써서 해당하지 않습니다.
 - **Firestore 무료 한도:** 10/21 실제 두 반(엔트리 수업)은 읽기 약 3만·쓰기 약 1.4만이었고, 시계 폭주를 빼도 저장·채점이 반당 쓰기 약 1천 회입니다. 하루 4반(반 정원 기준)×45분의 정기 읽기는 #101 전 30초 조회 기준 측정 환산 약 2.9만 회(과금 실측 아님)였고, 진입·저장·채점은 별도라 일일 무료 읽기 5만 회 안을 보장하지 않습니다.
 - **Vercel 무료 한도:** 11/2 오전 CDN 요청 935K·함수 호출 781K/1M, Active CPU 3h12m/4h(최근 30일, 많이 쓴 10/21~ 은 11/20 무렵 빠짐)입니다. 사용자가 무료 유지를 정해 학생 조회 간격을 늘렸고(#101), 작업실 파일은 #104부터 다시 Vercel이 보냅니다(학생마다 처음 한 번). [Hobby 안내](https://vercel.com/docs/plans/hobby)는 한도를 넘으면 30일이 지나야 그 기능을 다시 쓴다고만 하고 사이트 정지 여부는 적지 않습니다. Hobby도 Observability에서 최근 수업 시간의 경로별 요청 수는 볼 수 있고(11/2 사용자 화면), 런타임 로그는 1시간만 남습니다.

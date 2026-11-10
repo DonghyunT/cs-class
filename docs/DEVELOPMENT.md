@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-11-09(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-11-10(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -162,7 +162,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
   ```
 - 수업 전용 컴포넌트·보조 파일·고정 파일(예: `functions`의 `function-concepts.tsx`·`function-editing.ts`, `tests/fixtures/entry-function-export.json`)도 `patterns`에 넣습니다. 빠뜨리면 그 파일만 바꿔도 미분류로 보아 `full`이 나옵니다.
 - [`tests/lesson-smoke.spec.ts`](../tests/lesson-smoke.spec.ts)의 `ALL_LESSON_IDS`에 수업 ID를 넣고, 같은 파일에 그 수업의 저장·새로고침 복원 검사 블록을 추가합니다.
-- `tests/lesson-ui-consistency.spec.ts`의 `lessons`에 새 수업을 넣어 공통 헤더·버튼 이름 검사를 받게 합니다.
+- `tests/lesson-ui-consistency.spec.ts`는 `RELEASED_LESSONS`를 읽으므로 수업을 따로 넣지 않습니다. 오답 문구 검사의 정답 표(`correct`)에만 새 수업의 개념·퀴즈 데이터를 더합니다.
 
 ### 2.3 학생 수업 수동 저장 아키텍처 및 코드 계약
 <a id="학생-수업-수동-저장-아키텍처-및-계약"></a>
@@ -254,6 +254,8 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 - **임의 지연 금지:** `waitForTimeout`이나 임의의 `sleep`으로 타이밍 문제를 회피하지 않습니다.
 - **기대 상태 대기:** 저장 배지의 `toHaveText()` 또는 `await expect(locator).toBeVisible()`처럼 자동 재시도하는 단언으로 준비 상태를 확인합니다. 필요한 경우 특정 요청의 응답을 기다린 뒤 화면 상태도 단언합니다. `networkidle`이나 클릭 직후 한 번의 `isVisible()` 조회를 준비 완료 기준으로 쓰지 않습니다. [Playwright 공식 권고](https://playwright.dev/docs/best-practices#use-web-first-assertions)를 따릅니다.
 - **수동 저장 이탈 검사:** Entry 작업실은 현재 작품을 비동기로 캡처한 뒤 이탈 확인창을 엽니다. 미저장 입력을 명시한 시나리오는 `expect(dialog).toBeVisible()` 후 나가기 선택과 서버 기록 보존을 확인합니다. 클릭 직후 `isVisible()` 한 번으로 확인창을 건너뛰지 않습니다.
+- **엔트리 작업실 대기:** 작업실이 켜지기를 기다리는 단언(첫 진입·새로고침·탭 복귀·다시 불러오기 뒤)에는 `{ timeout: 20000 }`을 줍니다. 화면이 불러오기 실패로 판정하는 시간과 같습니다. 로컬 `next dev`에서는 다시 켜지는 데만 3.7~5초가 걸려(11/10 측정) 기본 5초로는 PC가 조금 느려지면 실패합니다.
+- **새로 켠 서버의 첫 테스트:** 로컬 `next dev`는 화면을 처음 열 때 컴파일하느라 최대 약 20초가 더 걸립니다. 평소 25초를 넘는 테스트는 `test.slow()`로 기본 제한 45초를 늘립니다.
 - **원인 분석:** 실패 시 `test-results/` 폴더의 스크린샷과 Playwright 트레이스 zip을 열어 실제 렌더링 상태를 확인합니다.
 
 ---

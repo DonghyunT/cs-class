@@ -56,7 +56,7 @@ test("공통 수업 헤더·단계 폭과 완료 진도는 모든 수업에서 �
     await page.screenshot({ path: testInfo.outputPath(`lesson-${lesson.id}-1920.png`) });
   }
 });
-test("공개 7수업의 개념 확인·퀴즈 오답은 힌트와 다른 문구를 받고 화면에 '다시 생각해 보기'·같은 버튼 이름·바로 저장 안내로 보인다", async ({ page }) => {
+test("공개 수업의 개념 확인·퀴즈 오답은 힌트와 다른 문구를 받고 화면에 '다시 생각해 보기'·같은 버튼 이름·바로 저장 안내로 보인다", async ({ page }) => {
   test.setTimeout(120_000);
   await enter(page);
   await db.doc("csClasses/2-1").update({ openedLessonIds: RELEASED_LESSONS.map((lesson) => lesson.id) });
