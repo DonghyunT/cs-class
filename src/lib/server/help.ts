@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { findLesson } from "../classroom/catalog";
 import type { HelpRequest, HelpSnapshot } from "../classroom/help";
-import { authorized, identity } from "./auth";
+import { authorized, authorizedRead, identity } from "./auth";
 import { studentClass, toWork, workRef } from "./classroom";
 import { requireCondition } from "./errors";
 import { admin } from "./firebase";
@@ -12,7 +12,7 @@ const snapshotRef = (uid: string) => admin().db.collection("csHelpSnapshots").do
 const requestId = z.string().uuid();
 
 export async function readHelp(classId?: string) {
-  return authorized(await identity(), async (tx, account) => {
+  return authorizedRead(await identity(), async (tx, account) => {
     if (account.role === "student") {
       const classroom = await studentClass(tx, account);
       requireCondition(!classId || classId === classroom.id, 403, "FORBIDDEN", "우리 반의 도움 요청만 확인할 수 있어요.");
@@ -77,7 +77,7 @@ export async function clearHelp(uid: string | undefined, payload: unknown) {
 
 export async function readHelpSnapshot(uid: string, id: string | null, latest: boolean): Promise<HelpSnapshot> {
   const selectedId = requestId.parse(id);
-  return authorized(await identity(), async (tx, account) => {
+  return authorizedRead(await identity(), async (tx, account) => {
     requireCondition(account.role !== "student", 403, "FORBIDDEN", "선생님만 학생의 저장본을 확인할 수 있어요.");
     const request = (await tx.get(requestRef(uid))).data() as HelpRequest | undefined;
     requireCondition(request && account.classIds.includes(request.classId), 403, "FORBIDDEN", "담당 반의 도움 요청만 확인할 수 있어요.");

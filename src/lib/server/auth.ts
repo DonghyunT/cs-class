@@ -46,24 +46,34 @@ export function validateSession(account: Account | undefined, who: Identity, all
   requireCondition(allowPasswordChange || !account.mustChangePassword, 403, "PASSWORD_REQUIRED", "먼저 비밀번호를 바꿔 주세요.");
   return account;
 }
-export async function authorized<T>(who: Identity, action: (transaction: Transaction, account: Account) => Promise<T>, allowPasswordChange = false) {
+export async function authorized<T>(who: Identity, action: (transaction: Transaction, account: Account) => Promise<T>, allowPasswordChange = false, readOnly = false) {
   const { db } = admin();
   return db.runTransaction(async (transaction) => {
     const snap = await transaction.get(db.collection("csAccounts").doc(who.uid));
     const account = validateSession(snap.exists ? snap.data() as Account : undefined, who, allowPasswordChange);
     return action(transaction, account);
-  });
+  }, readOnly ? { readOnly: true } : undefined);
+}
+// For requests that only read. A read-write transaction locks each document it reads until it ends, so a teacher's
+// class-wide read made every student's save wait. A read-only one takes no locks, and a write inside it throws.
+export function authorizedRead<T>(who: Identity, action: (transaction: Transaction, account: Account) => Promise<T>, allowPasswordChange = false) {
+  return authorized(who, action, allowPasswordChange, true);
 }
 export async function readSession() {
   const who = await identity();
-  return authorized(who, async (_transaction, account) => publicSession(account), true);
+  return authorizedRead(who, async (_transaction, account) => publicSession(account), true);
 }
 async function setSessionCookie(uid: string, secret: string) {
   (await cookies()).set(SESSION_COOKIE, `${uid}.${secret}`, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/" });
 }
 const loginLimitQueues = new Map<string, Promise<void>>();
-async function limitLogin(key: string, maximum: number, windowMs: number) {
+// When each full budget's window ends. Only for budgets nothing resets early (`remember`): a teacher's reset deletes an account's.
+const fullUntil = new Map<string, number>();
+async function limitLogin(key: string, maximum: number, windowMs: number, remember = false) {
   const { db } = admin(); const ref = db.collection("csRateLimits").doc(hash(key));
+  const limited = () => new ServiceError(429, "LOGIN_LIMIT", "로그인 요청이 많아요. 잠시 후 다시 시도해 주세요.");
+  // A flood past a full budget is refused here, so its database cost stops at the budget instead of growing with its speed.
+  if ((fullUntil.get(ref.id) ?? 0) > Date.now()) throw limited();
   // Serialize this instance's same-key writes; transactions enforce limits across instances.
   const previous = loginLimitQueues.get(ref.id) ?? Promise.resolve();
   const attempt = previous.then(async () => {
@@ -71,7 +81,13 @@ async function limitLogin(key: string, maximum: number, windowMs: number) {
     await db.runTransaction(async (tx) => {
       const data = (await tx.get(ref)).data();
       const fresh = !data || now - data.start >= windowMs;
-      requireCondition(fresh || data.count < maximum, 429, "LOGIN_LIMIT", "로그인 요청이 많아요. 잠시 후 다시 시도해 주세요.");
+      if (!fresh && data.count >= maximum) {
+        if (remember) {
+          for (const [id, until] of fullUntil) if (until <= now) fullUntil.delete(id);
+          fullUntil.set(ref.id, data.start + windowMs);
+        }
+        throw limited();
+      }
       tx.set(ref, { start: fresh ? now : data.start, count: fresh ? 1 : data.count + 1 });
     });
   });
@@ -106,12 +122,13 @@ async function loginPasswordAccount(role: Role, uid: string, email: string, pass
   const { auth, db } = admin();
   // Vercel가 덮어쓰는 출처만 신뢰합니다. 로컬에서는 전달 헤더로 제한을 우회하지 못합니다.
   const source = process.env.VERCEL ? (await headers()).get("x-vercel-forwarded-for") ?? "unknown" : "local";
-  await limitLogin(`source:${source}`, 600, 60_000);
+  await limitLogin(`source:${source}`, 600, 60_000, true);
+  const initial = (await db.collection("csAccounts").doc(uid).get()).data() as Account | undefined;
+  // 없는 학번·명단에서 뺀 계정은 확인할 비밀번호가 없어 계정 예산을 쓰지 않습니다. 아무 학번이나 넣어도 기록이 늘지 않습니다.
+  requireCondition(initial && initial.role === role && !initial.disabled, 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
   // 계정마다 따로 세어 같은 학교의 동시 입장은 허용합니다. 교사의 비밀번호 초기화가 이 잠금을 풉니다.
   await limitLogin(`account:${uid}`, 30, 15 * 60_000);
-  const initial = (await db.collection("csAccounts").doc(uid).get()).data() as Account | undefined;
-  requireCondition(initial && initial.role === role && !initial.disabled, 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
-  requireCondition(!initial?.authBusy, 423, "ACCOUNT_BUSY", "계정 정보를 변경하고 있어요. 잠시 후 다시 시도해 주세요.");
+  requireCondition(!initial.authBusy, 423, "ACCOUNT_BUSY", "계정 정보를 변경하고 있어요. 잠시 후 다시 시도해 주세요.");
   if (initial.mustChangePassword) {
     // 임시 비밀번호는 6자리 숫자가 될 수 없어, 6자리 숫자는 반 공통 첫 입장 코드로 확인합니다.
     if (role === "student" && initial.classId && /^\d{6}$/.test(password)) return openFirstEntry(uid, initial.authVersion, initial.classId, passwordDigest(password));
@@ -257,10 +274,10 @@ function passwordProvider(user: UserRecord): "password" | "google" | "unavailabl
 }
 export async function readProfile() {
   const who = await identity();
-  await authorized(who, async () => undefined);
+  await authorizedRead(who, async () => undefined);
   const user = await admin().auth.getUser(who.uid);
   requireCondition(!user.disabled, 401, "SIGNED_OUT", "사용할 수 없는 계정이에요. 선생님께 알려 주세요.");
-  const session = await authorized(who, async (_tx, account) => publicSession(account));
+  const session = await authorizedRead(who, async (_tx, account) => publicSession(account));
   return { session, nickname: session.nickname ?? "", passwordProvider: passwordProvider(user) };
 }
 export async function updateNickname(nickname: string) {
