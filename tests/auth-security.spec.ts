@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { test, expect } from "@playwright/test";
-import { auth, clearLoginLimit, db, headers, initialPassword, lessonId, loginStudent, readyStudent, readyTeacher, resetStudent, studentPassword } from "./emulator";
+import { auth, clearLoginLimit, db, headers, initialPassword, lessonId, localOnly, loginStudent, readyStudent, readyTeacher, resetStudent, studentPassword } from "./emulator";
 import { testEnv } from "../scripts/local-test-env.mjs";
 
 const resetPath = "/api/classroom/students/student-20101/reset";
@@ -66,14 +66,28 @@ test("계정 상한은 비밀번호를 바꿔 넣어도 30회에서 잠그고, �
 test("출처 예산은 학번·전달 헤더를 바꿔도 적용되고 기존 세션은 유지", async ({ request }) => {
   await readyStudent(request);
   const ref = db.collection("csRateLimits").doc(createHash("sha256").update("source:local").digest("hex"));
-  await ref.set({ start: Date.now(), count: 599 });
+  // The window ends 3 seconds from now, so the server's memory of the full budget does not outlive this test.
+  const start = Date.now() - 57_000;
+  await ref.set({ start, count: 599 });
   try {
     expect((await loginStudent(request, "wrong", "29998")).status()).toBe(401);
     expect((await request.post("/api/auth/login", { headers: { ...headers, "x-forwarded-for": "192.0.2.9", "x-vercel-forwarded-for": "192.0.2.10" }, data: { role: "student", studentId: "29999", password: "different" } })).status()).toBe(429);
     expect((await request.get("/api/classroom/student")).status()).toBe(200);
-    await ref.set({ start: Date.now() - 60_001, count: 600 });
-    expect((await loginStudent(request, studentPassword)).status()).toBe(200);
+    // Once full, the source is refused without reading the database again: the record is gone, the refusal stays.
+    await ref.delete();
+    expect((await loginStudent(request, "wrong", "29998")).status()).toBe(429);
+    expect((await ref.get()).exists).toBe(false);
+    await ref.set({ start, count: 600 });
+    await expect.poll(async () => (await loginStudent(request, studentPassword)).status(), { timeout: 10_000, intervals: [500] }).toBe(200);
   } finally { await ref.delete(); }
+});
+
+test("없는 학번으로 시도해도 계정 예산 기록을 만들지 않음", async ({ request }) => {
+  await localOnly(request);
+  const ref = db.collection("csRateLimits").doc(createHash("sha256").update("account:student-29997").digest("hex"));
+  await ref.delete();
+  expect((await loginStudent(request, "wrong", "29997")).status()).toBe(401);
+  expect((await ref.get()).exists).toBe(false);
 });
 
 test("같은 학교 출처의 27명 동시 입장이 모두 성공", async ({ playwright }, testInfo) => {

@@ -9,7 +9,7 @@ import { isTrialStudentId } from "../classroom/roster";
 import { randomUUID } from "node:crypto";
 import { basicReviewCheck } from "../classroom/review/project";
 import { admin } from "./firebase";
-import { authorized, identity, type Account } from "./auth";
+import { authorized, authorizedRead, identity, type Account } from "./auth";
 import { requireCondition } from "./errors";
 import { actionSchema, applyAction, draftSchema, revisionSchema, sameOrder, validateDraft } from "./learning";
 import { sameReviewProject } from "../classroom/review/project";
@@ -32,7 +32,7 @@ export async function studentClass(tx: Transaction, account: Account) {
   return classroom;
 }
 export async function studentDashboard(): Promise<StudentDashboard> {
-  return authorized(await identity(), async (tx, account) => {
+  return authorizedRead(await identity(), async (tx, account) => {
     const classroom = await studentClass(tx, account);
     const lessons = RELEASED_LESSONS.filter((lesson) => classroom.openedLessonIds.includes(lesson.id));
     const work: Record<string, Work> = {};
@@ -42,14 +42,14 @@ export async function studentDashboard(): Promise<StudentDashboard> {
   });
 }
 export async function studentClassroom(): Promise<Pick<StudentDashboard, "classroom" | "lessons">> {
-  return authorized(await identity(), async (tx, account) => {
+  return authorizedRead(await identity(), async (tx, account) => {
     const classroom = await studentClass(tx, account);
     return { classroom, lessons: RELEASED_LESSONS.filter(lesson => classroom.openedLessonIds.includes(lesson.id)) };
   });
 }
 export async function getWork(lessonId: string) {
   requireCondition(findLesson(lessonId), 404, "NOT_FOUND", "수업을 찾을 수 없어요.");
-  return authorized(await identity(), async (tx, account) => {
+  return authorizedRead(await identity(), async (tx, account) => {
     const classroom = await studentClass(tx, account);
     requireCondition(classroom.openedLessonIds.includes(lessonId), 403, "LESSON_CLOSED", "우리 반에 아직 열리지 않은 수업이에요.");
     return toWork((await tx.get(workRef(account.uid, lessonId))).data() as StoredWork | undefined, lessonId);
@@ -101,7 +101,7 @@ export async function mutateWork(lessonId: string, payload: unknown, actionReque
   });
 }
 export async function teacherDashboard(classId?: string, lessonId?: string): Promise<TeacherDashboard> {
-  return authorized(await identity(), async (tx, account) => {
+  return authorizedRead(await identity(), async (tx, account) => {
     requireCondition(account.role !== "student", 403, "FORBIDDEN", "선생님 계정으로 입장해 주세요.");
     const selectedClassId = classId ?? account.classIds[0];
     requireCondition(account.classIds.includes(selectedClassId), 403, "FORBIDDEN", "담당 반만 확인할 수 있어요.");
@@ -129,7 +129,7 @@ export async function teacherAssessment(classId?: string, lessonsParam?: string)
   const regular = RELEASED_LESSONS.filter((lesson) => lesson.mode !== "review");
   const lessonIds = lessonsParam === undefined ? null : [...new Set(lessonsParam.split(","))];
   requireCondition(!lessonIds || (lessonIds.length <= 60 && lessonIds.every((id) => regular.some((lesson) => lesson.id === id))), 400, "INVALID_LESSON", "평가할 정규 수업을 골라 주세요.");
-  const { classrooms, classroom } = await authorized(await identity(), async (tx, account) => {
+  const { classrooms, classroom } = await authorizedRead(await identity(), async (tx, account) => {
     requireCondition(account.role !== "student", 403, "FORBIDDEN", "선생님 계정으로 입장해 주세요.");
     const selectedClassId = classId ?? account.classIds[0];
     requireCondition(account.classIds.includes(selectedClassId), 403, "FORBIDDEN", "담당 반만 확인할 수 있어요.");
@@ -169,7 +169,7 @@ function workSummary(work: Work): WorkSummary {
 }
 export async function teacherWork(uid: string, lessonId: string) {
   requireCondition(findLesson(lessonId), 404, "NOT_FOUND", "수업을 찾을 수 없어요.");
-  return authorized(await identity(), async (tx, account) => {
+  return authorizedRead(await identity(), async (tx, account) => {
     const student = (await tx.get(admin().db.collection("csAccounts").doc(uid))).data() as Account | undefined;
     requireCondition(account.role !== "student" && student?.role === "student" && student.classId && account.classIds.includes(student.classId), 403, "FORBIDDEN", "담당 반의 학생 작품만 확인할 수 있어요.");
     return toWork((await tx.get(workRef(uid, lessonId))).data() as StoredWork | undefined, lessonId);

@@ -4,7 +4,7 @@ import type { Transaction } from "firebase-admin/firestore";
 import type { ClassSettings } from "../classroom/types";
 import { PLANNER_LIMIT, type ClassEvent, type SavedList, type ScheduleData, type Todo } from "../classroom/planner";
 import { RELEASED_LESSONS } from "../classroom/catalog";
-import { authorized, identity, type Account } from "./auth";
+import { authorized, authorizedRead, identity, type Account } from "./auth";
 import { admin } from "./firebase";
 import { requireCondition } from "./errors";
 import { revisionSchema } from "./learning";
@@ -29,7 +29,7 @@ function saveList<T extends { id: string }>(tx: Transaction, ref: FirebaseFirest
   return saved;
 }
 export async function readTodos(): Promise<SavedList<Todo>> {
-  return authorized(await identity(), async (tx, account) => {
+  return authorizedRead(await identity(), async (tx, account) => {
     const value = (await tx.get(admin().db.collection("csTodos").doc(account.uid))).data();
     return value as SavedList<Todo> | undefined ?? { revision: 0, items: [] };
   });
@@ -53,7 +53,7 @@ async function scheduleScope(tx: Transaction, account: Account, requested?: stri
   return { classroom: { id: classroom.id, name: classroom.name }, classrooms: classrooms.map(({ id, name }) => ({ id, name })), lessons: RELEASED_LESSONS.filter((value) => classroom.openedLessonIds.includes(value.id)).map(({ id, title }) => ({ id, title })) };
 }
 export async function readSchedule(classId?: string): Promise<ScheduleData> {
-  return authorized(await identity(), async (tx, account) => {
+  return authorizedRead(await identity(), async (tx, account) => {
     const scope = await scheduleScope(tx, account, classId);
     const value = (await tx.get(admin().db.collection("csSchedules").doc(scope.classroom.id))).data() as SavedList<ClassEvent> | undefined;
     return { ...scope, ...(value ?? { revision: 0, items: [] }), timetable: await readClassTimetable(tx, scope.classroom.id) };
@@ -74,7 +74,7 @@ export async function saveSchedule(classId: string, payload: unknown) {
 }
 export async function refreshScheduleTimetable(classId: string, payload: unknown) {
   z.object({}).strict().parse(payload);
-  await authorized(await identity(), async (tx, account) => {
+  await authorizedRead(await identity(), async (tx, account) => {
     requireCondition(account.role !== "student", 403, "FORBIDDEN", "시간표 갱신은 담당 선생님이 관리해요.");
     await scheduleScope(tx, account, classId);
   });
