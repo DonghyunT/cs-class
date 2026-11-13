@@ -63,5 +63,31 @@ export function readTimetableFields(client: string): TimetableFields | null {
   const subjects = /과목명\s*=\s*Q과목명\(자료\.(자료\d+)\[/.exec(client)?.[1];
   const original = /원자료\s*=\s*Q자료\(자료\.(자료\d+)\[/.exec(client)?.[1];
   const current = /일일자료\s*=\s*Q자료\(자료\.(자료\d+)\[/.exec(client)?.[1];
-  return subjects && original && current ? { subjects, original, current } : null;
+  if (!subjects || !original || !current) return null;
+  // Since 2026-11 the week's start, period times and week list are numbered fields too; older pages keep their plain names.
+  const start = /new Date\(QnmsbChange\(자료\.(자료\d+)\)\)/.exec(client)?.[1];
+  const times = /class='교시'>"\s*\+\s*자료\.(자료\d+)\[교시-1\]/.exec(client)?.[1];
+  const weeks = /일자설정하기\(H시간표\.(자료\d+),/.exec(client)?.[1];
+  return { subjects, original, current, ...(start ? { start } : {}), ...(times ? { times } : {}), ...(weeks ? { weeks } : {}) };
+}
+
+// Comcigan hides single values (school names and codes, dates, subjects) behind a second layer:
+// base64, XOR with a key spelled out in its QnmsbChange function, then EUC-KR. Read the key from that function.
+export function readFieldCipher(client: string): ((value: string) => string) | null {
+  const codes = /function QnmsbChange\([^)]*\)\s*\{[\s\S]*?String\.fromCharCode\(([\d,\s]+)\)/.exec(client)?.[1];
+  const key = codes?.split(",").map(Number);
+  if (!key?.length || key.some((code) => !Number.isInteger(code) || code < 0 || code > 255)) return null;
+  return (value) => {
+    if (value === "") return "";
+    if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)) throw new Error("TIMETABLE_FIELD");
+    const bytes = Buffer.from(value, "base64");
+    for (let i = 0; i < bytes.length; i++) bytes[i] ^= key[i % key.length];
+    return new TextDecoder("euc-kr", { fatal: true }).decode(bytes);
+  };
+}
+
+// The school code sits in a column that depends on the row's first number; the page states the divisor.
+export function readSchoolCodeDivisor(client: string): number | null {
+  const divisor = Number(/Math\.floor\(학교명단\[i\]\[0\]\/(\d+)\)\+2/.exec(client)?.[1]);
+  return Number.isSafeInteger(divisor) && divisor > 0 ? divisor : null;
 }
