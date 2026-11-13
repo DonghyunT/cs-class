@@ -21,19 +21,30 @@ const subjectsSchema = z.array(z.union([z.string().max(80), z.number()])).max(10
 const gridSchema = z.array(z.unknown()).length(4);
 const cells = z.array(z.union([z.number().int().nonnegative().safe(), z.string().regex(/^>?\d{1,15}$/)])).min(1).max(9);
 
-export interface TimetableFields { subjects: string; current: string; original: string }
+export interface TimetableFields { subjects: string; current: string; original: string; start?: string; times?: string; weeks?: string }
 // The synthetic local server keeps these names; the live page states its own (readTimetableFields).
 const FIXTURE_FIELDS: TimetableFields = { subjects: "자료492", current: "자료147", original: "자료481" };
 
-export function parseTimetableWeek(input: unknown, fields: TimetableFields = FIXTURE_FIELDS) {
+// `decode` opens the values the live page hides one by one (readFieldCipher); without it every value is read as it is.
+export function parseTimetableWeek(input: unknown, fields: TimetableFields = FIXTURE_FIELDS, decode?: (value: string) => string) {
   // Only school dates, subjects and periods leave this parser. Teacher fields are discarded.
-  const value = weekSchema.parse(input);
-  const raw = input as Record<string, unknown>;
-  // The render code never reads the revision time, so it is the one numbered field holding a timestamp.
-  const stamps = Object.entries(raw).filter(([key, item]) => /^자료\d+$/.test(key) && typeof item === "string" && updatedAtPattern.test(item));
+  const raw = z.record(z.string(), z.unknown()).parse(input);
+  const open = (item: unknown) => decode && typeof item === "string" ? decode(item) : item;
+  const weeks = raw[fields.weeks ?? "일자자료"];
+  const value = weekSchema.parse({
+    ...raw, 시작일: open(raw[fields.start ?? "시작일"]), 일과시간: raw[fields.times ?? "일과시간"],
+    일자자료: Array.isArray(weeks) ? weeks.map((week) => Array.isArray(week) ? [week[0], open(week[1])] : week) : weeks,
+  });
+  // The render code never shows the revision time, so it is the one numbered field holding a timestamp.
+  const stamps = Object.entries(raw).flatMap(([key, item]) => {
+    if (!/^자료\d+$/.test(key) || typeof item !== "string") return [];
+    let text: unknown;
+    try { text = open(item); } catch { return []; }
+    return typeof text === "string" && updatedAtPattern.test(text) ? [text] : [];
+  });
   if (stamps.length !== 1) throw new Error("TIMETABLE_STRUCTURE");
-  const updatedAt = stamps[0][1] as string;
-  const subjects = subjectsSchema.parse(raw[fields.subjects]);
+  const updatedAt = stamps[0];
+  const subjects = subjectsSchema.parse(raw[fields.subjects]).map(open);
   const currentGrid = gridSchema.parse(raw[fields.current]);
   const originalGrid = gridSchema.optional().parse(raw[fields.original]);
   if (value.학급수[2] - value.가상학급수[2] !== 11) throw new Error("TIMETABLE_CLASS_COUNT");
