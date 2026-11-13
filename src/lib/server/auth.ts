@@ -274,10 +274,9 @@ function passwordProvider(user: UserRecord): "password" | "google" | "unavailabl
 }
 export async function readProfile() {
   const who = await identity();
-  await authorizedRead(who, async () => undefined);
+  const session = await authorizedRead(who, async (_tx, account) => publicSession(account));
   const user = await admin().auth.getUser(who.uid);
   requireCondition(!user.disabled, 401, "SIGNED_OUT", "사용할 수 없는 계정이에요. 선생님께 알려 주세요.");
-  const session = await authorizedRead(who, async (_tx, account) => publicSession(account));
   return { session, nickname: session.nickname ?? "", passwordProvider: passwordProvider(user) };
 }
 export async function updateNickname(nickname: string) {

@@ -174,7 +174,7 @@ const variableId = (v: unknown): v is string => typeof v === "string" && /^[\w-]
 // Entry places variable boxes from the stage centre with y growing downward: A·B and 클릭 수 sit top-left, clear of the
 // answer box that opens along the bottom while a question waits.
 export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0, counter = false, variables: readonly StudentVariable[] = [], functions: readonly ProgramFunction[] = []): string {
-  const p = JSON.parse(buildNameProject()!);
+  const p = JSON.parse(buildNameProject());
   if (functions.length) p.functions = functions.map((f) => ({ id: f.id, type: "normal", localVariables: [], useLocalVariables: false, content: JSON.stringify([[{ type: "function_create", x: 50, y: 30, params: [{ type: "function_field_label", params: [f.name, null] }, null], statements: [f.body] }]]) }));
   p.variables.push(...["A", "B"].map((name, i) => ({ id: `cs-${name}`, name, variableType: "variable", value: 0, visible: false, x: -210, y: -112 + i * 30, object: null, isCloud: false, isRealTime: false })));
   if (counter) p.variables.push({ id: COUNTER.id, name: COUNTER.name, variableType: "variable", value: 0, visible: true, x: -210, y: -112, object: null, isCloud: false, isRealTime: false });
