@@ -446,6 +446,29 @@ test("질문 쓰기 기호·삭제 취소·실패 재시도·초점과 다른 �
   await expect(page.getByRole("region", { name: "우리 반 질문 목록", exact: true })).not.toContainText("삭제할 본인 질문");
 });
 
+test("불러온 마지막 질문을 지워도 앞서 불러온 질문은 목록에 남음", async ({ page }) => {
+  const id = randomUUID();
+  expect((await page.request.post(`${base}/2-1`, { headers, data: { id, title: "불러온 마지막 질문", body: "본문", lessonId: null } })).status()).toBe(200);
+  const earlier = randomUUID();
+  await page.route("**/api/classroom/community?**", async route => {
+    const response = await route.fetch();
+    const data = await response.json();
+    const last = data.questions.find((item: { id: string }) => item.id === id);
+    // Stands for an earlier page already on screen; once the question is gone, a reload from the start would drop it.
+    await route.fulfill({ response, json: last ? { ...data, questions: [{ ...last, id: earlier, title: "앞서 펼쳐 둔 질문" }, last], nextCursor: id } : data });
+  });
+  await page.goto("/student/community");
+  const list = page.getByRole("region", { name: "우리 반 질문 목록", exact: true });
+  await list.getByRole("button", { name: /불러온 마지막 질문/ }).click();
+  await page.getByRole("button", { name: "질문 삭제", exact: true }).click();
+  const dialog = page.getByRole("alertdialog", { name: "질문을 삭제할까요?", exact: true });
+  await dialog.getByRole("button", { name: "삭제하기", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(list).not.toContainText("불러온 마지막 질문");
+  await expect(list.getByRole("button", { name: /앞서 펼쳐 둔 질문/ })).toBeVisible();
+  await expect(list.getByRole("button", { name: "이전 질문 더 보기", exact: true })).toBeVisible();
+});
+
 test("삭제 성공 응답이 유실돼도 재시도404로 정리하고 이전 질문 페이지를 계속 조회", async ({ page }) => {
   const older = randomUUID(), id = randomUUID();
   for (const [questionId, title] of [[older, "이전 페이지 질문"], [id, "현재 페이지 마지막 질문"]]) {

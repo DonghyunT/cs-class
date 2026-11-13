@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { findLesson } from "@/lib/classroom/catalog";
 import { Classroom } from "@/components/classroom";
-import { getWork } from "@/lib/server/classroom";
+import { studentClassroom } from "@/lib/server/classroom";
 import { isConfigured } from "@/lib/server/firebase";
 import { ServiceError } from "@/lib/server/errors";
 import { redirect } from "next/navigation";
@@ -18,11 +18,14 @@ export default async function Page({
   const lesson = findLesson(id);
   if (!lesson) notFound();
   if (!isConfigured()) return <Classroom lesson={null} />;
-  try { await getWork(id); }
+  // Only the sign-in and the class's opened lessons gate the page; the screen loads the work itself.
+  let opened: boolean;
+  try { opened = (await studentClassroom()).classroom.openedLessonIds.includes(id); }
   catch (error) {
     if (error instanceof ServiceError && error.status === 401) redirect("/login/student");
     if (error instanceof ServiceError && error.status === 403) redirect("/student");
     throw error;
   }
+  if (!opened) redirect("/student");
   return <Classroom lesson={lesson} returnOrigin={returnOrigin} />;
 }
