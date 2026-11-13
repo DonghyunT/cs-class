@@ -230,7 +230,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 2. 에뮬레이터가 실행 중인 상태에서 `npm run test:e2e:running -- tests/<파일>.spec.ts tests/lesson-smoke.spec.ts`로 공통 스모크와 함께 돌립니다. **파일을 지정하지 않으면 전체 E2E가 실행되므로** 반드시 파일을 지정합니다.
 3. 전체 E2E가 필요하다고 판단되면 사용자에게 묻습니다.
 
-`:running` 명령은 3000번에 떠 있는 앱을 그대로 씁니다. `npm run dev:emulator`로 띄운 앱은 `CS_TIMETABLE_FIXTURE` 없이 가짜 시간표 서버를 켜지 않아 `timetable` 검사가 실패하고 실제 시간표 사이트로 요청이 갈 수 있습니다. 직접 고른 검사에 `timetable`이 있으면 앱과 에뮬레이터를 모두 끄고(3000·8080·9099 비움) `npx.cmd firebase emulators:exec --only auth,firestore --project demo-cs-class "npx playwright test tests/<파일>.spec.ts"`로 돌립니다(Playwright가 가짜 시간표 서버와 함께 앱을 띄웁니다).
+`:running` 명령은 3000번에 떠 있는 앱을 그대로 씁니다. 로컬에서는 `:running`이 아니어도 3000번에 무엇이든 떠 있으면 Playwright가 그 서버를 재사용하므로, 다른 프로그램이 3000번을 쓰고 있으면 검사가 전부 실패합니다(먼저 포트를 확인). `npm run dev:emulator`로 띄운 앱은 `CS_TIMETABLE_FIXTURE` 없이 가짜 시간표 서버를 켜지 않아 `timetable` 검사가 실패하고 실제 시간표 사이트로 요청이 갈 수 있습니다. 직접 고른 검사에 `timetable`이 있으면 앱과 에뮬레이터를 모두 끄고(3000·8080·9099 비움) `npx.cmd firebase emulators:exec --only auth,firestore --project demo-cs-class "npx playwright test tests/<파일>.spec.ts"`로 돌립니다(Playwright가 가짜 시간표 서버와 함께 앱을 띄웁니다).
 
 자동 CI의 `app`에는 비문서 변경의 정책·단위 검사, lint, typecheck, 빌드와 위 선별/스모크 검사(`verified`이면 앞선 PR 실행 결과로 대신)가 포함됩니다. 스모크 성공을 전체 회귀 검증 성공으로 해석하지 않습니다. PR 경로에서 전체 검사가 필요하면 별도로 승인받아 병합 전에 PR 브랜치에서 `gh workflow run verify.yml --ref <브랜치>`로 실행합니다(`main`에서 돌리면 실패를 공개 뒤에 압니다). `main`에서 돌려야 하면 운영 반영을 확인한 뒤 실행합니다(같은 SHA에 `app` 실행이 하나 더 생겨 배포 대기가 늘 수 있음). 수동 실행 결과는 PR에 실행 SHA·범위와 함께 기록합니다. `main` push의 `app` 성공은 Vercel 운영 반영의 조건이기도 하며, 그 규칙(`[skip ci]` 금지·검사 이름 변경 순서 등)은 [서버 안내](FIREBASE_SETUP.md#ci와-운영-공개)가 단일 기준입니다.
 
