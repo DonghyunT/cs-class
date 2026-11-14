@@ -102,7 +102,7 @@ npm run dev:emulator
 
 문서를 고칠 때의 주제별 위치와 쓰기 규칙은 [문서 작성 기준](docs/DEVELOPMENT.md#문서-작성-기준)에 있습니다. `docs/plans/`에는 진행 중인 작업 계획만 두고, 끝난 계획과 지난 원문은 [`docs/archive/`](docs/archive/README.md)에 보관합니다. `docs/reference/`는 보관 원문이 가리키는 근거 자료(화면 캡처 등)입니다.
 
-선생님이 직접 할 일은 [HANDOFF의 다음 작업·남은 한계](docs/HANDOFF.md#다음에-이어갈-작업), 수업 당일 순서는 [첫 실제 수업 확인 순서](docs/DEVELOPMENT.md#첫-실제-수업-확인-순서)에 있습니다. 교사가 투사하는 3차시 개념 수업 자료는 [내일, 축제에서 만나](teaching-materials/festival-romance/README.md)를 참고하세요. 독립 HTML 완성본과 수정 소스가 함께 있습니다.
+선생님이 직접 할 일은 [HANDOFF의 다음 작업·남은 한계](docs/HANDOFF.md#다음에-이어갈-작업), 수업 당일 순서는 [첫 실제 수업 확인 순서](docs/DEVELOPMENT.md#첫-실제-수업-확인-순서)에 있습니다. 교사 도입 수업(`/festival-lesson.html`)과 학생용 CS 복습 게임(`/festival-romance.html`) 자료는 [내일, 축제에서 만나](teaching-materials/festival-romance/README.md)를 참고하세요. 독립 HTML 완성본과 수정 소스가 함께 있습니다.
 
 ---
 
@@ -131,7 +131,7 @@ cs-class/
 ├─ public/entryjs/        # EntryJS 4.0.23 편집기 및 브라우저 정적 자산 (sprites/library: 엔트리 공식 오브젝트 묶음)
 ├─ public/concepts/       # 개념 화면 정적 그림(엔트리 블록 이미지 캡처)
 ├─ scripts/               # 에뮬레이터 시드, 선별 검증기, 문서 검사 스크립트
-├─ teaching-materials/    # 교사가 투사하는 독립 수업 자료 (로그인·DB 미사용, 자료 자체 빌드 build.cjs가 public/festival-romance.html도 만듦)
+├─ teaching-materials/    # 독립 수업·복습 자료 (로그인·DB 미사용, build.cjs가 public/festival-romance.html 빌드; public/festival-lesson.html은 원본 교사용 도입 자료)
 ├─ docs/                  # PRD, DESIGN, DEVELOPMENT, FIREBASE_SETUP, HANDOFF 핵심 문서
 │  ├─ plans/              # 진행 중인 작업 계획 (필요할 때 만들고, 끝나면 보관)
 │  ├─ archive/            # 지난 문서 원문 스냅샷 (수정 금지)

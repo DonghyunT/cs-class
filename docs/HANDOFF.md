@@ -4,6 +4,7 @@
 
 ## 현재 작업 상태
 
+- **페스티벌 로맨스 학생용 CS 복습 게임 개편 (`feat/festival-character-v7`):** Phase 2~4(3챕터 22장면 12문항·3갈래 엔딩·`?mode=teacher`/`?embed=1`·원본 `/festival-lesson.html` 보존) 빌드·단위 27건·Playwright QA 통과([개편 설계안](plans/festival-romance-review-game.md), [자료 인수인계](../teaching-materials/festival-romance/HANDOFF.md)). Phase 1 최종 `1536×2048` 3×2 스프라이트 교체(현재 v3 `rows: 1` 임시 사용) 및 Phase 5 메인 앱 `useWork` 임베드 대기.
 - **운영:** 설정·배포 게이트 상태는 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)을 봅니다.
 - **실제 학생 계정:** 등록 현황은 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)에 있습니다. 방식은 반별 30분 임시값 → 첫 입장 때 개인 비밀번호(사용자 결정)이고, 명부 CSV·등록 직후 백업은 등록에 쓴 PC의 Git 제외 `private/`에만 있습니다.
 

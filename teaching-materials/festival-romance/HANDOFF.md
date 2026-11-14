@@ -1,56 +1,38 @@
-# 수업 자료 인수인계
+# 페스티벌 로맨스 (`festival-romance`) 인수인계
 
-2026-10-20 · PR #59로 10/19 `main` 병합·운영 `/festival-romance.html` 공개(10/20 응답 200 확인) · 남은 일은 현장 확인
+갱신: 2026-11-15(Asia/Seoul) · 브랜치: `feat/festival-character-v7`
 
-## v7 캐릭터 시안 (2026-10-22)
+## 1. 현재 작업 상태
 
-로컬 `feat/festival-character-v7`에서 승인한 남녀 기본 시안을 각각 6표정으로 확장했습니다. 파일은 `assets/haru-boy-v7-preview.png`, `assets/haru-girl-v7-preview.png`이며, 남학생은 남성적인 얼굴·체형과 소매를 걷은 흰 교복 셔츠, 여학생은 기존 가디건입니다. 두 캐릭터 모두 작은 빨간 원·흰 꽃잎 교표로 맞추고 ‘금옥’ 글자를 없앴습니다. 제작·검수와 한계는 [이미지 제작 기록의 v7 절](image-generation-notes.md#6표정-v7-시안-2026-10-22)에 있습니다.
+- **학생용 CS 복습 게임 개편(Phase 2~4 반영·검증 완료):** [dist/festival-romance.html](dist/festival-romance.html) · [public/festival-romance.html](../../public/festival-romance.html)을 3개 챕터·22장면·12문항(`ch1-q1`~`ch3-q4`)·3갈래 엔딩(`썸 시작`/`찐친`/`어색한 사이`) 구조로 개편해 빌드와 테스트·Playwright QA를 통과했습니다([개편 설계안](../../docs/plans/festival-romance-review-game.md)).
+- **교사용 도입 수업 원본 보존:** [dist/festival-lesson.html](dist/festival-lesson.html) · [public/festival-lesson.html](../../public/festival-lesson.html) (기존 3차시 27장면)은 `build.cjs`와 분리해 바이트 단위로 그대로 유지했습니다.
+- **임시 v3 스프라이트 운용:** 현재 빌드는 [haru-boy-v3.png](assets/haru-boy-v3.png) · [haru-girl-v3.png](assets/haru-girl-v3.png) (`1536×1024`, `FESTIVAL_SPRITE_ROWS: { boy: 1, girl: 1 }`)를 `spriteCrop` 6표정 슬롯으로 매핑해 사용하며, `assets/` 내 후보 시트([haru-boy-v6.png](assets/haru-boy-v6.png), [haru-girl-v8.png](assets/haru-girl-v8.png))는 Phase 1 최종 `1536×2048` 3×2 시트 확정 교체 대기 상태입니다.
 
-**남학생 v7은 사용자 검토에서 인상이 너무 부드러워졌다는 이유로 보류했습니다.** v8 제작 때 기준이 된 승인 단독 시안을 `assets/haru-boy-v8-reference.png`로 함께 보관했습니다. 이전 v6 시트를 참조에서 빼고 단독 시안 하나만 사용해 턱·목·어깨가 유지되도록 재생성했습니다. 정사각형 3열×2행이므로 기존 게임용 시트와 칸 비율이 다릅니다. 여학생은 v7 유지입니다.
+## 2. 번들 산출물 및 검증 기록
 
-남학생의 최신 재검토용은 `assets/haru-boy-v11-preview.png`입니다. v9에서 2번째 수줍음과 4번째 놀람을 수정했고([v9 제작 기록](image-generation-notes.md#남학생-24번째-표정-v9-수정-2026-10-22)), v10에서 6표정의 머리를 가벼운 다운펌 느낌으로 정리했습니다. 사용자는 전반적인 이목구비는 마음에 들지만 얼굴 음영이 화장처럼 보인다고 해, v11에서 눈가의 붉은 갈색 음영·진한 테두리·볼 색·입술 광택을 줄였습니다. 이목구비·골격·표정 유지가 기준이며, v11에 대한 사용자 평가는 아직 받지 않았습니다.
+- **산출물 무결성 ([qa/build-manifest.json](qa/build-manifest.json)):**
+  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `15,167,492` bytes, SHA-256 `9ca74a575401ef2e4946219f1a6b27d31e46c5933fed9b09eedadc039d530a21`
+  - `public/festival-lesson.html` ≡ `dist/festival-lesson.html`: SHA-256 `8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c430b5` (원본 27장면 불변)
+- **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 27/27 통과
+  - `models.test.cjs` (10), `state.test.cjs` (6), `package.test.cjs` (3), `journey.test.cjs` (4), `refinement.test.cjs` (4)
+- **Playwright 브라우저 QA (`node teaching-materials/festival-romance/qa/browser.cjs`):** 9항목 통과 (`errors: []`, `consoleErrors: []`, `remoteRequests: 0`)
+  - 학생 모드 은닉·순차 해금, 첫 시도 하트 규칙·오답 재도전 0하트·새로고침/이전버튼 치트 방지(`festival-romance.game.v2`), 12문항 완주 및 3갈래 엔딩(`11/12 찐친`, `12/12+cold 찐친`→재도전 `썸 시작`, `≤6 어색한 사이`), `이미 본 대사 건너뛰기`, 모바일 `390×844` 가로 넘침 0건, `?mode=teacher` 전 시뮬레이터 오답 힌트, `?embed=1` (`127.0.0.1` 동일 출처 HTTP 호스트에서 `postMessage` `festival:init`/`festival:state`/`festival:complete` 및 `localStorage` 0회 접근 확인), 원본 `festival-lesson.html` 27장면 무오류 로드 확인.
+- **Playwright 재생 QA (`node teaching-materials/festival-romance/qa/playback-app.cjs`):** 8항목 통과 (`reducedMotion: 'reduce'` / `'no-preference'` 조명 4회·다각형 3/4/6종·일시정지/재개·내각 함정·모달 보류·장면 이탈 정리·앱 메시지 UI·`390×844`·원본 27장면 무오류 로드)
+- **시각 검수(`teaching-materials/festival-romance/qa-results/`):** 데스크톱(`1366×768`) 3갈래 엔딩·퀴즈 오답·마음 선택지·임베드·교사 메모·원본 수업, 모바일(`390×844`), `expressions-v3-{boy,girl}.png` 및 `playback-*.png` 확인.
+  - 경미한 시각 메모: `390px`에서 하트 획득/실패 일시 배지(`.heart-delta`)가 상단 안내 줄 위로 잠깐 겹치고, `girl` v3 슬롯 1 좌측 끝에 1px 미세 인접 프레임 경계가 보이나 최종 3×2 시트 교체 시 해소될 범위입니다.
+  - `?embed=1`의 `postToParent`는 `src/app.js`가 `window.location.origin`(`!== 'null'`)을 `targetOrigin`으로 사용하므로, `file://` 직접 열기에서는 브라우저 정책상 전달되지 않고 실제 서비스와 같은 `http(s)://` 동일 출처 환경에서 동작합니다.
 
-남녀 12표정을 Chrome에서 확인했으며, 게임용 칸 정렬·몸통 고정·표정 전환 검증은 하지 않았습니다. 빌드·공개 HTML은 v6를 사용합니다. 이미지 파일과 기록은 2026-10-24에 원격 브랜치 `feat/festival-character-v7`에 커밋·push했습니다(PR·`main` 병합 전). 다른 PC에서는 이 브랜치를 받아 이어가고, 게임에 적용해 `main`에 넣을 때는 PR 경로로 진행합니다.
+## 3. 다음에 이어갈 작업
 
-## 현재 결과
+1. **Phase 1 캐릭터 시트 확정:** `haru-girl-v8.png`·남학생 시안을 `1536×2048` 3×2 시트로 확정해 `haru-boy-v3.png`/`haru-girl-v3.png` 자리와 교체하고 `node teaching-materials/festival-romance/build.cjs`를 다시 실행합니다(`build.cjs`가 PNG IHDR로 `rows: 2`를 자동 반영).
+2. **Phase 5 메인 앱 임베드:** `cs-class` 본 사이트 내 복습 활동에서 `/festival-romance.html?embed=1`을 iframe으로 띄우고 `festival:init`/`festival:state`/`festival:complete`와 `useWork` 수동 저장을 연동합니다.
+3. **현장 확인:** 실제 학교 교실 프로젝터(교사용 `/festival-lesson.html`·`?mode=teacher`)와 학생 태블릿/크롬북(학생용 `/festival-romance.html`)에서 가독성과 터치 조작을 최종 점검합니다.
 
-중학교 정보교사가 투사하는 3차시 개념 자료입니다. 학생은 기존 사이트에서 복습·시연·실습합니다. 독립 HTML 한 파일, 하나의 축제 세계관, 대화 선택→핵심 개념 활동→결과 대화 구조입니다. 기초/조건/반복마다 중심 활동 3개, 나머지는 목차 확장입니다. 사용자는 일상적인 한국어와 자연스러운 설렘, 개념 우선, 중요한 순간에만 활동이 나오는 흐름을 원합니다.
-
-내 말과 하루의 말은 이름표·위치·색으로 구별합니다. 최초 연락은 축제앱 채팅이고 초대장은 앱의 별도 기능입니다. 초대장 이름을 생성하면 주인공 이름도 함께 바뀝니다. 조명 활동은 하루가 맡은 준비팀의 점등식을 전날부터 예고합니다. 앱 문구는 전용 휴대폰 그림·파란 메시지 틀로 구별합니다. 전체 실행은 명령별 400ms(동작 줄이기 700ms)로 이어지고, 일시 정지 후 다음 명령부터 재개합니다. 캐릭터는 승인한 수줍음을 포함한 남녀 6표정 v6입니다. 그림 제작과 프레임 규격은 이미지 제작 기록에 있습니다.
-
-첫 초대에 답하고, 선택·활동 결과를 주고받고, 함께 만든 조명과 하루의 먼저 도착한 배려를 엔딩에서 회수합니다. 1·2챕터 정리의 명시적 버튼으로 다음 챕터를 이어갈 수 있고 수업에서는 그 자리에서 멈출 수 있습니다. 대사 진행은 하단 버튼 하나입니다. 간결 모드는 결과 대사를 우선하고 말투별 추가 반응은 생략합니다.
-
-## 다음 PC
+## 4. 자주 쓰는 실행 명령
 
 ```powershell
-git status -sb
-git fetch origin
-git switch main
-git pull --ff-only origin main
 node teaching-materials/festival-romance/build.cjs
 node --test teaching-materials/festival-romance/tests/*.test.cjs
+node teaching-materials/festival-romance/qa/browser.cjs
+node teaching-materials/festival-romance/qa/playback-app.cjs
 ```
-
-기존 변경이 있으면 먼저 보존합니다. 완성본은 `dist/festival-romance.html`입니다. 압축 파일이나 환경변수·키·학생 데이터는 필요하지 않습니다. 소스 위치와 브라우저 검사는 README에 있습니다. 빌드는 Node 기본 모듈만 사용합니다.
-
-## 상태와 제한
-
-현재 소스로 단위/패키지 검사 24개, Chrome 검사 17개 묶음과 자동 실행·일시 정지·앱 화면 추가 7개 묶음(세 차시 전체 진행·네 AND 결과·말투와 일반/간결 모드·세 도형 엔딩·키보드·모바일 선택 포함), lint·typecheck·build·문서 검사를 통과했습니다. 페이지 오류·원격 요청 0. 로컬 Next Production 서버의 `/festival-romance.html`은 200 HTML이며 오프라인 완성본과 SHA-256이 같습니다. 현장 프로젝터·한글 입력기·수업 시간·학생 반응은 미측정이고 전체 사이트 E2E는 실행하지 않았습니다.
-
-본 자료는 학생 로그인·useWork·DB·앱 수업 목록을 사용하지 않는 독립 파일입니다. 빌드는 dist와 웹 공개용 `public/festival-romance.html`을 동일하게 생성합니다. 기존 사이트의 `/festival-romance.html`로 공개되며, 고칠 때는 사이트의 [위험도별 반영 경로](../../docs/DEVELOPMENT.md#위험도별-반영-경로)를 따릅니다.
-
-이번 리뷰어는 사용자 요청에 따라 Luna max 3명이며 서사 플레이어·UX 플레이어·정보교사로 분담했습니다. 모두 읽기 전용으로 계획과 수정본을 반복 검토했고 root만 편집했습니다. 후속 UX·학습 검토에서 동작 줄이기 중 진행과 앱 구별을 확인했고, 일시 정지 후 처음부터 재실행되던 문제를 실패 검사로 재현해 수정·재확인했습니다. 최종 차단 문제는 없습니다. 전체 검증을 매번 반복하지 말고 변경한 경로를 우선 확인합니다.
-
-## 학생 시각 리뷰와 반영 (10/19)
-
-읽기 전용 리뷰어 4명(GPT-6 Luna max 2, Gemini 3.8 Flash High 2)이 학생 역할(지루한 뒷자리·꼼꼼한 모범생·프로젝터 뒷줄·분위기에 민감한 학생)로 기본 경로 화면 107장과 화면 글자를 보고 평가했습니다. 점수는 몰입 5~7, 개념 이해 7~8, 화면·조작 6~7입니다. 공통 강점은 변수 교체·비교·회전각을 짚는 예상하기와 차시 정리 카드입니다.
-
-`c5ca773`에서 반영: 낮 배경 대화 장면의 크림색 막 완화, 넓은 화면에서 실행 결과를 오른쪽 열(하루·예상 카드 자리)에 표시해 입력·제목이 밀려 올라가지 않게 함, 선택지가 하나인 단계에서 하단 버튼으로 진행, 2차시 정리 카드의 본편에 없던 ‘산술 연산’을 비교·논리 연산으로 교체. 단위 21·Chrome 검사 11묶음·ESLint·1366/1920/390 화면에서 확인했습니다.
-
-오판으로 제외: 조건 반복에 오답 반복이 없다(‘1111 입력’ 버튼이 있음), 회전각이 90°→120°로 바뀐다(체험 스크립트가 ‘360 ÷ 변의 수로 계산’을 누름), 남학생/여학생이 주인공 성별이다(하루 외형 선택).
-
-## 다음 작업
-
-1. **현장 확인:** 실제 프로젝터와 학급에서 표정·한글 입력·진행 시간·선택 토론이 자연스러운지 봅니다. 전체 사이트 E2E는 별도 승인 없이는 실행하지 않습니다.
-
-기존 중복 진행 버튼·기념품 판단 버튼 잘림·공개 안내판 기록·입장권 출처는 이번에 정리했습니다. 선택별 반응은 일반 모드에 있고 간결 모드는 결과 우선입니다. 엔딩의 다음 날 약속은 현재 사용자의 게임 목표에 맞춰 유지했습니다.
