@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { overallPercent } from "@/lib/classroom/progress";
 import type { Stage } from "@/lib/classroom/types";
 import styles from "./activity-progress-ring.module.css";
 
@@ -22,7 +23,7 @@ export function ActivityProgressRing({ parts, label = "전체 필수 활동 완�
   const [focused, setFocused] = useState<Stage | null>(null);
   const completed = parts.reduce((sum, part) => sum + part.completed, 0);
   const total = parts.reduce((sum, part) => sum + part.total, 0);
-  const percent = total ? Math.round(completed / total * 100) : 0;
+  const percent = overallPercent(parts);
   const detail = interactive ? parts.find(part => part.stage === (hovered ?? focused)) : undefined;
   const detailOpen = total > 0 && Boolean(detail);
   useEffect(() => {
@@ -37,7 +38,9 @@ export function ActivityProgressRing({ parts, label = "전체 필수 활동 완�
       <svg viewBox="0 0 180 180" aria-hidden="true"><defs>{parts.map((part, index) => <clipPath key={part.stage} id={`${tooltipId}-${part.stage}`}><path d={sectorClip(index)} /></clipPath>)}</defs>{parts.map((part, index) => <g key={part.stage} className={styles[part.stage]} onPointerEnter={interactive ? () => setHovered(part.stage) : undefined}>
         <path className={styles.track} data-stage={part.stage} d={sectorPath(index)} />
         {part.percent > 0 && <path className={styles.fill} d={sectorPath(index)} pathLength="100" strokeDasharray={`${part.percent} 100`} clipPath={`url(#${tooltipId}-${part.stage})`} />}
-      </g>)}{completed === 0 && <path data-start-marker="true" className={`${styles.concept} ${styles.startMarker}`} d={`M ${pointAt(0, 78)} A 78 78 0 0 1 ${pointAt(5, 78)}`} />}</svg>
+        {/* A stage with nothing done shows a half-circle start: a near-zero arc whose round cap the sector clip cuts in half. */}
+        {part.completed === 0 && <path data-start-marker="true" className={styles.startMarker} d={`M ${pointAt(index * 120, 78)} A 78 78 0 0 1 ${pointAt(index * 120 + 0.1, 78)}`} clipPath={`url(#${tooltipId}-${part.stage})`} />}
+      </g>)}</svg>
       <div className={styles.value} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-valuetext={`필수 활동 ${completed}/${total}개 완료`}><strong aria-hidden="true">{percent}<small>%</small></strong>{size === "normal" && <span aria-hidden="true">전체 진도</span>}</div>
       {detail && <div id={tooltipId} role="tooltip" className={`${styles.tooltip} ${styles[detail.stage]}`}><span>{detail.label}</span><strong>{detail.completed}/{detail.total}개 완료</strong><span>{detail.percent}%</span></div>}
     </div>

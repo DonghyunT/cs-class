@@ -11,7 +11,7 @@ import { LoadingState, Skeleton } from "@/components/ui/loading-state";
 import { useSession, useTeacherClass } from "@/components/session-provider";
 import { useNavigationGuard } from "@/components/navigation-provider";
 import { classroomApi } from "@/lib/classroom/client";
-import { CLASSROOM_HELP_ENABLED } from "@/lib/classroom/features";
+import { CLASSROOM_HELP_ENABLED, STUDENT_CLASS_POLL_MS } from "@/lib/classroom/features";
 import { latestSubmissionAtFor, progressFor, submissionCountFor } from "@/lib/classroom/progress";
 import { seoulToday, eventDate } from "@/lib/classroom/planner";
 import type { Lesson, Session, StudentDashboard, TeacherDashboard } from "@/lib/classroom/types";
@@ -62,7 +62,7 @@ function Dashboard({ session, teacher, explicitClassId }: { session: Session; te
     const check = () => { if (document.visibilityState === "visible") void classroomApi.studentClassroom().then(({ classroom }) => { if (active && classroom.revision !== loaded.current?.revision) void refresh(); }, () => { if (active) void refresh(); }); };
     // Coming back from another tab may follow saves made there, so it reloads work at most every 30 seconds.
     const focused = () => { if (Date.now() - (loaded.current?.at ?? 0) >= 30_000 && document.visibilityState === "visible") void refresh(); };
-    const timer = teacher ? null : setInterval(check, 30_000);
+    const timer = teacher ? null : setInterval(check, STUDENT_CLASS_POLL_MS);
     if (!teacher) window.addEventListener("focus", focused);
     return () => { active = false; request.current += 1; if (timer !== null) clearInterval(timer); window.removeEventListener("focus", focused); };
   }, [refresh, teacher]);

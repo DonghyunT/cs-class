@@ -40,6 +40,11 @@ test("일정 이력: 오늘 이후 기본·지난 일정 접기·상단 등록·
   const dates = await history.locator("li > time").evaluateAll(items => items.map(item => item.getAttribute("datetime")));
   expect(dates[0]).toBe(relativeDate(-13)); expect(dates.at(-1)).toBe(relativeDate(-1));
   await toggle.press("Enter");
+  const register = page.getByRole("button", { name: "일정 등록", exact: true }), reveal = page.locator("#schedule-form");
+  await expect(register).toHaveAttribute("aria-expanded", "false"); await expect(reveal).toHaveAttribute("inert", "");
+  await register.click(); await expect(reveal).not.toHaveAttribute("inert", ""); await expect(page.getByLabel("일정 제목", { exact: true })).toBeFocused();
+  await register.click(); await expect(register).toHaveAttribute("aria-expanded", "false"); await expect(register).toBeFocused();
+  await register.click();
   await page.getByLabel("일정 제목", { exact: true }).fill("등록 전 합성 입력");
   await page.setViewportSize({ width: 390, height: 720 });
   await page.getByRole("button", { name: "일정 등록", exact: true }).click();

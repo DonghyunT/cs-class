@@ -19,7 +19,7 @@ export function ProgressSummary({ lesson, work }: { lesson: Lesson; work?: Work 
       const detail = stage === "practice"
         ? lesson.practice.type === "flowchart" ? `4개 작품 중 ${part.completed}개 제출` : lesson.practice.type === "programming" ? `기본 ${part.total}개 미션 중 ${part.completed}개 제출` : work?.submission ? "제출 완료" : work?.validation?.passed ? "검증 통과 · 제출 전" : "제출 전"
         : `${part.total}${stage === "quiz" ? "문항" : "개"} 중 ${part.completed}${stage === "quiz" ? "문항 해결" : "개 완료"}`;
-      return <div key={stage} className={styles.progressItem}>
+      return <div key={stage} className={styles.progressItem} data-stage={stage}>
         <dt>{label}<strong>{part.percent}%</strong></dt>
         <dd><span className={styles.track} role="progressbar" aria-label={`${label} 완료율`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={part.percent} aria-valuetext={detail}><span style={{ width: `${part.percent}%` }} /></span><span>{detail}</span></dd>
       </div>;

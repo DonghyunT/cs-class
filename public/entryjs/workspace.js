@@ -9,6 +9,8 @@ const mission = params.get("mission");
 // Mission flags from the lesson page: arrow-key events keep the run waiting; vars shows A·B.
 const keyMission = params.get("keys") === "1";
 const showVariables = params.get("vars") === "1";
+// The functions lesson turns on plain Entry functions (no parameters, return values or local variables).
+const functionsEnabled = programming && params.get("fn") === "1";
 // Dog-free lessons: every object is equal, a few starter objects stay, shapes can be viewed.
 const free = programming && params.get("free") === "1";
 const lockedIds = (params.get("locked") ?? "").split(",").filter(Boolean);
@@ -23,6 +25,8 @@ const speechNow = () => {
   return "";
 };
 let disposed = false;
+// Copy of FUNCTION_PALETTE in src/lib/classroom/entry-palette.ts, kept equal by tests/entry-palette.test.ts.
+const FUNCTION_PALETTE = { category: "func", blocks: ["functionAddButton"] };
 // Copy of ENTRY_PALETTE in src/lib/classroom/entry-palette.ts. This sandboxed
 // script cannot import it; tests/entry-palette.test.ts keeps both lists equal.
 const PROGRAMMING_PALETTE = [
@@ -35,17 +39,25 @@ const PROGRAMMING_PALETTE = [
   { category: "calc", blocks: ["calc_basic", "calc_rand", "coordinate_mouse", "coordinate_object", "quotient_and_mod", "calc_operation", "get_project_timer_value", "choose_project_timer_action", "set_visible_project_timer", "get_date", "distance_something", "length_of_string", "count_match_string", "combine_something", "char_at", "substring", "index_of_string", "replace_string", "reverse_of_string", "change_string_case"] },
   { category: "variable", blocks: ["ask_and_wait", "get_canvas_input_value", "set_visible_answer", "get_variable", "change_variable", "set_variable", "show_variable", "hide_variable"] },
 ];
-const send = (type, details = {}) => { if (!disposed) parent.postMessage({ channel: CHANNEL, type, ...details }, location.origin); };
+// The lesson page that embeds this iframe. Production serves this file from the workspace host or the Entry CDN, so
+// the page's origin comes from the referrer the page sends (the iframe sets referrerPolicy="origin"), or the browser's
+// ancestor list when a referrer was stripped. Any site may frame this file, so wherever it runs it must hold nothing
+// but what it is sent: the app's copy always runs in an opaque sandbox (next.config.ts sends a CSP sandbox), and the
+// workspace host and the CDN serve nothing else. Messages go only to that origin and are accepted only from it.
+const APP_ORIGIN = (() => {
+  for (const candidate of [document.referrer, location.ancestorOrigins?.[0]]) {
+    try { const url = new URL(candidate); if (url.protocol === "https:" || url.protocol === "http:") return url.origin; }
+    catch { /* Missing or not a URL: try the next one. */ }
+  }
+  return location.origin;
+})();
+const send = (type, details = {}) => { if (!disposed) parent.postMessage({ channel: CHANNEL, type, ...details }, APP_ORIGIN); };
 let loading = false;
 let locked = false;
 let original = null;
 let monitor = null;
 let startedAt = 0;
 let lastSpeech = "";
-// The lesson no longer reads name-run records, but awaitingAnswer is set only while one is open,
-// so the run record also keeps answer waits out of the 15-second run limit.
-let nameRun = null;
-let awaitingAnswer = false;
 let activeTime = 0;
 let lastTick = 0;
 // Event lines keep a run open after the start lines finish, so students can
@@ -54,8 +66,21 @@ const EVENT_STARTS = ["when_some_key_pressed", "mouse_clicked", "mouse_click_can
 // Entry's stop erases brush lines and fills, so drawing runs wait the same way. Stamps survive a stop.
 const DRAW_BLOCKS = ["start_drawing", "start_fill"];
 const RUN_STARTS = ["when_run_button_click", "when_clone_start", ...EVENT_STARTS];
+// A line draws when it, or a function it calls (each function once), has a pen block.
+function drawsIn(blocks, seen = new Set()) {
+  return blocks.some((block) => {
+    if (DRAW_BLOCKS.includes(block.type)) return true;
+    const id = /^func_(.+)$/.exec(block.type)?.[1];
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    const content = Entry.variableContainer?.functions_?.[id]?.content;
+    return typeof content?.getBlockList === "function" && drawsIn(content.getBlockList(), seen);
+  });
+}
 let waitsForEvents = false;
 let keepsDrawing = false;
+// A game that ends with ‘코드 멈추기’ keeps its last frame, because Entry's stop resets score, shapes and bubbles.
+let keepsResult = false;
 let reported = false;
 
 function captureScripts() {
@@ -63,6 +88,8 @@ function captureScripts() {
     const live = Entry.container.getObject(object.id);
     if (live) object.script = live.getScriptText();
   }
+  // Functions can be edited during a run too.
+  if (functionsEnabled && typeof Entry.variableContainer?.getFunctionJSON === "function") original.functions = Entry.variableContainer.getFunctionJSON();
 }
 
 function exportProject() {
@@ -74,8 +101,10 @@ function exportProject() {
   return JSON.stringify(original);
 }
 
+const functionEditing = () => functionsEnabled && Entry.Func?.isEdit === true;
 function changed() {
-  if (loading || locked || !Entry.isLoadProject) return;
+  // A function being edited is not the work yet; its save or cancel sends the result.
+  if (loading || locked || !Entry.isLoadProject || functionEditing()) return;
   // Menu clones live offscreen until the drop is committed.
   if (Entry.getMainWS().board.dragBlock || Entry.playground.blockMenu.dragBlock) return;
   try { send("changed", { project: exportProject() }); }
@@ -88,7 +117,6 @@ function result(reason) {
   const speech = speechNow();
   if (speech) lastSpeech = speech;
   send("result", { x: entity.getX(), y: entity.getY(), speech: lastSpeech, reason });
-  if (traced && nameRun) { send("name-run", { run: { ...nameRun, reason: nameRun.failed ? "error" : reason } }); nameRun = null; }
 }
 
 async function stop(reason) {
@@ -97,6 +125,9 @@ async function stop(reason) {
 }
 
 try {
+  // PreloadJS adds X-Requested-With to files it thinks share this page's host, which forces a CORS preflight from the
+  // opaque sandbox; the Entry CDN answers OPTIONS with 405. Every request from this sandbox is cross-origin anyway.
+  if (typeof window.createjs?.RequestUtils?.isCrossDomain === "function") window.createjs.RequestUtils.isCrossDomain = () => true;
   // Entry's canvas controls omit CORS when loading their images. An opaque
   // sandbox needs anonymous requests so EaselJS can read pixels for hit tests.
   window.Image = new Proxy(window.Image, {
@@ -106,12 +137,12 @@ try {
       return image;
     },
   });
-  // EntryJS reads editor preferences from localStorage during initialization.
-  // An opaque sandbox cannot access site storage, so preferences stay in memory.
-  try { window.localStorage.getItem("entryjs"); }
-  catch {
+  // EntryJS reads editor preferences from localStorage during initialization and saves its panel layout on unload.
+  // An opaque sandbox has no site storage, and on the workspace host nothing may outlive one open (or reach another
+  // lesson), so preferences always stay in memory.
+  {
     const preferences = new Map();
-    Object.defineProperty(window, "localStorage", { value: {
+    Object.defineProperty(window, "localStorage", { configurable: true, value: {
       getItem: (key) => preferences.get(String(key)) ?? null,
       setItem: (key, value) => { preferences.set(String(key), String(value)); },
       removeItem: (key) => { preferences.delete(String(key)); },
@@ -130,19 +161,27 @@ try {
   }
   EntryStatic.fontFamily = "sans-serif";
   if (programming && keyMission && Entry.block?.when_some_key_pressed?.def) Entry.block.when_some_key_pressed.def.params = [null, "38"];
-  EntryStatic.getAllBlocks = () => programming ? PROGRAMMING_PALETTE : [
+  if (functionsEnabled) {
+    // The editor menu would offer parameter fields and the properties panel (value return, local variables).
+    // A block shows unless every class in isNotFor is banned, so these get one class that stays banned.
+    for (const type of ["function_field_string", "function_field_boolean", "showFunctionPropsButton", "function_name"]) if (Entry.block?.[type]) Entry.block[type].isNotFor = ["csClassHidden"];
+  }
+  EntryStatic.getAllBlocks = () => programming ? (functionsEnabled ? [...PROGRAMMING_PALETTE, FUNCTION_PALETTE] : PROGRAMMING_PALETTE) : [
     { category: "start", blocks: ["when_run_button_click"] },
     { category: "moving", blocks: ["move_direction"] },
     { category: "looks", blocks: ["dialog_time"] },
   ];
   Entry.creationChangedEvent = new Entry.Event(window);
   Entry.init(document.getElementById("workspace"), {
-    type: "workspace", libDir: "/entryjs/vendor", entryDir: "/entry",
+    // The production build may point the vendor <script> tags at the Entry CDN (scripts/entryjs-cdn.mjs). Elsewhere the
+    // raw attribute stays "/entryjs/vendor". Entry copies libDir into picture URLs; the saved-project parsers accept
+    // only their trusted local picture paths, so a CDN URL is never stored.
+    type: "workspace", libDir: document.querySelector('script[src$="/entry/dist/entry.min.js"]').getAttribute("src").replace(/\/entry\/dist\/entry\.min\.js$/, ""), entryDir: "/entry",
     // The programming lesson lets students add objects from the lesson's own sprites.
     projectsaveable: false, objectEditable: programming, objectaddable: programming,
     objectdeletable: programming, pictureeditable: free, soundeditable: false,
-    sceneEditable: false, variableEnable: false, listEnable: false,
-    functionEnable: false, messageEnable: false, hardwareEnable: false,
+    sceneEditable: false, variableEnable: programming, listEnable: false,
+    functionEnable: functionsEnabled, messageEnable: false, hardwareEnable: false,
     aiLearningEnable: false, aiUtilizeDisable: true, expansionDisable: true,
     textCodingEnable: false, backpackDisable: true, exportObjectEnable: false,
     blockSaveImageEnable: false, iframeDomAccess: "none", fullScreenEnable: false,
@@ -153,36 +192,14 @@ try {
     const ask = Entry.block?.ask_and_wait?.func;
     if (typeof ask === "function") {
       Entry.block.ask_and_wait.func = function (entity, script) {
-        try {
-          const first = !script.isInit;
-          const input = Entry.container.inputValue;
-          const answered = script.isInit && input.complete && input.sprite === entity && Entry.stage.inputField?._isHidden;
-          // Only the dog's question and speech belong to the name mission's run record.
-          const own = entity.parent?.id === "entrybot";
-          if (!script.isInit && nameRun && own) { awaitingAnswer = true; nameRun.steps.push({ kind: "ask", value: String(script.getValue("VALUE", script)) }); }
-          if (answered && nameRun && own) { awaitingAnswer = false; nameRun.steps.push({ kind: "answer", value: String(Entry.container.getInputValue()) }); }
-          const result = ask.call(this, entity, script);
-          if (first) {
-            const field = Entry.stage.inputField;
-            field._hiddenInput.setAttribute("aria-label", free ? "질문 대답" : programming && mission !== "name" ? "강아지 질문 대답" : "강아지 이름 대답");
-            field._hiddenInput.maxLength = 180;
-          }
-          return result;
-        } catch (error) { if (nameRun) nameRun.failed = true; throw error; }
-      };
-    }
-    // Both speech blocks count for the name mission. ‘말하기’ runs once; the timed one
-    // runs every frame until its time is up, so only its first frame is recorded.
-    for (const type of ["dialog_time", "dialog"]) {
-      const say = Entry.block?.[type]?.func;
-      if (typeof say !== "function") continue;
-      Entry.block[type].func = function (entity, script) {
-        try {
-          const first = !script.isStart;
-          const result = say.call(this, entity, script);
-          if (first && nameRun && entity.parent?.id === "entrybot") nameRun.steps.push({ kind: "say", value: String(entity.dialog?.message_ ?? "") });
-          return result;
-        } catch (error) { if (nameRun) nameRun.failed = true; throw error; }
+        const first = !script.isInit;
+        const result = ask.call(this, entity, script);
+        if (first) {
+          const field = Entry.stage.inputField;
+          field._hiddenInput.setAttribute("aria-label", free ? "질문 대답" : programming && mission !== "name" ? "강아지 질문 대답" : "강아지 이름 대답");
+          field._hiddenInput.maxLength = 180;
+        }
+        return result;
       };
     }
   }
@@ -211,8 +228,52 @@ try {
         return clone;
       };
     }
+    // The lesson's own variables are rebuilt on save, so they cannot be deleted or renamed. Copy of
+    // LESSON_VARIABLES and MAX_STUDENT_VARIABLES in src/lib/classroom/programming-entry.ts, plus brick-breaker's "score",
+    // which the server keeps as a student variable and restores in parseProgrammingProject.
+    const LESSON_VARIABLES = ["cs-A", "cs-B", "cs-clicks", "score"];
+    const variables = Entry.variableContainer;
+    const removeVariable = variables?.removeVariable, renameVariable = variables?.changeVariableName, addVariable = variables?._addVariable;
+    if (typeof removeVariable === "function") variables.removeVariable = function (variable, ...rest) {
+      if (!loading && LESSON_VARIABLES.includes(variable?.id_ ?? variable?.id)) { send("variable-locked"); return; }
+      return removeVariable.call(this, variable, ...rest);
+    };
+    if (typeof renameVariable === "function") variables.changeVariableName = function (variable, name, ...rest) {
+      if (!loading && LESSON_VARIABLES.includes(variable?.id_)) { if (variable.listElement?.nameField) variable.listElement.nameField.value = variable.name_; send("variable-locked"); return; }
+      return renameVariable.call(this, variable, name, ...rest);
+    };
+    if (typeof addVariable === "function") variables._addVariable = function (...rest) {
+      if (this.variables_.filter((item) => item.type === "variable" && !LESSON_VARIABLES.includes(item.id_)).length >= 10) { send("variable-limit"); return; }
+      return addVariable.apply(this, rest);
+    };
+    // Deleting, renaming or changing a variable's value or visibility goes through Entry.do without a block
+    // change event, so report it as an edit. Lesson variables always start at 0.
+    const run = Entry.do;
+    if (typeof run === "function") Entry.do = function (command, ...rest) {
+      if (!loading && command === "variableSetDefaultValue" && LESSON_VARIABLES.includes(rest[0])) {
+        if (variables.selected?.listElement) variables.updateSelectedVariable(variables.selected);
+        send("variable-locked");
+        return;
+      }
+      const result = run.call(this, command, ...rest);
+      if (typeof command === "string" && command.startsWith("variable")) queueMicrotask(changed);
+      return result;
+    };
     // Entry's add button only asks for a sprite; the lesson page shows its own sprite list.
     Entry.addEventListener("openSpriteManager", () => { if (!locked && !loading) send("add-object-request"); });
+    if (functionsEnabled) {
+      Entry.getMainWS()?.getBlockMenu()?.banClass("csClassHidden", true);
+      // Entry has no event for the function editor; the page learns when it opens and closes.
+      for (const name of ["edit", "endEdit"]) {
+        const original = Entry.Func?.[name];
+        if (typeof original === "function") Entry.Func[name] = function (...rest) {
+          const result = original.apply(this, rest);
+          send("function-editing", { editing: Entry.Func.isEdit === true });
+          if (name === "endEdit") queueMicrotask(changed);
+          return result;
+        };
+      }
+    }
     if (free) {
       // Shapes come from the bundled Entry library and are rebuilt on save, so they can only be viewed and picked.
       Entry.addEventListener("openPictureManager", () => send("picture-locked"));
@@ -237,9 +298,19 @@ try {
   const resetActiveTime = () => { if (traced && monitor !== null) { activeTime = 0; lastTick = Date.now(); } };
   document.addEventListener("keydown", resetActiveTime, true);
   document.addEventListener("mousedown", resetActiveTime, true);
+  document.addEventListener("mousemove", resetActiveTime, true);
   document.addEventListener("touchstart", resetActiveTime, true);
   document.addEventListener("mouseup", () => queueMicrotask(changed));
   document.addEventListener("touchend", () => queueMicrotask(changed));
+  // Frame input never bubbles to the lesson, and function editing deliberately sends no draft changes.
+  let lastActivity = 0;
+  const reportActivity = (event) => {
+    const now = Date.now();
+    if (!event.isTrusted || now - lastActivity < 1000 || loading || locked) return;
+    lastActivity = now;
+    send("activity");
+  };
+  for (const type of ["pointerdown", "keydown", "input", "scroll", "touchstart"]) document.addEventListener(type, reportActivity, { passive: true, capture: true });
   Entry.addEventListener("run", () => {
     if (locked || loading) { void stop("stopped"); return; }
     if (!traced) changed();
@@ -247,15 +318,14 @@ try {
       // The run event fires during the engine transition. A full export here
       // calls toggleStop; capture the code without changing engine state.
       captureScripts();
-      nameRun = { id: crypto.randomUUID(), project: JSON.stringify(original), steps: [] };
-      awaitingAnswer = false; activeTime = 0; lastTick = Date.now();
-      send("name-start", { id: nameRun.id, project: nameRun.project });
+      activeTime = 0; lastTick = Date.now();
     }
     lastSpeech = "";
     reported = false;
     waitsForEvents = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => EVENT_STARTS.includes(thread.getFirstBlock()?.type)));
     // Only lines that run (a start or event block first) count; a loose pen block on the board does not.
-    keepsDrawing = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => RUN_STARTS.includes(thread.getFirstBlock()?.type) && typeof thread.getBlockList === "function" && thread.getBlockList().some((block) => DRAW_BLOCKS.includes(block.type))));
+    keepsDrawing = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => RUN_STARTS.includes(thread.getFirstBlock()?.type) && typeof thread.getBlockList === "function" && drawsIn(thread.getBlockList())));
+    keepsResult = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => RUN_STARTS.includes(thread.getFirstBlock()?.type) && typeof thread.getBlockList === "function" && thread.getBlockList().some((block) => block.type === "stop_object")));
     startedAt = Date.now();
     send("running", { running: true });
     clearInterval(monitor);
@@ -264,14 +334,17 @@ try {
       if (speech) lastSpeech = speech;
       const idle = Entry.container.getAllObjects().every((item) => item.script.executors.length === 0);
       if (idle && !(programming && keyMission)) {
-        if (!waitsForEvents && !keepsDrawing) void stop("finished");
-        else if (!reported) { result("finished"); reported = true; send("waiting", { drawing: !waitsForEvents }); }
+        if (!waitsForEvents && !keepsDrawing && !keepsResult) void stop("finished");
+        else if (!reported) { result("finished"); reported = true; send("waiting", { drawing: !waitsForEvents, result: keepsResult }); }
       }
       if (monitor === null) return;
       if (traced) {
         const now = Date.now();
         const waitingIdle = idle && (reported || (programming && keyMission));
-        if (!awaitingAnswer && !waitingIdle) activeTime += now - lastTick;
+        // A flag set by the question block could outlive its line (`코드 멈추기` ends the line but leaves the
+        // answer box open), so only a line that is still on a question pauses the limit.
+        const asking = Entry.container.getAllObjects().some((item) => item.script.executors.some((executor) => executor.scope?.block?.type === "ask_and_wait"));
+        if (!asking && !waitingIdle) activeTime += now - lastTick;
         lastTick = now;
       }
       if ((traced ? activeTime : Date.now() - startedAt) >= 15000) void stop("timeout");
@@ -282,7 +355,7 @@ try {
   });
   Entry.addEventListener("stop", () => { send("running", { running: false }); });
   window.addEventListener("message", async (event) => {
-    if (disposed || event.source !== parent || event.origin !== location.origin || event.data?.channel !== CHANNEL) return;
+    if (disposed || event.source !== parent || event.origin !== APP_ORIGIN || event.data?.channel !== CHANNEL) return;
     const message = event.data;
     try {
       if (message.type === "load") {
@@ -336,6 +409,8 @@ try {
       } else if (message.type === "stage-size") {
         // Phone-width pages show only this frame's left edge. Entry's smallest stage keeps its start button there.
         Entry.resizeElement({ ...Entry.interfaceState, canvasWidth: message.narrow === true ? Entry.CANVAS_DEFAULT_WIDTH : wideStage });
+      } else if (message.type === "export" && functionEditing()) {
+        send("exported", { id: message.id, refused: "function-editing" });
       } else if (message.type === "export") {
         document.activeElement?.blur();
         Entry.getMainWS().syncCode();

@@ -3,10 +3,11 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { classroomApi } from "@/lib/classroom/client";
+import { STUDENT_CLASS_POLL_MS } from "@/lib/classroom/features";
 import type { Lesson, StudentDashboard, Work, WorkDraft } from "@/lib/classroom/types";
 import { LessonShell } from "./lesson-shell";
 import { LessonEditor, type LessonFrame, type WorkspaceView } from "./lesson-editor";
-import { readEntryDraft } from "./read-editor-draft";
+import { readEntryDraft, type EntryExport } from "./read-editor-draft";
 import { useWork } from "./use-work";
 import styles from "./student.module.css";
 
@@ -32,9 +33,9 @@ export function LessonWorkspace({ lesson, uid, returnOrigin, workspaceWide, prac
       finally { fetching = false; }
     };
     void refresh();
-    const timer = setInterval(() => { void refresh(); }, 30_000);
-    // Returning from the Entry iframe also fires focus; the 30-second poll bounds the delay.
-    const focused = () => { if (Date.now() - fetchedAt >= 30_000) void refresh(); };
+    const timer = setInterval(() => { void refresh(); }, STUDENT_CLASS_POLL_MS);
+    // Returning from the Entry iframe also fires focus, so it waits as long as the poll.
+    const focused = () => { if (Date.now() - fetchedAt >= STUDENT_CLASS_POLL_MS) void refresh(); };
     window.addEventListener("focus", focused);
     return () => { cancelled = true; clearInterval(timer); window.removeEventListener("focus", focused); };
   }, []);
@@ -46,11 +47,13 @@ export function LessonWorkspace({ lesson, uid, returnOrigin, workspaceWide, prac
 
 
 const StudentWorkEditor = memo(function StudentWorkEditor({ lesson, initial, uid, ...view }: { lesson: Lesson; initial: Work; uid: string; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
-  const entryExport = useRef<(() => Promise<string | null>) | null>(null);
+  const entryExport = useRef<EntryExport | null>(null);
   const readEditorDraft = useCallback((current: WorkDraft) => {
-    if (entryExport.current) return readEntryDraft(lesson, current, entryExport.current);
+    if (entryExport.current) return readEntryDraft(lesson, current, entryExport.current.read);
     return Promise.resolve(current);
   }, [lesson]);
-  const controller = useWork(initial, uid, lesson.practice.type === "entryjs" || lesson.practice.type === "programming" ? readEditorDraft : undefined);
+  // An open Entry function editor holds edits the draft does not have yet, so leaving asks first.
+  const editorBusy = useCallback(() => !!entryExport.current?.editing(), []);
+  const controller = useWork(initial, uid, lesson.practice.type === "entryjs" || lesson.practice.type === "programming" ? readEditorDraft : undefined, editorBusy);
   return <LessonEditor lesson={lesson} initial={initial} controller={controller} entryExport={entryExport} {...view} />;
 });

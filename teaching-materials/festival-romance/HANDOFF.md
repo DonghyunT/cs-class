@@ -12,7 +12,7 @@
 
 - **산출물 무결성 ([qa/build-manifest.json](qa/build-manifest.json)):**
   - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `15,167,492` bytes, SHA-256 `9ca74a575401ef2e4946219f1a6b27d31e46c5933fed9b09eedadc039d530a21`
-  - `public/festival-lesson.html` ≡ `dist/festival-lesson.html`: SHA-256 `8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c430b5` (원본 27장면 불변)
+  - `public/festival-lesson.html` ≡ `dist/festival-lesson.html`: SHA-256 `8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c430b5` (원본 27장면 불변, 10/19 기준 검증은 [제작·검수 기록](제작-검수-기록.md))
 - **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 27/27 통과
   - `models.test.cjs` (10), `state.test.cjs` (6), `package.test.cjs` (3), `journey.test.cjs` (4), `refinement.test.cjs` (4)
 - **Playwright 브라우저 QA (`node teaching-materials/festival-romance/qa/browser.cjs`):** 9항목 통과 (`errors: []`, `consoleErrors: []`, `remoteRequests: 0`)
@@ -29,6 +29,8 @@
 3. **현장 확인:** 실제 학교 교실 프로젝터(교사용 `/festival-lesson.html`·`?mode=teacher`)와 학생 태블릿/크롬북(학생용 `/festival-romance.html`)에서 가독성과 터치 조작을 최종 점검합니다.
 
 ## 4. 자주 쓰는 실행 명령
+
+저장소를 최신으로 받은 뒤([개발 안내 §1.5](../../docs/DEVELOPMENT.md#15-다른-pc에서-진행-중-작업-이어가기)) 이 자료는 아래 명령으로 빌드·검사합니다.
 
 ```powershell
 node teaching-materials/festival-romance/build.cjs

@@ -134,7 +134,8 @@ test("알려진 최근 작품만 집계하며 다른 수업으로 옮긴 미션�
   expect(submissionCountFor(ordinary, rows[1].work)).toBe(0);
   unknown.submission = { id: "ordinary", order: [], submittedAt: 1000 };
   expect(submissionCountFor(ordinary, unknown)).toBe(1);
-  expect(missionsFor("programming-13")).toHaveLength(4);
+  // Four basic missions count toward completion; the change calculator is an optional challenge.
+  expect(missionsFor("programming-13").filter((mission) => !mission.optional)).toHaveLength(4);
 });
 
 test("교사 집계·진행 필터·검색 복구는 부분 제출과 이전 수업 기록을 정확히 표시", async ({ page }) => {
@@ -250,7 +251,7 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   await expect(page.locator("tbody tr").filter({ hasText: "20184" }).getByRole("progressbar", { name: "20184 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "100");
   await expect(challenge.getByRole("progressbar", { name: "20185 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "0");
   await expect(challenge.getByRole("progressbar", { name: "20185 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuetext", "필수 활동 0/14개 완료");
-  await expect(challenge.locator("svg [data-start-marker]")).toHaveCount(1);
+  await expect(challenge.locator("svg [data-start-marker]")).toHaveCount(3);
   await expect(page.locator("tbody tr").filter({ hasText: "20184" }).locator("svg [data-start-marker]")).toHaveCount(0);
   await expect(challenge.locator("svg [data-stage]")).toHaveCount(3);
   await expect(challenge.getByRole("button", { name: "20185 제출 작품 보기", exact: true })).toBeEnabled();
@@ -261,7 +262,7 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   const row = page.locator("tbody tr");
   await expect(row).toHaveCount(1);
   await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuetext", "필수 활동 1/14개 완료");
-  await expect(row.locator("svg [data-start-marker]")).toHaveCount(0);
+  await expect(row.locator("svg [data-start-marker]")).toHaveCount(2);
   const viewer = row.getByRole("button", { name: "20182 제출 작품 보기", exact: true });
   await viewer.click();
   await expect(page.getByRole("dialog", { name: "20182 학생의 제출 작품", exact: true })).toBeVisible();
@@ -286,7 +287,7 @@ test("교사 목록·격자는 진행/검색·작품·계정과 재조회 실패
   await expect(page.getByRole("searchbox", { name: "학번·닉네임 검색" })).toHaveValue("20182");
   await expect(page.getByRole("combobox", { name: "진행 상태", exact: true })).toHaveText("진행 중");
   await expect(row).toHaveCount(1);
-  await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "7");
+  await expect(row.getByRole("progressbar", { name: "20182 필수 활동 완료율", exact: true })).toHaveAttribute("aria-valuenow", "8");
 });
 
 test("선택 복습과 미지정 학생은 목록·격자에서 정규 완료율을 만들지 않음", async ({ page }) => {

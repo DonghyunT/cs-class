@@ -2,21 +2,25 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { LEGACY_INPUTS } from "./entry-legacy-inputs";
 import legacyKeys from "./fixtures/entry-legacy-keys.json";
+import functionExport from "./fixtures/entry-function-export.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { readEntryDraft } from "../src/components/student/read-editor-draft";
-import { CONTAINER_BLOCKS, ENTRY_PALETTE, MISSION_BLOCKS, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
-import { PROGRAMMING_MISSIONS, buildProgrammingProject, entryBlockCategory, entryObjectModel, formatEntryNode, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode } from "../src/lib/classroom/programming-entry";
+import { CONTAINER_BLOCKS, ENTRY_PALETTE, FUNCTION_PALETTE, MISSION_BLOCKS, PALETTE_BLOCKS, PALETTE_TEXT, VALUE_BLOCKS, blockLabel, missionBlockTypes } from "../src/lib/classroom/entry-palette";
+import { MAX_FUNCTIONS, functionCallId, MAX_PROJECT_BYTES, PROGRAMMING_MISSIONS, buildProgrammingProject, missionsFor, entryBlockCategory, entryObjectModel, formatEntryNode, functionNamesOf, hintParts, hintPlain, missionBlockIssue, missionById, newAddedObject, parseProgrammingProject, programmingProjectLines, programmingProjectMatches, type AddedObject, type EntryNode, type ProgramFunction } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission, wordingMessage } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
 import { LOOPS_LESSON } from "../src/lib/classroom/loops-lesson";
+import { FUNCTIONS_LESSON } from "../src/lib/classroom/functions-lesson";
+import { BRICK_BREAKER_LESSON } from "../src/lib/classroom/brick-breaker-lesson";
+
 import { emptyWork } from "../src/lib/classroom/progress";
 import type { WorkDraft } from "../src/lib/classroom/types";
 
 test("처음 여는 수업의 첫 미션 작품은 수업 유형에 맞는 시작 작품이다", () => {
   const first = (lesson: Parameters<typeof emptyWork>[0]) => { const { mission, projects } = emptyWork(lesson).draft.programming!; return parseProgrammingProject(projects[mission])!; };
   expect(first(PROGRAMMING_LESSON).free).toBe(false);
-  for (const lesson of [CONDITIONALS_LESSON, LOOPS_LESSON]) expect(first(lesson).free, lesson.id).toBe(true);
+  for (const lesson of [CONDITIONALS_LESSON, LOOPS_LESSON, FUNCTIONS_LESSON, BRICK_BREAKER_LESSON]) expect(first(lesson).free, lesson.id).toBe(true);
 });
 
 const legacy: Record<string, { key: string | null; order: string[] | null; project: string | null; lines: string[]; checks: Record<string, { passed: boolean; message: string }> }> = legacyKeys;
@@ -72,6 +76,9 @@ test("workspace.js의 팔레트 복사본은 공유 목록과 같다", () => {
   const literal = source.match(/const PROGRAMMING_PALETTE = (\[[\s\S]*?\n\]);/)?.[1];
   expect(literal).toBeTruthy();
   expect(new Function(`return ${literal}`)()).toEqual(ENTRY_PALETTE.map((group) => ({ category: group.category, blocks: [...group.blocks] })));
+  const functions = source.match(/const FUNCTION_PALETTE = (\{.*\});/)?.[1];
+  expect(functions).toBeTruthy();
+  expect(new Function(`return ${functions}`)()).toEqual({ category: FUNCTION_PALETTE.category, blocks: [...FUNCTION_PALETTE.blocks] });
 });
 
 test("팔레트 블록·반복 안쪽·값 블록·미완성 드롭다운을 저장하고 다시 읽어도 같다", () => {
@@ -152,6 +159,8 @@ test("교사 작품 보기는 팔레트 블록 입력값과 반복 안쪽을 들
   ]);
   expect(formatEntryNode(node("locate", "mouse", null))).toBe("마우스 포인터 위치로 이동하기");
   expect(formatEntryNode(node("add_effect_amount", "color", number("10"), null))).toBe("색깔 효과를 10만큼 주기");
+  expect(formatEntryNode(node("stop_object", "thisOnly", null))).toBe("자신의 코드 멈추기");
+  expect(formatEntryNode(node("stop_object", "otherThread", null))).toBe("자신의 다른 코드 멈추기");
   expect(formatEntryNode(node("move_xy_time", number("2"), number("10"), number("-20"), null))).toBe("2초 동안 x: 10 y: -20만큼 움직이기");
   expect(formatEntryNode(node("locate_xy", number("50"), number("80"), null))).toBe("x: 50 y: 80 위치로 이동하기");
   expect(formatEntryNode(node("dialog", node("text", "반가워"), "think", null))).toBe("반가워을(를) 생각하기");
@@ -216,9 +225,9 @@ test("채점은 강아지 코드만 보고 다른 오브젝트의 블록은 무�
 test("원래 블록이 자기 조건에 맞지 않으면 일반 규칙으로 넘어가지 않고 거부한다", () => {
   const with_ = (block: EntryNode) => project([[start(), block]]);
   expect(parseProgrammingProject(with_(node("dialog_time", null, null, "x", null)))).toBeNull();
-  expect(parseProgrammingProject(with_(node("set_variable", "cs-Z", node("text", "1"), null)))).toBeNull();
+  expect(parseProgrammingProject(with_(node("set_variable", "변수 Z!", node("text", "1"), null)))).toBeNull();
   expect(parseProgrammingProject(with_(node("dialog_time", node("calc_basic", node("number", "1"), null, node("number", "2")), node("number", "1"), "speak", null)))).toBeNull();
-  expect(parseProgrammingProject(project([[node("get_variable", "cs-Z")]]))).toBeNull();
+  expect(parseProgrammingProject(project([[node("get_variable", null)]]))).toBeNull();
   expect(parseProgrammingProject(with_(node("move_x", ...Array.from({ length: 9 }, () => null))))).toBeNull();
 });
 
@@ -258,11 +267,14 @@ test("비슷한 블록과 다른 오브젝트에 만든 시작 줄을 구체적�
 // Words each chip must keep so students can find that one block on the palette (and not its look-alike).
 const CHIP_WORDS: Record<string, RegExp> = {
   when_run_button_click: /^시작하기 버튼을 클릭했을 때$/, when_some_key_pressed: /^.+ 키를 눌렀을 때$/, mouse_clicked: /^마우스를 클릭했을 때$/, ask_and_wait: /^.+[을를] 묻고 대답 기다리기$/,
-  dialog: /^.+[을를] 말하기$/, set_variable: /^[AB]를 .+로 정하기$/, change_variable: /^.+에 \d+만큼 더하기$/, calc_basic: / [+\-x/] /, boolean_basic_operator: /^.+ (=|!=|>|<|≥|≤) .+$/,
+  dialog: /^.+[을를] 말하기$/, set_variable: /^[AB]를 .+로 정하기$/, change_variable: /^.+에 \d+만큼 더하기$/, calc_basic: / [+\-x/] /, combine_something: /^.+ 과\(와\) .+ 을\(를\) 합친 값$/, boolean_basic_operator: /^.+ (=|!=|>|<|≥|≤) .+$/,
   boolean_and_or: /^참 (그리고|또는) /, if_else: /^만일 .+라면 아니면$/, _if: /^만일 .+라면$/, repeat_basic: /^.+번 반복하기$/, repeat_while_true: /될 때까지 반복하기$/,
   move_direction: /^\d+만큼 움직이기$/, direction_relative: /^.+° 회전하기$/, direction_absolute: /^이동 방향을 \d+°로 정하기$/,
-  start_drawing: /^그리기 시작하기$/, stop_drawing: /^그리기 멈추기$/, locate_xy: /^x: -?\d+ y: -?\d+ 위치로 이동하기$/, change_to_next_shape: /^다음 모양으로 바꾸기$/,
+  move_x: /^x 좌표를 -?\d+만큼 바꾸기$/, start_drawing: /^그리기 시작하기$/, stop_drawing: /^그리기 멈추기$/, locate_xy: /^x: -?\d+ y: -?\d+ 위치로 이동하기$/, change_to_next_shape: /^다음 모양으로 바꾸기$/,
+  when_object_click: /^오브젝트를 클릭했을 때$/, repeat_inf: /^계속 반복하기$/, locate_x: /^x: .+ 위치로 이동하기$/, coordinate_mouse: /^마우스 [xy] 좌푯값$/, bounce_wall: /^화면 끝에 닿으면 튕기기$/, reach_something: /^.+에 닿았는가\?$/, stop_object: /^.+ 멈추기$/, hide: /^모양 숨기기$/,
 };
+// Functions come first: students make a function before they call it.
+const walkProject = (raw: string, walk: (v: unknown) => void) => { const p = JSON.parse(raw); walk(p.functions ?? []); walk({ ...p, functions: [] }); };
 const missionText = (id: string) => { const m = missionById(id)!; return [m.hint, ...m.steps, m.tip ?? ""]; };
 
 test("힌트 칩은 그 미션이 받는 블록이고 팔레트의 고정 낱말을 지키며, 힌트는 짧고 칩 표기가 새지 않는다", () => {
@@ -319,8 +331,8 @@ const ifElse = (condition: EntryNode, yes: EntryNode[], no: EntryNode[]): EntryN
 const speak = (v: string) => node("dialog", text(v), "speak", null);
 const passProgram = (op = "GREATER_OR_EQUAL", yes = "합격", no = "불합격") => [start(), ask(), ifElse(compare(answer(), op, number("60")), [speak(yes)], [speak(no)])];
 const freeThrow = (first = "8") => [start(), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number(first)), [speak("훌륭해요!")], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak("잘했어요!")], [speak("더 연습해 보자!")])])];
-const escapeProgram = (condition: EntryNode) => [start(), ask(), node("set_variable", "cs-A", answer(), null), ask(), node("set_variable", "cs-B", answer(), null), ifElse(condition, [speak("탈출 성공!")], [speak("탈출 실패")])];
-const solved = (id: string) => compare(node("get_variable", id), "EQUAL", number("1"));
+const rideProgram = (condition: EntryNode) => [start(), ask(), node("set_variable", "cs-A", answer(), null), ask(), node("set_variable", "cs-B", answer(), null), ifElse(condition, [speak("탈 수 있어요")], [speak("탈 수 없어요")])];
+const atLeast = (id: string, limit: string, op = "GREATER_OR_EQUAL") => compare(node("get_variable", id), op, number(limit));
 
 test("선택 구조 미션은 실제 내보내기 모양의 조건문을 실행해 정확한 말을 확인한다", () => {
   expect(checkProgrammingMission("pass", exported([passProgram()]))).toEqual({ passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." });
@@ -336,18 +348,20 @@ test("선택 구조 미션은 실제 내보내기 모양의 조건문을 실행�
   expect(checkProgrammingMission("freethrow", exported([freeThrow("9")])).passed).toBe(false);
 });
 
-test("방탈출은 A·B에 저장한 값을 논리 블록으로 바르게 판단해야 통과한다", () => {
-  const or = node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B"));
-  expect(checkProgrammingMission("escape", exported([escapeProgram(or)])).passed).toBe(true);
-  expect(checkProgrammingMission("escape", exported([escapeProgram(node("boolean_and_or", solved("cs-A"), "AND", solved("cs-B")))])).passed).toBe(false);
-  // The same meaning with ‘그리고’·‘아니다’ also passes: not (A = 0 and B = 0).
-  const none = node("boolean_and_or", compare(node("get_variable", "cs-A"), "EQUAL", number("0")), "AND", compare(node("get_variable", "cs-B"), "EQUAL", number("0")));
-  expect(checkProgrammingMission("escape", exported([escapeProgram(node("boolean_not", null, none, null))])).passed).toBe(true);
+test("놀이기구 탑승은 A·B에 저장한 키와 나이를 논리 블록으로 바르게 판단해야 통과한다", () => {
+  const and = node("boolean_and_or", atLeast("cs-A", "130"), "AND", atLeast("cs-B", "10"));
+  expect(checkProgrammingMission("ride", exported([rideProgram(and)])).passed).toBe(true);
+  expect(checkProgrammingMission("ride", exported([rideProgram(node("boolean_and_or", atLeast("cs-A", "130"), "OR", atLeast("cs-B", "10")))])).passed).toBe(false);
+  // 130cm and 10 years old can ride: ‘>’ misses the limits.
+  expect(checkProgrammingMission("ride", exported([rideProgram(node("boolean_and_or", atLeast("cs-A", "130", "GREATER"), "AND", atLeast("cs-B", "10", "GREATER")))])).passed).toBe(false);
+  // The same meaning with ‘또는’·‘아니다’ also passes: not (A < 130 or B < 10).
+  const short = node("boolean_and_or", atLeast("cs-A", "130", "LESS"), "OR", atLeast("cs-B", "10", "LESS"));
+  expect(checkProgrammingMission("ride", exported([rideProgram(node("boolean_not", null, short, null))])).passed).toBe(true);
   // Nested conditions give the right words but skip the logic block the mission practices.
-  const nested = [...escapeProgram(solved("cs-A")).slice(0, 5), ifElse(solved("cs-A"), [speak("탈출 성공!")], [ifElse(solved("cs-B"), [speak("탈출 성공!")], [speak("탈출 실패")])])];
-  expect(checkProgrammingMission("escape", exported([nested])).passed).toBe(false);
-  // A ‘또는’ that never looks at A·B does not count.
-  expect(checkProgrammingMission("escape", exported([escapeProgram(node("boolean_and_or", node("False", null), "OR", node("boolean_and_or", solved("cs-A"), "AND", node("True", null))))])).passed).toBe(false);
+  const nested = [...rideProgram(atLeast("cs-A", "130")).slice(0, 5), ifElse(atLeast("cs-A", "130"), [ifElse(atLeast("cs-B", "10"), [speak("탈 수 있어요")], [speak("탈 수 없어요")])], [speak("탈 수 없어요")])];
+  expect(checkProgrammingMission("ride", exported([nested])).passed).toBe(false);
+  // A ‘그리고’ that ignores the age does not count.
+  expect(checkProgrammingMission("ride", exported([rideProgram(node("boolean_and_or", atLeast("cs-A", "130"), "AND", node("True", null)))])).passed).toBe(false);
 });
 
 test("몫·나머지는 엔트리처럼 버림 나눗셈으로 계산하고, 미션 규칙이 없는 ID는 통과시키지 않는다", () => {
@@ -466,7 +480,7 @@ const freeProject = (objects: { sprite: string; threads?: EntryNode[][] }[]) => 
 const pen = library.find((s) => s.name === "연필(1)")!.id;
 
 test("조건·반복 수업은 강아지 없이 엔트리봇으로 시작하고, 기초 수업은 그대로 강아지로 시작한다", () => {
-  for (const id of ["average", "pass", "freethrow", "escape", "square", "polygon", "safe"]) {
+  for (const id of ["average", "pass", "freethrow", "ride", "square", "polygon", "safe"]) {
     const p = parseProgrammingProject(missionStarter(id))!;
     expect(p.free, id).toBe(true);
     expect(p.added.map((o) => o.sprite), id).toEqual([ENTRYBOT_SPRITE]);
@@ -523,8 +537,23 @@ test("엔트리 오브젝트 묶음은 파일·분류·크기가 맞고 위험�
   }
 });
 
+const withBrickObjects = (missionId: string, byObject: Record<string, EntryNode[][]>) => {
+  const p = parseProgrammingProject(missionStarter(missionId))!;
+  return buildProgrammingProject(undefined, p.added.map((o) => byObject[o.id] ? { ...o, threads: byObject[o.id] } : o), -1, false, p.variables, p.functions);
+};
+const withBrickThreads = (missionId: string, objectId: string, threads: EntryNode[][]) => withBrickObjects(missionId, { [objectId]: threads });
+const touchOf = (target: string) => node("reach_something", null, target, null);
+const stopAllOf = () => node("stop_object", "all", null);
+const objectClick = () => node("when_object_click", null);
+const brickBallSteps = () => [forward(number("4")), node("bounce_wall", null), { ...node("_if", touchOf("paddle"), null), statements: [[node("func_pbounce", null)]] }, { ...node("_if", touchOf("wall_down"), null), statements: [[stopAllOf()]] }];
+const BRICK_SOLUTIONS = {
+  paddle: withBrickThreads("paddle", "paddle", [[start(), forever([node("locate_x", node("coordinate_mouse", null, "x", null), null)])]]),
+  ball: withBrickThreads("ball", "ball", [[objectClick(), forever(brickBallSteps())]]),
+  brick: withBrickObjects("brick", { brick1: [[start(), forever([{ ...node("_if", touchOf("ball"), null), statements: [[node("change_variable", "score", number("1"), null), node("hide", null)]] }])]], youwin: [[start(), forever([{ ...node("_if", compare(node("get_variable", "score"), "EQUAL", number("3")), null), statements: [[node("show", null), stopAllOf()]] }])]] }),
+  "brick-bounce": withBrickThreads("brick-bounce", "ball", [[objectClick(), forever([...brickBallSteps(), ...(["brick1", "brick2", "brick3"] as const).map((bid) => ({ ...node("_if", touchOf(bid), null), statements: [[turn(node("angle", "180"))]] }))])]]),
+};
 // Solutions built in the order of each mission's `steps` (plan appendix D); guidance and grading must agree.
-test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 블록 모두)은 채점을 통과한다", () => {
+test("조립 순서대로 만든 미션 해답(정사각형은 두 회전 블록 모두)은 채점을 통과한다", () => {
   const sayTimed = (value: EntryNode) => node("dialog_time", value, number("2"), "speak", null);
   const variable = (id: string) => node("get_variable", `cs-${id}`);
   const store = (id: string) => [ask(), node("set_variable", `cs-${id}`, answer(), null)];
@@ -537,14 +566,24 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
     ["average", exported([[start(), ...store("A"), ...store("B"), speak2(calc(calc(variable("A"), "PLUS", variable("B")), "DIVIDE", number("2")))]])],
     ["pass", exported([passProgram()])],
     ["freethrow", exported([freeThrow()])],
-    ["escape", exported([escapeProgram(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")))])],
+    ["change", exported([[start(), ...store("A"), ...store("B"), speak2(join(text("거스름돈은 "), join(calc(variable("A"), "MINUS", variable("B")), text("원"))))]])],
+    ["ride", exported([rideProgram(node("boolean_and_or", atLeast("cs-A", "130"), "AND", atLeast("cs-B", "10")))])],
     ["square", exported([[start(), node("start_drawing", null), loopOf(number("4"), [forward(number("100")), turn(node("angle", "90"))])]])],
     ["square", exported([[start(), node("start_drawing", null), loopOf(number("4"), [forward(number("100")), turn(node("angle", "90"), "rotate_relative")])]])],
     ["polygon", exported([[start(), node("ask_and_wait", text("변의 수는?"), null), node("start_drawing", null), loopOf(answer(), [forward(number("70")), turn(calc(number("360"), "DIVIDE", answer()))]), node("stop_drawing", null), node("locate_xy", number("-150"), number("0"), null)]])],
     ["tree", withTree(treeCode(["5", "10", "15", "20", "25"].map(grow)))],
     ["safe", exported([[start(), until(compare(answer(), "EQUAL", number("1234"))), speak("금고가 열렸어요!")]])],
+    ["cat-walk", oneObject([keyLine("39", moveX("10"), callOf("step")), keyLine("37", moveX("-10"), callOf("step"))], [{ id: "step", name: "고양이 걸음", body: [node("change_to_next_shape", "next", null)] }], CAT)],
+    ["windows", oneObject([[start(), callOf("win"), moveX("100"), callOf("win")]], [{ id: "win", name: "창문 그리기", body: penBody(4) }])],
+    ["fix-shapes", repairedShapes()],
+    ["flower", oneObject([[start(), loopOf(number("6"), [callOf("petal"), turn(node("angle", "60"))])]], [{ id: "petal", name: "꽃잎", body: penBody(4) }])],
+    ["paddle", BRICK_SOLUTIONS.paddle],
+    ["ball", BRICK_SOLUTIONS.ball],
+    ["brick", BRICK_SOLUTIONS.brick],
+    ["brick-bounce", BRICK_SOLUTIONS["brick-bounce"]],
   ];
-  expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(PROGRAMMING_MISSIONS.map((mission) => mission.id)));
+  // Every mission a lesson still offers has a solution; retired ones (escape) are no longer graded.
+  expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(["programming-13", "conditionals", "loops", "functions", "brick-breaker"].flatMap((lesson) => missionsFor(lesson).map((mission) => mission.id))));
   // The steps name the values and slots these solutions use.
   expect(hintPlain(missionById("polygon")!.steps[1])).toContain("70만큼 움직이기");
   // After drawing, the pen lifts and Entrybot steps aside so it does not hide the shape.
@@ -553,12 +592,12 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
   // Following the steps gives the solution: each block it uses is a hint chip, or (for asking, saying,
   // answers and variable values written in plain words) named by its word. Alternatives (the second square) are skipped.
   const MENTION: Record<string, string> = { ask_and_wait: "묻", dialog: "말하기", dialog_time: "말하기", get_canvas_input_value: "대답", get_variable: " 값" };
-  const typesIn = (raw: string) => { const out = new Set<string>(); const walk = (v: unknown): void => { if (typeof v === "string" && v.startsWith("[")) { try { walk(JSON.parse(v)); } catch { /* plain text */ } } else if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") { const t = (v as { type?: unknown }).type; if (typeof t === "string" && PALETTE_BLOCKS.has(t)) out.add(t); Object.values(v).forEach(walk); } }; walk(JSON.parse(raw)); return out; };
+  const typesIn = (raw: string) => { const out = new Set<string>(); const walk = (v: unknown): void => { if (typeof v === "string" && v.startsWith("[")) { try { walk(JSON.parse(v)); } catch { /* plain text */ } } else if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") { const t = (v as { type?: unknown }).type; if (typeof t === "string" && PALETTE_BLOCKS.has(t)) out.add(t); Object.values(v).forEach(walk); } }; walkProject(raw, walk); return out; };
   // Values each solution uses, as the hint writes them (palette symbols; Entry key codes 37–40 as key names).
-  const SYMBOL: Record<string, string> = { GREATER_OR_EQUAL: "≥", EQUAL: "=", MULTI: "x", DIVIDE: "/", PLUS: "+" }, KEY: Record<string, string> = { 37: "왼쪽", 38: "위쪽", 39: "오른쪽", 40: "아래쪽" };
-  const VARIABLE: Record<string, string> = { "cs-A": "A", "cs-B": "B", "cs-clicks": "클릭 수" };
+  const SYMBOL: Record<string, string> = { GREATER_OR_EQUAL: "≥", EQUAL: "=", MULTI: "x", DIVIDE: "/", PLUS: "+", MINUS: "-" }, KEY: Record<string, string> = { 37: "왼쪽", 38: "위쪽", 39: "오른쪽", 40: "아래쪽" };
+  const VARIABLE: Record<string, string> = { "cs-A": "A", "cs-B": "B", "cs-clicks": "클릭 수", score: "점수" };
   // The tree's later thresholds are written in words instead of four more chips.
-  const VALUE_IN_WORDS: Record<string, RegExp> = { "tree 클릭 수 값 = 10": /5를 10으로/, ...Object.fromEntries(["15", "20", "25"].map((n) => [`tree 클릭 수 값 = ${n}`, /15·20·25도/])) };
+  const VALUE_IN_WORDS: Record<string, RegExp> = { "brick 점수 값 = 3": /99를 3으로/, "tree 클릭 수 값 = 10": /5를 10으로/, ...Object.fromEntries(["15", "20", "25"].map((n) => [`tree 클릭 수 값 = ${n}`, /15·20·25도/])) };
   const LOGIC: Record<string, string> = { AND: "그리고", OR: "또는" };
   const valuesIn = (raw: string) => {
     const out: string[] = [], lit = (v: unknown) => { const n = v as EntryNode | null; return n && typeof n === "object" && ["number", "angle", "text"].includes(n.type) ? String(n.params[0]) : undefined; };
@@ -584,17 +623,23 @@ test("조립 순서대로 만든 12개 미션 해답(정사각형은 두 회전 
       if (type === "boolean_basic_operator" || type === "calc_basic") out.push(`${term(p0)} ${symbol(p1)} ${term(p2)}`);
       Object.values(v).forEach(walk);
     };
-    walk(JSON.parse(raw)); return out;
+    walkProject(raw, walk); return out;
   };
   for (const [id, raw] of solutions.filter(([id], i) => solutions.findIndex(([other]) => other === id) === i)) {
     const texts = missionText(id), chipTypes = new Set(texts.flatMap(hintParts).flatMap((part) => typeof part === "string" ? [] : [part.type])), plain = texts.map(hintPlain).join(" ");
-    // The start block is a chip too unless the starter already places it (lesson 1 students never dragged it in).
-    for (const type of typesIn(raw)) if (type !== "when_run_button_click" || !missionStarter(id).includes(type)) expect(chipTypes.has(type) || (MENTION[type] !== undefined && plain.includes(MENTION[type])), `${id}: ${type}`).toBe(true);
+    // Blocks and values the starter already places need no chip (lesson 1 students never dragged the start block in;
+    // the broken-shapes starter holds the code to repair).
+    const starterTypes = typesIn(missionStarter(id)), starterValues = valuesIn(missionStarter(id));
+    for (const type of typesIn(raw)) if (!starterTypes.has(type)) expect(chipTypes.has(type) || (MENTION[type] !== undefined && plain.includes(MENTION[type])), `${id}: ${type}`).toBe(true);
     // ...and with the solution's values: a right block with a wrong threshold, count or symbol still misleads.
     const pattern = (value: string) => VALUE_IN_WORDS[`${id} ${value}`] ?? new RegExp(`${/^[\d가-힣-]/.test(value) ? "(?<![\\d\\-가-힣])" : ""}${value.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}`);
-    for (const value of valuesIn(raw)) expect(pattern(value).test(plain), `${id}: ${value}`).toBe(true);
+    for (const value of valuesIn(raw)) if (!starterValues.includes(value)) expect(pattern(value).test(plain), `${id}: ${value}`).toBe(true);
+    // A function the solution calls (and the starter does not) is named in the steps.
+    const callsIn = (text: string) => new Set([...text.matchAll(/\\*"type\\*":\\*"func_([\w-]+)/g)].map((m) => m[1]));
+    const starterCalls = callsIn(missionStarter(id)), names = functionNamesOf(parseProgrammingProject(raw)!.functions);
+    for (const callee of callsIn(raw)) if (!starterCalls.has(callee)) expect(plain, `${id}: ${names[callee]}`).toContain(names[callee]);
     // ...in the solution's order within the steps, so a swapped threshold, branch or key angle fails too (the tree's word-form list is skipped).
-    const steps = missionById(id)!.steps.map(hintPlain).join(" "), at = [...new Set(valuesIn(raw))].filter((value) => !VALUE_IN_WORDS[`${id} ${value}`]).map((value) => [value, steps.search(pattern(value))] as const).filter(([, i]) => i >= 0);
+    const steps = missionById(id)!.steps.map(hintPlain).join(" "), at = [...new Set(valuesIn(raw))].filter((value) => !VALUE_IN_WORDS[`${id} ${value}`] && !starterValues.includes(value)).map((value) => [value, steps.search(pattern(value))] as const).filter(([, i]) => i >= 0);
     at.forEach(([value, i], k) => expect(i, `${id}: ${value} comes after ${at[k - 1]?.[0]}`).toBeGreaterThanOrEqual(at[k - 1]?.[1] ?? 0));
     // ...and each block's first chip follows the solution's block order, so swapped steps fail too. Nesting words (안에·아래(바깥)) are not checked.
     const chipOrder = missionById(id)!.steps.flatMap(hintParts).flatMap((part) => typeof part === "string" ? [] : [part.type]), firsts = [...typesIn(raw)].map((type) => [type, chipOrder.indexOf(type)] as const).filter(([, i]) => i >= 0);
@@ -624,7 +669,7 @@ const wait = () => node("wait_second", number("1"), null);
 const both = [start(), ...store("A"), ...store("B")];
 const scored = (yes: EntryNode[], no: EntryNode[], condition = compare(answer(), "GREATER_OR_EQUAL", number("60"))) => [start(), ask(), ifElse(condition, yes, no)];
 const throwsOf = (top: string, middle: string, low: string) => [start(), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("8")), [speak(top)], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak(middle)], [speak(low)])])];
-const escapeSays = (condition: EntryNode, yes: string, no: string) => [...both, ifElse(condition, [speak(yes)], [speak(no)])];
+const rideSays = (yes: string, no: string, condition = node("boolean_and_or", atLeast("cs-A", "130"), "AND", atLeast("cs-B", "10"))) => [...both, ifElse(condition, [speak(yes)], [speak(no)])];
 const drawn = (inner: EntryNode[], count = "4") => [start(), node("start_drawing", null), loopOf(number(count), inner)];
 const right90 = () => turn(node("angle", "90"));
 const opened = (line = "금고가 열렸어요!") => speak(line);
@@ -636,7 +681,6 @@ const arrowLines = (body: (dx: number, dy: number) => EntryNode[]) => [["38", 0,
 const hintOf = (id: string) => missionById(id)!.failure;
 const when = (condition: EntryNode, inner: EntryNode[]): EntryNode => ({ ...node("_if", condition, null), statements: [inner] });
 const SAFE_STOP = "1234를 맞힌 뒤에도 또 물어요. 맞히면 반복이 멈추도록 ‘반복 중단하기’나 반복 조건을 확인해 주세요.";
-const noneSolved = node("boolean_and_or", compare(v("A"), "EQUAL", number("0")), "AND", compare(v("B"), "EQUAL", number("0")));
 
 const MUST_PASS: [string, string, EntryNode[][]][] = [
   ["name", "일반 말하기", [[start(), ask(), say(answer())]]],
@@ -653,8 +697,10 @@ const MUST_PASS: [string, string, EntryNode[][]][] = [
   ["pass", "이모지·인사·마무리 말", [[start(), speak("점수를 알려 줘"), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [speak("축하해요, 합격! 🎉")], [speak("아쉽지만 불합격 😢")]), speak("수고했어")]]],
   ["pass", "대답을 A에 저장해 비교", [[start(), ask(), setTo("A", answer()), ifElse(compare(v("A"), "GREATER_OR_EQUAL", number("60")), [speak("합격")], [speak("불합격")])]]],
   ["freethrow", "더 연습하자!·이모지·느낌표 없음", [throwsOf("훌륭해요!👍", "잘했어요", "더 연습하자!")]],
-  ["escape", "탈출에 성공했어!·탈출에 실패했어", [escapeSays(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")), "탈출에 성공했어!", "탈출에 실패했어")]],
-  ["escape", "(A = 0 그리고 B = 0)이면 실패", [escapeSays(noneSolved, "탈출 실패", "탈출 성공!")]],
+  ["ride", "탈 수 있어요!·이모지", [rideSays("탈 수 있어요! 🎢", "아쉽지만 탈 수 없어요")]],
+  ["ride", "(A < 130 또는 B < 10)이면 못 탐", [rideSays("탈 수 없어요", "탈 수 있어요", node("boolean_and_or", atLeast("cs-A", "130", "LESS"), "OR", atLeast("cs-B", "10", "LESS")))]],
+  ["change", "거스름돈은 ○원", [[...both, say(join(text("거스름돈은 "), join(calc(v("A"), "MINUS", v("B")), text("원"))))]]],
+  ["change", "거스름돈을 A에 저장해 말하기", [[...both, setTo("A", calc(v("A"), "MINUS", v("B"))), say(join(v("A"), text("원")))]]],
   ["square", "변을 50씩 나누어 그리기", [drawn([forward(number("50")), forward(number("50")), right90()])]],
   ["square", "한 바퀴 더 돌기", [drawn([forward(number("100")), right90()], "5")]],
   ["square", "( )초 동안 회전하기 두 가지", [drawn([forward(number("100")), node("rotate_by_time", number("1"), node("angle", "45"), null), node("direction_relative_duration", number("1"), node("angle", "45"), null)])]],
@@ -666,7 +712,7 @@ const MUST_PASS: [string, string, EntryNode[][]][] = [
   // A line said before the first question cannot depend on the answer, so its words do not count.
   ["pass", "질문 전에 ‘합격 기준은 60점이야’", [[start(), speak("합격 기준은 60점이야"), ...scored([speak("합격")], [speak("불합격")]).slice(1)]]],
   ["freethrow", "질문 전에 ‘자유투 연습 결과를 알려 줄게’", [[start(), speak("자유투 연습 결과를 알려 줄게"), ...throwsOf("훌륭해요!", "잘했어요!", "더 연습해 보자!").slice(1)]]],
-  ["escape", "질문 전에 ‘방 탈출, 성공할 수 있을까?’", [[start(), speak("방 탈출, 성공할 수 있을까?"), ...escapeSays(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")), "탈출 성공!", "탈출 실패").slice(1)]]],
+  ["ride", "질문 전에 ‘놀이기구를 탈 수 있는지 알아볼게’", [[start(), speak("놀이기구를 탈 수 있는지 알아볼게"), ...rideSays("탈 수 있어요", "탈 수 없어요").slice(1)]]],
   ["move", "x 좌표 바꾸기", [[start(), node("move_x", number("10"), null)]]],
   ["move", "( )초 동안 x·y만큼 움직이기", [[start(), node("move_xy_time", number("1"), number("10"), number("0"), null)]]],
   ["move", "90 방향으로 움직이기", [[start(), node("move_to_angle", node("angle", "90"), number("10"), null)]]],
@@ -690,8 +736,11 @@ const MUST_FAIL: [string, string, EntryNode[][], string?][] = [
   ["pass", "생각하기로만 말함", [scored([say(text("합격"), "think")], [sayFor(text("불합격"), "think")])], THINKING],
   ["freethrow", "5부터 확인", [[start(), ask(), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak("잘했어요!")], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("8")), [speak("훌륭해요!")], [speak("더 연습해 보자!")])])]]],
   ["freethrow", "한 줄에 두 결과", [throwsOf("훌륭해요! 잘했어요!", "잘했어요!", "더 연습해 보자!")]],
-  ["escape", "논리 블록 없이 (A + B) > 0", [escapeSays(compare(calc(v("A"), "PLUS", v("B")), "GREATER", number("0")), "탈출 성공!", "탈출 실패")]],
-  ["escape", "늘 탈출 성공", [[...both, speak("탈출 성공!")]]],
+  ["ride", "논리 블록 없이 만일 두 번", [[...both, ifElse(atLeast("cs-A", "130"), [ifElse(atLeast("cs-B", "10"), [speak("탈 수 있어요")], [speak("탈 수 없어요")])], [speak("탈 수 없어요")])]]],
+  ["ride", "늘 탈 수 있어요", [[...both, speak("탈 수 있어요")]]],
+  ["change", "물건값에서 낸 돈을 뺌", [[...both, say(join(calc(v("B"), "MINUS", v("A")), text("원")))]]],
+  ["change", "‘원’ 없이 숫자만", [[...both, say(calc(v("A"), "MINUS", v("B")))]]],
+  ["change", "정해 둔 답", [[...both, say(text("1800원"))]]],
   ["square", "반복 없이 네 변", [[start(), node("start_drawing", null), ...Array.from({ length: 4 }, () => [forward(number("100")), right90()]).flat()]]],
   ["square", "정사각형 대신 정팔각형", [drawn([forward(number("100")), turn(node("angle", "45"))], "8")]],
   ["square", "변마다 옆으로 비켜 감", [drawn([forward(number("100")), right90(), node("move_x", number("10"), null)])]],
@@ -723,8 +772,8 @@ const MUST_FAIL: [string, string, EntryNode[][], string?][] = [
   ["pass", "불합격 뒤 ‘다음엔 꼭 합격하자’", [scored([speak("합격")], [speak("불합격"), speak("다음엔 꼭 합격하자")])], wordingMessage("pass")],
   ["freethrow", "‘연습 잘했어’", [throwsOf("훌륭해요!", "연습 잘했어", "더 연습해 보자!")], wordingMessage("freethrow")],
   ["freethrow", "질문 뒤에 ‘자유투 연습 결과는’", [[start(), ask(), speak("자유투 연습 결과는"), ...throwsOf("훌륭해요!", "잘했어요!", "더 연습해 보자!").slice(2)]], wordingMessage("freethrow")],
-  ["escape", "‘탈출 실패, 다음엔 성공하자’", [escapeSays(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")), "탈출 성공!", "탈출 실패, 다음엔 성공하자")], wordingMessage("escape")],
-  ["escape", "마무리 ‘실패해도 괜찮아’", [[...escapeSays(node("boolean_and_or", solved("cs-A"), "OR", solved("cs-B")), "탈출 성공!", "탈출 실패"), speak("실패해도 괜찮아")]], wordingMessage("escape")],
+  ["ride", "‘탈 수 없어요, 다음엔 탈 수 있어요’", [rideSays("탈 수 있어요", "탈 수 없어요, 다음엔 탈 수 있어요")], wordingMessage("ride")],
+  ["ride", "마무리 ‘키가 크면 다시 와요, 그땐 탈 수 있어요’", [[...rideSays("탈 수 있어요", "탈 수 없어요"), speak("키가 크면 다시 와요, 그땐 탈 수 있어요")]], wordingMessage("ride")],
   // Wrong or missing branches still get the mission's hint.
   ["pass", "늘 합격·불합격을 둘 다 말함", [[start(), ask(), speak("합격"), speak("불합격")]], hintOf("pass")],
   ["pass", "‘아니면’ 없이 합격만", [[start(), ask(), { ...node("_if", compare(answer(), "GREATER_OR_EQUAL", number("60")), null), statements: [[speak("합격")]] }]], hintOf("pass")],
@@ -759,7 +808,7 @@ test("채점 표: 같은 뜻으로 만든 작품은 통과하고, 결과가 틀�
   // The wording message quotes the whole result phrases students say, in two short sentences.
   expect(wordingMessage("freethrow")).toBe("조건은 맞게 나눴어요. 결과를 말할 때 ‘훌륭해요’·‘잘했어요’·‘더 연습해 보자’ 중 맞는 말 하나만 넣어 주세요.");
   expect(wordingMessage("pass")).toContain("‘합격’·‘불합격’");
-  expect(wordingMessage("escape")).toContain("‘탈출 성공’·‘탈출 실패’");
+  expect(wordingMessage("ride")).toContain("‘탈 수 있어요’·‘탈 수 없어요’");
   // Harmless extras run in the tree mission too, and the block list shown to students leaves them out.
   const grown = treeCode(["5", "10", "15", "20", "25"].map(grow));
   expect(checkProgrammingMission("tree", withTree([[...grown[0], node("change_scale_size", number("1"), null), node("show", null)]]))).toEqual(OK);
@@ -779,13 +828,13 @@ test("채점 표: 같은 뜻으로 만든 작품은 통과하고, 결과가 틀�
 // misleading ‘시작 블록은 맨 위에…’ message.
 test("미션이 받는 모든 동작 블록은 해석기에서 실행된다", () => {
   const STARTS = new Set(["when_run_button_click", "when_some_key_pressed", "mouse_clicked", "when_object_click"]);
-  const REPORTERS = new Set(["get_canvas_input_value", "get_variable", "combine_something", "calc_basic", "boolean_basic_operator", "boolean_and_or", "boolean_not", "quotient_and_mod", "is_clicked"]);
+  const REPORTERS = new Set(["get_canvas_input_value", "get_variable", "combine_something", "calc_basic", "boolean_basic_operator", "boolean_and_or", "boolean_not", "quotient_and_mod", "is_clicked", "reach_something", "coordinate_mouse", "coordinate_object", "calc_rand"]);
   const n = number("1"), color = node("color", "#FF0000"), yes = node("True", null);
   const DEFAULTS: Record<string, unknown[]> = {
     ask_and_wait: [text("?"), null], dialog_time: [text("안녕"), n, "speak", null], dialog: [text("안녕"), "speak", null], set_variable: ["cs-A", n, null],
-    move_direction: [n, null], move_x: [n, null], move_y: [n, null], move_xy_time: [n, n, n, null], locate_xy_time: [n, n, n, null], move_to_angle: [n, n, null], locate_xy: [n, n, null], locate: ["mouse", null],
-    direction_absolute: [n, null], direction_relative: [n, null], rotate_relative: [n, null], rotate_by_time: [n, n, null], direction_relative_duration: [n, n, null],
-    start_drawing: [null], stop_drawing: [null], brush_erase_all: [null], repeat_basic: [n, null], repeat_while_true: [yes, "until", null], repeat_inf: [null, null], stop_repeat: [null], _if: [yes, null], if_else: [yes, null, null],
+    move_direction: [n, null], bounce_wall: [null], move_x: [n, null], move_y: [n, null], move_xy_time: [n, n, n, null], locate_x: [n, null], locate_xy_time: [n, n, n, null], move_to_angle: [n, n, null], locate_xy: [n, n, null], locate: ["mouse", null],
+    direction_absolute: [n, null], direction_relative: [n, null], rotate_relative: [n, null], rotate_absolute: [n, null], rotate_by_time: [n, n, null], direction_relative_duration: [n, n, null],
+    start_drawing: [null], stop_drawing: [null], brush_erase_all: [null], repeat_basic: [n, null], repeat_while_true: [yes, "until", null], repeat_inf: [null, null], stop_repeat: [null], stop_object: ["all", null], _if: [yes, null], if_else: [yes, null, null],
     change_variable: ["cs-clicks", n, null], change_to_next_shape: ["next", null], change_to_some_shape: [node("get_pictures", "tree-pic2"), null],
     wait_second: [n, null], remove_dialog: [null], show: [null], hide: [null], set_visible_answer: ["HIDE", null], show_variable: ["cs-A", null], hide_variable: ["cs-A", null],
     set_color: [color, null], change_thickness: [n, null], set_thickness: [n, null], set_random_color: [null], set_fill_color: [color, null], start_fill: [null], stop_fill: [null],
@@ -802,4 +851,374 @@ test("미션이 받는 모든 동작 블록은 해석기에서 실행된다", ()
       expect(checkProgrammingMission(id, raw).message, `${id}: ${type}`).not.toBe("시작 블록은 맨 위에 두고 동작을 아래로 연결해 주세요.");
     }
   }
+});
+
+// Variables students make in the attribute tab, as Entry 4.0.23 exports them (newest first).
+const studentVariable = (id: string, name: string, extra: Record<string, unknown> = {}) => ({ name, id, visible: true, value: 0, variableType: "variable", isCloud: false, isRealTime: false, cloudDate: false, object: null, x: -230, y: -32, ...extra });
+const withVariables = (raw: string, variables: Record<string, unknown>[]) => { const p = JSON.parse(raw); p.variables.unshift(...variables); return JSON.stringify(p); };
+
+test("학생이 만든 변수는 저장되고 기존 변수 키·채점은 그대로다", () => {
+  const plain = project([multiply()]);
+  const raw = withVariables(plain, [studentVariable("tcgg", " 속도 ", { object: "entrybot", value: "5", isCloud: true }), studentVariable("syrt", "점수")]);
+  const parsed = parseProgrammingProject(raw)!;
+  expect(parsed.variables).toEqual([
+    { id: "tcgg", name: "속도", value: 5, visible: true, x: -230, y: -32, object: "entrybot" },
+    { id: "syrt", name: "점수", value: 0, visible: true, x: -230, y: -32, object: null },
+  ]);
+  expect((parsed.project.variables as { id: string; isCloud: boolean }[]).filter((v) => !["timer", "answer", "cs-A", "cs-B"].includes(v.id)).map((v) => [v.id, v.isCloud])).toEqual([["tcgg", false], ["syrt", false]]);
+  // Adding a variable is a change to save; a reload that lists variables in another order is not.
+  expect(parsed.key).not.toBe(parseProgrammingProject(plain)!.key);
+  const reordered = JSON.parse(JSON.stringify(parsed.project)); reordered.variables.reverse();
+  expect(parseProgrammingProject(JSON.stringify(reordered))!.key).toBe(parsed.key);
+  const again = parseProgrammingProject(JSON.stringify(parsed.project))!;
+  expect([again.key, JSON.stringify(again.project)]).toEqual([parsed.key, JSON.stringify(parsed.project)]);
+  // Without student variables the key is the one saved work already has.
+  expect(parseProgrammingProject(plain)!.key).toBe(parseProgrammingProject(plain)!.gradeKey);
+  expect(checkProgrammingMission("multiply", raw).passed).toBe(true);
+});
+
+test("엔트리가 만들 수 있는 학생 변수는 받고, 너무 많거나 없는 오브젝트 것이면 거부한다", () => {
+  const plain = project([[start()]]);
+  // Entry numbers a copied 10-character name past 10 (`abcdefghij1`), and ‘클릭 수’ is free outside the tree mission.
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "abcdefghij"), studentVariable("bbbb", "abcdefghij1"), studentVariable("cccc", "클릭 수")]))!.variables.map((v) => v.name)).toEqual(["abcdefghij", "abcdefghij1", "클릭 수"]);
+  // Copying an object copies its own variables past the add panel's limit of 10 (ten local variables, three copies);
+  // only the saved size limits them.
+  const many = parseProgrammingProject(withVariables(plain, Array.from({ length: 40 }, (_, i) => studentVariable(`v${i}`, `변수${i}`))))!;
+  expect([many.variables.length, many.bytes < MAX_PROJECT_BYTES]).toEqual([40, true]);
+  // ‘1e309’ would load as Infinity, which the saved project cannot hold.
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "큰 수", { value: "1e309" })]))).toBeNull();
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "점수"), studentVariable("aaaa", "점수2")]))).toBeNull();
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "속도", { object: "obj-gone" })]))).toBeNull();
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "  ")]))).toBeNull();
+  expect(parseProgrammingProject(withVariables(plain, [studentVariable("aaaa", "점수", { value: { x: 1 } })]))).toBeNull();
+});
+
+test("학생 변수로 결과를 담거나 기준값을 두어도 채점이 엔트리와 같다", () => {
+  const say = (value: EntryNode) => node("dialog", value, "speak", null);
+  const product = withVariables(project([[start(), ask(), node("set_variable", "cs-A", answer(), null), ask(), node("set_variable", "cs-B", answer(), null),
+    node("set_variable", "gopp", node("calc_basic", node("get_variable", "cs-A"), "MULTI", node("get_variable", "cs-B")), null), say(node("get_variable", "gopp"))]]), [studentVariable("gopp", "곱")]);
+  expect(checkProgrammingMission("multiply", product)).toEqual({ passed: true, message: "목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요." });
+  // A variable starts at its saved value: 기준 = 60 decides 합격.
+  const pass = (limit: number | string) => withVariables(buildProgrammingProject(undefined, parseProgrammingProject(missionStarter("pass"))!.added.map((o) => ({ ...o, threads: [[start(), node("ask_and_wait", node("text", "점수는?"), null),
+    { ...node("if_else", node("boolean_basic_operator", answer(), "GREATER_OR_EQUAL", node("get_variable", "gijn")), null), statements: [[say(node("text", "합격"))], [say(node("text", "불합격"))]] }]] })), -1), [studentVariable("gijn", "기준", { value: limit })]);
+  expect(checkProgrammingMission("pass", pass(60)).passed).toBe(true);
+  expect(checkProgrammingMission("pass", pass("60")).passed).toBe(true);
+  expect(checkProgrammingMission("pass", pass(50)).passed).toBe(false);
+});
+
+test("지운 변수를 가리키는 블록은 저장되고 교사 화면과 채점이 ‘대상 없음’으로 알린다", () => {
+  const raw = withVariables(project([[start(), node("set_variable", "gone", number("1"), null), node("change_variable", "syrt", number("2"), null)]]), [studentVariable("syrt", "점수")]);
+  expect(programmingProjectLines(raw)).toEqual(["시작하기 버튼을 클릭했을 때", "대상 없음에 1 저장하기", "점수에 2만큼 더하기"]);
+  const missing = "변수 블록에 ‘대상 없음’이 있어요. ▾를 눌러 변수를 다시 골라 주세요.";
+  expect(checkProgrammingMission("multiply", project([multiply([node("set_variable", "gone", number("1"), null)])])).message).toBe(missing);
+  expect(checkProgrammingMission("multiply", project([[...multiply().slice(0, -1), node("dialog", node("get_variable", "gone"), "speak", null)]])).message).toBe(missing);
+  expect(formatEntryNode(node("get_variable", "toString"))).toBe("대상 없음 · 아직 연결하지 않은 블록");
+});
+
+test("학생 변수만 바꿔도 저장할 변경으로 보고, 순서만 바뀐 것은 변경이 아니다", () => {
+  const plain = project([multiply()]);
+  const draft = (raw: string): WorkDraft => ({ ...emptyWork(PROGRAMMING_LESSON).draft, programming: { mission: "multiply", projects: { multiply: raw }, reflection: "" } });
+  const one = withVariables(plain, [studentVariable("aaaa", "점수", { value: 1 }), studentVariable("bbbb", "속도")]);
+  expect(sameWorkContent(draft(plain), draft(one))).toBe(false);
+  expect(sameWorkContent(draft(one), draft(withVariables(plain, [studentVariable("aaaa", "점수", { value: 99 }), studentVariable("bbbb", "속도")])))).toBe(false);
+  expect(sameWorkContent(draft(one), draft(withVariables(plain, [studentVariable("bbbb", "속도"), studentVariable("aaaa", "점수", { value: 1 })])))).toBe(true);
+});
+
+test("놀이기구 탑승은 A·B를 학생 변수에 옮겨 담아 판단해도 통과한다", () => {
+  const copies = [...rideProgram(node("True", null)).slice(0, 5), node("set_variable", "kiii", node("get_variable", "cs-A"), null), node("set_variable", "naii", node("get_variable", "cs-B"), null)];
+  const ride = (op: string) => withVariables(exported([[...copies, ifElse(node("boolean_and_or", atLeast("kiii", "130"), op, atLeast("naii", "10")), [speak("탈 수 있어요")], [speak("탈 수 없어요")])]]), [studentVariable("kiii", "키"), studentVariable("naii", "나이")]);
+  expect(checkProgrammingMission("ride", ride("AND")).passed).toBe(true);
+  expect(checkProgrammingMission("ride", ride("OR")).passed).toBe(false);
+});
+
+test("학생 변수 기본값은 엔트리가 다시 불러온 값으로 저장해 새로고침 뒤에도 검증 기록이 맞는다", () => {
+  const plain = project([multiply()]);
+  const value = (v: unknown) => parseProgrammingProject(withVariables(plain, [studentVariable("gijn", "기준", { value: v })]))!;
+  // Entry.parseNumber: numeric text becomes a number unless it starts with 0, and an empty value is 0.
+  expect([60, "60", "-2.5", "6e2", "007", "0", "", "1,000", " 60"].map((v) => value(v).variables[0].value)).toEqual([60, 60, -2.5, 600, "007", "0", 0, "1,000", " 60"]);
+  expect(programmingProjectMatches(withVariables(plain, [studentVariable("gijn", "기준", { value: "60" })]), withVariables(plain, [studentVariable("gijn", "기준", { value: 60 })]))).toBe(true);
+});
+
+// A real Entry 4.0.23 export: function `창문 그리기` (id win1) called twice from the start line.
+const functionRaw = JSON.stringify(functionExport);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- edits raw Entry export JSON
+type RawJson = any;
+const withFunctionEdit = (change: (project: RawJson, fn: RawJson, head: RawJson) => void) => {
+  const p = JSON.parse(functionRaw), fn = p.functions[0], content = JSON.parse(fn.content);
+  change(p, fn, content[0][0]);
+  fn.content = JSON.stringify(content);
+  return JSON.stringify(p);
+};
+const startLine = (raw: string) => parseProgrammingProject(raw)!.added[0].threads[0].map((n) => n.type);
+
+test("함수 정의와 호출을 저장하고 다시 읽어도 같다", () => {
+  const parsed = parseProgrammingProject(functionRaw)!;
+  expect(parsed.functions).toHaveLength(1);
+  expect(parsed.functions[0]).toMatchObject({ id: "win1", name: "창문 그리기" });
+  expect(parsed.functions[0].body.map((n) => n.type)).toEqual(["start_drawing", "repeat_basic", "stop_drawing"]);
+  expect(startLine(functionRaw)).toEqual(["when_run_button_click", "func_win1", "move_x", "func_win1"]);
+  const again = parseProgrammingProject(JSON.stringify(parsed.project))!;
+  expect(again.key).toBe(parsed.key);
+  expect(again.functions).toEqual(parsed.functions);
+});
+
+test("함수가 없는 작품의 키에는 함수가 들어가지 않는다", () => {
+  const plain = withFunctionEdit((p) => {
+    p.functions = [];
+    p.objects[0].script = JSON.stringify(JSON.parse(p.objects[0].script).map((t: { type: string }[]) => t.filter((b) => !b.type.startsWith("func_"))));
+  });
+  const parsed = parseProgrammingProject(plain)!;
+  expect(parsed.functions).toEqual([]);
+  expect(parsed.key).not.toContain("functions");
+  expect(JSON.stringify(parsed.project)).toContain("\"functions\":[]");
+});
+
+test("값 반환 함수·매개변수·지역 변수·상한 초과 함수는 읽지 않는다", () => {
+  expect(parseProgrammingProject(withFunctionEdit((_, fn) => { fn.type = "value"; }))).toBeNull();
+  expect(parseProgrammingProject(withFunctionEdit((_, __, head) => { head.params[0].params[1] = { type: "function_field_string", params: [{ type: "stringParam_ab12", params: [] }, null] }; }))).toBeNull();
+  expect(parseProgrammingProject(withFunctionEdit((_, fn) => { fn.useLocalVariables = true; }))).toBeNull();
+  expect(parseProgrammingProject(withFunctionEdit((_, fn) => { fn.localVariables = [{ id: "lv1", name: "지역", value: 0 }]; }))).toBeNull();
+  const copies = (count: number) => withFunctionEdit((p, fn) => { p.functions = Array.from({ length: count }, (_, i) => ({ ...fn, id: `f${i}` })); });
+  expect(parseProgrammingProject(copies(10))?.functions).toHaveLength(10);
+  expect(parseProgrammingProject(copies(MAX_FUNCTIONS + 1))).toBeNull();
+  // Long names are trimmed and cut like student variable names, not refused.
+  expect(parseProgrammingProject(withFunctionEdit((_, __, head) => { head.params[0].params[0] = ` ${"가".repeat(25)} `; }))!.functions[0].name).toBe("가".repeat(20));
+});
+
+test("없는 함수를 부르는 블록은 빼고 읽고, 이름이 같은 함수는 id로 구분한다", () => {
+  // Entry drops calls to a deleted function on load, so the parser does the same.
+  const deleted = withFunctionEdit((p) => { p.functions = []; });
+  expect(startLine(deleted)).toEqual(["when_run_button_click", "move_x"]);
+  expect(parseProgrammingProject(JSON.stringify(parseProgrammingProject(deleted)!.project))!.key).toBe(parseProgrammingProject(deleted)!.key);
+  const twins = withFunctionEdit((p, fn) => {
+    p.functions.push({ ...fn, id: "win2" });
+    const script = JSON.parse(p.objects[0].script);
+    script[0].push({ ...script[0][1], id: "call2", type: "func_win2" });
+    p.objects[0].script = JSON.stringify(script);
+  });
+  const parsed = parseProgrammingProject(twins)!;
+  expect(parsed.functions.map((f) => [f.id, f.name])).toEqual([["win1", "창문 그리기"], ["win2", "창문 그리기"]]);
+  expect(startLine(twins).at(-1)).toBe("func_win2");
+  expect(functionCallId("func_win2")).toBe("win2");
+  expect(functionCallId("move_x")).toBeNull();
+});
+
+test("교사 작품 보기는 함수 정의와 호출을 보여 준다", () => {
+  const lines = programmingProjectLines(functionRaw);
+  expect(lines[0]).toBe("함수 ‘창문 그리기’");
+  expect(lines[1].startsWith("└ ")).toBe(true);
+  expect(lines.filter((line) => line.includes("‘창문 그리기’ 부르기"))).toHaveLength(2);
+  const call = parseProgrammingProject(functionRaw)!.added[0].threads[0][1];
+  expect(formatEntryNode(call, {}, { win1: "창문 그리기" })).toBe("‘창문 그리기’ 부르기");
+});
+
+test("채점 줄에서 부르는 함수 본문도 미션 블록으로 검사한다", () => {
+  const ask = { type: "ask_and_wait", params: [{ type: "text", params: ["몇 개?"] }, null] };
+  const asking = withFunctionEdit((_, __, head) => { head.statements[0].push(ask); });
+  expect(missionBlockIssue("square", asking)).toContain("묻고 대답 기다리기");
+  // A function no graded line calls is not checked.
+  const uncalled = withFunctionEdit((p, _, head) => {
+    head.statements[0].push(ask);
+    p.objects[0].script = JSON.stringify(JSON.parse(p.objects[0].script).map((t: { type: string }[]) => t.filter((b) => !b.type.startsWith("func_"))));
+  });
+  expect(missionBlockIssue("square", uncalled)).toBeNull();
+  // Functions calling each other are each checked once.
+  const mutual = withFunctionEdit((p, fn, head) => {
+    head.statements[0].push({ type: "func_win2", params: [null] });
+    const other = JSON.parse(fn.content);
+    other[0][0].statements[0] = [{ type: "func_win1", params: [null] }];
+    p.functions.push({ ...fn, id: "win2", content: JSON.stringify(other) });
+  });
+  expect(missionBlockIssue("square", mutual)).toBeNull();
+});
+
+test("함수 본문만 바꿔도 미저장으로 본다", () => {
+  const wider = withFunctionEdit((_, __, head) => { head.statements[0][1].statements[0][0].params[0].params = ["80"]; });
+  expect(programmingProjectMatches(functionRaw, wider)).toBe(false);
+  const draft = (raw: string): WorkDraft => ({ ...emptyWork(LOOPS_LESSON).draft, programming: { mission: "square", projects: { square: raw }, reflection: "" } });
+  expect(sameWorkContent(draft(functionRaw), draft(wider))).toBe(false);
+  expect(sameWorkContent(draft(functionRaw), draft(functionRaw))).toBe(true);
+});
+
+// Function lesson grading. Free projects with one object; functions are named by id.
+const fnOf = (id: string, body: EntryNode[]): ProgramFunction => ({ id, name: id, body });
+const callOf = (id: string) => node(`func_${id}`, null);
+const moveX = (v: string) => node("move_x", number(v), null);
+const penBody = (sides: number, length = 50, angle = 360 / sides) => [node("start_drawing", null), loopOf(number(String(sides)), [forward(number(String(length))), turn(node("angle", String(angle)))]), node("stop_drawing", null)];
+const CAT = "e55e8ef04e443a90e6afe5e6d";
+const oneObject = (threads: EntryNode[][], functions: ProgramFunction[], sprite = ENTRYBOT_SPRITE) => buildProgrammingProject(undefined, [{ ...newAddedObject(sprite, 0, true)!, id: "actor", threads }], -1, false, [], functions);
+const keyLine = (key: string, ...body: EntryNode[]) => [node("when_some_key_pressed", null, key), ...body];
+
+test("창문 두 개는 같은 함수의 서로 다른 두 호출이 닿지 않는 정사각형을 하나씩 그려야 통과한다", () => {
+  const win = fnOf("win", penBody(4));
+  const pass = (raw: string) => checkProgrammingMission("windows", raw).passed;
+  expect(pass(oneObject([[start(), callOf("win"), moveX("100"), callOf("win")]], [win]))).toBe(true);
+  const unrolled = fnOf("win", [node("start_drawing", null), ...Array.from({ length: 4 }, () => [forward(number("50")), turn(node("angle", "90"))]).flat(), node("stop_drawing", null)]);
+  expect(pass(oneObject([[start(), callOf("win"), moveX("100"), callOf("win")]], [unrolled]))).toBe(true);
+  // Wrapping the calls in another function still counts each window call.
+  expect(pass(oneObject([[start(), callOf("house")]], [win, fnOf("house", [callOf("win"), moveX("100"), callOf("win")])]))).toBe(true);
+  const message = (raw: string) => checkProgrammingMission("windows", raw).message;
+  const outsideSquare = [node("start_drawing", null), loopOf(number("4"), [forward(number("50")), turn(node("angle", "90"))])];
+  expect(message(oneObject([[start(), callOf("win"), callOf("win"), moveX("100"), ...outsideSquare]], [win]))).toContain("함수 밖에서");
+  expect(message(oneObject([[start(), callOf("win")]], [win]))).toContain("한 번 더 불러");
+  expect(message(oneObject([[start(), callOf("win"), moveX("50"), callOf("win")]], [win]))).toContain("더 멀리");
+  // A call to a deleted function is dropped like Entry does, leaving one call.
+  expect(message(oneObject([[start(), callOf("win"), moveX("100"), callOf("gone")]], [win]))).toContain("한 번 더 불러");
+  expect(message(oneObject([[start(), callOf("again")]], [fnOf("again", [callOf("again")])]))).toContain("자기 자신");
+});
+
+test("고양이 걸음은 두 방향키가 같은 함수 안에서 모양을 바꿔야 통과한다", () => {
+  const step = fnOf("step", [node("change_to_next_shape", "next", null)]);
+  const check = (threads: EntryNode[][], functions: ProgramFunction[]) => checkProgrammingMission("cat-walk", oneObject(threads, functions, CAT));
+  expect(check([keyLine("39", moveX("10"), callOf("step")), keyLine("37", moveX("-10"), callOf("step"))], [step]).passed).toBe(true);
+  expect(check([keyLine("39", callOf("right")), keyLine("37", moveX("-10"), callOf("step"))], [step, fnOf("right", [moveX("10"), callOf("step")])]).passed).toBe(true);
+  expect(check([keyLine("39", moveX("10"), node("change_to_next_shape", "next", null)), keyLine("37", moveX("-10"), callOf("step"))], [step]).message).toContain("함수 안으로");
+  expect(check([keyLine("39", moveX("10"), callOf("step")), keyLine("37", moveX("-10"), callOf("other"))], [step, fnOf("other", [node("change_to_next_shape", "next", null)])]).message).toContain("같은");
+  expect(check([keyLine("39", moveX("10"), callOf("step")), keyLine("37", moveX("10"), callOf("step"))], [step]).passed).toBe(false);
+});
+
+// The broken-shapes starter with both bugs fixed: the pentagon turns 72° and the hexagon is called.
+function repairedShapes() {
+  const p = parseProgrammingProject(missionStarter("fix-shapes"))!, [, pentagon, hexagon] = p.functions;
+  return buildProgrammingProject(undefined, [{ ...p.added[0], threads: [[...p.added[0].threads[0], callOf(hexagon.id)]] }], -1, false, [], p.functions.map((f) => f === pentagon ? { ...f, body: penBody(5) } : f));
+}
+
+test("고장 난 도형 시작 작품은 오각형 90°와 육각형 호출 누락만 고치면 통과한다", () => {
+  const starter = missionStarter("fix-shapes");
+  expect(checkProgrammingMission("fix-shapes", starter).passed).toBe(false);
+  const p = parseProgrammingProject(starter)!;
+  expect(p.functions.map((f) => f.name)).toEqual(["사각형 그리기", "오각형 그리기", "육각형 그리기"]);
+  expect(p.bytes).toBeLessThan(MAX_PROJECT_BYTES / 4);
+  const pentagon = p.functions[1], hexagon = p.functions[2];
+  const fixed = p.functions.map((f) => f === pentagon ? { ...f, body: penBody(5) } : f);
+  const main = p.added[0].threads[0];
+  expect(main.filter((n) => functionCallId(n.type))).toHaveLength(2);
+  const repaired = buildProgrammingProject(undefined, [{ ...p.added[0], threads: [[...main, callOf(hexagon.id)]] }], -1, false, [], fixed);
+  expect(checkProgrammingMission("fix-shapes", repaired).passed).toBe(true);
+  // Fixing only one of the two bugs is not enough.
+  expect(checkProgrammingMission("fix-shapes", buildProgrammingProject(undefined, [{ ...p.added[0], threads: [[...main, callOf(hexagon.id)]] }], -1, false, [], p.functions)).passed).toBe(false);
+});
+
+test("꽃 피우기는 반복 안에서 부른 같은 함수가 60°씩 돌아간 정사각형 여섯 개를 그려야 통과한다", () => {
+  const petal = fnOf("petal", penBody(4));
+  const pass = (threads: EntryNode[][], functions: ProgramFunction[]) => checkProgrammingMission("flower", oneObject(threads, functions)).passed;
+  const bloom = [loopOf(number("6"), [callOf("petal"), turn(node("angle", "60"))])];
+  expect(pass([[start(), ...bloom]], [petal])).toBe(true);
+  expect(pass([[start(), callOf("bloom")]], [petal, fnOf("bloom", bloom)])).toBe(true);
+  expect(pass([[start(), ...Array.from({ length: 6 }, () => [callOf("petal"), turn(node("angle", "60"))]).flat()]], [petal])).toBe(false);
+  expect(pass([[start(), loopOf(number("6"), [callOf("petal"), turn(node("angle", "45"))])]], [petal])).toBe(false);
+});
+
+test("QA: 창문이 닿는지는 오브젝트의 저장된 방향으로 그린 모양으로 판단한다", () => {
+  const win = fnOf("win", penBody(4));
+  // Turned 45°, a side-50 square is a diamond about 70.7 wide: 60 apart they cross, 100 apart they do not.
+  const turned = (gap: string) => buildProgrammingProject(undefined, [{ ...newAddedObject(ENTRYBOT_SPRITE, 0, true)!, id: "actor", threads: [[start(), callOf("win"), moveX(gap), callOf("win")]], entity: { ...newAddedObject(ENTRYBOT_SPRITE, 0, true)!.entity, direction: 45 } }], -1, false, [], [win]);
+  expect(checkProgrammingMission("windows", turned("60")).passed).toBe(false);
+  expect(checkProgrammingMission("windows", turned("100")).passed).toBe(true);
+});
+
+test("QA: 고양이 걸음은 방향키 줄을 가진 오브젝트를 채점하고 다른 키의 꾸미기 줄은 무시한다", () => {
+  const step = fnOf("step", [node("change_to_next_shape", "next", null)]);
+  const decoration = { ...newAddedObject("e667cf0989776a4d6c183825d", 0, true)!, id: "deco", threads: [keyLine("32", node("change_to_next_shape", "next", null))] };
+  const cat = { ...newAddedObject(CAT, 1, true)!, id: "cat", threads: [keyLine("39", moveX("10"), callOf("step")), keyLine("37", moveX("-10"), callOf("step"))] };
+  expect(checkProgrammingMission("cat-walk", buildProgrammingProject(undefined, [decoration, cat], -1, false, [], [step])).passed).toBe(true);
+});
+
+test("QA: 객체 원형 이름과 겹치는 함수 id는 읽지 않는다", () => {
+  for (const id of ["__proto__", "constructor", "toString"]) {
+    const raw = withFunctionEdit((p, fn) => {
+      fn.id = id;
+      p.objects[0].script = p.objects[0].script.replaceAll("func_win1", `func_${id}`);
+    });
+    expect(parseProgrammingProject(raw), id).toBeNull();
+  }
+});
+
+test("QA: 이름 칸을 비운 함수는 기본 이름 ‘함수’로 읽는다", () => {
+  const blank = withFunctionEdit((_, __, head) => { head.params[0].params[0] = "  "; });
+  expect(parseProgrammingProject(blank)!.functions[0].name).toBe("함수");
+});
+
+test("QA: 고장 난 도형 미션은 이미 있는 함수를 여는 방법을 알려 준다", () => {
+  expect(missionById("fix-shapes")!.tip).toContain("두 번");
+});
+
+test("QA2: 고양이 걸음은 고양이의 저장된 방향으로 움직임을 판단한다", () => {
+  const step = fnOf("step", [node("change_to_next_shape", "next", null)]);
+  const cat = (direction: number) => buildProgrammingProject(undefined, [{ ...newAddedObject(CAT, 0, true)!, id: "cat", threads: [keyLine("39", forward(number("10")), callOf("step")), keyLine("37", forward(number("-10")), callOf("step"))], entity: { ...newAddedObject(CAT, 0, true)!.entity, direction } }], -1, false, [], [step]);
+  expect(checkProgrammingMission("cat-walk", cat(90)).passed).toBe(true);
+  // Facing 45°, Entry moves the cat diagonally, about 7.07 on each axis.
+  expect(checkProgrammingMission("cat-walk", cat(45)).passed).toBe(false);
+});
+
+test("QA2: 회전 방식이 자유가 아니면 ‘방향 회전’은 그리는 방향을 바꾸지 않는다", () => {
+  const spinning = fnOf("win", [node("start_drawing", null), loopOf(number("4"), [forward(number("50")), turn(node("angle", "90"), "rotate_relative")]), node("stop_drawing", null)]);
+  const windowsWith = (rotateMethod: AddedObject["rotateMethod"]) => buildProgrammingProject(undefined, [{ ...newAddedObject(ENTRYBOT_SPRITE, 0, true)!, id: "actor", rotateMethod, threads: [[start(), callOf("win"), moveX("100"), callOf("win")]] }], -1, false, [], [spinning]);
+  expect(checkProgrammingMission("windows", windowsWith("free")).passed).toBe(true);
+  expect(checkProgrammingMission("windows", windowsWith("none")).passed).toBe(false);
+  expect(checkProgrammingMission("windows", windowsWith("vertical")).passed).toBe(false);
+});
+
+test("QA2: func_로 시작하는 함수 id는 읽지 않는다", () => {
+  const raw = withFunctionEdit((p, fn) => { fn.id = "func_a"; p.objects[0].script = p.objects[0].script.replaceAll("func_win1", "func_func_a"); });
+  expect(parseProgrammingProject(raw)).toBeNull();
+});
+
+
+test("벽돌 깨기 4개 미션은 시작 작품 구조·변수·채점 조건을 정확히 검사한다", () => {
+  for (const id of ["paddle", "ball", "brick", "brick-bounce"]) {
+    const starter = missionStarter(id);
+    const parsed = parseProgrammingProject(starter)!;
+    expect(parsed.free, id).toBe(true);
+    expect(new Set(parsed.added.map((o) => o.id)), id).toEqual(new Set(["paddle", "ball", "brick1", "brick2", "brick3", "youwin"]));
+    expect(parsed.variables.map((v) => [v.id, v.name, v.value]), id).toEqual([["score", "점수", 0]]);
+    expect(checkProgrammingMission(id, starter).passed, id).toBe(false);
+    expect(parsed.added.find((o) => o.id === "ball")!.entity.direction, id).toBe(160);
+    expect(parsed.added.find((o) => o.id === "youwin")!.entity.visible, id).toBe(false);
+  }
+  expect(JSON.stringify(parseProgrammingProject(missionStarter("brick"))!.added.find((o) => o.id === "youwin")!.threads)).toContain('"99"');
+  expect(parseProgrammingProject(missionStarter("ball"))!.functions.map((f) => f.name)).toEqual(["막대에서 튕기기"]);
+  const withObjectThreads = (missionId: string, objectId: string, threads: EntryNode[][]) => {
+    const p = parseProgrammingProject(missionStarter(missionId))!;
+    return buildProgrammingProject(undefined, p.added.map((o) => o.id === objectId ? { ...o, threads } : o), -1, false, p.variables, p.functions);
+  };
+  const mouseX = () => node("coordinate_mouse", null, "x", null);
+  const mouseY = () => node("coordinate_mouse", null, "y", null);
+  expect(checkProgrammingMission("paddle", BRICK_SOLUTIONS.paddle).passed).toBe(true);
+  expect(checkProgrammingMission("paddle", withObjectThreads("paddle", "paddle", [[start(), node("locate_x", mouseX(), null)]])).passed).toBe(false);
+  expect(checkProgrammingMission("paddle", withObjectThreads("paddle", "paddle", [[start(), forever([node("locate_x", number("10"), null)])]])).passed).toBe(false);
+  expect(checkProgrammingMission("paddle", withObjectThreads("paddle", "paddle", [[start(), forever([node("locate_x", mouseY(), null)])]])).passed).toBe(false);
+  expect(checkProgrammingMission("paddle", withObjectThreads("paddle", "paddle", [[start(), forever([node("locate_xy", mouseX(), mouseY(), null)])]])).passed).toBe(false);
+  expect(missionBlockIssue("paddle", withObjectThreads("paddle", "paddle", [[start(), forever([node("move_x", number("10"), null)])]]))).toContain("대신 ‘x: ( ) 위치로 이동하기’");
+
+  expect(checkProgrammingMission("ball", BRICK_SOLUTIONS.ball).passed).toBe(true);
+  const touch = (target: string) => node("reach_something", null, target, null);
+  const stopAll = () => node("stop_object", "all", null);
+  expect(checkProgrammingMission("ball", withObjectThreads("ball", "ball", [[node("when_object_click", null), forever([forward(number("10")), node("bounce_wall", null), when(touch("paddle"), [turn(node("angle", "180"))]), when(touch("wall_down"), [stopAll()])])]])).passed).toBe(true);
+  expect(checkProgrammingMission("ball", withObjectThreads("ball", "ball", [[start(), forever([forward(number("10")), when(touch("paddle"), [turn(node("angle", "90"))]), when(touch("wall_down"), [stopAll()])])]])).passed).toBe(false);
+  expect(checkProgrammingMission("ball", withObjectThreads("ball", "ball", [[start(), forever([forward(number("10")), node("bounce_wall", null), turn(node("angle", "90")), when(touch("wall_down"), [stopAll()])])]])).passed).toBe(false);
+  expect(checkProgrammingMission("ball", withObjectThreads("ball", "ball", [[start(), forever([forward(number("10")), node("bounce_wall", null), when(touch("paddle"), [turn(node("angle", "90"))]), when(touch("wall_up"), [stopAll()])])]])).passed).toBe(false);
+
+  expect(checkProgrammingMission("brick", BRICK_SOLUTIONS.brick).passed).toBe(true);
+  const addScore = () => node("change_variable", "score", number("1"), null);
+  const hide = () => node("hide", null);
+  const scoreEq = (op: string, val: string) => compare(node("get_variable", "score"), op, number(val));
+  // A win check nested in brick1's touch check only fires when brick1 breaks last, so it does not meet the mission.
+  expect(checkProgrammingMission("brick", withObjectThreads("brick", "brick1", [[start(), forever([when(touch("ball"), [addScore(), hide(), when(scoreEq("EQUAL", "3"), [speak("You win!"), stopAll()])])])]])).passed).toBe(false);
+  expect(checkProgrammingMission("brick", withObjectThreads("brick", "brick1", [[start(), forever([when(touch("ball"), [addScore(), hide()])])]])).passed, "You win! still says 99").toBe(false);
+  const winAt = (target: string) => [[start(), forever([when(scoreEq("EQUAL", "3"), [node("show", null), node("stop_object", target, null)])])]];
+  // The teacher's own brick stops its line after hiding, and that must still pass.
+  expect(checkProgrammingMission("brick", withBrickObjects("brick", { brick1: [[start(), forever([when(touch("ball"), [addScore(), hide(), node("stop_object", "thisThread", null)])])]], youwin: winAt("all") })).passed, "brick stops its own line").toBe(true);
+  for (const target of ["thisOnly", "thisThread", "otherThread", "other_objects"]) {
+    expect(checkProgrammingMission("ball", withObjectThreads("ball", "ball", [[start(), forever([forward(number("3")), node("bounce_wall", null), when(touch("paddle"), [turn(node("angle", "90"))]), when(touch("wall_down"), [node("stop_object", target, null)])])]])).passed, target).toBe(false);
+    expect(checkProgrammingMission("brick", withBrickObjects("brick", { brick1: [[start(), forever([when(touch("ball"), [addScore(), hide()])])]], youwin: winAt(target) })).passed, target).toBe(false);
+  }
+  expect(checkProgrammingMission("ball", withObjectThreads("ball", "ball", [[start(), forever([forward(number("3")), node("bounce_wall", null), when(touch("paddle"), [turn(node("angle", "90"))]), when(touch("wall_down"), [node("stop_repeat", null)])])]])).passed, "stop_repeat").toBe(false);
+  expect(checkProgrammingMission("brick", withObjectThreads("brick", "brick1", [[start(), forever([when(touch("ball"), [addScore()]), when(scoreEq("EQUAL", "3"), [speak("성공!"), stopAll()])])]])).passed).toBe(false);
+  expect(checkProgrammingMission("brick", withObjectThreads("brick", "brick1", [[start(), forever([when(touch("ball"), [addScore(), hide()]), when(scoreEq("GREATER", "3"), [speak("성공!"), stopAll()])])]])).passed).toBe(false);
+  expect(checkProgrammingMission("brick", withObjectThreads("brick", "brick1", [[start(), forever([when(touch("ball"), [addScore(), hide()]), when(scoreEq("EQUAL", "1"), [speak("성공!"), stopAll()])])]])).passed).toBe(false);
+
+  expect(checkProgrammingMission("brick-bounce", BRICK_SOLUTIONS["brick-bounce"]).passed).toBe(true);
+  const onlyTwoBricks = [[start(), forever([forward(number("10")), node("bounce_wall", null), when(touch("paddle"), [turn(node("angle", "90"))]), when(touch("wall_down"), [stopAll()]), when(touch("brick1"), [turn(node("angle", "180"))]), when(touch("brick2"), [turn(node("angle", "180"))])])]];
+  expect(checkProgrammingMission("brick-bounce", withObjectThreads("brick-bounce", "ball", onlyTwoBricks)).passed).toBe(false);
 });

@@ -1,0 +1,12 @@
+{
+  "archivedAt": "2026-10-24 Asia/Seoul",
+  "sourceCommit": "ccb7e6c20cbd48b5e15fbec0fab683b1ca312000",
+  "files": [
+    {
+      "source": "docs/plans/color-refresh.md",
+      "archived": "color-refresh.md",
+      "bytes": 7869,
+      "sha256": "f7cbbc718c7993c14a93681a1bc66fd51e6289e0e2c5193afaa9a6e7cb73e1b9"
+    }
+  ]
+}

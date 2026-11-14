@@ -1,6 +1,6 @@
 # Firebase·Vercel 운영 설정과 배포
 
-갱신: 2026-10-21(Asia/Seoul). 운영 Firebase·Vercel의 설정·배포·복구 절차입니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다. 지금 설정이 어떤 상태인지는 끝의 [운영 환경 현황](#운영-환경-현황)에 모읍니다.
+갱신: 2026-11-09(Asia/Seoul). 운영 Firebase·Vercel의 설정·배포·복구 절차입니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다. 지금 설정이 어떤 상태인지는 끝의 [운영 환경 현황](#운영-환경-현황)에 모읍니다.
 
 ## 연결 기준
 
@@ -50,7 +50,7 @@ Node 서버 함수는 `vercel.json`의 `regions: ["icn1"]`로 서울에 배치�
 
 운영 주소는 [CS Class](https://cs-class-donghyunt.vercel.app)이며, 이 도메인이 Firebase Authentication 허용 목록에 있어야 합니다. Vercel `cs-class`에는 위 표의 Firebase 웹 설정 3개, 관리자 JSON, 교사 허용 목록, 초기·초기화 비밀번호 총 7개를 **Production 전용 Secret**으로 등록합니다. 일반 Preview에는 운영 인증정보를 넣지 않습니다.
 
-운영 도메인은 Vercel 프로젝트의 Production에 `cs-class-donghyunt.vercel.app`을 연결하고, 이전 `cs-class-sigma.vercel.app`은 해당 주소로 307 이동하도록 유지합니다. 공유 링크와 로그인 확인에는 운영 주소를 사용합니다. Vercel 도메인 연결과 Firebase Authentication의 승인 도메인은 별도 설정입니다. 다른 주소에서 Google 로그인이 실패하면 최종 접속 도메인과 Firebase의 도메인 오류를 먼저 확인하며, 임의의 배포·Preview 주소를 승인 목록에 추가해 해결하지 않습니다. 설정 변경 뒤에는 이전 주소의 경로 유지와 실제 Google 로그인·세션 생성을 구분해 검증합니다.
+운영 도메인은 Vercel 프로젝트의 Production에 `cs-class-donghyunt.vercel.app`을 연결하고, 이전 `cs-class-sigma.vercel.app`은 [엔트리 작업실 주소](#엔트리-작업실-주소)로 쓰며, 도메인 이동 대신 앱이 `/entryjs/` 밖의 경로를 운영 주소로 307 이동시킵니다. 공유 링크와 로그인 확인에는 운영 주소를 사용합니다. Vercel 도메인 연결과 Firebase Authentication의 승인 도메인은 별도 설정입니다. 다른 주소에서 Google 로그인이 실패하면 최종 접속 도메인과 Firebase의 도메인 오류를 먼저 확인하며, 임의의 배포·Preview 주소를 승인 목록에 추가해 해결하지 않습니다. 설정 변경 뒤에는 이전 주소의 경로 유지와 실제 Google 로그인·세션 생성을 구분해 검증합니다.
 
 Preview와 Production 양쪽에 일반 설정 `NODE_OPTIONS=--experimental-require-module`을 등록해야 합니다. Firebase Admin 14의 `jwks-rsa`가 ESM 전용 `jose`를 불러오는데, Vercel은 이 Node 기능을 기본으로 끕니다. 설정 없이 빌드와 로컬 검사가 통과해도 배포 API 시작 시 `ERR_REQUIRE_ESM`으로 실패합니다. [Vercel 공식 실행 설정](https://vercel.com/docs/functions/runtimes/node-js/advanced-node-configuration#experimental-nodejs-require-of-es-module)을 적용하며, 의존성을 임의로 낮추지 않습니다.
 
@@ -60,13 +60,13 @@ Preview와 Production 양쪽에 일반 설정 `NODE_OPTIONS=--experimental-requi
 
 main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Deployment Checks에 GitHub `app` 검사를 Production 조건으로 연결하며, 성공 전에는 새 배포를 운영 도메인에 연결하지 않습니다. 실패·취소·대기는 기존 운영 버전을 유지합니다. 불안정한 검사 때문에 `app`이 실패하면 Production 배포가 `failure`로 표시되며, 실패한 단계만 재실행(`gh run rerun <run-id> --failed`)해 성공하면 같은 SHA가 운영에 반영됩니다. 이 설정은 Vercel 대시보드에서만 바꿀 수 있어 코드나 문서만으로는 현재 상태를 알 수 없습니다. 빌드 READY와 운영 별칭 연결을 구분합니다. 게이트의 연결 상태는 [운영 환경 현황](#운영-환경-현황)에 두며, 게이트를 추가·제거하면 같은 작업에서 이 절과 현황 표를 함께 고칩니다.
 
-자동 `app` 범위와 전체 E2E 실행 조건은 [검증](DEVELOPMENT.md#검증)을 따르며, 배포 검사 통과를 전체 E2E 통과로 기록하지 않습니다. 자동 `app`은 수 분 단위로 끝나는 선별/스모크 범위이며 실제 시간은 실행별 기록을 따릅니다.
+자동 `app` 범위와 전체 E2E 실행 조건은 [검증](DEVELOPMENT.md#검증)을 따르며, 배포 검사 통과를 전체 E2E 통과로 기록하지 않습니다. 실제 검사한 코드 지문이 같은 성공 PR 실행을 재사용하는 `verified`도 성공한 `app`이므로 게이트를 통과합니다. 재사용하는 검사와 기록 조건은 개발 안내가 단일 기준이며 Vercel Production 빌드는 별도로 실행합니다.
 
 게이트와 workflow는 `app`이라는 검사 이름으로 맺어져 있어 아래를 함께 지킵니다.
 
 - `.github/workflows/verify.yml`의 job ID `app`을 바꾸거나 지우기 전에 Vercel의 Deployment Checks를 먼저 새 이름으로 바꿉니다. 이름이 어긋나면 새 배포가 운영에 연결되지 않고 대기합니다.
 - 커밋 메시지에 `[skip ci]`를 쓰지 않습니다. 앱 변경 커밋에서 `app` 검사가 만들어지지 않아 같은 이유로 대기합니다. 문서만 바꾼 커밋은 Vercel이 빌드를 생략(CANCELED)하므로 게이트와 무관하며 `app`도 문서 모드로 짧게 끝나, `[skip ci]`로 얻는 것이 없습니다.
-- 전체 E2E 수동 실행은 같은 SHA에 별도 `app` 실행을 만들어 배포 대기를 늘릴 수 있습니다(미확인). [검증](DEVELOPMENT.md#검증)대로 병합 전 PR 브랜치에서 실행하고, `main`에서 돌려야 하면 운영 반영을 확인한 뒤 실행합니다.
+- 전체 E2E 수동 실행은 같은 SHA에 별도 `app` 실행을 만들어 배포 대기를 늘릴 수 있습니다(미확인). 언제 어디서 돌리는지는 [검증](DEVELOPMENT.md#검증)을 따릅니다.
 
 문서 전용 변경은 `vercel.json`의 Ignored Build Step으로 앱 빌드를 생략합니다. `VERCEL_GIT_PREVIOUS_SHA`(같은 프로젝트·브랜치의 마지막 성공 배포)부터 비교하며 기준 없음·이력 부족·판정 실패는 빌드를 진행합니다. Vercel은 판정 전에 제외 파일을 지우므로 `.vercelignore`에서 Git commit 메타데이터는 남기고 인증 config·hooks·logs는 제외합니다. 생략은 CANCELED로 표시되고 배포 한도에 포함될 수 있습니다. 문서 push 뒤 main과 운영 SHA가 달라도 정상입니다.
 
@@ -74,7 +74,7 @@ main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Depl
 - **PR 경로:** SHA·운영 별칭·익명 API·로그인 화면을 확인합니다. 게이트가 `app`을 기다렸는지는 GitHub Production 배포 상태의 `success` 시각이 `app` 성공 직후인지로 판단합니다(배포 ID는 `gh api 'repos/DonghyunT/cs-class/deployments?sha=<SHA>&environment=Production'`로 찾고, 상태는 `gh api repos/DonghyunT/cs-class/deployments/<ID>/statuses`로 봅니다). Vercel 빌드 READY는 `app` 성공보다 먼저 올 수 있으므로 판단 근거로 쓰지 않습니다.
 - **직접 push 경로:** 게이트(`app` 성공 전 운영 미연결)에 맡기고, 이상이 있을 때만 확인합니다.
 - READY·익명 응답만으로 실제 계정 로그인·저장/재접속 성공을 주장하지 않습니다. CI와 Vercel의 검사 SHA가 같은지 확인하며 Force Promote는 기본 절차로 사용하지 않습니다.
-- 게이트를 우회하는 수동 Promote나 검사 제거는 사용자의 명시 요청이 있을 때만 하고, 우회한 릴리스는 `app` 검사 없이 공개했다고 HANDOFF에 기록합니다. HANDOFF에는 이처럼 이상·우회·복구가 있을 때만 배포 세부를 남깁니다.
+- 게이트를 우회하는 수동 Promote나 검사 제거는 사용자의 명시 요청이 있을 때만 하고, 우회한 릴리스는 `app` 검사 없이 공개했다고 HANDOFF에 기록합니다.
 - 오류 복구는 확인된 이전 운영 배포로 되돌리고, 재발 방지를 코드에 반영해 검사 후 공개합니다. 검사 명령은 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따릅니다.
 
 ### 수동 Preview
@@ -83,7 +83,7 @@ Git 자동 배포는 `main`만 허용하므로 작업 브랜치 push는 Preview�
 
 Preview에는 운영 Firebase 비밀정보·학생 자료를 복사하지 않고 호스팅 게스트·에뮬레이터도 켜지 않습니다. 온라인 화면 확인과 로그인·저장 검증을 구분하며 별도 인증용 Preview 환경은 만들지 않습니다. main 빌드의 CI 대기 중 배포별 주소는 **Production 설정**일 수 있으므로 Preview와 혼동하지 않고 실제 학생 자료를 변경하지 않습니다. 아래 접근 보호를 유지하며, 대상 SHA·주소·환경·검증 한계는 요청한 사용자에게 보고합니다.
 
-Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 적용되는 주소에서는 앱 API에 도달하기 전에 Vercel 인증 화면으로 이동할 수 있습니다. 프로젝트 도메인·Preview·배포별 주소의 적용 범위를 구분하며, 이전 배포 주소에서 관찰한 302를 모든 운영 도메인의 현재 동작으로 일반화하지 않습니다. 학생 공개 배포 때는 이 보호의 실제 적용 범위와 학생 계정 등록을 함께 결정합니다.
+Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 적용되는 주소에서는 앱 API에 도달하기 전에 Vercel 인증 화면으로 이동할 수 있습니다. 프로젝트 도메인·Preview·배포별 주소의 적용 범위를 구분하며, 이전 배포 주소에서 관찰한 302를 모든 운영 도메인의 현재 동작으로 일반화하지 않습니다. 실제 학생이 쓰는 운영 도메인의 보호 적용 범위는 확인하면 운영 환경 현황에 확인일과 함께 적습니다.
 
 ### 운영 오류 조사(읽기 전용)
 
@@ -93,21 +93,40 @@ Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 �
 
 `vercel.json`의 `/api/cron/timetable`은 UTC 10시, 한국 저녁 7시에 하루 한 번 실행하도록 설정합니다. [Vercel 최신 안내](https://vercel.com/docs/cron-jobs/usage-and-pricing)에 따라 Hobby에서는 19:00~19:59에 실행될 수 있고 Cron도 일반 함수 사용량에 포함됩니다. 자동 실행은 Production 배포에서만 활성화됩니다. 대상은 위 `cs-class` 프로젝트이며 `CRON_SECRET`을 Production 서버 전용 비밀로 등록하고 해당 변경을 배포해야 합니다. Preview에는 운영 시간표 쓰기를 허용하지 않습니다. 환경변수 값·Authorization 헤더를 채팅이나 로그로 공유하지 않습니다.
 
-공개 조회는 `http://comci.net:4082/st`의 현재 요청 규칙과 학교 검색에서 금옥중학교·서울·코드 `74022` 일치를 확인합니다. 공식 API 계약은 아니므로 구조가 바뀌면 마지막 정상본을 유지하고 오류를 표시합니다. 현재 두 주 공개 기준 갱신당 외부 GET 4건(페이지·학교 확인·각 주)이며 최대 네 주까지 6건입니다. 학교 단위 lease·일별 성공 기록으로 중복 예약 실행을 막습니다. 최근 5분 안에 정상 갱신한 자료가 있으면 예약 호출은 외부 재조회 없이 완료합니다. 별도 자동 재시도는 없으며 실패 뒤 교사 갱신 버튼을 사용할 수 있습니다.
+공개 조회는 `http://comci.net:4082/st`의 현재 요청 규칙과 학교 검색에서 코드에 설정한 학교명·지역·학교코드가 모두 일치하는지 확인합니다. 공식 API 계약은 아니므로 구조가 바뀌면 마지막 정상본을 유지하고 오류를 표시합니다. 현재 두 주 공개 기준 갱신당 외부 GET 4건(페이지·학교 확인·각 주)이며 최대 네 주까지 6건입니다. 학교 단위 lease·일별 성공 기록으로 중복 예약 실행을 막습니다. 최근 5분 안에 정상 갱신한 자료가 있으면 예약 호출은 외부 재조회 없이 완료합니다. 별도 자동 재시도는 없으며 실패 뒤 교사 갱신 버튼을 사용할 수 있습니다.
 
-배포 후 Cron 인증 없는 요청의 401, 담당 교사의 첫 수동 갱신, 학생 본인 반 조회·직접 일정 보존을 확인합니다. Vercel Cron 설정·실제 예약 실행 로그와 `csTimetables/74022.checkedAt`을 확인한 뒤에만 운영 일일 갱신이 검증됐다고 기록합니다. 로컬 `next start`의 호출 검증을 실제 예약 실행으로 표현하지 않습니다.
+배포 후 Cron 인증 없는 요청의 401, 담당 교사의 첫 수동 갱신, 학생 본인 반 조회·직접 일정 보존을 확인합니다. Vercel Cron 설정·실제 예약 실행 로그와 `csTimetables/<학교코드>.checkedAt`을 확인한 뒤에만 운영 일일 갱신이 검증됐다고 기록합니다. 로컬 `next start`의 호출 검증을 실제 예약 실행으로 표현하지 않습니다.
+
+### 엔트리 작업실 주소
+<a id="엔트리-작업실-주소"></a>
+
+운영 수업 iframe은 작업실을 같은 Vercel 프로젝트의 두 번째 운영 도메인 `cs-class-sigma.vercel.app`(`scripts/entryjs-cdn.json`의 `workspaceHost`)에서 엽니다. 다른 사이트라서 `allow-same-origin`을 줘도 앱의 쿠키에 닿지 못하고, 그 덕분에 크롬이 작업실 파일을 캐시해 학생마다 수업 중 처음 한 번만 받습니다(이유와 구조는 [개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)). 같은 배포를 내주므로 따로 올리거나 버전을 맞출 일이 없습니다.
+
+1. **도메인 설정(사용자, 병합 전):** Vercel `cs-class` → Settings → Domains에서 `cs-class-sigma.vercel.app`의 Edit를 눌러 `cs-class-donghyunt.vercel.app`으로의 Redirect를 없애고(No redirect) Production에 연결된 채로 저장합니다. 이 사이 잠깐은 그 주소에서 앱 전체가 열리므로 수업이 없을 때 바꾸고 곧바로 병합합니다.
+2. **확인:** 병합 뒤 공개 빌드 로그의 `Entry vendor files:` 줄이 `workspace host cs-class-sigma.vercel.app`인지 봅니다(`answered 307`이면 1번이 안 된 것으로, 작업실은 앱 사본으로 열림). `https://cs-class-sigma.vercel.app/login`이 운영 주소로 307 이동하고(`/_next/`의 공개 빌드 파일은 Next.js가 리디렉트에서 빼므로 그대로 응답), `/entryjs/workspace.html`은 200에 `Content-Security-Policy`가 없는지, 운영 주소의 같은 파일에는 `sandbox allow-scripts`가 있는지 봅니다. 수업에서 Observability의 경로별 요청으로 `/entryjs/vendor/`가 학생 수 정도로 줄었는지 확인합니다.
+3. **되돌리기:** `workspaceHost`를 비워 병합·배포하면 앱 사본으로 돌아갑니다(이미 열린 탭은 새로고침). 도메인 Redirect를 다시 켜는 것은 그 배포가 공개된 뒤에만 합니다. 먼저 켜면 작업실이 앱 사본으로 넘어가 출처가 맞지 않아 열리지 않습니다.
+
+### 엔트리 라이브러리 CDN
+<a id="엔트리-라이브러리-cdn"></a>
+
+11/3부터 꺼 둠(`base` 비움): 한국 접속이 Cloudflare LA로 가 수업 중 작업실이 20초 안에 열리지 않았습니다([개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)). 아래는 다시 켤 때의 절차입니다.
+
+엔트리 작업실 전체(라이브러리 `public/entryjs/vendor/`, 브리지 `workspace.html`·`workspace.js`·`workspace.css`, 그림 `sprites/` 등 `/entryjs/`의 나머지)는 Cloudflare Workers 정적 파일 `cs-class-entry`([`cloudflare/entry-cdn/wrangler.jsonc`](../cloudflare/entry-cdn/wrangler.jsonc))에서 열어 Vercel CDN 요청을 줄입니다. 서버 코드가 없는 정적 파일만이라 [무료 플랜에서도 요청이 무료·무제한](https://developers.cloudflare.com/workers/platform/pricing/)이고, [한도](https://developers.cloudflare.com/workers/platform/limits/#static-assets)(한 버전 20,000개·파일당 25MiB·`_headers` 규칙 100개) 안입니다(11/2 묶음 1,853개, 넘으면 묶음 단계가 멈춤). 주소 전환·CDN 구조·교체 순서는 [개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)에 있습니다.
+
+1. **올리기(사용자 승인 필요):** `npx wrangler login`(사용자 로그인) 뒤 `npm run deploy:entry-cdn`(Windows PowerShell이 막으면 `npx.cmd`·`npm.cmd`). 묶음 단계가 `git fetch origin main`으로 운영 브리지 이력을 받고, 지금 체크아웃이 `origin/main`을 포함하며 `public/entryjs/`에 커밋하지 않은 변경이 없는지 확인한 뒤(아니면 멈춤) `scratch/entry-cdn/`에 라이브러리, 브리지(지금 파일 + `origin/main`의 최근 20개), `/entryjs/` 사본과 그 지문(`/entryjs/cdn-version.txt`), `_headers`(CORS `*`, `nosniff`, `noindex`, 지문 경로는 1년 `immutable`, `/entryjs/`는 하루)를 만들어 올립니다. 올릴 때마다 그 묶음만 남으므로 이 명령으로만 올립니다. 브리지·그림이 바뀐 PR은 CI 통과 뒤 PR 브랜치에서 올리고 병합하며, 라이브러리를 바꿀 때는 [개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)의 순서(병합 → 올리기 → 재배포)를 지킵니다. 주소는 `https://cs-class-entry.cs-class.workers.dev`이고 버전별 미리보기 주소는 끄고(`preview_urls: false`), `.html`을 확장자 없는 주소로 돌리지 않습니다(`html_handling: none`).
+2. **확인:** 묶음 단계가 출력한 브리지 주소의 `version.txt`가 `<브리지 지문> <라이브러리 지문>`이고, `workspace.html`이 리디렉트 없이 200, `/entryjs/name-dog.svg`에 `Access-Control-Allow-Origin: *`와 `Cache-Control: public, max-age=86400` 하나만 있는지 봅니다. 학교 PC에서도 같은 주소가 열려야 합니다(10/30 확인).
+3. **켜기:** `scripts/entryjs-cdn.json`의 `base`에 `https://` 주소(경로 없이)를 넣어 PR로 병합합니다. Vercel 설정은 바꾸지 않습니다. 공개 뒤 빌드 로그의 `Entry vendor files:` 줄에 브리지 주소(`/v/…`)가 있는지, Vercel Observability의 수업 시간 경로별 요청에서 `/entryjs/`가 사라졌는지 확인합니다.
+4. **되돌리기:** `base`를 비워 병합·배포하면 Vercel 파일로 돌아갑니다. 이미 열린 탭은 새로고침해야 바뀝니다. CDN 장애 때 자동으로 돌아가지 않습니다. Vercel 롤백은 그 배포의 브리지가 최근 20개 안이면 그대로 열리고, 라이브러리 지문이 다른 옛 배포는 CDN에 없어 작업실이 열리지 않으므로 그때는 `base`를 비운 배포로 되돌립니다.
 
 ### 복습 AI 서버 설정
 
-cs-class Vercel 프로젝트(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Production 서버 설정에 `UPSTAGE_API_KEY`와 임의 생성한 32자 이상 `CS_AI_COMMAND_SECRET`을 Sensitive로 등록합니다. 키를 채팅·Git·로그·브라우저 `NEXT_PUBLIC_*`에 넣지 않습니다. 기존 Algorithm Studio의 Sensitive 키는 재조회/이식할 수 없는 경우 직접 등록이 필요합니다. Preview에 운영 인증값이나 AI 키를 자동 복사하지 않습니다.
+cs-class Vercel 프로젝트(`prj_RUUtcTMukVY9kjudgDr6VA89KKxP`)의 Production 서버 설정에 `UPSTAGE_API_KEY`와 임의 생성한 32자 이상 `CS_AI_COMMAND_SECRET`을 Sensitive로 등록합니다. 키를 채팅·Git·로그·명령 인자·문서·브라우저 `NEXT_PUBLIC_*`에 넣지 않습니다. Preview에 운영 인증값을, Preview·Development에 AI 키를 복사하지 않습니다.
 
-공개 전 실제 제공자 확인에는 로컬 PC의 Git 제외 `.env.local` 또는 사용자가 지정한 비공개 로컬 설정 경로도 필요합니다. Vercel에 Sensitive로 등록한 키는 다시 읽어 로컬 검사에 가져올 수 있다고 가정하지 않습니다. 실제 Solar 호출 검사의 원칙은 [개발 안내](DEVELOPMENT.md#알고리즘-복습-수업)를 따릅니다.
+공개 전 실제 제공자 확인에는 로컬 PC의 Git 제외 `.env.local`(파일 접근 권한 제한) 또는 사용자가 지정한 비공개 로컬 설정 경로도 필요합니다. Vercel에 Sensitive로 등록한 키는 다시 읽어 로컬 검사에 가져올 수 있다고 가정하지 않습니다. 실제 Solar 호출은 [AGENTS의 먼저 묻는 일](../AGENTS.md#검증-및-배포-규칙)을 따릅니다.
 
 서버는 [Upstage 공식 Chat API](https://console.upstage.ai/api/chat)의 `solar-pro4`와 구조화 JSON 출력을 사용합니다. 출력 토큰·호출 한도와 비보관 정책은 [PRD §4.3](PRD.md#43-선택-복습-수업-공통-정책)을 따릅니다. 시간 제한은 제공자 25초·전체 45초·브라우저 50초이며, 응답 잘림·형식 오류를 성공으로 처리하지 않습니다. `CS_AI_PAUSED=1`로 새 AI 요청을 중지할 수 있습니다.
 
 공개 전 AI 캐시/요청 장부에만 `expiresAt` TTL을 활성화합니다. 기존 인덱스 설정을 읽어 보존하고 `firestore.indexes.json`의 두 컬렉션을 확인한 뒤 승인된 프로젝트에 `npx firebase deploy --only firestore:indexes --project cs-class-f74c4`로 적용합니다. [공식 TTL/인덱스 정의](https://firebase.google.com/docs/reference/firestore/indexes)를 따르며 Firestore 비용·활성 상태를 확인합니다. 학생 작품/제출 컬렉션에는 적용하지 않습니다. 적용 상태는 [운영 환경 현황](#운영-환경-현황)을 봅니다.
-
-로컬 `.env.local`은 Git 제외이며 파일 접근 권한을 제한합니다. AI 키는 Preview나 Development에 복사하지 않으며, 원문을 로그·명령 인자·문서에 노출하지 않습니다.
 
 TTL은 만료 직후 즉시 삭제를 보장하지 않으며, 실제 정리·청구와 월 AI 예산은 운영 집계로 확인합니다.
 
@@ -117,15 +136,15 @@ TTL은 만료 직후 즉시 삭제를 보장하지 않으며, 실제 정리·청
 
 실학생 계정은 [명부 절차](DEVELOPMENT.md#실학생-명부-준비와-반별-발급)의 전용 스크립트로만 등록합니다. Auth UID `student-학번`과 서버 `csAccounts`를 함께 만듭니다. 이름·연락처는 현재 모델에 필요하지 않습니다. 강사 계정은 별도 발급합니다.
 
-`check-cloud-flow.mjs`는 로컬 3001번의 공개 설정만 읽으며 서버 신원을 입증하지 않습니다. `--apply`는 네트워크·관리자 초기화 전에 거부합니다. 이 도구의 운영 합성 계정 생성·비밀번호 전달 검사는 폐기했고 자동 검증은 로컬 demo 에뮬레이터에서만 수행합니다. 운영 확인은 배포 SHA·익명 API·실제 승인 계정의 사용자 흐름을 구분합니다.
+`check-cloud-flow.mjs`는 로컬 3001번의 공개 설정만 읽으며 서버 신원을 입증하지 않습니다. `--apply`는 네트워크·관리자 초기화 전에 거부하므로 운영 합성 계정을 만들지 않으며, 자동 검증은 로컬 demo 에뮬레이터에서만 합니다. 운영 확인은 배포 SHA·익명 API·실제 승인 계정의 사용자 흐름을 구분합니다.
 
 ### 승인된 운영 테스트 계정
 
-운영의 합성 계정은 사용자 승인으로 만든 체험 계정뿐입니다. 구성과 실학생 정책의 예외는 [PRD §6.3](PRD.md#운영-테스트-계정), 발급 상태는 [운영 환경 현황](#운영-환경-현황), 당시 발급·검증 기록은 [보관함](archive/README.md)의 인계 원문을 봅니다. 기존 demo 시드와 폐기된 `check-cloud-flow --apply`는 변경하지 않으며 반복 검사나 다른 운영 계정 생성으로 확대하지 않습니다.
+운영의 합성 계정은 사용자 승인으로 만든 체험 계정뿐입니다. 구성과 실학생 정책의 예외는 [PRD §6.3](PRD.md#운영-테스트-계정), 발급 상태는 [운영 환경 현황](#운영-환경-현황), 당시 발급·검증 기록은 [보관함](archive/README.md)의 인계 원문을 봅니다. 반복 검사나 다른 운영 계정 생성으로 확대하지 않습니다.
 
-체험 학생 계정은 [학생 입장](https://cs-class-donghyunt.vercel.app/login/student)에서 전달받은 해당 반의 학번과 공통 비밀번호를 입력합니다(실제 학생은 [명부 절차](DEVELOPMENT.md#실학생-명부-준비와-반별-발급)의 학생별 임시값). 교사 비밀번호 로그인은 실제 강사 계정 `instructor` 하나뿐입니다. 그 비밀번호를 바꾸면 체험용으로는 쓸 수 없습니다. 이 테스트 계정은 비밀번호 변경 없이 대시보드로 이동합니다. 비밀번호 원문과 반별 안내는 발급 PC의 Git 제외 `scratch/private/배포-테스트-로그인.txt`에만 전달하며 저장소·일반 로그에는 넣지 않습니다. 다른 PC에서는 본인이 안전한 경로로 안내 파일을 별도로 옮깁니다.
+체험 학생 계정은 [학생 입장](https://cs-class-donghyunt.vercel.app/login/student)에서 전달받은 해당 반의 학번과 공통 비밀번호를 입력합니다(실제 학생은 [명부 절차](DEVELOPMENT.md#실학생-명부-준비와-반별-발급)의 학생별 임시값 또는 반 공통 첫 입장 코드). 교사 비밀번호 로그인은 실제 강사 계정 `instructor` 하나뿐입니다. 그 비밀번호를 바꾸면 체험용으로는 쓸 수 없습니다. 체험 학생 계정은 비밀번호 변경 없이 대시보드로 이동합니다. 비밀번호 원문과 반별 안내는 발급 PC의 Git 제외 `scratch/private/배포-테스트-로그인.txt`에만 전달하며 저장소·일반 로그에는 넣지 않습니다. 다른 PC에서는 본인이 안전한 경로로 안내 파일을 별도로 옮깁니다.
 
-해당 반을 체험하려면 교사가 `수업 관리`에서 반을 선택하고 수업을 열어야 합니다. 학생 기록과 수업 설정은 운영 DB에 저장되므로 체험 뒤 실제 학생 기록과 혼동하지 않도록 합성 학번을 사용합니다. 체험 학생 계정(각 반 99번)은 교사 화면의 학생 목록·반 통계에 나오지 않고 아래 `명단에서 뺀 계정` 묶음에 `체험 계정 · 로그인 가능`으로만 보이며, 교사 화면에서 초기화·상세 보기를 할 수 없습니다.
+해당 반을 체험하려면 교사가 `수업 관리`에서 반을 선택하고 수업을 열어야 합니다. 학생 기록과 수업 설정은 운영 DB에 저장되므로 체험 뒤 실제 학생 기록과 혼동하지 않도록 합성 학번을 사용합니다. 체험 학생 계정(각 반 99번)의 교사 화면 표시는 [PRD §5.6](PRD.md#교사-대시보드의-1차-범위)을 따릅니다.
 
 ## 로컬 자동 검사
 
@@ -152,17 +171,16 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 ## 데이터 구조와 보안 경계
 <a id="데이터와-남은-한계"></a>
 
-실학생 Excel 변환·사전 충돌 확인·등록·반별 30분 발급·제한된 학습 백업의 실제 명령과 중단 처리는 [명부 운영 안내](DEVELOPMENT.md#실학생-명부-준비와-반별-발급)를 따릅니다. 사전 등록은 임시값 없이 준비하고 수업 직전 별도 발급합니다. 기존 계정·수업 설정·학습 기록을 승인 없이 일괄 변경하지 않습니다.
-
 - `csAccounts`: 역할·반·변경 필요 여부·세션 해시·무활동 시각. 평문 개인 비밀번호를 저장하지 않습니다. `disabled`만 있으면 교사가 명단에서 뺀 학생(로그인 막힘, 기록 유지)이고 `authBusy`와 함께면 등록 중단입니다. 명단 복귀는 문서를 직접 고치지 않고 교사 화면 `다시 넣기`로 합니다.
 - `csClasses`: 공개 수업·이번 수업·revision. 교사는 열린 수업을 닫을 수 있고, 닫아도 학생 작업은 지우지 않습니다([PRD §5.6](PRD.md#교사-대시보드의-1차-범위)).
 - `csWork`: 학생별 초안·풀이 결과·검증·최근 제출본·revision. 프로그래밍 수업의 초안은 `draft.programming`, 미션별 검증·제출은 `missions`에 함께 보존합니다. 완료는 서버가 판정합니다.
 - `csTodos/{uid}`: 본인 개인 할 일의 `revision`과 `items`(항목 ID·텍스트·완료 의도). 서버 세션 UID만 사용하고 교사도 다른 사용자의 목록을 조회하지 않습니다.
 - `csSchedules/{classId}`: 반 일정의 `revision`과 `items`(항목 ID·제목·한국 날짜·선택 수업 ID). 학생은 본인 반 조회만, 교사·강사는 담당 반 조회·수정만 허용합니다. 계정·반 권한·열린 수업을 같은 서버 트랜잭션에서 확인합니다.
-- `csTimetables/74022`: 정규화한 학교 정보 수업의 날짜·반·교시·시작 시각·변경 표시·원본 수정 시각·확인 시각과 비공개 갱신 lease/시도 시각/예약 성공 날짜. 서버 조회에서 반을 제한하고 lease 인증값은 응답하지 않습니다. 직접 일정과 저장소를 분리해 갱신 실패나 수업 교체가 수동 기록을 덮어쓰지 않습니다.
-- 데이터는 서버 API로만 접근하며 직접 Firestore 접근은 차단합니다. 쓰기는 Origin·세션 UID·revision을 검사합니다. 재시도·동시 변경의 제품 의미는 [PRD §3.2](PRD.md#작업-저장과-통신-비용), 일정 한도는 [PRD §5.3](PRD.md#작은-버전의-경계와-저장-동작)을 기준으로 합니다.
+- `csTimetables/<학교코드>`: 정규화한 학교 정보 수업의 날짜·반·교시·시작 시각·변경 표시·원본 수정 시각·확인 시각과 비공개 갱신 lease/시도 시각/예약 성공 날짜. 서버 조회에서 반을 제한하고 lease 인증값은 응답하지 않습니다. 직접 일정과 저장소를 분리해 갱신 실패나 수업 교체가 수동 기록을 덮어쓰지 않습니다.
+- 쓰기는 Origin·세션 UID·revision을 검사합니다. 재시도·동시 변경의 제품 의미는 [PRD §3.2](PRD.md#작업-저장과-통신-비용), 일정 한도는 [PRD §5.3](PRD.md#작은-버전의-경계와-저장-동작)을 기준으로 합니다.
 - `csFirstEntry/{classId}`: 반 공통 첫 입장 코드의 SHA-256 해시·만료 시각·연 교사 UID·틀린 코드 횟수. 코드 원문은 저장하지 않고, 닫거나 틀린 코드가 50번 쌓이면 문서를 지우며 만료된 문서는 다음에 열 때 덮어씁니다.
-- `csRateLimits`, `csGoogleExchanges`: 로그인 제한과 Google 로그인 토큰 재사용 방지. 로그인 제한은 출처·계정 단위 횟수만 저장합니다. 후속 운영에서 보관 기간·정리 작업을 마련합니다.
+- `csRateLimits`, `csGoogleExchanges`: 로그인 제한과 Google 로그인 토큰 재사용 방지. 로그인 제한은 출처·계정 단위 횟수만 저장합니다. 보관 기간·정리 작업은 아직 없습니다.
+- `csQuestions`(+`answers`)·`csCommunityLimits`: 우리 반 질문·답변과 계정별 분당 작성 횟수. `csHelpRequests`(+`ids`)·`csHelpSnapshots`·`csHelpLimits`: 손들기 요청·요청 당시 저장본·분당 횟수(손들기 중지 중에도 보존). `csAiUsage`·`csAiCache`·`csAiRequests`: 복습 AI 사용량과 `expiresAt` TTL이 걸린 캐시·요청 기록.
 - 무활동 만료·연장·동시 접속·저장 기록의 제품 정책은 [PRD의 로그인 정책](PRD.md#로그인-정책)에 모읍니다. 서버 세션은 계정의 세션 해시·활동 시각과 대조합니다.
 - 세션 쿠키는 HttpOnly·SameSite=Strict, 배포 환경 Secure이며 지속 만료일을 넣지 않습니다. 브라우저의 세션 복원 기능은 쿠키를 복구할 수 있어 창 닫기를 절대적인 로그아웃 보장으로 취급하지 않습니다. 공용 PC에서는 로그아웃을 사용합니다.
 - 미전송 초안과 강제 종료 후 복구 경계는 [PRD의 저장 정책](PRD.md#작업-저장과-통신-비용), 미해결 제품·운영 과제는 [HANDOFF](HANDOFF.md#남은-한계와-다음-결정)에 있습니다. EntryJS 실행·자산·검사는 [개발 안내](DEVELOPMENT.md#entryjs-실습)를 따릅니다.
@@ -179,15 +197,17 @@ Auth 비밀번호 변경 뒤 DB 확정이 실패하면 이전 접속을 살리�
 | 서버 함수 지역 | Vercel `cs-class` Production 배포가 `icn1`(서울) | 2026-10-18, #44 배포 정보 |
 | 운영 도메인 | `cs-class-donghyunt.vercel.app`, Firebase Authentication 허용 목록에 등록 | 2026-09-28 사용자 승인으로 등록 |
 | Production 환경변수 | Firebase 웹 설정 3개·관리자 JSON·교사 허용 목록·초기/초기화 비밀번호 7개(Production 전용 Secret), `CRON_SECRET`, `UPSTAGE_API_KEY`·`CS_AI_COMMAND_SECRET`(Production 전용 Sensitive) | 2026-10-13판 문서 기록 |
-| 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-19 `app` 실패가 Production을 막음을 확인, 2026-10-20 `d0dacec`까지 `app` 성공 3~4초 뒤 공개 |
+| 배포 게이트 | Deployment Checks에 GitHub `app`(Production) 연결. 2026-10-15 사용자가 다시 연결 | 2026-10-19 실패 차단 확인. 2026-11-07 `444850f`의 READY·운영 별칭 미연결 → `app` 성공 뒤 연결, `f7a214d`의 `verified` 성공·공개 확인. 2026-11-09 `bd547a2`는 `app`(19초)이 빌드 READY보다 먼저 끝난 뒤 8분간 `Waiting for checks`로 멈췄고, 사용자 승인으로 `gh run rerun` 하자 성공 3초 뒤 연결 |
 | 실행 설정 `NODE_OPTIONS` | Preview·Production에 `--experimental-require-module` | 2026-09-30 보관 인계 기록(재확인 안 함) |
-| Firestore 규칙 | 전체 거부(서버 전용), 운영 적용본 대조 미확인 | 확인 안 함 |
+| Firestore 규칙 | 전체 거부(서버 전용). 운영 적용본은 저장소 `firestore.rules`와 주석만 다름(주석은 9/28 `ba0dbc7` 판본) | 2026-11-05 사용자 승인으로 기본 DB 규칙을 읽어 대조 |
 | 배포 보존 기간 | Build and Deployment의 Deployment Retention Policy 네 항목 모두 1주. Hobby 롤백은 직전 Production까지만 되므로 늘리지 않음 | 2026-10-18 대시보드 확인(Deployment Storage 4.97/10 GB) |
 | 시간표 Cron | Production 일일 예약 Enabled | 2026-10-13판 문서 기록 |
 | 결제·AI TTL | 결제 계정 연결, `csAiCache`·`csAiRequests`의 `expiresAt` TTL 인덱스 적용 | 2026-10-13판 문서 기록 |
 | 질문 인덱스 | `csQuestions`(`classId ASC / createdAt DESC`) READY | [10/10 보관 인계 원문](archive/cs-class/2026-10-10-before-consulting-release/HANDOFF.md) |
 | 손들기 인덱스 | `csHelpRequests` 복합 인덱스의 운영 배포 여부 미확인. 손들기 중지 중이라 앱 배포의 선행 조건은 아님 | 2026-10-15 |
 | 인증 제공자 | 이메일/비밀번호·Google 활성. 네이티브 비밀번호 정책의 강제 여부는 미확인(점진 검토 대상) | 2026-10-13판 문서 기록 |
-| 운영 계정 | 승인된 체험 계정 12개(2026-10-03). 실제 학생 계정 297개(2-1~2-11반 각 1~27번, 2026학년도 명부)를 사전 등록했고 임시 비밀번호는 아직 발급하지 않음. 실제 인원이 27명보다 적은 반은 없는 번호의 계정도 있음 | 2026-10-19 사용자 승인으로 `student-roster.mjs` register·backup |
-| 강사 계정 `instructor` | 담당 반 10·11반(체험용 1~11반에서 줄임). 비밀번호는 아직 체험용 공통 비밀번호이며 사용자가 Firebase 콘솔에서 바꿀 예정 | 2026-10-18 운영 DB 쓰기·확인 |
+| 운영 계정 | 승인된 체험 계정 12개(학생 11개 + 실제 강사용으로 넘긴 `instructor`, 2026-10-03). 실제 학생 계정(2026학년도 명부의 반별 번호 전체)을 사전 등록함. 2026-10-21 첫 실제 수업부터 반 공통 첫 입장 코드로 입장. 실제 인원이 명부 번호 범위보다 적은 반은 없는 번호의 계정도 있음 | 2026-10-19 사용자 승인으로 `student-roster.mjs` register·backup, 입장 방식은 2026-10-25 사용자 확인 |
+| 강사 계정 `instructor` | 담당 반 10·11반(체험용 1~11반에서 줄임). 비밀번호는 체험용 공통 비밀번호이며, 강사가 이미 쓰고 있어 바꾸지 않기로 함 | 2026-10-18 운영 DB 쓰기·확인, 비밀번호 유지는 2026-10-26 사용자 결정 |
+| 엔트리 작업실 주소 | `cs-class-sigma.vercel.app`(`workspaceHost`)에서 `allow-same-origin`으로 열고, 그 도메인의 `/entryjs/` 밖은 운영 주소로 307 | 11/3 Redirect 해제·#104 병합, 공개 후 확인 완료(수업 중 요청 수는 미확인) |
+| 엔트리 작업실 CDN | 11/3부터 꺼 둠(`base` 비움, 한국 접속이 LA로 감). Cloudflare Workers `cs-class-entry`(`cs-class-entry.cs-class.workers.dev`, `preview_urls` 끔, `html_handling: none`). 라이브러리 지문 `edd97a3a4026506f`, 브리지 `/v/71c457dc39088a7c-edd97a3a4026506f/`, 그림 사본 지문 `7a21ac07e493d6e8`(`.vercelignore` 제외 반영), 파일 1,853개. `scripts/entryjs-cdn.json`의 `base`로 운영 작업실에서 켬 | 라이브러리는 2026-10-30 사용자 승인으로 업로드·전 파일 대조·학교 PC 접속 확인. 작업실 전체는 2026-11-02 사용자 승인으로 #102 브랜치(`0e94772`)에서 업로드, 버전 파일·헤더·OPTIONS 405·브리지 파일 대조, 운영 빌드 판단(CDN 주소) 미리 확인. #102 공개 빌드는 사본 지문 불일치로 Vercel 파일을 썼고, #103 브랜치(`81ade55`)에서 다시 올린 뒤 공개 빌드(`ff5db4e`) 로그에 브리지 주소가 찍힘. 학교 PC에서 CDN 작업실 실행은 미확인 |
 | 로그인 제한 문서 | #44 배포(2026-10-18 00:52 KST) 이전의 만료된 기록(소금 없는 `credential:` 해시 포함) 19개를 삭제함. 남은 기록은 현재 방식뿐 | 2026-10-20 사용자 승인으로 삭제·재조회(이전 기록 0개) |

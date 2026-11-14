@@ -4,12 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Play, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ENTRY_PALETTE, TRUSTED_SPRITES } from "@/lib/classroom/entry-palette";
+import { ENTRY_WORKSPACE_SANDBOX, ENTRY_WORKSPACE_SRC, entryFrameOrigin } from "@/lib/classroom/entry-workspace-frame";
 import {
   entryBlockCategory,
   formatEntryNode,
+  functionNamesOf,
   missionById,
   parseProgrammingProject,
   programmingProjectLines,
+  variableNames,
   type EntryNode,
 } from "@/lib/classroom/programming-entry";
 import styles from "./teacher.module.css";
@@ -18,7 +21,8 @@ const CHANNEL = "cs-class-entryjs";
 const WAITING = " 키를 누르거나 무대·오브젝트를 클릭해 보세요. 다 해 봤으면 무대 아래 ‘정지하기’를 눌러 주세요.";
 // Entry's stop resets the stage, so drawing runs stay until the teacher stops them.
 const DRAWING = " 그린 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가요.";
-const withoutWaiting = (text: string) => [WAITING, DRAWING].reduce((rest, notice) => rest.endsWith(notice) ? rest.slice(0, -notice.length) : rest, text);
+const RESULT = " 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가요.";
+const withoutWaiting = (text: string) => [WAITING, DRAWING, RESULT].reduce((rest, notice) => rest.endsWith(notice) ? rest.slice(0, -notice.length) : rest, text);
 
 type EntryCategory = (typeof ENTRY_PALETTE)[number]["category"];
 
@@ -33,7 +37,7 @@ const CATEGORY_LABELS: Record<EntryCategory, string> = {
   variable: "자료",
 };
 
-function BlockTree({ nodes }: { nodes: EntryNode[] }) {
+function BlockTree({ nodes, names, functionNames }: { nodes: EntryNode[]; names: Readonly<Record<string, string>>; functionNames: Readonly<Record<string, string>> }) {
   if (!nodes.length) return <p className={styles.entryEmptyBranch}>비어 있음</p>;
   return (
     <ol className={styles.entryBlockList}>
@@ -46,18 +50,18 @@ function BlockTree({ nodes }: { nodes: EntryNode[] }) {
           <li key={index} className={styles.entryBlockItem}>
             <div className={styles.entryBlockPill} data-category={category}>
               <span className={styles.entryBlockBadge}>{CATEGORY_LABELS[category]}</span>
-              <span className={styles.entryBlockText}>{formatEntryNode(node)}</span>
+              <span className={styles.entryBlockText}>{formatEntryNode(node, names, functionNames)}</span>
             </div>
             {branches.length > 0 && (
               <div className={styles.entryBranches} data-category={category}>
                 <div className={styles.entryBranch}>
-                  <BlockTree nodes={branches[0] ?? []} />
+                  <BlockTree nodes={branches[0] ?? []} names={names} functionNames={functionNames} />
                 </div>
                 {branches.length > 1 && (
                   <>
                     <div className={styles.entryElseDivider}>아니면</div>
                     <div className={styles.entryBranch}>
-                      <BlockTree nodes={branches[1] ?? []} />
+                      <BlockTree nodes={branches[1] ?? []} names={names} functionNames={functionNames} />
                     </div>
                   </>
                 )}
@@ -165,7 +169,7 @@ export function EntryProjectPreview({
   useEffect(() => {
     if (!workspaceOpen) return;
     function receive(event: MessageEvent) {
-      if (event.source !== frameRef.current?.contentWindow || event.origin !== "null" || event.data?.channel !== CHANNEL) return;
+      if (!frameRef.current || event.source !== frameRef.current.contentWindow || event.origin !== entryFrameOrigin(frameRef.current) || event.data?.channel !== CHANNEL) return;
       const message = event.data;
       if (message.type === "ready") setBootReady(true);
       else if (message.type === "loaded") setPhase("ready");
@@ -204,7 +208,7 @@ export function EntryProjectPreview({
           `${finish} 현재 위치 X ${Math.round(message.x * 100) / 100} · Y ${Math.round(message.y * 100) / 100} · 마지막 말: ${message.speech.slice(0, 80) || "아직 없음"}`,
         );
       } else if (message.type === "waiting") {
-        setResult((text) => `${withoutWaiting(text)}${message.drawing === true ? DRAWING : WAITING}`);
+        setResult((text) => `${withoutWaiting(text)}${message.result === true ? RESULT : message.drawing === true ? DRAWING : WAITING}`);
       } else if (message.type === "waiting-ended") {
         setResult((text) => `${withoutWaiting(text)} ${message.reason === "timeout" ? "15초가 지나 실행을 멈췄어요." : "실행을 멈췄어요."}`);
       } else if (message.type === "error") {
@@ -343,9 +347,10 @@ export function EntryProjectPreview({
             <iframe
               key={attempt}
               ref={frameRef}
-              src={`/entryjs/workspace.html?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${parsed.free ? "&free=1" : ""}`}
+              src={`${ENTRY_WORKSPACE_SRC}?exercise=programming&mission=${encodeURIComponent(missionId)}${missionById(missionId)?.variables ? "&vars=1" : ""}${missionById(missionId)?.keyEvents ? "&keys=1" : ""}${missionById(missionId)?.functions ? "&fn=1" : ""}${parsed.free ? "&free=1" : ""}`}
               title={`${missionTitle} 교사 실행 작업실`}
-              sandbox="allow-scripts"
+              referrerPolicy="origin"
+              sandbox={ENTRY_WORKSPACE_SANDBOX}
               className={styles.entryRunnerFrame}
               inert={phase !== "ready"}
             />
@@ -377,6 +382,19 @@ export function EntryProjectPreview({
       )}
 
       <div className={styles.entryObjectList}>
+        {parsed.functions.length > 0 && (
+          <section className={styles.entryObjectSection} aria-label="함수 블록 조립도">
+            <header className={styles.entryObjectHeader}><h4>함수</h4></header>
+            <div className={styles.entryThreads}>
+              {parsed.functions.map((fn) => (
+                <div key={fn.id} className={styles.entryThreadCard}>
+                  <div className={styles.entryThreadTitle}>{`함수 ‘${fn.name}’`}</div>
+                  <BlockTree nodes={fn.body} names={variableNames(parsed.variables)} functionNames={functionNamesOf(parsed.functions)} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
         {objects.map((object) => (
           <section key={object.id} className={styles.entryObjectSection} aria-label={`${object.name} 블록 조립도`}>
             {objects.length > 1 && (
@@ -397,7 +415,7 @@ export function EntryProjectPreview({
                         ? `시작 묶음 ${index + 1}`
                         : `블록 묶음 ${index + 1}`}
                     </div>
-                    <BlockTree nodes={thread} />
+                    <BlockTree nodes={thread} names={variableNames(parsed.variables)} functionNames={functionNamesOf(parsed.functions)} />
                   </div>
                 ))}
               </div>

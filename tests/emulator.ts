@@ -20,6 +20,14 @@ export const headers = { "X-CS-Class": "1" };
 export const entryReset = (page: Page) => page.getByRole("button", { name: "무대 초기화", exact: true });
 export const entryStart = (page: Page) => page.frameLocator("iframe").getByRole("button", { name: "시작하기", exact: true });
 export const entryStop = (page: Page) => page.frameLocator("iframe").getByRole("button", { name: "정지하기", exact: true });
+// The emulator's real clock lags a page's virtual clock, so a later session read would report seconds of idle time and count
+// as fresh activity. Later reads report minutes instead, as the server would after hearing nothing since the page loaded.
+export async function serverIdleSession(page: Page) {
+  const state = await (await page.request.get("/api/auth/session")).json();
+  let reads = 0;
+  await page.route("**/api/auth/session", route => route.fulfill({ json: { ...state, session: { ...state.session, idleMs: reads++ ? 9 * 60_000 : 0 } } }));
+  return state.session;
+}
 export async function saveDraft(page: Page) {
   await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(page.locator("[data-lesson-shell] header [role=status]")).toHaveText(/저장 완료|아직 학습 기록이 없어요/);

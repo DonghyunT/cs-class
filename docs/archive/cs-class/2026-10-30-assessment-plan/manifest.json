@@ -1,0 +1,12 @@
+{
+  "archivedAt": "2026-10-30 Asia/Seoul",
+  "sourceCommit": "16287cc01ba8a2bbbff041e81c499480bb65db81",
+  "files": [
+    {
+      "source": "docs/plans/assessment-portfolio.md",
+      "archived": "assessment-portfolio.md",
+      "bytes": 10985,
+      "sha256": "8def52c01eb3f2cee8d9a920a883231b2d70f35ea3ccd2fd47abc9f0b531692e"
+    }
+  ]
+}

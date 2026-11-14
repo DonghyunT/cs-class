@@ -7,7 +7,9 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const manifestText = (await readFile(new URL("./entryjs-assets.json", import.meta.url), "utf8")).replace(/^\uFEFF/, "");
 const manifest = JSON.parse(manifestText);
-const fingerprint = createHash("sha256").update(manifestText).digest("hex");
+// This script's copy rules shape the output too, and the fingerprint names the Entry CDN version (scripts/entryjs-cdn.mjs).
+// LF only: a Windows checkout (core.autocrlf) must name the same version as Vercel's Linux build.
+const fingerprint = createHash("sha256").update(`${manifestText}\0${await readFile(new URL(import.meta.url), "utf8")}`.replace(/\r\n/g, "\n")).digest("hex");
 const output = path.join(root, "public/entryjs/vendor");
 const marker = path.join(output, ".prepared");
 if (await readFile(marker, "utf8").catch(() => "") === fingerprint) process.exit(0);

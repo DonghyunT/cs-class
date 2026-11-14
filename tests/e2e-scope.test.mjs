@@ -4,7 +4,31 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { selectE2E, matchLesson, matchLessons } from "../scripts/e2e-scope.mjs";
+import { selectE2E, matchLesson, matchLessons, smokeRelatedTests } from "../scripts/e2e-scope.mjs";
+
+test("teacher smoke groups cover management, previews, assessment and work review without narrowing local scope", () => {
+  const groups = [
+    ["dashboard.tsx", ["teacher-class-management", "classroom-api", "teacher-preparation", "ui-teacher-refinement", "teacher-review-workflow"]],
+    ["lesson-preview.tsx", ["teacher-lesson-preview", "teacher-preview-api"]],
+    ["use-preview-work.ts", ["teacher-lesson-preview", "teacher-preview-api"]],
+    ["assessment.tsx", ["teacher-assessment"]],
+    ["assessment.module.css", ["teacher-assessment"]],
+    ["work-details.tsx", ["teacher-review-workflow", "ui-teacher-refinement"]],
+  ];
+  for (const [name, specs] of groups) {
+    const file = `src/components/teacher/${name}`;
+    assert.deepEqual(new Set(smokeRelatedTests([file])), new Set(specs.map(spec => `tests/${spec}.spec.ts`)), name);
+    assert.equal(selectE2E([file]).mode, "full", "local manual selection remains required");
+  }
+  const shared = smokeRelatedTests(["src\\components\\teacher\\teacher.module.css", "src/components/teacher/teacher-toolbar.tsx"]);
+  for (const spec of ["teacher-class-management", "teacher-assessment", "teacher-review-workflow"]) {
+    assert.ok(shared.includes(`tests/${spec}.spec.ts`), spec);
+  }
+  assert.ok(smokeRelatedTests(["src/components/teacher/presentation.ts"]).includes("tests/teacher-assessment.spec.ts"));
+  assert.deepEqual(smokeRelatedTests(["src/lib/server/classroom.ts", "src/app/api/classroom/[...path]/route.ts",
+    "src/components/teacher/assessment-helper.ts", "src/components/teacher/dashboard.ts", "src/components/teacher/new-feature.tsx"]), []);
+  assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops", "functions", "brick-breaker"]);
+});
 
 function runRunner({ plan, planFile = "plan.json", args = [], event = "push", setup } = {}) {
   const directory = mkdtempSync(path.join(tmpdir(), "cs-class-e2e-plan-"));
@@ -57,9 +81,15 @@ test("matchLesson matches lesson specific files accurately", () => {
   assert.equal(matchLesson("tests/entry-palette.test.ts"), "programming-13");
   assert.equal(matchLesson("tests/fixtures/entry-legacy-keys.json"), "programming-13");
   assert.equal(matchLesson("src/lib/server/programming-grader.ts"), "programming-13");
-  assert.deepEqual(matchLessons("src\\lib\\classroom\\programming-entry.ts"), ["programming-13", "conditionals", "loops"]);
-  assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops"]);
-  assert.deepEqual(matchLessons("tests/programming-learning.spec.ts"), ["programming-13", "conditionals", "loops"]);
+  assert.deepEqual(matchLessons("src\\lib\\classroom\\programming-entry.ts"), ["programming-13", "conditionals", "loops", "functions", "brick-breaker"]);
+  assert.deepEqual(matchLessons("src/components/teacher/entry-project-preview.tsx"), ["programming-13", "conditionals", "loops", "functions", "brick-breaker"]);
+  assert.deepEqual(matchLessons("tests/programming-learning.spec.ts"), ["programming-13", "conditionals", "loops", "functions", "brick-breaker"]);
+  for (const file of ["src/lib/classroom/entry-workspace-frame.ts", "src/lib/classroom/entry-workspace.json"]) {
+    assert.deepEqual(matchLessons(file), ["programming-13", "conditionals", "loops", "functions", "brick-breaker"], file);
+  }
+  for (const file of ["scripts/entryjs-cdn.mjs", "scripts/entryjs-cdn.json", "cloudflare/entry-cdn/wrangler.jsonc", "next.config.ts", "src/proxy.ts"]) {
+    assert.deepEqual(matchLessons(file), ["programming-13"], file);
+  }
   assert.deepEqual(matchLessons("src/components/teacher/teacher.module.css"), []);
   assert.deepEqual(matchLessons("src/lib/classroom/conditionals-data.ts"), ["conditionals"]);
   assert.deepEqual(matchLessons("src/components/student/programming-concept.tsx"), ["programming-13"]);
@@ -96,10 +126,17 @@ test("selectE2E classifies single lesson changes as affected", () => {
   // The shared Entry practice screen selects every Entry lesson's tests.
   const programming = selectE2E(["src/components/student/programming-lesson.tsx"]);
   assert.equal(programming.mode, "affected");
-  assert.deepEqual(programming.lessonIds, ["conditionals", "loops", "programming-13"]);
+  assert.deepEqual(programming.lessonIds, ["brick-breaker", "conditionals", "functions", "loops", "programming-13"]);
   assert.ok(programming.testFiles.includes("tests/conditionals.spec.ts"));
   assert.ok(programming.testFiles.includes("tests/programming-classroom.spec.ts"));
   assert.ok(programming.testFiles.includes("tests/entryjs-ui.spec.ts"));
+
+  // Where production serves the workspace is checked once, not through every Entry lesson's missions.
+  const hosting = selectE2E(["scripts/entryjs-cdn.mjs", "next.config.ts", "src/proxy.ts"]);
+  assert.equal(hosting.mode, "affected");
+  assert.deepEqual(hosting.lessonIds, ["programming-13"]);
+  assert.deepEqual(hosting.testFiles, ["tests/programming-classroom.spec.ts"]);
+  assert.deepEqual(selectE2E(["next.config.ts", "public/entryjs/workspace.js"]).testFiles, programming.testFiles);
 });
 
 test("selectE2E classifies multiple lesson changes as affected union", () => {
@@ -111,6 +148,13 @@ test("selectE2E classifies multiple lesson changes as affected union", () => {
   assert.deepEqual(result.lessonIds, ["review-abstraction", "review-sandwich"]);
   assert.ok(result.testFiles.includes("tests/review-sandwich.spec.ts"));
   assert.ok(result.testFiles.includes("tests/review-abstraction.spec.ts"));
+});
+
+test("timetable changes add its spec to the smoke fallback without narrowing local scope", () => {
+  for (const file of ["src/lib/classroom/timetable.ts", "src/lib/server/timetable.ts", "src/lib/server/timetable-protocol.ts", "scripts/timetable-fixture.mjs"]) {
+    assert.deepEqual(smokeRelatedTests([file]), ["tests/timetable.spec.ts"], file);
+    assert.equal(selectE2E([file]).mode, "full", file);
+  }
 });
 
 test("selectE2E elevates to full if unmapped or shared code is modified", () => {
@@ -126,7 +170,7 @@ test("selectE2E elevates to full if unmapped or shared code is modified", () => 
 });
 
 test("selectE2E maps concept pictures, Entry specs and logic-only tests", () => {
-  assert.deepEqual(matchLessons("src/components/student/concept-visual.module.css"), ["conditionals", "loops"]);
+  assert.deepEqual(matchLessons("src/components/student/concept-visual.module.css"), ["conditionals", "loops", "functions", "brick-breaker"]);
   assert.deepEqual(matchLessons("public/concepts/loops-repeat-triangle.png"), ["loops"]);
   assert.deepEqual(matchLessons("public/concepts/conditionals-nested-if.png"), ["conditionals"]);
   assert.deepEqual(matchLessons("public/concepts/other.png"), []);
@@ -135,8 +179,16 @@ test("selectE2E maps concept pictures, Entry specs and logic-only tests", () => 
 
   const picture = selectE2E(["src/components/student/concept-visual.tsx", "public/concepts/loops-repeat-until.png", "tests/lesson-feedback.test.ts"]);
   assert.equal(picture.mode, "affected");
-  assert.deepEqual(picture.lessonIds, ["conditionals", "loops"]);
-  assert.deepEqual(picture.testFiles, ["tests/conditionals.spec.ts", "tests/loops.spec.ts", "tests/teacher-lesson-preview.spec.ts"]);
+  assert.deepEqual(picture.lessonIds, ["brick-breaker", "conditionals", "functions", "loops"]);
+  assert.deepEqual(picture.testFiles, ["tests/brick-breaker.spec.ts", "tests/conditionals.spec.ts", "tests/functions.spec.ts", "tests/loops.spec.ts", "tests/teacher-lesson-preview.spec.ts"]);
+  assert.deepEqual(matchLessons("src/lib/classroom/brick-breaker-data.ts"), ["brick-breaker"]);
+  assert.deepEqual(matchLessons("src/lib/classroom/brick-breaker-lesson.ts"), ["brick-breaker"]);
+  assert.deepEqual(matchLessons("tests/brick-breaker.spec.ts"), ["brick-breaker"]);
+  assert.deepEqual(matchLessons("src/lib/classroom/functions-data.ts"), ["functions"]);
+  assert.deepEqual(matchLessons("src/components/student/function-editing.ts"), ["functions"]);
+  assert.deepEqual(matchLessons("src/components/student/function-concepts.tsx"), ["functions"]);
+  assert.deepEqual(matchLessons("src/components/student/function-concepts.module.css"), ["functions"]);
+  assert.deepEqual(matchLessons("tests/fixtures/entry-function-export.json"), ["functions"]);
 
   // A logic test alone selects no lesson, so it stays on the conservative full path.
   assert.equal(selectE2E(["tests/lesson-feedback.test.ts"]).mode, "full");

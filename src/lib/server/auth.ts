@@ -5,11 +5,13 @@ import { cookies, headers } from "next/headers";
 import type { Transaction } from "firebase-admin/firestore";
 import type { UserRecord } from "firebase-admin/auth";
 import type { Role, Session } from "../classroom/types";
+import { STUDENT_IDLE_TIMEOUT_MS } from "../classroom/features";
 import { admin } from "./firebase";
 import { guestLoginEnabled } from "./guest-mode";
 import { createTemporaryPassword, passwordDigest } from "./temporary-password.mjs";
 import { requireCondition, ServiceError } from "./errors";
 import { isTrialStudentId } from "../classroom/roster";
+import { passwordFailureIsWrongCredentials } from "./password-response";
 
 export const SESSION_COOKIE = "cs_session";
 export interface Account {
@@ -22,7 +24,7 @@ export interface Account {
 }
 export interface Identity { uid: string; secret: string }
 export function hash(value: string) { return createHash("sha256").update(value).digest("hex"); }
-export function timeoutFor(role: Role) { return role === "student" ? 10 * 60_000 : 4 * 60 * 60_000; }
+export function timeoutFor(role: Role) { return role === "student" ? STUDENT_IDLE_TIMEOUT_MS : 4 * 60 * 60_000; }
 export function publicSession(account: Account): Session {
   return { uid: account.uid, ...(account.nickname ? { nickname: account.nickname } : {}), role: account.role, studentId: account.studentId, classId: account.classId, classIds: account.classIds, mustChangePassword: account.mustChangePassword, lastActivityAt: account.session!.lastActivityAt, idleMs: Math.max(0, Date.now() - account.session!.lastActivityAt), idleTimeoutMs: timeoutFor(account.role) };
 }
@@ -44,24 +46,34 @@ export function validateSession(account: Account | undefined, who: Identity, all
   requireCondition(allowPasswordChange || !account.mustChangePassword, 403, "PASSWORD_REQUIRED", "먼저 비밀번호를 바꿔 주세요.");
   return account;
 }
-export async function authorized<T>(who: Identity, action: (transaction: Transaction, account: Account) => Promise<T>, allowPasswordChange = false) {
+export async function authorized<T>(who: Identity, action: (transaction: Transaction, account: Account) => Promise<T>, allowPasswordChange = false, readOnly = false) {
   const { db } = admin();
   return db.runTransaction(async (transaction) => {
     const snap = await transaction.get(db.collection("csAccounts").doc(who.uid));
     const account = validateSession(snap.exists ? snap.data() as Account : undefined, who, allowPasswordChange);
     return action(transaction, account);
-  });
+  }, readOnly ? { readOnly: true } : undefined);
+}
+// For requests that only read. A read-write transaction locks each document it reads until it ends, so a teacher's
+// class-wide read made every student's save wait. A read-only one takes no locks, and a write inside it throws.
+export function authorizedRead<T>(who: Identity, action: (transaction: Transaction, account: Account) => Promise<T>, allowPasswordChange = false) {
+  return authorized(who, action, allowPasswordChange, true);
 }
 export async function readSession() {
   const who = await identity();
-  return authorized(who, async (_transaction, account) => publicSession(account), true);
+  return authorizedRead(who, async (_transaction, account) => publicSession(account), true);
 }
 async function setSessionCookie(uid: string, secret: string) {
   (await cookies()).set(SESSION_COOKIE, `${uid}.${secret}`, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/" });
 }
 const loginLimitQueues = new Map<string, Promise<void>>();
-async function limitLogin(key: string, maximum: number, windowMs: number) {
+// When each full budget's window ends. Only for budgets nothing resets early (`remember`): a teacher's reset deletes an account's.
+const fullUntil = new Map<string, number>();
+async function limitLogin(key: string, maximum: number, windowMs: number, remember = false) {
   const { db } = admin(); const ref = db.collection("csRateLimits").doc(hash(key));
+  const limited = () => new ServiceError(429, "LOGIN_LIMIT", "로그인 요청이 많아요. 잠시 후 다시 시도해 주세요.");
+  // A flood past a full budget is refused here, so its database cost stops at the budget instead of growing with its speed.
+  if ((fullUntil.get(ref.id) ?? 0) > Date.now()) throw limited();
   // Serialize this instance's same-key writes; transactions enforce limits across instances.
   const previous = loginLimitQueues.get(ref.id) ?? Promise.resolve();
   const attempt = previous.then(async () => {
@@ -69,7 +81,13 @@ async function limitLogin(key: string, maximum: number, windowMs: number) {
     await db.runTransaction(async (tx) => {
       const data = (await tx.get(ref)).data();
       const fresh = !data || now - data.start >= windowMs;
-      requireCondition(fresh || data.count < maximum, 429, "LOGIN_LIMIT", "로그인 요청이 많아요. 잠시 후 다시 시도해 주세요.");
+      if (!fresh && data.count >= maximum) {
+        if (remember) {
+          for (const [id, until] of fullUntil) if (until <= now) fullUntil.delete(id);
+          fullUntil.set(ref.id, data.start + windowMs);
+        }
+        throw limited();
+      }
       tx.set(ref, { start: fresh ? now : data.start, count: fresh ? 1 : data.count + 1 });
     });
   });
@@ -104,12 +122,13 @@ async function loginPasswordAccount(role: Role, uid: string, email: string, pass
   const { auth, db } = admin();
   // Vercel가 덮어쓰는 출처만 신뢰합니다. 로컬에서는 전달 헤더로 제한을 우회하지 못합니다.
   const source = process.env.VERCEL ? (await headers()).get("x-vercel-forwarded-for") ?? "unknown" : "local";
-  await limitLogin(`source:${source}`, 600, 60_000);
+  await limitLogin(`source:${source}`, 600, 60_000, true);
+  const initial = (await db.collection("csAccounts").doc(uid).get()).data() as Account | undefined;
+  // 없는 학번·명단에서 뺀 계정은 확인할 비밀번호가 없어 계정 예산을 쓰지 않습니다. 아무 학번이나 넣어도 기록이 늘지 않습니다.
+  requireCondition(initial && initial.role === role && !initial.disabled, 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
   // 계정마다 따로 세어 같은 학교의 동시 입장은 허용합니다. 교사의 비밀번호 초기화가 이 잠금을 풉니다.
   await limitLogin(`account:${uid}`, 30, 15 * 60_000);
-  const initial = (await db.collection("csAccounts").doc(uid).get()).data() as Account | undefined;
-  requireCondition(initial && initial.role === role && !initial.disabled, 401, "INVALID_LOGIN", "학번 또는 비밀번호를 확인해 주세요.");
-  requireCondition(!initial?.authBusy, 423, "ACCOUNT_BUSY", "계정 정보를 변경하고 있어요. 잠시 후 다시 시도해 주세요.");
+  requireCondition(!initial.authBusy, 423, "ACCOUNT_BUSY", "계정 정보를 변경하고 있어요. 잠시 후 다시 시도해 주세요.");
   if (initial.mustChangePassword) {
     // 임시 비밀번호는 6자리 숫자가 될 수 없어, 6자리 숫자는 반 공통 첫 입장 코드로 확인합니다.
     if (role === "student" && initial.classId && /^\d{6}$/.test(password)) return openFirstEntry(uid, initial.authVersion, initial.classId, passwordDigest(password));
@@ -171,15 +190,12 @@ export async function updateFirstEntry(classId: string, input: unknown) {
     return { code, expiresAt };
   });
 }
-// Firebase는 차단·설정 오류도 4xx로 알리므로 문서에 있는 자격 증명 오류만 비밀번호 오답으로 봅니다.
-const wrongCredentials = ["EMAIL_NOT_FOUND", "INVALID_PASSWORD", "USER_DISABLED", "INVALID_LOGIN_CREDENTIALS"];
 async function signInWithPassword(email: string, password: string): Promise<{ idToken: string } | null> {
   const host = process.env.FIREBASE_AUTH_EMULATOR_HOST;
   const endpoint = host ? `http://${host}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword` : "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword";
   const response = await fetch(`${endpoint}?key=${encodeURIComponent(process.env.FIREBASE_WEB_API_KEY!)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, returnSecureToken: true }), cache: "no-store", signal: AbortSignal.timeout(15000) });
   if (response.ok) return response.json();
-  const reason = /^[A-Z_]+/.exec(String((await response.json().catch(() => null))?.error?.message ?? ""))?.[0];
-  requireCondition(reason && wrongCredentials.includes(reason), 503, "PASSWORD_VERIFY", "비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.");
+  requireCondition(passwordFailureIsWrongCredentials(response.status, await response.json().catch(() => null)), 503, "PASSWORD_VERIFY", "비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.");
   return null;
 }
 export async function loginGoogle(idToken: string) {
@@ -258,10 +274,9 @@ function passwordProvider(user: UserRecord): "password" | "google" | "unavailabl
 }
 export async function readProfile() {
   const who = await identity();
-  await authorized(who, async () => undefined);
+  const session = await authorizedRead(who, async (_tx, account) => publicSession(account));
   const user = await admin().auth.getUser(who.uid);
   requireCondition(!user.disabled, 401, "SIGNED_OUT", "사용할 수 없는 계정이에요. 선생님께 알려 주세요.");
-  const session = await authorized(who, async (_tx, account) => publicSession(account));
   return { session, nickname: session.nickname ?? "", passwordProvider: passwordProvider(user) };
 }
 export async function updateNickname(nickname: string) {

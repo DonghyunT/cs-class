@@ -1,6 +1,6 @@
 // Fits the existing 32KB request limit even with maximum-length Korean text.
 export const PLANNER_LIMIT = 50;
-export const TIMETABLE_SCHOOL = { code: "74022", name: "금옥중학교", url: "https://timetable.s2h9.dev/?sc=74022" };
+export const TIMETABLE_SCHOOL = { code: "74022", name: "금옥중학교", url: "http://comci.net:4082/st" };
 export interface TimetableEvent { id: string; classId: string; date: string; period: number; startsAt: string; changed: boolean }
 export interface TimetableSnapshot { checkedAt: number; sourceUpdatedAt: string; rangeStart: string; rangeEnd: string; items: TimetableEvent[] }
 export interface ClassTimetable {

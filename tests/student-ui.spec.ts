@@ -30,7 +30,7 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   await enter(page);
   await page.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
   await page.getByRole("button", { name: "정답 확인", exact: true }).first().click();
-  await expect(page.locator("#concept-feedback-algorithm")).toBeFocused();
+  await expect(page.locator("#concept-next-algorithm")).toBeFocused();
   await page.getByRole("button", { name: "다음 개념", exact: true }).click();
   await page.getByRole("radio", { name: "내용을 저장해요", exact: true }).check();
   await page.getByRole("button", { name: "정답 확인", exact: true }).click();

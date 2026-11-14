@@ -38,6 +38,8 @@
 - **임베드 모드 (`?embed=1`):** `body`와 `#stage`에 `data-embed="true"` 적용, `#fullscreen` 숨김, `createMemoryStorage` 사용으로 `localStorage` 접근 0회, `parent.postMessage`(`festival:init`, `festival:state`, `festival:complete`) 브리지 제공(메인 앱 연동은 Phase 5 예정).
 - **캐릭터 스프라이트:** 현재 번들은 `assets/haru-boy-v3.png`와 `assets/haru-girl-v3.png`(`1536×1024`, `FESTIVAL_SPRITE_ROWS: { boy: 1, girl: 1 }`)를 사용하며 `spriteCrop`이 6개 표정 슬롯을 매핑합니다. 3×2 6표정 시트(`1536×2048`) 후보 자산인 [haru-boy-v6.png](assets/haru-boy-v6.png)와 [haru-girl-v8.png](assets/haru-girl-v8.png)는 `assets/`에 보관되어 있으며, 최종 시트 교체 후 다시 빌드하면 `build.cjs`가 `rows: 2`를 자동 감지합니다.
 
+- **보존된 원본 자료의 검증 기준:** V1 3차시 27장면 도입 수업(`/festival-lesson.html`) 검수 이력은 [제작·검수 기록](제작-검수-기록.md)에 보존되어 있으며, v2 개편 검증·남은 작업은 [HANDOFF.md](HANDOFF.md)에 있습니다.
+
 ## 빌드·테스트·QA 명령
 
 ```powershell

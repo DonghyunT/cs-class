@@ -97,7 +97,7 @@ test("반 전체 진도는 필수 활동 합산이며 선택 도전·최근 활�
     await page.getByRole("button", { name: "수업 새로고침", exact: true }).click();
     await expect(overall).toHaveAttribute("aria-valuenow", "0");
     await expect(overall).toHaveAttribute("aria-valuetext", `필수 활동 ${completed}/378개 완료`);
-    await expect(current.locator("svg [data-start-marker]")).toHaveCount(completed === 0 ? 1 : 0);
+    await expect(current.locator("svg [data-start-marker]")).toHaveCount(completed === 0 ? 3 : 2);
   }
 
   const review = LESSONS.find(item => item.mode === "review")!;
@@ -159,7 +159,7 @@ test("닉네임은 상단·하단 프로필에 보이며 새 탐색 메뉴와 �
     await expect(profile).toBeVisible();
     await expect(profile).toHaveAttribute("href", role === "teacher" ? "/teacher/settings?classId=2-1" : "/student/settings");
     const menu = page.getByRole("navigation", { name: "교실 메뉴", exact: true });
-    await expect(menu.getByRole("link")).toHaveCount(5);
+    await expect(menu.getByRole("link")).toHaveCount(role === "teacher" ? 6 : 5);
     await expect(menu.getByRole("link", { name: "반 일정", exact: true })).toHaveCount(0);
     await expect(menu.getByRole("link", { name: "우리 반 질문", exact: true })).toBeVisible();
     await expect(page.getByRole("region", { name: "다가오는 일정", exact: true }).getByRole("link", { name: role === "teacher" ? "일정 관리" : "전체 보기", exact: true })).toHaveAttribute("href", role === "teacher" ? "/teacher/schedule?classId=2-1" : "/student/schedule");

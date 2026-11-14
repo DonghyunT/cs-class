@@ -8,7 +8,7 @@ export const failureOperations = [
   "classroom.community.reply", "classroom.community.resolve", "classroom.community.delete",
   "classroom.help.list", "classroom.help.snapshot", "classroom.help.raise", "classroom.help.cancel",
   "classroom.help.resolve", "classroom.todos.read", "classroom.todos.save", "classroom.schedule.read",
-  "classroom.schedule.save", "classroom.student.dashboard", "classroom.teacher.dashboard",
+  "classroom.schedule.save", "classroom.student.dashboard", "classroom.teacher.dashboard", "classroom.teacher.assessment",
   "classroom.work.read", "classroom.teacher.work.read", "classroom.ai", "classroom.review.decide",
   "classroom.timetable.refresh", "classroom.classes.update", "classroom.student.password.reset", "classroom.student.roster", "classroom.first-entry.update",
   "classroom.work.save", "classroom.work.action", "cron.timetable.refresh", "teacher-preview.evaluate",

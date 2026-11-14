@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import { emptyWork } from "../src/lib/classroom/progress";
-import { buildProgrammingProject } from "../src/lib/classroom/programming-entry";
+import { buildProgrammingProject, missionsFor } from "../src/lib/classroom/programming-entry";
 import type { StudentDashboard, Work, WorkAction } from "../src/lib/classroom/types";
 import { auth, clearLoginLimit, db, headers, initialPassword, localOnly, loginStudent, resetStudent, studentPassword } from "./emulator";
 
@@ -106,15 +106,15 @@ test.afterAll(async () => {
 test("entry-guidance: 계산 안내 없이 정규 완료 수를 표시하고 선택 복습 추가로 집계를 바꾸지 않는다", async ({ page }) => {
   const work = emptyWork(programming); work.conceptSolved = ["pc0", "pc1"]; work.quizSolved = ["language"]; work.updatedAt = Date.now();
   await showDashboardFixture(page, [programming], programming.id, { [programming.id]: work });
-  await expectProgress(page, "3/14", 21);
+  await expectProgress(page, "3/14", 20);
   await expect(progressRegion(page).getByText("진도 계산 안내", { exact: true })).toHaveCount(0);
   await expect(progressRegion(page).locator("details")).toHaveCount(0);
   await showDashboardFixture(page, [programming, ...reviews], programming.id, { [programming.id]: work });
-  await expectProgress(page, "3/14", 21);
+  await expectProgress(page, "3/14", 20);
   await expect(progressRegion(page).getByText("진도 계산 안내", { exact: true })).toHaveCount(0);
 });
 
-test("필수 활동 개수를 합산하며 단계 평균·선택 복습·심화 제출을 제외", async ({ page }, testInfo) => {
+test("개념·퀴즈·실습을 1/3씩 평균하며 선택 복습·심화 제출을 제외", async ({ page }, testInfo) => {
   await openLessons([programming.id, ...reviews.map(lesson => lesson.id)], programming.id);
   const partial = emptyWork(programming);
   partial.conceptSolved = ["pc0"];
@@ -129,8 +129,8 @@ test("필수 활동 개수를 합산하며 단계 평균·선택 복습·심화 
   optional.updatedAt = Date.now();
   await saveWork(optional);
   await page.goto("/student");
-  // Four of fourteen required activities give 29%, unlike averaging 20%, 40%, and 25%.
-  await expectProgress(page, "4/14", 29);
+  // Averaging 20%, 40% and 25% gives 28%, unlike counting four of fourteen required activities (29%).
+  await expectProgress(page, "4/14", 28);
   const overview = progressRegion(page);
   const concept = overview.getByRole("button", { name: /^개념 진도:/ });
   const quiz = overview.getByRole("button", { name: /^퀴즈 진도:/ });
@@ -229,17 +229,16 @@ test("0%는 실제 값과 별도의 짧은 시작 표시를 유지하고 100%는
   await expect(overview.locator("svg [data-stage]")).toHaveCount(3);
   await expect(overview.locator("svg path[stroke-dasharray]")).toHaveCount(0);
   const start = overview.locator("svg [data-start-marker]");
-  await expect(start).toHaveCount(1);
-  const geometry = await start.evaluate(element => {
+  await expect(start).toHaveCount(3);
+  const geometry = await start.first().evaluate(element => {
     const path = element as SVGGeometryElement;
     const point = path.getPointAtLength(0);
     return { startX: point.x, startY: point.y, degrees: path.getTotalLength() / 78 * 180 / Math.PI, cap: getComputedStyle(path).strokeLinecap, stroke: getComputedStyle(path).stroke };
   });
   expect(geometry.startX).toBeCloseTo(90, 1);
   expect(geometry.startY).toBeCloseTo(12, 1);
-  expect(geometry.degrees).toBeGreaterThanOrEqual(4);
-  expect(geometry.degrees).toBeLessThanOrEqual(6);
-  expect(geometry.cap).toBe("butt");
+  expect(geometry.degrees).toBeLessThanOrEqual(0.2);
+  expect(geometry.cap).toBe("round");
   expect(geometry.stroke).not.toBe(await overview.locator('svg [data-stage="concept"]').evaluate(element => getComputedStyle(element).stroke));
   for (const stage of ["개념", "퀴즈", "실습"]) {
     const legend = overview.getByRole("button", { name: new RegExp(`^${stage} 진도:`) });
@@ -259,7 +258,7 @@ test("0%는 실제 값과 별도의 짧은 시작 표시를 유지하고 100%는
   await page.getByRole("button", { name: "격자 보기", exact: true }).click();
   await expect(course.locator("svg [data-stage]")).toHaveCount(3);
   await expect(course.locator("svg path[stroke-dasharray]")).toHaveCount(0);
-  await expect(course.locator("svg [data-start-marker]")).toHaveCount(1);
+  await expect(course.locator("svg [data-start-marker]")).toHaveCount(3);
   await expect(course.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
   await expect(course.getByRole("progressbar")).toHaveAttribute("aria-valuetext", "필수 활동 0/14개 완료");
   const completed = emptyWork(programming);
@@ -301,7 +300,7 @@ test("단계별 0%와 100%를 터치로 확인하고 정규 수업과 복습을 
   const quiz = overview.getByRole("button", { name: /^퀴즈 진도:/ });
   await expect(concept).toHaveAccessibleName("개념 진도: 5/5개 완료, 100%");
   await expect(quiz).toHaveAccessibleName("퀴즈 진도: 0/5개 완료, 0%");
-  await expect(overview.locator("svg [data-start-marker]")).toHaveCount(0);
+  await expect(overview.locator("svg [data-start-marker]")).toHaveCount(2);
   const lessons = page.getByRole("region", { name: "수업별 학습 진도", exact: true });
   await expect(lessons.getByRole("article")).toHaveCount(1);
   await expect(lessons.getByRole("link", { name: "선택 복습 수업 둘러보기", exact: true })).toBeVisible();
@@ -334,7 +333,7 @@ test("단계별 0%와 100%를 터치로 확인하고 정규 수업과 복습을 
     await context.addCookies(await page.context().cookies());
     const touchPage = await context.newPage();
     await touchPage.goto("/student");
-    await expectProgress(touchPage, "5/14", 36);
+    await expectProgress(touchPage, "5/14", 33);
     const touchOverview = progressRegion(touchPage);
     const touchConcept = touchOverview.getByRole("button", { name: /^개념 진도:/ });
     await expect(touchConcept).toHaveAccessibleName("개념 진도: 5/5개 완료, 100%");
@@ -346,7 +345,7 @@ test("단계별 0%와 100%를 터치로 확인하고 정규 수업과 복습을 
     await expect(touchOverview.getByRole("tooltip")).toContainText("0%");
     await touchPage.getByRole("button", { name: "수업 새로고침", exact: true }).tap();
     await expect(touchOverview.getByRole("tooltip")).toHaveCount(0);
-    await expectProgress(touchPage, "5/14", 36);
+    await expectProgress(touchPage, "5/14", 33);
   } finally { await context.close(); }
 });
 
@@ -385,7 +384,7 @@ test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 �
   await expect(grid).toBeFocused();
   await expect(grid).toHaveAttribute("aria-pressed", "true");
   const programRing = programCard.getByRole("progressbar", { name: `${programming.title} 필수 활동 완료율`, exact: true });
-  await expect(programRing).toHaveAttribute("aria-valuenow", "29");
+  await expect(programRing).toHaveAttribute("aria-valuenow", "28");
   await expect(programRing).toHaveAttribute("aria-valuetext", "필수 활동 4/14개 완료");
   await expect(programCard.locator("svg [data-stage]")).toHaveCount(3);
   await expect(programCard.locator("svg [data-start-marker]")).toHaveCount(0);
@@ -435,7 +434,7 @@ test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 �
   await expect(refresh).toBeFocused();
   await expect(grid).toHaveAttribute("aria-pressed", "true");
   await expect(cards).toHaveCount(4);
-  await expect(programRing).toHaveAttribute("aria-valuenow", "29");
+  await expect(programRing).toHaveAttribute("aria-valuenow", "28");
   await page.unroute(studentEndpoint);
   const resume = programCard.getByRole("button", { name: "이어하기", exact: true });
   await expect(resume).toHaveAttribute("href", `/classroom/${programming.id}?from=lessons`);
@@ -460,7 +459,7 @@ test("초안·검증은 집계하지 않고 제출 후 수정 완료를 유지�
   await expectProgress(page, "0/14", 0);
   work = await action(page, work, { type: "submit-practice", missionId: "name" });
   await page.getByRole("button", { name: "수업 새로고침", exact: true }).click();
-  await expectProgress(page, "1/14", 7);
+  await expectProgress(page, "1/14", 8);
   const previous = work.missions!.name.submission;
   const draft = { ...work.draft, programming: { ...work.draft.programming!, projects: { name: buildProgrammingProject() } } };
   const saved = await page.request.post(endpoint, { headers, data: { revision: work.revision, draft } });
@@ -469,7 +468,7 @@ test("초안·검증은 집계하지 않고 제출 후 수정 완료를 유지�
   expect(modified.missions!.name.validation).toBeNull();
   expect(modified.missions!.name.submission).toEqual(previous);
   await page.reload();
-  await expectProgress(page, "1/14", 7);
+  await expectProgress(page, "1/14", 8);
   await page.setViewportSize({ width: 320, height: 720 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const continuation = page.getByRole("button", { name: "이어하기", exact: true }).first();
@@ -553,7 +552,7 @@ test("comments-layout/followup45-home: 반응형 경계에서 카드 높이·원
   work.conceptSolved = ["pc0"];
   work.updatedAt = 1_700_000_000_000;
   await showDashboardFixture(page, [programming], programming.id, { [programming.id]: work });
-  await expectProgress(page, "1/14", 7);
+  await expectProgress(page, "1/14", 6);
   const overview = progressRegion(page);
   const enter = overview.getByRole("button", { name: "이어하기", exact: true });
   const ring = overview.locator("svg").filter({ has: page.locator("[data-stage]") });
@@ -674,7 +673,7 @@ test("첫 조회는 초점을 유지하며 대기·실패의 가짜 0%와 재조
     await expect(enterLessons).toBeFocused();
     const focusedButton = await enterLessons.elementHandle();
     mode = "live"; release();
-    await expectProgress(page, "1/14", 7);
+    await expectProgress(page, "1/14", 8);
     await expectMobileCurrentFirst(page);
     expect(await focusedButton!.evaluate(element => element === document.activeElement)).toBe(true);
     mode = "failed";
@@ -686,14 +685,14 @@ test("첫 조회는 초점을 유지하며 대기·실패의 가짜 0%와 재조
     await expectMobileCurrentFirst(page);
     mode = "live";
     await page.getByRole("button", { name: "수업 다시 불러오기", exact: true }).click();
-    await expectProgress(page, "1/14", 7);
+    await expectProgress(page, "1/14", 8);
     const savedEnter = await progressRegion(page).getByRole("button", { name: "이어하기", exact: true }).elementHandle();
     const savedRing = await progressRegion(page).getByRole("progressbar").elementHandle();
     mode = "failed";
     const refresh = page.getByRole("button", { name: "수업 새로고침", exact: true });
     await refresh.click();
     await expect(page.getByRole("alert").filter({ hasText: "마지막으로 확인한 수업 기록" })).toBeVisible();
-    await expectProgress(page, "1/14", 7);
+    await expectProgress(page, "1/14", 8);
     await expectMobileCurrentFirst(page);
     await expect(progressRegion(page).locator("#current-heading")).toHaveText(programming.title);
     expect(await savedEnter!.evaluate(element => element.isConnected)).toBe(true);
@@ -743,13 +742,13 @@ test("완료 알림·배지: 마지막 활동을 마치면 완료 카드와 받�
   await expect(stamps).toHaveCount(4);
   await expect(stamps.filter({ hasText: "찍음" })).toHaveCount(4);
   await expect(badges).toContainText("도장 4개");
-  await expect(badges).toContainText("희귀 배지 0/2");
+  await expect(badges).toContainText("희귀 배지 0/1 · 깜짝 배지 0/2");
   await expect(badges).not.toContainText("정규 수업의 필수 활동을 모두 마치면 받아요.");
   await badges.getByRole("link", { name: "모두 보기", exact: true }).click();
   await expect(page).toHaveURL(/\/student\/badges$/);
   await expect(page.getByRole("navigation", { name: "교실 메뉴", exact: true }).getByRole("link", { name: "내 배지", exact: true })).toHaveAttribute("aria-current", "page");
   const all = page.getByRole("region", { name: "배지 모음", exact: true });
-  await expect(all).toContainText("10종 중 6종 받음");
+  await expect(all).toContainText("11종 중 6종 받음");
   const finished = all.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "수업 완주 · 받은 배지", exact: true }) });
   await expect(finished.getByLabel("별 5개 중 1개")).toBeVisible();
   await expect(finished).toContainText("다음 별까지 2개");
@@ -758,41 +757,91 @@ test("완료 알림·배지: 마지막 활동을 마치면 완료 카드와 받�
   await expect(all.getByRole("heading", { name: "도전자 · 아직 받지 않은 배지", exact: true })).toBeVisible();
   await expect(all.getByRole("listitem").filter({ hasText: "첫 발걸음" })).toContainText(`개념을 확인한 수업: ${conditionals.title}`);
   // Rare badges stay a mystery with a teaser until earned.
-  await expect(all.getByRole("heading", { name: "??? · 아직 받지 않은 희귀 배지", exact: true })).toHaveCount(2);
-  await expect(all).toContainText("한 수업을 도전 미션까지 완벽하게");
+  await expect(all.getByRole("heading", { name: "??? · 아직 받지 않은 희귀 배지", exact: true })).toHaveCount(1);
+  await expect(all.getByRole("heading", { name: "??? · 아직 받지 않은 깜짝 배지", exact: true })).toHaveCount(2);
+  await expect(all).toContainText("빈틈없이 완벽한 하루");
+  await expect(all).toContainText("포기하지 않는 사람에게");
+  await expect(all).toContainText("작품 너머의 깨달음을 남기면");
   await expect(all).not.toContainText("올클리어");
   // Earned badges are new once on this device, then remembered.
   await expect(all.getByText("새로 받음", { exact: true })).toHaveCount(6);
   await page.reload();
-  await expect(all).toContainText("10종 중 6종 받음");
+  await expect(all).toContainText("11종 중 6종 받음");
   await expect(all.getByText("새로 받음", { exact: true })).toHaveCount(0);
 });
 
-test("희귀 배지: 오뚝이·올클리어는 받으면 이름과 함께 반짝이고, 움직임 줄이기에서는 멈춘다", async ({ page }) => {
+test("배지의 받은 수업은 최신 세 개만 보이고 나머지는 키보드로 펼쳐 본다", async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+  const lessons = LESSONS.filter(lesson => lesson.practice.type === "programming");
+  const work = Object.fromEntries(lessons.map(lesson => [lesson.id, {
+    ...emptyWork(lesson), updatedAt: Date.now(),
+    conceptSolved: lesson.concepts.map(concept => concept.id), quizSolved: lesson.quiz.map(question => question.id),
+    missions: Object.fromEntries(missionsFor(lesson.id).map(mission => [mission.id, { validation: null, submission: submission(mission.id) }])),
+  }]));
+  await showDashboardFixture(page, lessons, lessons.at(-1)!.id, work);
+  await page.goto("/student/badges");
+  const allClear = page.locator('[data-badge="all-clear"][data-earned="true"]');
+  const newest = [...lessons].reverse();
+  await expect(allClear.locator("p").filter({ hasText: /^받은 수업:/ })).toHaveText(`받은 수업: ${newest.slice(0, 3).map(lesson => lesson.title).join(", ")}`);
+  await expect(allClear).toContainText(`${lessons.length}개 수업에서 받음`);
+  const more = allClear.locator("summary");
+  await expect(more).toHaveText(`나머지 ${lessons.length - 3}개 보기`);
+  const older = allClear.locator("details p");
+  await expect(older).toBeHidden();
+  await more.focus(); await page.keyboard.press("Enter");
+  await expect(older).toBeVisible();
+  await expect(older).toHaveText(newest.slice(3).map(lesson => lesson.title).join(", "));
+  await allClear.screenshot({ path: info.outputPath("badge-lessons-expanded.png") });
+  await page.keyboard.press("Enter");
+  await expect(older).toBeHidden();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await allClear.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath("badge-lessons-mobile.png"), fullPage: false });
+  await showDashboardFixture(page, lessons.slice(0, 3), lessons[2].id, work);
+  await page.goto("/student/badges");
+  await expect(allClear).toContainText("3개 수업에서 받음");
+  await expect(allClear.locator("details")).toHaveCount(0);
+  await expect(allClear.locator("p").filter({ hasText: /^받은 수업:/ })).toHaveText(`받은 수업: ${lessons.slice(0, 3).reverse().map(lesson => lesson.title).join(", ")}`);
+  expect(errors).toEqual([]);
+});
+
+test("희귀·깜짝 배지·토스트: 수업 중 배지를 받으면 토스트로 알리고, 희귀 배지만 반짝인다", async ({ page }) => {
   const conditionals = LESSONS.find(lesson => lesson.id === "conditionals")!;
   await openLessons([conditionals.id], conditionals.id);
   const work = emptyWork(conditionals);
-  work.conceptSolved = conditionals.concepts.map(concept => concept.id);
+  work.conceptSolved = conditionals.concepts.slice(1).map(concept => concept.id);
   work.quizSolved = conditionals.quiz.map(question => question.id);
   work.quizRound = 3;
-  work.missions = Object.fromEntries(["average", "pass", "freethrow", "escape"].map(id => [id, { validation: null, submission: submission(`${id}-submitted`) }]));
+  work.missions = Object.fromEntries(["average", "pass"].map(id => [id, { validation: null, submission: submission(`${id}-submitted`) }]));
   work.updatedAt = Date.now();
   await saveWork(work);
-  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(`/classroom/${conditionals.id}?from=dashboard`);
+  await page.locator("#panel-concept input[type=radio]").first().check();
+  await page.getByRole("button", { name: "정답 확인", exact: true }).click();
+  await expect(page.locator('[data-slot="toast"]').filter({ hasText: "‘개념 탐험가’ 배지를 받았어요!" })).toBeVisible();
+  work.conceptSolved = conditionals.concepts.map(concept => concept.id);
+  work.missions = Object.fromEntries(["average", "pass", "freethrow", "ride"].map(id => [id, { validation: null, submission: submission(`${id}-submitted`) }]));
+  work.updatedAt = Date.now();
+  await saveWork(work);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/student/badges");
   const all = page.getByRole("region", { name: "배지 모음", exact: true });
   const comeback = all.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "오뚝이 · 받은 배지", exact: true }) });
   await expect(comeback).toContainText("세 번 넘어져도 끝까지 해냈어요!");
-  // A retried quiz is not a first-try score, so 올클리어 stays hidden here.
   await expect(all.getByRole("heading", { name: "??? · 아직 받지 않은 희귀 배지", exact: true })).toHaveCount(1);
-  expect(await comeback.evaluate(element => getComputedStyle(element, "::after").display)).toBe("none");
+  await expect(all.getByRole("heading", { name: "??? · 아직 받지 않은 깜짝 배지", exact: true })).toHaveCount(1);
+  expect(await comeback.evaluate(element => getComputedStyle(element, "::after").animationName)).toBe("none");
   work.quizRound = 1;
   await saveWork(work);
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.reload();
   const allClear = all.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "올클리어 · 받은 배지", exact: true }) });
   await expect(allClear).toContainText("1개 수업에서 받음");
   expect(await allClear.evaluate(element => getComputedStyle(element, "::after").animationName)).toContain("shine");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(await allClear.evaluate(element => getComputedStyle(element, "::after").display)).toBe("none");
 });
 
 test("남은 활동: 진행 중인 정규 수업은 대시보드와 수업 목록에 남은 개념·퀴즈·미션 수를 보여 준다", async ({ page }) => {

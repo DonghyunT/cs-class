@@ -1,14 +1,24 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, renameSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { changedFiles, classify, findBaseline, ignoreBuild, selectScope } from "../scripts/ci-policy.mjs";
+import { changedFiles, classify, codeFingerprint, codeToRecord, findBaseline, findTestedRun, findVerifiedRun, ignoreBuild, selectScope } from "../scripts/ci-policy.mjs";
 
 const sha = "a".repeat(40);
 const env = { GITHUB_EVENT_NAME: "push", GITHUB_REF: "refs/heads/main", GITHUB_TOKEN: "test-only",
   GITHUB_REPOSITORY: "example/project", GITHUB_RUN_ID: "9", GITHUB_SHA: "b".repeat(40) };
+// Main pushes look for a trusted pull_request record of the same code; these tests have none.
+const unverified = async () => null;
+
+const prEnv = { ...env, GITHUB_EVENT_NAME: "pull_request", GITHUB_REF: "refs/pull/5/merge", GITHUB_HEAD_REF: "fix/work" };
+const passedRun = { id: 7, event: "pull_request", status: "completed", conclusion: "success", head_branch: "fix/work",
+  head_repository: { full_name: "example/project" } };
+const recorded = (code, conclusion = "success") => [{ name: "app", conclusion: "success", steps: [{ name: "Run npm run build", conclusion: "success" },
+  { name: `Record tested code ${code}`, conclusion }] }];
+// Answers the run list and the candidate run's jobs.
+const ciApi = (runs, jobs) => async (url) => ({ ok: true, json: async () => url.includes("/jobs") ? { jobs } : { workflow_runs: runs } });
 
 test("only explicit documentation paths are light checks", () => {
   assert.equal(classify(["README.md", "AGENTS.md", "docs/HANDOFF.md", "docs/archive/old.md"]), "docs");
@@ -47,10 +57,10 @@ test("scope compares all changes since last success, including failed code befor
   assert.equal((await selectScope(env, baseline, () => ["docs/HANDOFF.md"])).mode, "docs");
   assert.equal((await selectScope(env, baseline, (base) => {
     assert.equal(base, sha); return ["src/lib/save.ts", "docs/HANDOFF.md"];
-  })).mode, "smoke");
+  }, unverified)).mode, "smoke");
 
   // Single lesson affected scope
-  const sandwichScope = await selectScope(env, baseline, () => ["src/components/student/review/sandwich.tsx"]);
+  const sandwichScope = await selectScope(env, baseline, () => ["src/components/student/review/sandwich.tsx"], unverified);
   assert.equal(sandwichScope.mode, "affected");
   assert.deepEqual(sandwichScope.lessonIds, ["review-sandwich"]);
   assert.ok(sandwichScope.testFiles.length > 0);
@@ -65,13 +75,52 @@ test("shared changes retain related lesson tests and all registered lesson smoke
   assert.deepEqual(plan.lessonIds, ["review-sandwich"]);
   assert.deepEqual(new Set(plan.testFiles), new Set(["tests/review-sandwich.spec.ts", "tests/sandwich-conversation.spec.ts",
     "tests/review-practice-ui.spec.ts", "tests/lesson-feedback-workspace.spec.ts", "tests/lesson-smoke.spec.ts"]));
-  const common = await selectScope(env, async () => sha, () => ["src/components/student/use-work.ts"]);
+  const common = await selectScope(env, async () => sha, () => ["src/components/student/use-work.ts"], unverified);
   assert.equal(common.mode, "smoke");
   assert.deepEqual(common.testFiles, ["tests/lesson-smoke.spec.ts"]);
+  // Hosting the Entry workspace (with its unit test) needs only programming-classroom, not every Entry lesson.
+  const hosting = await selectScope(env, async () => sha, () => ["scripts/entryjs-cdn.mjs", "tests/entryjs-cdn.test.mjs"], unverified);
+  assert.equal(hosting.mode, "smoke");
+  assert.deepEqual(hosting.testFiles, ["tests/programming-classroom.spec.ts", "tests/lesson-smoke.spec.ts"]);
+});
+
+test("automatic smoke runs the specs that pin session and polling timing", async () => {
+  const timing = ["tests/classroom-api.spec.ts", "tests/manual-save-entry.spec.ts", "tests/read-polling.spec.ts"];
+  for (const file of ["src/components/session-provider.tsx", "src/app/api/auth/[action]/route.ts", "src/lib/classroom/features.ts",
+    "src/components/student/lesson-workspace.tsx", "src/components/student/dashboard.tsx", "src/components/dashboard/dashboard.tsx", "tests/read-polling.spec.ts"]) {
+    const plan = await selectScope(env, async () => sha, () => [file], unverified);
+    assert.equal(plan.mode, "smoke", file);
+    assert.deepEqual(new Set(plan.testFiles), new Set([...timing, "tests/lesson-smoke.spec.ts"]), file);
+  }
+  // Locally these shared files still need the user's full-suite decision.
+  assert.equal((await selectScope({}, undefined, () => ["src/components/session-provider.tsx"])).mode, "full");
 });
 
 test("local common changes still require a full-suite decision by the user", async () => {
   assert.equal((await selectScope({}, undefined, () => ["src/components/student/use-work.ts"])).mode, "full");
+});
+
+test("teacher CI adds each role's specs and preserves student smoke for mixed and duplicate changes", async () => {
+  for (const event of [env, prEnv]) {
+    for (const [file, expected] of [["assessment.tsx", "teacher-assessment"], ["work-details.tsx", "teacher-review-workflow"],
+      ["dashboard.tsx", "teacher-class-management"], ["lesson-preview.tsx", "teacher-preview-api"]]) {
+      const plan = await selectScope(event, async () => sha, () => [`src/components/teacher/${file}`], unverified, unverified);
+      assert.equal(plan.mode, "smoke");
+      assert.ok(plan.testFiles.includes(`tests/${expected}.spec.ts`));
+      assert.ok(plan.testFiles.includes("tests/lesson-smoke.spec.ts"));
+    }
+  }
+  const files = ["src/components/teacher/assessment.tsx", "src/components/teacher/dashboard.tsx",
+    "src/components/teacher/dialogs.tsx", "src/components/teacher/work-details.tsx", "src/components/teacher/lesson-preview.tsx",
+    "src/components/student/review/sandwich.tsx", "src/lib/server/classroom.ts", "src/components/teacher/dashboard.tsx"];
+  const plan = await selectScope(prEnv, async () => sha, () => files, unverified, unverified);
+  assert.equal(plan.mode, "smoke");
+  for (const spec of ["teacher-assessment", "teacher-review-workflow", "teacher-class-management", "teacher-lesson-preview",
+    "teacher-preview-api", "classroom-api", "teacher-preparation", "ui-teacher-refinement", "review-sandwich", "lesson-smoke"]) {
+    assert.ok(plan.testFiles.includes(`tests/${spec}.spec.ts`), spec);
+  }
+  assert.equal(plan.testFiles.length, new Set(plan.testFiles).size);
+  assert.deepEqual(plan.lessonIds, ["review-sandwich"]);
 });
 
 test("baseline rejects failed/canceled/manual/current/nonancestor runs", async () => {
@@ -84,6 +133,289 @@ test("baseline rejects failed/canceled/manual/current/nonancestor runs", async (
   await assert.rejects(findBaseline(env, async () => ({ ok: false })));
   await assert.rejects(findBaseline(env, async () => ({ ok: true, json: async () => ({}) })));
   assert.equal(await findBaseline({}), null);
+});
+
+test("main reuses trusted successful records of the tested code, independent of the PR head tree", async () => {
+  const code = "c".repeat(64);
+  const lookup = (runs, jobs = recorded(code)) => findVerifiedRun(env, ciApi(runs, jobs), () => code);
+  assert.equal(await lookup([passedRun]), 7);
+  assert.equal(await lookup([{ ...passedRun, head_commit: { tree_id: "d".repeat(40) } }]), 7);
+  assert.equal(await lookup([{ ...passedRun, head_commit: null }]), 7);
+  for (const other of [{ conclusion: "failure" }, { conclusion: "cancelled" }, { status: "in_progress" }, { event: "push" },
+    { event: "workflow_dispatch" }, { head_repository: { full_name: "someone/fork" } }, { head_repository: null }, { id: 9 }]) {
+    assert.equal(await lookup([{ ...passedRun, ...other }]), null, JSON.stringify(other));
+  }
+  for (const jobs of [[], recorded("d".repeat(64)), recorded(code, "skipped"), recorded(code, "failure"),
+    [{ ...recorded(code)[0], name: "another-job" }], [{ ...recorded(code)[0], conclusion: "failure" }],
+    [{ name: "app", conclusion: "success", steps: [{ name: "Run npm run build", conclusion: "success" }] }]]) {
+    assert.equal(await lookup([passedRun], jobs), null);
+  }
+  const urls = [];
+  const request = async (url) => {
+    urls.push(url);
+    return { ok: true, json: async () => url.includes("/jobs")
+      ? { jobs: recorded(url.includes("/runs/6/") ? "d".repeat(64) : code) }
+      : { workflow_runs: [{ ...passedRun, id: 6 }, passedRun] } };
+  };
+  assert.equal(await findVerifiedRun(env, request, () => code), 7);
+  assert.match(urls[0], /verify\.yml\/runs\?event=pull_request&status=success&per_page=100$/);
+  assert.equal(urls.length, 3, "a newer different-code run does not hide a matching older run");
+  assert.equal(await lookup([]), null);
+  await assert.rejects(findVerifiedRun(env, async () => ({ ok: false }), () => code));
+  await assert.rejects(findVerifiedRun(env, async (url) => url.includes("/jobs") ? { ok: false } : ciApi([passedRun], recorded(code))(url), () => code));
+  assert.equal(await findVerifiedRun({}), null);
+
+  const lesson = () => ["src/components/student/review/sandwich.tsx"];
+  const reused = await selectScope(env, async () => sha, lesson, async () => 7);
+  assert.equal(reused.mode, "verified");
+  assert.match(reused.reason, /run 7/);
+  assert.equal(reused.base, sha);
+  assert.deepEqual(reused.testFiles, []);
+  assert.equal((await selectScope(env, async () => sha, () => ["src/components/student/use-work.ts"], async () => 7)).mode, "verified");
+  assert.equal((await selectScope({ ...env, GITHUB_EVENT_NAME: "pull_request" }, async () => sha, lesson, async () => 7)).mode, "affected");
+  assert.equal((await selectScope(env, async () => sha, () => ["docs/HANDOFF.md"], async () => 7)).mode, "docs");
+  const unavailable = (runEnv) => findVerifiedRun(runEnv, async () => ({ ok: false }), () => code);
+  assert.equal((await selectScope(env, async () => sha, lesson, unavailable)).mode, "affected");
+});
+
+test("main checks the latest record first, then batches older jobs with bounded concurrency", async () => {
+  const code = "c".repeat(64);
+  const runs = Array.from({ length: 21 }, (_, index) => ({ ...passedRun, id: 100 + index }));
+  let active = 0, peak = 0;
+  const requested = [];
+  const request = async (url) => {
+    if (!url.includes("/jobs")) return { ok: true, json: async () => ({ workflow_runs: runs }) };
+    const id = Number(url.match(/runs\/(\d+)\/jobs/)[1]);
+    requested.push(id);
+    peak = Math.max(peak, ++active);
+    await new Promise(resolve => setImmediate(resolve));
+    active--;
+    return { ok: true, json: async () => ({ jobs: recorded(id === 109 ? code : "d".repeat(64)) }) };
+  };
+  assert.equal(await findVerifiedRun(env, request, () => code), 109);
+  assert.equal(peak, 10);
+  assert.deepEqual(requested, Array.from({ length: 11 }, (_, index) => 100 + index));
+  requested.length = 0;
+  peak = 0;
+  runs[0] = { ...passedRun, id: 109 };
+  assert.equal(await findVerifiedRun(env, request, () => code), 109);
+  assert.deepEqual(requested, [109], "the common latest-match case reads only one job");
+  assert.equal(peak, 1);
+});
+
+test("a pull_request run reuses the last passed run of its branch only when that run recorded the same code", async () => {
+  const code = "c".repeat(64);
+  const lookup = (runs, jobs, runEnv = prEnv) => findTestedRun(runEnv, ciApi(runs, jobs), () => code);
+  assert.equal(await lookup([passedRun], recorded(code)), 7);
+
+  const urls = [];
+  await findTestedRun(prEnv, async (url) => { urls.push(url); return ciApi([passedRun], recorded(code))(url); }, () => code);
+  assert.match(urls[0], /verify\.yml\/runs\?branch=fix%2Fwork&event=pull_request&status=success&per_page=1$/);
+  assert.match(urls[1], /actions\/runs\/7\/jobs$/);
+
+  // No proof: each of these must leave E2E to run.
+  assert.equal(await lookup([], recorded(code)), null);
+  assert.equal(await lookup([passedRun], recorded("d".repeat(64))), null);
+  assert.equal(await lookup([passedRun], recorded(code, "skipped")), null);
+  assert.equal(await lookup([passedRun], [{ name: "app", steps: [{ name: "Run npm run build", conclusion: "success" }] }]), null);
+  for (const other of [{ conclusion: "failure" }, { status: "in_progress" }, { event: "push" }, { event: "workflow_dispatch" },
+    { head_branch: "fix/other" }, { head_repository: { full_name: "someone/fork" } }, { head_repository: null }, { id: 9 }]) {
+    assert.equal(await lookup([{ ...passedRun, ...other }], recorded(code)), null, JSON.stringify(other));
+  }
+  // Nothing to ask with: these must not even reach the API.
+  const noRequest = async () => { throw new Error("must not call the API"); };
+  assert.equal(await findTestedRun({ ...prEnv, GITHUB_HEAD_REF: "" }, noRequest, () => code), null);
+  assert.equal(await findTestedRun({ ...prEnv, GITHUB_TOKEN: "" }, noRequest, () => code), null);
+
+  // Failed lookups reject here; selectScope turns that into its own E2E (below).
+  await assert.rejects(findTestedRun(prEnv, async () => ({ ok: false }), () => code));
+  await assert.rejects(findTestedRun(prEnv, async (url) => url.includes("/jobs") ? { ok: false } : ciApi([passedRun])(url), () => code));
+  await assert.rejects(lookup([passedRun], undefined));
+  await assert.rejects(findTestedRun(prEnv, ciApi([passedRun], recorded(code)), () => { throw new Error("no git"); }));
+});
+
+test("only pull_request events consult the tested-code lookup, and any failure runs E2E", async () => {
+  const lesson = () => ["src/components/student/review/sandwich.tsx"];
+  const refuse = async () => { throw new Error("must not be consulted"); };
+  const reused = await selectScope(prEnv, async () => sha, lesson, refuse, async () => 7);
+  assert.equal(reused.mode, "verified");
+  assert.match(reused.reason, /run 7/);
+  assert.equal(reused.base, sha);
+  assert.deepEqual(reused.testFiles, []);
+  assert.equal((await selectScope(prEnv, async () => sha, () => ["src/components/student/use-work.ts"], refuse, async () => 7)).mode, "verified");
+
+  // No match or a failed lookup keeps today's scope.
+  assert.equal((await selectScope(prEnv, async () => sha, lesson, refuse, async () => null)).mode, "affected");
+  assert.equal((await selectScope(prEnv, async () => sha, lesson, refuse, refuse)).mode, "affected");
+  const shared = await selectScope(prEnv, async () => sha, () => ["src/components/student/use-work.ts"], refuse, refuse);
+  assert.equal(shared.mode, "smoke");
+  assert.deepEqual(shared.testFiles, ["tests/lesson-smoke.spec.ts"]);
+  // A real lookup failing on the API also ends there, not in a crash or a skip.
+  const unreachable = (runEnv) => findTestedRun(runEnv, async () => ({ ok: false }), () => "c".repeat(64));
+  assert.equal((await selectScope(prEnv, async () => sha, lesson, refuse, unreachable)).mode, "affected");
+
+  // These lookups would claim a match, so a wrong call to them shows up as `verified`.
+  const match = async () => 7;
+  assert.equal((await selectScope(prEnv, async () => sha, () => ["docs/HANDOFF.md"], match, match)).mode, "docs");
+  assert.equal((await selectScope(prEnv, async () => sha, lesson, match, async () => null)).mode, "affected");
+  assert.equal((await selectScope(env, async () => sha, lesson, async () => null, match)).mode, "affected");
+  assert.equal((await selectScope({ GITHUB_ACTIONS: "true" }, async () => sha, lesson, match, match)).mode, "affected");
+  assert.equal((await selectScope({ ...prEnv, GITHUB_EVENT_NAME: "workflow_dispatch" }, refuse, lesson, match, match)).mode, "full");
+});
+
+test("only a pull_request run on its normal scope leaves a record", async () => {
+  const code = () => "c".repeat(64);
+  for (const mode of ["affected", "smoke", "verified"]) assert.equal(codeToRecord(prEnv, { mode, base: sha }, code), code());
+  assert.equal(codeToRecord(prEnv, { mode: "docs", base: sha }, code), "");
+  assert.equal(codeToRecord(env, { mode: "affected", base: sha }, code), "");
+  assert.equal(codeToRecord({ ...prEnv, GITHUB_EVENT_NAME: "workflow_dispatch" }, { mode: "full", base: null }, code), "");
+  assert.equal(codeToRecord(prEnv, { mode: "smoke", base: sha }, () => { throw new Error("no git"); }), "");
+  // Without a baseline, or when comparison fails, the run tried smoke alone and must not stand in for the real scope.
+  for (const [baseline, diff] of [[async () => null], [async () => { throw new Error("API failure"); }],
+    [async () => sha, () => { throw new Error("missing history"); }]]) {
+    assert.equal(codeToRecord(prEnv, await selectScope(prEnv, baseline, diff), code), "");
+  }
+});
+
+test("the workflow records tested code last, under the name the next run looks for", () => {
+  const workflow = readFileSync(new URL("../.github/workflows/verify.yml", import.meta.url), "utf8");
+  const step = workflow.indexOf("- name: Record tested code ${{ steps.scope.outputs.code }}");
+  const e2e = workflow.lastIndexOf("run: npm run test:e2e:scope");
+  assert.ok(e2e > 0 && step > e2e, "must run after E2E");
+  assert.doesNotMatch(workflow.slice(step + 1), /^\s+- /m, "must be the last step");
+  // No status function here: a failed step above skips the record.
+  assert.match(workflow.slice(step), /\n\s+if: steps\.scope\.outputs\.code != ''\s/);
+});
+
+test("verified skips repeated caches and app checks while policy and the final record remain", () => {
+  const workflow = readFileSync(new URL("../.github/workflows/verify.yml", import.meta.url), "utf8");
+  const steps = workflow.split(/(?=^ {6}- )/m);
+  const repeated = steps.filter(step => /actions\/cache@v4|run: npm (?:ci|run (?:lint|typecheck|test:review|build))\s*$/m.test(step));
+  assert.equal(repeated.length, 7);
+  for (const step of repeated) {
+    assert.match(step, /if: steps\.scope\.outputs\.mode != 'docs' && steps\.scope\.outputs\.mode != 'verified'/);
+  }
+  const policy = steps.find(step => step.includes('name: Verify policy and documentation'));
+  assert.ok(policy.includes('node --test'));
+  assert.ok(policy.includes('node scripts/check-docs.mjs'));
+  assert.doesNotMatch(policy, /^\s+if:/m);
+});
+
+test("the fingerprint changes with every non-document file and with nothing else", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "cs-class-code-"));
+  const previous = process.cwd();
+  const runGit = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  const commit = () => {
+    runGit("add", "-A");
+    runGit("-c", "user.name=CI test", "-c", "user.email=ci@example.invalid", "-c", "commit.gpgsign=false", "commit", "-qm", "fixture");
+  };
+  const write = (file, text) => { mkdirSync(path.dirname(path.join(root, file)), { recursive: true }); writeFileSync(path.join(root, file), text); };
+  try {
+    runGit("init", "--quiet");
+    write("src/app.ts", "one\n"); write("docs/guide.md", "one\n"); commit();
+    process.chdir(root);
+    const first = codeFingerprint();
+    assert.match(first, /^[a-f0-9]{64}$/);
+
+    write("docs/guide.md", "two\n"); write("docs/new/deep.md", "new\n"); write("README.md", "new\n"); write("AGENTS.md", "new\n"); commit();
+    assert.equal(codeFingerprint(), first);
+    rmSync(path.join(root, "docs/new/deep.md")); commit();
+    assert.equal(codeFingerprint(), first);
+
+    // What classify treats as code stays code, wherever it lives.
+    for (const file of ["docs/example.ts", "notes.md", "src/README.md", "docs/guide.md.bak", ".github/workflows/verify.yml"]) {
+      write(file, "x\n"); commit();
+      assert.notEqual(codeFingerprint(), first, file);
+      rmSync(path.join(root, file)); commit();
+      assert.equal(codeFingerprint(), first, file);
+    }
+    write("src/app.ts", "two\n"); commit();
+    assert.notEqual(codeFingerprint(), first);
+    write("src/app.ts", "one\n"); commit();
+    assert.equal(codeFingerprint(), first);
+    renameSync(path.join(root, "src/app.ts"), path.join(root, "src/moved.ts")); commit();
+    assert.notEqual(codeFingerprint(), first, "same content under a new path");
+    renameSync(path.join(root, "src/moved.ts"), path.join(root, "src/app.ts")); commit();
+    assert.equal(codeFingerprint(), first);
+    runGit("update-index", "--chmod=+x", "src/app.ts");
+    runGit("-c", "user.name=CI test", "-c", "user.email=ci@example.invalid", "-c", "commit.gpgsign=false", "commit", "-qm", "mode");
+    assert.notEqual(codeFingerprint(), first, "mode change");
+  } finally { process.chdir(previous); rmSync(root, { recursive: true, force: true }); }
+});
+
+test("a chain of pull_request runs stays tied to the code that last passed E2E", async () => {
+  const root = mkdtempSync(path.join(tmpdir(), "cs-class-chain-"));
+  const previous = process.cwd();
+  const runGit = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  const identity = ["-c", "user.name=CI test", "-c", "user.email=ci@example.invalid", "-c", "commit.gpgsign=false"];
+  const commitFile = (file, text) => {
+    mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    writeFileSync(path.join(root, file), text);
+    runGit("add", "-A");
+    runGit(...identity, "commit", "-qm", file);
+    return runGit("rev-parse", "HEAD");
+  };
+  const commitOn = (branch, file, text) => { runGit("checkout", "-q", branch); return commitFile(file, text); };
+  // GitHub checks out a throwaway merge of the pull request into main's tip; pull_request runs see that.
+  let last = null;
+  const prRun = async ({ pass = true } = {}) => {
+    runGit("checkout", "-q", "--detach", "main");
+    runGit(...identity, "merge", "-q", "--no-ff", "-m", "test merge", "work");
+    const lookup = (runEnv) => findTestedRun(runEnv, ciApi(last ? [passedRun] : [], last));
+    const plan = await selectScope(prEnv, async () => base, changedFiles, unverified, lookup);
+    // The API filters on success, so a failed run leaves the previous record as the latest.
+    if (pass) {
+      const code = codeToRecord(prEnv, plan);
+      assert.ok(code, "a normal scope records its code");
+      last = recorded(code);
+    }
+    return plan.mode;
+  };
+  let base;
+  try {
+    runGit("init", "--quiet", "-b", "main");
+    base = commitFile("src/main.ts", "main\n");
+    commitFile("docs/guide.md", "guide\n");
+    runGit("checkout", "-q", "-b", "work");
+    process.chdir(root);
+
+    const firstCode = commitOn("work", "src/work.ts", "one\n");
+    assert.equal(await prRun(), "smoke", "nothing recorded yet");
+    assert.equal(await prRun(), "verified", "same commit again");
+
+    commitOn("work", "docs/guide-work.md", "docs\n");
+    assert.equal(await prRun(), "verified", "docs commit");
+    commitOn("work", "docs/guide-more.md", "more docs\n");
+    assert.equal(await prRun(), "verified", "second docs commit reads the record of a run that skipped E2E");
+    commitOn("main", "README.md", "main moved by documents\n");
+    assert.equal(await prRun(), "verified", "main moved by documents only");
+
+    commitOn("work", "src/work.ts", "two\n");
+    assert.equal(await prRun({ pass: false }), "smoke", "code after a verified run still runs E2E");
+    commitOn("work", "docs/after-failure.md", "docs\n");
+    assert.equal(await prRun(), "smoke", "docs on top of failed code do not inherit the older pass");
+    commitOn("work", "docs/after-pass.md", "docs\n");
+    assert.equal(await prRun(), "verified", "that E2E pass counts for the next docs commit");
+
+    commitOn("main", "src/main.ts", "main moved by code\n");
+    commitOn("work", "docs/after-move.md", "docs\n");
+    assert.equal(await prRun(), "smoke", "main moved by code: the merged files are new");
+    assert.equal(await prRun(), "verified", "then that merge has passed");
+
+    // A force-push back to older code differs from the last record even if that code once passed.
+    runGit("checkout", "-q", "work");
+    runGit("reset", "-q", "--hard", firstCode);
+    assert.equal(await prRun(), "smoke", "force-push to older code");
+
+    runGit("checkout", "-q", "main");
+    runGit(...identity, "merge", "-q", "--squash", "work");
+    runGit(...identity, "commit", "-qm", "squash");
+    commitFile("docs/after-squash.md", "main-only documents\n");
+    const verified = () => findVerifiedRun(env, ciApi([passedRun], last));
+    assert.equal((await selectScope(env, async () => base, changedFiles, verified)).mode, "verified", "main matches the actual merge's code after squash and docs");
+    commitFile("src/main.ts", "untested code\n");
+    assert.equal((await selectScope(env, async () => base, changedFiles, verified)).mode, "smoke", "a new main code tree runs its own checks");
+  } finally { process.chdir(previous); rmSync(root, { recursive: true, force: true }); }
 });
 
 test("Vercel skips only proven docs; missing baseline/history builds", () => {

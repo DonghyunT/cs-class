@@ -1,5 +1,5 @@
 import { body, failure, failureResponse, json } from "@/lib/server/http";
-import { decideReview, getWork, mutateWork, studentClassroom, studentDashboard, teacherDashboard, teacherWork, updateClass } from "@/lib/server/classroom";
+import { decideReview, getWork, mutateWork, studentClassroom, studentDashboard, teacherAssessment, teacherDashboard, teacherWork, updateClass } from "@/lib/server/classroom";
 import { classroomAi } from "@/lib/server/review-ai";
 import { resetStudentPassword, setStudentListed, updateFirstEntry } from "@/lib/server/auth";
 import { readTodos, saveTodos, readSchedule, saveSchedule, refreshScheduleTimetable } from "@/lib/server/planner";
@@ -27,6 +27,7 @@ export async function GET(request: Request, context: Context) {
     if (path.length === 1 && path[0] === "student") { operation = "classroom.student.dashboard"; return json(await studentDashboard()); }
     if (path.length === 2 && path[0] === "student" && path[1] === "class") { operation = "classroom.student.dashboard"; return json(await studentClassroom()); }
     if (path.length === 1 && path[0] === "teacher") { operation = "classroom.teacher.dashboard"; return json(await teacherDashboard(query.get("classId") ?? undefined, query.get("lessonId") ?? undefined)); }
+    if (path.length === 1 && path[0] === "assessment") { operation = "classroom.teacher.assessment"; return json(await teacherAssessment(query.get("classId") ?? undefined, query.get("lessons") ?? undefined)); }
     if (path.length === 2 && path[0] === "work") { operation = "classroom.work.read"; return json(await getWork(path[1])); }
     if (path.length === 4 && path[0] === "students" && path[2] === "work" && /^[a-zA-Z0-9_-]{1,128}$/.test(path[1])) { operation = "classroom.teacher.work.read"; return json(await teacherWork(path[1], path[3])); }
     return failureResponse({ code: "NOT_FOUND", message: "찾을 수 없는 요청입니다." }, 404, { operation });

@@ -142,7 +142,8 @@ async function executeAi(payload: unknown, deadline: number) {
     if (input.task === "flow-review") requireCondition(basicReviewCheck(project, input.missionId).passed && input.missionId === "free", 400, "BASIC_CHECK_REQUIRED", "기본 구조와 기획서를 완성한 뒤 설계 리뷰를 요청해 주세요.");
     if (input.task === "abstraction-review") requireCondition(basicReviewCheck(project).passed, 400, "BASIC_CHECK_REQUIRED", "처방전의 필수 작성 내용을 채운 뒤 리뷰를 요청해 주세요.");
     const cacheRef = db.collection("csAiCache").doc(digest([account.uid, input.task, input.input, projectSnapshot(project, input.missionId), project.type === "abstraction" ? project.step : null, promptVersion, ...(input.planning ? [input.planning] : [])]));
-    const cache = (await tx.get(cacheRef)).data();
+    // Chat answers are never cached (see the write below), so there is nothing to look up.
+    const cache = input.task === "abstraction-chat" ? undefined : (await tx.get(cacheRef)).data();
     requireCondition(Date.now() < deadline, 504, "AI_TIMEOUT", "AI 요청 준비 시간이 길어졌어요. 입력은 보존됩니다.");
     const quota = quotaWindow(quotaSnap.data(), Date.now());
     const cached = cache && cache.expiresAt.toMillis() > Date.now();

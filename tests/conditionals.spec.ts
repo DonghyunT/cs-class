@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { buildProgrammingProject, missionStarter, parseProgrammingProject, type EntryNode } from "../src/lib/classroom/programming-entry";
 import type { Work } from "../src/lib/classroom/types";
 import { conditionalConcepts, conditionalQuestions } from "../src/lib/classroom/conditionals-data";
-import { db, headers, readyStudent, entryReset, entryStart } from "./emulator";
+import { db, headers, readyStudent, entryReset, entryStart, entryStop } from "./emulator";
 
 const id = "conditionals", endpoint = `/api/classroom/work/${id}`;
 const node = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
@@ -24,14 +24,14 @@ const solutions: Record<string, { project: string; runs: [string[], string][] }>
   average: { project: onBot("average", [[start(), ...store("A"), ...store("B"), speak(node("calc_basic", node("calc_basic", variable("A"), "PLUS", variable("B")), "DIVIDE", number("2")))]]), runs: [[["6", "4"], "5"]] },
   pass: { project: onBot("pass", [[start(), ask("점수는?"), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [speak(text("합격"))], [speak(text("불합격"))])]]), runs: [[["60"], "합격"], [["59"], "불합격"]] },
   freethrow: { project: onBot("freethrow", [[start(), ask("몇 개?"), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("8")), [speak(text("훌륭해요!"))], [ifElse(compare(answer(), "GREATER_OR_EQUAL", number("5")), [speak(text("잘했어요!"))], [speak(text("더 연습해 보자!"))])])]]), runs: [[["6"], "잘했어요!"]] },
-  escape: { project: onBot("escape", [[start(), ...store("A"), ...store("B"), ifElse(node("boolean_and_or", compare(variable("A"), "EQUAL", number("1")), "OR", compare(variable("B"), "EQUAL", number("1"))), [speak(text("탈출 성공!"))], [speak(text("탈출 실패"))])]]), runs: [[["0", "1"], "탈출 성공!"], [["0", "0"], "탈출 실패"]] },
+  ride: { project: onBot("ride", [[start(), ask("키는?"), node("set_variable", "cs-A", answer(), null), ask("나이는?"), node("set_variable", "cs-B", answer(), null), ifElse(node("boolean_and_or", compare(variable("A"), "GREATER_OR_EQUAL", number("130")), "AND", compare(variable("B"), "GREATER_OR_EQUAL", number("10"))), [speak(text("탈 수 있어요"))], [speak(text("탈 수 없어요"))])]]), runs: [[["130", "10"], "탈 수 있어요"], [["130", "9"], "탈 수 없어요"]] },
 };
 
 // Work saved before the lessons dropped the dog keeps the dog and still runs and grades.
 solutions.legacy = { project: buildProgrammingProject([[start(), ask("점수는?"), ifElse(compare(answer(), "GREATER_OR_EQUAL", number("60")), [speak(text("합격"))], [speak(text("불합격"))])]]), runs: [[["61"], "합격"]] };
 const missionOf = (key: string) => key === "legacy" ? "pass" : key;
 
-async function open(page: Page, mission?: string) {
+async function open(page: Page, mission?: string, project = mission && solutions[mission].project) {
   // Leave the previous editor first so it cannot save over the new fixture.
   await page.goto("about:blank");
   await readyStudent(page.request);
@@ -39,7 +39,7 @@ async function open(page: Page, mission?: string) {
   await db.collection("csClasses").doc("2-1").update({ currentLessonId: id, openedLessonIds: ["programming-13", id] });
   if (mission) {
     const work: Work = await (await page.request.get(endpoint)).json();
-    expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice", programming: { mission: missionOf(mission), projects: { [missionOf(mission)]: solutions[mission].project }, reflection: "" } } } })).status()).toBe(200);
+    expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, stage: "practice", programming: { mission: missionOf(mission), projects: { [missionOf(mission)]: project }, reflection: "" } } } })).status()).toBe(200);
   }
   await page.goto(`/classroom/${id}?from=dashboard`);
 }
@@ -85,6 +85,56 @@ test("조건 수업 퀴즈 오답은 고른 답의 이유와 '다시 생각해 �
   await expect(result).toContainText("다시 생각해 보기");
   await expect(result).toContainText(conditionalQuestions[0].why["1"]);
   await expect(result).not.toContainText(conditionalQuestions[0].hint);
+});
+
+test("강아지 없는 조건 수업도 질문에 대답을 기다리는 시간은 15초 실행 제한에 넣지 않는다", async ({ page }) => {
+  test.setTimeout(90000);
+  await open(page, "pass");
+  await page.locator("iframe").scrollIntoViewIfNeeded();
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+  await entryStart(page).click();
+  const input = page.frameLocator("iframe").getByLabel("질문 대답", { exact: true });
+  await expect(input).toBeVisible();
+  // The limit itself is the subject: wait past it while the question stays open.
+  await page.waitForTimeout(16000);
+  await expect(page.getByText("15초가 지나 실행을 멈췄어요.", { exact: false })).toHaveCount(0);
+  await input.fill("60"); await input.press("Enter");
+  await expect(page.getByRole("status").filter({ hasText: "마지막 말: 합격" })).toBeVisible({ timeout: 10000 });
+});
+
+test("무대 클릭으로 시작한 질문도 대답을 기다리는 시간은 15초 실행 제한에 넣지 않는다", async ({ page }) => {
+  test.setTimeout(90000);
+  // The run reports `finished` and waits for clicks; the question starts only from the click.
+  await open(page, "pass", onBot("pass", [[node("mouse_clicked", null), ask("점수는?"), speak(answer())]]));
+  const frame = page.frameLocator("iframe");
+  await page.locator("iframe").scrollIntoViewIfNeeded();
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+  await entryStart(page).click();
+  await expect(page.getByRole("status").filter({ hasText: "무대·오브젝트를 클릭해 보세요." })).toBeVisible({ timeout: 10000 });
+  await frame.locator("#entryCanvas").click({ position: { x: 40, y: 40 } });
+  const input = frame.getByLabel("질문 대답", { exact: true });
+  await expect(input).toBeVisible();
+  await page.waitForTimeout(16000);
+  await expect(page.getByText("15초가 지나 실행을 멈췄어요.", { exact: false })).toHaveCount(0);
+  // The status keeps the waiting text after `finished`, so the stage's speech shows the answer was taken.
+  await input.fill("60"); await input.press("Enter");
+  const said = () => page.frames().find((f) => f.url().includes("/entryjs/workspace.html"))!.evaluate(() =>
+    (window as unknown as { Entry: { container: { getObject: (id: string) => { entity: { dialog?: { message_?: string } } } } } }).Entry.container.getObject("bot").entity.dialog?.message_ ?? "");
+  await expect.poll(said).toBe("60");
+  await expect(entryStop(page)).toBeEnabled();
+  await expect(page.getByText("15초가 지나 실행을 멈췄어요.", { exact: false })).toHaveCount(0);
+});
+
+test("다른 줄이 멈춘 질문은 15초 실행 제한을 풀어 두지 않는다", async ({ page }) => {
+  test.setTimeout(90000);
+  // `코드 멈추기` ends the asking line but leaves its answer box open; the endless loop must still hit the limit.
+  const loop = { ...node("repeat_inf", null), statements: [[node("wait_second", number("0.1"), null)]] };
+  await open(page, "pass", onBot("pass", [[start(), ask("점수는?")], [start(), node("wait_second", number("1"), null), node("stop_object", "otherThread", null), loop]]));
+  await page.locator("iframe").scrollIntoViewIfNeeded();
+  await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
+  await entryStart(page).click();
+  await expect(page.frameLocator("iframe").getByLabel("질문 대답", { exact: true })).toBeVisible();
+  await expect(page.getByText("15초가 지나 실행을 멈췄어요.", { exact: false })).toBeVisible({ timeout: 25000 });
 });
 
 for (const mission of Object.keys(solutions)) {

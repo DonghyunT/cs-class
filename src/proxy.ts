@@ -14,4 +14,5 @@ export function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: "/entryjs/:path*" };
+// Only preflights carry this header, so plain asset GETs are served without running (and billing) this function.
+export const config = { matcher: [{ source: "/entryjs/:path*", has: [{ type: "header", key: "access-control-request-method" }] }] };

@@ -1,13 +1,17 @@
 "use client";
 
+import { assembledIds } from "@/lib/classroom/assemble";
 import { memo, useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { ArrowRight, ArrowDown, ArrowUp, BookOpen, Check, CheckCircle2, Layers3, Send } from "lucide-react";
+import { Toast } from "@base-ui/react/toast";
 import { Button } from "@/components/ui/button";
+import { SuccessToasts } from "@/components/ui/toast";
 import type { WorkController, LessonMode } from "./work-controller";
 import { practiceMatches, progressFor, shownQuizIds } from "@/lib/classroom/progress";
 import type { Lesson, Question, Stage, Work, WorkAction, WorkDraft } from "@/lib/classroom/types";
 import { LearningStatus } from "./progress-summary";
 import { EntryPracticeWorkspace } from "./entry-practice-workspace";
+import type { EntryExport } from "./read-editor-draft";
 import { ProgrammingLearningStage, hasCustomLearning } from "./programming-lesson";
 import { missionsFor, parseProgrammingProject } from "@/lib/classroom/programming-entry";
 import { isReviewType } from "@/lib/classroom/review/project";
@@ -19,19 +23,19 @@ import styles from "./student.module.css";
 import type { LessonOrigin } from "./lesson-shell";
 import { PracticeGuidance } from "./practice-guidance";
 import { CompletionBanner, CompletionCelebration } from "./lesson-complete";
-import { lessonBadgesFor, type BadgeId } from "@/lib/classroom/achievements";
+import { badgeTitle, lessonBadgesFor, type BadgeId } from "@/lib/classroom/achievements";
 import { LessonConceptPanel } from "./lesson-concept-panel";
 import { LessonQuizPanel } from "./lesson-quiz-panel";
 
 const stages = [{ id: "concept", label: "개념", icon: BookOpen }, { id: "quiz", label: "퀴즈", icon: CheckCircle2 }, { id: "practice", label: "실습", icon: Layers3 }] as const;
 const timeLabel = (time: number) => new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
 
-export type LessonFrame = { stage: Stage; saveLabel: string; save?: () => Promise<boolean>; saveDisabled?: boolean; learningStatus: ReactNode; navigation: ReactNode; focusRequest: { id: string; preventScroll?: boolean } | null };
+export type LessonFrame = { stage: Stage; saveLabel: string; save?: () => Promise<boolean>; saveDisabled?: boolean; learningStatus: ReactNode; navigation: ReactNode; focusRequest: { id: string | readonly string[]; preventScroll?: boolean } | null };
 
 export type WorkspaceView = { returnOrigin: LessonOrigin; workspaceWide: boolean; practiceFocused: boolean; onPracticeFocusedChange: (focused: boolean) => void; onWorkspaceWideChange: (wide: boolean) => void; onWorkspaceStageChange: (stage: Stage) => void };
 
 function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }) {
-  const label = (question: Question, answer?: string) => question.options.find((option) => option.id === answer)?.label ?? "미응답";
+  const label = (question: Question, answer?: string) => question.assemble && answer ? `블록 ${assembledIds(answer).length}개 조립` : question.options.find((option) => option.id === answer)?.label ?? "미응답";
   return <ul className={styles.comparisonList}>
     <li><strong>이어갈 단계</strong>{stages.find((stage) => stage.id === draft.stage)?.label}</li>
     {lesson.concepts.map((concept, i) => <li key={concept.id}><strong>개념 {i + 1}</strong>{label(concept.question, draft.conceptAnswers[concept.id])}</li>)}
@@ -43,7 +47,7 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
 }
 
 // Keep the editor independent of its presentation snapshots: header updates never recreate its controller or iframe.
-export const LessonEditor = memo(function LessonEditor({ lesson, initial, controller, entryExport, mode = "student", workspaceWide, practiceFocused, onWorkspaceWideChange, onWorkspaceStageChange, onFrameChange }: { lesson: Lesson; initial: Work; controller: WorkController; entryExport: RefObject<(() => Promise<string | null>) | null>; mode?: LessonMode; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
+export const LessonEditor = memo(function LessonEditor({ lesson, initial, controller, entryExport, mode = "student", workspaceWide, practiceFocused, onWorkspaceWideChange, onWorkspaceStageChange, onFrameChange }: { lesson: Lesson; initial: Work; controller: WorkController; entryExport: RefObject<EntryExport | null>; mode?: LessonMode; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
   const { work, draft, busy, update, perform, saveState, error, switchStage: changeStage, actionBlocked } = controller;
   const progress = progressFor(lesson, work);
   const reviewType = lesson.practice.type === "sandwich" || lesson.practice.type === "abstraction" || lesson.practice.type === "flowchart" ? lesson.practice.type : null;
@@ -51,6 +55,14 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   // Celebrate only the change to complete during this visit, whichever activity finished it,
   // and list just the badges whose count this change raised (the dashboard counts lessons per badge).
   const [seen, setSeen] = useState({ completed, badges: lessonBadges });
+  const [toasts] = useState(() => Toast.createToastManager());
+  const prev = useRef({ completed, badges: lessonBadges });
+  useEffect(() => {
+    const justCompleted = completed && !prev.current.completed;
+    const added = lessonBadges.filter(id => !prev.current.badges.includes(id));
+    prev.current = { completed, badges: lessonBadges };
+    if (!justCompleted) for (const id of added) toasts.add({ id: `badge-${id}`, title: `‘${badgeTitle(id)}’ 배지를 받았어요!`, priority: "low" });
+  }, [completed, lessonBadges, toasts]);
   const [celebration, setCelebration] = useState<BadgeId[] | null>(null);
   if (completed !== seen.completed || lessonBadges.join() !== seen.badges.join()) {
     if (completed && !seen.completed) setCelebration(lessonBadges.filter(id => !seen.badges.includes(id)));
@@ -62,13 +74,14 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   const keepPractice = practiceVisited && (reviewType === "sandwich" || reviewType === "abstraction");
   const [moveMessage, setMoveMessage] = useState("");
   const [switchingTo, setSwitchingTo] = useState<Stage | null>(null);
-  const [focusRequest, setFocusRequest] = useState<{ id: string; preventScroll?: boolean } | null>(null);
+  const [focusRequest, setFocusRequest] = useState<{ id: string | readonly string[]; preventScroll?: boolean } | null>(null);
   const [conceptId, setConceptId] = useState(() => lesson.concepts.find((item) => !initial.conceptSolved.includes(item.id))?.id ?? lesson.concepts[0]?.id);
   const displayedConcept = useRef(conceptId);
   useEffect(() => { displayedConcept.current = conceptId; }, [conceptId]);
   const [quizQuestionId, setQuizQuestionId] = useState(() => shownQuizIds(lesson, initial).find((id) => initial.quizRoundGraded ? !initial.quizFeedback[id]?.correct : !initial.draft.quizAnswers[id]) ?? shownQuizIds(lesson, initial)[0] ?? lesson.quiz[0]?.id);
   const [experienceVersion, setExperienceVersion] = useState(0);
   const [nativeReady, setNativeReady] = useState(false);
+  const [functionEditing, setFunctionEditing] = useState(false);
   const needsNative = draft.stage === "practice" && (lesson.practice.type === "entryjs" || lesson.practice.type === "programming");
   useEffect(() => { onWorkspaceStageChange(draft.stage); }, [draft.stage, onWorkspaceStageChange]);
   const locked = busy || switchingTo !== null;
@@ -83,7 +96,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     setFocusRequest({ id: "concept-experience-reset", preventScroll: true });
   }
   function moveQuestion(id: string) { setQuizQuestionId(id); setFocusRequest({ id: "quiz-question-title" }); }
-  const saveLabel = mode === "preview" ? error ? "체험 작품 확인 필요" : "이 창에서 체험 중" : switchingTo ? "입력 확인 후 이동 중…" : controller.conflict ? "저장 기록 충돌" : saveState === "saved" ? work.updatedAt ? "저장 완료" : "아직 학습 기록이 없어요" : saveState === "saving" ? "저장 중…" : saveState === "failed" ? "저장 확인 필요" : "저장하지 않은 변경 있음";
+  const saveLabel = mode === "preview" ? error ? "체험 작품 확인 필요" : "이 창에서 체험 중" : switchingTo ? "입력 확인 후 이동 중…" : controller.conflict ? "저장 기록 충돌" : functionEditing && (saveState === "saved" || saveState === "dirty") ? "함수 편집 중 · 저장 전" : saveState === "saved" ? work.updatedAt ? "저장 완료" : "아직 학습 기록이 없어요" : saveState === "saving" ? "저장 중…" : saveState === "failed" ? "저장 확인 필요" : "저장하지 않은 변경 있음";
   const switchStage = useCallback(async (stage: Stage, focusTab = false) => {
     if (switchingTo || busy || actionBlocked) return;
     setSwitchingTo(stage);
@@ -99,7 +112,8 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     else return;
     event.preventDefault(); void switchStage(stages[next].id, true);
   }, [switchStage]);
-  async function runAction(action: WorkAction, focusId: string) {
+  // `focusId` may list targets; the first one on screen takes focus (the next button once an answer is right).
+  async function runAction(action: WorkAction, focusId: string | readonly string[]) {
     if (await perform(action)) {
       if (action.type === "retry-quiz") setQuizQuestionId(lesson.quiz.find((question) => !work.quizSolved.includes(question.id))?.id ?? lesson.quiz[0]?.id);
       const current = controller.getDraft();
@@ -112,11 +126,11 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     const action = controller.actionFailure?.action;
     if (!action || !await controller.recoverAction(resend)) return;
     const programming = lesson.practice.type === "programming";
-    // Only the first programming lesson has its own concept and quiz screens.
+    // Only the first programming lesson has its own concept screen.
     const customLearning = programming && hasCustomLearning(lesson);
-    const id = action.type === "check-concept" ? customLearning ? "concept-feedback" : `concept-feedback-${action.conceptId}` :
-      action.type === "grade-quiz" ? customLearning ? "programming-quiz-result" : "quiz-round-result" :
-      action.type === "retry-quiz" ? customLearning ? "programming-question" : "quiz-question-title" :
+    const id: string | readonly string[] = action.type === "check-concept" ? customLearning ? ["concept-next", "concept-feedback"] : [`concept-next-${action.conceptId}`, `concept-feedback-${action.conceptId}`] :
+      action.type === "grade-quiz" ? "quiz-next-action" :
+      action.type === "retry-quiz" ? "quiz-question-title" :
       reviewType ? "review-action-feedback" : action.type === "submit-practice" ? programming ?
         missionsFor(lesson.id).at(-1)?.id === controller.getDraft().programming?.mission ? "programming-mission-complete" : "programming-next-mission"
         : "submitted-heading" : "practice-feedback";
@@ -161,11 +175,11 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     {controller.remote && <section className={styles.conflictPanel} aria-label="저장 충돌 비교"><h2>어떤 입력으로 이어갈까요?</h2><p>서버의 완료·제출 기록은 유지돼요. 입력 내용은 아래에서 직접 선택하세요.</p><div className={styles.comparisonGrid}><div><h3>이 화면의 입력</h3><DraftComparison lesson={lesson} draft={draft} /></div><div><h3>서버에 저장된 입력</h3><DraftComparison lesson={lesson} draft={controller.remote.draft} /></div></div><div className={styles.actions}><Button disabled={busy} onClick={() => void controller.resolve(true)}>현재 입력을 새 버전으로 저장</Button><Button variant="outline" disabled={busy} onClick={() => void controller.resolve(false)}>서버 기록으로 이어하기</Button></div></section>}
 
 
-    {lesson.practice.type === "programming" && <ProgrammingLearningStage mode={mode} practiceFocused={practiceFocused} lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} conceptId={conceptId} quizQuestionId={quizQuestionId} onConceptChange={setConceptId} onQuizQuestionChange={setQuizQuestionId} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} onEditorReady={setNativeReady} />}
+    {lesson.practice.type === "programming" && <ProgrammingLearningStage mode={mode} practiceFocused={practiceFocused} lesson={lesson} controller={controller} locked={locked} exportRef={entryExport} runAction={runAction} focus={(id) => setFocusRequest({ id })} next={(stage) => void switchStage(stage)} conceptId={conceptId} onConceptChange={setConceptId} workspaceWide={workspaceWide} onWorkspaceWideChange={onWorkspaceWideChange} saveLabel={saveLabel} onEditorReady={setNativeReady} onFunctionEditingChange={setFunctionEditing} />}
 
     {!(lesson.practice.type === "programming" && hasCustomLearning(lesson)) && draft.stage === "concept" && <LessonConceptPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} conceptId={conceptId} experienceVersion={experienceVersion} onResetExperience={resetExperience} onSelectConcept={selectConcept} />}
 
-    {!(lesson.practice.type === "programming" && hasCustomLearning(lesson)) && draft.stage === "quiz" && <LessonQuizPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} quizQuestionId={quizQuestionId} moveQuestion={moveQuestion} />}
+    {draft.stage === "quiz" && <LessonQuizPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} quizQuestionId={quizQuestionId} moveQuestion={moveQuestion} />}
 
     {isReviewType(lesson.practice.type) && (draft.stage === "practice" || keepPractice) && <section id="panel-practice" hidden={draft.stage !== "practice"} role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 className={reviewStyles.srOnly} id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2>{lesson.practice.type === "sandwich" ? <Sandwich mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "abstraction" ? <Abstraction mode={mode} controller={controller} practiceFocused={practiceFocused} /> : <Flowchart mode={mode} controller={controller} practiceFocused={practiceFocused} />}</section>}
     {lesson.practice.type !== "programming" && !isReviewType(lesson.practice.type) && draft.stage === "practice" && (
@@ -304,5 +318,6 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   return <div className={styles.workspace}>{content}
     <span className={styles.srOnly} role="status">{celebration ? "필수 활동을 모두 마쳤어요. 완료 안내에서 이번에 오른 배지를 볼 수 있어요." : ""}</span>
     {celebration && <CompletionCelebration lesson={lesson} work={work} badges={celebration} mode={mode} onClose={closeCelebration} />}
+    <SuccessToasts manager={toasts} label="배지 알림" />
   </div>;
 });

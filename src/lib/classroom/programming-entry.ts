@@ -1,12 +1,12 @@
 import { buildNameProject } from "./name-entry";
-import { CONTAINER_BLOCKS, ENTRYBOT_SPRITE, ENTRY_PALETTE, ENTRY_SPRITES, LIBRARY_SPRITES, MAX_ADDED_OBJECTS, MAX_FREE_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, TRUSTED_SPRITES, VALUE_BLOCKS, blockLabel, spritePictures } from "./entry-palette";
+import { CAT_SPRITE, CONTAINER_BLOCKS, ENTRYBOT_SPRITE, ENTRY_PALETTE, ENTRY_SPRITES, LIBRARY_SPRITES, MAX_ADDED_OBJECTS, MAX_FREE_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, TRUSTED_SPRITES, VALUE_BLOCKS, blockLabel, spritePictures } from "./entry-palette";
 
 // `variables` shows A·B on the stage; `keyEvents` keeps the run waiting for arrow keys.
 // `objects` missions grade every object's event code instead of only the dog's.
 // `hint` is the summary line, `steps` the folded assembly order and `tip` one 💡 reason. They write
 // block chips as `type: text` (the Entry block type and the filled-in block a student builds);
 // read them with `hintParts`/`hintPlain`. `failure` is the grader's plain failure message.
-export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; steps: readonly string[]; tip?: string; failure: string; experiment: string; optional?: true; variables?: true; keyEvents?: true; objects?: true };
+export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; steps: readonly string[]; tip?: string; failure: string; experiment: string; optional?: true; variables?: true; keyEvents?: true; objects?: true; functions?: true };
 
 // Every mission across lessons, keyed by an id no other lesson reuses. Grading and
 // saved records look missions up here; lessons list theirs in LESSON_MISSIONS.
@@ -15,6 +15,7 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "multiply", title: "곱셈 계산기", goal: "두 수를 A와 B에 기억하고, 두 수의 곱을 말하게 해 주세요.", hint: "묻기·변수는 ‘자료’, 곱하기는 ‘계산’ 꾸러미에 있어요.", steps: ["첫 번째 수 묻기 → `set_variable: A를 대답으로 정하기`", "두 번째 수 묻기 → `set_variable: B를 대답으로 정하기`(A▾를 B로)", "말하기 안에 `calc_basic: A 값 x B 값`"], tip: "다시 물으면 대답이 바뀌니, 묻자마자 저장해요.", failure: "첫 질문의 대답을 A에 저장한 뒤 두 번째 수를 물어보세요. B를 물으면 ‘대답’이 바뀌어요.", experiment: "6과 4, 3과 7을 입력해 보세요. 입력을 바꾸면 결과도 달라지나요?", variables: true },
   { id: "move", title: "시작 버튼으로 움직이기", goal: "시작하기 버튼을 누르면 강아지가 오른쪽으로 10만큼 움직이게 해 주세요.", hint: "‘움직임’ 꾸러미에서 ‘방향을’ 말고 ‘이동 방향을’ 블록을 골라요.", steps: ["시작하기 아래에 `direction_absolute: 이동 방향을 90°로 정하기`", "그 아래에 `move_direction: 10만큼 움직이기`"], tip: "엔트리에서 90°는 오른쪽, 0°는 위쪽이에요.", failure: "시작하기 아래에 이동 블록을 연결해 보세요. 오른쪽 방향은 90°예요.", experiment: "실행 → 중지 → 다시 실행해 보세요. 시작 위치와 이동 결과를 비교해요." },
   { id: "keys", title: "방향키로 움직임 개선", goal: "네 방향키로 강아지를 각 방향으로 10만큼 움직이게 해 주세요.", hint: "‘시작’ 꾸러미의 키 블록으로 방향키마다 한 줄씩 만들어요.", steps: ["`when_some_key_pressed: 위쪽 화살표 키를 눌렀을 때` 놓기", "그 아래에 `direction_absolute: 이동 방향을 0°로 정하기` → `move_direction: 10만큼 움직이기`", "같은 줄 3개 더: 오른쪽 키 90° · 아래쪽 키 180° · 왼쪽 키 270°"], tip: "키는 블록의 ▾를 눌러 바꿔요.", failure: "‘키를 눌렀을 때’ 아래에 방향을 정하고 움직여요. 위 0°·오른쪽 90°·아래 180°·왼쪽 270°예요.", experiment: "실행 후 무대를 클릭하고 네 방향키를 눌러 보세요.", keyEvents: true },
+  { id: "change", title: "도전 · 거스름돈 계산기", goal: "낸 돈과 물건값을 A와 B에 기억하고, ‘거스름돈은 1800원’처럼 거스름돈을 한 문장으로 말하게 해 주세요.", hint: "곱셈처럼 먼저 저장하고, 문장은 ‘계산’ 꾸러미의 합치기 블록으로 만들어요.", steps: ["낸 돈 묻기 → `set_variable: A를 대답으로 정하기`", "물건값 묻기 → `set_variable: B를 대답으로 정하기`(A▾를 B로)", "말하기 안에 `combine_something: 거스름돈은 과(와) 원 을(를) 합친 값`", "‘원’ 칸에 합치기를 하나 더 넣어 `calc_basic: A 값 - B 값`과 원 합치기"], tip: "빼기는 순서를 바꾸면 답이 달라져요. 낸 돈에서 물건값을 빼요.", failure: "낸 돈에서 물건값을 뺐는지(A 값 - B 값), 합치기 블록으로 거스름돈과 ‘원’을 한 문장에 넣었는지 확인해 보세요.", experiment: "5000과 3200, 1000과 1000을 넣어 보세요. 물건값이 낸 돈과 같으면 거스름돈은 얼마일까요?", optional: true, variables: true },
   // tests/fixtures/entry-legacy-keys.json pins the failure messages of name·multiply·average·move·keys; keep them byte-identical.
   { id: "average", title: "평균 계산기", goal: "두 수를 A와 B에 기억하고, 두 수의 평균 (A + B) ÷ 2를 말하게 해 주세요.", hint: "곱셈 계산기처럼 먼저 저장하고, ‘계산’ 블록 두 개를 겹쳐요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 첫 번째 수 묻기 → `set_variable: A를 대답으로 정하기`", "두 번째 수 묻기 → `set_variable: B를 대답으로 정하기`", "말하기 안에 `calc_basic: (A 값 + B 값) / 2`"], tip: "더하기 블록을 나누기 블록의 왼쪽 칸에 넣어야 먼저 더해요.", failure: "덧셈 블록을 나눗셈 블록 안에 넣어, 두 수를 먼저 더한 뒤 2로 나눠요.", experiment: "6과 4의 평균은 5예요. -2와 5를 넣으면 어떻게 될까요?", variables: true },
   { id: "pass", title: "시험 합격/불합격", goal: "점수를 묻고, 60점 이상이면 ‘합격’, 아니면 ‘불합격’을 말하게 해 주세요.", hint: "만일 블록은 ‘흐름’, 비교 블록은 ‘판단’ 꾸러미에 있어요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 점수 묻기 → `if_else: 만일 참(이)라면 아니면`", "조건 칸에 `boolean_basic_operator: 대답 ≥ 60`", "위 칸에 `dialog: 합격을 말하기`, 아래 칸에 `dialog: 불합격을 말하기`"], tip: "60점도 합격이니 ‘≥’(크거나 같다)를 골라요.", failure: "60에서 ‘합격’, 59에서 ‘불합격’이 나오는지 조건과 두 칸의 말을 확인해 보세요.", experiment: "59, 60, 100을 차례로 넣어 보세요. 60에서는 어떤 말이 나와야 할까요?" },
@@ -24,6 +25,15 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "tree", title: "나무 키우기", goal: "무대를 클릭할 때마다 ‘클릭 수’를 1씩 늘리고, 클릭 수가 5, 10, 15, 20, 25가 될 때마다 나무를 다음 모양으로 바꿔 주세요. 다 자라면 나무가 ‘성공~!’을 말해요.", hint: "코드는 ‘나무’에 만들어요. 오브젝트 목록에서 나무를 먼저 골라요.", steps: ["`mouse_clicked: 마우스를 클릭했을 때` → `change_variable: 클릭 수에 1만큼 더하기`(A▾를 ‘클릭 수’로)", "`_if: 만일 참(이)라면` 조건 칸에 `boolean_basic_operator: 클릭 수 값 = 5`(여기도 A▾를 ‘클릭 수’로)", "만일 안에 `change_to_next_shape: 다음 모양으로 바꾸기`", "맨 아래 만일을 복제해 아래(바깥)에 붙이고, 5를 10으로 바꾸기", "같은 방법으로 15·20·25도 만들고, 25에는 `dialog: 성공~!을 말하기`도 넣기"], tip: "복제하면 그 아래 블록까지 함께 복제돼요.", failure: "코드를 ‘나무’에 만들었는지, ‘클릭 수’에 1씩 더하고 조건에서도 ‘클릭 수’를 골랐는지, 5·10·15·20·25에서 모양이 바뀌고 25에서 ‘성공~!’을 말하는지 확인해 보세요.", experiment: "4번·5번·6번째 클릭에서 나무 모양을 비교해 보세요. 25번 넘게 클릭해도 나무가 처음 모양으로 돌아가지 않는지도 보세요.", objects: true },
   { id: "safe", title: "도전 · 비밀번호 금고", goal: "대답이 1234가 될 때까지 비밀번호를 묻고, 맞히면 ‘금고가 열렸어요!’를 말하게 해 주세요.", hint: "반복은 ‘흐름’, 비교는 ‘판단’ 꾸러미에 있어요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` → `repeat_while_true: 참이 될 때까지 반복하기`", "조건 칸에 `boolean_basic_operator: 대답 = 1234`, 반복 안에 `ask_and_wait: 비밀번호를 묻고 대답 기다리기`", "반복 아래(바깥)에 `dialog: 금고가 열렸어요!를 말하기`"], tip: "묻기가 반복 안에 있어야 틀릴 때마다 다시 물어요.", failure: "묻기가 반복 안에, ‘금고가 열렸어요!’ 말하기가 반복 아래(바깥)에 있는지 확인해 보세요.", experiment: "틀린 번호를 몇 번 넣은 뒤 1234를 넣어 보세요. 질문이 몇 번 나왔나요?", optional: true },
   { id: "escape", title: "도전 · 방탈출", goal: "1번·2번 문제를 풀었으면 1, 못 풀었으면 0을 묻고 A·B에 저장한 뒤, 하나라도 풀었으면 ‘탈출 성공!’, 아니면 ‘탈출 실패’를 말하게 해 주세요.", hint: "묻기·변수는 ‘자료’, 두 조건을 묶는 블록은 ‘판단’ 꾸러미에 있어요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 1번 결과 묻기 → `set_variable: A를 대답으로 정하기`", "2번 결과 묻기 → `set_variable: B를 대답으로 정하기`", "`if_else: 만일 참(이)라면 아니면` 조건 칸에 `boolean_and_or: 참 또는 거짓`", "‘또는’의 두 칸에 `boolean_basic_operator: A 값 = 1`, `boolean_basic_operator: B 값 = 1`", "위 칸에 `dialog: 탈출 성공!을 말하기`, 아래 칸에 `dialog: 탈출 실패를 말하기`"], tip: "‘또는’은 하나만 참이어도 참, ‘그리고’는 둘 다 참이어야 참이에요.", failure: "1과 0, 0과 1에서 ‘탈출 성공!’, 0과 0에서 ‘탈출 실패’가 나오는지 A·B 저장과 조건을 확인해 보세요.", experiment: "1과 0, 0과 1, 0과 0을 넣어 보세요. 여유가 있으면 1과 1에서 어떻게 될지 먼저 예상해 보세요.", optional: true, variables: true },
+  { id: "ride", title: "도전 · 놀이기구 탑승", goal: "키와 나이를 묻고 A·B에 저장한 뒤, 키가 130 이상이고 나이가 10 이상이면 ‘탈 수 있어요’, 아니면 ‘탈 수 없어요’를 말하게 해 주세요.", hint: "묻기·변수는 ‘자료’, 두 조건을 묶는 블록은 ‘판단’ 꾸러미에 있어요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 키 묻기 → `set_variable: A를 대답으로 정하기`", "나이 묻기 → `set_variable: B를 대답으로 정하기`(A▾를 B로)", "`if_else: 만일 참(이)라면 아니면` 조건 칸에 `boolean_and_or: 참 그리고 참`", "‘그리고’의 두 칸에 `boolean_basic_operator: A 값 ≥ 130`, `boolean_basic_operator: B 값 ≥ 10`", "위 칸에 `dialog: 탈 수 있어요를 말하기`, 아래 칸에 `dialog: 탈 수 없어요를 말하기`"], tip: "130cm·10살도 탈 수 있으니 두 비교 모두 ‘≥’를 골라요.", failure: "130과 10에서 ‘탈 수 있어요’, 129와 10·130과 9에서 ‘탈 수 없어요’가 나오는지 A·B 저장과 ‘그리고’ 조건을 확인해 보세요.", experiment: "130과 10, 129와 10, 130과 9를 넣어 보세요. 기준과 같은 수에서는 어떤 말이 나와야 할까요?", optional: true, variables: true },
+  { id: "cat-walk", title: "고양이 걸음", goal: "‘고양이 걸음’ 함수에 ‘다음 모양으로 바꾸기’를 넣고, ←·→ 키를 누르면 그 방향으로 10만큼 움직인 뒤 고양이 걸음을 부르게 해 주세요.", hint: "함수는 ‘함수’ 꾸러미의 ‘함수 만들기’로 만들어요.", steps: ["‘함수 만들기’ → 이름 칸에 ‘고양이 걸음’ 쓰기", "함수 안에 `change_to_next_shape: 다음 모양으로 바꾸기` → 함수 편집 창의 ‘저장’", "`when_some_key_pressed: 오른쪽 화살표 키를 눌렀을 때` → `move_x: x 좌표를 10만큼 바꾸기`", "그 아래에 ‘함수’ 꾸러미의 ‘고양이 걸음’ 블록 끼우기", "왼쪽 화살표 키로 같은 줄을 만들고 10을 -10으로"], tip: "키는 블록의 ▾를 눌러 바꿔요.", failure: "←·→ 키마다 10만큼 움직이고, 두 키 모두 ‘고양이 걸음’ 함수를 부르는지 확인해 보세요.", experiment: "실행 후 무대를 클릭하고 ←·→ 키를 번갈아 눌러 보세요. 걸을 때마다 모양이 바뀌어요.", keyEvents: true, functions: true },
+  { id: "windows", title: "창문 두 개", goal: "‘창문 그리기’ 함수로 한 변이 50인 정사각형을 그리고, 위치를 옮겨 한 번 더 불러 서로 닿지 않는 창문 두 개를 만들어 주세요.", hint: "그리는 블록은 모두 ‘창문 그리기’ 함수 안에 넣어요.", steps: ["‘창문 그리기’ 함수 안: `start_drawing: 그리기 시작하기` → `repeat_basic: 4번 반복하기`", "반복 안에 `move_direction: 50만큼 움직이기`, `direction_relative: 90° 회전하기`", "반복 아래에 `stop_drawing: 그리기 멈추기` → 함수 편집 창의 ‘저장’", "`when_run_button_click: 시작하기 버튼을 클릭했을 때` → 창문 그리기", "그 아래 `move_x: x 좌표를 100만큼 바꾸기` → 창문 그리기 한 번 더"], failure: "창문 그리기 함수를 위치를 옮겨 두 번 부르고, 선은 모두 함수 안에서 그렸는지 확인해 보세요.", experiment: "한 창문만 크게 하려면 함수 안의 50만 바꾸면 될까요? 먼저 예상하고 실행해 본 뒤, 제출 전에는 50으로 되돌려 주세요.", functions: true },
+  { id: "fix-shapes", title: "고장 난 도형 고치기", goal: "정호의 코드는 정사각형·정오각형·정육각형을 그려야 하는데 이상하게 그려져요. 디버깅해서 세 도형을 모두 완성해 주세요.", hint: "먼저 실행해 보고, 예상과 다른 곳을 찾아요.", steps: ["시작하기를 눌러 어느 도형이 이상한지 보기", "오각형이 사각형처럼 보이면: 360 ÷ 5 = 72° → `direction_relative: 72° 회전하기`", "육각형이 안 보이면: 시작하기 줄 맨 아래에 ‘육각형 그리기’ 끼우기", "다시 실행해 정사각형·정오각형·정육각형이 맞는지 확인하기"], tip: "함수 블록을 두 번 누르면 편집 창이 열려요.", failure: "세 도형이 모두 닫혔는지, 도형마다 자기 함수로 그리는지 확인해 보세요.", experiment: "오각형의 회전 각도를 다른 값으로 바꿔 보며 도형이 어떻게 달라지는지 보세요. 실험 뒤에는 72°로 되돌려 제출해 주세요.", functions: true },
+  { id: "flower", title: "도전 · 꽃 피우기", goal: "‘꽃잎’ 함수로 한 변이 50인 정사각형을 그리고, 반복 안에서 6번 부르며 부를 때마다 60°씩 돌아 꽃을 만들어 주세요.", hint: "‘창문 그리기’처럼 함수를 만들고 반복 안에서 불러요.", steps: ["‘꽃잎’ 함수 안: `start_drawing: 그리기 시작하기` → `repeat_basic: 4번 반복하기`", "반복 안에 `move_direction: 50만큼 움직이기`, `direction_relative: 90° 회전하기`", "반복 아래에 `stop_drawing: 그리기 멈추기` → 함수 편집 창의 ‘저장’", "`when_run_button_click: 시작하기 버튼을 클릭했을 때` → `repeat_basic: 6번 반복하기`", "반복 안에 꽃잎 → `direction_relative: 60° 회전하기`"], failure: "반복 안에서 ‘꽃잎’을 6번 부르고, 부를 때마다 60°씩 도는지 확인해 보세요.", experiment: "6과 60을 8과 45로 바꾸면 어떤 꽃이 될까요? 제출은 6번·60°로 해 주세요.", optional: true, functions: true },
+  { id: "paddle", title: "막대 움직이기", goal: "시작하기를 누르면 막대가 마우스의 x 좌표를 계속 따라가게 만들어요.", hint: "시작하기 아래 `repeat_inf: 계속 반복하기` 안에서 마우스 x로 이동해요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 아래에 `repeat_inf: 계속 반복하기`를 붙여요", "반복 안에 `locate_x: x: 10 위치로 이동하기`를 넣고 `coordinate_mouse: 마우스 x 좌푯값`을 넣어요"], tip: "x만 바꾸면 막대 높이는 그대로예요.", failure: "시작하기 아래 ‘계속 반복하기’ 안에서 ‘x: (마우스 x 좌푯값) 위치로 이동하기’를 실행해 막대가 마우스 x 좌푯값을 따라가게 해 주세요.", experiment: "시작하기를 누르고 무대 위에서 마우스를 좌우·위아래로 움직여 막대가 가로로만 따라오는지 확인해 보세요.", objects: true },
+  { id: "ball", title: "통통 튀는 공 만들기", goal: "공을 클릭하면 움직이기 시작해 벽과 막대에서 튕기고, 아래쪽 벽에 닿으면 모든 코드를 멈추게 해요. 막대에서는 준비된 함수 ‘막대에서 튕기기’를 불러요.", hint: "공을 클릭하면 계속 움직이며 튕기고 아래쪽 벽에 닿으면 멈춰요.", steps: ["`when_object_click: 오브젝트를 클릭했을 때` 아래에 `repeat_inf: 계속 반복하기`를 붙여요", "반복 안에 `move_direction: 4만큼 움직이기`(10을 4로)와 `bounce_wall: 화면 끝에 닿으면 튕기기`를 넣어요", "반복 안 `_if: 만일 참(이)라면`에 `reach_something: 마우스포인터에 닿았는가?`(▾를 막대로)를 넣어요", "그 안에 ‘함수’ 꾸러미의 ‘막대에서 튕기기’를 넣어요", "반복 맨 아래 `_if: 만일 참(이)라면`에 `reach_something: 아래쪽 벽에 닿았는가?`, 안에 `stop_object: 모든 코드 멈추기`"], tip: "시작하기를 누른 뒤 공을 클릭해야 움직여요.", failure: "공의 ‘계속 반복하기’ 안에 이동·화면 끝 튕기기와 ‘막대에 닿았는가?’(▾를 막대로)일 때 ‘막대에서 튕기기’, ‘아래쪽 벽에 닿았는가?’일 때 ‘모든 코드 멈추기’를 모두 넣어 주세요.", experiment: "시작하기를 누르고 공을 클릭한 뒤 막대로 공을 받아 보세요. 일부러 놓쳐 아래쪽 벽에서 멈추는지도 확인해 보세요. 여유가 있으면 4를 5로 바꿔 더 빠르게 해 봐요.", objects: true, functions: true },
+  { id: "brick", title: "벽돌 깨고 점수 올리기", goal: "벽돌1이 공에 닿으면 점수를 1 올리고 숨겨요. You win!의 승리 조건도 벽돌 수인 3으로 고쳐요.", hint: "공에 닿으면 점수를 올리고 숨겨요. You win!의 99는 3으로 고쳐요.", steps: ["벽돌1에 `when_run_button_click: 시작하기 버튼을 클릭했을 때`와 `repeat_inf: 계속 반복하기`를 붙여요", "반복 안 `_if: 만일 참(이)라면`에 `reach_something: 마우스포인터에 닿았는가?`(▾를 공으로)를 넣어요", "그 안에 `change_variable: A에 10만큼 더하기`(A▾를 점수로, 10을 1로)를 넣어요", "이어서 `hide: 모양 숨기기`를 넣어요", "오브젝트 목록에서 You win!을 눌러 `boolean_basic_operator: 점수 값 = 99`의 99를 3으로 고쳐요"], tip: "점수는 0에서 시작해요. 벽돌2를 눌러 완성된 코드를 보세요.", failure: "벽돌1이 공에 닿으면(▾를 공으로) 점수를 1 올리고 숨기는지, You win!의 99를 3으로 고쳐 승리 조건이 ‘점수 값 = 3’이고 ‘모든 코드 멈추기’로 끝나는지 확인해 보세요.", experiment: "시작하기를 누르고 공을 클릭해 벽돌 3개를 모두 깨면 You win!이 나타나며 멈추는지 확인해 보세요.", objects: true, functions: true },
+  { id: "brick-bounce", title: "도전 · 벽돌에서도 튕기는 공", goal: "공이 벽돌1·벽돌2·벽돌3에 닿았을 때도 방향을 회전해 통통 튕기며 깨게 만들어요.", hint: "공의 `repeat_inf: 계속 반복하기` 안에 벽돌에 닿을 때 회전을 더해요.", steps: ["공의 반복 안에 `_if: 만일 참(이)라면`과 `reach_something: 마우스포인터에 닿았는가?`(▾를 벽돌1로)", "그 안에 `direction_relative: 180° 회전하기`를 넣어 벽돌에서 튕기게 해요", "아래에 벽돌2·벽돌3에 닿았을 때 180° 회전하는 만일도 더해요"], tip: "90°나 180° 회전 모두 벽돌에서 튕길 수 있어요.", failure: "공이 벽돌1·벽돌2·벽돌3에 닿았을 때도 이동 방향을 회전해 튕기도록 공의 반복 안에 조건을 넣어 주세요.", experiment: "시작하기를 누르고 공을 클릭해 공이 벽돌1·벽돌2·벽돌3을 깰 때마다 방향을 바꿔 튕겨 나오는지 확인해 보세요.", optional: true, objects: true, functions: true },
 ];
 
 // A hint string split into plain text and `{ type, text }` block chips.
@@ -35,15 +45,19 @@ export const hintPlain = (text: string) => text.replace(new RegExp(CHIP, "g"), "
 // `active` missions are shown and can be checked. `retired` ones only keep old saved work readable.
 const LESSON_MISSIONS: Readonly<Record<string, { active: readonly string[]; retired?: readonly string[] }>> = {
   // The average calculator moved to conditionals; earlier average work stays readable here.
-  "programming-13": { active: ["name", "multiply", "move", "keys"], retired: ["average"] },
-  conditionals: { active: ["average", "pass", "freethrow", "escape"] },
+  "programming-13": { active: ["name", "multiply", "move", "keys", "change"], retired: ["average"] },
+  // The escape-room challenge was replaced by the ride check; earlier escape work stays readable.
+  conditionals: { active: ["average", "pass", "freethrow", "ride"], retired: ["escape"] },
   loops: { active: ["square", "polygon", "tree", "safe"] },
+  functions: { active: ["cat-walk", "windows", "fix-shapes", "flower"] },
+  "brick-breaker": { active: ["paddle", "ball", "brick", "brick-bounce"] },
 };
 // These lessons start without the dog: every object is equal and students pick from the Entry library.
-const FREE_MISSIONS: ReadonlySet<string> = new Set([...LESSON_MISSIONS.conditionals.active, ...LESSON_MISSIONS.loops.active]);
+const FREE_MISSIONS: ReadonlySet<string> = new Set([...LESSON_MISSIONS.conditionals.active, ...LESSON_MISSIONS.conditionals.retired!, ...LESSON_MISSIONS.loops.active, ...LESSON_MISSIONS.functions.active, ...LESSON_MISSIONS["brick-breaker"].active]);
 export const isFreeMission = (id: string) => FREE_MISSIONS.has(id);
 // Starter objects the mission needs; they cannot be deleted.
-export const LOCKED_OBJECTS: Readonly<Record<string, readonly string[]>> = { tree: ["can", "tree"] };
+const BRICK_OBJECTS = ["paddle", "ball", "brick1", "brick2", "brick3", "youwin"] as const;
+export const LOCKED_OBJECTS: Readonly<Record<string, readonly string[]>> = { tree: ["can", "tree"], paddle: BRICK_OBJECTS, ball: BRICK_OBJECTS, brick: BRICK_OBJECTS, "brick-bounce": BRICK_OBJECTS };
 export const missionById = (id: string) => PROGRAMMING_MISSIONS.find((m) => m.id === id);
 export const missionsFor = (lessonId: string) => (LESSON_MISSIONS[lessonId]?.active ?? []).map((id) => missionById(id)!);
 export const requiredMissionsFor = (lessonId: string) => missionsFor(lessonId).filter((m) => !m.optional);
@@ -95,13 +109,41 @@ const placed = (id: string, sprite: string, name: string, entity: Partial<AddedO
 // watering can, growing tree and soil.
 export function missionStarter(missionId: string): string {
   if (missionId === "tree") return buildProgrammingProject(undefined, [
-    placed("can", "watering-can", "물뿌리개", { x: -150, y: 40, scaleX: 0.32, scaleY: 0.32 }),
+    placed("can", "watering-can", "물뿌리개", { x: -150, y: 0, scaleX: 0.32, scaleY: 0.32 }),
     placed("tree", "tree-growth", "나무", { x: 110, y: -10, scaleX: 0.8, scaleY: 0.8 }),
     placed("soil", "soil", "흙", { scaleX: 0.5, scaleY: 0.5 }),
   ], -1, true);
+  if (missionId === "cat-walk") return buildProgrammingProject(undefined, [placed("cat", CAT_SPRITE, "고양이", { scaleX: 0.5, scaleY: 0.5 })], -1);
+  // Jeongho's shapes (textbook p.133) with two bugs: the pentagon turns 90° and the hexagon is never called.
+  if (missionId === "fix-shapes") return buildProgrammingProject(undefined, [{ ...placed("bot", ENTRYBOT_SPRITE, "엔트리봇", { x: -200, scaleX: 0.3, scaleY: 0.3 }), threads: [[{ ...starterBlock("when_run_button_click", null), x: 40, y: 50 }, starterBlock("func_fsq1", null), starterBlock("move_x", starterNumber(130), null), starterBlock("func_fpe1", null), starterBlock("move_x", starterNumber(130), null)]] }], -1, false, [], [
+    { id: "fsq1", name: "사각형 그리기", body: polygonBody(4, 90) }, { id: "fpe1", name: "오각형 그리기", body: polygonBody(5, 90) }, { id: "fhx1", name: "육각형 그리기", body: polygonBody(6, 60) },
+  ]);
+  if (BRICK_STARTERS[missionId]) return BRICK_STARTERS[missionId]();
   if (isFreeMission(missionId)) return buildProgrammingProject(undefined, [placed("bot", ENTRYBOT_SPRITE, "엔트리봇", { scaleX: 0.4, scaleY: 0.4 })], -1);
   return buildProgrammingProject();
 }
+
+const starterBlock = (type: string, ...params: unknown[]): EntryNode => ({ type, params });
+const starterNumber = (value: number, type = "number") => starterBlock(type, String(value));
+// Pen down, `sides` sides of 50 turning `turn`° each, pen up.
+const polygonBody = (sides: number, turn: number): EntryNode[] => [starterBlock("start_drawing", null), { ...starterBlock("repeat_basic", starterNumber(sides), null), statements: [[starterBlock("move_direction", starterNumber(50), null), starterBlock("direction_relative", starterNumber(turn, "angle"), null)]] }, starterBlock("stop_drawing", null)];
+const SCORE_VARIABLE: StudentVariable = { id: "score", name: "점수", value: 0, visible: true, x: -210, y: -112, object: null };
+const brickPaddle = (threads: EntryNode[][] = []) => ({ ...placed("paddle", "paddle", "막대", { x: 0, y: -115, scaleX: 0.75, scaleY: 0.75 }), threads });
+const brickBall = (threads: EntryNode[][] = []) => ({ ...placed("ball", "ball", "공", { x: -19, y: -38, scaleX: 0.3, scaleY: 0.3, direction: 160 }), threads });
+const brickItem = (n: 1 | 2 | 3, threads: EntryNode[][] = []) => ({ ...placed(`brick${n}`, "brick", `벽돌${n}`, { x: (n - 2) * 130, y: 90, scaleX: 0.85, scaleY: 0.85 }), threads });
+// The win picture judges the win: a hidden brick's speech bubble would not show, and the picture stays until 정지하기.
+const brickYouWin = (winAt?: number) => ({ ...placed("youwin", "you-win", "You win!", { scaleX: 0.8, scaleY: 0.8, visible: false }), threads: winAt === undefined ? [] : [[{ ...starterBlock("when_run_button_click", null), x: 40, y: 50 }, { ...starterBlock("repeat_inf", null, null), statements: [[{ ...starterBlock("_if", starterBlock("boolean_basic_operator", starterBlock("get_variable", "score"), "EQUAL", starterNumber(winAt)), null), statements: [[starterBlock("show", null), starterBlock("stop_object", "all", null)]] }]] }]] });
+// The reflection is nested and hard to read, so students call it by name, as in the functions lesson.
+const PADDLE_BOUNCE: ProgramFunction = { id: "pbounce", name: "막대에서 튕기기", body: [starterBlock("rotate_absolute", starterBlock("calc_basic", starterNumber(180), "MINUS", starterBlock("coordinate_object", null, "ball", null, "rotation")), null), starterBlock("rotate_relative", starterBlock("calc_rand", null, starterNumber(-30), null, starterNumber(30), null), null)] };
+const paddleStarterThread = (): EntryNode[] => [{ ...starterBlock("when_run_button_click", null), x: 40, y: 50 }, { ...starterBlock("repeat_inf", null, null), statements: [[starterBlock("locate_x", starterBlock("coordinate_mouse", null, "x", null), null)]] }];
+const ballStarterThread = (): EntryNode[] => [{ ...starterBlock("when_object_click", null), x: 40, y: 50 }, { ...starterBlock("repeat_inf", null, null), statements: [[starterBlock("move_direction", starterNumber(4), null), starterBlock("bounce_wall", null), { ...starterBlock("_if", starterBlock("reach_something", null, "paddle", null), null), statements: [[starterBlock("func_pbounce", null)]] }, { ...starterBlock("_if", starterBlock("reach_something", null, "wall_down", null), null), statements: [[starterBlock("stop_object", "all", null)]] }]] }];
+const brickStarterThread = (delay = false): EntryNode[] => [{ ...starterBlock("when_run_button_click", null), x: 40, y: 50 }, { ...starterBlock("repeat_inf", null, null), statements: [[{ ...starterBlock("_if", starterBlock("reach_something", null, "ball", null), null), statements: [[...(delay ? [starterBlock("wait_second", starterNumber(0.05), null)] : []), starterBlock("change_variable", "score", starterNumber(1), null), starterBlock("hide", null)]] }]] }];
+const BRICK_STARTERS: Readonly<Record<string, () => string>> = {
+  paddle: () => buildProgrammingProject(undefined, [brickPaddle(), brickBall(), brickItem(1), brickItem(2), brickItem(3), brickYouWin()], -1, false, [SCORE_VARIABLE]),
+  ball: () => buildProgrammingProject(undefined, [brickBall(), brickPaddle([paddleStarterThread()]), brickItem(1), brickItem(2), brickItem(3), brickYouWin()], -1, false, [SCORE_VARIABLE], [PADDLE_BOUNCE]),
+  brick: () => buildProgrammingProject(undefined, [brickItem(1), brickItem(2, [brickStarterThread()]), brickItem(3, [brickStarterThread()]), brickBall([ballStarterThread()]), brickPaddle([paddleStarterThread()]), brickYouWin(99)], -1, false, [SCORE_VARIABLE], [PADDLE_BOUNCE]),
+  "brick-bounce": () => buildProgrammingProject(undefined, [brickBall([ballStarterThread()]), brickItem(1, [brickStarterThread(true)]), brickItem(2, [brickStarterThread(true)]), brickItem(3, [brickStarterThread(true)]), brickPaddle([paddleStarterThread()]), brickYouWin(3)], -1, false, [SCORE_VARIABLE], [PADDLE_BOUNCE]),
+};
 
 // Same per-mission limit the server enforces on the normalized project.
 export const MAX_PROJECT_BYTES = 32_768;
@@ -111,11 +153,32 @@ const projectBytes = (project: unknown) => new TextEncoder().encode(JSON.stringi
 
 // The tree mission's ‘클릭 수’ variable, shown on the stage.
 export const COUNTER = { id: "cs-clicks", name: "클릭 수" } as const;
+// The lesson's own variables: rebuilt on every save, so students cannot delete or rename them.
+export const LESSON_VARIABLES: readonly string[] = ["cs-A", "cs-B", COUNTER.id];
+// A variable a student made in the attribute tab. `object` is the owner of an ‘이 오브젝트에서 사용’ variable.
+export type StudentVariable = { id: string; name: string; value: string | number; visible: boolean; x: number; y: number; object: string | null };
+export const MAX_STUDENT_VARIABLES = 10;
+// A plain Entry function (no parameters, return value or local variables). Entry keeps the body
+// inside the definition block (`function_create.statements[0]`) and calls it as `func_<id>`.
+export type ProgramFunction = { id: string; name: string; body: EntryNode[] };
+export const MAX_FUNCTIONS = 10;
+export const functionCallId = (type: string): string | null => /^func_([\w-]{1,30})$/.exec(type)?.[1] ?? null;
+// Entry 4.0.23 `Entry.Utils.isNumber`.
+export const entryNumeric = (v: unknown) => typeof v === "number" || typeof v === "string" && /^-?\d+\.?\d*(?:[eE][+-]?\d+)?$/.test(v);
+// A variable's value as Entry keeps it after loading (`Entry.parseNumber`): numeric text becomes a number unless it
+// starts with 0 (‘007’), and an empty value is 0. Saving it that way keeps a reload from changing the key.
+const loadedValue = (v: string | number) => typeof v === "number" ? v : !v ? 0 : entryNumeric(v) && v[0] !== "0" ? Number(v) : v;
+// A block can name a variable the project lacks: Entry keeps blocks whose variable was deleted (‘대상 없음’).
+const variableId = (v: unknown): v is string => typeof v === "string" && /^[\w-]{1,30}$/.test(v);
 
-export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0, counter = false): string {
-  const p = JSON.parse(buildNameProject()!);
-  p.variables.push(...["A", "B"].map((name, i) => ({ id: `cs-${name}`, name, variableType: "variable", value: 0, visible: false, x: -210, y: 130 - i * 30, object: null, isCloud: false, isRealTime: false })));
-  if (counter) p.variables.push({ id: COUNTER.id, name: COUNTER.name, variableType: "variable", value: 0, visible: true, x: -225, y: 125, object: null, isCloud: false, isRealTime: false });
+// Entry places variable boxes from the stage centre with y growing downward: A·B and 클릭 수 sit top-left, clear of the
+// answer box that opens along the bottom while a question waits.
+export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObject[] = [], mainIndex = 0, counter = false, variables: readonly StudentVariable[] = [], functions: readonly ProgramFunction[] = []): string {
+  const p = JSON.parse(buildNameProject());
+  if (functions.length) p.functions = functions.map((f) => ({ id: f.id, type: "normal", localVariables: [], useLocalVariables: false, content: JSON.stringify([[{ type: "function_create", x: 50, y: 30, params: [{ type: "function_field_label", params: [f.name, null] }, null], statements: [f.body] }]]) }));
+  p.variables.push(...["A", "B"].map((name, i) => ({ id: `cs-${name}`, name, variableType: "variable", value: 0, visible: false, x: -210, y: -112 + i * 30, object: null, isCloud: false, isRealTime: false })));
+  if (counter) p.variables.push({ id: COUNTER.id, name: COUNTER.name, variableType: "variable", value: 0, visible: true, x: -210, y: -112, object: null, isCloud: false, isRealTime: false });
+  p.variables.push(...variables.map((v) => ({ ...v, variableType: "variable", isCloud: false, isRealTime: false })));
   if (threads) p.objects[0].script = threads;
   // Entry lists objects front to back; added objects keep their saved order around the dog.
   // A negative mainIndex is a dog-free project.
@@ -127,8 +190,9 @@ export function buildProgrammingProject(threads?: EntryNode[][], added: AddedObj
 // The editor's media, objects and variables are fixed. Preserve incomplete
 // literal inputs here; validity for execution is checked separately below.
 // `key` compares whole saved works (validation/submission). `gradeKey` covers only
-// the dog's code, which is all grading and the name mission's run records use.
-export function parseProgrammingProject(raw: unknown): { project: Record<string, unknown>; key: string; gradeKey: string; bytes: number; threads: EntryNode[][]; order: string[]; added: AddedObject[]; mainIndex: number; free: boolean } | null {
+// the graded code (the dog's, or every object's in a dog-free project); the app no
+// longer reads it since name-run records were dropped (#74).
+export function parseProgrammingProject(raw: unknown): { project: Record<string, unknown>; key: string; gradeKey: string; bytes: number; threads: EntryNode[][]; order: string[]; added: AddedObject[]; mainIndex: number; free: boolean; variables: StudentVariable[]; functions: ProgramFunction[] } | null {
   if (typeof raw !== "string" || raw.length > MAX_RAW_PROJECT_CHARS) return null;
   try {
     const p = JSON.parse(raw);
@@ -146,6 +210,28 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     let count = 0;
     const reporters = ["text", "number", "angle", "get_canvas_input_value", "get_variable", "combine_something", "calc_basic"];
     const fail = (): never => { throw Error(); };
+    const num = (v: unknown, min: number, max: number, fallback: number) => typeof v === "number" && Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : fallback;
+    // Variables students made; 대답·초시계 have other types. Cloud, real-time and slider settings are dropped (the editor hides them).
+    const variables: StudentVariable[] = (Array.isArray(p.variables) ? p.variables : []).filter((v: unknown) => object(v) && ["variable", "slide"].includes(String(v.variableType)) && !LESSON_VARIABLES.includes(String(v.id))).map((v: Record<string, unknown>) => {
+      // Entry allows 10 characters but numbers a copied name past that (`이름1`).
+      const name = typeof v.name === "string" ? v.name.trim().slice(0, 20).trim() : "";
+      const value = typeof v.value === "number" && Number.isFinite(v.value) || typeof v.value === "string" && v.value.length <= 180 ? loadedValue(v.value) : fail();
+      // Text like ‘1e309’ loads as Infinity, which a saved project cannot hold.
+      if (!variableId(v.id) || !name || (v.object != null && typeof v.object !== "string") || !Number.isFinite(typeof value === "number" ? value : 0)) throw Error();
+      return { id: v.id, name, value, visible: v.visible !== false, x: num(v.x, -1000, 1000, 0), y: num(v.y, -1000, 1000, 0), object: typeof v.object === "string" ? v.object : null };
+    });
+    // The editor stops the add panel at MAX_STUDENT_VARIABLES, but copying an object copies its own variables, so the
+    // count is left to MAX_PROJECT_BYTES, which tells the student to trim the work. Names are not checked: blocks use ids.
+    if (new Set(variables.map((v) => v.id)).size < variables.length) return null;
+    const rawFunctions: unknown[] = Array.isArray(p.functions) ? p.functions : [];
+    if (rawFunctions.length > MAX_FUNCTIONS) return null;
+    // Entry keeps functions in a plain object, so an id like __proto__ would not survive its own export,
+    // and its editor strips a leading func_ from ids, so func_a would open a.
+    const functionId = (v: unknown): v is string => variableId(v) && !(v in Object.prototype) && !v.startsWith("func_");
+    const declared = new Set(rawFunctions.map((f) => object(f) && functionId(f.id) ? f.id : ""));
+    // Entry drops a call whose function is gone (on delete and on load); dropping it here keeps reloads stable.
+    const dangling = (n: unknown) => object(n) && typeof n.type === "string" && functionCallId(n.type) !== null && !declared.has(functionCallId(n.type)!);
+    const live = (list: unknown[]) => list.filter((n) => !dangling(n));
     // The original blocks must match their own branch. Letting a malformed one fall
     // through to the generic rule would hand the interpreter and teacher view a shape they cannot read.
     const legacy = new Set([...reporters, "when_run_button_click", "when_some_key_pressed", "ask_and_wait", "set_variable", "move_direction", "direction_absolute", "dialog_time"]);
@@ -157,15 +243,16 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
       let statements: EntryNode[][] | undefined;
       if (expression && ["text", "number", "angle"].includes(type) && ["string", "number"].includes(typeof params[0]) && String(params[0]).length <= 180) next = [params[0]];
       else if (expression && type === "get_canvas_input_value") next = [null];
-      else if (expression && type === "get_variable" && ["cs-A", "cs-B", COUNTER.id].includes(String(params[0]))) next = [params[0]];
+      else if (expression && type === "get_variable" && variableId(params[0])) next = [params[0]];
       else if (expression && type === "combine_something") next = [null, expr(params[1]), null, expr(params[3]), null];
       else if (expression && type === "calc_basic" && ["PLUS", "MINUS", "MULTI", "DIVIDE"].includes(String(params[1]))) next = [expr(params[0]), params[1], expr(params[2])];
       else if (!expression && type === "when_run_button_click") next = [null];
       else if (!expression && type === "when_some_key_pressed" && /^\d{1,3}$/.test(String(params[1])) && Number(params[1]) <= 255) next = [null, String(params[1])];
       else if (!expression && type === "ask_and_wait") next = [expr(params[0]), null];
-      else if (!expression && type === "set_variable" && ["cs-A", "cs-B", COUNTER.id].includes(String(params[0]))) next = [params[0], expr(params[1]), null];
+      else if (!expression && type === "set_variable" && variableId(params[0])) next = [params[0], expr(params[1]), null];
       else if (!expression && ["move_direction", "direction_absolute"].includes(type)) next = [expr(params[0]), null];
       else if (!expression && type === "dialog_time" && ["speak", "think"].includes(String(params[2]))) next = [expr(params[0]), expr(params[1]), params[2], null];
+      else if (!expression && declared.has(functionCallId(type) ?? "") && params.length <= 1 && params[0] == null) next = [null];
       // The branches above keep the original lesson blocks' saved shape and keys.
       // Other palette blocks keep their native params; only containers keep statements.
       else if (!legacy.has(type) && (PALETTE_BLOCKS.has(type) || VALUE_BLOCKS.has(type)) && params.length <= 8) {
@@ -174,7 +261,7 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
         if (lists) {
           const inner = value.statements ?? Array.from({ length: lists }, () => []);
           if (!Array.isArray(inner) || inner.length !== lists) throw Error();
-          statements = inner.map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return t.map((n) => clean(n, object(n) && reporters.includes(String(n.type)), depth + 1)); });
+          statements = inner.map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return live(t).map((n) => clean(n, object(n) && reporters.includes(String(n.type)), depth + 1)); });
         }
       }
       else throw Error();
@@ -183,11 +270,29 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     const scriptOf = (o: Record<string, unknown>): EntryNode[][] => {
       const script = typeof o.script === "string" ? JSON.parse(o.script) : o.script ?? [];
       if (!Array.isArray(script) || script.length > 16) throw Error();
-      return script.map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return t.map((n) => clean(n, object(n) && reporters.includes(String(n.type)))); });
+      // A line that held only dropped calls goes too, as in Entry.
+      return script.filter((t: unknown) => !Array.isArray(t) || !t.length || live(t).length).map((t: unknown) => { if (!Array.isArray(t) || t.length > 40) throw Error(); return live(t).map((n) => clean(n, object(n) && reporters.includes(String(n.type)))); });
     };
+    // Only plain functions: a ‘값 반환’ type, parameter fields or local variables are refused.
+    const functions: ProgramFunction[] = rawFunctions.map((f) => {
+      if (!object(f) || !functionId(f.id) || f.type !== "normal" || f.useLocalVariables === true || (Array.isArray(f.localVariables) && f.localVariables.length)) throw Error();
+      const content = typeof f.content === "string" ? JSON.parse(f.content) : f.content;
+      const head = Array.isArray(content) && Array.isArray(content[0]) ? content[0][0] : null;
+      if (!object(head) || head.type !== "function_create" || !Array.isArray(head.params)) throw Error();
+      let name = "", label: unknown = head.params[0];
+      for (let i = 0; label != null; i++, label = (label as Record<string, unknown[]>).params[1]) {
+        if (i > 10 || !object(label) || label.type !== "function_field_label" || !Array.isArray(label.params) || typeof label.params[0] !== "string") throw Error();
+        name = `${name} ${label.params[0]}`;
+      }
+      // An emptied name label reads as Entry's default name instead of refusing the work.
+      name = name.trim().slice(0, 20).trim() || "함수";
+      const body = Array.isArray(head.statements) ? head.statements[0] ?? [] : [];
+      if (!Array.isArray(body) || body.length > 40) throw Error();
+      return { id: f.id, name, body: live(body).map((n) => clean(n, object(n) && reporters.includes(String(n.type)))) };
+    });
+    if (declared.size < functions.length) return null;
     const threads = mainIndex < 0 ? [] : scriptOf(p.objects[mainIndex]);
     const ids = new Set<string>();
-    const num = (v: unknown, min: number, max: number, fallback: number) => typeof v === "number" && Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : fallback;
     // Entry flips scaleX negative for vertical rotation; keep the sign and limit the size.
     const scale = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v !== 0 ? Math.sign(v) * Math.max(0.05, Math.min(5, Math.abs(v))) : 0.5;
     const added: AddedObject[] = p.objects.filter((_: unknown, i: number) => i !== mainIndex).map((o: Record<string, unknown>) => {
@@ -217,13 +322,20 @@ export function parseProgrammingProject(raw: unknown): { project: Record<string,
     const code = (list: EntryNode[][]) => list.map((t) => t.map(semantic));
     // The click counter exists only in projects that started with it (the tree mission).
     const counter = Array.isArray(p.variables) && p.variables.some((v: unknown) => object(v) && v.id === COUNTER.id);
-    const project = JSON.parse(buildProgrammingProject(threads, added, mainIndex, counter));
+    if (ids.has("paddle") && !variables.some((v) => v.id === SCORE_VARIABLE.id)) variables.push(SCORE_VARIABLE);
+    // An ‘이 오브젝트에서 사용’ variable belongs to an object in this project; the dog is always rebuilt as `entrybot`.
+    if (variables.some((v) => v.object !== null && !(v.object === "entrybot" && mainIndex >= 0) && !ids.has(v.object))) return null;
+    const project = JSON.parse(buildProgrammingProject(threads, added, mainIndex, counter, variables, functions));
     // Projects with only the dog keep the original key so saved checks still match.
     // Dog-free projects grade every object's code.
     const free = mainIndex < 0;
     const gradeKey = JSON.stringify(free ? added.map((o) => code(o.threads)) : code(threads));
-    const key = added.length ? JSON.stringify({ main: code(threads), mainIndex, added: added.map((o) => ({ ...o, threads: code(o.threads) })), ...(counter ? { counter } : {}) }) : gradeKey;
-    return { project, threads, added, mainIndex, free, order: [...threads, ...added.flatMap((o) => o.threads)].flatMap(flat), key, gradeKey, bytes: projectBytes(project) };
+    // Entry lists new variables first, so the key sorts them to stay the same after a reload.
+    const sorted = [...variables].sort((a, b) => a.id < b.id ? -1 : 1);
+    // Functions join the key only when the work has some, so works without them keep their key.
+    const functionKey = [...functions].sort((a, b) => a.id < b.id ? -1 : 1).map((f) => ({ id: f.id, name: f.name, body: f.body.map(semantic) }));
+    const key = added.length || variables.length || functions.length ? JSON.stringify({ main: code(threads), mainIndex, added: added.map((o) => ({ ...o, threads: code(o.threads) })), ...(counter ? { counter } : {}), ...(variables.length ? { variables: sorted } : {}), ...(functions.length ? { functions: functionKey } : {}) }) : gradeKey;
+    return { project, threads, added, mainIndex, free, variables, functions, order: [...threads, ...added.flatMap((o) => o.threads)].flatMap(flat), key, gradeKey, bytes: projectBytes(project) };
   } catch { return null; }
 }
 
@@ -242,8 +354,9 @@ const DROPDOWN_LABELS: Readonly<Record<string, string>> = {
   WIDTH: "가로", HEIGHT: "세로", width: "가로", height: "세로",
   speak: "말하기", think: "생각하기",
   START: "시작", STOP: "정지", RESET: "초기화", SHOW: "보이기", HIDE: "숨기기",
-  self: "자신", entrybot: "강아지", mouse: "마우스 포인터", wall: "벽", edge: "화면 끝", all: "모든 코드",
-  thisThread: "이 코드", thisOnly: "이 오브젝트의 다른 코드", otherThread: "다른 오브젝트의 코드",
+  self: "자신", entrybot: "강아지", mouse: "마우스 포인터", wall: "벽", wall_up: "위쪽 벽", wall_down: "아래쪽 벽", wall_right: "오른쪽 벽", wall_left: "왼쪽 벽", edge: "화면 끝", all: "모든 코드",
+  thisThread: "이 코드", thisOnly: "자신의 코드", otherThread: "자신의 다른 코드", other_objects: "다른 오브젝트의 코드",
+  paddle: "막대", ball: "공", brick1: "벽돌1", brick2: "벽돌2", brick3: "벽돌3",
   FRONT: "맨 앞", FORWARD: "앞으로", BACKWARD: "뒤로", BACK: "맨 뒤",
   QUOTIENT: "몫", MOD: "나머지",
   square: "제곱", root: "제곱근", sin: "사인", cos: "코사인", tan: "탄젠트", abs: "절댓값", floor: "버림", ceil: "올림", round: "반올림",
@@ -262,21 +375,24 @@ const REPORTER_BLOCKS: ReadonlySet<string> = new Set([
   "get_canvas_input_value", "get_variable",
 ]);
 
-const variableName = (id: string) => id === COUNTER.id ? COUNTER.name : id.replace("cs-", "변수 ");
+// Student variables are shown by the names in `names` (id → name, from `variableNames`); a deleted one as Entry shows it.
+const variableName = (id: string, names: Readonly<Record<string, string>> = {}) => Object.hasOwn(names, id) ? names[id] : id === COUNTER.id ? COUNTER.name : id === SCORE_VARIABLE.id ? SCORE_VARIABLE.name : LESSON_VARIABLES.includes(id) ? id.replace("cs-", "변수 ") : "대상 없음";
+export const variableNames = (variables: readonly StudentVariable[]): Record<string, string> => Object.fromEntries(variables.map((v) => [v.id, v.name]));
+export const functionNamesOf = (functions: readonly ProgramFunction[]): Record<string, string> => Object.fromEntries(functions.map((f) => [f.id, f.name]));
 
-export function formatEntryNode(node: EntryNode): string {
+export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, string>> = {}, functionNames: Readonly<Record<string, string>> = {}): string {
   const keyName = (v: unknown) => v === null || v === undefined ? "( )" : KEY_LABELS[String(v)] ?? `${v}번`;
   const val = (n: EntryNode, index: number): string => {
     const v = n.params[index];
     if (v === null || v === undefined) return "( )";
     if (object(v) && typeof v.type === "string") return expression(v as EntryNode);
     const s = String(v);
-    if (s.startsWith("cs-")) return variableName(s);
+    if (s.startsWith("cs-") || s === SCORE_VARIABLE.id || Object.hasOwn(names, s)) return variableName(s, names);
     return DROPDOWN_LABELS[s] ?? s;
   };
   const expression = (n: EntryNode): string => {
     if (n.type === "get_canvas_input_value") return "대답";
-    if (n.type === "get_variable") return n.params[0] ? variableName(String(n.params[0])) : "변수 값";
+    if (n.type === "get_variable") return n.params[0] ? variableName(String(n.params[0]), names) : "변수 값";
     // Shape ids end in -pic (1st), -pic2, -pic3, …
     if (n.type === "get_pictures") return n.params[0] ? `${Number(/-pic(\d*)$/.exec(String(n.params[0]))?.[1] || 1)}번` : "( )";
     if (n.type === "combine_something") return `${val(n, 1)} + ${val(n, 3)}`;
@@ -291,7 +407,7 @@ export function formatEntryNode(node: EntryNode): string {
     if (n.type === "reach_something") return `${val(n, 1)}에 닿았는가?`;
     if (n.type === "is_type") return `${val(n, 0)}이(가) ${val(n, 2)}인가?`;
     if (n.type === "calc_rand") return `${val(n, 1)}부터 ${val(n, 3)} 사이의 무작위 수`;
-    if (n.type === "coordinate_mouse") return `마우스 ${val(n, 1)} 좌표`;
+    if (n.type === "coordinate_mouse") return `마우스 ${val(n, 1)} 좌푯값`;
     if (n.type === "coordinate_object") return n.params[1] ? `${val(n, 1)}의 ${val(n, 3)}` : "오브젝트의 좌표·값";
     if (n.type === "quotient_and_mod") return `${val(n, 1)} / ${val(n, 3)}의 ${val(n, 5)}`;
     if (n.type === "calc_operation") return `${val(n, 1)}의 ${val(n, 3)}`;
@@ -308,10 +424,12 @@ export function formatEntryNode(node: EntryNode): string {
     return blockLabel(n.type);
   };
   const line = (n: EntryNode): string => {
+    const callee = functionCallId(n.type);
+    if (callee) return `‘${functionNames[callee] ?? "함수"}’ 부르기`;
     if (n.type === "when_run_button_click") return "시작하기 버튼을 클릭했을 때";
     if (n.type === "when_some_key_pressed") return `${keyName(n.params[1])} 키를 눌렀을 때`;
     if (n.type === "ask_and_wait") return `${expression(n.params[0] as EntryNode)} · 묻고 대답 기다리기`;
-    if (n.type === "set_variable") return `${variableName(String(n.params[0]))}에 ${expression(n.params[1] as EntryNode)} 저장하기`;
+    if (n.type === "set_variable") return `${variableName(String(n.params[0]), names)}에 ${expression(n.params[1] as EntryNode)} 저장하기`;
     if (n.type === "change_to_next_shape") return n.params[0] === "prev" ? "이전 모양으로 바꾸기" : "다음 모양으로 바꾸기";
     if (n.type === "change_to_some_shape") return `${val(n, 0)} 모양으로 바꾸기`;
     if (n.type === "dialog_time") return `${expression(n.params[0] as EntryNode)} · ${expression(n.params[1] as EntryNode)}초 동안 ${n.params[2] === "speak" ? "말하기" : "생각하기"}`;
@@ -337,9 +455,9 @@ export function formatEntryNode(node: EntryNode): string {
     if (n.type === "change_object_index") return n.params[0] ? `${val(n, 0)} 보내기` : "앞뒤 순서 바꾸기";
     if (n.type === "set_color") return n.params[0] !== null && n.params[0] !== undefined ? `그리기 색을 ${val(n, 0)}(으)로 정하기` : "그리기 색 정하기";
     if (n.type === "set_fill_color") return n.params[0] !== null && n.params[0] !== undefined ? `채우기 색을 ${val(n, 0)}(으)로 정하기` : "채우기 색 정하기";
-    if (n.type === "change_variable") return `${n.params[0] ? val(n, 0) : "변수"}에 ${val(n, 1)}만큼 더하기`;
-    if (n.type === "show_variable") return `${n.params[0] ? val(n, 0) : "변수"} 보이기`;
-    if (n.type === "hide_variable") return `${n.params[0] ? val(n, 0) : "변수"} 숨기기`;
+    if (n.type === "change_variable") return `${n.params[0] ? variableName(String(n.params[0]), names) : "변수"}에 ${val(n, 1)}만큼 더하기`;
+    if (n.type === "show_variable") return `${n.params[0] ? variableName(String(n.params[0]), names) : "변수"} 보이기`;
+    if (n.type === "hide_variable") return `${n.params[0] ? variableName(String(n.params[0]), names) : "변수"} 숨기기`;
     if (n.type === "choose_project_timer_action" || n.type === "set_visible_project_timer") return n.params[1] ? `초시계 ${val(n, 1)}` : blockLabel(n.type);
     if (n.type === "set_visible_answer") return n.params[0] ? `대답 ${val(n, 0)}` : blockLabel(n.type);
     const label = blockLabel(n.type);
@@ -349,15 +467,16 @@ export function formatEntryNode(node: EntryNode): string {
 }
 
 export function programmingProjectLines(raw: unknown): string[] {
-  // Inner blocks of repeat/if are listed under their block with └.
-  const lines = (thread: EntryNode[], depth: number): string[] => thread.flatMap((n) => [
-    `${depth ? `${"  ".repeat(depth - 1)}└ ` : ""}${formatEntryNode(n)}`,
-    ...(n.statements ?? []).flatMap((inner, i) => [...(i ? [`${"  ".repeat(depth)}아니면`] : []), ...lines(inner, depth + 1)]),
-  ]);
   const parsed = parseProgrammingProject(raw);
   if (!parsed) return ["작품을 읽지 못했어요. 저장된 원문은 보존돼요."];
-  // The dog's code comes first; added objects follow with their names.
-  return [...parsed.threads.flatMap((thread) => lines(thread, 0)), ...parsed.added.flatMap((o) => {
+  const names = variableNames(parsed.variables), functionNames = functionNamesOf(parsed.functions);
+  // Inner blocks of repeat/if are listed under their block with └.
+  const lines = (thread: EntryNode[], depth: number): string[] => thread.flatMap((n) => [
+    `${depth ? `${"  ".repeat(depth - 1)}└ ` : ""}${formatEntryNode(n, names, functionNames)}`,
+    ...(n.statements ?? []).flatMap((inner, i) => [...(i ? [`${"  ".repeat(depth)}아니면`] : []), ...lines(inner, depth + 1)]),
+  ]);
+  // Function definitions come first, then the dog's code; added objects follow with their names.
+  return [...parsed.functions.flatMap((f) => [`함수 ‘${f.name}’`, ...lines(f.body, 1)]), ...parsed.threads.flatMap((thread) => lines(thread, 0)), ...parsed.added.flatMap((o) => {
     const code = o.threads.flatMap((thread) => lines(thread, 0));
     return code.length ? code.map((text) => `[${o.name}] ${text}`) : [`[${o.name}] 코드 없음`];
   })];
@@ -365,7 +484,7 @@ export function programmingProjectLines(raw: unknown): string[] {
 
 // Blocks students often reach for instead of the mission block.
 // Absolute moves and ‘방향을 정하기’ (the object's rotation) do not mean the same in Entry.
-const SIMILAR_BLOCKS: Record<string, string> = { locate_x: "move_x", locate_y: "move_y", rotate_absolute: "direction_absolute" };
+const SIMILAR_BLOCKS: Record<string, string> = { locate_x: "move_x", move_x: "locate_x", locate_y: "move_y", rotate_absolute: "direction_absolute" };
 
 // Graded lines start with a signal this mission's interpreter runs. Loose blocks
 // and other event lines stay in the work but are not graded.
@@ -382,7 +501,17 @@ export function missionBlockIssue(id: string, raw: unknown): string | null {
   const graded = mission?.objects
     ? [...p.threads, ...p.added.flatMap((o) => o.threads)].filter((t) => OBJECT_EVENTS.includes(t[0]?.type))
     : (p.free ? p.added.flatMap((o) => o.threads) : p.threads).filter(starts);
-  const outside = (n: EntryNode): string | undefined => allowed.has(n.type) ? [...n.params.filter((v): v is EntryNode => object(v) && typeof v.type === "string"), ...(n.statements ?? []).flat()].map(outside).find(Boolean) : n.type;
+  // A graded line's function calls are followed into their bodies, each function once.
+  const bodies = new Map(p.functions.map((f) => [f.id, f.body])), entered = new Set<string>();
+  const outside = (n: EntryNode): string | undefined => {
+    const callee = functionCallId(n.type);
+    if (callee) {
+      if (entered.has(callee) || !bodies.has(callee)) return undefined;
+      entered.add(callee);
+      return bodies.get(callee)!.map(outside).find(Boolean);
+    }
+    return allowed.has(n.type) ? [...n.params.filter((v): v is EntryNode => object(v) && typeof v.type === "string"), ...(n.statements ?? []).flat()].map(outside).find(Boolean) : n.type;
+  };
   const type = graded.flat().map(outside).find(Boolean);
   if (type) {
     const instead = SIMILAR_BLOCKS[type];

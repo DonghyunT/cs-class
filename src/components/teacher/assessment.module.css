@@ -1,0 +1,11 @@
+.lessons { margin-top: 28px; }
+.lessonChoices { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; padding: 0; border: none; }
+.lessonChoices small { color: #526173; font-size: 12px; }
+.loadRow { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 14px; color: #526173; }
+/* The stage columns would squeeze a phone-width page; the table scrolls inside its frame instead. */
+.tableScroll { border: 1px solid #e3e8ef; border-radius: 22px; background: white; overflow-x: auto; }
+.tableScroll th[scope="row"] { white-space: nowrap; font-weight: 650; }
+.nickname { display: block; color: #526173; font-size: 12px; font-weight: 450; }
+.number { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.remaining { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.remaining li { padding: 3px 8px; border-radius: 8px; background: #f0f3f7; color: #526173; font-size: 12px; white-space: nowrap; }

@@ -9,6 +9,7 @@ const ENTRY_SHARED = [
   /^tests\/(?:entry-palette\.test\.ts|entry-legacy-(?:inputs|objects)\.ts|fixtures\/entry-legacy-(?:keys|objects)\.json)$/,
   /^public\/entryjs\/.+$/,
   /^scripts\/prepare-entryjs\.mjs$/,
+  /^src\/lib\/classroom\/entry-workspace(?:\.json|-frame\.ts)$/,
   // The teacher runner boots the same iframe for every Entry lesson; its E2E check lives in programming-learning.
   /^src\/components\/teacher\/entry-project-preview\.tsx$/,
   /^tests\/programming-learning\.spec\.ts$/,
@@ -18,8 +19,58 @@ const ENTRY_SHARED = [
   /^scripts\/(?:fetch-entry-library\.mjs|entry-library-picks\.json)$/
 ];
 
-// The concept-screen pictures; only conditionals and loops have entries, and the teacher preview shows them too.
+// The concept-screen pictures; conditionals, loops and brick-breaker have entries, and the teacher preview shows them too.
 const CONCEPT_VISUAL = /^src\/components\/student\/concept-visual(?:\.tsx|\.module\.css)$/;
+
+// Shared session and polling files stay unmapped, so local runs still need the full suite; automatic CI's smoke
+// fallback adds the specs that pin their timing.
+export const SMOKE_RELATED = [{
+  patterns: [
+    /^src\/components\/session-provider\.tsx$/,
+    /^src\/app\/api\/auth\/\[action\]\/route\.ts$/,
+    /^src\/lib\/classroom\/features\.ts$/,
+    /^src\/components\/student\/(?:lesson-workspace|dashboard)\.tsx$/,
+    /^src\/components\/dashboard\/dashboard\.tsx$/,
+    /^tests\/(?:read-polling|manual-save-entry|classroom-api)\.spec\.ts$/
+  ],
+  tests: ["tests/read-polling.spec.ts", "tests/manual-save-entry.spec.ts", "tests/classroom-api.spec.ts"]
+}, {
+  patterns: [
+    /^src\/components\/teacher\/(?:(?:dashboard|dialogs)\.tsx|presentation\.ts)$/,
+    /^src\/components\/teacher\/(?:class-preparation-table|class-progress|teacher-toolbar)(?:\.tsx|\.module\.css)$/,
+    /^src\/components\/teacher\/teacher\.module\.css$/
+  ],
+  tests: ["tests/teacher-class-management.spec.ts", "tests/classroom-api.spec.ts", "tests/teacher-preparation.spec.ts", "tests/ui-teacher-refinement.spec.ts"]
+}, {
+  patterns: [/^src\/components\/teacher\/(?:lesson-preview\.tsx|use-preview-work\.ts)$/],
+  tests: ["tests/teacher-lesson-preview.spec.ts", "tests/teacher-preview-api.spec.ts"]
+}, {
+  patterns: [
+    /^src\/components\/teacher\/(?:assessment|teacher-toolbar)(?:\.tsx|\.module\.css)$/,
+    /^src\/components\/teacher\/presentation\.ts$/,
+    /^src\/components\/teacher\/teacher\.module\.css$/
+  ],
+  tests: ["tests/teacher-assessment.spec.ts"]
+}, {
+  patterns: [
+    /^src\/components\/teacher\/(?:dashboard|dialogs|work-details)\.tsx$/,
+    /^src\/components\/teacher\/(?:presentation\.ts|teacher\.module\.css)$/
+  ],
+  tests: ["tests/teacher-review-workflow.spec.ts", "tests/ui-teacher-refinement.spec.ts"]
+}, {
+  patterns: [
+    /^src\/lib\/(?:classroom|server)\/timetable\.ts$/,
+    /^src\/lib\/server\/timetable-protocol\.ts$/,
+    /^scripts\/timetable-fixture\.mjs$/,
+    /^tests\/timetable(?:-parser\.test|\.spec)\.ts$/
+  ],
+  tests: ["tests/timetable.spec.ts"]
+}];
+
+export function smokeRelatedTests(files) {
+  const normalized = files.map(file => file.replaceAll("\\", "/"));
+  return SMOKE_RELATED.filter(group => normalized.some(file => group.patterns.some(pattern => pattern.test(file)))).flatMap(group => group.tests);
+}
 
 // Logic tests run in the unit job (test:review), so on their own they need no E2E.
 const LOGIC_ONLY = [/^tests\/lesson-feedback\.test\.ts$/];
@@ -61,7 +112,7 @@ export const LESSON_MAPPINGS = {
   "review-abstraction": {
     lessonId: "review-abstraction",
     patterns: [
-      /^src\/components\/student\/review\/abstraction(?:\.tsx|\.module\.css|-stage\.tsx|-concepts\.tsx|-concepts\.module\.css)$/,
+      /^src\/components\/student\/review\/abstraction(?:\.tsx|\.module\.css|-concepts\.tsx|-concepts\.module\.css)$/,
       /^src\/lib\/classroom\/review\/abstraction-data\.mjs$/
     ],
     tests: [
@@ -119,14 +170,66 @@ export const LESSON_MAPPINGS = {
       "tests/loops.spec.ts",
       "tests/teacher-lesson-preview.spec.ts"
     ]
+  },
+  "functions": {
+    lessonId: "functions",
+    patterns: [
+      ...ENTRY_SHARED,
+      /^src\/lib\/classroom\/functions-(?:lesson|data)\.ts$/,
+      /^src\/components\/student\/function-(?:editing\.ts|concepts\.(?:tsx|module\.css))$/,
+      /^tests\/(?:functions\.spec\.ts|fixtures\/entry-function-export\.json)$/,
+      CONCEPT_VISUAL,
+      /^public\/concepts\/functions-[\w-]+\.png$/
+    ],
+    tests: [
+      "tests/functions.spec.ts",
+      "tests/teacher-lesson-preview.spec.ts"
+    ]
+  },
+  "brick-breaker": {
+    lessonId: "brick-breaker",
+    patterns: [
+      ...ENTRY_SHARED,
+      /^src\/lib\/classroom\/brick-breaker-(?:lesson|data)\.ts$/,
+      /^src\/components\/student\/(?:brick-concept-play|concept-assemble)\.tsx$/,
+      /^src\/lib\/classroom\/assemble\.ts$/,
+      /^tests\/brick-breaker\.spec\.ts$/,
+      CONCEPT_VISUAL
+    ],
+    tests: [
+      "tests/brick-breaker.spec.ts",
+      "tests/teacher-lesson-preview.spec.ts"
+    ]
   }
 };
 
+// Where production serves the Entry workspace (host, CDN, headers). Every Entry lesson boots that workspace the same way,
+// so programming-classroom's entry-assets, entry-cdn and entry-host checks cover these without each lesson's missions.
+const ENTRY_HOSTING = {
+  lessonId: "programming-13",
+  patterns: [
+    // Moves the workspace to the Entry CDN on production builds.
+    /^scripts\/entryjs-cdn\.(?:mjs|json)$/,
+    /^cloudflare\/entry-cdn\/.+$/,
+    // Only the Entry workspace's headers and its host's redirect live here; remove this entry if the config grows.
+    /^next\.config\.ts$/,
+    // Answers the sandboxed iframe's CORS preflights. Remove this entry if the matcher grows beyond /entryjs/.
+    /^src\/proxy\.ts$/
+  ],
+  tests: ["tests/programming-classroom.spec.ts"]
+};
+
+const MAPPINGS = [...Object.values(LESSON_MAPPINGS), ENTRY_HOSTING];
+
 // Shared files (the Entry interpreter, palette, iframe) belong to every lesson that lists them.
-export function matchLessons(file) {
+function matchMappings(file) {
   // Normalize Windows backslashes to POSIX
   const normalized = file.replaceAll("\\", "/");
-  return Object.values(LESSON_MAPPINGS).filter(mapping => mapping.patterns.some(pattern => pattern.test(normalized))).map(mapping => mapping.lessonId);
+  return MAPPINGS.filter(mapping => mapping.patterns.some(pattern => pattern.test(normalized)));
+}
+
+export function matchLessons(file) {
+  return [...new Set(matchMappings(file).map(mapping => mapping.lessonId))];
 }
 
 export function matchLesson(file) {
@@ -148,13 +251,13 @@ export function selectE2E(files) {
   // Filter out documentation files to see the functional changes
   const codeFiles = normalizedFiles.filter(f => !isDocument(f) && !LOGIC_ONLY.some(pattern => pattern.test(f)));
 
-  const matchedLessons = new Set();
+  const matchedMappings = new Set();
   let unmapped = null;
 
   for (const file of codeFiles) {
-    const lessons = matchLessons(file);
-    if (lessons.length) {
-      lessons.forEach(lesson => matchedLessons.add(lesson));
+    const mappings = matchMappings(file);
+    if (mappings.length) {
+      mappings.forEach(mapping => matchedMappings.add(mapping));
     } else {
       unmapped = file;
       break;
@@ -162,7 +265,7 @@ export function selectE2E(files) {
   }
 
   // If any code file is not strictly mapped to a lesson, elevate to full
-  if (unmapped || matchedLessons.size === 0) {
+  if (unmapped || matchedMappings.size === 0) {
     return {
       mode: "full",
       reason: unmapped ? `unmapped file: ${unmapped}` : "no lesson matched",
@@ -171,16 +274,8 @@ export function selectE2E(files) {
     };
   }
 
-  const lessonIds = Array.from(matchedLessons).sort();
-  const testFilesSet = new Set();
-
-  for (const id of lessonIds) {
-    for (const test of LESSON_MAPPINGS[id].tests) {
-      testFilesSet.add(test);
-    }
-  }
-
-  const testFiles = Array.from(testFilesSet).sort();
+  const lessonIds = [...new Set([...matchedMappings].map(mapping => mapping.lessonId))].sort();
+  const testFiles = [...new Set([...matchedMappings].flatMap(mapping => mapping.tests))].sort();
 
   return {
     mode: "affected",

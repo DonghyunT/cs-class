@@ -415,6 +415,7 @@ test("작업실 가까이 저장·검증·제출을 구분하고 수정·저장 
   await expect(page.getByRole("button", { name: "작품 제출", exact: true })).toHaveClass(/bg-primary/);
   await page.getByRole("button", { name: "작품 제출", exact: true }).click();
   await expect(states).toContainText("현재 작품 제출 완료");
+  await expect(page.getByRole("button", { name: "조건 검증", exact: true })).not.toHaveClass(/bg-primary/);
   const submitted = ((await (await page.request.get(endpoint)).json()) as Work).submission;
   const frame = page.frameLocator("iframe");
   await page.locator("iframe").scrollIntoViewIfNeeded();
@@ -431,6 +432,7 @@ test("작업실 가까이 저장·검증·제출을 구분하고 수정·저장 
   await frame.locator("input:not([disabled]):visible").press("Enter");
   await expect(states).toContainText("저장하지 않은 변경 있음");
   await expect(states).toContainText("다시 검증 필요");
+  await expect(page.getByRole("button", { name: "조건 검증", exact: true })).toHaveClass(/bg-primary/);
   await expect(states).toContainText("이전 제출 유지 · 수정 중");
   await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(states).toContainText("저장 중");

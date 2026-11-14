@@ -4,7 +4,7 @@ import { FieldPath, type Transaction } from "firebase-admin/firestore";
 import { LESSONS, RELEASED_LESSONS } from "../classroom/catalog";
 import { QUESTION_ANSWER_LIMIT, type CommunityData, type CommunityQuestion, type QuestionAuthor, type QuestionAnswer, type QuestionReplyResult, type QuestionSummary } from "../classroom/community";
 import type { ClassSettings } from "../classroom/types";
-import { authorized, identity, type Account } from "./auth";
+import { authorized, authorizedRead, identity, type Account } from "./auth";
 import { studentClass } from "./classroom";
 import { admin } from "./firebase";
 import { requireCondition } from "./errors";
@@ -57,7 +57,7 @@ async function takeWriteSlot(tx: Transaction, account: Account) {
 }
 export async function readCommunity(classId?: string, after?: string): Promise<CommunityData> {
   if (after) uuid.parse(after);
-  return authorized(await identity(), async (tx, account) => {
+  return authorizedRead(await identity(), async (tx, account) => {
     const selected = await scope(tx, account, classId);
     let query = admin().db.collection("csQuestions").where("classId", "==", selected.classroom.id).orderBy("createdAt", "desc").orderBy(FieldPath.documentId(), "desc").limit(51);
     if (after) {
@@ -71,7 +71,7 @@ export async function readCommunity(classId?: string, after?: string): Promise<C
 }
 export async function readQuestion(questionId: string): Promise<CommunityQuestion> {
   uuid.parse(questionId);
-  return authorized(await identity(), async (tx, account) => {
+  return authorizedRead(await identity(), async (tx, account) => {
     const question = await storedQuestion(tx, account, questionId);
     return { ...summary(question), body: question.body, answers: await readAnswers(tx, questionId) };
   });

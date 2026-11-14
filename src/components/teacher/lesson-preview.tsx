@@ -8,7 +8,7 @@ import { RELEASED_LESSONS } from "@/lib/classroom/catalog";
 import type { Lesson, Stage, WorkDraft } from "@/lib/classroom/types";
 import { LessonEditor, type LessonFrame } from "../student/lesson-editor";
 import { LessonShell } from "../student/lesson-shell";
-import { readEntryDraft } from "../student/read-editor-draft";
+import { readEntryDraft, type EntryExport } from "../student/read-editor-draft";
 import { usePreviewWork } from "./use-preview-work";
 
 export function LessonPreview({ lesson, classId, uid }: { lesson: Lesson; classId: string; uid: string }) {
@@ -19,8 +19,8 @@ export function LessonPreview({ lesson, classId, uid }: { lesson: Lesson; classI
 
 function PreviewWorkspace({ lesson, classId, uid, reset, restoreResetFocus }: { lesson: Lesson; classId: string; uid: string; reset: () => void; restoreResetFocus: boolean }) {
   const router = useRouter();
-  const exportRef = useRef<(() => Promise<string | null>) | null>(null);
-  const readEditorDraft = useCallback((current: WorkDraft) => exportRef.current ? readEntryDraft(lesson, current, exportRef.current) : Promise.resolve(current), [lesson]);
+  const exportRef = useRef<EntryExport | null>(null);
+  const readEditorDraft = useCallback((current: WorkDraft) => exportRef.current ? readEntryDraft(lesson, current, exportRef.current.read) : Promise.resolve(current), [lesson]);
   const controller = usePreviewWork(lesson, classId, uid, lesson.practice.type === "entryjs" || lesson.practice.type === "programming" ? readEditorDraft : undefined);
   const [initial] = useState(() => controller.work);
   const resetButton = useRef<HTMLButtonElement>(null);

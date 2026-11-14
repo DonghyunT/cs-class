@@ -1,0 +1,75 @@
+.experience { container-type: inline-size; display: grid; gap: 16px; margin: 12px 0 20px; font-size: 17px; line-height: 1.7; min-width: 0; }
+.experience :is(button, [tabindex]):focus-visible { outline: 3px solid #376fc8; outline-offset: 3px; }
+.observation { margin: 0; padding: 14px 18px; border: 1px solid #e0cfb2; border-radius: 14px; background: #fff8ed; color: #655033; }
+.observation strong { display: block; font-size: 14px; }
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; align-items: start; }
+.pane { display: grid; gap: 12px; justify-items: start; align-content: start; min-width: 0; padding: 16px; border-radius: 14px; background: #f5f8fd; }
+.paneLabel { font-size: 14px; font-weight: 700; color: #28548e; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.result { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 12px 16px; border-radius: 12px; background: #eef4fd; }
+.result p { flex: 1 1 260px; margin: 0; font-weight: 600; color: #1f3d66; }
+.toCheck { flex-shrink: 0; }
+.note { margin: 0; font-size: 14px; color: #526173; }
+
+/* Entry-looking blocks, in darker shades of Entry's category colours so white text stays readable. */
+.code { display: grid; gap: 3px; justify-items: start; max-width: 100%; }
+.block { max-width: 100%; padding: 7px 14px; border-radius: 10px 10px 10px 3px; color: #fff; font-size: 16px; font-weight: 650; line-height: 1.5; transition: transform .15s, box-shadow .15s; }
+.block[data-inner] { margin-left: 16px; }
+.block[data-kind="start"] { background: #15803d; border-radius: 16px 16px 10px 3px; }
+.block[data-kind="fn"] { background: #c2410c; }
+.block[data-kind="say"] { background: #be185d; }
+.block[data-kind="move"] { background: #7e22ce; }
+.block[data-kind="pen"] { background: #fdba74; color: #7c2d12; }
+.block b { display: inline-block; margin-left: 6px; padding: 0 10px; border-radius: 8px; background: #fde68a; color: #633806; }
+.block[data-on] { transform: translateX(4px); box-shadow: 0 0 0 3px #fbbf24; }
+.loop { display: grid; gap: 3px; justify-items: start; margin-left: 16px; padding: 7px 10px 10px; border-radius: 10px; background: #0369a1; color: #fff; font-size: 16px; font-weight: 650; }
+.loop .block[data-inner] { margin-left: 8px; }
+.slot { margin-left: 16px; padding: 6px 14px; border: 2px dashed #9fb3d1; border-radius: 10px; color: #526173; font-size: 15px; }
+.badge { padding: 2px 12px; border-radius: 999px; background: #e9eef6; color: #526173; font-size: 14px; font-weight: 600; }
+.badge[data-on] { background: #ffedd5; color: #9a3412; }
+.removable { display: flex; align-items: center; gap: 6px; max-width: 100%; }
+.remove { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; color: #526173; }
+.remove:hover { background: #e9eef6; }
+
+/* The classroom beat. */
+.tiles { display: flex; flex-wrap: wrap; gap: 10px; }
+.tile { width: 64px; height: 64px; border: 2px solid #c4d5f2; border-radius: 14px; background: #fff; color: #2e5fab; font-size: 22px; font-weight: 700; transition: transform .15s, background .15s; }
+.tile[data-tone="clap"] { border-color: #cdbbe6; color: #6d47a3; }
+.tile[data-on] { transform: scale(1.12); background: #2e5fab; color: #fff; }
+.tile[data-tone="clap"][data-on] { background: #6d47a3; }
+.stage { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 16px; border-radius: 14px; background: #fbede3; color: #8b633e; }
+.bubble { min-width: 72px; padding: 6px 16px; border: 1px solid #e3cdb8; border-radius: 14px 14px 14px 3px; background: #fff; color: #1f2a38; font-size: 22px; font-weight: 700; text-align: center; }
+
+/* Performance order and the debugging steps. */
+.timeline { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.timeline li { padding: 4px 10px; border: 2px solid #c2410c; border-radius: 8px; background: #fff; color: #9a3412; font-size: 15px; font-weight: 700; transition: transform .15s, background .15s; }
+.timeline li[data-loop] { border-color: #0369a1; color: #0c4a6e; background: #e0f2fe; }
+.timeline li[data-break] { border-color: #be185d; color: #9d174d; background: #fdf2f8; }
+.timeline li[data-tone="clap"] { color: #6d47a3; }
+/* A prediction or an old run: dashed, but the text keeps full contrast. */
+.timeline li[data-dim] { border-style: dashed; }
+.timeline li[data-on] { transform: translateY(-3px); background: #fbbf24; color: #1f2a38; opacity: 1; }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; font-size: 14px; color: #526173; }
+/* Each swatch stays on the same line as its label. */
+.legend > span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.legend i { display: inline-block; width: 14px; height: 14px; border: 2px solid #c2410c; border-radius: 4px; }
+.legend i[data-loop] { border-color: #0369a1; background: #e0f2fe; }
+.legend i[data-break] { border-color: #be185d; background: #fdf2f8; }
+.stale { margin: 0; font-size: 15px; font-weight: 600; color: #9a3412; }
+.pending { margin: 0; font-size: 14px; color: #526173; }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.steps li { padding: 8px 12px; border: 2px solid #dce5f2; border-radius: 12px; background: #fff; color: #526173; font-size: 15px; font-weight: 700; text-align: center; }
+.steps li[data-past] { border-color: #9fd3c3; color: #1d6b5a; }
+.steps li[data-on] { border-color: #376fc8; background: #eaf2ff; color: #1f3d66; }
+.value { display: inline-flex; align-items: center; gap: 2px; margin: 0 6px; padding: 2px; border-radius: 999px; background: #fde68a; color: #633806; vertical-align: middle; }
+.value button { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 999px; color: #633806; }
+.value button:hover { background: #fcd34d; }
+.value .number { min-width: 40px; text-align: center; font-weight: 700; }
+.canvas { width: 100%; max-width: 280px; height: auto; border: 1px solid #dce5f2; border-radius: 12px; background: #fff; }
+.pen { stroke: #c2410c; stroke-dasharray: 1; animation: draw 1.2s ease-out both; }
+.pen[data-stale] { opacity: .35; }
+@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+@container (max-width: 520px) { .pane { padding: 12px; } .block, .loop { font-size: 15px; } }
+@media (max-width: 600px) { .experience { font-size: 16px; } }
+@media (prefers-reduced-motion: reduce) { .pen { animation: none; } .block, .tile, .timeline li { transition: none; } }

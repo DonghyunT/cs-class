@@ -1,4 +1,7 @@
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import path from "node:path";
+import { BRIDGE_FILES, bridgeFingerprint, bridgePrefix, writeBundle } from "../scripts/entryjs-cdn.mjs";
 import { buildProgrammingProject, newAddedObject, parseProgrammingProject, programmingProjectMatches, type EntryNode } from "../src/lib/classroom/programming-entry";
 import { checkProgrammingMission } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
@@ -23,7 +26,6 @@ const nameProject = buildProgrammingProject([[start(), node("ask_and_wait", node
 
 async function prepare(page: Page, mission = "name", project = buildProgrammingProject()) {
   // Stop the previous editor before replacing its account and server fixture.
-  // Otherwise its autosave can write the old mission after the new fixture POST.
   await page.goto("about:blank");
   await readyStudent(page.request);
   await db.collection("csWork").doc(`student-20101__${id}`).delete();
@@ -47,6 +49,34 @@ test("entry-guidance: 이름 미션은 실행 없이 바로 검증하고, 고친
   await page.getByRole("tab", { name: /퀴즈/ }).click(); await page.getByRole("tab", { name: /실습/ }).click();
   await saveDraft(page);
   expect(parseProgrammingProject((await stored(page)).draft.programming!.projects.name)?.threads[0][2].params[1]).toMatchObject({ type: "number", params: ["0.3"] });
+});
+
+test("제출한 미션은 검증을 다시 강조하지 않고 수정하면 재검증을 안내한다", async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+  const frame = await prepare(page, "name", nameProject);
+  const validate = page.getByRole("button", { name: "조건 검증", exact: true });
+  await expect(validate).toHaveClass(/bg-primary/);
+  await validate.click();
+  const submit = page.getByRole("button", { name: "작품 제출", exact: true });
+  await expect(submit).toBeEnabled();
+  await expect(submit).toHaveClass(/bg-primary/);
+  await expect(validate).not.toHaveClass(/bg-primary/);
+  await submit.click();
+  await expect(page.getByRole("button", { name: "이 작품 제출 완료", exact: true })).toBeDisabled();
+  await expect(validate).not.toHaveClass(/bg-primary/);
+  await expect(page.locator("#programming-next-mission")).toBeFocused();
+  await page.screenshot({ path: info.outputPath("submitted-mission.png"), fullPage: true });
+  await page.reload();
+  await expect(page.getByRole("button", { name: "이 작품 제출 완료", exact: true })).toBeDisabled();
+  await expect(validate).not.toHaveClass(/bg-primary/);
+  await frame.locator("#entryWorkspaceBoard").getByText("0.2", { exact: true }).first().locator("..").click();
+  const duration = frame.locator("input.entry-widget-input-field:visible");
+  await duration.fill("0.3"); await duration.press("Enter");
+  await expect(validate).toHaveClass(/bg-primary/);
+  await expect(page.getByRole("button", { name: "수정한 작품 제출", exact: true })).toBeDisabled();
+  expect(errors).toEqual([]);
 });
 
 test("entry-guidance: 시작 블록의 다음 행동과 위아래 위치를 정확히 안내한다", async ({ page }) => {
@@ -119,7 +149,7 @@ test("운영 수업 API · 미션별 검증/제출 · 재시도 · 수정 뒤 �
     const result = await teacher.get(`/api/classroom/teacher?classId=2-1&lessonId=${id}`);
     expect(result.status()).toBe(200);
     const summary = (await result.json()).students.find((s: { uid: string }) => s.uid === "student-20101").work;
-    expect(summary.missions.keys.submission).toEqual({ id: submissions!.keys.submission!.id, submittedAt: submissions!.keys.submission!.submittedAt });
+    expect(summary.missions.keys.submission).toEqual({ id: submissions!.keys.submission!.id, submittedAt: submissions!.keys.submission!.submittedAt, firstSubmittedAt: submissions!.keys.submission!.firstSubmittedAt });
     expect(summary.draft).toBeUndefined();
     const detail = await teacher.get(`/api/classroom/students/student-20101/work/${id}`);
     expect(detail.status()).toBe(200);
@@ -187,7 +217,7 @@ test("entry-answer: 실제 질문칸에서 한글·조합 Enter·저장 대기·
       await expect(entryStop(page)).toBeEnabled();
       await expect(input).toHaveValue(name);
       await input.dispatchEvent("compositionend", { data: name });
-      // The 900 ms debounce and five-second save interval must not blur the answer.
+      // Several idle seconds with the answer box open must not blur it.
       await page.waitForTimeout(5500);
       await expect(input).toBeFocused();
       await page.keyboard.press("Enter");
@@ -248,6 +278,130 @@ test("entry-assets: 그림 준비 전 실행을 막고 그림 로딩 실패에�
   await page.unroute("**/entryjs/name-dog.svg");
   await page.getByRole("button", { name: "작업실 다시 불러오기", exact: true }).click();
   await expect(entryStart(page)).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("entry-cdn: 작업실을 CDN에서 열어도 실행·저장되고 작품에 CDN 주소가 남지 않는다", async ({ page }, info) => {
+  test.setTimeout(60000);
+  const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
+  const base = "https://entry-cdn.test", fingerprint = readFileSync("public/entryjs/vendor/.prepared", "utf8").trim();
+  const current = Object.fromEntries(BRIDGE_FILES.map((name) => [name, readFileSync(`public/entryjs/${name}`, "utf8")]));
+  const bridge = bridgePrefix(base, bridgeFingerprint(current), fingerprint);
+  // The folder `npm run deploy:entry-cdn` uploads, with this checkout's bridge only.
+  const out = info.outputPath("entry-cdn");
+  await writeBundle({ out, base, fingerprint, versions: new Map([[bridgeFingerprint(current), current]]) });
+  const cdn: string[] = [], app: string[] = [], failed: string[] = [], preflighted: string[] = [];
+  page.on("requestfailed", (request) => failed.push(`${request.url()} ${request.failure()?.errorText}`));
+  page.on("response", (response) => { if (response.status() >= 400) failed.push(`${response.url()} ${response.status()}`); });
+  page.on("console", (message) => { if (message.type() === "error") failed.push(`console: ${message.text()}`); });
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.origin === base) {
+      cdn.push(`${request.method()} ${url.pathname}`);
+      // The real CDN answers OPTIONS with 405, so nothing from the iframe may need a CORS preflight.
+      if (request.method() !== "GET" || request.headers()["x-requested-with"]) preflighted.push(`${request.method()} ${url.pathname}`);
+    } else if (url.pathname.startsWith("/entryjs/")) app.push(url.pathname);
+  });
+  // A production build points the lesson iframe at the bridge on the CDN (scripts/entryjs-cdn.mjs writes
+  // entry-workspace.json); here the page swaps the address as React sets it. Playwright cannot route a redirect target.
+  await page.addInitScript((target) => {
+    const setAttribute = Element.prototype.setAttribute;
+    Element.prototype.setAttribute = function (name: string, value: string) {
+      const moved = this instanceof HTMLIFrameElement && name === "src" && value.startsWith("/entryjs/workspace.html");
+      return setAttribute.call(this, name, moved ? target + value.slice("/entryjs/workspace.html".length) : value);
+    };
+  }, `${bridge}/workspace.html`);
+  // Every iframe file is answered here: Chromium treats a route-fulfilled document as public and blocks its requests
+  // back to localhost (Local Network Access), which production, with Vercel and the CDN both public, never meets.
+  await page.route((url) => url.origin === base || url.pathname.startsWith("/entryjs/"), async (route) => {
+    const url = new URL(route.request().url());
+    if (url.origin !== base) return route.fulfill({ status: 404 });
+    const file = path.join(out, decodeURIComponent(url.pathname));
+    return file.startsWith(out) && existsSync(file) && statSync(file).isFile() ? route.fulfill({ path: file, headers: { "Access-Control-Allow-Origin": "*" } }) : route.fulfill({ status: 404 });
+  });
+  await prepare(page, "name", nameProject);
+  expect(page.frames().some((frame) => frame.url().startsWith(`${bridge}/workspace.html?`))).toBe(true);
+  await entryStart(page).click();
+  const input = page.frameLocator("iframe").getByLabel("강아지 이름 대답");
+  await clickAnswerCanvas(page); await expect(input).toBeFocused();
+  await page.keyboard.insertText("별이"); await page.keyboard.press("Enter");
+  await expect(page.getByRole("status").filter({ hasText: "마지막 말: 별이" })).toBeVisible();
+  await expect(entryStart(page)).toBeEnabled();
+  await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+  await expect(page.locator("#practice-feedback")).toHaveText("목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요.");
+  await saveDraft(page);
+  const project = (await stored(page)).draft.programming!.projects.name;
+  expect(JSON.stringify(project)).not.toContain("entry-cdn.test");
+  expect(cdn.length).toBeGreaterThan(50);
+  // The saved picture path (/entryjs/name-dog.svg) resolves on the CDN once the bridge runs there.
+  expect(cdn).toContain("GET /entryjs/name-dog.svg");
+  expect(cdn).toContain(`GET ${new URL(bridge).pathname}/workspace.js`);
+  // Nothing under /entryjs/ reaches the app any more.
+  expect(app).toEqual([]);
+  info.annotations.push({ type: "entry-cdn requests", description: `CDN ${cdn.length}, app ${app.length}` });
+  expect(preflighted).toEqual([]);
+  expect(failed).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+test("entry-host: 작업실을 다른 주소에서 자기 출처로 열어도 실행·저장되고, 앱의 사본은 늘 격리된다", async ({ page, baseURL }) => {
+  test.setTimeout(60000);
+  const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
+  const host = "https://entry-host.test";
+  const { workspaceHost, appHost } = JSON.parse(readFileSync("scripts/entryjs-cdn.json", "utf8"));
+  // next.config.ts: the app's copy carries a CSP sandbox; the workspace host serves /entryjs/ as is and sends the rest on.
+  expect((await page.request.get("/entryjs/workspace.html")).headers()["content-security-policy"]).toBe("sandbox allow-scripts");
+  const onHost = { headers: { host: workspaceHost }, maxRedirects: 0 };
+  const hosted = await page.request.get("/entryjs/workspace.html", onHost);
+  expect(hosted.status()).toBe(200);
+  expect(hosted.headers()["content-security-policy"]).toBeUndefined();
+  for (const pathname of ["/", "/login?next=%2Fstudent", "/api/classroom/student"]) {
+    const moved = await page.request.get(pathname, onHost);
+    expect(moved.status(), pathname).toBe(307);
+    expect(moved.headers().location, pathname).toBe(`https://${appHost}${pathname}`);
+  }
+  const app: string[] = [], failed: string[] = [];
+  let served = 0;
+  page.on("requestfailed", (request) => failed.push(`${request.url()} ${request.failure()?.errorText}`));
+  page.on("console", (message) => { if (message.type() === "error") failed.push(`console: ${message.text()}`); });
+  page.on("request", (request) => { const url = new URL(request.url()); if (url.origin !== host && url.pathname.startsWith("/entryjs/")) app.push(url.pathname); });
+  // A production build points the iframes at the workspace host with allow-same-origin (entry-workspace-frame.ts);
+  // here the page swaps both as React sets them.
+  await page.addInitScript((target) => {
+    const setAttribute = Element.prototype.setAttribute;
+    Element.prototype.setAttribute = function (name: string, value: string) {
+      if (this instanceof HTMLIFrameElement && name === "src" && value.startsWith("/entryjs/workspace.html")) value = target + value;
+      if (this instanceof HTMLIFrameElement && name === "sandbox" && value === "allow-scripts") value = "allow-scripts allow-same-origin";
+      return setAttribute.call(this, name, value);
+    };
+  }, host);
+  // The host is this same app, as Vercel serves one deployment on both domains; Playwright fetches it, so the iframe never
+  // reaches localhost (Local Network Access), and drops the CSP header the app host sends, as the workspace host does.
+  await page.route((url) => url.origin === host || url.pathname.startsWith("/entryjs/"), async (route) => {
+    const url = new URL(route.request().url());
+    if (url.origin !== host) return route.fulfill({ status: 404 });
+    served++;
+    const response = await route.fetch({ url: `${baseURL}${url.pathname}${url.search}` });
+    return route.fulfill({ response, headers: Object.fromEntries(Object.entries(response.headers()).filter(([name]) => name !== "content-security-policy")) });
+  });
+  await prepare(page, "name", nameProject);
+  const frame = page.frames().find((item) => item.url().startsWith(`${host}/entryjs/workspace.html?`))!;
+  expect(await frame.evaluate(() => self.origin)).toBe(host);
+  await entryStart(page).click();
+  const input = page.frameLocator("iframe").getByLabel("강아지 이름 대답");
+  await clickAnswerCanvas(page); await expect(input).toBeFocused();
+  await page.keyboard.insertText("별이"); await page.keyboard.press("Enter");
+  await expect(page.getByRole("status").filter({ hasText: "마지막 말: 별이" })).toBeVisible();
+  await expect(entryStart(page)).toBeEnabled();
+  await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+  await expect(page.locator("#practice-feedback")).toHaveText("목표 조건을 확인했어요. 작품을 제출하면 이 미션이 완료돼요.");
+  await saveDraft(page);
+  expect(JSON.stringify((await stored(page)).draft.programming!.projects.name)).not.toContain("entry-host.test");
+  // Entry saves its panel layout on unload; with a real origin that must still stay in memory.
+  expect(await frame.evaluate(() => { localStorage.setItem("workspace-interface", "{}"); return Object.getOwnPropertyDescriptor(window, "localStorage")?.value !== undefined; })).toBe(true);
+  expect(served).toBeGreaterThan(50);
+  expect(app).toEqual([]);
+  expect(failed).toEqual([]);
   expect(errors).toEqual([]);
 });
 
@@ -457,10 +611,10 @@ test("저장 실패에도 미션 간 초안은 유지하고, 명시 저장한 �
   await expect.poll(async () => (await stored(page)).draft.quizAnswers[questions[0].id]).toBe(String(questions[0].correct));
   await page.getByRole("button", { name: "다음 문제" }).click();
   await page.reload();
-  await expect(page.locator("#programming-question")).toHaveText(questions[1].prompt);
+  await expect(page.locator("#quiz-question-title")).toHaveText(questions[1].prompt);
   await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
   await page.getByRole("navigation", { name: "퀴즈 문항 목록" }).getByRole("button", { name: /문제 1/ }).click();
-  await expect(page.locator("#programming-question")).toHaveText(questions[0].prompt);
+  await expect(page.locator("#quiz-question-title")).toHaveText(questions[0].prompt);
   await expect(page.getByRole("button", { name: "이전 문제" })).toBeDisabled();
   await expect(page.getByRole("radio").nth(questions[0].correct)).toBeChecked();
   expect((await stored(page)).draft.programming!.reflection).toBe("저장 실패 중에도 유지");

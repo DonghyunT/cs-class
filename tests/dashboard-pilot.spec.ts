@@ -366,6 +366,7 @@ test("다른 탭의 목록 변경은 보관한 입력으로 명시적 재시도�
 test("반 일정: 교사 CRUD·실패 복구·반 전환 보호·학생 조회·재로그인", async ({ page, playwright }) => {
   await readyStudent(page.request); await readyTeacher(page.request); await page.goto("/teacher/schedule");
   await expect(page.getByText("아직 등록된 일정이 없어요.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "일정 등록", exact: true }).click();
   await page.getByLabel("일정 제목", { exact: true }).fill("정보 수업 준비");
   await page.getByRole("combobox", { name: "연결할 수업 · 선택", exact: true }).click();
   await page.getByRole("option", { name: "프로그래밍의 기초", exact: true }).click();

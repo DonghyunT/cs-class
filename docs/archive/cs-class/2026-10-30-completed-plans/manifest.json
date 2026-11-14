@@ -1,0 +1,12 @@
+{
+  "archivedAt": "2026-10-30 Asia/Seoul",
+  "sourceCommit": "4ce9dc99695456c33681a0349ac4792423ba363c",
+  "files": [
+    {
+      "source": "docs/plans/entry-assets-cloudflare.md",
+      "archived": "entry-assets-cloudflare.md",
+      "bytes": 7660,
+      "sha256": "90794d0ec2dcb5044578fd293a2c237adbe6b05f2b848b3f9da9a58621e6cd76"
+    }
+  ]
+}

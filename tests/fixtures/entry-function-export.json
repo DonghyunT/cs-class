@@ -1,0 +1,137 @@
+{
+ "objects": [
+  {
+   "id": "bot",
+   "name": "엔트리봇",
+   "script": "[[{\"id\":\"xtjz\",\"x\":50,\"y\":30,\"type\":\"when_run_button_click\",\"params\":[null],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]},{\"id\":\"wp8q\",\"x\":0,\"y\":0,\"type\":\"func_win1\",\"params\":[null],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]},{\"id\":\"xocc\",\"x\":0,\"y\":0,\"type\":\"move_x\",\"params\":[{\"id\":\"u27u\",\"x\":0,\"y\":0,\"type\":\"number\",\"params\":[\"100\"],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]},null],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]},{\"id\":\"erpw\",\"x\":0,\"y\":0,\"type\":\"func_win1\",\"params\":[null],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]}]]",
+   "objectType": "sprite",
+   "rotateMethod": "free",
+   "scene": "scene1",
+   "sprite": {
+    "pictures": [
+     {
+      "id": "bot-pic",
+      "dimension": {
+       "width": 284,
+       "height": 350
+      },
+      "fileurl": "/entryjs/sprites/library/a8268fd79a48fd9b92c7b47406b95393.png",
+      "thumbUrl": "/entryjs/sprites/library/a8268fd79a48fd9b92c7b47406b95393.png",
+      "name": "(1)엔트리봇_1",
+      "imageType": "png"
+     },
+     {
+      "id": "bot-pic2",
+      "dimension": {
+       "width": 284,
+       "height": 350
+      },
+      "fileurl": "/entryjs/sprites/library/44cbd5953180e91751e82837bdff91ac.png",
+      "thumbUrl": "/entryjs/sprites/library/44cbd5953180e91751e82837bdff91ac.png",
+      "name": "(1)엔트리봇_2",
+      "imageType": "png"
+     }
+    ],
+    "sounds": []
+   },
+   "selectedPictureId": "bot-pic",
+   "lock": false,
+   "entity": {
+    "x": 0,
+    "y": 0,
+    "regX": 142,
+    "regY": 175,
+    "scaleX": 0.4,
+    "scaleY": 0.4,
+    "rotation": 0,
+    "direction": 90,
+    "width": 284,
+    "height": 350,
+    "font": "undefinedpx ",
+    "visible": true
+   }
+  }
+ ],
+ "scenes": [
+  {
+   "id": "scene1",
+   "name": "장면 1"
+  }
+ ],
+ "variables": [
+  {
+   "name": "A",
+   "id": "cs-A",
+   "visible": false,
+   "value": 0,
+   "variableType": "variable",
+   "isCloud": false,
+   "isRealTime": false,
+   "cloudDate": false,
+   "object": null,
+   "x": -210,
+   "y": -112
+  },
+  {
+   "name": "B",
+   "id": "cs-B",
+   "visible": false,
+   "value": 0,
+   "variableType": "variable",
+   "isCloud": false,
+   "isRealTime": false,
+   "cloudDate": false,
+   "object": null,
+   "x": -210,
+   "y": -82
+  },
+  {
+   "name": "초시계",
+   "id": "timer",
+   "visible": false,
+   "value": "0",
+   "variableType": "timer",
+   "isCloud": false,
+   "isRealTime": false,
+   "cloudDate": false,
+   "object": null,
+   "x": 134,
+   "y": -70
+  },
+  {
+   "name": " 대답 ",
+   "id": "answer",
+   "visible": false,
+   "value": "0",
+   "variableType": "answer",
+   "isCloud": false,
+   "isRealTime": false,
+   "cloudDate": false,
+   "object": null,
+   "x": 150,
+   "y": -100
+  }
+ ],
+ "messages": [],
+ "functions": [
+  {
+   "id": "win1",
+   "type": "normal",
+   "localVariables": [],
+   "useLocalVariables": false,
+   "content": "[[{\"id\":\"8di0\",\"x\":50,\"y\":30,\"type\":\"function_create\",\"params\":[{\"id\":\"ch8d\",\"x\":0,\"y\":0,\"type\":\"function_field_label\",\"params\":[\"창문 그리기\",null],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]},null],\"statements\":[[{\"id\":\"7o6g\",\"x\":0,\"y\":0,\"type\":\"start_drawing\",\"params\":[null],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]},{\"id\":\"l3b6\",\"x\":0,\"y\":0,\"type\":\"repeat_basic\",\"params\":[{\"id\":\"e5k4\",\"x\":0,\"y\":0,\"type\":\"number\",\"params\":[\"4\"],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]},null],\"statements\":[[{\"id\":\"b723\",\"x\":0,\"y\":0,\"type\":\"move_direction\",\"params\":[{\"id\":\"qu7t\",\"x\":0,\"y\":0,\"type\":\"number\",\"params\":[\"50\"],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]},null],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]},{\"id\":\"wff0\",\"x\":0,\"y\":0,\"type\":\"direction_relative\",\"params\":[{\"id\":\"6a9l\",\"x\":0,\"y\":0,\"type\":\"angle\",\"params\":[\"90\"],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]},null],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]}]],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]},{\"id\":\"718q\",\"x\":0,\"y\":0,\"type\":\"stop_drawing\",\"params\":[null],\"statements\":[],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]}]],\"movable\":null,\"deletable\":1,\"emphasized\":false,\"readOnly\":null,\"copyable\":true,\"assemble\":true,\"extensions\":[]}]]"
+  }
+ ],
+ "tables": [],
+ "speed": 60,
+ "interface": {
+  "menuWidth": 280,
+  "canvasWidth": 480,
+  "object": "bot"
+ },
+ "expansionBlocks": [],
+ "aiUtilizeBlocks": [],
+ "hardwareLiteBlocks": [],
+ "externalModules": [],
+ "externalModulesLite": []
+}

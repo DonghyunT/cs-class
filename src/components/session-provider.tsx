@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { classroomApi, setExpectedUser } from "@/lib/classroom/client";
+import { SESSION_ACTIVITY_MS, SESSION_RETRY_MS, STUDENT_IDLE_TIMEOUT_MS } from "@/lib/classroom/features";
 import styles from "./session-provider.module.css";
 import type { Session } from "@/lib/classroom/types";
 
@@ -12,6 +13,13 @@ interface SessionContextValue {
 const Context = createContext<SessionContextValue | null>(null);
 const CLASS_KEY = "cs-teacher-class";
 function clearClassMemory() { try { sessionStorage.removeItem(CLASS_KEY); } catch { /* Selection still works with storage blocked. */ } }
+// Q&A drafts outlive their screen in this tab, so the session end clears every class's draft here.
+// With `keepUid` only other accounts' drafts go, and the open screen keeps what it shows.
+function clearDrafts(keepUid?: string) {
+  if (!keepUid) window.dispatchEvent(new Event("cs-draft-clear"));
+  const kept = `cs-community-draft:${keepUid}:`;
+  try { for (const key of Object.keys(sessionStorage)) if (key.startsWith("cs-community-draft:") && !(keepUid && key.startsWith(kept))) sessionStorage.removeItem(key); } catch { /* Nothing was stored with storage blocked. */ }
+}
 function rememberedClass(value: Session) {
   try {
     const saved = JSON.parse(sessionStorage.getItem(CLASS_KEY) ?? "null");
@@ -29,7 +37,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [selectedClass, setSelectedClass] = useState<{ uid: string; classId: string } | null>(null);
   const applySession = useCallback((value: Session, restoreClass: boolean) => {
     generation.current += 1;
-    if (current.current?.uid !== value.uid) window.dispatchEvent(new Event("cs-draft-clear"));
+    // A switch drops every draft; otherwise this account's drafts stay (a reload) and only drafts another
+    // account left in this tab go, as when another tab changed the shared cookie before this reload.
+    clearDrafts(current.current && current.current.uid !== value.uid ? undefined : value.uid);
     if (!restoreClass) clearClassMemory();
     const classId = value.role !== "student" ? (restoreClass ? rememberedClass(value) : undefined) ?? value.classIds[0] : undefined;
     setSelectedClass(classId ? { uid: value.uid, classId } : null);
@@ -37,7 +47,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
   // Called after an actual login; loading the existing cookie below keeps this tab's selection.
   const acceptSession = useCallback((value: Session) => applySession(value, false), [applySession]);
-  const clear = useCallback((message = "") => { generation.current += 1; clearClassMemory(); setSelectedClass(null); window.dispatchEvent(new Event("cs-draft-clear")); current.current = null; setExpectedUser(null); setSession(null); setError(message); setRemaining(null); setLoading(false); }, []);
+  const clear = useCallback((message = "") => { generation.current += 1; clearClassMemory(); setSelectedClass(null); clearDrafts(); current.current = null; setExpectedUser(null); setSession(null); setError(message); setRemaining(null); setLoading(false); }, []);
   const selectTeacherClass = useCallback((classId: string) => {
     const value = current.current;
     if (!value || value.role === "student" || !value.classIds.includes(classId)) return;
@@ -65,13 +75,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const channel = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel("cs-class-activity");
     const onActivity = (event: Event) => {
       if (!event.isTrusted || !current.current) return;
+      // Work inside a sandboxed frame (the Entry editor) reaches this page only as that frame's messages.
+      // `parent` is readable even on a cross-origin frame, so this needs no DOM scan per message; the page's own messages don't count.
+      if (event instanceof MessageEvent && (event.source === window || (event.source as Window | null)?.parent !== window)) return;
       const now = Date.now(); if (now - activity.current < 1000) return;
       activity.current = now; channel?.postMessage({ uid, at: now });
     };
     if (channel) channel.onmessage = (event) => { if (event.data?.uid === uid && typeof event.data.at === "number" && event.data.at <= Date.now() + 1000) activity.current = Math.max(activity.current, event.data.at); };
-    const events = ["pointerdown", "keydown", "input", "scroll", "touchstart"];
+    const events = ["pointerdown", "keydown", "input", "scroll", "touchstart", "message"];
     events.forEach((name) => window.addEventListener(name, onActivity, { passive: true, capture: true }));
-    let tick = 0;
+    let retryAt = 0, triedCheck = 0;
     const timer = window.setInterval(async () => {
       const value = current.current; if (!value) return;
       const now = Date.now(); const left = value.idleTimeoutMs - (now - activity.current);
@@ -82,16 +95,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (busy.current) return;
-      if (activity.current > lastSent.current && now - lastSent.current >= 30_000 && now - activity.current < 60_000) {
+      // Unsent activity always goes out, with its real age, so the server never times out a student the page still counts as active.
+      if (activity.current > lastSent.current && now - lastSent.current >= SESSION_ACTIVITY_MS && now >= retryAt) {
         busy.current = true;
         const started = generation.current;
-        try { const touched = await classroomApi.touch(Math.max(0, now - activity.current)); if (started === generation.current) { lastSent.current = Date.now() - touched.session.idleMs; current.current = touched.session; setSession(touched.session); checked.current = Date.now(); } }
-        catch { /* A later interaction retries; 401 is handled by the central event. */ }
+        try { const touched = await classroomApi.touch(Math.min(STUDENT_IDLE_TIMEOUT_MS, Math.max(0, now - activity.current))); if (started === generation.current) { lastSent.current = Date.now() - touched.session.idleMs; current.current = touched.session; setSession(touched.session); checked.current = Date.now(); } }
+        catch { retryAt = Date.now() + SESSION_RETRY_MS; /* 401 is handled by the central event. */ }
         finally { busy.current = false; }
-      } else if (++tick % 30 === 0 && document.visibilityState === "visible" && now - checked.current >= 30_000) { busy.current = true; try { await refresh(); } finally { busy.current = false; } }
+      // A failed check waits as long as a successful one, so an offline tab does not retry every second.
+      } else if (document.visibilityState === "visible" && now - Math.max(checked.current, triedCheck) >= SESSION_ACTIVITY_MS) { triedCheck = now; busy.current = true; try { await refresh(); } finally { busy.current = false; } }
     }, 1000);
     const onFocus = async () => {
-      if (busy.current || Date.now() - checked.current < 30_000) return;
+      if (busy.current || Date.now() - checked.current < SESSION_ACTIVITY_MS) return;
       busy.current = true; try { await refresh(); } finally { busy.current = false; }
     }; window.addEventListener("focus", onFocus);
     return () => { window.clearInterval(timer); channel?.close(); events.forEach((name) => window.removeEventListener(name, onActivity, true)); window.removeEventListener("focus", onFocus); };

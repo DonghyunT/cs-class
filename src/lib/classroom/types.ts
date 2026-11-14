@@ -27,7 +27,12 @@ export interface Question {
   prompt: string;
   // Code lines shown with a quiz question, for reading a program before answering.
   scene?: string[];
+  // Entry's own rendering of the scene (public/concepts/); then `scene` stays as its screen-reader text.
+  captures?: { src: string; width: number; height: number }[];
   options: { id: string; label: string }[];
+  // A concept check answered by assembling blocks under the fixed `head`; `options` stays empty and `slots` holds each slot's indent.
+  // Labels may mark Entry's parts (see BLOCK_PARTS in assemble.ts).
+  assemble?: { head: string; blocks: { id: string; label: string; kind: "flow" | "moving" | "looks" | "variable" }[]; slots: number[] };
   hint: string;
 }
 import type { ReviewProject } from "./review/project";
@@ -58,7 +63,7 @@ export interface Lesson {
   description: string;
   category?: string;
   mode?: "review";
-  concepts: { id: string; title: string; explanation: string; example: string; question: Question }[];
+  concepts: { id: string; title: string; explanation: string; keyPoint?: string; example: string; question: Question }[];
   quiz: Question[];
   practice: PracticeDef;
 }
@@ -77,6 +82,8 @@ export interface Submission {
   order: string[];
   entryProject?: string | null;
   submittedAt: number;
+  // Carried over on every resubmission. Missing on submissions made before 2026-10-28 (see submissionTimes).
+  firstSubmittedAt?: number;
   reviewProject?: ReviewProject;
   approvedByTeacher?: boolean;
 }
@@ -129,8 +136,8 @@ export interface StudentRow {
 export type WorkSummary = Pick<Work, "lessonId" | "revision" | "conceptSolved" | "quizSolved" | "updatedAt"> & {
   edited: boolean;
   validated: boolean;
-  submission: Pick<Submission, "id" | "submittedAt"> | null;
-  missions?: Record<string, { submission: Pick<Submission, "id" | "submittedAt"> | null }>;
+  submission: Pick<Submission, "id" | "submittedAt" | "firstSubmittedAt"> | null;
+  missions?: Record<string, { submission: Pick<Submission, "id" | "submittedAt" | "firstSubmittedAt"> | null }>;
   review?: Pick<NonNullable<Work["review"]>, "id" | "status" | "requestedAt" | "missionId">;
 };
 export interface TeacherDashboard {
@@ -143,6 +150,16 @@ export interface TeacherDashboard {
   offList: OffListAccount[];
 }
 export interface OffListAccount { uid: string; studentId: string; nickname?: string; kind: "trial" | "removed" }
+export interface AssessmentLesson { id: string; title: string; opened: boolean }
+export interface AssessmentRow { uid: string; studentId: string; nickname?: string; progress: Record<string, Pick<Progress, Stage>> }
+export interface TeacherAssessment {
+  classrooms: ClassSettings[];
+  classroom: ClassSettings;
+  // Regular lessons only; review lessons are left out of grades.
+  lessons: AssessmentLesson[];
+  // Read only when the teacher asks for chosen lessons, so opening the page reads no student work.
+  report: { lessonIds: string[]; rows: AssessmentRow[]; checkedAt: number } | null;
+}
 export type WorkAction =
   | { type: "check-concept"; conceptId: string }
   | { type: "grade-quiz" }

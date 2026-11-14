@@ -10,6 +10,8 @@ const node = (type: string, ...params: unknown[]): EntryNode => ({ type, params 
 const number = (value: number) => node("number", String(value));
 const moveProject = buildProgrammingProject([[node("when_run_button_click", null), node("move_direction", number(10), null)]]);
 const keysProject = buildProgrammingProject([["38", 0], ["39", 90], ["40", 180], ["37", 270]].map(([key, angle]) => [node("when_some_key_pressed", null, String(key)), node("direction_absolute", node("angle", String(angle)), null), node("move_direction", number(10), null)]));
+// The change challenge is the lesson's last mission.
+const changeProject = buildProgrammingProject([[node("when_run_button_click", null), ...["A", "B"].flatMap((name) => [node("ask_and_wait", node("text", "얼마?"), null), node("set_variable", `cs-${name}`, node("get_canvas_input_value", null), null)]), node("dialog", node("combine_something", null, node("text", "거스름돈은 "), null, node("combine_something", null, node("calc_basic", node("get_variable", "cs-A"), "MINUS", node("get_variable", "cs-B")), null, node("text", "원"), null), null), "speak", null)]]);
 let originalClass: DocumentData | undefined;
 
 test.beforeEach(async ({ page }) => {
@@ -25,7 +27,7 @@ test.afterEach(async ({ page }) => {
 });
 
 async function prepare(page: Page, mission = "move", submitted = false) {
-  const project = mission === "keys" ? keysProject : moveProject;
+  const project = mission === "keys" ? keysProject : mission === "change" ? changeProject : moveProject;
   const before: Work = await (await page.request.get(endpoint)).json();
   let response = await page.request.post(endpoint, { headers, data: { revision: before.revision, draft: { ...before.draft, stage: "practice", programming: { mission, projects: { [mission]: project }, reflection: "" } } } });
   expect(response.status()).toBe(200);
@@ -158,13 +160,13 @@ for (const lost of [false, true]) {
 }
 
 test("마지막 미션 제출은 완료 안내에 초점을 두고 이전 미션으로 돌아갈 수 있다", async ({ page }) => {
-  await prepare(page, "keys");
+  await prepare(page, "change");
   await validate(page);
   await page.getByRole("button", { name: "작품 제출", exact: true }).click();
   await expect(page.locator("#programming-mission-complete")).toBeFocused();
   await expect(page.locator("#programming-mission-complete")).toContainText("이 미션의 작품을 제출했어요");
   await expect(page.getByRole("button", { name: "다음 미션", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "이전 미션", exact: true }).click();
-  await expect(page.locator("#programming-mission-title")).toHaveText("시작 버튼으로 움직이기");
+  await expect(page.locator("#programming-mission-title")).toHaveText("방향키로 움직임 개선");
   await expect(page.locator("#programming-mission-title")).toBeFocused();
 });

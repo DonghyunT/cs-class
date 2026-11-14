@@ -2,6 +2,10 @@ import type { Lesson, WorkDraft } from "@/lib/classroom/types";
 import { parseEntryProject } from "@/lib/classroom/entry-project";
 import { parseProgrammingProject } from "@/lib/classroom/programming-entry";
 
+// The Entry workspace's link to the page: read the work, and whether a function is being edited
+// (an open function editor holds edits the page cannot read yet).
+export type EntryExport = { read: () => Promise<string | null>; editing: () => boolean };
+
 export async function readEntryDraft(lesson: Lesson, current: WorkDraft, exportProject: () => Promise<string | null>): Promise<WorkDraft> {
   const serialized = await exportProject();
   const project = lesson.practice.type === "programming" ? parseProgrammingProject(serialized) : parseEntryProject(serialized);
