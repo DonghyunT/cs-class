@@ -6,7 +6,7 @@
 
 - **학생용 CS 복습 게임 개편(Phase 2~4 반영·검증 완료):** [dist/festival-romance.html](dist/festival-romance.html) · [public/festival-romance.html](../../public/festival-romance.html)을 3개 챕터·22장면·12문항(`ch1-q1`~`ch3-q4`)·3갈래 엔딩(`썸 시작`/`찐친`/`어색한 사이`) 구조로 개편해 빌드와 테스트·Playwright QA를 통과했습니다([개편 설계안](../../docs/plans/festival-romance-review-game.md)).
 - **교사용 도입 수업 원본 보존:** [dist/festival-lesson.html](dist/festival-lesson.html) · [public/festival-lesson.html](../../public/festival-lesson.html) (기존 3차시 27장면)은 `build.cjs`와 분리해 바이트 단위로 그대로 유지했습니다.
-- **임시 v3 스프라이트 운용:** 현재 빌드는 [haru-boy-v3.png](assets/haru-boy-v3.png) · [haru-girl-v3.png](assets/haru-girl-v3.png) (`1536×1024`, `FESTIVAL_SPRITE_ROWS: { boy: 1, girl: 1 }`)를 `spriteCrop` 6표정 슬롯으로 매핑해 사용하며, `assets/` 내 후보 시트([haru-boy-v6.png](assets/haru-boy-v6.png), [haru-girl-v8.png](assets/haru-girl-v8.png))는 Phase 1 최종 `1536×2048` 3×2 시트 확정 교체 대기 상태입니다.
+- **임시 v3 스프라이트 운용:** 현재 빌드는 [haru-boy-v3.png](assets/haru-boy-v3.png) · [haru-girl-v3.png](assets/haru-girl-v3.png) (`1536×1024`, `FESTIVAL_SPRITE_ROWS: { boy: 1, girl: 1 }`)를 `spriteCrop` 6표정 슬롯으로 매핑해 사용하며, `assets/` 내 후보 시트([haru-boy-v6.png](assets/haru-boy-v6.png), [haru-girl-v7-preview.png](assets/haru-girl-v7-preview.png), 로컬 시안 `haru-girl-v8.png`)를 바탕으로 Phase 1 최종 `1536×2048` 3×2 시트 확정 교체 대기 상태입니다.
 
 ## 2. 번들 산출물 및 검증 기록
 

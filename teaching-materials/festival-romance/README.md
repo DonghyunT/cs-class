@@ -36,7 +36,7 @@
 - **기본 학생 모드 (`/festival-romance.html`):** 순차 챕터 해금(1장 완료 시 2장 해금, 2장 완료 시 3장 해금), 목차(`#contents-button`)·교사 도구(`#teaching-tools`)·설정 내 교사 옵션 숨김, `localStorage` 키 `festival-romance.game.v2` 저장, 이미 본 장면(`seenScenes`)에 대한 `이미 본 대사 건너뛰기` 지원.
 - **교사 모드 (`?mode=teacher`):** 전체 챕터 즉시 해금, 목차·교사 메모·간결 대화·엔딩 미리보기 패널 활성화.
 - **임베드 모드 (`?embed=1`):** `body`와 `#stage`에 `data-embed="true"` 적용, `#fullscreen` 숨김, `createMemoryStorage` 사용으로 `localStorage` 접근 0회, `parent.postMessage`(`festival:init`, `festival:state`, `festival:complete`) 브리지 제공(메인 앱 연동은 Phase 5 예정).
-- **캐릭터 스프라이트:** 현재 번들은 `assets/haru-boy-v3.png`와 `assets/haru-girl-v3.png`(`1536×1024`, `FESTIVAL_SPRITE_ROWS: { boy: 1, girl: 1 }`)를 사용하며 `spriteCrop`이 6개 표정 슬롯을 매핑합니다. 3×2 6표정 시트(`1536×2048`) 후보 자산인 [haru-boy-v6.png](assets/haru-boy-v6.png)와 [haru-girl-v8.png](assets/haru-girl-v8.png)는 `assets/`에 보관되어 있으며, 최종 시트 교체 후 다시 빌드하면 `build.cjs`가 `rows: 2`를 자동 감지합니다.
+- **캐릭터 스프라이트:** 현재 번들은 [haru-boy-v3.png](assets/haru-boy-v3.png)와 [haru-girl-v3.png](assets/haru-girl-v3.png)(`1536×1024`, `FESTIVAL_SPRITE_ROWS: { boy: 1, girl: 1 }`)를 사용하며 `spriteCrop`이 6개 표정 슬롯을 매핑합니다. 최종 `1536×2048` 3×2 6표정 시트 교체 후 다시 빌드하면 `build.cjs`가 `rows: 2`를 자동 감지합니다([haru-boy-v6.png](assets/haru-boy-v6.png), [haru-girl-v7-preview.png](assets/haru-girl-v7-preview.png) 등 시안은 `assets/` 참고).
 
 - **보존된 원본 자료의 검증 기준:** V1 3차시 27장면 도입 수업(`/festival-lesson.html`) 검수 이력은 [제작·검수 기록](제작-검수-기록.md)에 보존되어 있으며, v2 개편 검증·남은 작업은 [HANDOFF.md](HANDOFF.md)에 있습니다.
 
