@@ -524,7 +524,23 @@ async function playChapterToEnd(page, chapterId, {
       await advanceDialogue(page, { skipSeen: true });
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, '390px 시뮬레이터 가로 넘침 없음');
       await page.screenshot({ path: path.join(resultsDir, 'v2-mobile-390.png'), fullPage: true });
-      checks.push('모바일 390x844 타이틀·시뮬레이터·엔딩 리포트 가로 넘침 0건 확인');
+      // 하루 성별에 따라 같은 대사의 말투가 바뀜(여학생 → 남학생 전환 후 이전/다음으로 다시 그림)
+      await page.locator('#home-button').click();
+      await page.locator('[data-chapter="1"]').click();
+      for (let i = 0; i < 6 && !/^5 \//.test(await page.locator('#line-progress').innerText()); i++) await page.locator('#next-button').click();
+      assert.match(await page.locator('#dialogue-text').innerText(), /혹시 우리 반 구름\?/, '여학생 하루 말투');
+      await page.locator('input[name="variant"][value="boy"]').check();
+      await page.locator('#previous-button').click();
+      await page.locator('#next-button').click();
+      assert.match(await page.locator('#dialogue-text').innerText(), /우리 반 구름 맞지\?/, '남학생 하루 말투');
+      // 390px에서 버튼만으로 블록 순서 바꾸기 완료
+      await advanceDialogue(page, { skipSeen: true });
+      assert.equal(await page.locator('#experiment').getAttribute('data-experiment'), 'arrange');
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, '390px 순서 바꾸기 가로 넘침 없음');
+      await solveArrange(page);
+      await waitForActivityPass(page);
+      await page.screenshot({ path: path.join(resultsDir, 'v3-arrange-390.png'), fullPage: true });
+      checks.push('모바일 390x844 타이틀·시뮬레이터·엔딩 리포트·순서 바꾸기(버튼만) 가로 넘침 0건, 남녀 말투 전환 확인');
 
       await ctx.close();
     }
