@@ -28,7 +28,7 @@
 
 1. **학생 테스터 재검토(선택):** 다시 돌린다면 풀이 시간 상한(문항당 약 1분)과 카드 3장·직접 조작 형식을 지시에 넣습니다. 검토 자료는 `node teaching-materials/festival-romance/qa/student-review-pack.cjs`로 만듭니다.
 2. **캐릭터 시트:** v15(표정 5개 새로 그림)를 적용했습니다. 남학생 수줍음·장난기는 소매 윤곽이 미소 칸보다 약 9~10px 넓어, 표정이 바뀔 때 소매가 살짝 움직여 보일 수 있습니다. 거슬리면 해당 칸만 같은 요청문으로 다시 그립니다(요청문은 이미지 제작 기록). 다른 시안으로 바꾸려면 같은 3×2 규격으로 만들어 `build.cjs`의 파일 이름만 바꿉니다(PNG 높이로 `rows`를 자동 감지).
-3. **Phase 5 메인 앱 임베드(구현 완료, 병합 전):** [복습 활동 계획](../../docs/plans/festival-romance-embed.md)대로 복습 활동 `review-festival`로 넣었고 브랜치 `feat/festival-embed`의 PR에서 사용자 확인을 기다립니다. 병합 뒤에도 주소 `/festival-romance.html`로 여는 방식은 그대로 동작합니다.
+3. **Phase 5 메인 앱 임베드(구현 완료, 병합 전):** [복습 활동 계획](../../docs/archive/cs-class/2026-11-16-completed-plans/festival-romance-embed.md)대로 복습 활동 `review-festival`로 넣었고 브랜치 `feat/festival-embed`의 PR에서 사용자 확인을 기다립니다. 병합 뒤에도 주소 `/festival-romance.html`로 여는 방식은 그대로 동작합니다.
 4. **현장 확인:** 크롬북에서 학교 와이파이로 첫 로딩에 걸리는 시간(17MB)과 두 번째부터 캐시가 되는지(D3, 두 번째 도메인 `cs-class-sigma.vercel.app`)를 봅니다. 실제 학교 교실 프로젝터(교사용 `/festival-lesson.html`·`?mode=teacher`)와 학생 태블릿/크롬북(학생용)에서 가독성과 터치 조작도 점검합니다.
 
 ## 4. 자주 쓰는 실행 명령
