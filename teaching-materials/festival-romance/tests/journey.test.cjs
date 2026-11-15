@@ -120,17 +120,8 @@ test('3개 챕터·12개 등급 문항·마음 선택지·3가지 엔딩·교사
         assert.ok(sc.flow && Array.isArray(sc.flow.firstTrySuccess) && sc.flow.firstTrySuccess.length > 0, `${sc.id} firstTrySuccess 필수`);
         assert.ok(Array.isArray(sc.flow.retrySuccess) && sc.flow.retrySuccess.length > 0, `${sc.id} retrySuccess 필수`);
         assert.ok(sc.flow.wrongReaction && [3, 4].includes(sc.flow.wrongReaction.expression) && sc.flow.wrongReaction.line, `${sc.id} wrongReaction 필수`);
-        if (sc.experiment === 'quiz' && sc.quiz?.style === 'chat') {
-          assert.ok(Array.isArray(sc.quiz.steps) && sc.quiz.steps.length > 0, `${sc.id} 대화 단계 필수`);
-        } else if (sc.experiment === 'quiz') {
-          assert.ok(sc.quiz && sc.quiz.prompt && Array.isArray(sc.quiz.choices), `${sc.id} quiz 필수`);
-          assert.equal(sc.quiz.choices.some((c) => c.correct), true, `${sc.id} 정답 보기 필수`);
-          for (const c of sc.quiz.choices) {
-            if (!c.correct) assert.ok(c.why, `${sc.id} 오답 보기(${c.key}) why 필수`);
-          }
-        } else {
-          assert.ok(sc.goal && sc.goal.wrongHints && sc.goal.defaultWhy, `${sc.id} goal.wrongHints/defaultWhy 필수`);
-        }
+        // 카드 구조(정답 1개·오답 이유·실행 결과)는 refinement.test.cjs가 자세히 검사합니다.
+        assert.ok(sc.experiment === 'quiz' && (Array.isArray(sc.quiz?.choices) || sc.quiz?.variants), `${sc.id} 카드 문항 필수`);
       }
 
       for (const text of collectTexts(sc)) {

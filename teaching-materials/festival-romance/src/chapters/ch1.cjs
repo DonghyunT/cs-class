@@ -96,55 +96,82 @@ module.exports = {
       "graded": true,
       "questionId": "ch1-q1",
       "conceptTitle": "프로그래밍과 입력·처리·출력",
-      "experiment": "arrange",
-      "title": "버그 1 · 이름보다 먼저 나온 환영 인사",
+      "experiment": "quiz",
+      "title": "EP 1 · 이름보다 먼저 나온 환영 인사",
       "topic": "프로그래밍 · 명령의 순서",
-      "minutes": "1:10",
+      "minutes": "1:00",
       "background": "night",
       "channel": "축제앱 · 하루와 채팅",
       "quote": "하루: \"메모 순서 그대로 블록을 옮겼는데, 실행하면 이름 칸이 비어!\"",
-      "goalPrompt": "환영 문구에 이름이 나오도록 블록 순서를 고쳐 실행해 보세요!",
+      "goalPrompt": "환영 문구에 이름이 나오려면 블록을 어떤 순서로 둘까?",
       "observe": "값은 쓰기 전에 정해야 해서 묻기(입력) → 정하기(처리) → 말하기(출력) 순서예요.",
-      "goal": {
-        "hat": "시작하기 버튼을 클릭했을 때",
-        "note": { "title": "하루의 메모", "lines": ["① 환영 인사 띄우기", "② 이름 물어보기", "③ 이름 기억해 두기"] },
-        "blocks": [
-          { "id": "say", "label": "([이름]과(와) \" 님, 환영해요!\"를 합친 값) 말하기" },
-          { "id": "ask", "label": "\"이름이 뭐예요?\" 묻고 대답 기다리기" },
-          { "id": "set", "label": "[이름]을 (대답)으로 정하기" }
+      "quiz": {
+        "situation": [
+          "이름을 입력했는데 화면에 “ 님, 환영해요!”만 떠요."
         ],
-        "initialOrder": ["say", "ask", "set"],
-        "acceptOrders": [["ask", "set", "say"]],
-        "simulate": "welcome",
-        "successTitle": "환영 화면 정상!",
-        "successText": "묻고 → 정하고 → 말하니 이름이 제대로 들어갔어요.",
-        "wrongHints": {
-          "say": "인사를 말하는 순간 [이름]이 아직 비어 있어요. 값은 쓰기 전에 정해 둬야 해요.",
-          "set": "[이름]을 정하는 순간 아직 묻기 전이라 대답이 비어 있어요.",
-          "ask": "이름을 먼저 물어봐야 [이름]에 담을 값이 생겨요."
-        },
-        "defaultWhy": "줄마다 그 순간 [이름]에 무엇이 들어 있는지 따라가 보세요."
+        "code": [
+          "([이름]과 \" 님, 환영해요!\"를 합친 값) 말하기",
+          "\"이름이 뭐예요?\" 묻고 대답 기다리기",
+          "[이름]을 (대답)으로 정하기"
+        ],
+        "choices": [
+          {
+            "key": "ask-set-say",
+            "label": "묻기 → 정하기 → 말하기",
+            "correct": true,
+            "screen": "“{{name}} 님, 환영해요!”"
+          },
+          {
+            "key": "set-ask-say",
+            "label": "정하기 → 묻기 → 말하기",
+            "screen": "“ 님, 환영해요!” (이름 칸이 비어요)",
+            "why": "정할 때는 아직 아무것도 묻지 않아 대답이 비어 있어요. 이름을 물어본 다음에 [이름]을 정해야 해요."
+          },
+          {
+            "key": "ask-say-set",
+            "label": "묻기 → 말하기 → 정하기",
+            "screen": "“ 님, 환영해요!” (이름 칸이 비어요)",
+            "why": "말할 때 [이름]이 아직 비어 있어요. 말하기 전에 [이름]을 정해 둬야 해요."
+          }
+        ],
+        "successTitle": "환영 문구 정상!",
+        "explain": "물어보고(입력) → 기억하고(처리) → 인사하기(출력). 값은 쓰기 전에 정해 둬야 해요.",
+        "hat": "시작하기 버튼을 클릭했을 때"
       },
       "flow": {
         "intro": [
           {
-            "speaker": "하루", "role": "haru", "expression": 0,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
             "text": {
               "boy": "이게 환영 화면 블록이야. 짜기 전에 순서를 메모로도 적어 놨거든.",
               "girl": "이게 환영 화면 블록이야! 짜기 전에 순서를 메모로도 적어 놨어."
             }
           },
           {
-            "speaker": "하루", "role": "haru", "expression": 4,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 4,
             "text": {
               "boy": "메모대로 옮겼는데 실행하면 이름 칸이 비어. 뭐가 문제지?",
               "girl": "메모대로 옮겼는데 실행하면 이름 칸이 비어… 뭐가 문제지?"
             }
           },
-          { "speaker": "나", "role": "me", "text": "메모 순서부터 한 줄씩 따라가 보자.", "expression": 0 }
+          {
+            "speaker": "나",
+            "role": "me",
+            "text": "블록 순서를 한 줄씩 따라가 보자.",
+            "expression": 0
+          }
         ],
         "shortIntro": [
-          { "speaker": "하루", "role": "haru", "text": "메모대로 블록을 옮겼는데 환영 문구 이름 칸이 비어! 같이 봐 줘.", "expression": 4 }
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "메모대로 블록을 옮겼는데 환영 문구 이름 칸이 비어! 같이 봐 줘.",
+            "expression": 4
+          }
         ],
         "wrongReaction": {
           "expression": 4,
@@ -152,7 +179,9 @@ module.exports = {
         },
         "firstTrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 3,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 3,
             "text": {
               "boy": "와, 바로 뜬다. 메모부터 순서가 틀렸던 거네 ㅋㅋ",
               "girl": "와, 바로 떴어! 메모부터 순서가 틀렸던 거구나 ㅋㅋ"
@@ -161,7 +190,9 @@ module.exports = {
         ],
         "retrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 0,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
             "text": {
               "boy": "됐다. 묻고, 기억하고, 그다음에 인사. 이제 안 까먹겠다.",
               "girl": "됐다! 묻고, 기억하고, 그다음에 인사하기. 이제 안 까먹을게."
@@ -183,65 +214,93 @@ module.exports = {
       "questionId": "ch1-q2",
       "conceptTitle": "변수 덮어쓰기와 대답 저장",
       "experiment": "quiz",
-      "title": "버그 2 · 초대장에 찍힌 '정문 님'",
+      "title": "EP 2 · 초대장에 찍힌 '정문 님'",
       "topic": "변수와 대답",
-      "minutes": "1:10",
+      "minutes": "1:00",
       "background": "night",
       "channel": "축제앱 · 하루와 채팅",
       "quote": "하루: \"네가 보낸 초대장이 '정문 님'으로 왔어 ㅋㅋ 이름 칸에 왜 장소가 들어가?\"",
-      "goalPrompt": "실행 기록을 보고, 초대장이 '정문 님'으로 온 버그를 고칠 방법을 골라 주세요!",
+      "goalPrompt": "3번 줄 [이름]을 (대답)으로 정하기를 어디로 옮길까?",
       "observe": "'대답'은 마지막 값 하나만 기억하니, 받자마자 변수에 저장해요.",
       "quiz": {
-        "style": "chat",
-        "trace": [
-          ["\"보내는 사람 이름은?\" 묻고 대답 기다리기", "대답: {{name}}"],
-          ["\"만날 장소는?\" 묻고 대답 기다리기", "대답: 정문"],
-          ["[이름]을 (대답)으로 정하기", "[이름]: 정문"],
-          ["[장소]를 (대답)으로 정하기", "[장소]: 정문"]
+        "situation": [
+          "이름에 ‘{{name}}’, 장소에 ‘정문’을 입력했더니",
+          "초대장이 “정문 님! 내일 정문에서 만나요.”"
         ],
-        "screen": "도착한 초대장: \"정문 님! 내일 정문에서 만나요.\"",
-        "successTitle": "초대장 정상 발송!",
-        "explain": "고친 초대장: \"{{name}} 님! 내일 정문에서 만나요.\" — 이름을 받자마자 [이름]에 넣어 두니 다음 질문에도 지워지지 않았어요.",
-        "steps": [
+        "code": [
+          "\"보내는 사람 이름은?\" 묻고 대답 기다리기",
+          "\"만날 장소는?\" 묻고 대답 기다리기",
+          "[이름]을 (대답)으로 정하기",
+          "[장소]를 (대답)으로 정하기"
+        ],
+        "focus": 3,
+        "choices": [
           {
-            "prompt": "이름 칸에 '정문'이 들어갔어. 어떻게 고치면 돼?",
-            "choices": [
-              { "key": "save-first", "label": "이름을 묻자마자 바로 [이름]에 넣어 두자.", "correct": true },
-              { "key": "swap-ask", "label": "장소를 먼저 묻고, 이름은 나중에 묻자.", "why": "두 질문이 다 끝난 뒤에 정하면 [이름]과 [장소]가 둘 다 마지막 대답이 돼요. '대답'은 마지막 값 하나만 기억해요." },
-              { "key": "stack", "label": "'대답'에 쌓인 값 중 첫 번째를 꺼내 쓰자.", "why": "'대답'은 값을 쌓아 두지 않고 가장 최근 값 하나만 기억해요. 실행 기록 둘째 줄에서 '대답'이 '정문'으로 바뀐 걸 보세요." },
-              { "key": "same-box", "label": "[이름]과 [장소]를 한 변수로 합쳐 두자.", "why": "변수를 합치면 이름과 장소를 따로 기억할 수 없어요. 문제는 [이름]을 정할 때 '대답'이 이미 '정문'이었다는 거예요." }
-            ]
+            "key": "after-1",
+            "label": "1번 줄 바로 다음",
+            "correct": true,
+            "screen": "“{{name}} 님! 내일 정문에서 만나요.”"
+          },
+          {
+            "key": "top",
+            "label": "맨 앞 (1번 줄 위)",
+            "screen": "“ 님! 내일 정문에서 만나요.”",
+            "why": "아직 아무것도 묻지 않아 대답이 비어 있어요. 이름을 물은 뒤에 정해야 해요."
+          },
+          {
+            "key": "bottom",
+            "label": "맨 끝 (4번 줄 아래)",
+            "screen": "“정문 님! 내일 정문에서 만나요.”",
+            "why": "'대답'은 마지막 값 하나만 기억해요. 장소까지 물은 뒤에는 대답이 '정문'이에요."
           }
-        ]
+        ],
+        "successTitle": "초대장 정상 발송!",
+        "explain": "'대답'은 마지막 값 하나만 기억해요. 그래서 이름을 받자마자 [이름]에 넣어 둬야 다음 질문에도 지워지지 않아요."
       },
       "flow": {
         "intro": [
           {
-            "speaker": "하루", "role": "haru", "expression": 0,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
             "text": {
               "boy": "환영 화면 살았다. 다음은 초대장. 테스트 겸 나한테 하나 보내 볼래?",
               "girl": "환영 화면 살았다! 다음은 초대장… 테스트 겸 나한테 하나 보내 볼래?"
             }
           },
-          { "speaker": "내 생각", "role": "narration", "text": "이름 칸에 내 이름을, 장소 칸에 '정문'을 적고 보냈다.", "expression": 0 },
           {
-            "speaker": "하루", "role": "haru", "expression": 3,
+            "speaker": "내 생각",
+            "role": "narration",
+            "text": "이름 칸에 내 이름을, 장소 칸에 '정문'을 적고 보냈다.",
+            "expression": 0
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 3,
             "text": {
-              "boy": "ㅋㅋ '정문 님'이 누구냐. 실행 기록 같이 보자.",
-              "girl": "ㅋㅋ '정문 님'은 누구야? 실행 기록 같이 봐 줘."
+              "boy": "ㅋㅋ '정문 님'은 누구야? 블록 같이 봐 줘.",
+              "girl": "ㅋㅋ '정문 님'은 누구야? 블록 같이 봐 줄래?"
             }
           }
         ],
         "shortIntro": [
-          { "speaker": "하루", "role": "haru", "text": "네가 보낸 초대장이 '정문 님'으로 왔어! 실행 기록 같이 봐 줘.", "expression": 4 }
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "네가 보낸 초대장이 '정문 님'으로 왔어! 블록 같이 봐 줘.",
+            "expression": 4
+          }
         ],
         "wrongReaction": {
           "expression": 4,
-          "line": "아직 '정문 님'이야. 실행 기록에서 '대답' 칸이 언제 바뀌는지 봐 봐!"
+          "line": "아직 '정문 님'이야. '대답'이 언제 바뀌는지 다시 보자!"
         },
         "firstTrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 3,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 3,
             "text": {
               "boy": "오, '{{name}} 님'으로 왔다. 대답은 마지막 것만 남는 거였구나.",
               "girl": "오, '{{name}} 님'으로 왔어! 대답은 마지막 것만 남는 거였구나."
@@ -250,7 +309,9 @@ module.exports = {
         ],
         "retrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 0,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
             "text": {
               "boy": "이제 '{{name}} 님'으로 제대로 온다. 대답은 받자마자 저장. 기억할게.",
               "girl": "이제 '{{name}} 님'으로 제대로 와! 대답은 받자마자 저장하기, 기억할게."
@@ -261,8 +322,8 @@ module.exports = {
       "teacher": {
         "ask": "두 질문을 연달아 한 뒤 앞의 대답이 사라진 까닭은 무엇일까요?",
         "answer": "'대답'은 마지막 입력 하나만 기억하므로 첫 대답을 받자마자 [이름]에 저장해야 합니다.",
-        "watch": "'대답'이 목록처럼 쌓인다는 오개념을 실행 기록(둘째 줄에서 대답이 '정문'으로 바뀜)으로 확인하게 합니다.",
-        "short": "실행 기록을 보고 이름을 받자마자 저장하도록 고칩니다."
+        "watch": "'대답'이 목록처럼 쌓인다는 오개념을 짚고, 장소를 묻는 순간 대답이 '정문'으로 바뀐다는 점을 확인합니다.",
+        "short": "이름을 묻자마자 [이름]에 저장하도록 블록 위치를 고칩니다."
       }
     },
     {
@@ -350,41 +411,80 @@ module.exports = {
       "graded": true,
       "questionId": "ch1-q3",
       "conceptTitle": "방향키 사건과 방향각 이동",
-      "experiment": "map",
-      "title": "버그 3 · 초대장 '길 안내'가 하늘로 간다",
+      "experiment": "quiz",
+      "title": "EP 3 · 초대장 '길 안내'가 하늘로 간다",
       "topic": "방향키 사건과 엔트리 방향각",
       "minutes": "1:00",
       "background": "night",
       "channel": "축제앱 · 하루와 채팅",
       "quote": "하루: \"초대장 [길 안내]에서 → 키를 누르면 캐릭터가 정문 대신 하늘로 날아가!\"",
-      "goalPrompt": "→ 키를 누르면 캐릭터가 정문까지 가도록 이동 방향을 고쳐 보세요!",
+      "goalPrompt": "→ 키를 누르면 정문으로 가게 하려면 각도를 몇 도로 할까?",
       "observe": "→ 키 사건이 오면 블록이 실행되고, 엔트리에서 오른쪽은 90°(위 0°)예요.",
-      "goal": {
+      "quiz": {
+        "situation": [
+          "정문은 오른쪽으로 세 칸 (엔트리 방향: 위쪽이 0°)",
+          "→ 키를 누르면 위(하늘)로 날아가요."
+        ],
         "hat": "오른쪽 화살표 키를 눌렀을 때",
-        "initialAngle": 0,
-        "expectedAngle": 90,
-        "target": { "x": 4, "y": 2 },
-        "wrongHints": {
-          "0": "0°는 위쪽이라 하늘로 갔어요. 정문은 오른쪽이에요.",
-          "180": "180°는 아래쪽이에요. 위가 0°라면 오른쪽은 몇 도일까요?",
-          "270": "270°는 왼쪽이에요. 시계 방향으로 더 적게 돌아야 해요."
-        },
-        "defaultWhy": "엔트리 방향각은 위쪽이 0°이고 시계 방향으로 커져요."
+        "code": [
+          "이동 방향을 0°로 정하기",
+          "3칸 움직이기"
+        ],
+        "focus": 1,
+        "choices": [
+          {
+            "key": "90",
+            "label": "90°",
+            "correct": true,
+            "screen": "→ 오른쪽으로 세 칸, 정문 도착!"
+          },
+          {
+            "key": "180",
+            "label": "180°",
+            "screen": "↓ 아래로 세 칸 내려가요",
+            "why": "180°는 아래쪽이에요. 위가 0°이고 시계 방향으로 90°씩 돌아요."
+          },
+          {
+            "key": "270",
+            "label": "270°",
+            "screen": "← 왼쪽으로 세 칸 가요",
+            "why": "270°는 왼쪽이에요. 오른쪽은 위(0°)에서 시계 방향으로 한 번(90°) 돈 쪽이에요."
+          }
+        ],
+        "successTitle": "정문 도착 완료!",
+        "explain": "→ 키를 누르면(사건) 블록이 실행되고, 오른쪽인 90°로 정하니 정문까지 세 칸 정확히 갔어요."
       },
       "flow": {
         "intro": [
-          { "speaker": "내 생각", "role": "narration", "text": "저장한 초대장 아래 [길 안내]를 눌러 봤다. 정문은 오른쪽으로 세 칸이다.", "expression": 0 },
           {
-            "speaker": "하루", "role": "haru", "expression": 3,
+            "speaker": "내 생각",
+            "role": "narration",
+            "text": "저장한 초대장 아래 [길 안내]를 눌러 봤다. 정문은 오른쪽으로 세 칸이다.",
+            "expression": 0
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 3,
             "text": {
               "boy": "아 그거… → 키 누르면 정문이 아니라 하늘로 날아가지?",
               "girl": "아 그거…! → 키를 누르면 정문이 아니라 하늘로 날아가잖아."
             }
           },
-          { "speaker": "나", "role": "me", "text": "고치기 전에 → 키부터 눌러서 직접 확인해 보자.", "expression": 0 }
+          {
+            "speaker": "나",
+            "role": "me",
+            "text": "방향을 정하는 블록부터 보자.",
+            "expression": 0
+          }
         ],
         "shortIntro": [
-          { "speaker": "하루", "role": "haru", "text": "길 안내에서 → 키를 누르면 캐릭터가 하늘로 날아가! 같이 고쳐 줘!", "expression": 3 }
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "길 안내에서 → 키를 누르면 캐릭터가 하늘로 날아가! 같이 고쳐 줘!",
+            "expression": 3
+          }
         ],
         "wrongReaction": {
           "expression": 3,
@@ -392,7 +492,9 @@ module.exports = {
         },
         "firstTrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 2,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 2,
             "text": {
               "boy": "오, 정문까지 한 번에 들어갔다. 위 0°, 오른쪽 90°. 내일 길 잃을 일은 없겠다.",
               "girl": "오, 정문까지 한 번에 쏙! 위 0°, 오른쪽 90°… 내일 길 잃을 일은 없겠다."
@@ -401,7 +503,9 @@ module.exports = {
         ],
         "retrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 0,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
             "text": {
               "boy": "휴, 이제 정문까지 간다. 엔트리는 위가 0°였지.",
               "girl": "휴, 이제 정문까지 가네! 엔트리는 위가 0°였지."
@@ -422,47 +526,72 @@ module.exports = {
       "graded": true,
       "questionId": "ch1-q4",
       "conceptTitle": "변수로 계산하기(값이 바뀌면 결과도 바뀌게)",
-      "experiment": "arrange",
-      "title": "버그 4 · 티켓 나누기가 아직도 8장씩?",
+      "experiment": "quiz",
+      "title": "EP 4 · 티켓 나누기가 아직도 8장씩?",
       "topic": "변수 · 값을 기억하는 상자",
-      "minutes": "1:10",
+      "minutes": "1:00",
       "background": "night",
       "channel": "축제앱 · 하루와 채팅",
       "quote": "하루: \"게임 한 판 하느라 티켓 2장 썼는데, 나누기 화면은 아직도 한 사람당 8장씩이래!\"",
-      "goalPrompt": "지금 가진 티켓으로 한 사람 몫이 나오도록 ⇄ 블록을 눌러 바꿔 보세요!",
+      "goalPrompt": "3번 줄을 어떻게 바꿔야 늘 똑같이 나눈 값이 나올까?",
       "observe": "숫자를 직접 적으면 값이 바뀌어도 그대로라서, 변수를 넣어 계산해야 해요.",
-      "goal": {
-        "fixedOrder": true,
-        "hat": "티켓 나누기 버튼을 클릭했을 때",
-        "blocks": [
-          { "id": "mine", "label": "[내 티켓]을 9로 정하기" },
-          { "id": "haru", "label": "[하루 티켓]을 5로 정하기" },
-          { "id": "share", "label": "{choice}", "choices": ["[한 사람 몫]을 8로 정하기", "[한 사람 몫]을 ([내 티켓] + [하루 티켓])로 정하기", "[한 사람 몫]을 (([내 티켓] + [하루 티켓]) ÷ 2)로 정하기"], "initialChoice": 0 },
-          { "id": "say", "label": "([한 사람 몫]과(와) \"장씩!\"을 합친 값) 말하기" }
+      "quiz": {
+        "situation": [
+          "나 9장 · 하루 5장인데 화면은 “8장씩!”",
+          "티켓 수가 바뀌어도 늘 맞게 나와야 해요."
         ],
-        "initialOrder": ["mine", "haru", "share", "say"],
-        "acceptOrders": [["mine", "haru", "share", "say"]],
-        "expectedChoices": { "share": 2 },
-        "simulate": "share",
+        "hat": "티켓 나누기 버튼을 클릭했을 때",
+        "code": [
+          "[내 티켓]을 9로 정하기",
+          "[하루 티켓]을 5로 정하기",
+          "[한 사람 몫]을 8로 정하기",
+          "([한 사람 몫]과 \"장씩!\"을 합친 값) 말하기"
+        ],
+        "focus": 3,
+        "choices": [
+          {
+            "key": "avg",
+            "label": "[한 사람 몫]을 (([내 티켓] + [하루 티켓]) ÷ 2)로 정하기",
+            "correct": true,
+            "screen": "“7장씩!” · 하루가 2장 더 쓰면 “6장씩!”"
+          },
+          {
+            "key": "double",
+            "label": "[한 사람 몫]을 (([내 티켓] + [하루 티켓]) × 2)로 정하기",
+            "screen": "“28장씩!”",
+            "why": "둘이 똑같이 나누려면 합을 2로 나눠야 해요."
+          },
+          {
+            "key": "fixed",
+            "label": "[한 사람 몫]을 ((9 + 5) ÷ 2)로 정하기",
+            "screen": "“7장씩!” · 하루가 2장 더 써도 “7장씩!”",
+            "why": "숫자를 직접 적으면 티켓이 바뀌어도 결과가 그대로예요. 변수를 넣어 계산해야 해요."
+          }
+        ],
         "successTitle": "티켓 나누기 정상!",
-        "successText": "지금 티켓(나 9장, 하루 5장)으로 계산해 한 사람당 7장씩이 나왔어요.",
-        "wrongHints": {
-          "share": "실행 기록의 [한 사람 몫]을 보세요. 지금 티켓 수로, 두 사람이 똑같이 나눈 값이어야 해요."
-        },
-        "defaultWhy": "[한 사람 몫]이 지금 티켓 수를 따라 계산되는지 확인해 보세요."
+        "explain": "변수를 넣어 계산하면 지금 상자에 든 값(9, 5)으로 7장씩이 나오고, 티켓이 바뀌면 몫도 따라 바뀌어요."
       },
       "flow": {
         "intro": [
           {
-            "speaker": "하루", "role": "haru", "expression": 0,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
             "text": {
               "boy": "마지막 하나만 더. [티켓 나누기] 화면인데, 아까 게임 한 판 하느라 내가 2장 썼거든.",
               "girl": "마지막 하나만 더! [티켓 나누기] 화면인데, 아까 게임 한 판 하느라 내가 2장 썼어."
             }
           },
-          { "speaker": "축제앱", "role": "system", "text": "티켓 나누기: 나 9장 · 하루 5장 → \"8장씩!\"", "expression": 0 },
           {
-            "speaker": "하루", "role": "haru", "expression": 3,
+            "speaker": "축제앱",
+            "role": "system",
+            "text": "티켓 나누기: 나 9장 · 하루 5장 → \"8장씩!\"",
+            "expression": 0
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 3,
             "text": {
               "boy": "합쳐도 14장인데 8장씩? 티켓은 줄었는데 몫은 그대로다.",
               "girl": "합쳐도 14장인데 8장씩이래. 티켓은 줄었는데 몫은 그대로야!"
@@ -470,15 +599,22 @@ module.exports = {
           }
         ],
         "shortIntro": [
-          { "speaker": "하루", "role": "haru", "text": "티켓 2장 썼는데 나누기 화면은 아직 한 사람당 8장씩이래! 같이 고쳐 줘.", "expression": 4 }
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "티켓 2장 썼는데 나누기 화면은 아직 한 사람당 8장씩이래! 같이 고쳐 줘.",
+            "expression": 4
+          }
         ],
         "wrongReaction": {
           "expression": 4,
-          "line": "어… 아직 몫이 이상해. 실행 기록에서 [한 사람 몫]을 다시 보자!"
+          "line": "어… 아직 몫이 이상해. 티켓 수가 바뀌면 어떻게 되는지 다시 보자!"
         },
         "firstTrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 2,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 2,
             "text": {
               "boy": "오, 14장을 둘이 나눠 7장씩. 8로 박아 두니까 티켓이 줄어도 그대로였던 거네.",
               "girl": "오, 14장을 둘이 나눠 7장씩! 8로 박아 두니까 티켓이 줄어도 그대로였구나."
@@ -487,7 +623,9 @@ module.exports = {
         ],
         "retrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 0,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
             "text": {
               "boy": "됐다. 변수를 넣어 계산해야 값이 바뀌면 결과도 따라 바뀌는 거였네.",
               "girl": "됐다! 변수를 넣어 계산해야 값이 바뀌면 결과도 따라 바뀌는 거구나."
@@ -498,7 +636,7 @@ module.exports = {
       "teacher": {
         "ask": "하루가 티켓을 쓴 뒤에도 몫이 8장으로 남은 까닭은 무엇일까요?",
         "answer": "몫을 숫자 8로 직접 정해 두어 [하루 티켓] 값이 7에서 5로 바뀌어도 결과가 그대로였습니다. ([내 티켓] + [하루 티켓]) ÷ 2처럼 변수로 계산하면 지금 값(9, 5)으로 7장씩이 나옵니다.",
-        "watch": "계산식에 숫자를 직접 적는 습관과, 합계만 구하고 나누기를 빠뜨리는 실수(14장씩)를 실행 기록으로 확인합니다.",
+        "watch": "계산식에 숫자를 직접 적는 습관(지금만 맞는 7장씩)과, 둘이 나눌 때 합을 2로 나누는 점을 확인합니다.",
         "short": "고정 숫자 대신 변수로 몫을 계산해 지금 티켓 수를 반영합니다."
       }
     },

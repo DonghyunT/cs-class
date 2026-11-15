@@ -19,20 +19,12 @@ const fill = (s) => String(s ?? '').replace(/\{\{(\w+)\}\}/g, (_, k) => VARS[k] 
 const text = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? `[남] ${fill(v.boy)}\n    [여] ${fill(v.girl)}` : fill(v));
 const who = (l) => (l.role === 'me' || l.speaker === '나' ? '나(주인공)' : l.speaker);
 const lines = (arr, indent = '') => (arr || []).map((l) => `${indent}- ${who(l)}: ${text(l.text)}`).join('\n');
-const goalSummary = (g) => {
-  if (!g) return '';
-  const { wrongHints, defaultWhy, chat, predict, ...rest } = g;
-  const out = [`  활동 설정: ${JSON.stringify(rest)}`];
-  if (predict) out.push('  고치기 전 예측 대화:', chatSteps(predict, '  '));
-  if (chat) out.push(chatSteps(chat, '  '));
-  if (wrongHints) out.push(`  오답 힌트(틀렸을 때 보이는 문구):\n${Object.entries(wrongHints).map(([k, v]) => `    · [${k}] ${fill(v)}`).join('\n')}`);
-  if (defaultWhy) out.push(`  기본 힌트: ${fill(defaultWhy)}`);
-  return out.join('\n');
-};
-const chatSteps = (q, indent = '') => (q.steps || []).map((st, i) => [
-  `${indent}대화 ${i + 1}턴 — 하루: ${fill(st.prompt)}`,
-  ...st.choices.map((c) => `${indent}  · (${c.key}) ${fill(c.label)}${c.correct ? '  ← 정답' : `  → 오답 피드백: ${fill(c.why)}`}`),
-].join('\n')).join('\n');
+const cardSummary = (q, indent = '  ') => [
+  ...(q.situation || []).map((l) => `${indent}지금 상황: ${fill(l)}`),
+  ...(q.hat ? [`${indent}시작 블록: ${fill(q.hat)}`] : []),
+  ...(q.code || []).map((c, i) => `${indent}  ${i + 1}. ${fill(c)}${q.focus === i + 1 ? '   ← 고칠 곳' : ''}`),
+  ...(q.choices || []).map((c) => `${indent}· 카드 (${c.key}) ${fill(c.label)} → 실행 결과: ${fill(c.screen)}${c.correct ? '  ← 정답' : `  → 오답 피드백: ${fill(c.why)}`}`),
+].join('\n');
 
 const md = [
   '# 내일, 축제에서 만나 — 학생 테스터용 플레이 대본',
@@ -60,17 +52,14 @@ for (const ch of chapters) {
       for (const c of s.choices) md.push(`  ▶ (${c.key}${c.cold ? ', 차갑게 선 긋기' : ''}) ${fill(c.label)}`, lines(c.reply, '    '));
     }
     if (s.graded) {
-      md.push(`인용: ${fill(s.quote)}`, `미션 목표: ${fill(s.goalPrompt)}`, `활동 종류: ${s.experiment}  (캡처: activity-${s.id}.png)`);
+      md.push(`인용: ${fill(s.quote)}`, `질문: ${fill(s.goalPrompt)}`, `활동 종류: ${s.experiment}  (캡처: activity-${s.id}.png)`);
       if (s.flow?.intro) md.push('도입 대사:', lines(s.flow.intro, '  '));
       if (s.flow?.options) md.push('도입 뒤 선택:', ...s.flow.options.map((o) => `  ▶ (${o.key}) ${fill(o.label)}`));
-      if (s.quiz) {
-        const q = s.quiz;
-        if (q.code) md.push('  화면의 블록 코드:', ...q.code.map((c) => `    ${c}`));
-        if (q.trace) md.push('  실행 기록:', ...q.trace.map(([a, b]) => `    ${fill(a)} → ${fill(b)}`), `    화면: ${fill(q.screen)}`);
-        if (q.style === 'chat') md.push(chatSteps(q, '  '));
-        else md.push(`  문제: ${fill(q.prompt)}`, ...(q.choices || []).map((c) => `  · (${c.key}) ${fill(c.label)}${c.correct ? '  ← 정답' : `  → 오답 피드백: ${fill(c.why)}`}`));
+      if (s.quiz?.variants) {
+        for (const [k, v] of Object.entries(s.quiz.variants)) md.push(`  [${k}을(를) 고른 경우]`, cardSummary({ ...s.quiz, ...v }, '    '));
+      } else if (s.quiz) {
+        md.push(cardSummary(s.quiz));
       }
-      if (s.goal) md.push(goalSummary(s.goal));
       if (s.flow?.wrongReaction) md.push(`틀렸을 때 하루: ${fill(s.flow.wrongReaction.line)}`);
       if (s.flow?.choiceReplies) md.push('선택별 반응:', ...Object.entries(s.flow.choiceReplies).map(([k, v]) => `  (${k})\n${lines(v, '    ')}`));
       if (s.flow?.firstTrySuccess) md.push('첫 시도 성공 반응:', lines(s.flow.firstTrySuccess, '  '));

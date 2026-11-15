@@ -475,3 +475,22 @@ dialog::backdrop{background:#202a3b68}
 .path-legend,.map-legend{margin:6px 0 4px}
 .lesson-main .experiment-actions{position:static;background:none;padding:0;margin-top:14px}
 .lesson-main.has-more::after{margin:6px 6px 0 auto;opacity:.92}
+/* 하트 문항 카드 화면: 지금 상황 → 코드(고칠 줄) → 질문 → 큰 카드 3장 */
+.quiz-board{gap:14px;padding:18px 22px}
+.quiz-situation{background:#fff6e3;border:1.5px solid #e0c08a;border-radius:10px;padding:10px 16px}
+.quiz-situation p{margin:2px 0;font-size:clamp(19px,1.55vw,23px);line-height:1.45;font-weight:650;color:#3b2c1f}
+.quiz-label{display:block;font-size:13px;font-weight:700;color:#9a6b2f;margin-bottom:2px}
+.quiz-hat{justify-self:start;margin-bottom:-14px;padding:7px 16px;border-radius:14px 14px 4px 4px;background:#e7b23f;color:#3a2a10;font-size:18px;font-weight:700}
+.quiz-code{font-size:clamp(18px,1.45vw,21px);line-height:1.6}
+.quiz-code .code-line{display:flex;padding:1px 6px;border-radius:5px}
+.quiz-code .code-line.indent .code-text{padding-left:24px}
+.quiz-code .code-line.indent .focus-tag{padding-left:9px}
+.quiz-code .code-line.focus{background:#fff0b3;box-shadow:inset 0 0 0 2px #e0a21f}
+.focus-tag{margin-left:auto;flex-shrink:0;padding:1px 9px;border-radius:10px;background:#c2410c;color:#fff;font-size:13px;font-weight:700;white-space:nowrap}
+.quiz-prompt{margin:2px 0 0;font-size:clamp(21px,1.75vw,26px);font-weight:750;line-height:1.4;color:var(--navy)}
+.quiz-choices{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.quiz-choice{flex-direction:column;align-items:flex-start;gap:8px;min-height:92px;padding:14px 16px;border-width:2px;border-radius:12px;font-size:clamp(18px,1.45vw,21px);font-weight:600;line-height:1.4;box-shadow:0 3px 0 #dcc8a6}
+.quiz-choice:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+.result .sim-screen{margin:0 0 8px;font-size:clamp(17px,1.35vw,20px);font-weight:650}
+@media (max-width:900px){.quiz-choices{grid-template-columns:1fr}.quiz-choice{min-height:0}}
+@media (max-height:820px){.quiz-board{gap:9px;padding:12px 18px}.quiz-situation{padding:7px 14px}.quiz-situation p{font-size:19px}.quiz-code{font-size:18px;line-height:1.45;padding:8px 12px}.quiz-prompt{font-size:21px}.quiz-choice{min-height:0;gap:6px;padding:10px 14px}}

@@ -55,60 +55,108 @@ module.exports = {
       "graded": true,
       "questionId": "ch3-q1",
       "conceptTitle": "횟수 반복(정해진 횟수만큼)",
-      "experiment": "count",
-      "title": "버그 9 · 몇 번 깜빡이는지 모르는 개막 조명",
+      "experiment": "quiz",
+      "title": "EP 9 · 몇 번 깜빡이는지 모르는 개막 조명",
       "topic": "반복의 장점 · 정해진 횟수만큼 반복",
-      "minutes": "1:10",
+      "minutes": "1:00",
       "background": "dusk",
       "channel": "운동장 · 빛그림 점등식",
-      "quote": "하루: \"진행팀이 개막 신호를 '두 번 깜빡이기를 2세트'로 해 달래. 지금은 몇 번 깜빡이지?\"",
-      "goalPrompt": "진행팀 요청(두 번 깜빡이기 × 2세트)만큼 깜빡이도록 반복 횟수를 고쳐 보세요!",
+      "quote": "하루: \"진행팀은 조명을 4번 깜빡여 달랬는데, 지금은 몇 번 깜빡이지?\"",
+      "goalPrompt": "조명이 정확히 4번 깜빡이게 하려면 어떻게 고칠까?",
       "observe": "반복 블록은 묶음을 한 번만 적고 숫자 하나로 횟수를 정해요(2 × 2 = 4번).",
-      "goal": {
-        "initialTimes": 3,
-        "expectedTimes": 4,
-        "wrongHints": {
-          "times": "반복 숫자가 곧 깜빡이는 횟수예요. 두 번씩 2세트면 모두 몇 번일까요?"
-        },
-        "defaultWhy": "반복 블록의 숫자가 깜빡임 횟수와 같은지 확인해 보세요."
+      "quiz": {
+        "situation": [
+          "진행팀 요청: 조명을 모두 4번 깜빡이기",
+          "지금은 3번만 깜빡이고 꺼져요."
+        ],
+        "code": [
+          "3번 반복하기",
+          "  불 켜기",
+          "  0.5초 기다리기",
+          "  불 끄기"
+        ],
+        "focus": 1,
+        "choices": [
+          {
+            "key": "four",
+            "label": "반복 횟수를 4로",
+            "correct": true,
+            "screen": "💡 깜빡 × 4 → 본 공연 시작!"
+          },
+          {
+            "key": "twelve",
+            "label": "반복 횟수를 12로",
+            "screen": "💡 깜빡 × 12",
+            "why": "반복 숫자는 안쪽 묶음 전체를 몇 번 할지예요. 안쪽 블록 수(3개)를 곱하지 않아요."
+          },
+          {
+            "key": "extra",
+            "label": "'불 켜기' 하나 더 넣기",
+            "screen": "💡 깜빡 × 3 (켜기만 두 번)",
+            "why": "반복 횟수가 그대로 3이라 여전히 3번만 깜빡여요."
+          }
+        ],
+        "successTitle": "정확해요! 4번 깜빡임 완료",
+        "explain": "켜기·기다리기·끄기 묶음을 한 번만 적고, 숫자 하나로 4번 반복했어요.",
+        "values": {
+          "times": 4
+        }
       },
       "flow": {
         "intro": [
           {
-            "speaker": "하루", "role": "haru", "expression": 0,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
             "text": {
-              "boy": "먼저 개막 조명. 진행팀 요청은 '두 번 깜빡이기를 2세트' 하고 본 공연 시작이다.",
-              "girl": "먼저 개막 조명이야. 진행팀 요청은 '두 번 깜빡이기를 2세트' 하고 본 공연 시작이래."
+              "boy": "먼저 개막 조명이야. 진행팀이 신호로 조명을 딱 4번 깜빡여 달래.",
+              "girl": "먼저 개막 조명이야. 진행팀이 신호로 조명을 딱 4번 깜빡여 달래!"
             }
           },
           {
-            "speaker": "하루", "role": "haru", "expression": 4,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 4,
             "text": {
               "boy": "켜기·기다리기·끄기를 복붙하다가 반복 블록으로 줄였는데, 횟수가 맞는지 모르겠다.",
               "girl": "켜기·기다리기·끄기를 복붙하다가 반복 블록으로 줄였는데, 횟수가 맞는지 모르겠어…"
             }
           },
-          { "speaker": "나", "role": "me", "text": "일단 그대로 돌려 보고 몇 번 깜빡이는지 세 보자.", "expression": 0 }
+          {
+            "speaker": "나",
+            "role": "me",
+            "text": "몇 번 반복하는지부터 보자.",
+            "expression": 0
+          }
         ],
         "shortIntro": [
-          { "speaker": "하루", "role": "haru", "text": "개막 조명이 진행팀 요청(두 번 깜빡이기 × 2세트)대로 깜빡이는지 같이 보자!", "expression": 0 }
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "개막 조명이 진행팀 요청(4번 깜빡이기)대로 깜빡이는지 같이 보자!",
+            "expression": 0
+          }
         ],
         "wrongReaction": {
           "expression": 3,
-          "line": "어어?! 깜빡임 횟수가 안 맞아! 두 번씩 2세트면 몇 번인지 다시 세 보자."
+          "line": "어어?! 깜빡임 횟수가 안 맞아! 4번이 되려면 몇 번 반복해야 할까?"
         },
         "firstTrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 2,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 2,
             "text": {
-              "boy": "두 번씩 2세트, 딱 4번. 복붙했으면 네 군데를 고칠 뻔했네. 숫자 하나면 끝이다.",
-              "girl": "두 번씩 2세트, 딱 4번! 복붙했으면 네 군데를 고칠 뻔했잖아. 숫자 하나면 끝이네!"
+              "boy": "딱 4번! 복붙했으면 네 군데를 고칠 뻔했잖아. 숫자 하나면 끝이네.",
+              "girl": "딱 4번! 복붙했으면 네 군데를 고칠 뻔했잖아. 숫자 하나면 끝이네!"
             }
           }
         ],
         "retrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 0,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
             "text": {
               "boy": "4번 반복 완료. 반복 숫자가 곧 횟수구나.",
               "girl": "4번 반복 완료! 반복 숫자가 곧 횟수구나."
@@ -118,8 +166,8 @@ module.exports = {
       },
       "teacher": {
         "ask": "같은 명령 묶음을 4번 복사하는 것과 '4번 반복하기'를 쓰는 것의 차이는 무엇일까요?",
-        "answer": "반복 블록은 코드가 짧아지고 숫자 하나로 횟수를 바꿀 수 있으며, 안쪽 묶음 전체를 정해진 횟수만큼 실행합니다. 두 번씩 2세트는 2 × 2 = 4번입니다.",
-        "watch": "진행팀 요청에서 반복 횟수 4를 스스로 구하게 합니다. '4번 반복' 안에 '10만큼 움직이기'가 있으면 10이나 14가 아니라 40만큼 움직인다는 점도 함께 짚어 줄 수 있습니다.",
+        "answer": "반복 블록은 코드가 짧아지고 숫자 하나로 횟수를 바꿀 수 있으며, 안쪽 묶음 전체를 정해진 횟수만큼 실행합니다. 4번 깜빡이려면 4번 반복하면 됩니다.",
+        "watch": "반복 횟수에 안쪽 블록 수(3개)를 곱하는 오개념(12번)을 짚습니다. '4번 반복' 안에 '10만큼 움직이기'가 있으면 40만큼 움직인다는 점도 함께 짚어 줄 수 있습니다.",
         "short": "횟수 반복을 4로 고쳐 개막 조명을 맞춥니다."
       }
     },
@@ -129,42 +177,152 @@ module.exports = {
       "graded": true,
       "questionId": "ch3-q2",
       "conceptTitle": "정다각형 회전각 (360° ÷ 변의 수)",
-      "experiment": "polygon",
-      "title": "버그 10 · 찌그러져서 닫히지 않는 드론 도형",
+      "experiment": "quiz",
+      "title": "EP 10 · 찌그러져서 닫히지 않는 드론 도형",
       "topic": "정다각형 그리기 · 드론 비행",
-      "minutes": "1:20",
+      "minutes": "1:00",
       "background": "dusk",
       "channel": "운동장 · 빛그림 점등식",
       "quote": "하루: \"분명 도형 안쪽 각도대로 돌렸는데 드론이 제자리로 안 돌아와!\"",
-      "goalPrompt": "고른 도형이 닫히도록 드론의 회전각을 골라 실행해 보세요!",
+      "goalPrompt": "드론이 제자리로 돌아와 도형이 닫히려면 몇 도씩 돌까?",
       "observe": "드론이 꺾는 각은 바깥 회전각이라, 360° ÷ 변의 수만큼 돌아야 닫혀요.",
-      "goal": {
-        "wrongHints": {
-          "3:60": "60°는 정삼각형의 안쪽 각이에요. 60° × 3 = 180°라 반 바퀴밖에 못 돌아요.",
-          "5:108": "108°는 정오각형의 안쪽 각이에요. 108° × 5 = 540°라 한 바퀴 반을 돌아요.",
-          "6:120": "120°는 정육각형의 안쪽 각이에요. 120° × 6 = 720°라 두 바퀴를 돌아요.",
-          "interior": "도형의 안쪽 각을 골랐어요. 드론은 진행 방향이 바뀌는 만큼 돌아요."
-        },
-        "defaultWhy": "다 날고 나면 처음 방향으로 돌아와야 해요. 결과의 '회전각 × 변의 수'가 몇 도여야 할까요?"
+      "quiz": {
+        "successTitle": "드론 도형 완성!",
+        "explain": "드론이 꺾는 각은 바깥 회전각이라, 다 돌면 처음 방향(한 바퀴)으로 돌아와야 닫혀요.",
+        "variants": {
+          "triangle": {
+            "situation": [
+              "고른 도형: 정삼각형 (변 3개)",
+              "60°씩 돌았더니 반 바퀴만 돌고 안 닫혀요."
+            ],
+            "code": [
+              "3번 반복하기",
+              "  80만큼 움직이기",
+              "  60°만큼 회전하기"
+            ],
+            "focus": 3,
+            "choices": [
+              {
+                "key": "120",
+                "label": "120°",
+                "correct": true,
+                "screen": "120° × 3 = 360° → 삼각형 완성!"
+              },
+              {
+                "key": "90",
+                "label": "90°",
+                "screen": "90° × 3 = 270° → 안 닫혀요",
+                "why": "다 돌고 나면 처음 방향으로 돌아와야 해요. 회전각 × 3이 한 바퀴가 되는지 보세요."
+              },
+              {
+                "key": "180",
+                "label": "180°",
+                "screen": "180° × 3 = 540° → 같은 선만 왔다 갔다",
+                "why": "180°는 뒤로 돌기라 같은 선을 왔다 갔다 해요. 회전각 × 3이 한 바퀴가 되어야 해요."
+              }
+            ],
+            "storyPatch": {
+              "polygon": 3
+            }
+          },
+          "pentagon": {
+            "situation": [
+              "고른 도형: 정오각형 (변 5개)",
+              "108°씩 돌았더니 제자리로 안 돌아와요."
+            ],
+            "code": [
+              "5번 반복하기",
+              "  80만큼 움직이기",
+              "  108°만큼 회전하기"
+            ],
+            "focus": 3,
+            "choices": [
+              {
+                "key": "72",
+                "label": "72°",
+                "correct": true,
+                "screen": "72° × 5 = 360° → 오각형 완성!"
+              },
+              {
+                "key": "90",
+                "label": "90°",
+                "screen": "90° × 5 = 450° → 안 닫혀요",
+                "why": "다 돌고 나면 처음 방향으로 돌아와야 해요. 회전각 × 5가 한 바퀴가 되는지 보세요."
+              },
+              {
+                "key": "60",
+                "label": "60°",
+                "screen": "60° × 5 = 300° → 안 닫혀요",
+                "why": "한 바퀴에 조금 모자라요. 회전각 × 5가 딱 한 바퀴가 되어야 해요."
+              }
+            ],
+            "storyPatch": {
+              "polygon": 5
+            }
+          },
+          "hexagon": {
+            "situation": [
+              "고른 도형: 정육각형 (변 6개)",
+              "120°씩 돌았더니 삼각형만 두 번 그려져요."
+            ],
+            "code": [
+              "6번 반복하기",
+              "  80만큼 움직이기",
+              "  120°만큼 회전하기"
+            ],
+            "focus": 3,
+            "choices": [
+              {
+                "key": "60",
+                "label": "60°",
+                "correct": true,
+                "screen": "60° × 6 = 360° → 육각형 완성!"
+              },
+              {
+                "key": "90",
+                "label": "90°",
+                "screen": "90° × 6 = 540° → 안 닫혀요",
+                "why": "다 돌고 나면 처음 방향으로 돌아와야 해요. 회전각 × 6이 한 바퀴가 되는지 보세요."
+              },
+              {
+                "key": "45",
+                "label": "45°",
+                "screen": "45° × 6 = 270° → 안 닫혀요",
+                "why": "한 바퀴에 모자라요. 회전각 × 6이 딱 한 바퀴가 되어야 해요."
+              }
+            ],
+            "storyPatch": {
+              "polygon": 6
+            }
+          }
+        }
       },
       "flow": {
         "intro": [
           {
-            "speaker": "하루", "role": "haru", "expression": 1, "when": "warm",
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 1,
+            "when": "warm",
             "text": {
               "boy": "이제 하이라이트. 우리가 맡은 가운데 자리에 띄울 드론 도형을 고르자.",
               "girl": "이제 진짜 하이라이트! 우리가 맡은 가운데 자리에 띄울 드론 도형을 고르자."
             }
           },
           {
-            "speaker": "하루", "role": "haru", "expression": 0, "when": "cold",
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
+            "when": "cold",
             "text": {
               "boy": "이제 하이라이트. 준비팀이 맡은 가운데 자리에 띄울 드론 도형을 고르자.",
               "girl": "이제 하이라이트야. 준비팀이 맡은 가운데 자리에 띄울 드론 도형을 고르자."
             }
           },
           {
-            "speaker": "하루", "role": "haru", "expression": 4,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 4,
             "text": {
               "boy": "근데 안쪽 각도대로 돌렸더니 드론이 제자리로 못 돌아왔거든. 고른 모양에 맞춰 회전각 좀 봐 줘.",
               "girl": "근데 안쪽 각도대로 돌렸더니 드론이 제자리로 못 돌아왔어… 고른 모양에 맞춰 회전각 좀 봐 줘."
@@ -172,17 +330,42 @@ module.exports = {
           }
         ],
         "shortIntro": [
-          { "speaker": "하루", "role": "haru", "text": "가운데 자리에 띄울 도형을 고르고, 드론이 제자리로 돌아오게 회전각을 맞춰 보자!", "expression": 0 }
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "가운데 자리에 띄울 도형을 고르고, 드론이 제자리로 돌아오게 회전각을 맞춰 보자!",
+            "expression": 0
+          }
         ],
         "options": [
-          { "key": "triangle", "label": "날렵한 삼각형 조명 (3변)", "params": { "sides": 3 } },
-          { "key": "pentagon", "label": "꽃잎 같은 오각형 조명 (5변)", "params": { "sides": 5 } },
-          { "key": "hexagon", "label": "별빛 같은 육각형 조명 (6변)", "params": { "sides": 6 } }
+          {
+            "key": "triangle",
+            "label": "날렵한 삼각형 조명 (3변)",
+            "params": {
+              "sides": 3
+            }
+          },
+          {
+            "key": "pentagon",
+            "label": "꽃잎 같은 오각형 조명 (5변)",
+            "params": {
+              "sides": 5
+            }
+          },
+          {
+            "key": "hexagon",
+            "label": "별빛 같은 육각형 조명 (6변)",
+            "params": {
+              "sides": 6
+            }
+          }
         ],
         "choiceReplies": {
           "triangle": [
             {
-              "speaker": "하루", "role": "haru", "expression": 2,
+              "speaker": "하루",
+              "role": "haru",
+              "expression": 2,
               "text": {
                 "boy": "삼각형 고른 거 잘했다. 하늘에서도 한눈에 보이겠다.",
                 "girl": "삼각형 고른 거 잘했다! 하늘에서도 한눈에 보이겠어."
@@ -191,7 +374,9 @@ module.exports = {
           ],
           "pentagon": [
             {
-              "speaker": "하루", "role": "haru", "expression": 2,
+              "speaker": "하루",
+              "role": "haru",
+              "expression": 2,
               "text": {
                 "boy": "오각형 고른 거 잘했다. 꽃잎처럼 펼쳐지겠다.",
                 "girl": "오각형 고른 거 잘했다! 꽃잎처럼 펼쳐지겠어."
@@ -200,7 +385,9 @@ module.exports = {
           ],
           "hexagon": [
             {
-              "speaker": "하루", "role": "haru", "expression": 2,
+              "speaker": "하루",
+              "role": "haru",
+              "expression": 2,
               "text": {
                 "boy": "육각형 고른 거 잘했다. 작은 별 같아서 예쁘겠다.",
                 "girl": "육각형 고른 거 잘했다! 작은 별 같아서 진짜 예쁘겠어."
@@ -210,11 +397,13 @@ module.exports = {
         },
         "wrongReaction": {
           "expression": 3,
-          "line": "으악!! 드론이 제자리에 안 돌아왔어! 결과에 나온 회전각 합계를 보자!"
+          "line": "으악!! 드론이 제자리에 안 돌아왔어! 회전각을 다 더하면 몇 도인지 보자!"
         },
         "firstTrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 1,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 1,
             "text": {
               "boy": "완벽하게 닫힌 {{shapeName}} 떴다. 360°를 변의 수로 나눈 만큼 꺾는 거였네.",
               "girl": "와아, 완벽하게 닫힌 {{shapeName}} 떴다! 360°를 변의 수로 나눈 만큼 꺾는 거였구나."
@@ -223,7 +412,9 @@ module.exports = {
         ],
         "retrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 0,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
             "text": {
               "boy": "드디어 {{shapeName}} 닫혔다. 꺾는 각은 360 ÷ 변의 수.",
               "girl": "드디어 {{shapeName}} 닫혔다! 꺾는 각은 360 ÷ 변의 수."
@@ -234,7 +425,7 @@ module.exports = {
       "teacher": {
         "ask": "정삼각형을 그릴 때 회전각은 왜 60°가 아니라 120°이며, 정오각형과 정육각형은 각각 몇 도를 돌아야 할까요?",
         "answer": "실제 회전각은 도형 안쪽 각(내각)이 아니라 바깥에서 꺾는 외각이므로 360° ÷ 변의 수입니다. 정삼각형은 120°, 정사각형은 90°, 정오각형은 72°, 정육각형은 60°입니다.",
-        "watch": "보기는 고른 도형의 안쪽 각·90°·바깥 회전각 세 가지입니다. 처음 값(안쪽 각)으로 실행해 경로가 닫히지 않는 것을 보고, 회전각 합계(× 변의 수)로 360°를 찾게 합니다.",
+        "watch": "카드는 고른 도형마다 바깥 회전각과 두 가지 오답입니다. 처음 값(안쪽 각)으로는 닫히지 않는다는 상황을 읽고, 회전각 × 변의 수가 360°가 되어야 닫힌다는 점을 짚습니다.",
         "short": "모양을 고르고 360 ÷ 변의 수 회전각으로 드론 도형을 닫습니다."
       }
     },
@@ -244,35 +435,71 @@ module.exports = {
       "graded": true,
       "questionId": "ch3-q3",
       "conceptTitle": "조건 반복 (~할 때까지)과 종료 조건",
-      "experiment": "until",
-      "title": "버그 11 · 거꾸로 열리는 제어반 암호 잠금",
+      "experiment": "quiz",
+      "title": "EP 11 · 거꾸로 열리는 제어반 암호 잠금",
       "topic": "조건 반복 (~할 때까지) · 멈추는 때",
-      "minutes": "1:10",
+      "minutes": "1:00",
       "background": "dusk",
       "channel": "운동장 · 빛그림 점등식",
       "quote": "하루: \"점등 스위치에 약속 시각({{meetingTime}})으로 암호를 걸었는데, 틀린 암호에 오히려 열려!\"",
-      "goalPrompt": "틀린 암호엔 다시 묻고, 맞는 암호에서 열리도록 반복 조건을 고쳐 보세요!",
+      "goalPrompt": "맞는 암호에서만 열리게 하려면 반복 조건을 어떻게 바꿀까?",
       "observe": "'~할 때까지 반복'은 조건이 참이 되면 멈추니, 멈출 때(대답 = 암호)를 적어요.",
-      "goal": {
-        "initialCondition": "!=",
-        "expectedCondition": "=",
-        "wrongHints": {
-          "!=": "'~할 때까지 반복'은 조건이 참이 되면 멈춰요. 지금 조건은 틀린 암호 1111에서 참이 되어 바로 열려요. 언제 멈춰야 할까요?"
-        },
-        "defaultWhy": "반복이 언제 멈춰야 하는지 조건을 다시 보세요."
+      "quiz": {
+        "situation": [
+          "암호는 약속 시각 {{meetingTime}} 네 자리예요.",
+          "틀린 1111엔 열리고, 맞는 암호엔 계속 다시 물어요."
+        ],
+        "code": [
+          "\"암호는?\" 묻고 대답 기다리기",
+          "(대답 ≠ 암호)이 될 때까지 반복하기",
+          "  \"다시 입력!\" 묻고 대답 기다리기",
+          "잠금 열기"
+        ],
+        "focus": 2,
+        "choices": [
+          {
+            "key": "eq",
+            "label": "(대답 = 암호)이 될 때까지",
+            "correct": true,
+            "screen": "1111 → 다시 입력! · {{meetingTime}} → 열림 🔓"
+          },
+          {
+            "key": "gt",
+            "label": "(대답 > 암호)이 될 때까지",
+            "screen": "9999처럼 큰 수를 넣으면 열려요",
+            "why": "크기를 비교하는 게 아니라 같은지를 봐야 해요. 암호와 같아질 때 멈춰야 해요."
+          },
+          {
+            "key": "remove",
+            "label": "반복 블록을 통째로 지우기",
+            "screen": "아무 암호나 바로 열려요",
+            "why": "다시 묻는 반복이 없어지면 틀린 암호도 그냥 통과해요."
+          }
+        ],
+        "successTitle": "조건 참! 잠금 해제 🔓",
+        "explain": "'~할 때까지 반복'은 조건이 참이 되면 멈춰요. 그래서 멈출 때인 '대답 = 암호'를 적어요."
       },
       "flow": {
         "intro": [
-          { "speaker": "내 생각", "role": "narration", "text": "드론 도형이 완성되자 하루가 태블릿 잠금 화면을 내밀었다. 점등 스위치에 네 자리 암호가 걸려 있었다.", "expression": 0 },
           {
-            "speaker": "하루", "role": "haru", "expression": 1,
+            "speaker": "내 생각",
+            "role": "narration",
+            "text": "드론 도형이 완성되자 하루가 태블릿 잠금 화면을 내밀었다. 점등 스위치에 네 자리 암호가 걸려 있었다.",
+            "expression": 0
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 1,
             "text": {
               "boy": "실수로 누르지 않게 잠금 걸어 뒀다. 암호는 어젯밤 우리 약속 시각 {{meetingTime}} 네 자리. …외우기 쉬워서 그런 거다.",
               "girl": "실수로 누르지 않게 잠금 걸어 뒀어. 암호는 어젯밤 우리 약속 시각 {{meetingTime}} 네 자리야. …외우기 쉬워서 그런 거야!"
             }
           },
           {
-            "speaker": "하루", "role": "haru", "expression": 4,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 4,
             "text": {
               "boy": "근데 시험해 보니까 틀린 암호를 넣으면 오히려 열린다.",
               "girl": "근데 시험해 보니까 틀린 암호를 넣으면 오히려 열려…"
@@ -280,16 +507,28 @@ module.exports = {
           }
         ],
         "shortIntro": [
-          { "speaker": "하루", "role": "haru", "text": "점등 스위치 잠금이 틀린 암호에 열려! 약속 시각({{meetingTime}}) 네 자리에서만 열리게 고쳐 줘!", "expression": 4 }
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "점등 스위치 잠금이 틀린 암호에 열려! 약속 시각({{meetingTime}}) 네 자리에서만 열리게 고쳐 줘!",
+            "expression": 4
+          }
         ],
         "wrongReaction": {
           "expression": 4,
           "line": "잠금창이 또 엉뚱하게 열렸어! 반복이 언제 멈추는지 다시 따라가 보자!"
         },
         "firstTrySuccess": [
-          { "speaker": "빛그림 제어반", "role": "system", "text": "조건 참! 반복 종료 → 점등 스위치 잠금 해제 🔓", "expression": 0 },
           {
-            "speaker": "하루", "role": "haru", "expression": 2,
+            "speaker": "빛그림 제어반",
+            "role": "system",
+            "text": "조건 참! 반복 종료 → 점등 스위치 잠금 해제 🔓",
+            "expression": 0
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 2,
             "text": {
               "boy": "열렸다. 틀리면 다시 묻고, 맞는 암호에서 딱 멈추네.",
               "girl": "열렸다! 틀리면 다시 묻다가, 맞는 암호에서 딱 멈추는구나!"
@@ -298,7 +537,9 @@ module.exports = {
         ],
         "retrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 0,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
             "text": {
               "boy": "휴, 제어반 열렸다. '~할 때까지'에는 멈출 때를 적는 거였네.",
               "girl": "휴, 이제야 제어반 열렸다! '~할 때까지'에는 멈출 때를 적는 거구나."
@@ -309,7 +550,7 @@ module.exports = {
       "teacher": {
         "ask": "'(대답 ≠ 암호)가 될 때까지 반복'이면 틀린 암호 1111을 넣었을 때 어떻게 될까요?",
         "answer": "'~할 때까지 반복'은 조건이 참이 되면 멈춥니다. ≠로 쓰면 1111 ≠ 암호가 참이라 틀린 암호에 바로 열리므로, 멈출 때인 '대답 = 암호'를 적어야 합니다. 그러면 1111(거짓) 뒤 정답(참)에서 두 번 묻고 멈춥니다.",
-        "watch": "실행하면 1111 → 약속 시각 순서로 자동 입력한 실행 기록이 나옵니다. '='와 '≠' 반전과, 반복 안에서 대답이 새로 바뀌어야 멈출 수 있다는 점을 짚어 줍니다.",
+        "watch": "틀린 1111과 맞는 암호를 넣었을 때 각각 어떻게 되는지 카드 결과로 비교하고, '='와 '≠' 반전을 짚어 줍니다.",
         "short": "반복 조건을 '대답 = 암호'로 고쳐 잠금장치를 엽니다."
       }
     },
@@ -319,58 +560,98 @@ module.exports = {
       "graded": true,
       "questionId": "ch3-q4",
       "conceptTitle": "반복과 카운터(1만큼 더하기로 세기)",
-      "experiment": "arrange",
-      "title": "버그 12 · 피날레 직전, 1에서 멈춘 카운터",
+      "experiment": "quiz",
+      "title": "EP 12 · 피날레 직전, 1에서 멈춘 카운터",
       "topic": "반복과 카운터",
-      "minutes": "1:10",
+      "minutes": "1:00",
       "background": "dusk",
       "channel": "운동장 · 빛그림 점등식",
       "quote": "하루: \"불꽃은 6발 다 나갔는데, 전광판 카운터가 1에서 안 올라가!\"",
-      "goalPrompt": "불꽃을 쏠 때마다 카운터가 올라가 6이 되도록 ⇄ 블록을 바꿔 보세요!",
+      "goalPrompt": "4번 줄을 어떻게 바꿔야 쏠 때마다 카운터가 올라갈까?",
       "observe": "카운터는 '1만큼 더하기'로 쌓아요. '1로 정하기'는 매번 1로 덮어써요.",
-      "goal": {
-        "hat": "피날레 버튼을 클릭했을 때",
-        "fixedOrder": true,
-        "blocks": [
-          { "id": "init", "label": "[카운터]를 0으로 정하기" },
-          { "id": "loop", "label": "6번 반복하기" },
-          { "id": "fire", "indent": 1, "label": "불꽃 신호 쏘기" },
-          { "id": "counter", "indent": 1, "label": "{choice}", "choices": ["[카운터]를 1로 정하기", "[카운터]에 1만큼 더하기", "[카운터]에 6만큼 더하기"], "initialChoice": 0 }
+      "quiz": {
+        "situation": [
+          "쏠 때마다 카운터가 1, 2, 3 … 6으로 올라가야 해요.",
+          "지금은 6발을 다 쏴도 카운터가 1이에요."
         ],
-        "initialOrder": ["init", "loop", "fire", "counter"],
-        "acceptOrders": [["init", "loop", "fire", "counter"]],
-        "expectedChoices": { "counter": 1 },
-        "simulate": "finale",
-        "successTitle": "피날레 대본 정상!",
-        "successText": "불꽃이 한 발 나갈 때마다 1씩 쌓여 카운터가 6이 됐어요.",
-        "wrongHints": {
-          "counter": "실행 기록의 [카운터]를 보세요. 불꽃이 한 발 나갈 때마다 카운터도 1씩 올라가야 6발에 6이 돼요."
-        },
-        "defaultWhy": "불꽃 한 발마다 [카운터]가 어떻게 바뀌는지 보세요."
+        "code": [
+          "[카운터]를 0으로 정하기",
+          "6번 반복하기",
+          "  불꽃 신호 쏘기",
+          "  [카운터]를 1로 정하기"
+        ],
+        "focus": 4,
+        "choices": [
+          {
+            "key": "add1",
+            "label": "[카운터]에 1만큼 더하기",
+            "correct": true,
+            "screen": "1 → 2 → 3 → 4 → 5 → 6 ✨"
+          },
+          {
+            "key": "add6",
+            "label": "[카운터]에 6만큼 더하기",
+            "screen": "6 → 12 → 18 → … → 36",
+            "why": "한 발에 6씩 올라가요. 한 발마다 1씩 세야 해요."
+          },
+          {
+            "key": "set6",
+            "label": "[카운터]를 6으로 정하기",
+            "screen": "6 → 6 → 6 → … (처음부터 6)",
+            "why": "'정하기'는 매번 같은 값으로 덮어써요. 쏠 때마다 올라가지 않아요."
+          }
+        ],
+        "successTitle": "불꽃 6번 · 카운터 6 ✨",
+        "explain": "카운터는 '1만큼 더하기'로 쌓아요. '1로 정하기'는 매번 1로 덮어써서 6번 돌아도 1이었어요.",
+        "hat": "피날레 버튼을 클릭했을 때"
       },
       "flow": {
         "intro": [
-          { "speaker": "빛그림 제어반", "role": "system", "text": "피날레 리허설 결과 · 불꽃 6번 발사 · 전광판 카운터: 1", "expression": 0 },
           {
-            "speaker": "하루", "role": "haru", "expression": 3,
+            "speaker": "빛그림 제어반",
+            "role": "system",
+            "text": "피날레 리허설 결과 · 불꽃 6번 발사 · 전광판 카운터: 1",
+            "expression": 0
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 3,
             "text": {
               "boy": "{{vocative}}, 큰일이다. 불꽃은 6발 다 나갔는데 전광판 카운터가 1에서 안 올라간다.",
               "girl": "{{vocative}}, 큰일 났어! 불꽃은 6발 다 나갔는데 전광판 카운터가 1에서 안 올라가!"
             }
           },
-          { "speaker": "나", "role": "me", "text": "점등은 우리가 버튼을 눌러야 시작하니까 서두르지 말자. 대본부터 한 번 돌려 보자.", "expression": 0 }
+          {
+            "speaker": "나",
+            "role": "me",
+            "text": "점등은 우리가 버튼을 눌러야 시작하니까 서두르지 말자. 블록부터 보자.",
+            "expression": 0
+          }
         ],
         "shortIntro": [
-          { "speaker": "하루", "role": "haru", "text": "불꽃은 6발 다 나갔는데 카운터가 1에서 안 올라가! 같이 고쳐 줘!", "expression": 3 }
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "불꽃은 6발 다 나갔는데 카운터가 1에서 안 올라가! 같이 고쳐 줘!",
+            "expression": 3
+          }
         ],
         "wrongReaction": {
           "expression": 3,
-          "line": "땡! 카운터가 아직 이상해! 실행 기록에서 [카운터]가 어떻게 바뀌는지 보자!"
+          "line": "땡! 카운터가 아직 이상해! 쏠 때마다 [카운터]가 어떻게 바뀌는지 보자!"
         },
         "firstTrySuccess": [
-          { "speaker": "빛그림 제어반", "role": "system", "text": "불꽃 6번 · 카운터 6 ✨ 피날레 준비 끝", "expression": 0 },
           {
-            "speaker": "하루", "role": "haru", "expression": 1,
+            "speaker": "빛그림 제어반",
+            "role": "system",
+            "text": "불꽃 6번 · 카운터 6 ✨ 피날레 준비 끝",
+            "expression": 0
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 1,
             "text": {
               "boy": "{{vocative}}, 오늘 진짜… 너 아니었으면 못 했다.",
               "girl": "{{vocative}}, 너 진짜… 오늘 너 아니었으면 못 했을 거야."
@@ -379,7 +660,9 @@ module.exports = {
         ],
         "retrySuccess": [
           {
-            "speaker": "하루", "role": "haru", "expression": 0,
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
             "text": {
               "boy": "휴, 살았다. 세는 건 정하기가 아니라 더하기. 다 잡았다.",
               "girl": "휴, 살았다! 세는 건 정하기가 아니라 더하기. 다 잡았어!"
@@ -390,7 +673,7 @@ module.exports = {
       "teacher": {
         "ask": "반복 안에서 '[카운터]를 1로 정하기'를 쓰면 6번 돌아도 왜 1에 머물까요?",
         "answer": "'정하기'는 값을 새 값으로 덮어쓰므로 매번 1이 됩니다. 반복할 때마다 값을 쌓으려면 '1만큼 더하기'를 써야 6발에 6이 됩니다. '6만큼 더하기'는 한 발에 6씩 쌓여 36이 됩니다.",
-        "watch": "블록 순서는 고정이고 표기만 눌러 바꿉니다. 실행 기록에서 카운터가 1 → 1 → 1…, 1 → 2 → 3…, 6 → 12 → 18…로 바뀌는 모습을 비교하게 합니다.",
+        "watch": "카드 결과에서 카운터가 1 → 2 → 3…, 6 → 12 → 18…, 6 → 6 → 6…으로 바뀌는 모습을 비교하게 합니다.",
         "short": "카운터 블록을 '1만큼 더하기'로 고쳐 불꽃 수를 셉니다."
       }
     },

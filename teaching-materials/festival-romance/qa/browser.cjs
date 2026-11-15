@@ -76,11 +76,6 @@ async function waitForActivityPass(page) {
   }, null, { timeout: 15000 });
 }
 
-async function waitForRepro(page, why) {
-  await page.locator('#result.result-repro').waitFor({ timeout: 15000 });
-  assert.match(await page.locator('#result').innerText(), /버그 재현/, why);
-}
-
 async function waitForActivityFail(page) {
   await page.waitForFunction(() => {
     const res = document.getElementById('result');
@@ -114,14 +109,6 @@ async function finishConceptResponse(page, { skipSeen = false } = {}) {
   }
 }
 
-// 대화형 문항의 현재 턴에서 오답 보기를 하나 누름
-async function clickWrongChat(page, chat) {
-  const shown = await page.evaluate(() => [...document.querySelectorAll('[data-chat-choice]:not(:disabled)')].map((b) => b.dataset.chatChoice));
-  const wrong = chat.steps.flatMap((s) => s.choices).find((c) => !c.correct && shown.includes(c.key));
-  assert.ok(wrong, '오답 보기 존재');
-  await page.locator(`[data-chat-choice="${wrong.key}"]`).click();
-}
-
 // 지금 화면의 장면 데이터(제목으로 찾음)
 async function currentSceneData(page) {
   const title = await page.locator('.lesson-heading h2').innerText();
@@ -130,92 +117,44 @@ async function currentSceneData(page) {
   return scene;
 }
 
-// 블록 순서 바꾸기: ↑ 버튼과 표기 버튼만으로 첫 허용 순서를 만든 뒤 실행(keyboard면 초점+Enter만 사용)
-async function solveArrange(page, { keyboard = false } = {}) {
-  const press = async (selector) => {
-    if (!keyboard) return page.locator(selector).click();
-    await page.locator(selector).focus();
-    await page.keyboard.press('Enter');
-  };
-  const { goal } = await currentSceneData(page);
-  const target = goal.acceptOrders[0];
-  for (let i = 0; i < target.length; i++) {
-    const order = await page.evaluate(() => [...document.querySelectorAll('.arrange-row')].map((r) => r.dataset.blockId));
-    for (let j = order.indexOf(target[i]); j > i; j--) {
-      await press(`[data-arrange-move="-1"][data-id="${target[i]}"]`);
-    }
-  }
-  const picksNow = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('[data-arrange-choice]')].map((b) => [b.dataset.arrangeChoice, b.textContent])));
-  for (const [id, want] of Object.entries(goal.expectedChoices || {})) {
-    const block = goal.blocks.find((b) => b.id === id);
-    const now = Math.max(0, block.choices.findIndex((c) => (picksNow[id] || '').startsWith(c)));
-    const steps = (want - now + block.choices.length) % block.choices.length;
-    for (let k = 0; k < steps; k++) await press(`[data-arrange-choice="${id}"]`);
-  }
-  await press('#run-arrange');
+// 지금 보이는 카드 묶음(3장 도형 문항은 고른 도형의 묶음)
+async function shownQuiz(page) {
+  const scene = await currentSceneData(page);
+  const shown = await page.evaluate(() => [...document.querySelectorAll('[data-quiz-choice]')].map((b) => b.dataset.quizChoice));
+  const sets = scene.quiz.variants ? Object.entries(scene.quiz.variants) : [['', scene.quiz]];
+  const found = sets.find(([, q]) => q.choices.length === shown.length && q.choices.every((c) => shown.includes(c.key)));
+  assert.ok(found, `${scene.questionId} 카드 묶음 찾기`);
+  return { scene, shown, variantKey: found[0], quiz: { ...scene.quiz, ...found[1] } };
 }
 
-async function solveCurrentChallenge(page, { meetingTime = '16:00', polygonAngle = '60', finish = true } = {}) {
-  const type = await page.locator('#experiment').getAttribute('data-experiment');
-  if (type === 'quiz' && (await currentSceneData(page)).quiz.style === 'chat') {
-    const { quiz, questionId } = await currentSceneData(page);
-    for (const [i, step] of quiz.steps.entries()) {
-      const keys = step.choices.map((c) => c.key);
-      const shownOrder = await page.evaluate(() => [...document.querySelectorAll('[data-chat-choice]')].map((b) => b.dataset.chatChoice));
-      const seeded = await page.evaluate(({ id, n }) => window.FestivalModels.seededOrder(id, n), { id: `${questionId}:${i}`, n: keys.length });
-      assert.deepEqual(shownOrder, seeded.map((k) => keys[k]), `${questionId}:${i} 대화 보기 순서를 단계별 seed로 섞음`);
-      await page.locator(`[data-chat-choice="${step.choices.find((c) => c.correct).key}"]`).click();
-    }
-  } else if (type === 'quiz') {
-    const scene = await currentSceneData(page);
-    const keys = scene.quiz.choices.map((c) => c.key);
-    const shownOrder = await page.evaluate(() => [...document.querySelectorAll('[data-quiz-choice]')].map((b) => b.dataset.quizChoice));
-    const seeded = await page.evaluate(({ id, n }) => window.FestivalModels.seededOrder(id, n), { id: scene.questionId, n: keys.length });
-    assert.deepEqual(shownOrder, seeded.map((i) => keys[i]), `${scene.questionId} 보기 순서를 문항별 seed로 섞음`);
-    await page.locator(`[data-quiz-choice="${scene.quiz.choices.find((c) => c.correct).key}"]`).click();
-  } else if (type === 'arrange') {
-    await solveArrange(page);
-  } else if (type === 'map') {
-    await page.locator('[data-map-angle="90"]').click();
-    await page.locator('[data-key="ArrowRight"]').click(); // 연결한 신호를 실제로 보내야 실행됨
-  } else if (type === 'math') {
-    await page.locator('[data-math-gap="0"]').click(); // (
-    await page.locator('[data-math-gap="3"]').click();
-    await page.locator('[data-math-gap="3"]').click(); // )
-    await page.locator('#run').click();
-    const { goal } = await currentSceneData(page);
-    await page.locator(`[data-chat-choice="${goal.chat.steps[0].choices.find((c) => c.correct).key}"]`).click();
-  } else if (type === 'compare') {
-    await page.locator('#operator').selectOption('≥');
-    await page.locator('#run').click();
-  } else if (type === 'and') {
-    await page.locator('[data-logic-op="and"]').click();
-    await page.locator('[data-logic-answer="false"]').click();
-    await page.locator('#run').click();
-  } else if (type === 'route') {
-    await page.locator('#route-rain-check').selectOption('not');
-    await page.locator('#run').click();
-  } else if (type === 'prize') {
-    const { goal } = await currentSceneData(page);
-    await page.locator(`[data-prize-top="${[...goal.tiers].sort((a, b) => b.min - a.min)[0].key}"]`).click();
-    await page.locator('#run').click();
-  } else if (type === 'count') {
-    await page.locator('#times').selectOption('4');
-    await page.locator('#run').click();
-  } else if (type === 'polygon') {
-    assert.equal(await page.locator('#fit').count(), 0, '다각형 #fit 치트 버튼 제거 확인');
-    await page.locator('#turn').selectOption(polygonAngle);
-    await page.locator('#run').click();
-  } else if (type === 'until') {
-    assert.equal(await page.locator('#correct').count(), 0, 'until #correct 치트 버튼 제거 확인');
-    const bodyText = await page.locator('#experiment').innerText();
-    assert.equal(bodyText.includes('비밀번호는 1600'), false, 'until 1600 치트 문구 제거 확인');
-    await page.locator('#until-cond').selectOption('=');
-    await page.locator('#run-until').click();
-    assert.match(await page.locator('#until-sim .sim-screen').innerText(), new RegExp(`약속 시각 ${meetingTime.replace(':', '')}에서 잠금 해제`), '약속 시각 네 자리에서 열림');
+// 맞는(또는 틀린) 카드를 하나 고름. keyboard면 초점+Enter만 사용
+async function clickCard(page, { correct, keyboard = false } = {}) {
+  const { quiz } = await shownQuiz(page);
+  const enabled = await page.evaluate(() => [...document.querySelectorAll('[data-quiz-choice]:not(:disabled)')].map((b) => b.dataset.quizChoice));
+  const card = quiz.choices.find((c) => Boolean(c.correct) === correct && enabled.includes(c.key));
+  assert.ok(card, `${correct ? '정답' : '오답'} 카드 찾기`);
+  const selector = `[data-quiz-choice="${card.key}"]`;
+  if (keyboard) {
+    await page.locator(selector).focus();
+    await page.keyboard.press('Enter');
   } else {
-    throw new Error(`알 수 없는 실험 타입: ${type}`);
+    await page.locator(selector).click();
   }
+  return card;
+}
+
+async function solveCurrentChallenge(page, { meetingTime = '16:00', finish = true } = {}) {
+  const type = await page.locator('#experiment').getAttribute('data-experiment');
+  assert.equal(type, 'quiz', '하트 문항은 카드 선택');
+  assert.equal(await page.locator('#experiment select').count(), 0, '드롭다운 없음');
+  const { scene, shown, variantKey, quiz } = await shownQuiz(page);
+  const seeded = await page.evaluate(({ id, n }) => window.FestivalModels.seededOrder(id, n), { id: scene.questionId + variantKey, n: quiz.choices.length });
+  assert.deepEqual(shown, seeded.map((i) => quiz.choices[i].key), `${scene.questionId} 카드 순서를 문항별 seed로 섞음`);
+  assert.equal((await page.locator('body').innerText()).includes('{{'), false, `${scene.questionId} 치환 안 된 {{변수}} 없음`);
+  await clickCard(page, { correct: true });
+  const screen = await page.locator('#result .sim-screen').innerText();
+  assert.match(screen, /실행 결과/, `${scene.questionId} 고른 카드의 실행 결과`);
+  if (scene.questionId === 'ch3-q3') assert.ok(screen.includes(meetingTime), '약속 시각 암호에서 열림');
   if (!finish) {
     await waitForActivityPass(page);
     return type;
@@ -240,6 +179,7 @@ async function playChapterToEnd(page, chapterId, {
     const stageKind = await page.locator('#stage').getAttribute('data-kind');
     if (stageKind === 'story') {
       const textBefore = await page.locator('.story-heading h2').innerText();
+      assert.equal(textBefore.includes('{{'), false, `장면 제목에 치환 안 된 변수: ${textBefore}`);
       if (onScene) await onScene(textBefore);
       // Wait through dialogue until choices/summary/experiment/ending-report
       for (let lineStep = 0; lineStep < 25; lineStep++) {
@@ -373,7 +313,7 @@ async function playChapterToEnd(page, chapterId, {
       await page.locator('label:has(input[name="onboard-variant"][value="boy"])').click();
       await page.locator('#onboard-name').fill('구름');
       await page.locator('#onboard-start').click();
-      checks.push('학생 모드 UI 은닉·순차 잠금·온보딩 남녀 v13 스프라이트(300% 200%) 확인');
+      checks.push('학생 모드 UI 은닉·순차 잠금·온보딩 남녀 v15 스프라이트(300% 200%) 확인');
 
       // Ch.1: advance ch1-1, verify v3 sprite crop & keyboard space/arrow
       assert.equal(await page.locator('.story-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 200%');
@@ -402,18 +342,15 @@ async function playChapterToEnd(page, chapterId, {
 
       // In ch1-2 (ch1-q1): intentionally fail first attempt, test anti-cheat reload & back button
       await advanceDialogue(page);
-      assert.equal(await page.locator('#experiment').getAttribute('data-experiment'), 'arrange');
-      assert.equal(await page.locator('.arrange-note').isVisible(), true, '하루의 손글씨 메모 표시');
-      await page.locator('#run-arrange').click(); // 고치기 전 그대로 실행 → 버그 재현(하트 영향 없음)
-      await waitForRepro(page, '고치기 전 실행은 버그 재현');
-      assert.match(await page.locator('.sim-screen').innerText(), /" 님, 환영해요!"/, '재현 실행 기록에 빈 이름 인사');
-      assert.equal(await page.locator('#chapter-hearts .heart-slot.missed').count(), 0, '버그 재현은 첫 시도 실패가 아님');
+      assert.equal(await page.locator('#experiment').getAttribute('data-experiment'), 'quiz');
+      assert.equal(await page.locator('.quiz-choice').count(), 3, '큰 카드 3장');
+      assert.equal(await page.locator('.goal-banner').count(), 0, '질문은 카드판 안에 한 번만');
+      assert.equal(await page.locator('#chapter-hearts .heart-slot.missed').count(), 0);
       assert.equal(await page.locator('#chapter-hearts').getAttribute('data-label'), '1장', '상단 하트 칸 이름은 지금 장(1장)');
-      await page.locator('[data-arrange-move="-1"][data-id="set"]').click(); // 한 줄만 옮긴 틀린 고침 → 첫 시도 실패
-      await page.locator('#run-arrange').click();
+      const wrongCard = await clickCard(page, { correct: false }); // 틀린 카드 → 첫 시도 실패
       await waitForActivityFail(page);
-      assert.match(await page.locator('#result').innerText(), /\[이름\]이 아직 비어/);
-      assert.match(await page.locator('.sim-screen').innerText(), /" 님, 환영해요!"/, '실행 기록에 빈 이름 인사 표시');
+      assert.match(await page.locator('#result .sim-screen').innerText(), /“ 님, 환영해요!”/, '틀린 카드의 실행 결과(빈 이름)');
+      assert.equal(await page.locator(`[data-quiz-choice="${wrongCard.key}"]`).isDisabled(), true, '틀린 카드는 다시 못 누름');
       assert.equal(await page.locator('.companion-character').getAttribute('data-expression'), '4');
       assert.equal(await page.locator('.companion-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 200%');
       assert.equal(await page.locator('.companion-character').evaluate((el) => el.style.backgroundPosition), '50% 100%');
@@ -458,8 +395,8 @@ async function playChapterToEnd(page, chapterId, {
       assert.equal(await page.locator('#chapter-hearts .heart-slot.missed').count(), 1, '이전 장면 복귀 후에도 첫 시도 실패 유지');
 
       // Retry ch1-q1 right -> 0 heart
-      await solveArrange(page);
-      assert.match(await page.locator('.sim-screen').innerText(), /구름 님, 환영해요!/, '고친 뒤 이름이 들어간 인사');
+      await clickCard(page, { correct: true });
+      assert.match(await page.locator('#result .sim-screen').innerText(), /구름 님, 환영해요!/, '고친 뒤 이름이 들어간 인사');
       await finishConceptResponse(page);
       assert.equal(await page.locator('#total-hearts').innerText(), '총 ♥ 0/12');
       assert.equal(await page.locator('#chapter-hearts .heart-slot.missed').count(), 1);
@@ -473,7 +410,7 @@ async function playChapterToEnd(page, chapterId, {
       assert.equal(await page.locator('#experiment').count(), 0, '결과 대사로 이동');
       await page.locator('#previous-button').click();
       assert.equal(await page.locator('#experiment').count(), 1, '결과 대사에서 이전 → 활동 화면');
-      await page.locator('[data-chat-choice="stack"]').click(); // 이미 푼 문항을 다시 틀려도
+      await clickCard(page, { correct: false }); // 이미 푼 문항을 다시 틀려도
       await waitForActivityFail(page);
       assert.equal(await page.locator('#total-hearts').innerText(), '총 ♥ 1/12', '이미 얻은 하트 유지');
       assert.equal(/첫 시도 실패/.test(await page.locator('#heart-delta').innerText()), false, '이미 푼 문항에 첫 시도 실패 안내 없음');
@@ -521,7 +458,7 @@ async function playChapterToEnd(page, chapterId, {
       assert.match(await page.locator('.missed-list').innerText(), /프로그래밍과 입력·처리·출력/);
       assert.equal(await page.locator('[data-retry-chapter="1"]').isVisible(), true);
       await page.screenshot({ path: path.join(resultsDir, 'v2-ending-friend-report.png') });
-      checks.push('12문항 전체 시뮬레이터·퀴즈 완주 및 찐친 엔딩(11/12)·오답 리포트 확인');
+      checks.push('12문항 카드 완주 및 찐친 엔딩(11/12)·오답 리포트 확인');
 
       // Retry Ch.1 with skip-seen-dialogue -> 4/4 -> revisit ending -> 12/12 + cold Friend-zone!
       await page.locator('[data-retry-chapter="1"]').click();
@@ -567,14 +504,14 @@ async function playChapterToEnd(page, chapterId, {
       await page.locator('#previous-button').click();
       await page.locator('#next-button').click();
       assert.match(await page.locator('#dialogue-text').innerText(), /우리 반 구름 맞지\?/, '남학생 하루 말투');
-      // 390px에서 버튼만으로 블록 순서 바꾸기 완료
+      // 390px에서 카드는 한 줄씩, 가로 넘침 없이 고름
       await advanceDialogue(page, { skipSeen: true });
-      assert.equal(await page.locator('#experiment').getAttribute('data-experiment'), 'arrange');
-      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, '390px 순서 바꾸기 가로 넘침 없음');
-      await solveArrange(page);
+      assert.equal(await page.locator('#experiment').getAttribute('data-experiment'), 'quiz');
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, '390px 카드 화면 가로 넘침 없음');
+      await clickCard(page, { correct: true });
       await waitForActivityPass(page);
-      await page.screenshot({ path: path.join(resultsDir, 'v3-arrange-390.png'), fullPage: true });
-      checks.push('모바일 390x844 타이틀·시뮬레이터·엔딩 리포트·순서 바꾸기(버튼만) 가로 넘침 0건, 남녀 말투 전환 확인');
+      await page.screenshot({ path: path.join(resultsDir, 'v4-cards-390.png'), fullPage: true });
+      checks.push('모바일 390x844 타이틀·카드 화면·엔딩 리포트 가로 넘침 0건, 남녀 말투 전환 확인');
 
       await ctx.close();
     }
@@ -613,115 +550,33 @@ async function playChapterToEnd(page, chapterId, {
       await page.screenshot({ path: path.join(resultsDir, 'v2-teacher-notes.png') });
       await page.locator('[data-close="notes-dialog"]').click();
 
-      // Verify wrong-attempt misconception feedback on every graded simulator
-      await enterExp('ch1-3'); // 초대장: 실행 기록 보고 대화
-      assert.match(await page.locator('.sim-screen').innerText(), /정문 님! 내일 정문에서 만나요\./, '버그 초대장 실행 기록 표시');
-      assert.match(await page.locator('.sim-steps').innerText(), /대답: 구름|대답: /, '실행 기록에 대답 칸 변화');
-      assert.equal(await page.locator('.chat-reply').count(), 4, '대화는 한 번, 보기 4개');
-      await page.locator('[data-chat-choice="same-box"]').click();
-      await waitForActivityFail(page);
-      assert.match(await page.locator('#result').innerText(), /따로 기억할 수 없/);
-
-      await enterExp('ch1-5'); // map: → 키 사건 블록의 방향각 하나만 고침
-      assert.equal(await page.locator('[data-map-event], #start-map').count(), 0, '사건 고르기·시작 버튼 없이 방향각만 고름');
-      await page.locator('#map-holder').focus();
-      await page.keyboard.press('ArrowUp'); // 연결되지 않은 신호 → 아무 일도 없음(채점 안 함)
-      assert.equal(await page.locator('#result').isVisible(), false, '연결 안 된 신호는 채점하지 않음');
-      assert.match(await page.locator('#map-info').innerText(), /연결된 블록이 없/);
-      await page.locator('[data-key="ArrowRight"]').click(); // 고치기 전 그대로(0°) → 하늘로 날아가는 버그 재현
-      await waitForRepro(page, '길 안내 버그 재현');
-      await page.locator('[data-map-angle="180"]').click();
-      await page.locator('[data-key="ArrowRight"]').click(); // 180° → 방향각 오답
-      await waitForActivityFail(page);
-      assert.match(await page.locator('#result').innerText(), /180°는 아래쪽/);
-      const smallTargets = await page.evaluate(() => [...document.querySelectorAll('.map-chip, [data-key]')]
-        .map((b) => b.getBoundingClientRect()).filter((r) => r.width < 44 || r.height < 44).length);
-      assert.equal(smallTargets, 0, '길 안내 버튼은 모두 44px 이상');
-      await page.locator('[data-map-angle="90"]').click();
-      await page.keyboard.press('ArrowLeft'); // 연결 안 된 신호: 활동을 벗어나지 않음
-      assert.equal(await page.locator('#experiment').count(), 1, '← 키가 활동을 벗어나지 않음');
-      await page.keyboard.press('ArrowRight'); // 실제 키보드 → 키 신호로 실행
-      await waitForActivityPass(page);
-
-      await enterExp('ch1-6'); // 티켓 나누기: 숫자 대신 변수로 계산(표기 바꾸기 블록판)
-      await page.locator('#run-arrange').click(); // 고치기 전 → 버그 재현(8장씩)
-      await waitForRepro(page, '티켓 나누기 버그 재현');
-      assert.match(await page.locator('.sim-screen').innerText(), /"8장씩!"/);
-      await page.locator('[data-arrange-choice="share"]').click(); // 합계만(나누기 없음) → 오답
-      await page.locator('#run-arrange').click();
-      await waitForActivityFail(page);
-      assert.match(await page.locator('.sim-screen').innerText(), /"14장씩!"/);
-
-      await enterExp('ch2-2'); // compare
-      await page.locator('#run').click(); // > 그대로 → 버그 재현
-      await waitForRepro(page, '포토 부스 버그 재현');
-      assert.equal(await page.locator('#booth-open, #tickets, #five, #six, #seven').count(), 0, '채점 화면에는 부스 운영 조건·티켓 입력·시험 버튼 없음');
-      await page.locator('#operator').selectOption('≤');
-      await page.locator('#run').click();
-      await waitForActivityFail(page);
-      assert.match(await page.locator('#result').innerText(), /8장: 8 ≤ 7 → 거짓 · 입장 불가/, '앞뒤 손님 결과로 규칙과 다름을 보여 줌');
-
-      await enterExp('ch2-3'); // AND: 부스 스태프와 대화
-      await clickWrongChat(page, (await currentSceneData(page)).quiz);
-      await waitForActivityFail(page);
-
-      await enterExp('ch2-4'); // route: 첫 줄 조건 하나만 고름
-      assert.equal(await page.locator('#rain, #umbrella, #passage, #route-connector').count(), 0, '상황 체크·연결어 선택 없이 첫 줄 조건만 고름');
-      await page.locator('#run').click(); // 고치기 전 → 버그 재현
-      await waitForRepro(page, '날씨 길 안내 버그 재현');
-      assert.equal(/우산/.test(await page.locator('#experiment').innerText()), false, '실내로 가는 조건은 로비·통로(우산 아님)');
-      await page.locator('#route-rain-check').selectOption('notLobby');
-      await page.locator('#run').click();
-      await waitForActivityFail(page);
-      assert.match(await page.locator('#result').innerText(), /야외 공연으로/);
-
-      await enterExp('ch2-5'); // prize: 맨 위 조건 고르기
-      {
-        const { goal } = await currentSceneData(page);
-        assert.equal(await page.locator('[data-chat-choice], #tickets').count(), 0, '예측 대화·교환권 입력 없이 바로 고치기');
-        const rows = await page.locator('#prize-rows').innerText();
-        assert.equal(/또는/.test(rows), false, '다중 선택 줄에 가짜 또는 없음');
-        assert.match(rows, /아니면, 만일/);
-        await page.locator('#run').click(); // 처음 상태 → 버그 재현
-        await waitForRepro(page, '자판기 버그 재현');
-        await page.locator(`[data-prize-top="${[...goal.tiers].sort((a, b) => b.min - a.min)[1].key}"]`).click(); // 중간 기준을 맨 위로 → 오답
-        await page.locator('#run').click();
+      // 12문항 모두: 지금 상황·카드 3장(44px 이상)·드롭다운 없음·1366×768 한 화면, 틀린 카드 → 실행 결과와 이유
+      for (const [id, key] of [['ch1-2'], ['ch1-3'], ['ch1-5'], ['ch1-6'], ['ch2-2'], ['ch2-3'], ['ch2-4'], ['ch2-5'], ['ch3-2'], ['ch3-3', 'triangle'], ['ch3-4'], ['ch3-5']]) {
+        await enterExp(id, key);
+        assert.equal(await page.locator('.quiz-situation').isVisible(), true, `${id} 지금 상황`);
+        assert.equal(await page.locator('.quiz-choice').count(), 3, `${id} 카드 3장`);
+        assert.equal(await page.locator('#experiment select, #experiment input').count(), 0, `${id} 드롭다운·입력칸 없음`);
+        const fit = await page.evaluate(() => {
+          const cards = [...document.querySelectorAll('.quiz-choice')].map((b) => b.getBoundingClientRect());
+          const main = document.querySelector('.lesson-main').getBoundingClientRect();
+          return { small: cards.filter((r) => r.height < 44).length, below: cards.filter((r) => r.bottom > main.bottom + 1).length };
+        });
+        assert.equal(fit.small, 0, `${id} 카드 높이 44px 이상`);
+        assert.equal(fit.below, 0, `${id} 1366×768에서 카드가 스크롤 없이 보임`);
+        const { quiz } = await shownQuiz(page);
+        if (quiz.focus) assert.equal(await page.locator('.code-line.focus .focus-tag').count(), 1, `${id} 고칠 줄 표시`);
+        assert.equal((await page.locator('body').innerText()).includes('{{'), false, `${id} 치환 안 된 {{변수}} 없음`);
+        const card = await clickCard(page, { correct: false });
         await waitForActivityFail(page);
+        const res = await page.locator('#result').innerText();
+        assert.match(res, /실행 결과/, `${id} 틀린 카드의 실행 결과`);
+        assert.ok(res.includes(card.why.slice(0, 15)), `${id} 틀린 이유 표시`);
+        if (id === 'ch2-5') {
+          const code = await page.locator('.quiz-code').innerText();
+          assert.equal(/또는/.test(code), false, '다중 선택 줄에 가짜 또는 없음');
+          assert.match(code, /아니면, 만일/);
+        }
       }
-
-      await enterExp('ch3-5'); // 피날레 블록판(표기만 바꾸기)
-      assert.equal(await page.locator('[data-arrange-move]').count(), 0, '피날레는 순서 이동 없이 표기만 바꿈');
-      await page.locator('#run-arrange').click(); // 고치기 전 → 버그 재현
-      await waitForRepro(page, '피날레 버그 재현');
-      assert.match(await page.locator('.sim-screen').innerText(), /카운터 1(?!\d)/);
-      assert.equal(await page.locator('[data-arrange-choice]').count(), 1, '⇄ 블록은 하나');
-      await page.locator('[data-arrange-choice="counter"]').click();
-      await page.locator('[data-arrange-choice="counter"]').click(); // 6만큼 더하기 → 오답
-      await page.locator('#run-arrange').click();
-      await waitForActivityFail(page);
-      assert.match(await page.locator('.sim-screen').innerText(), /카운터 36/);
-
-      await enterExp('ch3-2'); // count
-      for (let i = 0; i < 9; i++) await page.locator('#step').click(); // 명령 한 줄씩으로 고치기 전 그대로 끝까지 → 버그 재현(하트 영향 없음)
-      await waitForRepro(page, '한 줄씩 실행해도 고치기 전이면 버그 재현');
-      await page.locator('#times').selectOption('2');
-      await page.locator('#run').click();
-      await waitForActivityFail(page);
-
-      await enterExp('ch3-3', 'triangle'); // polygon interior trap 60°
-      await page.locator('#turn').selectOption('60');
-      await page.locator('#run').click();
-      await waitForActivityFail(page);
-      assert.match(await page.locator('#result').innerText(), /안쪽 각/);
-
-      await enterExp('ch3-4'); // until
-      await page.locator('#run-until').click(); // 고치기 전 → 버그 재현
-      await waitForRepro(page, '잠금 버그 재현');
-      assert.match(await page.locator('#until-sim .sim-screen').innerText(), /틀린 암호 1111인데 잠금 해제/);
-      await page.locator('#until-cond').selectOption('=');
-      await page.locator('#until-cond').selectOption('!='); // 바꿨다가 되돌린 뒤 실행 → 첫 시도 오답
-      await page.locator('#run-until').click();
-      await waitForActivityFail(page);
 
       // Jump to ch3-7 with <= 6 hearts -> awkward ending + teacher ending preview pills
       await jump('ch3-7');
@@ -735,7 +590,7 @@ async function playChapterToEnd(page, chapterId, {
       assert.equal(await page.locator('.ending-report-layout').getAttribute('data-outcome'), 'some');
 
       await ctx.close();
-      checks.push('교사 모드(?mode=teacher)·전 시뮬레이터 오답 힌트·어색한 사이(<=6/12) 엔딩·엔딩 미리보기 확인');
+      checks.push('교사 모드(?mode=teacher)·12문항 카드(상황·고칠 줄·한 화면·틀린 카드 결과와 이유)·어색한 사이(<=6/12) 엔딩·엔딩 미리보기 확인');
     }
 
     // 3b. 대화 하트 규칙, 390px 터치 기기에서 키보드만으로 순서 바꾸기
@@ -749,12 +604,11 @@ async function playChapterToEnd(page, chapterId, {
         await page.locator(`[data-scene="${id}"]`).click();
         await advanceDialogue(page);
       };
-      // 2장 1번: 기호를 바르게 고치면 앞 손님(6장)은 규칙대로 막히고 우리(7장)는 들어감 → 첫 시도 성공
+      // 2장 1번: 맞는 카드의 결과에 6·7·8장 손님 → 첫 시도 성공
       await jump('ch2-2');
-      await page.locator('#operator').selectOption('≥');
-      await page.locator('#run').click();
+      await clickCard(page, { correct: true });
       await waitForActivityPass(page);
-      assert.match(await page.locator('#result').innerText(), /6장: 6 ≥ 7 → 거짓 · 입장 불가/, '앞 손님 6장은 규칙대로 막힘');
+      assert.match(await page.locator('#result .sim-screen').innerText(), /6장 ✕ · 7장 ○ · 8장 ○/, '앞 손님 6장은 막히고 우리 7장은 입장');
       const ch2Run = await page.evaluate(() => JSON.parse(localStorage.getItem('festival-romance.game.v2')).activeRuns?.['2']);
       assert.equal(Boolean(ch2Run?.missedThisRun?.['ch2-q1']), false, '바르게 고친 첫 실행은 하트를 잃지 않음');
       // 2장에서 선을 그었다면 3장 시작 대사가 달라짐
@@ -767,25 +621,21 @@ async function playChapterToEnd(page, chapterId, {
       await page.evaluate(() => { const k = 'festival-romance.game.v2'; const s = JSON.parse(localStorage.getItem(k)); s.coldChoices = {}; localStorage.setItem(k, JSON.stringify(s)); });
       await page.reload();
       await jump('ch1-2');
-      await solveArrange(page, { keyboard: true });
+      await clickCard(page, { correct: true, keyboard: true }); // 터치 기기에서도 키보드만으로 카드 선택
       await waitForActivityPass(page);
-      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, '390px 터치 순서 바꾸기 가로 넘침 없음');
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, '390px 터치 카드 화면 가로 넘침 없음');
 
-      // 2장 2번 대화(1턴): 오답 → 하트 잃음, 틀린 답은 잠기고 같은 질문에 다시 답함
+      // 2장 2번: 틀린 카드 → 하트 잃음, 틀린 카드는 잠기고 다른 카드를 다시 고름
       await jump('ch2-3');
-      const chat = (await currentSceneData(page)).quiz;
-      assert.equal(chat.steps.length, 1, '대화는 한 번');
-      const bad = chat.steps[0].choices.find((c) => !c.correct).key;
-      const ok = chat.steps[0].choices.find((c) => c.correct).key;
-      await page.locator(`[data-chat-choice="${bad}"]`).click();
+      const bad = await clickCard(page, { correct: false });
       await waitForActivityFail(page);
-      assert.equal(await page.locator(`[data-chat-choice="${bad}"]`).isDisabled(), true, '틀린 답은 다시 못 누름');
-      await page.locator(`[data-chat-choice="${ok}"]`).click();
+      assert.equal(await page.locator(`[data-quiz-choice="${bad.key}"]`).isDisabled(), true, '틀린 카드는 다시 못 누름');
+      await clickCard(page, { correct: true });
       await waitForActivityPass(page);
       const run = await page.evaluate(() => JSON.parse(localStorage.getItem('festival-romance.game.v2')).activeRuns['2'].solvedThisRun['ch2-q2']);
       assert.equal(run.solved && run.firstAttempt, false, '오답 뒤 정답은 하트 없음');
       await ctx.close();
-      checks.push('대화 1턴(오답 → 하트 없음, 틀린 답 잠금 뒤 재도전)·2장 1번 앞뒤 손님 결과·390px 터치 기기 키보드만으로 순서 바꾸기 확인');
+      checks.push('카드 오답 → 하트 없음·틀린 카드 잠금 뒤 재선택, 2장 1번 6·7·8장 결과, 390px 터치 기기 키보드만으로 카드 선택 확인');
     }
 
     // 4. Embed Mode (?embed=1): data-embed=true, hidden #fullscreen, 0 localStorage, postMessage contract
@@ -931,10 +781,10 @@ async function playChapterToEnd(page, chapterId, {
           `<style>body{margin:0;background:#dbe3e8;font-family:sans-serif;display:grid;grid-template-columns:repeat(3,1fr)}figure{margin:10px;text-align:center}div{height:300px;aspect-ratio:1/2;margin:auto;background-image:url("${assets.assets[variant]}");background-repeat:no-repeat}</style>` +
             assets.crops.map((c, i) => `<figure><div style="background-size:${c.backgroundSize};background-position:${c.backgroundPosition}"></div><figcaption>${i}: ${assets.labels[i]}</figcaption></figure>`).join(''),
         );
-        await page.screenshot({ path: path.join(resultsDir, `expressions-v13-${variant}.png`) });
+        await page.screenshot({ path: path.join(resultsDir, `expressions-v15-${variant}.png`) });
       }
       await ctx.close();
-      checks.push('v13 남녀 3x2 6표정(겹침 분리·놀람·머쓱함) 시트 저장 확인');
+      checks.push('v15 남녀 3x2 6표정 시트 저장 확인');
     }
 
     assert.deepEqual(errors, []);

@@ -5,28 +5,28 @@
 ## 1. 현재 작업 상태
 
 - **학생용 CS 복습 게임 개편(Phase 2~4 반영·검증 완료):** [dist/festival-romance.html](dist/festival-romance.html) · [public/festival-romance.html](../../public/festival-romance.html)을 3개 챕터·22장면·12문항(`ch1-q1`~`ch3-q4`)·3갈래 엔딩(`썸 시작`/`찐친`/`어색한 사이`) 구조로 개편해 빌드와 테스트·Playwright QA를 통과했습니다([개편 설계안](../../docs/plans/festival-romance-review-game.md)).
-- **v3 개편(1~3장 반영):** [구현 계획](../../docs/plans/festival-romance-v3.md)의 엔진 기반과 1장을 사용자가 확인한 뒤, 학생 테스터 10명(Haiku max) 검토 루프를 3회 돌려 2·3장까지 고쳤습니다. 평균 점수는 1차 → 3차에 개연성 2.5→3.6, 활동 적절성 3.1→3.8, 재미 3.5→3.4, 복습 3.2→4.0이고 치명 지적은 0건입니다(10명 모두 아직 SATISFIED는 아님). 고치기 전 실행은 하트에 반영하지 않는 '버그 재현', 하루 대사 남녀 두 가지(3장 모두), 마음 선택지에 친근한 세 번째 답, 2장에서 선을 그으면 3장 일부 대사가 달라짐(`when: cold|warm`). 교사가 직접 해 본 뒤(2026-11-15) 문제가 길고 현학적이라는 지적에 따라 12문항을 모두 한 번의 선택이나 짧은 조작(약 30~60초, 미션 60자 이하·대화 1턴·블록 4줄·바꿀 블록 1개)으로 줄였고, 장별 예상 시간은 13~14분에서 약 8분이 됐습니다. 남은 결정은 아래 다음 작업 1번입니다.
+- **v3 개편(1~3장 반영):** [구현 계획](../../docs/plans/festival-romance-v3.md)의 엔진 기반과 1장을 사용자가 확인한 뒤, 학생 테스터 10명(Haiku max) 검토 루프를 3회 돌려 2·3장까지 고쳤습니다. 평균 점수는 1차 → 3차에 개연성 2.5→3.6, 활동 적절성 3.1→3.8, 재미 3.5→3.4, 복습 3.2→4.0이고 치명 지적은 0건입니다(10명 모두 아직 SATISFIED는 아님). 고치기 전 실행은 하트에 반영하지 않는 '버그 재현', 하루 대사 남녀 두 가지(3장 모두), 마음 선택지에 친근한 세 번째 답, 2장에서 선을 그으면 3장 일부 대사가 달라짐(`when: cold|warm`). 교사가 직접 해 본 뒤(2026-11-15) 문제가 길고 현학적이라는 지적에 따라 12문항을 모두 한 번의 선택이나 짧은 조작(약 30~60초, 미션 60자 이하·대화 1턴·블록 4줄·바꿀 블록 1개)으로 줄였고, 장별 예상 시간은 13~14분에서 약 8분이 됐습니다. 이어서 교사 피드백(문제 글씨가 작고 한눈에 안 들어옴, 드롭다운 대신 카드, "버그 N" 제목이 무서움, 3장 1번 조건이 모호함, 3장 끝 제목에 `{{shapeName}}`이 그대로 보임)에 따라 12문항을 모두 큰 카드 3장 선택형(지금 상황 → 고칠 줄 강조 코드 → 질문 → 카드, 고르면 실행 결과·이유)으로 통일하고 제목을 `EP N · …`로 바꿨습니다. 남은 결정은 아래 다음 작업 1번입니다.
 - **교사용 도입 수업 원본 보존:** [dist/festival-lesson.html](dist/festival-lesson.html) · [public/festival-lesson.html](../../public/festival-lesson.html) (기존 3차시 27장면)은 `build.cjs`와 분리해 바이트 단위로 그대로 유지했습니다.
 - **캐릭터 시트 v15 적용:** 현재 빌드는 [haru-boy-v15.png](assets/haru-boy-v15.png) · [haru-girl-v15.png](assets/haru-girl-v15.png)(`1536×2048` 3×2, `FESTIVAL_SPRITE_ROWS: { boy: 2, girl: 2 }`)를 씁니다. 순서는 미소·수줍음·환한 웃음 / 놀람·곤란·장난기입니다. v13 표정 칸은 바탕에 얼굴 조각을 붙인 합성이라 앞머리가 끊겼고, 보정으로도 한계가 있어 교사 요청(2026-11-15)으로 미소 칸을 레퍼런스 삼아 Codex 내장 imagegen으로 표정마다 전신을 새로 그렸습니다. 미소 칸은 v13 바탕과 픽셀 동일하고, 새 5칸은 위치·크기만 맞췄습니다(합성 없음). 제작 기록은 [이미지 제작 기록](image-generation-notes.md#표정-새로-그리기-v15-2026-11-15)에 있습니다.
 
 ## 2. 번들 산출물 및 검증 기록
 
 - **산출물 무결성 ([qa/build-manifest.json](qa/build-manifest.json)):**
-  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `17,304,316` bytes, SHA-256 `7210e15bb5c59d6a5f82ed386b996b32e3b02188997589591b8807333e6aad8a`
+  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `17,229,104` bytes, SHA-256 `c455d41b4ada0051d75faf120614cdeb24d817de1c221b3f8a0d55a50b4ddece`
   - `public/festival-lesson.html` ≡ `dist/festival-lesson.html`: SHA-256 `8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c430b5` (원본 27장면 불변, 10/19 기준 검증은 [제작·검수 기록](제작-검수-기록.md))
-- **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 50/50 통과
-  - `models.test.cjs` (14), `state.test.cjs` (7), `package.test.cjs` (3), `journey.test.cjs` (7), `refinement.test.cjs` (19)
-  - 하트 문항 12개의 미션 목표·도입 대사·인용·대화 질문은 고칠 방법 대신 목표만 말하고, 하루의 한마디는 풀기 전엔 중립 문구, 정답 뒤에 개념 요약(`observe`)을 보여 줍니다(`refinement.test.cjs`가 정답 단서 재유입을 막음). 파이썬 문자열 금지, 정답 보기 길이 오답 평균 ±25%, 대화형 문항 구조, 남녀 대사 구조, 문항 크기 상한(미션·개념 60자, 도입 3줄, 대화 1턴, 블록 4줄·바꿀 블록 1개, 예상 시간 1:30 이하)도 테스트합니다.
-- **Playwright 브라우저 QA (`node teaching-materials/festival-romance/qa/browser.cjs`):** 10항목 통과(재현 규칙·6장 테스트·선 그은 뒤 3장 대사 확인 포함) (`errors: []`, `consoleErrors: []`, `remoteRequests: 0`)
+- **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 52/52 통과
+  - `models.test.cjs` (14), `state.test.cjs` (7), `package.test.cjs` (3), `journey.test.cjs` (7), `refinement.test.cjs` (21)
+  - 하트 문항 12개의 미션 목표·도입 대사·인용·대화 질문은 고칠 방법 대신 목표만 말하고, 하루의 한마디는 풀기 전엔 중립 문구, 정답 뒤에 개념 요약(`observe`)을 보여 줍니다(`refinement.test.cjs`가 정답 단서 재유입을 막음). 카드 구조(문항마다 카드 3장·정답 1개·카드마다 실행 결과·오답마다 이유, 상황 1~2줄·코드 4줄 이하), `EP N` 제목, 드롭다운·대화형 보기 없음, 제목 `{{변수}}` 치환, 파이썬 문자열 금지, 정답 보기 길이 오답 평균 ±25%, 대화형 문항 구조, 남녀 대사 구조, 문항 크기 상한(미션·개념 60자, 도입 3줄, 대화 1턴, 블록 4줄·바꿀 블록 1개, 예상 시간 1:30 이하)도 테스트합니다.
+- **Playwright 브라우저 QA (`node teaching-materials/festival-romance/qa/browser.cjs`):** 10항목 통과(12문항 카드 화면·1366×768 한 화면·틀린 카드 결과와 이유·키보드만으로 카드 선택·화면에 `{{` 없음 포함) (`errors: []`, `consoleErrors: []`, `remoteRequests: 0`)
   - 학생 모드 은닉·순차 해금, 첫 시도 하트 규칙·오답 재도전 0하트·새로고침/이전버튼 치트 방지(`festival-romance.game.v2`), 12문항 완주 및 3갈래 엔딩(`11/12 찐친`, `12/12+cold 찐친`→재도전 `썸 시작`, `≤6 어색한 사이`), `이미 본 대사 건너뛰기`, 모바일 `390×844` 가로 넘침 0건(순서 바꾸기를 버튼만으로 완료), 새 학생 챕터 카드 숨김·예전 저장 이어하기, 대사 한 줄 이전(버튼·← 키)·응답→선택지·결과→활동 재풀이 하트 불변, 남녀 말투 전환, 1턴 대화 오답 → 하트 없음·재도전, 상단 하트 표시 `1장` 표기·390px 터치 기기 키보드만으로 순서 바꾸기, 길 안내 실제 방향키·44px 버튼, 이미 푼 문항 재오답 시 기록·안내 없음, `?mode=teacher` 전 시뮬레이터 오답 힌트, `?embed=1` (`127.0.0.1` 동일 출처 HTTP 호스트에서 `postMessage` `festival:init`/`festival:state`/`festival:complete` 및 `localStorage` 0회 접근 확인), 원본 `festival-lesson.html` 27장면 무오류 로드 확인.
-- **Playwright 재생 QA (`node teaching-materials/festival-romance/qa/playback-app.cjs`):** 8항목 통과 (`reducedMotion: 'reduce'` / `'no-preference'` 조명 4회·다각형 3/4/6종·일시정지/재개·내각 함정·모달 보류·장면 이탈 정리·앱 메시지 UI·`390×844`·원본 27장면 무오류 로드)
+- **Playwright 재생 QA (`node teaching-materials/festival-romance/qa/playback-app.cjs`):** 2항목 통과(원본 27장면 무오류 로드, 앱 메시지 UI·`390×844`). 조명·다각형 재생 검사 6항목은 해당 조작 화면을 카드형으로 바꾸며 함께 지웠습니다.
 - **시각 검수(`teaching-materials/festival-romance/qa-results/`):** 데스크톱(`1366×768`) 3갈래 엔딩·퀴즈 오답·마음 선택지·임베드·교사 메모·원본 수업, 모바일(`390×844`), `expressions-v3-{boy,girl}.png` 및 `playback-*.png` 확인.
   - 경미한 시각 메모: `390px`에서 하트 획득/실패 일시 배지(`.heart-delta`)가 상단 안내 줄 위로 잠깐 겹치고, `girl` v3 슬롯 1 좌측 끝에 1px 미세 인접 프레임 경계가 보이나 최종 3×2 시트 교체 시 해소될 범위입니다.
   - `?embed=1`의 `postToParent`는 `src/app.js`가 `window.location.origin`(`!== 'null'`)을 `targetOrigin`으로 사용하므로, `file://` 직접 열기에서는 브라우저 정책상 전달되지 않고 실제 서비스와 같은 `http(s)://` 동일 출처 환경에서 동작합니다.
 
 ## 3. 다음에 이어갈 작업
 
-1. **교사 확인:** 12문항을 짧게 줄인 판(2026-11-15)을 교사가 다시 해 보고 난이도·풀이 시간이 맞는지 확인합니다. 학생 테스터 검토를 다시 돌린다면 깊이·다양성 요구로 문항이 다시 길어지지 않게, 풀이 시간 상한(문항당 약 1분)을 지시에 넣습니다. 검토 자료는 `node teaching-materials/festival-romance/qa/student-review-pack.cjs`로 만듭니다. 3장 3번(반복 조건)은 보기가 ≠/= 두 개뿐이라 사실상 첫 시도에 맞히기 쉽습니다.
+1. **교사 확인:** 카드형으로 바꾼 12문항(2026-11-15)을 교사가 다시 해 보고 글씨 크기·풀이 시간·조건의 명확함을 확인합니다. 학생 테스터 검토를 다시 돌린다면 풀이 시간 상한(문항당 약 1분)과 카드 3장 형식을 지시에 넣습니다. 검토 자료는 `node teaching-materials/festival-romance/qa/student-review-pack.cjs`로 만듭니다.
 2. **캐릭터 시트:** v15(표정 5개 새로 그림)를 적용했습니다. 남학생 수줍음·장난기는 소매 윤곽이 미소 칸보다 약 9~10px 넓어, 표정이 바뀔 때 소매가 살짝 움직여 보일 수 있습니다. 거슬리면 해당 칸만 같은 요청문으로 다시 그립니다(요청문은 이미지 제작 기록). 다른 시안으로 바꾸려면 같은 3×2 규격으로 만들어 `build.cjs`의 파일 이름만 바꿉니다(PNG 높이로 `rows`를 자동 감지).
 3. **Phase 5 메인 앱 임베드:** `cs-class` 본 사이트 내 복습 활동에서 `/festival-romance.html?embed=1`을 iframe으로 띄우고 `festival:init`/`festival:state`/`festival:complete`와 `useWork` 수동 저장을 연동합니다.
 4. **현장 확인:** 실제 학교 교실 프로젝터(교사용 `/festival-lesson.html`·`?mode=teacher`)와 학생 태블릿/크롬북(학생용 `/festival-romance.html`)에서 가독성과 터치 조작을 최종 점검합니다.
