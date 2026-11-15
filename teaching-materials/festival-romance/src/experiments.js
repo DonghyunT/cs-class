@@ -76,7 +76,7 @@
     const rows=q.rows||[],byId=Object.fromEntries(rows.map(r=>[r.id,r]));
     let order=[...(q.initialOrder||rows.map(r=>r.id))],lastRun=order.join(),done=false;
     const draw=()=>{
-      $('order-rows').innerHTML=order.map((id,i)=>{const r=byId[id];return `<li class="order-row" data-row="${escape(id)}"><span class="line-no" aria-hidden="true">${i+1}</span><span class="code-text">${i?'아니면, 만일':'만일'} (${escape(fmt(q.subject||'값'))} ≥ ${r.min}) 이라면 → ${escape(fmt(r.then))}</span><span class="order-buttons"><button type="button" class="order-move" data-move="-1" data-id="${escape(id)}" aria-label="${i+1}번 줄을 위로"${i===0||done?' disabled':''}>↑</button><button type="button" class="order-move" data-move="1" data-id="${escape(id)}" aria-label="${i+1}번 줄을 아래로"${i===order.length-1||done?' disabled':''}>↓</button></span></li>`;}).join('');
+      $('order-rows').innerHTML=order.map((id,i)=>{const r=byId[id];return `<li class="order-row" data-row="${escape(id)}"><span class="line-no" aria-hidden="true">${i+1}</span><span class="code-text">${i?'아니면, 만일':'만일'} ${escape(fmt(q.subject||'값이'))} ${r.min}${escape(fmt(q.unit||''))} 이상이면 → ${escape(fmt(r.then))}</span><span class="order-buttons"><button type="button" class="order-move" data-move="-1" data-id="${escape(id)}" aria-label="${i+1}번 줄을 위로"${i===0||done?' disabled':''}>↑</button><button type="button" class="order-move" data-move="1" data-id="${escape(id)}" aria-label="${i+1}번 줄을 아래로"${i===order.length-1||done?' disabled':''}>↓</button></span></li>`;}).join('');
       $('run-task').disabled=done||order.join()===lastRun;
     };
     root.innerHTML=`<div class="board quiz-board task-board">${boardTop(q,ctx,fmt,{codeHtml:'<ol class="block-code quiz-code order-rows" id="order-rows"></ol>'})}<div class="task-controls"><button type="button" id="run-task" class="primary-button task-run">자판기 실행하기 ▶</button><span class="task-hint">줄 옆 ↑·↓로 순서를 바꾼 뒤 실행해요.</span></div></div>${resultBox}`;
@@ -116,26 +116,41 @@
     const slot=`<input id="task-num" class="code-input" type="number" inputmode="numeric" min="${min}" max="${max}" step="1" value="${escape(String(q.initial))}" aria-label="${escape(fmt(q.label||'값'))}">`;
     root.innerHTML=`<div class="board quiz-board task-board">${boardTop(q,ctx,fmt,{slot})}<div class="task-controls"><button type="button" class="step-button" data-step="-1" aria-label="${escape(fmt(q.label||'값'))} 1 줄이기">−</button><button type="button" class="step-button" data-step="1" aria-label="${escape(fmt(q.label||'값'))} 1 늘리기">+</button><button type="button" id="run-task" class="primary-button task-run">${escape(fmt(q.runLabel||'실행하기 ▶'))}</button><span class="task-hint">${escape(fmt(q.label||'값'))} 칸을 바꾼 뒤 실행해요.</span></div><div class="task-visual" id="task-visual" aria-hidden="true"></div></div>${resultBox}`;
     const input=$('task-num');
-    const sync=()=>{$('run-task').disabled=done||input.value.trim()===lastRun;};
+    let busy=false;
+    const sync=()=>{
+      const lock=done||busy;
+      $('run-task').disabled=lock||input.value.trim()===lastRun;
+      input.disabled=lock;
+      root.querySelectorAll('[data-step]').forEach(b=>{b.disabled=lock;});
+    };
     input.addEventListener('input',sync);
     input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&!$('run-task').disabled){e.preventDefault();$('run-task').click();}});
     root.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{
-      if(done)return;
+      if(done||busy)return;
       const n=Number(input.value)||0;
       input.value=String(Math.min(max,Math.max(min,n+Number(b.dataset.step))));
       sync();
     });
-    const visual=n=>{
+    // 실행 과정을 한 장면씩 보여 줍니다: 조명은 깜빡일 때마다 전구가 하나씩 켜지고, 드론은 한 변씩 날아가며 선을 그립니다.
+    const frames=n=>{
       if(q.visual==='lights'){
         const shown=Math.min(n,20);
-        return `<div class="lights-row">${Array.from({length:shown},(_,i)=>`<span class="bulb" style="animation-delay:${(i*0.18).toFixed(2)}s"></span>`).join('')}${n>shown?'<span class="bulb-more">…</span>':''}</div>`;
+        return {count:shown,ms:320,draw:k=>`<div class="lights-row">${Array.from({length:shown},(_,i)=>`<span class="bulb${i<k?' on':''}"></span>`).join('')}${n>shown?'<span class="bulb-more">…</span>':''}</div><p class="visual-caption">깜빡임 ${k}번</p>`};
       }
       if(q.visual==='drone'){
-        const pts=M.polygonPath(q.sides,60,n),xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
-        const x0=Math.min(...xs)-14,y0=Math.min(...ys)-14,w=Math.max(...xs)-x0+14,h=Math.max(...ys)-y0+14,end=pts.at(-1);
-        return `<svg class="drone-path" viewBox="${x0.toFixed(1)} ${y0.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}"><polyline points="${pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}"/><circle class="start" cx="0" cy="0" r="5"/><circle class="end" cx="${end.x.toFixed(1)}" cy="${end.y.toFixed(1)}" r="4"/></svg>`;
+        const pts=M.polygonPath(q.sides,60,n),xs=pts.map(p=>p.x),ys=pts.map(p=>p.y),f=v=>v.toFixed(1);
+        const x0=Math.min(...xs)-14,y0=Math.min(...ys)-14,box=`${f(x0)} ${f(y0)} ${f(Math.max(...xs)-x0+14)} ${f(Math.max(...ys)-y0+14)}`;
+        return {count:q.sides,ms:480,draw:k=>`<svg class="drone-path" viewBox="${box}"><polyline points="${pts.slice(0,k+1).map(p=>`${f(p.x)},${f(p.y)}`).join(' ')}"/><circle class="start" cx="0" cy="0" r="5"/><circle class="drone" cx="${f(pts[k].x)}" cy="${f(pts[k].y)}" r="7"/></svg><p class="visual-caption">${k} / ${q.sides}번 이동·회전</p>`};
       }
-      return '';
+      return {count:0,ms:0,draw:()=>''};
+    };
+    const play=(n,onDone)=>{
+      const {count,ms,draw}=frames(n);
+      if(!count||ctx.reducedMotion?.()){$('task-visual').innerHTML=draw(count);onDone();return;}
+      let k=0;
+      $('task-visual').innerHTML=draw(0);
+      $('task-visual').scrollIntoView({block:'nearest',behavior:'smooth'}); // 그리는 과정이 화면 밖에서 지나가지 않게
+      const timer=ctx.interval(()=>{k++;$('task-visual').innerHTML=draw(k);if(k>=count){clearInterval(timer);onDone();}},ms);
     };
     const screenFor=n=>{
       if(q.visual==='drone'){const sum=n*q.sides;return `${n}° × ${q.sides} = ${sum}°${sum===360?' → 도형 완성!':sum%360===0?' → 닫혔지만 한 바퀴보다 많이 돌아요':' → 제자리로 안 돌아와요'}`;}
@@ -145,15 +160,19 @@
       const n=M.boundedInteger(input.value.trim(),min,max);
       if(n===null){ctx.notify(`${min}~${max} 사이의 정수를 입력해 주세요.`);input.focus();return;}
       lastRun=String(n);input.value=String(n);
-      $('task-visual').innerHTML=visual(n);
-      if(n===q.answer){
-        done=true;input.disabled=true;root.querySelectorAll('[data-step]').forEach(b=>b.disabled=true);sync();
-        show(`${screenHtml(screenFor(n),fmt)}<strong>${escape(fmt(q.successTitle||'정답이에요!'))}</strong><span class="explanation">${escape(fmt(q.explain||''))}</span>`,{valid:true,story:q.storyPatch,values:q.values});
-        return;
-      }
-      sync();
-      const why=q.whyBy?.[String(n)]||(q.visual==='drone'&&(n*q.sides)%360===0?q.whyMulti:null)||(n<q.answer?q.whyLow:q.whyHigh)||q.whyWrong||'다시 생각해 보자!';
-      show(`${screenHtml(screenFor(n),fmt)}<strong>다시 바꿔 보자!</strong><span class="explanation">${escape(fmt(why))}</span>`,{valid:false,failWhy:fmt(why),failExpr:4});
+      $('result').hidden=true;
+      busy=true;sync();
+      play(n,()=>{
+        busy=false;
+        if(n===q.answer){
+          done=true;sync();
+          show(`${screenHtml(screenFor(n),fmt)}<strong>${escape(fmt(q.successTitle||'정답이에요!'))}</strong><span class="explanation">${escape(fmt(q.explain||''))}</span>`,{valid:true,story:q.storyPatch,values:q.values});
+          return;
+        }
+        sync();
+        const why=q.whyBy?.[String(n)]||(q.visual==='drone'&&(n*q.sides)%360===0?q.whyMulti:null)||(n<q.answer?q.whyLow:q.whyHigh)||q.whyWrong||'다시 생각해 보자!';
+        show(`${screenHtml(screenFor(n),fmt)}<strong>다시 바꿔 보자!</strong><span class="explanation">${escape(fmt(why))}</span>`,{valid:false,failWhy:fmt(why),failExpr:4});
+      });
     };
     sync();
   };

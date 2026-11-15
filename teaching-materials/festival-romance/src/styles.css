@@ -512,11 +512,14 @@ dialog::backdrop{background:#202a3b68}
 .task-visual{display:flex;justify-content:center}
 .task-visual:empty{display:none}
 .lights-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:4px 0}
-.bulb{width:30px;height:30px;border-radius:50%;background:#ffe48a;box-shadow:0 0 10px #ffcf3f88;animation:bulb-blink .5s ease-in-out both}
+.bulb{width:30px;height:30px;border-radius:50%;background:#d8d2c6;box-shadow:inset 0 -3px 0 #0000001a}
+.bulb.on{background:#ffe48a;box-shadow:0 0 12px #ffcf3f;animation:bulb-flash .3s ease-out}
 .bulb-more{font-size:22px;font-weight:700;color:var(--muted)}
-@keyframes bulb-blink{0%{background:#d8d2c6;box-shadow:none}50%{background:#ffd34d;box-shadow:0 0 16px #ffcf3f}100%{background:#ffe48a}}
+@keyframes bulb-flash{0%{transform:scale(.8);background:#fff6c4}100%{transform:scale(1)}}
+.visual-caption{margin:4px 0 0;text-align:center;font-size:15px;font-weight:650;color:var(--muted)}
+.task-visual{flex-direction:column;align-items:center}
 .drone-path{width:min(200px,55vw);height:auto;max-height:180px}
 .drone-path polyline{fill:none;stroke:var(--navy);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
 .drone-path .start{fill:#2f8f5b}
-.drone-path .end{fill:#c2410c}
-@media (prefers-reduced-motion:reduce){.bulb{animation:none}}
+.drone-path .drone{fill:#e8902a;stroke:#fff;stroke-width:2}
+@media (prefers-reduced-motion:reduce){.bulb.on{animation:none}}

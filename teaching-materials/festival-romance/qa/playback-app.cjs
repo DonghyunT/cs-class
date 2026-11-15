@@ -53,7 +53,36 @@ const lessonUrl = pathToFileURL(publicLessonPath).href;
         await page.locator('#contents-button').click();
         await page.locator(`[data-scene="${id}"]`).click();
       };
-      // 카드 문항에는 재생 타이머가 없습니다. 첫 장면 대사가 내레이션으로 시작하는지만 확인합니다.
+      // 단답형 문항은 실행 과정을 한 장면씩 보여 준 뒤 결과를 냅니다(움직임 줄이기면 바로 완성).
+      const enter = async (id, key) => {
+        await jump(id);
+        for (let i = 0; i < 14 && !(await page.locator('#experiment').count()); i++) {
+          const choice = page.locator(key ? `#story-choices button[data-flow-choice="${key}"]` : '#story-choices button:visible').first();
+          if ((await choice.count()) && (await choice.isVisible())) await choice.click();
+          else await page.locator('#next-button').click();
+        }
+      };
+      await enter('ch3-3', 'pentagon');
+      await page.locator('#task-num').fill('72');
+      await page.locator('#run-task').click();
+      const points = () => page.locator('.drone-path polyline').evaluate((el) => el.getAttribute('points').trim().split(/\s+/).length);
+      if (motion === 'reduce') {
+        assert.equal(await page.locator('#result').isVisible(), true, '움직임 줄이기: 결과 바로 표시');
+        assert.equal(await points(), 6, '움직임 줄이기: 오각형 경로 바로 완성');
+      } else {
+        assert.equal(await page.locator('#result').isVisible(), false, '그리는 동안 결과 숨김');
+        assert.equal(await page.locator('#task-num').isDisabled(), true, '그리는 동안 숫자 칸 잠금');
+        assert.match(await page.locator('.visual-caption').innerText(), /0 \/ 5/);
+        await page.clock.runFor(480);
+        assert.equal(await points(), 2, '한 변씩 그려짐');
+        assert.match(await page.locator('.visual-caption').innerText(), /1 \/ 5/);
+        await page.clock.runFor(480 * 4);
+        assert.equal(await points(), 6, '다섯 변을 다 그림');
+        assert.equal(await page.locator('#result.result-correct').isVisible(), true, '다 그린 뒤 결과 표시');
+      }
+      checks.push(`${motion}: 드론 경로를 한 변씩 그린 뒤 결과 표시(움직임 줄이기면 바로 완성)`);
+
+      // 첫 장면 대사가 내레이션으로 시작하는지 확인합니다.
       await jump('ch1-1');
       assert.equal(await page.locator('#stage').getAttribute('data-voice'), 'narration');
 

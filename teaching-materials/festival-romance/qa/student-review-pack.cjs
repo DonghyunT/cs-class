@@ -58,7 +58,7 @@ for (const ch of chapters) {
       if (s.task) {
         const one = (q, indent) => [
           ...(q.situation || []).map((l) => `${indent}지금 상황: ${fill(l)}`),
-          ...(q.rows ? [`${indent}직접 조작: 아래 줄을 ↑·↓로 옮긴 뒤 실행(손님 ${q.tests.join('·')}장으로 시험)`, ...q.initialOrder.map((id, i) => { const r = q.rows.find((x) => x.id === id); return `${indent}  ${i + 1}. ${i ? '아니면, 만일' : '만일'} (${q.subject} ≥ ${r.min}) 이라면 → ${r.then}`; })] : []),
+          ...(q.rows ? [`${indent}직접 조작: 아래 줄을 ↑·↓로 옮긴 뒤 실행(손님 ${q.tests.join('·')}장으로 시험)`, ...q.initialOrder.map((id, i) => { const r = q.rows.find((x) => x.id === id); return `${indent}  ${i + 1}. ${i ? '아니면, 만일' : '만일'} ${q.subject} ${r.min}${q.unit || ''} 이상이면 → ${r.then}`; })] : []),
           ...(q.code ? [`${indent}단답형: 숫자 칸에 ${q.label} 값을 적고 실행(처음 ${q.initial}, 정답 ${q.answer})`, ...q.code.map((c, i) => `${indent}  ${i + 1}. ${c.replace('{n}', '[ ]')}`)] : []),
           `${indent}틀린 이유: ${[...Object.values(q.whyTop || {}), q.whyRest, ...Object.values(q.whyBy || {}), q.whyLow, q.whyHigh, q.whyMulti].filter(Boolean).map(fill).join(' / ')}`,
         ].join('\n');

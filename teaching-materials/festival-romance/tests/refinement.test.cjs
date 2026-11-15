@@ -175,6 +175,22 @@ test('제어 구조(2·3장)에는 직접 조작·단답형 문항이 있고, �
   }
 });
 
+test('2·3장 조건은 자연스러운 말로 적고("비가 오지 않으면"), 3장 도형 선택지는 드론 쇼라고 부른다', () => {
+  const graded = [ch2, ch3].flatMap((ch) => ch.scenes.filter((s) => s.graded));
+  const texts = graded.flatMap((s) => {
+    const sets = (d) => (d?.variants ? Object.values(d.variants).map((v) => ({ ...d, ...v })) : d ? [d] : []);
+    return [...sets(s.quiz), ...sets(s.task)].flatMap((q) => [...(q.code || []), ...(q.choices || []).map((c) => c.label)]).map((x) => [s.questionId, x]);
+  });
+  assert.ok(texts.length > 0);
+  for (const [id, x] of texts) {
+    assert.equal(/아니다 \(|\) ?(?:이)?라면|≠|\) 또는 \(|\) 그리고 \(|이 될 때까지/.test(x), false, `${id} 기호식 조건: ${x}`);
+  }
+  const exp = fs.readFileSync(path.join(root, 'src/experiments.js'), 'utf8');
+  assert.equal(/\) 이라면/.test(exp), false, '자판기 줄도 "~장 이상이면"으로');
+  const shape = ch3.scenes.find((s) => s.questionId === 'ch3-q2');
+  for (const o of shape.flow.options) assert.match(o.label, /드론/, `도형 선택지는 드론 쇼: ${o.label}`);
+});
+
 test('하트 문항 제목은 "버그 N" 대신 "EP N · "으로 시작한다', () => {
   const graded = [ch1, ch2, ch3].flatMap((ch) => ch.scenes.filter((s) => s.graded));
   graded.forEach((s, i) => assert.match(s.title, new RegExp(`^EP ${i + 1} · \\S`), `${s.questionId} 제목: ${s.title}`));
