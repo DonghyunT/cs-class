@@ -436,3 +436,10 @@ dialog::backdrop{background:#202a3b68}
 .chat-replies{display:grid;gap:8px}
 .chat-reply{min-height:44px;width:100%;text-align:left;padding:10px 14px;border:1.5px solid #cab69a;border-radius:8px;background:#fffdf8;font-size:17px;line-height:1.45}
 .chat-reply[data-wrong="true"]{border-color:#c25b5b;background:#fbeaea;text-decoration:line-through}
+.arrange-note{margin:0 0 10px;padding:10px 14px;border:1px dashed #b49a74;border-radius:6px;background:#fffbe9;font-size:16px}
+.arrange-note ol{margin:6px 0 0;padding-left:4px;list-style:none}
+.sim-run h4{margin:0 0 6px;font-size:16px}
+.sim-steps{margin:0;padding-left:22px;display:grid;gap:4px;font-size:15px;line-height:1.45}
+.sim-steps li{overflow-wrap:anywhere}
+.sim-effect{margin-left:6px;color:#2f5f8a;font-weight:600}
+.sim-screen{margin:8px 0 0;padding:8px 12px;border-radius:8px;background:#222b3c;color:#fffaf1;font-size:16px;overflow-wrap:anywhere}

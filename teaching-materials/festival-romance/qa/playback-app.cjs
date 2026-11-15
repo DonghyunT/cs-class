@@ -175,8 +175,11 @@ const lessonUrl = pathToFileURL(publicLessonPath).href;
         assert.equal(await page.locator('.app-origin img').evaluate((img) => img.complete && img.naturalWidth > 0), true);
         await page.screenshot({ path: path.join(output, 'app-message-1366.png') });
         await page.locator('#next-button').click();
+        assert.equal(await page.locator('#stage').getAttribute('data-medium'), 'scene', '내 생각(내레이션)은 현장 화면');
+        await page.locator('#next-button').click();
+        await page.locator('#next-button').click();
         assert.equal(await page.locator('#stage').getAttribute('data-medium'), 'app');
-        assert.match(await page.locator('#dialogue-text').innerText(), /혹시 아직 안 자지/);
+        assert.match(await page.locator('#dialogue-text').innerText(), /이 시간에 테스트해 준 거야/);
 
         await page.setViewportSize({ width: 390, height: 844 });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false);

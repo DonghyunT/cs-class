@@ -54,7 +54,6 @@
     if(!renderers[type])throw Error('알 수 없는 실험: '+type);
     renderers[type](env);
     const questions={
-      terms:'두 표현을 실행하면 같은 문장이 나올까요?',
       invitation:'이름을 바꾸면 초대장의 어느 부분이 달라질까요?',
       variable:'새 시각을 저장하면 변수에는 어떤 값이 남을까요?',
       answer:'두 번 질문한 뒤 대답 칸에는 무엇이 남을까요?',
@@ -184,7 +183,8 @@
         (target&&!target.disabled?target:$('arrange-list').querySelector(`[data-id="${focus.id}"]:not(:disabled)`))?.focus();
       }
     };
-    root.innerHTML=`<div class="board arrange-board">${g.hat?`<p class="arrange-hat">${escape(g.hat)}</p>`:''}<ol id="arrange-list" class="arrange-list" aria-label="블록 순서"></ol><p id="arrange-live" class="sr-only" aria-live="polite"></p><div class="experiment-actions">${button('run-arrange',escape(g.runLabel||'실행해 보기'),true)}</div><div id="arrange-sim" class="arrange-sim" hidden></div></div>${result()}`;
+    const note=g.note?`<aside class="arrange-note"><strong>${escape(g.note.title||'메모')}</strong><ol>${(g.note.lines||[]).map(l=>`<li>${escape(l)}</li>`).join('')}</ol></aside>`:'';
+    root.innerHTML=`<div class="board arrange-board">${note}${g.hat?`<p class="arrange-hat">${escape(g.hat)}</p>`:''}<ol id="arrange-list" class="arrange-list" aria-label="블록 순서"></ol><p id="arrange-live" class="sr-only" aria-live="polite"></p><div class="experiment-actions">${button('run-arrange',escape(g.runLabel||'실행해 보기'),true)}</div><div id="arrange-sim" class="arrange-sim" hidden></div></div>${result()}`;
     draw();
     $('run-arrange').onclick=()=>{
       const r=M.evaluateArrange(order,g,picks);
@@ -200,13 +200,34 @@
     };
   };
   renderers.arrange.sims=arrangeSims;
-  renderers.terms=({root,$,show,hide})=>{
-    root.innerHTML=`<div class="two-columns"><div class="board"><h3>같은 초대, 다른 표현</h3><div class="prediction"><button type="button" id="blocks" aria-pressed="true">블록 표현</button><button type="button" id="text" aria-pressed="false">텍스트 표현</button></div><pre class="block-code" id="language-code">시작하기 버튼을 눌렀을 때\n  “내일 축제 같이 다닐래?” 말하기</pre></div><div class="board"><h3>실행하면?</h3>${prediction(['같은 문장','다른 문장'])}${button('run','실행해 보기',true)}${result()}</div></div><div class="terms-grid"><div class="term-card"><strong>프로그래밍 언어</strong><p>컴퓨터가 할 일을 표현하는 약속</p></div><div class="term-card"><strong>프로그램</strong><p>할 일을 적어 놓은 명령의 모음</p></div><div class="term-card"><strong>프로그래밍</strong><p>생각하고 만들고 실행하며 고치는 과정</p></div></div>`;
-    $('blocks').onclick=()=>{hide();$('blocks').setAttribute('aria-pressed','true');$('text').setAttribute('aria-pressed','false');$('language-code').textContent='시작하기 버튼을 눌렀을 때\n  “내일 축제 같이 다닐래?” 말하기';};
-    $('text').onclick=()=>{hide();$('blocks').setAttribute('aria-pressed','false');$('text').setAttribute('aria-pressed','true');$('language-code').textContent="print('내일 축제 같이 다닐래?')\n\n파이썬으로 표현한 같은 출력";};
-    $('run').onclick=()=>show('내일 축제 같이 다닐래?<span class="explanation">명령을 표현하는 방법은 달라도, 여기서 출력하는 초대 문장은 같아요.</span>');
+  // 실행 기록: 줄마다 바뀐 값을 보여 주고 마지막 화면을 띄웁니다.
+  const simLog=(rows,screen)=>'<div class="sim-run"><h4>실행 기록</h4><ol class="sim-steps">'+rows.map(r=>'<li><span class="sim-line">'+escape(r[0])+'</span><span class="sim-effect">→ '+escape(r[1])+'</span></li>').join('')+'</ol><p class="sim-screen" role="status">'+escape(screen)+'</p></div>';
+  const shown=v=>v===''?'(빈칸)':v;
+  arrangeSims.welcome=({order,ctx,goal})=>{
+    const label=Object.fromEntries(goal.blocks.map(b=>[b.id,b.label]));
+    const nick=ctx.state?.nickname||'나';
+    let answer='',name='',screen='';const rows=[];
+    for(const id of order){
+      if(id==='ask'){answer=nick;rows.push([label[id],'대답: '+nick]);}
+      else if(id==='set'){name=answer;rows.push([label[id],'[이름]: '+shown(name)]);}
+      else if(id==='say'){screen='"'+name+' 님, 환영해요!"';rows.push([label[id],'화면: '+screen]);}
+    }
+    return simLog(rows,'앱 화면: '+(screen||'(인사 없음)'));
   };
-
+  arrangeSims.invite=({order,picks,ctx,goal})=>{
+    const label=id=>{const b=goal.blocks.find(x=>x.id===id);return b.choices?b.choices[picks[id]??0]:b.label;};
+    const nick=ctx.state?.nickname||'나';
+    let answer='',name='',place='',tickets=0;const rows=[];
+    for(const id of order){
+      if(id==='askName'){answer=nick;rows.push([label(id),'대답: '+nick]);}
+      else if(id==='askPlace'){answer='정문';rows.push([label(id),'대답: 정문']);}
+      else if(id==='setName'){name=answer;rows.push([label(id),'[이름]: '+shown(name)]);}
+      else if(id==='setPlace'){place=answer;rows.push([label(id),'[장소]: '+shown(place)]);}
+      else if(id==='base'){tickets=6;rows.push([label(id),'[티켓]: 6']);}
+      else if(id==='bonus'){tickets=(picks.bonus??0)===1?tickets+3:3;rows.push([label(id),'[티켓]: '+tickets]);}
+    }
+    return simLog(rows,'도착한 초대장: "'+shown(name)+' 님! 내일 '+shown(place)+'에서 만나요. 보유 티켓: '+tickets+'장"');
+  };
   renderers.invitation=({root,$,M,ctx})=>{
     root.innerHTML=`<div class="flow-grid"><div class="flow-card"><h3>입력</h3><label for="nickname">초대장에 쓸 이름</label><input id="nickname" maxlength="12" autocomplete="off" value="${escape(ctx.state.nickname)}"><p class="form-note">새 이름을 입력해 보세요.</p></div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-card"><h3>처리</h3><div class="code-mix"><span class="variable-chip" id="process-name"></span><span>＋</span><span>“ 님의 초대장”</span></div></div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-card"><h3>출력</h3><div id="placeholder" class="output-placeholder">어떤 문장이<br>나타날까요?</div><div id="invitation" class="invitation" role="status" hidden><strong id="invitation-title"></strong><p>하루와 함께<br>내일, 정문에서.</p></div></div></div>${prediction(['입력한 이름으로 바뀐다','항상 처음 이름으로 나온다'])}<div class="experiment-actions">${button('run-experiment','초대장 만들기 →',true)}${button('again','다시 예상하기')}</div><div class="result" id="takeaway" hidden>입력 → 처리 → 출력<span class="explanation">이름을 받아, 문장을 만들고, 화면에 보여줘요.</span></div>`;
     const name=()=>ctx.stateApi.normalizeNickname($('nickname').value);

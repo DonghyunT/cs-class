@@ -40,8 +40,8 @@ test('개편된 3챕터에는 optional:true 없이 1~3단원 핵심 개념 12문
   assert.deepEqual(
     allGraded.map((s) => [s.questionId, s.experiment]),
     [
-      ['ch1-q1', 'quiz'],
-      ['ch1-q2', 'quiz'],
+      ['ch1-q1', 'arrange'],
+      ['ch1-q2', 'arrange'],
       ['ch1-q3', 'map'],
       ['ch1-q4', 'math'],
       ['ch2-q1', 'compare'],
@@ -78,7 +78,7 @@ test('소스 코드와 챕터 데이터에 치트 버튼·비밀번호 노출·�
   ];
   for (const rel of srcFiles) {
     const text = fs.readFileSync(path.join(root, rel), 'utf8');
-    for (const forbidden of ['#fit', '#correct', "button('fit", "button('correct", '비밀번호는 1600', "'1600'", '"1600"']) {
+    for (const forbidden of ['#fit', '#correct', "button('fit", "button('correct", '비밀번호는 1600', "'1600'", '"1600"', '파이썬', 'print(', 'input(']) {
       assert.equal(text.includes(forbidden), false, `${rel}에 금지 문자열 존재: ${forbidden}`);
     }
     assert.equal(/\b(?:src|href)\s*=\s*["']https?:\/\//i.test(text), false, `${rel} 외부 URL 금지`);
@@ -87,6 +87,8 @@ test('소스 코드와 챕터 데이터에 치트 버튼·비밀번호 노출·�
 
 test('하트 문항은 풀기 전에 보이는 미션 목표·하루의 한마디에 정답을 적지 않는다', () => {
   const answerHints = {
+    'ch1-q1': ['먼저 묻', '입력 → 처리 → 출력', '말하기를'],
+    'ch1-q2': ['더하기', '바로', '저장해'],
     'ch1-q3': ['90°'],
     'ch1-q4': ['괄호'],
     'ch2-q1': ['≥', '>'],
