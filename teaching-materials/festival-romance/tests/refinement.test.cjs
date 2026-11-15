@@ -123,3 +123,17 @@ test('채점 선택지는 정답 보기만 유독 길지 않다(오답 평균의
     assert.ok(ratio >= 0.75 && ratio <= 1.25, `${id} 정답 길이 비율 ${ratio.toFixed(2)}`);
   }
 });
+
+test("대화형 문항(style:'chat')은 단계마다 정답 1개·보기 3~4개·오답마다 이유가 있다", () => {
+  const chats = [ch1, ch2, ch3].flatMap((ch) => ch.scenes)
+    .flatMap((s) => [s.quiz, s.goal?.chat].filter((q) => q && q.style === 'chat').map((q) => [s.questionId, q]));
+  for (const [id, q] of chats) {
+    assert.ok(Array.isArray(q.steps) && q.steps.length >= 1, `${id} 단계 1개 이상`);
+    q.steps.forEach((step, i) => {
+      assert.ok(step.prompt && !/\{\{/.test(step.prompt), `${id}:${i} 질문(변수 없는 평문)`);
+      assert.ok(step.choices.length >= 3 && step.choices.length <= 4, `${id}:${i} 보기 3~4개`);
+      assert.equal(step.choices.filter((c) => c.correct).length, 1, `${id}:${i} 정답 1개`);
+      for (const c of step.choices.filter((x) => !x.correct)) assert.ok(c.why, `${id}:${i}:${c.key} 오답 이유`);
+    });
+  }
+});

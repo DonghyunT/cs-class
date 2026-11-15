@@ -429,3 +429,10 @@ dialog::backdrop{background:#202a3b68}
 .arrange-moves button{min-width:44px;min-height:44px;border:1px solid #bda485;border-radius:6px;background:#fffdf8;font-size:18px}
 .arrange-sim{margin-top:12px}
 @media (max-width:480px){.arrange-row{font-size:16px;gap:6px}}
+.chat-log{display:grid;gap:8px;margin-bottom:12px}
+.chat-bubble{margin:0;max-width:85%;padding:10px 14px;border-radius:14px;font-size:18px;line-height:1.5;overflow-wrap:anywhere}
+.chat-haru{justify-self:start;background:#fff1f3;border:1px solid #e7b9c3;border-bottom-left-radius:4px}
+.chat-me{justify-self:end;background:#e9eef8;border:1px solid #b9c4da;border-bottom-right-radius:4px}
+.chat-replies{display:grid;gap:8px}
+.chat-reply{min-height:44px;width:100%;text-align:left;padding:10px 14px;border:1.5px solid #cab69a;border-radius:8px;background:#fffdf8;font-size:17px;line-height:1.45}
+.chat-reply[data-wrong="true"]{border-color:#c25b5b;background:#fbeaea;text-decoration:line-through}

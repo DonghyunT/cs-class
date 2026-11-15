@@ -78,8 +78,38 @@
     }));
   }
 
-  renderers.quiz=({root,$,M,ctx,show})=>{
+  // 하루와 주고받는 대화형 선택. 단계마다 보기 순서를 섞고, 틀리면 그 단계만 다시 고릅니다.
+  function chatSteps(host,{M,steps,seedBase,onWrong,onStepRight,onAllRight}){
+    let i=0;
+    host.innerHTML='<div class="chat-log" aria-live="polite"></div><div class="chat-replies" role="group" aria-label="하루에게 할 대답"></div>';
+    const log=host.querySelector('.chat-log'),box=host.querySelector('.chat-replies');
+    const bubble=(who,text)=>{const p=document.createElement('p');p.className='chat-bubble chat-'+who;p.textContent=text;log.appendChild(p);};
+    const step=()=>{
+      const s=steps[i],choices=Array.isArray(s.choices)?s.choices:[];
+      bubble('haru',s.prompt);
+      box.innerHTML=M.seededOrder(seedBase+':'+i,choices.length).map(ci=>{const c=choices[ci];return '<button type="button" class="chat-reply" data-chat-choice="'+escape(String(c.key??ci))+'">'+escape(c.label)+'</button>';}).join('');
+      box.querySelectorAll('[data-chat-choice]').forEach(btn=>btn.onclick=()=>{
+        const g=M.gradeQuizAnswer(s,btn.dataset.chatChoice);
+        if(!g.correct){btn.dataset.wrong='true';btn.disabled=true;onWrong(g.why,g.choice);return;}
+        bubble('me',g.choice?.label||btn.textContent);
+        if(g.choice?.reply)bubble('haru',g.choice.reply);
+        box.innerHTML='';
+        i++;
+        if(i<steps.length){onStepRight?.(i);step();}else onAllRight(g.choice);
+      });
+    };
+    step();
+  }
+  renderers.quiz=({root,$,M,ctx,show,hide})=>{
     const q=ctx.scene?.quiz||{};
+    if(q.style==='chat'){
+      root.innerHTML='<div class="board chat-board" id="chat-host"></div>'+result();
+      chatSteps($('chat-host'),{M,steps:q.steps||[],seedBase:ctx.scene?.questionId||ctx.scene?.id||'',
+        onWrong:(why,choice)=>show('<strong>다시 생각해 보자!</strong><span class="explanation">'+escape(why)+'</span>',{valid:false,failWhy:why,failExpr:choice?.expression||4}),
+        onStepRight:()=>hide(false),
+        onAllRight:()=>show('<strong>'+escape(q.successTitle||'통했다!')+'</strong><span class="explanation">'+escape(q.explain||'하루가 고개를 끄덕였어요.')+'</span>',{valid:true,story:q.storyPatch,values:q.values})});
+      return;
+    }
     const isShort=q.inputType==='short';
     const choices=Array.isArray(q.choices)?q.choices:[];
     const letters=['A','B','C','D','E'];
