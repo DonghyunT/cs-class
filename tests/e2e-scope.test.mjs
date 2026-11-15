@@ -96,6 +96,13 @@ test("matchLesson matches lesson specific files accurately", () => {
   assert.deepEqual(matchLessons("src/components/student/use-work.ts"), []);
   assert.equal(matchLesson("src/components/student/use-work.ts"), null);
   assert.equal(matchLesson("src/components/student/lesson-editor.tsx"), null);
+  for (const file of ["src/components/student/review/festival.tsx", "src/lib/classroom/review/festival-embed.ts", "src/lib/classroom/review/festival-report.ts",
+    "public/festival-romance.html", "teaching-materials/festival-romance/src/app.js", "teaching-materials/festival-romance/src/chapters/ch1.cjs",
+    "tests/festival-project.test.ts", "tests/review-festival.spec.ts"]) {
+    assert.deepEqual(matchLessons(file), ["review-festival"], file);
+  }
+  // The original game lesson page is not the classroom's frame.
+  assert.deepEqual(matchLessons("public/festival-lesson.html"), []);
 });
 
 test("selectE2E classifies empty or invalid inputs as full", () => {
@@ -122,6 +129,11 @@ test("selectE2E classifies single lesson changes as affected", () => {
   assert.deepEqual(flowchart.lessonIds, ["review-flowchart"]);
   assert.ok(flowchart.testFiles.includes("tests/review-flowchart.spec.ts"));
   assert.ok(flowchart.testFiles.includes("tests/review-practice-ui.spec.ts"));
+
+  const festival = selectE2E(["src/components/student/review/festival.tsx", "teaching-materials/festival-romance/src/app.js"]);
+  assert.equal(festival.mode, "affected");
+  assert.deepEqual(festival.lessonIds, ["review-festival"]);
+  assert.deepEqual(festival.testFiles, ["tests/review-festival.spec.ts", "tests/teacher-lesson-preview.spec.ts"]);
 
   // The shared Entry practice screen selects every Entry lesson's tests.
   const programming = selectE2E(["src/components/student/programming-lesson.tsx"]);
