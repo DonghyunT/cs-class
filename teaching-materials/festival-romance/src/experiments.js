@@ -242,6 +242,14 @@
     const rows=[[pick('outer')+' 안의 '+inner+'번 반복','불꽃 '+fires+'번 발사'],[pick('counter'),'[카운터]: '+counter],[pick('ending'),loopTimes?'드론 '+loopTimes+'번 반짝인 뒤 다음 줄로':'드론이 끝없이 반짝임(아래 줄로 못 감)']];
     return simLog(rows,'제어반: 불꽃 '+fires+'번 · 카운터 '+counter+(loopTimes?' · "점등 완료!"':' · "점등 완료!" 안 뜸'));
   };
+  arrangeSims.share=({picks,goal})=>{
+    const pick=id=>{const b=goal.blocks.find(v=>v.id===id);return b?.choices?b.choices[picks[id]??b.initialChoice??0]:b?.label;};
+    const mine=9;let haru=7;const rows=[[pick('mine'),'[내 티켓]: 9'],[pick('haru'),'[하루 티켓]: 7']];
+    haru=/더하기/.test(pick('spend'))?haru-2:-2;rows.push([pick('spend'),'[하루 티켓]: '+haru]);
+    const s=pick('share');const share=/÷ 2/.test(s)?(mine+haru)/2:/\+/.test(s)?mine+haru:8;
+    rows.push([s,'[한 사람 몫]: '+share]);
+    return simLog(rows,'티켓 나누기 화면: "'+share+'장씩!" (지금 티켓: 나 '+mine+'장 · 하루 '+haru+'장)');
+  };
   arrangeSims.welcome=({order,ctx,goal})=>{
     const label=Object.fromEntries(goal.blocks.map(b=>[b.id,b.label]));
     const nick=ctx.state?.nickname||'나';

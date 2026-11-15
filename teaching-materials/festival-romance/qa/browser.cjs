@@ -647,17 +647,14 @@ async function playChapterToEnd(page, chapterId, {
       await page.keyboard.press('ArrowRight'); // 실제 키보드 → 키 신호로 실행
       await waitForActivityPass(page);
 
-      await enterExp('ch1-6'); // math
-      await page.locator('#run').click(); // 괄호 없이 실행 → 9.5 버그 재현
+      await enterExp('ch1-6'); // 티켓 나누기: 숫자 대신 변수로 계산(표기 바꾸기 블록판)
+      await page.locator('#run-arrange').click(); // 고치기 전 → 버그 재현(8장씩)
       await waitForRepro(page, '티켓 나누기 버그 재현');
-      assert.match(await page.locator('#math-steps').innerText(), /9 ÷ 2 = 4\.5/);
-      await page.locator('[data-math-gap="0"]').click();
-      await page.locator('[data-math-gap="3"]').click();
-      await page.locator('[data-math-gap="3"]').click();
-      await page.locator('#run').click();
-      assert.match(await page.locator('#math-steps').innerText(), /5 \+ 9 = 14/);
-      await page.locator('[data-chat-choice="half"]').click(); // 3.5번 → 몫·나머지 오답
+      assert.match(await page.locator('.sim-screen').innerText(), /"8장씩!"/);
+      await page.locator('[data-arrange-choice="share"]').click(); // 합계만(나누기 없음) → 오답
+      await page.locator('#run-arrange').click();
       await waitForActivityFail(page);
+      assert.match(await page.locator('.sim-screen').innerText(), /"14장씩!"/);
 
       await enterExp('ch2-2'); // compare
       await page.locator('#run').click(); // > 그대로 → 버그 재현
@@ -772,29 +769,21 @@ async function playChapterToEnd(page, chapterId, {
       await waitForActivityPass(page);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, '390px 터치 순서 바꾸기 가로 넘침 없음');
 
-      // 티켓 나누기 대화에 둘째 턴을 붙여 2턴 규칙 확인(1턴 정답·2턴 오답 → 하트 잃음, 2턴만 다시)
-      await page.evaluate(() => {
-        const sc = window.FESTIVAL_CHAPTERS[0].scenes.find((s) => s.id === 'ch1-6');
-        sc.goal.chat.steps.push({ prompt: '남은 1장은 어떻게 해?', choices: [
-          { key: 'keep', label: '다음 게임 때 쓰려고 남겨 둬.', correct: true },
-          { key: 'tear', label: '반으로 찢어서 반 판만 해.', why: '티켓은 나눌 수 없어요.' },
-          { key: 'lose', label: '1장은 그냥 사라져 버려.', why: '나머지는 남아 있어요.' },
-        ] });
-      });
-      await jump('ch1-6');
-      await page.locator('[data-math-gap="0"]').click();
-      await page.locator('[data-math-gap="3"]').click();
-      await page.locator('[data-math-gap="3"]').click();
-      await page.locator('#run').click();
-      await page.locator('[data-chat-choice="three-one"]').click();
+      // 2장 3번 대화(2턴): 1턴 정답·2턴 오답 → 하트 잃음, 2턴만 다시
+      await jump('ch2-3');
+      const chat = (await currentSceneData(page)).quiz;
+      const ok0 = chat.steps[0].choices.find((c) => c.correct).key;
+      const bad1 = chat.steps[1].choices.find((c) => !c.correct).key;
+      const ok1 = chat.steps[1].choices.find((c) => c.correct).key;
+      await page.locator(`[data-chat-choice="${ok0}"]`).click();
       assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('chat-reply')), true, '대화 정답 뒤 초점이 다음 답 버튼으로');
-      await page.locator('[data-chat-choice="tear"]').click();
+      await page.locator(`[data-chat-choice="${bad1}"]`).click();
       await waitForActivityFail(page);
-      assert.equal(await page.locator('[data-chat-choice="three-one"]').count(), 0, '1턴은 다시 묻지 않음');
-      assert.equal(await page.locator('[data-chat-choice="tear"]').isDisabled(), true);
-      await page.locator('[data-chat-choice="keep"]').click();
+      assert.equal(await page.locator(`[data-chat-choice="${ok0}"]`).count(), 0, '1턴은 다시 묻지 않음');
+      assert.equal(await page.locator(`[data-chat-choice="${bad1}"]`).isDisabled(), true);
+      await page.locator(`[data-chat-choice="${ok1}"]`).click();
       await waitForActivityPass(page);
-      const run = await page.evaluate(() => JSON.parse(localStorage.getItem('festival-romance.game.v2')).activeRuns['1'].solvedThisRun['ch1-q4']);
+      const run = await page.evaluate(() => JSON.parse(localStorage.getItem('festival-romance.game.v2')).activeRuns['2'].solvedThisRun['ch2-q2']);
       assert.equal(run.solved && run.firstAttempt, false, '2턴 오답 뒤 정답은 하트 없음');
       await ctx.close();
       checks.push('2턴 대화(1턴 정답·2턴 오답 → 하트 없음, 2턴만 재도전, 초점 이동)·390px 터치 기기 키보드만으로 순서 바꾸기 확인');

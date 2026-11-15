@@ -43,7 +43,7 @@ test('개편된 3챕터에는 optional:true 없이 1~3단원 핵심 개념 12문
       ['ch1-q1', 'arrange'],
       ['ch1-q2', 'quiz'],
       ['ch1-q3', 'map'],
-      ['ch1-q4', 'math'],
+      ['ch1-q4', 'arrange'],
       ['ch2-q1', 'compare'],
       ['ch2-q2', 'quiz'],
       ['ch2-q3', 'route'],
@@ -192,7 +192,7 @@ test('하트 문항의 도입 대사·인용·대화 질문에도 정답 단서�
     'ch1-q1': ['먼저 묻', '입력 → 처리 → 출력', '말하기를'],
     'ch1-q2': ['더하기', '저장해'],
     'ch1-q3': ['90°'],
-    'ch1-q4': ['괄호', '(5 + 9)', '몫', '나머지'],
+    'ch1-q4': ['[내 티켓]', '÷ 2', '변수로'],
   };
   const texts = (v) => (v == null ? [] : typeof v === 'string' ? [v] : Object.values(v));
   for (const [qId, hints] of Object.entries(answerHints)) {
@@ -226,4 +226,15 @@ test('3장 엔딩 리포트에 반복 단원 핵심 정리 카드가 있고, 찐
   const end = ch3.scenes.find((s) => s.ending);
   assert.ok(Array.isArray(end.cards) && end.cards.length >= 4, '3장 핵심 정리 카드');
   assert.match(end.endings.friend.footer, /마음 선택지/, '12/12 하트 + 마음 선택지 조건');
+});
+
+test('1장 6번은 1단원 개념(변수 값이 바뀌면 계산도 바뀜)이고 괄호 우선순위·몫·나머지를 다루지 않는다', () => {
+  const sc = ch1.scenes.find((s) => s.questionId === 'ch1-q4');
+  assert.equal(sc.experiment, 'arrange');
+  assert.equal(sc.goal.fixedOrder, true, '순서 이동 없는 블록판');
+  const all = JSON.stringify(sc);
+  assert.equal(/몫과 나머지|나머지 ?\d|우선순위|괄호가 없으면/.test(all), false, '1단원 밖 내용 없음');
+  assert.match(sc.conceptTitle, /변수/);
+  const card = ch1.scenes.find((s) => s.kind === 'summary').cards.map((c) => c.join(' ')).join(' ');
+  assert.equal(/몫|나머지|우선순위/.test(card), false, '정리 카드도 1단원 범위');
 });
