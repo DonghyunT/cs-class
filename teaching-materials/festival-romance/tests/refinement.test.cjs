@@ -108,3 +108,18 @@ test('하트 문항은 풀기 전에 보이는 미션 목표·하루의 한마�
   const app = fs.readFileSync(path.join(root, 'src/app.js'), 'utf8');
   assert.match(app, /companion-note-text">\$\{escape\(interpolate\(scene\.graded\?/);
 });
+
+test('채점 선택지는 정답 보기만 유독 길지 않다(오답 평균의 ±25%)', () => {
+  const quizzes = [ch1, ch2, ch3].flatMap((ch) => ch.scenes.filter((s) => s.graded && s.quiz))
+    .flatMap((s) => (s.quiz.steps ? s.quiz.steps.map((st, i) => [`${s.questionId}:${i}`, st]) : [[s.questionId, s.quiz]]));
+  assert.ok(quizzes.length > 0);
+  for (const [id, q] of quizzes) {
+    if (!Array.isArray(q.choices) || q.choices.length < 2) continue;
+    const right = q.choices.filter((c) => c.correct);
+    const wrong = q.choices.filter((c) => !c.correct);
+    assert.equal(right.length, 1, `${id} 정답 1개`);
+    const avg = wrong.reduce((sum, c) => sum + c.label.length, 0) / wrong.length;
+    const ratio = right[0].label.length / avg;
+    assert.ok(ratio >= 0.75 && ratio <= 1.25, `${id} 정답 길이 비율 ${ratio.toFixed(2)}`);
+  }
+});

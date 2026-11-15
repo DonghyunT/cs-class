@@ -156,3 +156,13 @@ test('gradeQuizAnswer·evaluatePolygonTurn·evaluatePrizeBranches는 오개념 �
   assert.equal(m.evaluatePrizeBranches(10, tiers, 'asc').matchedTier.key, 'sticker');
   assert.equal(m.evaluatePrizeBranches(10, tiers, 'desc').matchedTier.key, 'large');
 });
+
+test('seededOrder는 같은 seed에 같은 순열을 돌려준다', () => {
+  const a = m.seededOrder('ch1-q1', 4);
+  assert.deepEqual(m.seededOrder('ch1-q1', 4), a, '같은 seed는 같은 결과');
+  assert.deepEqual([...a].sort(), [0, 1, 2, 3], '0..3의 순열');
+  assert.deepEqual(m.seededOrder('x', 0), []);
+  assert.deepEqual(m.seededOrder('x', 1), [0]);
+  // 정답이 늘 첫 칸에 있지 않도록: 지금 퀴즈 문항 중 하나 이상은 0번(정답)이 첫 칸이 아님
+  assert.ok(['ch1-q1', 'ch1-q2', 'ch3-q4'].some((id) => m.seededOrder(id, 4)[0] !== 0));
+});

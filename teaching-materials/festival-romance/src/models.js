@@ -24,6 +24,15 @@
     const backgroundPosition=r===1?`${V3_COLUMN_MAP[n]*50}% 0%`:`${(n%3)*50}% ${Math.floor(n/3)*100}%`;
     return {expression:n,rows:r,backgroundSize,backgroundPosition,label:`하루 · ${EXPRESSION_LABELS[n]}`};
   }
+  // 문항 id로 늘 같은 보기 순서를 만듭니다(정답이 한 자리에 몰리지 않게, 새로고침해도 그대로).
+  function seededOrder(seed,length){
+    let h=2166136261;
+    for(const ch of String(seed))h=Math.imul(h^ch.charCodeAt(0),16777619)>>>0;
+    const next=()=>{h=(h+0x6D2B79F5)>>>0;let t=h;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};
+    const order=Array.from({length:Math.max(0,length|0)},(_,i)=>i);
+    for(let i=order.length-1;i>0;i--){const j=Math.floor(next()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
+    return order;
+  }
   function computeEndingOutcome(totalHearts,hasColdRejection){
     const hearts=Number(totalHearts)||0;
     if(hearts>=12&&!hasColdRejection)return 'some';
@@ -81,6 +90,6 @@
     EXPRESSION_LABELS,V3_COLUMN_MAP,
     boundedInteger,formatInvitation,overwriteDemo,answerDemo,moveOnMap,ticketMath,divideTickets,
     compareTicket,logicResult,chooseRoute,choosePrize,polygonTurn,polygonPath,untilTrace,incrementReady,
-    spriteCrop,computeEndingOutcome,gradeQuizAnswer,evaluatePolygonTurn,evaluatePrizeBranches
+    spriteCrop,seededOrder,computeEndingOutcome,gradeQuizAnswer,evaluatePolygonTurn,evaluatePrizeBranches
   };
 });

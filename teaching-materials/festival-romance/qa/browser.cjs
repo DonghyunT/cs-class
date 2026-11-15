@@ -353,6 +353,12 @@ async function playChapterToEnd(page, chapterId, {
 
       // In ch1-2 (ch1-q1): intentionally fail first attempt, test anti-cheat reload & back button
       await advanceDialogue(page);
+      const quizOrder = await page.evaluate(() => [...document.querySelectorAll('[data-quiz-choice]')].map((b) => b.dataset.quizChoice));
+      const seededQuizOrder = await page.evaluate(() => {
+        const keys = ['ipo', 'lang', 'outfirst', 'terms'];
+        return window.FestivalModels.seededOrder('ch1-q1', keys.length).map((i) => keys[i]);
+      });
+      assert.deepEqual(quizOrder, seededQuizOrder, '퀴즈 보기 순서를 문항별 seed로 섞음');
       await page.locator('[data-quiz-choice="lang"]').click();
       await waitForActivityFail(page);
       assert.match(await page.locator('#result').innerText(), /프로그래밍 언어/);
