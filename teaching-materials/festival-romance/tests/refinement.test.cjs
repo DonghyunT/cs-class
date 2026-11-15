@@ -140,3 +140,53 @@ test("대화형 문항(style:'chat')은 단계마다 정답 1개·보기 3~4개�
     });
   }
 });
+
+test('첫 화면 하루 문구는 R1 결정 문장이다', () => {
+  const shell = fs.readFileSync(path.join(root, 'src/shell.html'), 'utf8');
+  assert.ok(shell.includes('버그 좀 같이 잡아 줄래? …끝나면, 축제도 같이 돌자.'), 'R1 문구');
+  assert.equal(shell.includes('실력 좀 빌려줄래'), false, '옛 문구 제거');
+});
+
+test('ch1-q3 도입 증상은 처음 설정(시작하기 버튼 신호·0°)으로 실제 일어나는 일과 맞다', () => {
+  const sc = ch1.scenes.find((s) => s.questionId === 'ch1-q3');
+  assert.equal(sc.goal.initialEvent, 'start');
+  assert.equal(sc.goal.initialAngle, 0);
+  assert.match(sc.quote, /시작 버튼.*하늘/, '시작 버튼 → 위(하늘)로 감');
+  assert.match(sc.quote, /→ 키.*먹통/, '→ 키 → 연결 안 됨');
+  for (const line of sc.flow.intro.filter((l) => l.role === 'haru')) {
+    for (const t of typeof line.text === 'string' ? [line.text] : Object.values(line.text)) {
+      assert.equal(/시작 버튼[^,.]*(안 움직|먹통)/.test(t), false, `시작 버튼이 먹통이라는 옛 증상: ${t}`);
+    }
+  }
+});
+
+test('ch1-q2는 장소를 먼저 묻고 저장해도 결과가 맞으면 정답이다', () => {
+  const goal = ch1.scenes.find((s) => s.questionId === 'ch1-q2').goal;
+  assert.deepEqual(M.evaluateArrange(['askPlace', 'setPlace', 'askName', 'setName', 'base', 'bonus'], goal, { bonus: 1 }), { correct: true, firstWrongId: null });
+  assert.deepEqual(M.evaluateArrange(['base', 'bonus', 'askName', 'setName', 'askPlace', 'setPlace'], goal, { bonus: 1 }), { correct: true, firstWrongId: null });
+  assert.equal(M.evaluateArrange(['askName', 'askPlace', 'setName', 'setPlace', 'base', 'bonus'], goal, { bonus: 1 }).correct, false, '대답 덮어쓰기 버그');
+  assert.equal(M.evaluateArrange(['askPlace', 'askName', 'setPlace', 'setName', 'base', 'bonus'], goal, { bonus: 1 }).correct, false, '장소 먼저여도 덮어쓰기 버그');
+});
+
+test('1장 1번은 우리말 메모를 프로그래밍 언어로 설명하지 않는다', () => {
+  const q1 = ch1.scenes.find((s) => s.questionId === 'ch1-q1');
+  const card = ch1.scenes.find((s) => s.kind === 'summary').cards[0][1];
+  for (const t of [q1.observe, q1.teacher.answer, card]) {
+    assert.equal(/서로 다른 언어|다른 언어로|메모든 엔트리 블록이든 같은 명령/.test(t), false, `메모=언어 오개념: ${t}`);
+  }
+});
+
+test('하트 문항의 도입 대사·인용·대화 질문에도 정답 단서가 없다', () => {
+  const answerHints = {
+    'ch1-q1': ['먼저 묻', '입력 → 처리 → 출력', '말하기를'],
+    'ch1-q2': ['더하기', '저장해'],
+    'ch1-q3': ['90°'],
+    'ch1-q4': ['괄호', '(5 + 9)', '몫', '나머지'],
+  };
+  const texts = (v) => (v == null ? [] : typeof v === 'string' ? [v] : Object.values(v));
+  for (const [qId, hints] of Object.entries(answerHints)) {
+    const sc = ch1.scenes.find((s) => s.questionId === qId);
+    const pre = [sc.quote, ...(sc.flow.intro || []).flatMap((l) => texts(l.text)), ...((sc.goal?.chat?.steps || sc.quiz?.steps || []).map((st) => st.prompt))];
+    for (const t of pre) for (const h of hints) assert.equal(t.includes(h), false, `${qId} 풀기 전 문구에 정답 단서 '${h}': ${t}`);
+  }
+});

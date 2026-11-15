@@ -12,13 +12,13 @@
 ## 2. 번들 산출물 및 검증 기록
 
 - **산출물 무결성 ([qa/build-manifest.json](qa/build-manifest.json)):**
-  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `15,186,758` bytes, SHA-256 `3c28d0c0cf50d335f7004f303c319bc967d820affedf9f24e09a26371223583b`
+  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `15,188,708` bytes, SHA-256 `67b3c683a790627fc0d8a38f7ec4c7e82dbdb7bfe9dbe168288e6fb6e2e7fea8`
   - `public/festival-lesson.html` ≡ `dist/festival-lesson.html`: SHA-256 `8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c430b5` (원본 27장면 불변, 10/19 기준 검증은 [제작·검수 기록](제작-검수-기록.md))
-- **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 35/35 통과
-  - `models.test.cjs` (13), `state.test.cjs` (7), `package.test.cjs` (3), `journey.test.cjs` (5), `refinement.test.cjs` (7)
-  - 하트 문항 9개(`ch1-q3`·`ch1-q4`·`ch2-q1`~`q4`·`ch3-q1`~`q3`)의 미션 목표·주인공/하루 도입 대사는 고칠 방법 대신 목표만 말하고, 하루의 한마디는 풀기 전엔 중립 문구, 정답 뒤에 개념 요약(`observe`)을 보여 줍니다(`refinement.test.cjs`가 정답 단서 재유입을 막음). 파이썬 문자열 금지, 정답 보기 길이 오답 평균 ±25%, 대화형 문항 구조, 남녀 대사 구조도 테스트합니다.
-- **Playwright 브라우저 QA (`node teaching-materials/festival-romance/qa/browser.cjs`):** 9항목 통과 (`errors: []`, `consoleErrors: []`, `remoteRequests: 0`)
-  - 학생 모드 은닉·순차 해금, 첫 시도 하트 규칙·오답 재도전 0하트·새로고침/이전버튼 치트 방지(`festival-romance.game.v2`), 12문항 완주 및 3갈래 엔딩(`11/12 찐친`, `12/12+cold 찐친`→재도전 `썸 시작`, `≤6 어색한 사이`), `이미 본 대사 건너뛰기`, 모바일 `390×844` 가로 넘침 0건(순서 바꾸기를 버튼만으로 완료), 새 학생 챕터 카드 숨김·예전 저장 이어하기, 대사 한 줄 이전(버튼·← 키)·응답→선택지·결과→활동 재풀이 하트 불변, 남녀 말투 전환, `?mode=teacher` 전 시뮬레이터 오답 힌트, `?embed=1` (`127.0.0.1` 동일 출처 HTTP 호스트에서 `postMessage` `festival:init`/`festival:state`/`festival:complete` 및 `localStorage` 0회 접근 확인), 원본 `festival-lesson.html` 27장면 무오류 로드 확인.
+- **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 41/41 통과
+  - `models.test.cjs` (13), `state.test.cjs` (7), `package.test.cjs` (3), `journey.test.cjs` (6), `refinement.test.cjs` (12)
+  - 하트 문항 11개(`ch1-q1`~`q4`·`ch2-q1`~`q4`·`ch3-q1`~`q3`)의 미션 목표와 1장 도입 대사·인용·대화 질문은 고칠 방법 대신 목표만 말하고, 하루의 한마디는 풀기 전엔 중립 문구, 정답 뒤에 개념 요약(`observe`)을 보여 줍니다(`refinement.test.cjs`가 정답 단서 재유입을 막음). 파이썬 문자열 금지, 정답 보기 길이 오답 평균 ±25%, 대화형 문항 구조, 남녀 대사 구조도 테스트합니다.
+- **Playwright 브라우저 QA (`node teaching-materials/festival-romance/qa/browser.cjs`):** 10항목 통과 (`errors: []`, `consoleErrors: []`, `remoteRequests: 0`)
+  - 학생 모드 은닉·순차 해금, 첫 시도 하트 규칙·오답 재도전 0하트·새로고침/이전버튼 치트 방지(`festival-romance.game.v2`), 12문항 완주 및 3갈래 엔딩(`11/12 찐친`, `12/12+cold 찐친`→재도전 `썸 시작`, `≤6 어색한 사이`), `이미 본 대사 건너뛰기`, 모바일 `390×844` 가로 넘침 0건(순서 바꾸기를 버튼만으로 완료), 새 학생 챕터 카드 숨김·예전 저장 이어하기, 대사 한 줄 이전(버튼·← 키)·응답→선택지·결과→활동 재풀이 하트 불변, 남녀 말투 전환, 2턴 대화(1턴 정답·2턴 오답 → 하트 없음, 2턴만 재도전, 초점 이동)·390px 터치 기기 키보드만으로 순서 바꾸기, 길 안내 실제 방향키·44px 버튼, 이미 푼 문항 재오답 시 기록·안내 없음, `?mode=teacher` 전 시뮬레이터 오답 힌트, `?embed=1` (`127.0.0.1` 동일 출처 HTTP 호스트에서 `postMessage` `festival:init`/`festival:state`/`festival:complete` 및 `localStorage` 0회 접근 확인), 원본 `festival-lesson.html` 27장면 무오류 로드 확인.
 - **Playwright 재생 QA (`node teaching-materials/festival-romance/qa/playback-app.cjs`):** 8항목 통과 (`reducedMotion: 'reduce'` / `'no-preference'` 조명 4회·다각형 3/4/6종·일시정지/재개·내각 함정·모달 보류·장면 이탈 정리·앱 메시지 UI·`390×844`·원본 27장면 무오류 로드)
 - **시각 검수(`teaching-materials/festival-romance/qa-results/`):** 데스크톱(`1366×768`) 3갈래 엔딩·퀴즈 오답·마음 선택지·임베드·교사 메모·원본 수업, 모바일(`390×844`), `expressions-v3-{boy,girl}.png` 및 `playback-*.png` 확인.
   - 경미한 시각 메모: `390px`에서 하트 획득/실패 일시 배지(`.heart-delta`)가 상단 안내 줄 위로 잠깐 겹치고, `girl` v3 슬롯 1 좌측 끝에 1px 미세 인접 프레임 경계가 보이나 최종 3×2 시트 교체 시 해소될 범위입니다.

@@ -373,7 +373,9 @@
       if(noteText){
         noteText.textContent=interpolate(activeScene.flow?.wrongReaction?.line||'어라…? 왜 이렇게 나왔지? 아래 오개념 힌트를 보고 다시 풀어 보자!');
       }
-      if(activeScene.graded){
+      // 이번 회차에 이미 푼 문항(이전 버튼으로 돌아와 다시 푸는 중)은 기록·'첫 시도 실패' 안내 없이 다시 풀게 합니다.
+      const alreadySolved=Boolean(state.activeRuns?.[activeChapter.id]?.solvedThisRun?.[qId]?.solved);
+      if(activeScene.graded&&!alreadySolved){
         S.recordQuestionAttempt(state,activeChapter.id,qId,{correct:false,conceptTitle,wrongWhy:whyMessage});
         record();
         renderHeartHud({deltaText:'♡ 첫 시도 실패 · 다시 풀면 통과!',deltaKind:'is-miss'});

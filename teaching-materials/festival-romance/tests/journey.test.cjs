@@ -171,7 +171,16 @@ test('성별 대사 객체는 text·line에만, 두 키 모두, 같은 {{변수}
     for (const [k, v] of Object.entries(value)) walk(v, k, `${where}.${k}`);
   };
   for (const ch of chapters) walk(ch, null, ch.id);
-  // 구조 검사가 실제로 무언가를 검사하는지 확인(과제 7 이후 1장에 성별 대사가 생김)
-  assert.equal(typeof S.variantText, 'function');
-  return found;
+  assert.ok(found.length > 0, '성별 대사 객체가 실제로 있어야 구조 검사가 의미 있음');
+});
+
+test('1장 하루의 감정 대사(본편 대사·응답·도입·성공 반응)는 모두 남녀 두 가지다', () => {
+  const plain = [];
+  for (const sc of ch1.scenes) {
+    const groups = [sc.lines, ...(sc.choices || []).map((c) => c.reply), sc.flow?.intro, sc.flow?.firstTrySuccess, sc.flow?.retrySuccess];
+    for (const g of groups.filter(Array.isArray)) {
+      for (const line of g) if (line.role === 'haru' && typeof line.text === 'string') plain.push(`${sc.id}: ${line.text}`);
+    }
+  }
+  assert.deepEqual(plain, [], '남녀로 나뉘지 않은 하루 대사');
 });

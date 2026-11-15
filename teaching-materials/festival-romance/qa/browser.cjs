@@ -117,22 +117,29 @@ async function currentSceneData(page) {
   return scene;
 }
 
-// 블록 순서 바꾸기: ↑ 버튼과 표기 버튼만으로 첫 허용 순서를 만든 뒤 실행
-async function solveArrange(page) {
+// 블록 순서 바꾸기: ↑ 버튼과 표기 버튼만으로 첫 허용 순서를 만든 뒤 실행(keyboard면 초점+Enter만 사용)
+async function solveArrange(page, { keyboard = false } = {}) {
+  const press = async (selector) => {
+    if (!keyboard) return page.locator(selector).click();
+    await page.locator(selector).focus();
+    await page.keyboard.press('Enter');
+  };
   const { goal } = await currentSceneData(page);
   const target = goal.acceptOrders[0];
   for (let i = 0; i < target.length; i++) {
     const order = await page.evaluate(() => [...document.querySelectorAll('.arrange-row')].map((r) => r.dataset.blockId));
     for (let j = order.indexOf(target[i]); j > i; j--) {
-      await page.locator(`[data-arrange-move="-1"][data-id="${target[i]}"]`).click();
+      await press(`[data-arrange-move="-1"][data-id="${target[i]}"]`);
     }
   }
+  const picksNow = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('[data-arrange-choice]')].map((b) => [b.dataset.arrangeChoice, b.textContent])));
   for (const [id, want] of Object.entries(goal.expectedChoices || {})) {
     const block = goal.blocks.find((b) => b.id === id);
-    const steps = (want - (block.initialChoice ?? 0) + block.choices.length) % block.choices.length;
-    for (let k = 0; k < steps; k++) await page.locator(`[data-arrange-choice="${id}"]`).click();
+    const now = Math.max(0, block.choices.findIndex((c) => (picksNow[id] || '').startsWith(c)));
+    const steps = (want - now + block.choices.length) % block.choices.length;
+    for (let k = 0; k < steps; k++) await press(`[data-arrange-choice="${id}"]`);
   }
-  await page.locator('#run-arrange').click();
+  await press('#run-arrange');
 }
 
 async function solveCurrentChallenge(page, { meetingTime = '16:00', polygonAngle = '60', finish = true } = {}) {
@@ -332,6 +339,7 @@ async function playChapterToEnd(page, chapterId, {
       await page.locator('[data-close="settings-dialog"]').click();
 
       assert.equal(await page.locator('#chapter-list').isVisible(), false, '새 학생은 챕터 카드 숨김(새 이야기 시작으로만 진입)');
+      assert.equal(await page.locator('#previous-button').getAttribute('aria-label'), '이전', '이전 버튼 이름(한 줄 또는 이전 장면)');
       assert.equal(await page.locator('#resume-button').isVisible(), false, '새 학생은 이어하기 숨김');
       assert.equal(await page.locator('.title-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 100%');
       await page.screenshot({ path: path.join(resultsDir, 'v2-title-1366.png') });
@@ -443,6 +451,10 @@ async function playChapterToEnd(page, chapterId, {
       assert.equal(await page.locator('#experiment').count(), 0, '결과 대사로 이동');
       await page.locator('#previous-button').click();
       assert.equal(await page.locator('#experiment').count(), 1, '결과 대사에서 이전 → 활동 화면');
+      await page.locator('#run-arrange').click(); // 이미 푼 문항을 다시 틀려도
+      await waitForActivityFail(page);
+      assert.equal(await page.locator('#total-hearts').innerText(), '총 ♥ 1/12', '이미 얻은 하트 유지');
+      assert.equal(/첫 시도 실패/.test(await page.locator('#heart-delta').innerText()), false, '이미 푼 문항에 첫 시도 실패 안내 없음');
       await solveCurrentChallenge(page, { meetingTime: '16:00' });
       assert.equal(await page.locator('#total-hearts').innerText(), '총 ♥ 1/12', '되돌아가 다시 풀어도 하트 그대로');
 
@@ -595,6 +607,14 @@ async function playChapterToEnd(page, chapterId, {
       await page.locator('[data-key="ArrowRight"]').click(); // 방향 0° 그대로 → 방향각 오답
       await waitForActivityFail(page);
       assert.match(await page.locator('#result').innerText(), /0°는 위쪽/);
+      const smallTargets = await page.evaluate(() => [...document.querySelectorAll('.map-chip, .map-controls button, #start-map')]
+        .map((b) => b.getBoundingClientRect()).filter((r) => r.width < 44 || r.height < 44).length);
+      assert.equal(smallTargets, 0, '길 안내 버튼은 모두 44px 이상');
+      await page.locator('[data-map-angle="90"]').click();
+      await page.keyboard.press('ArrowLeft'); // 연결 안 된 신호: 활동을 벗어나지 않음
+      assert.equal(await page.locator('#experiment').count(), 1, '← 키가 활동을 벗어나지 않음');
+      await page.keyboard.press('ArrowRight'); // 실제 키보드 → 키 신호로 실행
+      await waitForActivityPass(page);
 
       await enterExp('ch1-6'); // math
       await page.locator('#run').click(); // 괄호 없이 실행 → 9.5
@@ -658,6 +678,50 @@ async function playChapterToEnd(page, chapterId, {
 
       await ctx.close();
       checks.push('교사 모드(?mode=teacher)·전 시뮬레이터 오답 힌트·어색한 사이(<=6/12) 엔딩·엔딩 미리보기 확인');
+    }
+
+    // 3b. 2턴 대화 하트 규칙·초점, 390px 터치 기기에서 키보드만으로 순서 바꾸기
+    {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: 'reduce' });
+      const page = await ctx.newPage();
+      attachGuards(page, errors, consoleErrors, remote);
+      await page.goto(`${romanceUrl}?mode=teacher`);
+      const jump = async (id) => {
+        await page.locator('#contents-button').click();
+        await page.locator(`[data-scene="${id}"]`).click();
+        await advanceDialogue(page);
+      };
+      await jump('ch1-2');
+      await solveArrange(page, { keyboard: true });
+      await waitForActivityPass(page);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, '390px 터치 순서 바꾸기 가로 넘침 없음');
+
+      // 티켓 나누기 대화에 둘째 턴을 붙여 2턴 규칙 확인(1턴 정답·2턴 오답 → 하트 잃음, 2턴만 다시)
+      await page.evaluate(() => {
+        const sc = window.FESTIVAL_CHAPTERS[0].scenes.find((s) => s.id === 'ch1-6');
+        sc.goal.chat.steps.push({ prompt: '남은 1장은 어떻게 해?', choices: [
+          { key: 'keep', label: '다음 게임 때 쓰려고 남겨 둬.', correct: true },
+          { key: 'tear', label: '반으로 찢어서 반 판만 해.', why: '티켓은 나눌 수 없어요.' },
+          { key: 'lose', label: '1장은 그냥 사라져 버려.', why: '나머지는 남아 있어요.' },
+        ] });
+      });
+      await jump('ch1-6');
+      await page.locator('[data-math-gap="0"]').click();
+      await page.locator('[data-math-gap="3"]').click();
+      await page.locator('[data-math-gap="3"]').click();
+      await page.locator('#run').click();
+      await page.locator('[data-chat-choice="three-one"]').click();
+      assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('chat-reply')), true, '대화 정답 뒤 초점이 다음 답 버튼으로');
+      await page.locator('[data-chat-choice="tear"]').click();
+      await waitForActivityFail(page);
+      assert.equal(await page.locator('[data-chat-choice="three-one"]').count(), 0, '1턴은 다시 묻지 않음');
+      assert.equal(await page.locator('[data-chat-choice="tear"]').isDisabled(), true);
+      await page.locator('[data-chat-choice="keep"]').click();
+      await waitForActivityPass(page);
+      const run = await page.evaluate(() => JSON.parse(localStorage.getItem('festival-romance.game.v2')).activeRuns['1'].solvedThisRun['ch1-q4']);
+      assert.equal(run.solved && run.firstAttempt, false, '2턴 오답 뒤 정답은 하트 없음');
+      await ctx.close();
+      checks.push('2턴 대화(1턴 정답·2턴 오답 → 하트 없음, 2턴만 재도전, 초점 이동)·390px 터치 기기 키보드만으로 순서 바꾸기 확인');
     }
 
     // 4. Embed Mode (?embed=1): data-embed=true, hidden #fullscreen, 0 localStorage, postMessage contract

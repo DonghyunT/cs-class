@@ -94,7 +94,7 @@
         if(g.choice?.reply)bubble('haru',g.choice.reply);
         box.innerHTML='';
         i++;
-        if(i<steps.length){onStepRight?.(i);step();}else onAllRight(g.choice);
+        if(i<steps.length){onStepRight?.(i);step();box.querySelector('button')?.focus();}else onAllRight(g.choice);
       });
     };
     step();
@@ -106,7 +106,7 @@
       chatSteps($('chat-host'),{M,steps:q.steps||[],seedBase:ctx.scene?.questionId||ctx.scene?.id||'',
         onWrong:(why,choice)=>show('<strong>다시 생각해 보자!</strong><span class="explanation">'+escape(why)+'</span>',{valid:false,failWhy:why,failExpr:choice?.expression||4}),
         onStepRight:()=>hide(false),
-        onAllRight:()=>show('<strong>'+escape(q.successTitle||'통했다!')+'</strong><span class="explanation">'+escape(q.explain||'하루가 고개를 끄덕였어요.')+'</span>',{valid:true,story:q.storyPatch,values:q.values})});
+        onAllRight:()=>{show('<strong>'+escape(q.successTitle||'통했다!')+'</strong><span class="explanation">'+escape(q.explain||'하루가 고개를 끄덕였어요.')+'</span>',{valid:true,story:q.storyPatch,values:q.values});ctx.focusNext?.();}});
       return;
     }
     const isShort=q.inputType==='short';
@@ -268,7 +268,7 @@
       const expectedEv=goal?.expectedEvent||'ArrowRight',expectedAng=goal?.expectedAngle??90,wh=goal?.wrongHints||{};
       let ev=goal?.initialEvent||'start',ang=Number(goal?.initialAngle??0),done=false;
       let pos={...start,direction:ang};
-      root.innerHTML=`<div class="two-columns"><div><div class="map-holder" id="map-holder" tabindex="0" data-experience="map" role="group" aria-label="길 안내 미니맵. 방향키로 신호를 보낼 수 있습니다."><div id="map" class="map-grid"></div></div><div class="map-controls" aria-label="방향키 신호 보내기"><span></span><button type="button" data-key="ArrowUp" aria-label="위쪽 화살표 키 신호">↑</button><span></span><button type="button" data-key="ArrowLeft" aria-label="왼쪽 화살표 키 신호">←</button><button type="button" data-key="ArrowDown" aria-label="아래쪽 화살표 키 신호">↓</button><button type="button" data-key="ArrowRight" aria-label="오른쪽 화살표 키 신호">→</button></div><div class="experiment-actions map-start">${button('start-map','▶ 시작하기 버튼')}</div></div><div class="board"><h3>길 안내 블록 고치기</h3><p class="form-note">① 어떤 신호를 받았을 때 움직일까?</p><div class="map-chips" role="group" aria-label="시작 신호(사건) 고르기">${Object.entries(events).map(([k,l])=>`<button type="button" class="map-chip" data-map-event="${k}" aria-pressed="${k===ev}">${escape(l)}</button>`).join('')}</div><p class="form-note">② 이동 방향은 몇 도로 정할까?</p><div class="map-chips map-compass" role="group" aria-label="이동 방향각 고르기">${[0,90,180,270].map(a=>`<button type="button" class="map-chip" data-map-angle="${a}" aria-pressed="${a===ang}">${a}°</button>`).join('')}</div><pre class="block-code" id="map-script"></pre><p class="map-info" id="map-info" role="status">블록을 고친 뒤, 연결한 신호를 직접 보내 실행해 보세요.</p></div></div>${result()}`;
+      root.innerHTML=`<div class="two-columns"><div><div class="map-holder" id="map-holder" tabindex="0" data-experience="map" role="group" aria-label="길 안내 미니맵. 방향키로 신호를 보낼 수 있습니다."><div id="map" class="map-grid"></div></div><div class="map-controls" aria-label="방향키 신호 보내기"><span></span><button type="button" data-key="ArrowUp" aria-label="위쪽 화살표 키 신호">↑</button><span></span><button type="button" data-key="ArrowLeft" aria-label="왼쪽 화살표 키 신호">←</button><button type="button" data-key="ArrowDown" aria-label="아래쪽 화살표 키 신호">↓</button><button type="button" data-key="ArrowRight" aria-label="오른쪽 화살표 키 신호">→</button></div><div class="experiment-actions map-start">${button('start-map','▶ 시작하기 버튼')}</div></div><div class="board"><h3>길 안내 블록 고치기</h3><p class="form-note">① 어떤 신호를 받았을 때 움직일까?</p><div class="map-chips" role="group" aria-label="시작 신호(사건) 고르기">${Object.entries(events).map(([k,l])=>`<button type="button" class="map-chip" data-map-event="${k}" aria-pressed="${k===ev}">${escape(l)}</button>`).join('')}</div><p class="form-note">② 이동 방향은 몇 도로 정할까?</p><div class="map-chips map-compass" role="group" aria-label="이동 방향각 고르기">${[0,90,180,270].map(a=>`<button type="button" class="map-chip" data-map-angle="${a}" aria-pressed="${a===ang}">${a}°</button>`).join('')}</div><pre class="block-code" id="map-script"></pre><p class="map-info" id="map-info" role="status">블록을 고친 뒤, 연결한 신호를 직접 보내 실행해 보세요(키보드 방향키도 돼요).</p></div></div>${result()}`;
       const draw=()=>{$('map').innerHTML=Array.from({length:25},(_,i)=>{const x=i%5,y=Math.floor(i/5),p=x===pos.x&&y===pos.y,g=x===target.x&&y===target.y;return `<div class="map-cell${p?' player':''}${g?' goal':''}"${p?' aria-label="현재 위치"':''}>${p?`<span style="transform:rotate(${pos.direction}deg)" aria-hidden="true">▲</span>`:g?'정문':''}</div>`;}).join('');};
       const script=()=>{$('map-script').textContent=`${events[ev]}\n  이동 방향을 ${ang}°로 정하기\n  3칸 움직이기`;};
       const pick=()=>{
@@ -296,12 +296,14 @@
           show(`<strong>방향각 오류 (${ang}°)</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
           return;
         }
-        done=true;
+        done=true;delete root.dataset.experience;
         root.querySelectorAll('[data-map-event],[data-map-angle],[data-key],#start-map').forEach(b=>b.disabled=true);
         $('map-info').textContent='오른쪽 화살표 키 신호로 정문에 정확히 도착했어요!';
         show('<strong>정문 도착 완료!</strong><span class="explanation">오른쪽 화살표 키 신호에 연결하고 90°로 정하니 정문까지 세 칸 정확히 움직였어요.</span>',{valid:true,key:'arrived',story:goal?.storyPatch});
       };
-      $('map-holder').onkeydown=e=>{if(e.isComposing||!e.key.startsWith('Arrow'))return;e.preventDefault();e.stopPropagation();trigger(e.key);};
+      // 활동 안 어디에 초점이 있든 방향키는 미니맵 신호입니다(대사 이동 ←/→로 새지 않게). 해결 뒤에는 대사 이동으로 돌려줍니다.
+      root.dataset.experience='map';
+      root.onkeydown=e=>{if(done||e.isComposing||!e.key.startsWith('Arrow'))return;e.preventDefault();e.stopPropagation();trigger(e.key);};
       root.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>trigger(b.dataset.key));
       $('start-map').onclick=()=>trigger('start');
       draw();script();
@@ -356,7 +358,7 @@
         chatSteps($('math-chat'),{M,steps:chat.steps,seedBase:(ctx.scene?.questionId||'math')+':chat',
           onWrong:(why,choice)=>show('<strong>다시 생각해 보자!</strong><span class="explanation">'+escape(why)+'</span>',{valid:false,failWhy:why,failExpr:choice?.expression||4}),
           onStepRight:()=>hide(false),
-          onAllRight:()=>show(`<strong>계산 성공! 한 사람당 ${fmt(expected)}장</strong><span class="explanation">${escape(chat.explain||'괄호로 덧셈을 먼저 하고, 횟수와 남는 장수는 몫과 나머지로 구했어요.')}</span>`,{valid:true,story:goal?.storyPatch})});
+          onAllRight:()=>{show(`<strong>계산 성공! 한 사람당 ${fmt(expected)}장</strong><span class="explanation">${escape(chat.explain||'괄호로 덧셈을 먼저 하고, 횟수와 남는 장수는 몫과 나머지로 구했어요.')}</span>`,{valid:true,story:goal?.storyPatch});ctx.focusNext?.();}});
       };
       return;
     }

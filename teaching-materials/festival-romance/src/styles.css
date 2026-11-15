@@ -217,8 +217,8 @@ button,select,input{accent-color:var(--navy)}
 .map-cell{display:grid;place-items:center;background:#fffaf0;border-radius:3px;font-size:14px;min-height:0}
 .map-cell.player{background:#c6d6e5;font-size:25px;color:#254367}
 .map-cell.goal{background:#ecd5a5;color:#775326;font-weight:700}
-.map-controls{display:grid;grid-template-columns:repeat(3,46px);gap:5px;justify-content:center;margin-top:10px}
-.map-controls button{min-height:40px;background:#fffaf1;border:1px solid #bca78d;border-radius:5px;font-size:20px}
+.map-controls{display:grid;grid-template-columns:repeat(3,48px);gap:5px;justify-content:center;margin-top:10px}
+.map-controls button{min-height:44px;background:#fffaf1;border:1px solid #bca78d;border-radius:5px;font-size:20px}
 .map-info{font-size:17px;line-height:1.6}
 .map-holder:focus-visible{outline:3px solid #99542c;outline-offset:5px;border-radius:7px}
 .light-row{display:flex;justify-content:center;gap:12px;padding:12px 0}
@@ -444,7 +444,7 @@ dialog::backdrop{background:#202a3b68}
 .sim-effect{margin-left:6px;color:#2f5f8a;font-weight:600}
 .sim-screen{margin:8px 0 0;padding:8px 12px;border-radius:8px;background:#222b3c;color:#fffaf1;font-size:16px;overflow-wrap:anywhere}
 .map-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
-.map-chip{min-height:44px;padding:6px 12px;border:1.5px solid #bda485;border-radius:20px;background:#fffdf8;font-size:16px}
+.map-chip{min-height:44px;min-width:44px;padding:6px 12px;border:1.5px solid #bda485;border-radius:20px;background:#fffdf8;font-size:16px}
 .map-chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fffaf1}
 .map-start{justify-content:center}
 .math-formula{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:26px;margin:8px 0}
