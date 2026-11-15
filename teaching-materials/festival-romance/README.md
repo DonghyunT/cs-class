@@ -12,7 +12,7 @@
   - `src/`: [shell.html](src/shell.html), [styles.css](src/styles.css), [models.js](src/models.js), [state.js](src/state.js), [experiments.js](src/experiments.js), [app.js](src/app.js)
   - `src/chapters/`: [ch1.cjs](src/chapters/ch1.cjs), [ch2.cjs](src/chapters/ch2.cjs), [ch3.cjs](src/chapters/ch3.cjs)
   - 빌드 스크립트: [build.cjs](build.cjs) (자산 인라인, PNG IHDR 기반 `FESTIVAL_SPRITE_ROWS` 자동 감지, `qa/build-manifest.json` 생성)
-- **개편 설계 문서:** [festival-romance-review-game.md](../../docs/plans/festival-romance-review-game.md)
+- **개편 설계 문서:** [festival-romance-review-game.md](../../docs/archive/cs-class/2026-11-15-completed-plans/festival-romance-review-game.md)
 
 ## 챕터·평가·엔딩 규칙
 
