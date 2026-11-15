@@ -45,13 +45,13 @@ test('개편된 3챕터에는 optional:true 없이 1~3단원 핵심 개념 12문
       ['ch1-q3', 'map'],
       ['ch1-q4', 'math'],
       ['ch2-q1', 'compare'],
-      ['ch2-q2', 'and'],
+      ['ch2-q2', 'quiz'],
       ['ch2-q3', 'route'],
       ['ch2-q4', 'prize'],
       ['ch3-q1', 'count'],
       ['ch3-q2', 'polygon'],
       ['ch3-q3', 'until'],
-      ['ch3-q4', 'quiz'],
+      ['ch3-q4', 'arrange'],
     ],
   );
   for (const ch of [ch1, ch2, ch3]) {
@@ -161,7 +161,8 @@ test('ch1-q3 도입 증상은 처음 설정(시작하기 버튼 신호·0°)으�
 });
 
 test('순서 바꾸기는 1장 1번 하나뿐이고, 1장 2번은 실행 기록을 보고 하루와 2턴 대화로 푼다', () => {
-  const arranges = [ch1, ch2, ch3].flatMap((ch) => ch.scenes).filter((s) => s.experiment === 'arrange').map((s) => s.questionId);
+  // 순서를 옮기는 퍼즐만 셉니다(fixedOrder 블록판은 표기만 바꾸는 조작 활동)
+  const arranges = [ch1, ch2, ch3].flatMap((ch) => ch.scenes).filter((s) => s.experiment === 'arrange' && !s.goal?.fixedOrder).map((s) => s.questionId);
   assert.deepEqual(arranges, ['ch1-q1']);
   const q = ch1.scenes.find((s) => s.questionId === 'ch1-q2').quiz;
   assert.equal(q.style, 'chat');
@@ -199,4 +200,30 @@ test('하트 문항의 도입 대사·인용·대화 질문에도 정답 단서�
     const pre = [sc.quote, ...(sc.flow.intro || []).flatMap((l) => texts(l.text)), ...((sc.goal?.chat?.steps || sc.quiz?.steps || []).map((st) => st.prompt))];
     for (const t of pre) for (const h of hints) assert.equal(t.includes(h), false, `${qId} 풀기 전 문구에 정답 단서 '${h}': ${t}`);
   }
+});
+
+test('다중 선택 자판기의 마지막 줄은 가짜 "또는" 없이 "아니면, 만일"이다', () => {
+  const src = fs.readFileSync(path.join(root, 'src/experiments.js'), 'utf8');
+  assert.equal(/아니면 \(또는/.test(src), false, '③ 아니면 (또는 ≥ N) 같은 가짜 OR 표기 금지');
+});
+
+test('2장 입장 티켓 수는 1장 끝의 7장씩과 이어진다', () => {
+  const goal = ch2.scenes.find((s) => s.questionId === 'ch2-q1').goal;
+  assert.equal(goal.threshold, 7);
+  assert.equal(goal.initialTickets, 7);
+});
+
+test('대사에 게임 구조 표현(1챕터 등)이 없고, 하루짜리 축제에 "내일 축제 끝나고"가 없다', () => {
+  for (const ch of [ch1, ch2, ch3]) {
+    const all = JSON.stringify(ch);
+    assert.equal(/[123]챕터/.test(all), false, `${ch.id}장에 '챕터' 표현`);
+  }
+  const ending = JSON.stringify(ch3.scenes.find((s) => s.ending));
+  assert.equal(/내일 축제 끝나고/.test(ending), false);
+});
+
+test('3장 엔딩 리포트에 반복 단원 핵심 정리 카드가 있고, 찐친 안내는 두 조건을 모두 말한다', () => {
+  const end = ch3.scenes.find((s) => s.ending);
+  assert.ok(Array.isArray(end.cards) && end.cards.length >= 4, '3장 핵심 정리 카드');
+  assert.match(end.endings.friend.footer, /마음 선택지/, '12/12 하트 + 마음 선택지 조건');
 });

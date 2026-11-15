@@ -122,7 +122,10 @@
       {key:'small',min:5,label:'작은 키링'},
       {key:'sticker',min:0,label:'별 스티커'}
     ]).slice();
-    const ordered=order==='asc'?list.sort((a,b)=>a.min-b.min):list.sort((a,b)=>b.min-a.min);
+    // order: 'asc' | 'desc' | 검사할 순서대로 놓은 tier key 배열(빠진 tier는 뒤에 큰 기준부터)
+    const ordered=Array.isArray(order)
+      ?[...order.map(k=>list.find(t=>t.key===k)).filter(Boolean),...list.filter(t=>!order.includes(t.key)).sort((a,b)=>b.min-a.min)]
+      :order==='asc'?list.sort((a,b)=>a.min-b.min):list.sort((a,b)=>b.min-a.min);
     const matchedIndex=ordered.findIndex(t=>tickets>=t.min);
     return {ordered,matchedIndex,matchedTier:matchedIndex>=0?ordered[matchedIndex]:null};
   }

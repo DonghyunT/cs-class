@@ -152,7 +152,7 @@
   function startChapter(chapterId,index=0){
     if(!canPickChapter()){openOnboarding();return;}
     if(!S.isChapterUnlocked(state,chapterId,isTeacher)){
-      notify(`${chapterId-1}챕터를 먼저 완료하면 ${chapterId}챕터가 열려요!`);
+      notify(`${chapterId-1}장을 먼저 완료하면 ${chapterId}장이 열려요!`);
       return;
     }
     if(index===0)S.startChapterRun(state,chapterId);
@@ -168,7 +168,7 @@
     $('chapter-list').innerHTML=chapters.map(c=>{
       const unlocked=S.isChapterUnlocked(state,c.id,isTeacher);
       const res=state.chapterResults?.[c.id]||{completed:false,hearts:0};
-      const status=res.completed?(res.hearts===4?'완료 · ♥ 4/4 퍼펙트!':`완료 · ♥ ${res.hearts}/4 · 재도전`):(unlocked?'도전 가능 · 4문항':`🔒 ${c.id-1}챕터 완료 후 해금`);
+      const status=res.completed?(res.hearts===4?'완료 · ♥ 4/4 퍼펙트!':`완료 · ♥ ${res.hearts}/4 · 재도전`):(unlocked?'도전 가능 · 4문항':`🔒 ${c.id-1}장 완료 후 해금`);
       const badgeClass=res.completed?(res.hearts===4?'is-perfect':'is-done'):(unlocked?'is-open':'is-locked');
       return `<button class="chapter-card ${badgeClass}" data-chapter="${c.id}"${unlocked?'':' disabled'}><span class="chapter-number">0${c.id}</span><span><strong>${escape(c.title)}</strong><small>${escape(c.subject)} · ${escape(status)}</small></span><span class="chapter-link" aria-hidden="true">${unlocked?'↗':'🔒'}</span></button>`;
     }).join('');
@@ -194,7 +194,7 @@
     delete $('stage').dataset.medium;
     background('day');
     $('chapter-indicator').textContent=isTeacher?'교사 검수 모드 · 전체 해금':'하나의 이야기 · 12문항 CS 챌린지';
-    $('progress-text').textContent=canPickChapter()?'새 이야기를 시작하거나 해금된 챕터를 골라 보세요.':'새 이야기 시작을 눌러 하루와의 이야기를 시작해 보세요.';
+    $('progress-text').textContent=canPickChapter()?'새 이야기를 시작하거나 해금된 장을 골라 보세요.':'새 이야기 시작을 눌러 하루와의 이야기를 시작해 보세요.';
     $('timing-text').textContent='1~3단원 핵심 개념 총복습 · 3가지 엔딩';
     ['previous-button','next-button','reset-button','teacher-button'].forEach(id=>$(id).disabled=true);
     $('next-button').textContent='다음 →';
@@ -414,7 +414,7 @@
     const invalidate=()=>{
       if(current!==generation)return;
       flowResult=null;
-      setForward('실행하고 결과 확인하기',null,true);
+      setForward(activeScene?.experiment==='quiz'?'답을 고르면 다음으로':'활동을 해결하면 다음으로',null,true);
     };
 
     invalidate();
@@ -458,7 +458,7 @@
     const missed=Object.entries(res.questions||{}).filter(([,q])=>!q.firstAttempt);
     const hasEnding=Boolean(state.chapterResults?.[3]?.completed);
     const nextChapter=chapters.find(c=>c.id===activeChapter.id+1);
-    return `<div class="summary-layout"><p class="eyebrow">CHAPTER 0${activeChapter.id} CLEAR · ${escape(scene.topic)}</p><h2 tabindex="-1">${escape(scene.title)}</h2><div class="chapter-clear-banner"><div><strong>이번 챕터 하트: ♥ ${res.hearts} / 4</strong><span>${res.hearts===4?'실수 없이 모든 버그를 첫 시도에 잡았어요!':`놓친 개념 ${missed.length}개 · 재도전하면 4/4 하트를 채울 수 있어요.`}</span></div><div class="clear-actions">${res.hearts<4?`<button type="button" id="retry-chapter-btn" class="secondary-button">이 챕터 하트 채우러 재도전</button>`:''}${hasEnding?`<button type="button" id="revisit-ending-btn" class="primary-button">엔딩 다시 보기 →</button>`:''}</div></div><div class="summary-cards">${scene.cards.map(([title,body])=>`<div class="summary-card"><b>${escape(title)}</b><p>${escape(body)}</p></div>`).join('')}</div>${scene.endingMessage?`<p class="ending-message">“${escape(interpolate(scene.endingMessage))}”</p>`:''}<p class="summary-extra">${escape(scene.extra||'')}</p><div class="practice-box"><p>${escape(scene.mission||'')}</p>${nextChapter?`<button type="button" id="next-chapter-btn" class="primary-button">${nextChapter.id}챕터로 이어가기 →</button>`:`<button type="button" id="practice-button" class="primary-button">처음 화면으로 →</button>`}</div></div>`;
+    return `<div class="summary-layout"><p class="eyebrow">CHAPTER 0${activeChapter.id} CLEAR · ${escape(scene.topic)}</p><h2 tabindex="-1">${escape(scene.title)}</h2><div class="chapter-clear-banner"><div><strong>이번 장 하트: ♥ ${res.hearts} / 4</strong><span>${res.hearts===4?'실수 없이 모든 버그를 첫 시도에 잡았어요!':`놓친 개념 ${missed.length}개 · 재도전하면 4/4 하트를 채울 수 있어요.`}</span></div><div class="clear-actions">${res.hearts<4?`<button type="button" id="retry-chapter-btn" class="secondary-button">이 장 하트 채우러 재도전</button>`:''}${hasEnding?`<button type="button" id="revisit-ending-btn" class="primary-button">엔딩 다시 보기 →</button>`:''}</div></div><div class="summary-cards">${scene.cards.map(([title,body])=>`<div class="summary-card"><b>${escape(title)}</b><p>${escape(body)}</p></div>`).join('')}</div>${scene.endingMessage?`<p class="ending-message">“${escape(interpolate(scene.endingMessage))}”</p>`:''}<p class="summary-extra">${escape(scene.extra||'')}</p><div class="practice-box"><p>${escape(scene.mission||'')}</p>${nextChapter?`<button type="button" id="next-chapter-btn" class="primary-button">${nextChapter.id}장으로 이어가기 →</button>`:`<button type="button" id="practice-button" class="primary-button">처음 화면으로 →</button>`}</div></div>`;
   }
 
   function findColdChoiceDetails(){
@@ -490,7 +490,7 @@
     }
     const imperfectChapters=[1,2,3].filter(id=>(state.chapterResults?.[id]?.hearts||0)<4);
     const expr=outcome==='some'?1:outcome==='friend'?2:4;
-    return `<div class="ending-report-layout" data-outcome="${escape(outcome)}"><div class="ending-lights ending-lights-${escape(outcome)}" aria-hidden="true">${shapeSvg()}</div><div class="ending-report-grid"><div class="ending-report-main"><div class="ending-badge">${escape(interpolate(data.badge||outcome))}</div><h2 tabindex="-1">${escape(interpolate(title))}</h2><p class="ending-headline">${escape(interpolate(headline))}</p><div class="ending-score-row"><div class="score-pill"><strong>총 하트 ♥ ${total} / 12</strong><small>${[1,2,3].map(id=>`Ch.${id} ${state.chapterResults?.[id]?.hearts||0}/4`).join(' · ')}</small></div></div>${isColdFriend?`<div class="cold-callout"><strong>12/12 만점인데 찐친 엔딩이 된 이유!</strong><p>${escape(interpolate(data.coldCallout||'모든 CS 문항을 완벽하게 맞혔지만, 마음 선택지에서 거리를 두어 찐친 사이로 남았어요!'))}</p>${coldDetails.length?`<div class="retry-row">${coldDetails.map(d=>`<button type="button" class="secondary-button" data-retry-chapter="${d.chapterId}">${d.chapterId}챕터 마음 선택지 다시 고르기 (${escape(d.title)})</button>`).join('')}</div>`:''}</div>`:''}<div class="report-card"><h3>CS 복습 리포트 ${missedItems.length?`· 놓친 개념 ${missedItems.length}개`:'· 퍼펙트 클리어!'}</h3>${missedItems.length?`<ul class="missed-list">${missedItems.map(m=>`<li><div><strong>[Ch.${m.chapterId}] ${escape(m.conceptTitle)}</strong>${m.lastWrongWhy?`<p>${escape(m.lastWrongWhy)}</p>`:''}</div></li>`).join('')}</ul>`:'<p class="perfect-note">1~3단원 12개 핵심 CS 개념을 전부 첫 시도에 완벽하게 해결했어요!</p>'}${imperfectChapters.length?`<div class="retry-row">${imperfectChapters.map(id=>`<button type="button" class="primary-button" data-retry-chapter="${id}">${id}챕터 하트 채우러 가기 (재도전)</button>`).join('')}</div>`:''}</div>${footer?`<p class="ending-footer">${escape(interpolate(footer))}</p>`:''}<div class="ending-actions"><button type="button" id="replay-ending-lines" class="secondary-button">엔딩 대사 다시 보기</button><button type="button" id="ending-home-btn" class="secondary-button">처음 화면으로</button></div>${isTeacher?`<div class="teacher-ending-preview"><span>교사 엔딩 미리보기:</span>${['some','friend','awkward'].map(k=>`<button type="button" class="pill-button" data-preview-ending="${k}" aria-pressed="${k===outcome}">${k==='some'?'썸 시작':k==='friend'?'찐친':'어색한 사이'}</button>`).join('')}</div>`:''}</div><aside class="ending-portrait"><div class="ending-character character" data-expression="${expr}" role="img" aria-label="하루"></div></aside></div></div>`;
+    return `<div class="ending-report-layout" data-outcome="${escape(outcome)}"><div class="ending-lights ending-lights-${escape(outcome)}" aria-hidden="true">${shapeSvg()}</div><div class="ending-report-grid"><div class="ending-report-main"><div class="ending-badge">${escape(interpolate(data.badge||outcome))}</div><h2 tabindex="-1">${escape(interpolate(title))}</h2><p class="ending-headline">${escape(interpolate(headline))}</p><div class="ending-score-row"><div class="score-pill"><strong>총 하트 ♥ ${total} / 12</strong><small>${[1,2,3].map(id=>`Ch.${id} ${state.chapterResults?.[id]?.hearts||0}/4`).join(' · ')}</small></div></div>${isColdFriend?`<div class="cold-callout"><strong>12/12 만점인데 찐친 엔딩이 된 이유!</strong><p>${escape(interpolate(data.coldCallout||'모든 CS 문항을 완벽하게 맞혔지만, 마음 선택지에서 거리를 두어 찐친 사이로 남았어요!'))}</p>${coldDetails.length?`<div class="retry-row">${coldDetails.map(d=>`<button type="button" class="secondary-button" data-retry-chapter="${d.chapterId}">${d.chapterId}장 마음 선택지 다시 고르기 (${escape(d.title)})</button>`).join('')}</div>`:''}</div>`:''}<div class="report-card"><h3>CS 복습 리포트 ${missedItems.length?`· 놓친 개념 ${missedItems.length}개`:'· 퍼펙트 클리어!'}</h3>${missedItems.length?`<ul class="missed-list">${missedItems.map(m=>`<li><div><strong>[${m.chapterId}장] ${escape(m.conceptTitle)}</strong>${m.lastWrongWhy?`<p>${escape(m.lastWrongWhy)}</p>`:''}</div></li>`).join('')}</ul>`:'<p class="perfect-note">1~3단원 12개 핵심 CS 개념을 전부 첫 시도에 완벽하게 해결했어요!</p>'}${imperfectChapters.length?`<div class="retry-row">${imperfectChapters.map(id=>`<button type="button" class="primary-button" data-retry-chapter="${id}">${id}장 하트 채우러 가기 (재도전)</button>`).join('')}</div>`:''}</div>${footer?`<p class="ending-footer">${escape(interpolate(footer))}</p>`:''}<div class="ending-actions"><button type="button" id="replay-ending-lines" class="secondary-button">엔딩 대사 다시 보기</button><button type="button" id="ending-home-btn" class="secondary-button">처음 화면으로</button></div>${isTeacher?`<div class="teacher-ending-preview"><span>교사 엔딩 미리보기:</span>${['some','friend','awkward'].map(k=>`<button type="button" class="pill-button" data-preview-ending="${k}" aria-pressed="${k===outcome}">${k==='some'?'썸 시작':k==='friend'?'찐친':'어색한 사이'}</button>`).join('')}</div>`:''}${Array.isArray(scene.cards)&&scene.cards.length?`<section class="ending-recap"><h3>${escape(scene.recapTitle||'3장 핵심 정리')}</h3><div class="card-grid">${scene.cards.map(([t,d])=>`<div class="summary-card"><strong>${escape(t)}</strong><p>${escape(d)}</p></div>`).join('')}</div></section>`:''}</div><aside class="ending-portrait"><div class="ending-character character" data-expression="${expr}" role="img" aria-label="하루"></div></aside></div></div>`;
   }
 
   function renderEndingReport(scene,outcome){
@@ -536,7 +536,7 @@
 
   function showScene(chapterId,index,save=true){
     if(!S.isChapterUnlocked(state,chapterId,isTeacher)){
-      notify(`${chapterId-1}챕터를 먼저 완료해야 열려요.`);
+      notify(`${chapterId-1}장을 먼저 완료해야 열려요.`);
       return;
     }
     const chapter=chapters.find(c=>c.id===chapterId);
@@ -564,7 +564,7 @@
       $('stage').dataset.kind='summary';
       $('scene-content').innerHTML=summaryMarkup(scene);
       const nextChapter=chapters.find(c=>c.id===chapterId+1);
-      setForward(nextChapter?`${nextChapter.id}챕터로 이어가기 →`:'처음 화면으로 ↗',nextChapter?()=>startChapter(nextChapter.id,0):showTitle);
+      setForward(nextChapter?`${nextChapter.id}장으로 이어가기 →`:'처음 화면으로 ↗',nextChapter?()=>startChapter(nextChapter.id,0):showTitle);
       if($('next-chapter-btn'))$('next-chapter-btn').onclick=()=>startChapter(nextChapter.id,0);
       if($('practice-button'))$('practice-button').onclick=showTitle;
       if($('retry-chapter-btn'))$('retry-chapter-btn').onclick=()=>startChapter(activeChapter.id,0);
@@ -575,7 +575,7 @@
     $('chapter-indicator').textContent=`CHAPTER 0${chapterId} · ${chapter.subject}`;
     const mainScenes=chapter.scenes.filter(s=>!s.optional);
     $('progress-text').textContent=scene.optional?`${chapter.subject} · 확장 활동`:`${chapter.subject} · ${mainScenes.indexOf(scene)+1} / ${mainScenes.length} 장면`;
-    $('timing-text').textContent=`${scene.kind==='summary'?'챕터 완료 · 정리':scene.graded?'하트 챌린지 · 첫 시도 +1 ♥':'스토리 진행'} · ${scene.minutes||''}`;
+    $('timing-text').textContent=`${scene.kind==='summary'?'장 완료 · 정리':scene.graded?'하트 챌린지 · 첫 시도 +1 ♥':'스토리 진행'} · ${scene.minutes||''}`;
     $('reset-button').disabled=!isTeacher;
     $('teacher-button').disabled=!isTeacher;
     if(save)record();

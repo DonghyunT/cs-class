@@ -191,3 +191,11 @@ test('evaluateTokens는 괄호·우선순위대로 계산하고 계산 순서를
   assert.equal(m.evaluateTokens([')', 5, '+', 9, '(', '÷', 2]), null, '닫는 괄호가 먼저');
   assert.equal(m.evaluateTokens(['(', ')', 5, '+', 9]), null, '빈 괄호');
 });
+
+test('evaluatePrizeBranches는 정해 준 검사 순서(키 배열)대로 처음 참인 줄에서 멈춘다', () => {
+  const tiers = [{ key: 'large', min: 10, label: '큰 키링' }, { key: 'small', min: 5, label: '작은 키링' }, { key: 'sticker', min: 3, label: '별 스티커' }];
+  assert.equal(m.evaluatePrizeBranches(10, tiers, ['small', 'large', 'sticker']).matchedTier.key, 'small', '≥5를 맨 위에 두면 10장도 작은 키링');
+  assert.equal(m.evaluatePrizeBranches(10, tiers, ['large', 'small', 'sticker']).matchedTier.key, 'large');
+  assert.deepEqual(m.evaluatePrizeBranches(6, tiers, ['large', 'small', 'sticker']).ordered.map((t) => t.key), ['large', 'small', 'sticker']);
+  assert.equal(m.evaluatePrizeBranches(10, tiers, 'asc').matchedTier.key, 'sticker', '기존 asc/desc도 그대로');
+});

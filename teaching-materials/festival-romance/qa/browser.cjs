@@ -109,6 +109,14 @@ async function finishConceptResponse(page, { skipSeen = false } = {}) {
   }
 }
 
+// 대화형 문항의 현재 턴에서 오답 보기를 하나 누름
+async function clickWrongChat(page, chat) {
+  const shown = await page.evaluate(() => [...document.querySelectorAll('[data-chat-choice]:not(:disabled)')].map((b) => b.dataset.chatChoice));
+  const wrong = chat.steps.flatMap((s) => s.choices).find((c) => !c.correct && shown.includes(c.key));
+  assert.ok(wrong, '오답 보기 존재');
+  await page.locator(`[data-chat-choice="${wrong.key}"]`).click();
+}
+
 // 지금 화면의 장면 데이터(제목으로 찾음)
 async function currentSceneData(page) {
   const title = await page.locator('.lesson-heading h2').innerText();
@@ -185,7 +193,9 @@ async function solveCurrentChallenge(page, { meetingTime = '16:00', polygonAngle
     await page.locator('#route-connector').selectOption('or');
     await page.locator('#run').click();
   } else if (type === 'prize') {
-    await page.locator('#prize-order').selectOption('desc');
+    const { goal } = await currentSceneData(page);
+    for (const st of goal.predict?.steps || []) await page.locator(`[data-chat-choice="${st.choices.find((c) => c.correct).key}"]`).click();
+    await page.locator(`[data-prize-top="${[...goal.tiers].sort((a, b) => b.min - a.min)[0].key}"]`).click();
     await page.locator('#run').click();
   } else if (type === 'count') {
     await page.locator('#times').selectOption('4');
@@ -643,9 +653,8 @@ async function playChapterToEnd(page, chapterId, {
       await page.locator('#run').click();
       await waitForActivityFail(page);
 
-      await enterExp('ch2-3'); // and
-      await page.locator('[data-logic-answer="true"]').click();
-      await page.locator('#run').click();
+      await enterExp('ch2-3'); // AND: 부스 스태프와 대화
+      await clickWrongChat(page, (await currentSceneData(page)).quiz);
       await waitForActivityFail(page);
 
       await enterExp('ch2-4'); // route
@@ -655,9 +664,22 @@ async function playChapterToEnd(page, chapterId, {
       await page.locator('#run').click();
       await waitForActivityFail(page);
 
-      await enterExp('ch2-5'); // prize
-      await page.locator('#run').click();
+      await enterExp('ch2-5'); // prize: 예측 대화 뒤 맨 위 조건 고르기
+      {
+        const { goal } = await currentSceneData(page);
+        for (const st of goal.predict?.steps || []) await page.locator(`[data-chat-choice="${st.choices.find((c) => c.correct).key}"]`).click();
+        const rows = await page.locator('#prize-rows').innerText();
+        assert.equal(/또는/.test(rows), false, '다중 선택 줄에 가짜 또는 없음');
+        assert.match(rows, /아니면, 만일/);
+        await page.locator('#run').click(); // 처음 상태(작은 기준이 맨 위) → 오답
+        await waitForActivityFail(page);
+      }
+
+      await enterExp('ch3-5'); // 피날레 블록판(표기만 바꾸기)
+      assert.equal(await page.locator('[data-arrange-move]').count(), 0, '피날레는 순서 이동 없이 표기만 바꿈');
+      await page.locator('#run-arrange').click();
       await waitForActivityFail(page);
+      assert.match(await page.locator('.sim-screen').innerText(), /점등 완료!" 안 뜸/);
 
       await enterExp('ch3-2'); // count
       await page.locator('[data-count-final="on"]').click();

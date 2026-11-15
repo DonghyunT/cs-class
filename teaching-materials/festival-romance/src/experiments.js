@@ -164,6 +164,7 @@
       $('arrange-list').innerHTML=order.map((id,i)=>{
         const b=byId[id],text=escape(labelOf(id));
         const label=b.choices?`<button type="button" class="arrange-choice" data-arrange-choice="${escape(id)}" aria-label="${text} · 눌러서 바꾸기"${locked?' disabled':''}>${text} <span aria-hidden="true">⇄</span></button>`:`<span class="arrange-label">${text}</span>`;
+        if(g.fixedOrder)return `<li class="arrange-row${b.indent?' arrange-indent-'+b.indent:''}" data-block-id="${escape(id)}"><span class="arrange-index" aria-hidden="true">${i+1}</span>${label}</li>`;
         return `<li class="arrange-row" data-block-id="${escape(id)}"><span class="arrange-index" aria-hidden="true">${i+1}</span>${label}<span class="arrange-moves"><button type="button" data-arrange-move="-1" data-id="${escape(id)}" aria-label="${i+1}번째 줄 '${text}' 위로"${locked||i===0?' disabled':''}>↑</button><button type="button" data-arrange-move="1" data-id="${escape(id)}" aria-label="${i+1}번째 줄 '${text}' 아래로"${locked||i===order.length-1?' disabled':''}>↓</button></span></li>`;
       }).join('');
       $('arrange-list').querySelectorAll('[data-arrange-move]').forEach(btn=>btn.onclick=()=>{
@@ -205,6 +206,15 @@
   // 실행 기록: 줄마다 바뀐 값을 보여 주고 마지막 화면을 띄웁니다.
   const simLog=(rows,screen)=>'<div class="sim-run"><h4>실행 기록</h4><ol class="sim-steps">'+rows.map(r=>'<li><span class="sim-line">'+escape(r[0])+'</span><span class="sim-effect">→ '+escape(r[1])+'</span></li>').join('')+'</ol><p class="sim-screen" role="status">'+escape(screen)+'</p></div>';
   const shown=v=>v===''?'(빈칸)':v;
+  arrangeSims.finale=({picks,goal})=>{
+    const pick=id=>{const b=goal.blocks.find(x=>x.id===id);return b?.choices?b.choices[picks[id]??b.initialChoice??0]:'';};
+    const outer=Number((pick('outer').match(/(\d+)번/)||[])[1]||2),inner=Number(goal.innerTimes||3),fires=outer*inner;
+    const adds=/더하기/.test(pick('counter'));
+    const counter=adds?fires:1;
+    const loopTimes=(pick('ending').match(/(\d+)번/)||[])[1];
+    const rows=[[pick('outer')+' 안의 '+inner+'번 반복','불꽃 '+fires+'번 발사'],[pick('counter'),'[카운터]: '+counter],[pick('ending'),loopTimes?'드론 '+loopTimes+'번 반짝인 뒤 다음 줄로':'드론이 끝없이 반짝임(아래 줄로 못 감)']];
+    return simLog(rows,'제어반: 불꽃 '+fires+'번 · 카운터 '+counter+(loopTimes?' · "점등 완료!"':' · "점등 완료!" 안 뜸'));
+  };
   arrangeSims.welcome=({order,ctx,goal})=>{
     const label=Object.fromEntries(goal.blocks.map(b=>[b.id,b.label]));
     const nick=ctx.state?.nickname||'나';
@@ -364,7 +374,7 @@
     const ops=graded?['>','≥','=','≠','<','≤']:['≥','>','=','≠','<','≤'];
     const initOp=goal?.initialOperator||(graded?'>':'≥');
     const initTickets=goal?.initialTickets??threshold;
-    root.innerHTML=`<div class="field-row">${numberField('tickets','가지고 있는 입장권',initTickets)}<label>보유 수 비교 연산자<select id="operator">${ops.map(op=>`<option${op===initOp?' selected':''}>${op}</option>`).join('')}</select></label><label>안내판 기준<input value="${threshold}" readonly></label></div><label class="checkbox-line"><input id="booth-open" type="checkbox" checked><span>${name} 운영을 시작했다</span></label><div class="board compact-board"><h3>${name} 입장 규칙 (${threshold}장 이상 입장)</h3><pre class="block-code"><span id="comparison">${initTickets} ${initOp} ${threshold}</span> 그리고 (부스 운영 중)\n두 조건이 모두 참이면 → 입장 가능</pre><p class="form-note">딱 ${threshold}장을 가진 사람도 입장할 수 있게 비교 연산자를 맞춰 실행해 보세요.</p></div>${graded?'':prediction(['들어갈 수 있다','아직 기다려야 한다'])}<div class="experiment-actions">${button('five',`${threshold-1}장`)}${button('six',`${threshold}장`)}${button('seven',`${threshold+1}장`)}${button('run','비교 실행하기',true)}</div>${result()}`;
+    root.innerHTML=`<div class="field-row">${numberField('tickets','가지고 있는 입장 티켓',initTickets)}<label>보유 수 비교 연산자<select id="operator">${ops.map(op=>`<option${op===initOp?' selected':''}>${op}</option>`).join('')}</select></label><label>안내판 기준<input value="${threshold}" readonly></label></div><label class="checkbox-line"${graded?' hidden':''}><input id="booth-open" type="checkbox" checked><span>${name} 운영을 시작했다</span></label><div class="board compact-board"><h3>${name} 입장 규칙 (${threshold}장 이상 입장)</h3><pre class="block-code"${graded?' data-graded="true"':''}><span id="comparison">${initTickets} ${initOp} ${threshold}</span>${graded?'\n참이면 → 입장 가능':' 그리고 (부스 운영 중)\n두 조건이 모두 참이면 → 입장 가능'}</pre><p class="form-note">딱 ${threshold}장을 가진 사람도 입장할 수 있게 비교 연산자를 맞춰 실행해 보세요.</p></div>${graded?'':prediction(['들어갈 수 있다','아직 기다려야 한다'])}<div class="experiment-actions">${button('five',`${threshold-1}장`)}${button('six',`${threshold}장`)}${button('seven',`${threshold+1}장`)}${button('run','비교 실행하기',true)}</div>${result()}`;
     const clear=()=>{$('comparison').textContent=`${$('tickets').value||'?'} ${$('operator').value} ${threshold}`;hide();};
     $('tickets').oninput=clear;$('operator').onchange=clear;$('booth-open').onchange=clear;
     [['five',threshold-1],['six',threshold],['seven',threshold+1]].forEach(([id,n])=>$(id).onclick=()=>{$('tickets').value=n;clear();});
@@ -376,15 +386,20 @@
       if(graded&&!validOp){
         const wh=goal?.wrongHints||{};
         const why=wh[op]||goal?.defaultWhy||`기준(${threshold}장)과 똑같을 때도 입장하려면 ‘크거나 같다(${expectedOp})’를 써야 해요!`;
-        show(`입장권 비교: ${n} ${escape(op)} ${threshold} → ${enough?'참':'거짓'}<br><strong>비교 연산자를 다시 살펴보자!</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
+        show(`입장 티켓 비교: ${n} ${escape(op)} ${threshold} → ${enough?'참':'거짓'}<br><strong>비교 연산자를 다시 살펴보자!</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
         return;
       }
-      if(graded&&!allowed){
-        show(`입장권 비교: ${n} ${escape(op)} ${threshold} → ${enough?'참':'거짓'} · 부스 운영 중: ${open?'참':'거짓'}<span class="explanation">연산자는 ${escape(expectedOp)}로 잘 고쳤어요! 이제 입장권을 ${threshold}장 이상·운영 중으로 맞춰 입장을 확인해 보세요.</span>`,{valid:false});
+      if(graded&&!enough){
+        show(`입장 티켓 비교: ${n} ${escape(op)} ${threshold} → 거짓<span class="explanation">${n}장은 ${threshold}장보다 적어서 입장할 수 없어요. ${threshold}장을 가진 우리 둘로 다시 확인해 보세요.</span>`,{valid:false});
         return;
       }
       const valid=validOp;
-      show(`입장권 비교: ${n} ${escape(op)} ${threshold} → ${enough?'참':'거짓'}<br>부스 운영 중: ${open?'참':'거짓'}<br><strong>${enough?'참':'거짓'} 그리고 ${open?'참':'거짓'} → ${allowed?'참 · 입장 가능':'거짓 · 아직 입장 불가'}</strong><span class="explanation">${valid?'경계값과 같은 수까지 포함하려면 ≥를 사용하고, 두 조건을 AND로 확인해요.':`지금 비교한 결과를 확인했어요. ‘${threshold}장 이상’을 표현하려면 ≥로 바꾸어 실행해 보세요.`}</span>`,{valid,key:allowed?'allowed':!enough&&!open?'both-blocked':enough?'wait':'blocked',story:{booth,boothAllowed:n>=threshold,boothOpen:open},values:{boothName:name,threshold,tickets:n}});
+      if(graded){
+        $('run').disabled=true;$('operator').disabled=true;
+        show(`입장 티켓 비교: ${n} ${escape(op)} ${threshold} → 참<br><strong>참 · 입장 가능!</strong><span class="explanation">‘${threshold}장 이상’은 ${threshold}장도 포함하니까 크거나 같다(≥)로 비교해야 딱 ${threshold}장인 사람도 들어갈 수 있어요.</span>`,{valid:true,key:'allowed'});
+        return;
+      }
+      show(`입장 티켓 비교: ${n} ${escape(op)} ${threshold} → ${enough?'참':'거짓'}<br>부스 운영 중: ${open?'참':'거짓'}<br><strong>${enough?'참':'거짓'} 그리고 ${open?'참':'거짓'} → ${allowed?'참 · 입장 가능':'거짓 · 아직 입장 불가'}</strong><span class="explanation">${valid?'경계값과 같은 수까지 포함하려면 ≥를 사용하고, 두 조건을 AND로 확인해요.':`지금 비교한 결과를 확인했어요. ‘${threshold}장 이상’을 표현하려면 ≥로 바꾸어 실행해 보세요.`}</span>`,{valid,key:allowed?'allowed':!enough&&!open?'both-blocked':enough?'wait':'blocked',story:{booth,boothAllowed:n>=threshold,boothOpen:open},values:{boothName:name,threshold,tickets:n}});
     };
   };
 
@@ -396,7 +411,7 @@
       const expectedOp=goal?.expectedOp||'and';
       const expectedResult=goal?.expectedResult!==undefined?Boolean(goal.expectedResult):(expectedOp==='and'?initA&&initB:initA||initB);
       let chosenOp='or',chosenTruth='';
-      root.innerHTML=`<div class="check-boards"><label class="check-board checkbox-line"><input id="condition-a" type="checkbox"${initA?' checked':''}${goal?.lockInputs?' disabled':''}><span>입장권 기준을 채웠다 (${initA?'참':'거짓'})</span></label><label class="check-board checkbox-line"><input id="condition-b" type="checkbox"${initB?' checked':''}${goal?.lockInputs?' disabled':''}><span>부스 운영을 시작했다 (${initB?'참':'거짓'})</span></label></div><div class="board" style="margin-top:14px"><h3>1. 부스 규칙에 맞는 논리 연산자</h3><div class="prediction"><button type="button" data-logic-op="or" aria-pressed="true">또는 (OR)</button><button type="button" data-logic-op="and" aria-pressed="false">그리고 (AND)</button></div><div class="formula" id="logic-formula">${initA?'참':'거짓'} 또는 ${initB?'참':'거짓'}</div><h3>2. 이 상태에서 최종 판단 결과는?</h3><div class="prediction"><button type="button" data-logic-answer="true" aria-pressed="false">참 (입장 가능)</button><button type="button" data-logic-answer="false" aria-pressed="false">거짓 (입장 불가)</button></div></div><div class="experiment-actions">${button('run','결과 확인하기',true)}</div>${result()}`;
+      root.innerHTML=`<div class="check-boards"><label class="check-board checkbox-line"><input id="condition-a" type="checkbox"${initA?' checked':''}${goal?.lockInputs?' disabled':''}><span>입장 티켓 기준을 채웠다 (${initA?'참':'거짓'})</span></label><label class="check-board checkbox-line"><input id="condition-b" type="checkbox"${initB?' checked':''}${goal?.lockInputs?' disabled':''}><span>부스 운영을 시작했다 (${initB?'참':'거짓'})</span></label></div><div class="board" style="margin-top:14px"><h3>1. 부스 규칙에 맞는 논리 연산자</h3><div class="prediction"><button type="button" data-logic-op="or" aria-pressed="true">또는 (OR)</button><button type="button" data-logic-op="and" aria-pressed="false">그리고 (AND)</button></div><div class="formula" id="logic-formula">${initA?'참':'거짓'} 또는 ${initB?'참':'거짓'}</div><h3>2. 이 상태에서 최종 판단 결과는?</h3><div class="prediction"><button type="button" data-logic-answer="true" aria-pressed="false">참 (입장 가능)</button><button type="button" data-logic-answer="false" aria-pressed="false">거짓 (입장 불가)</button></div></div><div class="experiment-actions">${button('run','결과 확인하기',true)}</div>${result()}`;
       const syncFormula=()=>{$('logic-formula').textContent=`${$('condition-a').checked?'참':'거짓'} ${chosenOp==='and'?'그리고':'또는'} ${$('condition-b').checked?'참':'거짓'}`;};
       root.querySelectorAll('[data-logic-op]').forEach(b=>b.onclick=()=>{chosenOp=b.dataset.logicOp;root.querySelectorAll('[data-logic-op]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));syncFormula();hide(false);});
       root.querySelectorAll('[data-logic-answer]').forEach(b=>b.onclick=()=>{chosenTruth=b.dataset.logicAnswer;root.querySelectorAll('[data-logic-answer]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));hide(false);});
@@ -420,7 +435,7 @@
       };
       return;
     }
-    root.innerHTML=`${prediction(['참','거짓'])}${or?'<div class="prediction"><button type="button" id="mode-or" aria-pressed="true">또는</button><button type="button" id="mode-not" aria-pressed="false">아니다</button></div>':''}<div class="check-boards"><label class="check-board checkbox-line"><input id="condition-a" type="checkbox" checked><span id="condition-a-label">${or?'우산이 있다':'입장권 보유 수 기준을 채웠다'}</span></label><label class="check-board checkbox-line" id="condition-b-holder"><input id="condition-b" type="checkbox"><span>${or?'실내 통로가 열렸다':'부스 운영을 시작했다'}</span></label></div><div class="board" style="margin-top:14px"><div class="formula" id="logic-formula">참 ${or?'또는':'그리고'} 거짓</div><p class="form-note" id="logic-help">${or?'하나라도 참이면 참! 둘 다 참이어도 참이에요.':'두 조건이 모두 참일 때만 입장할 수 있어요.'}</p></div><div class="experiment-actions">${button('run','결과 확인',true)}</div>${result()}`;
+    root.innerHTML=`${prediction(['참','거짓'])}${or?'<div class="prediction"><button type="button" id="mode-or" aria-pressed="true">또는</button><button type="button" id="mode-not" aria-pressed="false">아니다</button></div>':''}<div class="check-boards"><label class="check-board checkbox-line"><input id="condition-a" type="checkbox" checked><span id="condition-a-label">${or?'우산이 있다':'입장 티켓 보유 수 기준을 채웠다'}</span></label><label class="check-board checkbox-line" id="condition-b-holder"><input id="condition-b" type="checkbox"><span>${or?'실내 통로가 열렸다':'부스 운영을 시작했다'}</span></label></div><div class="board" style="margin-top:14px"><div class="formula" id="logic-formula">참 ${or?'또는':'그리고'} 거짓</div><p class="form-note" id="logic-help">${or?'하나라도 참이면 참! 둘 다 참이어도 참이에요.':'두 조건이 모두 참일 때만 입장할 수 있어요.'}</p></div><div class="experiment-actions">${button('run','결과 확인',true)}</div>${result()}`;
     let mode=or?'or':'and';if(!or){$('condition-a').checked=ctx.state.story.boothAllowed;$('condition-b').checked=ctx.state.story.boothOpen;}
     const clear=()=>{$('logic-formula').textContent=mode==='not'?`아니다 (${$('condition-a').checked?'참':'거짓'})`:`${$('condition-a').checked?'참':'거짓'} ${mode==='and'?'그리고':'또는'} ${$('condition-b').checked?'참':'거짓'}`;hide();};
     $('condition-a').onchange=clear;$('condition-b').onchange=clear;clear();
@@ -480,31 +495,41 @@
       const tiers=Array.isArray(goal?.tiers)&&goal.tiers.length?goal.tiers:[{key:'large',min:10,label:'큰 키링'},{key:'small',min:5,label:'작은 키링'},{key:'sticker',min:3,label:'별 스티커'}];
       const sortedAsc=[...tiers].sort((a,b)=>a.min-b.min);
       const sortedDesc=[...tiers].sort((a,b)=>b.min-a.min);
-      let order=goal?.initialOrder||'asc';
+      // 맨 위(①)에 둘 조건을 고르면 나머지는 큰 기준부터 이어집니다. 정답은 가장 큰 기준이 맨 위.
+      let top=String(goal?.initialTop??sortedAsc[0].key);
+      const orderKeys=()=>[top,...sortedDesc.map(t=>t.key).filter(k=>k!==top)];
+      let order=orderKeys();
       const initTickets=goal?.tickets??sortedDesc[0].min;
-      root.innerHTML=`<div class="field-row">${numberField('tickets','기념품 교환권 수',initTickets,0,30)}<label>검사 순서 배치<select id="prize-order"><option value="asc"${order==='asc'?' selected':''}>작은 기준(≥ ${sortedAsc[0].min})부터 검사</option><option value="desc"${order==='desc'?' selected':''}>큰 기준(≥ ${sortedDesc[0].min})부터 검사</option></select></label></div><div class="prize-rows" id="prize-rows"></div><div class="experiment-actions">${button('run','위에서부터 검사 실행',true)}</div>${result()}`;
+      const ordinal=['①','②','③','④','⑤'];
+      root.innerHTML=`${goal?.predict?'<div class="board chat-board" id="prize-predict"></div>':''}<div id="prize-fix"${goal?.predict?' hidden':''}><div class="field-row">${numberField('tickets','기념품 교환권 수',initTickets,0,30)}</div><p class="form-note">맨 위(①)에서 먼저 검사할 조건을 고르세요. 나머지 줄은 그 아래로 이어져요.</p><div class="map-chips" role="group" aria-label="맨 위에서 먼저 검사할 조건">${tiers.map(t=>`<button type="button" class="map-chip" data-prize-top="${escape(t.key)}" aria-pressed="${t.key===top}">교환권 ≥ ${t.min}</button>`).join('')}</div><div class="prize-rows" id="prize-rows"></div><div class="experiment-actions">${button('run','위에서부터 검사 실행',true)}</div></div>${result()}`;
       const renderRows=()=>{
-        order=$('prize-order').value;
+        order=orderKeys();
         const ev=M.evaluatePrizeBranches(0,tiers,order);
-        $('prize-rows').innerHTML=ev.ordered.map((t,i)=>`<div class="prize-row" data-prize="${escape(t.key)}">${i===0?'① 만일':i===ev.ordered.length-1?`③ 아니면 (또는 ≥ ${t.min})`:`② 아니면, 만일`} 교환권 ≥ ${t.min} → ${escape(t.label)} <small class="branch-status"></small></div>`).join('');
+        $('prize-rows').innerHTML=ev.ordered.map((t,i)=>`<div class="prize-row" data-prize="${escape(t.key)}">${ordinal[i]||i+1} ${i===0?'만일':'아니면, 만일'} 교환권 ≥ ${t.min} → ${escape(t.label)} <small class="branch-status"></small></div>`).join('');
+        root.querySelectorAll('[data-prize-top]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.prizeTop===top)));
       };
       const resetRows=()=>{hide();renderRows();};
-      $('prize-order').onchange=resetRows;
+      root.querySelectorAll('[data-prize-top]').forEach(b=>b.onclick=()=>{top=b.dataset.prizeTop;resetRows();});
+      if(goal?.predict){
+        chatSteps($('prize-predict'),{M,fmt:v=>ctx.interpolate?ctx.interpolate(v):String(v??''),steps:goal.predict.steps||[],seedBase:(ctx.scene?.questionId||'prize')+':predict',
+          onWrong:(why,choice)=>show('<strong>다시 생각해 보자!</strong><span class="explanation">'+escape(why)+'</span>',{valid:false,failWhy:why,failExpr:choice?.expression||4}),
+          onStepRight:()=>hide(false),
+          onAllRight:()=>{hide(false);$('prize-fix').hidden=false;root.querySelector('[data-prize-top]')?.focus();}});
+      }
       $('tickets').oninput=()=>{hide();root.querySelectorAll('.prize-row').forEach(x=>{x.classList.remove('chosen','skipped');x.querySelector('.branch-status').textContent='';});};
       renderRows();
       $('run').onclick=()=>{
         const n=read('tickets',0,30);if(n===null)return;
-        order=$('prize-order').value;
+        order=orderKeys();
         const ev=M.evaluatePrizeBranches(n,tiers,order);
         root.querySelectorAll('.prize-row').forEach((x,i)=>{
           x.classList.toggle('chosen',i===ev.matchedIndex);
           x.classList.toggle('skipped',ev.matchedIndex>=0&&i>ev.matchedIndex);
           x.querySelector('.branch-status').textContent=ev.matchedIndex<0?'거짓':i<ev.matchedIndex?'검사 → 거짓':i===ev.matchedIndex?'검사 → 참 → 여기서 멈춤!':'실행 안 됨';
         });
-        const expectedOrder=goal?.expectedOrder||'desc';
         const wh=goal?.wrongHints||{};
-        if(order!==expectedOrder){
-          const why=wh.asc||goal?.defaultWhy||`위에서부터 검사하기 때문에 ≥ ${sortedAsc[0].min}을 먼저 쓰면 ${n}장을 내도 첫 분기에서 ${ev.matchedTier?.label||'스티커'}만 받고 끝나 버려요!`;
+        if(top!==sortedDesc[0].key){
+          const why=wh[top]||wh.asc||goal?.defaultWhy||`위에서부터 검사하기 때문에 ≥ ${sortedAsc[0].min}을 먼저 쓰면 ${n}장을 내도 첫 분기에서 ${ev.matchedTier?.label||'스티커'}만 받고 끝나 버려요!`;
           show(`<strong>분기 순서 버그! (${escape(ev.matchedTier?.label||'오류')})</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
           return;
         }
@@ -512,12 +537,12 @@
           show(`교환권 ${n}장으로는 어떤 기준에도 해당하지 않았어요.<span class="explanation">교환권을 ${sortedDesc[0].min}장 이상으로 넣어 큰 키링이 제대로 나오는지 확인해 보세요.</span>`,{valid:false});
           return;
         }
-        $('run').disabled=true;$('prize-order').disabled=true;
+        $('run').disabled=true;root.querySelectorAll('[data-prize-top]').forEach(b=>b.disabled=true);
         show(`<strong>받을 상품: ${escape(ev.matchedTier.label)}!</strong><span class="explanation">큰 조건부터 차례로 검사해야 ${n}장에 알맞은 ${escape(ev.matchedTier.label)} 분기로 정확히 연결돼요.</span>`,{valid:true,key:ev.matchedTier.key,story:{prize:ev.matchedTier.key},values:{prizeName:ev.matchedTier.label}});
       };
       return;
     }
-    root.innerHTML=`${prediction(['큰 키링','작은 키링','별 스티커'])}<div class="field-row">${numberField('tickets','기념품 교환권 수',6)}</div><p class="form-note">입장권과 별도로 부스 체험 뒤 받은 기념품 교환권이에요.</p><div class="prize-rows"><div class="prize-row" data-prize="large">① 만일 교환권 ≥ 8 → 큰 키링 <small class="branch-status"></small></div><div class="prize-row" data-prize="small">② 아니면, 만일 교환권 ≥ 5 → 작은 키링 <small class="branch-status"></small></div><div class="prize-row" data-prize="sticker">③ 아니면 → 별 스티커 <small class="branch-status"></small></div></div><div class="experiment-actions">${button('run','위에서부터 판단하기',true)}</div>${result()}`;
+    root.innerHTML=`${prediction(['큰 키링','작은 키링','별 스티커'])}<div class="field-row">${numberField('tickets','기념품 교환권 수',6)}</div><p class="form-note">입장 티켓과 별도로 부스 체험 뒤 받은 기념품 교환권이에요.</p><div class="prize-rows"><div class="prize-row" data-prize="large">① 만일 교환권 ≥ 8 → 큰 키링 <small class="branch-status"></small></div><div class="prize-row" data-prize="small">② 아니면, 만일 교환권 ≥ 5 → 작은 키링 <small class="branch-status"></small></div><div class="prize-row" data-prize="sticker">③ 아니면 → 별 스티커 <small class="branch-status"></small></div></div><div class="experiment-actions">${button('run','위에서부터 판단하기',true)}</div>${result()}`;
     $('tickets').oninput=()=>{hide();root.querySelectorAll('.prize-row').forEach(x=>{x.classList.remove('chosen','skipped');x.querySelector('.branch-status').textContent='';});};
     $('run').onclick=()=>{const n=read('tickets');if(n===null)return;const p=M.choosePrize(n),selected=['large','small','sticker'].indexOf(p),name={large:'큰 키링',small:'작은 키링',sticker:'별 스티커'}[p];root.querySelectorAll('.prize-row').forEach((x,i)=>{x.classList.toggle('chosen',i===selected);x.classList.toggle('skipped',i>selected);x.querySelector('.branch-status').textContent=i<selected?'검사 → 거짓':i===selected?(i===2?'앞의 조건 모두 거짓 → 실행':'검사 → 참 → 실행'):'방문하지 않음';});show(`받을 상품은 ${name} 하나!<span class="explanation">${n>=8?'첫 조건이 참이므로 아래쪽 ‘아니면’은 실행하지 않아요.':n>=5?'8 이상은 거짓, 5 이상은 참이므로 두 번째 분기를 실행해요.':'두 조건이 모두 거짓이라 마지막 ‘아니면’을 실행해요.'}</span>`,{key:p,story:{prize:p},values:{prizeName:name}});};
   };
@@ -582,7 +607,7 @@
     const trapMap={3:60,4:45,5:108,6:120};
     const defaultTrap=n=>trapMap[n]||60;
     const initTurn=graded?(goal?.initialTurn&&goal.initialTurn!==M.polygonTurn(initialSides)?goal.initialTurn:defaultTrap(initialSides)):90;
-    root.innerHTML=`<div class="field-row"><label>선택한 도형의 변 수<select id="sides">${sidesOptions.map(n=>`<option${n===initialSides?' selected':''}>${n}</option>`).join('')}</select></label><label>한 번의 회전각 (바깥각)<select id="turn">${turnOptions.map(a=>`<option value="${a}"${a===initTurn?' selected':''}>${a}°</option>`).join('')}</select></label></div>${graded?'':prediction(['처음 자리로 돌아와 닫혀요','경로가 어긋날 것 같아요'])}<div class="two-columns"><div><pre class="block-code"><span id="sides-code">${initialSides}</span>번 반복하기\n  <span id="move-code">80만큼 움직이기</span>\n  <span id="turn-line"><span id="turn-code">${initTurn}</span>° 회전하기</span></pre><p class="form-note">빛 드론이 정다각형을 닫으려면 한 바퀴 360°를 변의 수로 나누어 회전해야 해요.</p><p class="control-description" id="polygon-command" role="status">오른쪽을 보고 출발해요.</p></div><div class="polygon-stage" id="polygon-stage" role="img" aria-label="도형 실행 경로"></div></div><div class="experiment-actions">${button('step','명령 한 줄씩')}${button('run','드론 비행 실행',true)}${button('stop','일시 정지')}</div>${result()}`;
+    root.innerHTML=`<div class="field-row"><label>선택한 도형의 변 수<select id="sides">${sidesOptions.map(n=>`<option${n===initialSides?' selected':''}>${n}</option>`).join('')}</select></label><label>한 번의 회전각<select id="turn">${turnOptions.map(a=>`<option value="${a}"${a===initTurn?' selected':''}>${a}°</option>`).join('')}</select></label></div>${graded?'':prediction(['처음 자리로 돌아와 닫혀요','경로가 어긋날 것 같아요'])}<div class="two-columns"><div><pre class="block-code"><span id="sides-code">${initialSides}</span>번 반복하기\n  <span id="move-code">80만큼 움직이기</span>\n  <span id="turn-line"><span id="turn-code">${initTurn}</span>° 회전하기</span></pre><p class="form-note">드론은 한 변을 날고 나서 정한 각도만큼 돌아요. 출발점으로 돌아와 도형이 닫혀야 성공!</p><p class="control-description" id="polygon-command" role="status">오른쪽을 보고 출발해요.</p></div><div class="polygon-stage" id="polygon-stage" role="img" aria-label="도형 실행 경로"></div></div><div class="experiment-actions">${button('step','명령 한 줄씩')}${button('run','드론 비행 실행',true)}${button('stop','일시 정지')}</div>${result()}`;
     let steps=0,running=false;const values=()=>({n:Number($('sides').value),a:Number($('turn').value)});
     const draw=()=>{const {n,a}=values(),points=M.polygonPath(n,80,a),shown=points.slice(0,Math.ceil(steps/2)+1),last=shown.at(-1),angle=Math.floor(steps/2)*a,xs=points.map(p=>p.x),ys=points.map(p=>p.y),x=Math.min(...xs)-45,y=Math.min(...ys)-45,w=Math.max(...xs)-x+50,h=Math.max(100,Math.max(...ys)-y+50);let arc='';if(steps>0&&steps%2===0){const r=24,start=(angle-a)*Math.PI/180,end=angle*Math.PI/180;arc=`<path class="turn-arc" d="M${last.x+r*Math.cos(start)},${last.y+r*Math.sin(start)} A${r},${r} 0 0 1 ${last.x+r*Math.cos(end)},${last.y+r*Math.sin(end)}"/>`;}$('polygon-stage').innerHTML=`<svg viewBox="${x} ${y} ${w} ${h}" aria-hidden="true"><polyline points="${shown.map(p=>p.x+','+p.y).join(' ')}"/>${arc}<path class="direction-cursor" transform="translate(${last.x} ${last.y}) rotate(${angle})" d="M10 0 L-6 -5 L-6 5 Z"/></svg>`;$('polygon-stage').setAttribute('aria-label',`${n}번 중 ${Math.ceil(steps/2)}번 이동, ${Math.floor(steps/2)}번 회전, 현재 방향 ${angle%360}도`);$('move-code').classList.toggle('trace',steps>0&&steps%2===1);$('turn-line').classList.toggle('trace',steps>0&&steps%2===0);$('step').disabled=running||steps>=n*2;$('run').disabled=running;$('stop').disabled=!running;};
     const stop=()=>{ctx.stopTimers();running=false;draw();};
@@ -617,7 +642,7 @@
     if(graded){
       const initCond=goal?.initialCondition||'!=';
       const initBody=goal?.initialBody||'outside';
-      root.innerHTML=`<div class="board"><h3>1. 잠금 해제 반복 블록 디버깅</h3><p class="form-note">틀린 암호(‘1111’)가 들어오면 다시 묻고, 1챕터 약속 시각 네 자리 암호가 들어오면 즉시 멈춰 잠금을 열어야 해요.</p><div class="block-code block-builder"><div id="until-before-line" class="form-note" hidden>암호 묻고 대답 기다리기 (반복 밖!)</div><div>(<select id="until-cond"><option value="!="${initCond==='!='?' selected':''}>대답 ≠ 목표 암호</option><option value="="${initCond==='='?' selected':''}>대답 = 목표 암호</option></select>) 이(가) 될 때까지 반복하기</div><div class="indent"><select id="until-body"><option value="outside"${initBody==='outside'?' selected':''}>아무것도 묻지 않고 그대로 검사만 반복</option><option value="inside"${initBody==='inside'?' selected':''}>암호 묻고 대답 기다리기 (반복 안)</option></select></div><div>잠금 풀고 점등식 시작!</div></div><div class="password-status"><span id="until-trace-step">블록을 고친 뒤 실행해 오답(‘1111’)과 약속 시각 네 자리를 테스트해 보세요.</span></div><div class="experiment-actions">${button('run-until','조건 검사하고 잠금 테스트 시작 →',true)}</div><div id="until-pass-box" hidden style="margin-top:14px"><label class="form-field">2. 제어반 네 자리 암호 입력 (오답 1111 먼저 시험해 보기)<input id="password" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="네 자리 숫자"></label><div class="experiment-actions">${button('wrong','1111 시험 입력')}${button('answer','암호 입력해서 검사하기',true)}</div><p id="password-error" class="form-feedback" role="status"></p></div></div>${result()}`;
+      root.innerHTML=`<div class="board"><h3>1. 잠금 해제 반복 블록 디버깅</h3><p class="form-note">틀린 암호(‘1111’)가 들어오면 다시 묻고, 어젯밤 정한 약속 시각 네 자리 암호가 들어오면 바로 멈춰 잠금을 열어야 해요.</p><div class="block-code block-builder"><div id="until-before-line" class="form-note" hidden>암호 묻고 대답 기다리기</div><div>(<select id="until-cond"><option value="!="${initCond==='!='?' selected':''}>대답 ≠ 목표 암호</option><option value="="${initCond==='='?' selected':''}>대답 = 목표 암호</option></select>) 이(가) 될 때까지 반복하기</div><div class="indent"><select id="until-body"><option value="outside"${initBody==='outside'?' selected':''}>아무것도 묻지 않고 그대로 검사만 반복</option><option value="inside"${initBody==='inside'?' selected':''}>암호 묻고 대답 기다리기 (반복 안)</option></select></div><div>잠금 풀고 점등식 시작!</div></div><div class="password-status"><span id="until-trace-step">블록을 고친 뒤 실행해 오답(‘1111’)과 약속 시각 네 자리를 테스트해 보세요.</span></div><div class="experiment-actions">${button('run-until','조건 검사하고 잠금 테스트 시작 →',true)}</div><div id="until-pass-box" hidden style="margin-top:14px"><label class="form-field">2. 제어반 네 자리 암호 입력 (오답 1111 먼저 시험해 보기)<input id="password" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="네 자리 숫자"></label><div class="experiment-actions">${button('wrong','1111 시험 입력')}${button('answer','암호 입력해서 검사하기',true)}</div><p id="password-error" class="form-feedback" role="status"></p></div></div>${result()}`;
       const resetPass=()=>{
         $('until-before-line').hidden=$('until-body').value!=='outside';
         $('until-pass-box').hidden=true;
@@ -663,7 +688,7 @@
         }
         $('password-error').textContent='';
         if(val!==secret){
-          $('until-trace-step').textContent=val==='1111'?'추적: ‘1111’ ≠ 암호 → 조건 거짓! 반복이 끝나지 않고 다시 물어요. 이제 1챕터 약속 시각 네 자리를 입력해 보세요!':`추적: ‘${val}’ ≠ 암호 → 조건 거짓! 다시 물어요. (힌트: 1챕터 약속 시각은 ${ctx.state.story.meetingTime}였어요!)`;
+          $('until-trace-step').textContent=val==='1111'?'추적: ‘1111’ ≠ 암호 → 조건 거짓! 반복이 끝나지 않고 다시 물어요. 이제 어젯밤 정한 약속 시각 네 자리를 입력해 보세요!':`추적: ‘${val}’ ≠ 암호 → 조건 거짓! 다시 물어요. (힌트: 어젯밤 정한 약속 시각은 ${ctx.state.story.meetingTime}였어요!)`;
           $('password').value='';
           $('password').focus();
           return;

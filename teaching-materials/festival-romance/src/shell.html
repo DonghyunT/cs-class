@@ -7,11 +7,11 @@
   <header class="topbar">
     <button class="brand" id="home-button" aria-label="처음 화면"><span class="brand-mark" aria-hidden="true">✦</span><span>내일, 축제에서 만나<small>페스티벌 로맨스 · CS 복습 챌린지</small></span></button>
     <div class="heart-hud" id="heart-hud" aria-label="호감도 하트 현황">
-      <div class="chapter-hearts" id="chapter-hearts" aria-label="현재 챕터 하트" hidden></div>
+      <div class="chapter-hearts" id="chapter-hearts" aria-label="이번 장 하트(첫 시도에 맞힌 문제)" title="이번 장 하트: 첫 시도에 맞힌 문제마다 ♥" hidden></div>
       <span class="total-hearts" id="total-hearts">총 ♥ 0/12</span>
       <span class="heart-delta" id="heart-delta" role="status" aria-live="polite" hidden></span>
     </div>
-    <div class="header-tools"><span class="chapter-indicator" id="chapter-indicator">하나의 이야기 · 12개 버그와 3가지 엔딩</span><fieldset class="variant-picker"><legend class="sr-only">하루 캐릭터 버전</legend><label><input type="radio" name="variant" value="boy" checked><span>남학생</span></label><label><input type="radio" name="variant" value="girl"><span>여학생</span></label></fieldset><button class="tool-button" id="settings-button">설정</button><button class="tool-button fullscreen-button" id="fullscreen" aria-label="전체 화면"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 9V4h5m6 0h5v5M4 15v5h5m6 0h5v-5"/></svg></button></div>
+    <div class="header-tools"><span class="chapter-indicator" id="chapter-indicator">하나의 이야기 · 12개 버그와 3가지 엔딩</span><fieldset class="variant-picker"><legend class="variant-legend">하루</legend><label><input type="radio" name="variant" value="boy" checked><span>남</span></label><label><input type="radio" name="variant" value="girl"><span>여</span></label></fieldset><button class="tool-button" id="settings-button">설정</button><button class="tool-button fullscreen-button" id="fullscreen" aria-label="전체 화면"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 9V4h5m6 0h5v5M4 15v5h5m6 0h5v-5"/></svg></button></div>
   </header>
   <section id="title-view" class="title-view" aria-label="타이틀과 챕터 선택">
     <div class="title-copy">
