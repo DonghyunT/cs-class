@@ -165,3 +165,11 @@ test('재도전 시 coldChoices 해제, 순차 해금, 임베드 메모리 저�
   assert.equal(embedAdapter.getItem(s.KEY), null);
   assert.equal(localTouched, 0);
 });
+
+test('variantText는 문자열을 그대로, 객체는 성별로 고르고 없으면 boy로', () => {
+  assert.equal(s.variantText('a', 'girl'), 'a');
+  assert.equal(s.variantText({ boy: 'b', girl: 'g' }, 'girl'), 'g');
+  assert.equal(s.variantText({ boy: 'b', girl: 'g' }, 'boy'), 'b');
+  assert.equal(s.variantText({ boy: 'b' }, 'girl'), 'b');
+  assert.equal(s.variantText(undefined, 'girl'), undefined);
+});

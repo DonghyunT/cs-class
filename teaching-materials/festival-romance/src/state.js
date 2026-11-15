@@ -3,6 +3,8 @@
   const KEY='festival-romance.game.v2';
   const CHAPTER_IDS=[1,2,3];
   function normalizeNickname(raw){return Array.from(typeof raw==='string'?raw.trim():'').slice(0,12).join('')||'여울';}
+  // 하루 대사 {boy, girl} 중 고른 성별 문장을 돌려줍니다(없으면 boy, 문자열은 그대로).
+  function variantText(value,variant){return value&&typeof value==='object'&&!Array.isArray(value)?(value[variant]??value.boy):value;}
   function vocative(name){const n=normalizeNickname(name),last=n.charCodeAt(n.length-1);return last>=0xAC00&&last<=0xD7A3?n+((last-0xAC00)%28?'아':'야'):n;}
   function storyValues(value={}){
     return {
@@ -258,7 +260,7 @@
     return Boolean(state?.seenScenes?.[key]||state?.seenLines?.[key]);
   }
   return {
-    KEY,normalizeNickname,vocative,createStoryState,applyIdentity,responseLines,conceptResponseLines,storyValues,
+    KEY,normalizeNickname,vocative,variantText,createStoryState,applyIdentity,responseLines,conceptResponseLines,storyValues,
     readBookmark,saveBookmark,clearBookmark,normalizeSiteUrl,
     sanitizeGameState,readGameState,saveGameState,clearGameState,
     createMemoryStorage,createStorageAdapter,isChapterUnlocked,

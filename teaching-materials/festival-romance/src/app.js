@@ -47,7 +47,7 @@
       routeDescription:t.route==='indoor'?'실내 부스를 둘러보고 나오니':t.route==='wait'?'비가 잠잠해질 때까지 함께 기다린 뒤':'야외 공연을 보고 나오니',
       ...(flowResult?.values||{})
     };
-    return String(value||'').replace(/\{\{(\w+)\}\}/g,(_,key)=>values[key]??'');
+    return String(S.variantText(value,state.variant)||'').replace(/\{\{(\w+)\}\}/g,(_,key)=>values[key]??'');
   }
 
   function buildEmbedPayload(){

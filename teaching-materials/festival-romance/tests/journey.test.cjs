@@ -147,3 +147,31 @@ test('3개 챕터·12개 등급 문항·마음 선택지·3가지 엔딩·교사
   assert.equal(heartChoiceScenes, 2);
   assert.equal(endingScenes, 1);
 });
+
+test('성별 대사 객체는 text·line에만, 두 키 모두, 같은 {{변수}}', () => {
+  const vars = (s) => [...s.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).sort().join(',');
+  const found = [];
+  const walk = (value, parentKey, where) => {
+    if (Array.isArray(value)) {
+      value.forEach((v, i) => walk(v, parentKey, `${where}[${i}]`));
+      return;
+    }
+    if (!value || typeof value !== 'object') return;
+    if ('boy' in value || 'girl' in value) {
+      found.push(where);
+      assert.deepEqual(Object.keys(value).sort(), ['boy', 'girl'], `${where}: boy·girl 두 키만`);
+      assert.ok(['text', 'line'].includes(parentKey), `${where}: text·line 아래에만 (지금 ${parentKey})`);
+      for (const k of ['boy', 'girl']) {
+        assert.equal(typeof value[k], 'string', `${where}.${k} 문자열`);
+        assert.ok(value[k].trim(), `${where}.${k} 비어 있지 않음`);
+      }
+      assert.equal(vars(value.boy), vars(value.girl), `${where}: 남녀 문장의 {{변수}}가 같아야 함`);
+      return;
+    }
+    for (const [k, v] of Object.entries(value)) walk(v, k, `${where}.${k}`);
+  };
+  for (const ch of chapters) walk(ch, null, ch.id);
+  // 구조 검사가 실제로 무언가를 검사하는지 확인(과제 7 이후 1장에 성별 대사가 생김)
+  assert.equal(typeof S.variantText, 'function');
+  return found;
+});
