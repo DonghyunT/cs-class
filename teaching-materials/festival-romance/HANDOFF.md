@@ -12,7 +12,7 @@
 ## 2. 번들 산출물 및 검증 기록
 
 - **산출물 무결성 ([qa/build-manifest.json](qa/build-manifest.json)):**
-  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `17,328,976` bytes, SHA-256 `af6af93ce230e07e3e8c98f23288a30279f454d456204ec407189f82744bda60`
+  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `17,304,316` bytes, SHA-256 `7210e15bb5c59d6a5f82ed386b996b32e3b02188997589591b8807333e6aad8a`
   - `public/festival-lesson.html` ≡ `dist/festival-lesson.html`: SHA-256 `8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c430b5` (원본 27장면 불변, 10/19 기준 검증은 [제작·검수 기록](제작-검수-기록.md))
 - **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 50/50 통과
   - `models.test.cjs` (14), `state.test.cjs` (7), `package.test.cjs` (3), `journey.test.cjs` (7), `refinement.test.cjs` (19)
@@ -27,7 +27,7 @@
 ## 3. 다음에 이어갈 작업
 
 1. **교사 확인:** 12문항을 짧게 줄인 판(2026-11-15)을 교사가 다시 해 보고 난이도·풀이 시간이 맞는지 확인합니다. 학생 테스터 검토를 다시 돌린다면 깊이·다양성 요구로 문항이 다시 길어지지 않게, 풀이 시간 상한(문항당 약 1분)을 지시에 넣습니다. 검토 자료는 `node teaching-materials/festival-romance/qa/student-review-pack.cjs`로 만듭니다. 3장 3번(반복 조건)은 보기가 ≠/= 두 개뿐이라 사실상 첫 시도에 맞히기 쉽습니다.
-2. **캐릭터 시트:** v15(표정 5개 새로 그림)를 적용했습니다. 남학생 수줍음·환한 웃음·장난기는 소매 윤곽이 미소 칸보다 9~12px 넓어, 표정이 바뀔 때 소매가 살짝 움직여 보일 수 있습니다. 거슬리면 해당 칸만 같은 요청문으로 다시 그립니다(요청문은 이미지 제작 기록). 다른 시안으로 바꾸려면 같은 3×2 규격으로 만들어 `build.cjs`의 파일 이름만 바꿉니다(PNG 높이로 `rows`를 자동 감지).
+2. **캐릭터 시트:** v15(표정 5개 새로 그림)를 적용했습니다. 남학생 수줍음·장난기는 소매 윤곽이 미소 칸보다 약 9~10px 넓어, 표정이 바뀔 때 소매가 살짝 움직여 보일 수 있습니다. 거슬리면 해당 칸만 같은 요청문으로 다시 그립니다(요청문은 이미지 제작 기록). 다른 시안으로 바꾸려면 같은 3×2 규격으로 만들어 `build.cjs`의 파일 이름만 바꿉니다(PNG 높이로 `rows`를 자동 감지).
 3. **Phase 5 메인 앱 임베드:** `cs-class` 본 사이트 내 복습 활동에서 `/festival-romance.html?embed=1`을 iframe으로 띄우고 `festival:init`/`festival:state`/`festival:complete`와 `useWork` 수동 저장을 연동합니다.
 4. **현장 확인:** 실제 학교 교실 프로젝터(교사용 `/festival-lesson.html`·`?mode=teacher`)와 학생 태블릿/크롬북(학생용 `/festival-romance.html`)에서 가독성과 터치 조작을 최종 점검합니다.
 
