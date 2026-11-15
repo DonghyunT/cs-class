@@ -3,6 +3,13 @@
   "baseline": "98781bd6e506e3ab5b1be08c39677e658215dba9",
   "records": [
     {
+      "source": "docs/plans/festival-romance-embed.md",
+      "archive": "docs/archive/cs-class/2026-11-16-completed-plans/festival-romance-embed.md",
+      "origin": "completed-plan-archived-20261116",
+      "baseCommit": "dc7852e48d683f809fb8aac35e1d8b694d9379e2",
+      "sha256": "2759a2dc69cdc98d4a6938939a0029e54eafc407fd1e31fcbf34725caf03ca68"
+    },
+    {
       "source": "docs/plans/festival-romance-review-game.md",
       "archive": "docs/archive/cs-class/2026-11-15-completed-plans/festival-romance-review-game.md",
       "origin": "completed-plan-archived-20261115",

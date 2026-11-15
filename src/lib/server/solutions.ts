@@ -184,7 +184,7 @@ export const SOLUTIONS: Record<string, LessonSolution> = {
 export function getLessonSolution(lessonId: string): LessonSolution | undefined {
   const lesson = REVIEW_LESSONS.find(item => item.id === lessonId);
   if (lesson) {
-    const unit = UNIT_QUIZ_DATA[lesson.practice.type === "sandwich" ? "algorithm" : lesson.practice.type as "abstraction" | "flowchart"];
+    const unit = lesson.practice.type === "festival" ? { questions: [] } : UNIT_QUIZ_DATA[lesson.practice.type === "sandwich" ? "algorithm" : lesson.practice.type as "abstraction" | "flowchart"];
     return { lessonId, conceptAnswers: Object.fromEntries(lesson.concepts.map(c => [c.id, "0"])), quizAnswers: Object.fromEntries(unit.questions.map(q => [String(q.id), String(q.options.findIndex(o => o.correct))])), quizFeedback: Object.fromEntries(unit.questions.map(q => [String(q.id), { correct: q.explanation, incorrect: q.wrong }])), conceptRetry: REVIEW_CONCEPT_RETRY, practice: { type: "ordering", expectedOrder: [], successMessage: "", failureMessage: "" } };
   }
   return SOLUTIONS[lessonId];

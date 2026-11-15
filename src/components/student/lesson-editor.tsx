@@ -18,6 +18,7 @@ import { isReviewType } from "@/lib/classroom/review/project";
 import { Sandwich } from "./review/sandwich";
 import { Abstraction } from "./review/abstraction";
 import { Flowchart } from "./review/flowchart";
+import { Festival } from "./review/festival";
 import reviewStyles from "./review/review.module.css";
 import styles from "./student.module.css";
 import type { LessonOrigin } from "./lesson-shell";
@@ -41,7 +42,7 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
     {lesson.concepts.map((concept, i) => <li key={concept.id}><strong>개념 {i + 1}</strong>{label(concept.question, draft.conceptAnswers[concept.id])}</li>)}
     {lesson.quiz.map((question, i) => <li key={question.id}><strong>퀴즈 {i + 1}</strong>{label(question, draft.quizAnswers[question.id])}</li>)}
     {lesson.practice.type === "programming" && missionsFor(lesson.id).map((mission) => <li key={mission.id}><strong>{mission.title}</strong>{draft.programming?.projects[mission.id] ? `${parseProgrammingProject(draft.programming.projects[mission.id])?.order.length ?? 0}개 블록` : "아직 시작하지 않았어요"}</li>)}
-    {draft.reviewProject && <li><strong>복습 작품</strong>{draft.reviewProject.type === "sandwich" ? `${draft.reviewProject.commands.length}개 명령 · 작성 중: ${draft.reviewProject.input}` : draft.reviewProject.type === "abstraction" ? `${draft.reviewProject.current} → ${draft.reviewProject.goal}` : `${draft.reviewProject.nodes.length}개 기호 · ${draft.reviewProject.edges.length}개 연결`}</li>}
+    {draft.reviewProject && <li><strong>복습 작품</strong>{draft.reviewProject.type === "sandwich" ? `${draft.reviewProject.commands.length}개 명령 · 작성 중: ${draft.reviewProject.input}` : draft.reviewProject.type === "abstraction" ? `${draft.reviewProject.current} → ${draft.reviewProject.goal}` : draft.reviewProject.type === "festival" ? `하트 ${draft.reviewProject.totalHearts}/${draft.reviewProject.maxHearts}개` : `${draft.reviewProject.nodes.length}개 기호 · ${draft.reviewProject.edges.length}개 연결`}</li>}
     <li><strong>{lesson.practice.type === "entryjs" ? "엔트리 블록" : "실습 순서"}</strong>{lesson.practice.type === "entryjs" ? `${draft.practiceOrder.length}개 블록 조립됨` : draft.practiceOrder.map((id) => lesson.practice.blocks.find((block) => block.id === id)?.label).filter(Boolean).join(" → ")}</li>
   </ul>;
 }
@@ -50,7 +51,7 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
 export const LessonEditor = memo(function LessonEditor({ lesson, initial, controller, entryExport, mode = "student", workspaceWide, practiceFocused, onWorkspaceWideChange, onWorkspaceStageChange, onFrameChange }: { lesson: Lesson; initial: Work; controller: WorkController; entryExport: RefObject<EntryExport | null>; mode?: LessonMode; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
   const { work, draft, busy, update, perform, saveState, error, switchStage: changeStage, actionBlocked } = controller;
   const progress = progressFor(lesson, work);
-  const reviewType = lesson.practice.type === "sandwich" || lesson.practice.type === "abstraction" || lesson.practice.type === "flowchart" ? lesson.practice.type : null;
+  const reviewType = lesson.practice.type === "sandwich" || lesson.practice.type === "abstraction" || lesson.practice.type === "flowchart" || lesson.practice.type === "festival" ? lesson.practice.type : null;
   const completed = progress.status === "completed", lessonBadges = lessonBadgesFor(lesson, work);
   // Celebrate only the change to complete during this visit, whichever activity finished it,
   // and list just the badges whose count this change raised (the dashboard counts lessons per badge).
@@ -65,13 +66,14 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   }, [completed, lessonBadges, toasts]);
   const [celebration, setCelebration] = useState<BadgeId[] | null>(null);
   if (completed !== seen.completed || lessonBadges.join() !== seen.badges.join()) {
-    if (completed && !seen.completed) setCelebration(lessonBadges.filter(id => !seen.badges.includes(id)));
+    // The game fills the window with its own ending report and earns no badge (D1, D6), so it gets no card on top.
+    if (completed && !seen.completed && reviewType !== "festival") setCelebration(lessonBadges.filter(id => !seen.badges.includes(id)));
     setSeen({ completed, badges: lessonBadges });
   }
   const [practiceVisited, setPracticeVisited] = useState(initial.draft.stage === "practice");
   if (draft.stage === "practice" && !practiceVisited) setPracticeVisited(true);
-  // Keep local consultation and reading position for this lesson without adding server storage.
-  const keepPractice = practiceVisited && (reviewType === "sandwich" || reviewType === "abstraction");
+  // Keep local consultation and reading position for this lesson without adding server storage, and never reload the 17 MB game.
+  const keepPractice = practiceVisited && (reviewType === "sandwich" || reviewType === "abstraction" || reviewType === "festival");
   const [moveMessage, setMoveMessage] = useState("");
   const [switchingTo, setSwitchingTo] = useState<Stage | null>(null);
   const [focusRequest, setFocusRequest] = useState<{ id: string | readonly string[]; preventScroll?: boolean } | null>(null);
@@ -137,7 +139,8 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     // A later edit may make the old validation invisible; the stage heading remains a safe focus target.
     const changed = JSON.stringify(controller.getDraft()) !== JSON.stringify(controller.actionFailure?.before.draft);
     const differentConcept = action.type === "check-concept" && action.conceptId !== displayedConcept.current;
-    setFocusRequest({ id: changed && action.type !== "retry-quiz" || differentConcept ? `stage-heading-${draft.stage}` : id });
+    // The game's status line and heading are screen-reader only: its finish button if still needed, else the game.
+    setFocusRequest({ id: reviewType === "festival" ? ["festival-finish", "festival-game"] : changed && action.type !== "retry-quiz" || differentConcept ? `stage-heading-${draft.stage}` : id });
   }
   function moveBlock(id: string, delta: number) {
     const index = draft.practiceOrder.indexOf(id);
@@ -157,7 +160,8 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     onFrameChange({ stage: draft.stage, saveLabel, save: mode === "student" ? controller.save : undefined, saveDisabled: locked || controller.capturing || controller.aiBusy || saveState === "saving" || controller.conflict || controller.actionBlocked || (needsNative && !nativeReady), learningStatus: <LearningStatus lesson={lesson} work={work} />, navigation, focusRequest });
   }, [onFrameChange, saveLabel, lesson, work, actionLocked, draft.stage, tabKey, switchStage, focusRequest, controller.save, controller.capturing, controller.aiBusy, controller.conflict, controller.actionBlocked, locked, mode, saveState, needsNative, nativeReady]);
   const content = <>
-    {completed && !practiceFocused && <CompletionBanner lesson={lesson} mode={mode} />}
+    {/* The game fills the window and shows its own ending. */}
+    {completed && !practiceFocused && reviewType !== "festival" && <CompletionBanner lesson={lesson} mode={mode} />}
     {error && <section id="work-save-error" tabIndex={-1} className={styles.errorPanel} role="alert"><strong>{controller.conflict ? "저장 기록이 서로 달라요." : "요청을 완료하지 못했어요."}</strong><p>{error}</p><p>현재 입력은 이 화면에 유지하고 있어요. 확인 전에는 창을 닫지 마세요.</p><Button variant="outline" disabled={busy} onClick={() => void (controller.conflict ? controller.compare() : controller.retry())}>{controller.conflict ? "서버 기록과 비교" : "저장 다시 확인"}</Button></section>}
     {controller.actionFailure && <section id="work-action-error" tabIndex={-1} className={styles.errorPanel} role="alert">
       <strong>{controller.actionFailure.uncertain ? "요청 결과를 확인해 주세요." : "행동 요청을 완료하지 못했어요."}</strong>
@@ -181,7 +185,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
 
     {draft.stage === "quiz" && <LessonQuizPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} quizQuestionId={quizQuestionId} moveQuestion={moveQuestion} />}
 
-    {isReviewType(lesson.practice.type) && (draft.stage === "practice" || keepPractice) && <section id="panel-practice" hidden={draft.stage !== "practice"} role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 className={reviewStyles.srOnly} id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2>{lesson.practice.type === "sandwich" ? <Sandwich mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "abstraction" ? <Abstraction mode={mode} controller={controller} practiceFocused={practiceFocused} /> : <Flowchart mode={mode} controller={controller} practiceFocused={practiceFocused} />}</section>}
+    {isReviewType(lesson.practice.type) && (draft.stage === "practice" || keepPractice) && <section id="panel-practice" hidden={draft.stage !== "practice"} role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 className={reviewStyles.srOnly} id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2>{lesson.practice.type === "sandwich" ? <Sandwich mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "abstraction" ? <Abstraction mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "festival" ? <Festival mode={mode} controller={controller} /> : <Flowchart mode={mode} controller={controller} practiceFocused={practiceFocused} />}</section>}
     {lesson.practice.type !== "programming" && !isReviewType(lesson.practice.type) && draft.stage === "practice" && (
       <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" tabIndex={0} className={styles.stagePanel}>
         <div className={styles.stageHeading}>

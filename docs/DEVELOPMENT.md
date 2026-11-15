@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-11-09(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-11-16(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -224,6 +224,8 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 
 **로컬 전체 실행:** 변경 범위와 관계없이 전체를 돌리는 명령은 `npm run test:e2e`입니다(`--full`은 선별 결과가 `full`일 때 실행을 허용할 뿐입니다). 앱과 에뮬레이터를 끄고 3000·8080·9099를 비운 뒤 실행합니다. 로컬은 `next dev`, CI는 빌드한 `next start`로 돌기 때문에 결과는 GitHub 실행과 구분해 실행 SHA와 함께 적습니다(PR 경로는 PR 설명, 그 밖에는 HANDOFF 남은 한계).
 
+**축제 복습 게임:** 게임 원본(`teaching-materials/festival-romance/**`)과 번들(`public/festival-romance.html`)도 `review-festival` 수업으로 매핑되어 `review-festival`·`teacher-lesson-preview` 검사와 그 수업의 스모크를 돌립니다. 게임 자체의 단위 테스트와 브라우저 QA는 E2E와 CI에 들어 있지 않으므로, 게임 파일을 바꾸면 [게임 README](../teaching-materials/festival-romance/README.md)의 명령으로 따로 돌립니다.
+
 **미분류 파일이 있을 때의 로컬 검사:** 로컬 선별 도구(`npm run test:e2e:scope`)는 수업에 매핑되지 않은 파일(서버·공통·설정·검사 파일 등)이 하나라도 있으면 `full`을 내고 멈춥니다. CI는 같은 경우 `smoke`로 낮춥니다. 이때는 전체 E2E를 돌리지 않고 아래 순서로 검사 파일을 직접 골라 돌립니다.
 
 1. 바꾼 코드를 직접 쓰는 검사와, 바꾼 파일 이름·API 경로(예: `/api/classroom/classes`)를 `git grep -l "<이름>" -- tests`로 찾아 나온 검사를 모두 고릅니다(예: `src/lib/server/auth.ts` → `auth-security`·`settings`·`guest-login`·`first-entry`·`roster-off-list`, 수업 설정 → `classroom-api`·`teacher-class-management`).
@@ -346,6 +348,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 
 - **코드 구조:** `src/lib/classroom/review/`에 순수 엔진(샌드위치, 순서도 실행기, 추상화 데이터)을 두고, 화면 컴포넌트는 `src/components/student/review/`에 배치합니다.
 - **순서도 (`flowchart.tsx`):** 퍼즐 실습(3열), 예시 공방(2열), 자유 공방(4열). 임의 JS 실행 없이 순수 표현식 인터프리터(`flow-runner.mjs`)로 동작합니다.
+- **축제 복습 게임 (`festival.tsx`):** 게임 번들 `public/festival-romance.html`은 `teaching-materials/festival-romance/build.cjs`로 다시 빌드하고([게임 README](../teaching-materials/festival-romance/README.md)) 학생 화면은 그것을 iframe으로 엽니다. iframe 주소·sandbox는 [`festival-embed.ts`](../src/lib/classroom/review/festival-embed.ts)의 `festivalFrame`이 고릅니다. 운영 빌드에서 엔트리 작업실 호스트가 정해져 있으면 그 호스트(`allow-same-origin` 허용, 다른 사이트라 쿠키에 닿지 못함), 아니면 같은 주소의 `allow-scripts allow-forms`입니다. 교사 화면은 [`festival-report.ts`](../src/lib/classroom/review/festival-report.ts)가 게임의 장 정의에서 문항 이름을 읽습니다.
 - **AI 엔드포인트 (`POST /api/classroom/ai`):** HMAC 기반 요청 검증, 학생별 사용량 장부(`csAiUsage/{uid}`, 한도는 [PRD §4.3](PRD.md#43-선택-복습-수업-공통-정책)), 결과 TTL 캐시(24시간)를 적용합니다.
 - **실제 AI 품질 검사:** 유료 Solar 호출은 [AGENTS의 먼저 묻는 일](../AGENTS.md#검증-및-배포-규칙)을 따릅니다.
 

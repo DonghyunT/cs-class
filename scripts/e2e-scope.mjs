@@ -123,6 +123,21 @@ export const LESSON_MAPPINGS = {
       "tests/lesson-feedback-workspace.spec.ts"
     ]
   },
+  "review-festival": {
+    lessonId: "review-festival",
+    patterns: [
+      /^src\/components\/student\/review\/festival\.tsx$/,
+      /^src\/lib\/classroom\/review\/festival-(?:embed|report)\.ts$/,
+      // The game the classroom frames and its source; the teacher view reads the game's chapter files.
+      /^public\/festival-romance\.html$/,
+      /^teaching-materials\/festival-romance\/.+$/,
+      /^tests\/(?:festival-(?:embed|project|report)\.test|review-festival\.spec)\.ts$/
+    ],
+    tests: [
+      "tests/review-festival.spec.ts",
+      "tests/teacher-lesson-preview.spec.ts"
+    ]
+  },
   "programming-13": {
     lessonId: "programming-13",
     patterns: [
@@ -211,7 +226,8 @@ const ENTRY_HOSTING = {
     // Moves the workspace to the Entry CDN on production builds.
     /^scripts\/entryjs-cdn\.(?:mjs|json)$/,
     /^cloudflare\/entry-cdn\/.+$/,
-    // Only the Entry workspace's headers and its host's redirect live here; remove this entry if the config grows.
+    // Only the Entry workspace's headers and its host's redirect live here (tests/festival-embed.test.ts checks the festival
+    // game's redirect exception and its embed sandbox header); remove this entry if the config grows.
     /^next\.config\.ts$/,
     // Answers the sandboxed iframe's CORS preflights. Remove this entry if the matcher grows beyond /entryjs/.
     /^src\/proxy\.ts$/

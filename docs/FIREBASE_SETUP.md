@@ -1,6 +1,6 @@
 # Firebase·Vercel 운영 설정과 배포
 
-갱신: 2026-11-09(Asia/Seoul). 운영 Firebase·Vercel의 설정·배포·복구 절차입니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다. 지금 설정이 어떤 상태인지는 끝의 [운영 환경 현황](#운영-환경-현황)에 모읍니다.
+갱신: 2026-11-16(Asia/Seoul). 운영 Firebase·Vercel의 설정·배포·복구 절차입니다. 승인 대상은 `cs-class-f74c4`, 기본 Firestore Standard DB는 서울(`asia-northeast3`)입니다. V1이나 도구가 이전에 가리키던 다른 프로젝트를 사용하지 않습니다. 지금 설정이 어떤 상태인지는 끝의 [운영 환경 현황](#운영-환경-현황)에 모읍니다.
 
 ## 연결 기준
 
@@ -101,6 +101,8 @@ Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 �
 <a id="엔트리-작업실-주소"></a>
 
 운영 수업 iframe은 작업실을 같은 Vercel 프로젝트의 두 번째 운영 도메인 `cs-class-sigma.vercel.app`(`scripts/entryjs-cdn.json`의 `workspaceHost`)에서 엽니다. 다른 사이트라서 `allow-same-origin`을 줘도 앱의 쿠키에 닿지 못하고, 그 덕분에 크롬이 작업실 파일을 캐시해 학생마다 수업 중 처음 한 번만 받습니다(이유와 구조는 [개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)). 같은 배포를 내주므로 따로 올리거나 버전을 맞출 일이 없습니다.
+
+이 호스트는 `/entryjs/` 외에 축제 복습 게임 파일 `/festival-romance.html`도 내줍니다(`next.config.ts`의 이동 규칙이 이 파일만 빼 둠). `review-festival` 수업 iframe이 이 주소에서 `allow-same-origin`으로 열리고, 그 밖의 경로는 그대로 운영 주소로 307 이동합니다. 확인은 아래 2번에서 `https://cs-class-sigma.vercel.app/festival-romance.html`이 200인지 함께 봅니다.
 
 1. **도메인 설정(사용자, 병합 전):** Vercel `cs-class` → Settings → Domains에서 `cs-class-sigma.vercel.app`의 Edit를 눌러 `cs-class-donghyunt.vercel.app`으로의 Redirect를 없애고(No redirect) Production에 연결된 채로 저장합니다. 이 사이 잠깐은 그 주소에서 앱 전체가 열리므로 수업이 없을 때 바꾸고 곧바로 병합합니다.
 2. **확인:** 병합 뒤 공개 빌드 로그의 `Entry vendor files:` 줄이 `workspace host cs-class-sigma.vercel.app`인지 봅니다(`answered 307`이면 1번이 안 된 것으로, 작업실은 앱 사본으로 열림). `https://cs-class-sigma.vercel.app/login`이 운영 주소로 307 이동하고(`/_next/`의 공개 빌드 파일은 Next.js가 리디렉트에서 빼므로 그대로 응답), `/entryjs/workspace.html`은 200에 `Content-Security-Policy`가 없는지, 운영 주소의 같은 파일에는 `sandbox allow-scripts`가 있는지 봅니다. 수업에서 Observability의 경로별 요청으로 `/entryjs/vendor/`가 학생 수 정도로 줄었는지 확인합니다.
