@@ -747,6 +747,26 @@ async function playChapterToEnd(page, chapterId, {
         await page.locator(`[data-scene="${id}"]`).click();
         await advanceDialogue(page);
       };
+      // 2장 2번: 기호를 바르게 고친 뒤 6장 테스트(입장 불가가 맞음)는 첫 시도 실패가 아님
+      await jump('ch2-2');
+      await page.locator('#operator').selectOption('≥');
+      await page.locator('#five').click(); // 기준-1 = 6장
+      await page.locator('#run').click();
+      assert.equal(await page.locator('#result.result-wrong').count(), 0, '규칙대로 막힌 6장 테스트는 오답 아님');
+      const ch2Run = await page.evaluate(() => JSON.parse(localStorage.getItem('festival-romance.game.v2')).activeRuns?.['2']);
+      assert.equal(Boolean(ch2Run?.missedThisRun?.['ch2-q1']), false, '6장 테스트로 하트를 잃지 않음');
+      await page.locator('#six').click(); // 기준 = 7장
+      await page.locator('#run').click();
+      await waitForActivityPass(page);
+      // 2장에서 선을 그었다면 3장 시작 대사가 달라짐
+      await page.evaluate(() => { const k = 'festival-romance.game.v2'; const s = JSON.parse(localStorage.getItem(k)); s.coldChoices = { 'ch2-6': true }; localStorage.setItem(k, JSON.stringify(s)); });
+      await page.reload();
+      await page.locator('#contents-button').click();
+      await page.locator('[data-scene="ch3-1"]').click();
+      await page.locator('#next-button').click();
+      assert.match(await page.locator('#dialogue-text').innerText(), /준비팀 몫/, '선을 그은 뒤 3장 첫 대사');
+      await page.evaluate(() => { const k = 'festival-romance.game.v2'; const s = JSON.parse(localStorage.getItem(k)); s.coldChoices = {}; localStorage.setItem(k, JSON.stringify(s)); });
+      await page.reload();
       await jump('ch1-2');
       await solveArrange(page, { keyboard: true });
       await waitForActivityPass(page);

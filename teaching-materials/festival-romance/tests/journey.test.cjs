@@ -186,3 +186,12 @@ test('하루의 감정 대사(본편 대사·응답·도입·성공 반응·엔�
   }
   assert.deepEqual(plain, [], '남녀로 나뉘지 않은 하루 대사');
 });
+
+test('2장에서 선을 그었으면 3장 시작·도형 장면에 그에 맞는 대사가 있다(when: cold/warm)', () => {
+  for (const id of ['ch3-1', 'ch3-3']) {
+    const sc = ch3.scenes.find((s) => s.id === id);
+    const pool = [...(sc.lines || []), ...(sc.flow?.intro || [])];
+    assert.ok(pool.some((l) => l.when === 'cold'), `${id} cold 대사`);
+    assert.ok(pool.some((l) => l.when === 'warm'), `${id} warm 대사`);
+  }
+});

@@ -55,6 +55,9 @@ node teaching-materials/festival-romance/qa/browser.cjs
 
 # 4. 복습 앱 주요 시뮬레이터·모션 옵션 QA
 node teaching-materials/festival-romance/qa/playback-app.cjs
+
+# 5. 학생 테스터(사람·AI)용 검토 자료: 전체 대본(남녀 대사·활동·힌트)과 활동 캡처 → qa-results/student-review/
+node teaching-materials/festival-romance/qa/student-review-pack.cjs
 ```
 
 QA 스크린샷과 리포트 JSON은 `teaching-materials/festival-romance/qa-results/`(Git 제외)에 생성됩니다.

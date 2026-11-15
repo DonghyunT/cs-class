@@ -214,7 +214,7 @@
       }
     };
     const note=g.note?`<aside class="arrange-note"><strong>${escape(g.note.title||'메모')}</strong><ol>${(g.note.lines||[]).map(l=>`<li>${escape(l)}</li>`).join('')}</ol></aside>`:'';
-    root.innerHTML=`<div class="board arrange-board">${note}${g.hat?`<p class="arrange-hat">${escape(g.hat)}</p>`:''}<ol id="arrange-list" class="arrange-list" aria-label="블록 순서"></ol>${(g.blocks||[]).some(b=>b.choices)?'<p class="form-note">⇄ 표시된 블록은 누르면 내용이 바뀌어요.</p>':''}<p id="arrange-live" class="sr-only" aria-live="polite"></p><div class="experiment-actions">${button('run-arrange',escape(g.runLabel||'실행해 보기'),true)}</div><div id="arrange-sim" class="arrange-sim" hidden></div></div>${result()}`;
+    root.innerHTML=`<div class="board arrange-board">${note}${(g.blocks||[]).some(b=>b.choices)?'<p class="form-note">⇄ 표시된 블록은 누르면 내용이 바뀌어요.</p>':''}${g.hat?`<p class="arrange-hat">${escape(g.hat)}</p>`:''}<ol id="arrange-list" class="arrange-list" aria-label="블록 순서"></ol><p id="arrange-live" class="sr-only" aria-live="polite"></p><div class="experiment-actions">${button('run-arrange',escape(g.runLabel||'실행해 보기'),true)}</div><div id="arrange-sim" class="arrange-sim" hidden></div></div>${result()}`;
     draw();
     $('run-arrange').onclick=()=>{
       const r=M.evaluateArrange(order,g,picks);
@@ -417,7 +417,8 @@
         return;
       }
       if(graded&&!enough){
-        show(`입장 티켓 비교: ${n} ${escape(op)} ${threshold} → 거짓<span class="explanation">${n}장은 ${threshold}장보다 적어서 입장할 수 없어요. ${threshold}장을 가진 우리 둘로 다시 확인해 보세요.</span>`,{valid:false});
+        const resEl=$('result');resEl.classList.remove('result-wrong','result-correct');resEl.classList.add('result-repro');
+        resEl.innerHTML=`입장 티켓 비교: ${n} ${escape(op)} ${threshold} → 거짓<span class="explanation">규칙대로 ${n}장은 들어갈 수 없어요(하트와 상관없는 테스트). 이제 ${threshold}장을 가진 우리 둘로 확인해 보세요.</span>`;resEl.hidden=false;ctx.invalidate();
         return;
       }
       const valid=validOp;

@@ -473,3 +473,5 @@ dialog::backdrop{background:#202a3b68}
 .chapter-hearts::before{content:"이 장";margin-right:6px;font-size:12px;font-weight:650;color:var(--muted)}
 #next-button:disabled{opacity:1;background:#d9d3c8;border-color:#bfb6a6;color:#3d3a35}
 .path-legend,.map-legend{margin:6px 0 4px}
+.lesson-main .experiment-actions{position:static;background:none;padding:0;margin-top:14px}
+.lesson-main.has-more::after{margin:6px 6px 0 auto;opacity:.92}
