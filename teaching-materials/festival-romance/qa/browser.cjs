@@ -76,6 +76,11 @@ async function waitForActivityPass(page) {
   }, null, { timeout: 15000 });
 }
 
+async function waitForRepro(page, why) {
+  await page.locator('#result.result-repro').waitFor({ timeout: 15000 });
+  assert.match(await page.locator('#result').innerText(), /버그 재현/, why);
+}
+
 async function waitForActivityFail(page) {
   await page.waitForFunction(() => {
     const res = document.getElementById('result');
@@ -407,7 +412,12 @@ async function playChapterToEnd(page, chapterId, {
       await advanceDialogue(page);
       assert.equal(await page.locator('#experiment').getAttribute('data-experiment'), 'arrange');
       assert.equal(await page.locator('.arrange-note').isVisible(), true, '하루의 손글씨 메모 표시');
-      await page.locator('#run-arrange').click(); // 처음 순서(말하기가 맨 위) 그대로 실행 → 첫 시도 실패
+      await page.locator('#run-arrange').click(); // 고치기 전 그대로 실행 → 버그 재현(하트 영향 없음)
+      await waitForRepro(page, '고치기 전 실행은 버그 재현');
+      assert.match(await page.locator('.sim-screen').innerText(), /" 님, 환영해요!"/, '재현 실행 기록에 빈 이름 인사');
+      assert.equal(await page.locator('#chapter-hearts .heart-slot.missed').count(), 0, '버그 재현은 첫 시도 실패가 아님');
+      await page.locator('[data-arrange-move="-1"][data-id="set"]').click(); // 한 줄만 옮긴 틀린 고침 → 첫 시도 실패
+      await page.locator('#run-arrange').click();
       await waitForActivityFail(page);
       assert.match(await page.locator('#result').innerText(), /\[이름\]이 아직 비어/);
       assert.match(await page.locator('.sim-screen').innerText(), /" 님, 환영해요!"/, '실행 기록에 빈 이름 인사 표시');
@@ -622,8 +632,8 @@ async function playChapterToEnd(page, chapterId, {
       await page.locator('[data-key="ArrowUp"]').click(); // 연결되지 않은 신호 → 아무 일도 없음(채점 안 함)
       assert.equal(await page.locator('#result').isVisible(), false, '연결 안 된 신호는 채점하지 않음');
       assert.match(await page.locator('#map-info').innerText(), /연결된 블록이 없/);
-      await page.locator('#start-map').click(); // 처음 연결(시작하기 버튼) 그대로 실행 → 사건 오답
-      await waitForActivityFail(page);
+      await page.locator('#start-map').click(); // 고치기 전 그대로 → 하늘로 날아가는 버그 재현
+      await waitForRepro(page, '길 안내 버그 재현');
       await page.locator('[data-map-event="ArrowRight"]').click();
       await page.locator('[data-key="ArrowRight"]').click(); // 방향 0° 그대로 → 방향각 오답
       await waitForActivityFail(page);
@@ -638,8 +648,8 @@ async function playChapterToEnd(page, chapterId, {
       await waitForActivityPass(page);
 
       await enterExp('ch1-6'); // math
-      await page.locator('#run').click(); // 괄호 없이 실행 → 9.5
-      await waitForActivityFail(page);
+      await page.locator('#run').click(); // 괄호 없이 실행 → 9.5 버그 재현
+      await waitForRepro(page, '티켓 나누기 버그 재현');
       assert.match(await page.locator('#math-steps').innerText(), /9 ÷ 2 = 4\.5/);
       await page.locator('[data-math-gap="0"]').click();
       await page.locator('[data-math-gap="3"]').click();
@@ -650,6 +660,11 @@ async function playChapterToEnd(page, chapterId, {
       await waitForActivityFail(page);
 
       await enterExp('ch2-2'); // compare
+      await page.locator('#run').click(); // > 그대로 → 버그 재현
+      await waitForRepro(page, '포토 부스 버그 재현');
+      assert.equal(await page.locator('#booth-open').isVisible(), false, '채점 화면에는 부스 운영 조건(AND) 없음');
+      await page.locator('#seven').click();
+      await page.locator('#operator').selectOption('<');
       await page.locator('#run').click();
       await waitForActivityFail(page);
 
@@ -658,8 +673,9 @@ async function playChapterToEnd(page, chapterId, {
       await waitForActivityFail(page);
 
       await enterExp('ch2-4'); // route
-      await page.locator('#run').click();
-      await waitForActivityFail(page);
+      await page.locator('#run').click(); // 고치기 전 → 버그 재현
+      await waitForRepro(page, '날씨 길 안내 버그 재현');
+      assert.equal(/우산/.test(await page.locator('#experiment').innerText()), false, '실내로 가는 조건은 로비·통로(우산 아님)');
       await page.locator('#route-rain-check').selectOption('not');
       await page.locator('#run').click();
       await waitForActivityFail(page);
@@ -671,15 +687,21 @@ async function playChapterToEnd(page, chapterId, {
         const rows = await page.locator('#prize-rows').innerText();
         assert.equal(/또는/.test(rows), false, '다중 선택 줄에 가짜 또는 없음');
         assert.match(rows, /아니면, 만일/);
-        await page.locator('#run').click(); // 처음 상태(작은 기준이 맨 위) → 오답
+        await page.locator('#run').click(); // 처음 상태 → 버그 재현
+        await waitForRepro(page, '자판기 버그 재현');
+        await page.locator(`[data-prize-top="${[...goal.tiers].sort((a, b) => b.min - a.min)[1].key}"]`).click(); // 중간 기준을 맨 위로 → 오답
+        await page.locator('#run').click();
         await waitForActivityFail(page);
       }
 
       await enterExp('ch3-5'); // 피날레 블록판(표기만 바꾸기)
       assert.equal(await page.locator('[data-arrange-move]').count(), 0, '피날레는 순서 이동 없이 표기만 바꿈');
+      await page.locator('#run-arrange').click(); // 고치기 전 → 버그 재현
+      await waitForRepro(page, '피날레 버그 재현');
+      assert.match(await page.locator('.sim-screen').innerText(), /점등 완료!" 안 뜸/);
+      await page.locator('[data-arrange-choice="counter"]').click(); // 카운터만 고치고 실행 → 오답(계속 반복 남음)
       await page.locator('#run-arrange').click();
       await waitForActivityFail(page);
-      assert.match(await page.locator('.sim-screen').innerText(), /점등 완료!" 안 뜸/);
 
       await enterExp('ch3-2'); // count
       await page.locator('[data-count-final="on"]').click();
@@ -687,13 +709,14 @@ async function playChapterToEnd(page, chapterId, {
       await waitForActivityFail(page);
 
       await enterExp('ch3-3', 'triangle'); // polygon interior trap 60°
+      await page.locator('#turn').selectOption('60');
       await page.locator('#run').click();
       await waitForActivityFail(page);
       assert.match(await page.locator('#result').innerText(), /안쪽 각/);
 
       await enterExp('ch3-4'); // until
-      await page.locator('#run-until').click();
-      await waitForActivityFail(page);
+      await page.locator('#run-until').click(); // 고치기 전 → 버그 재현
+      await waitForRepro(page, '잠금 버그 재현');
       await page.locator('#until-body').selectOption('inside');
       await page.locator('#run-until').click();
       await waitForActivityFail(page);

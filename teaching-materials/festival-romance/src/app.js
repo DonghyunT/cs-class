@@ -345,10 +345,10 @@
   }
 
   function conceptMarkup(scene){
-    const brief=flowChoice?`<div class="journey-brief"><span>선택한 진행 · ${escape(interpolate(flowChoice.label))}</span>${(scene.flow?.options?.length||0)>1?'<button type="button" id="change-choice" class="text-button">선택 다시 보기</button>':''}</div>`:'';
+    const brief=flowChoice?`<div class="journey-brief"><span>내가 고른 것 · ${escape(interpolate(flowChoice.label))}</span>${(scene.flow?.options?.length||0)>1?'<button type="button" id="change-choice" class="text-button">선택 다시 보기</button>':''}</div>`:'';
     const originMap={invitation:'초대장',variable:'약속 관리',event:'하루와 채팅',until:'디지털 카드'};
     const goalBanner=scene.goalPrompt?`<div class="goal-banner"><strong>미션 목표</strong><span>${escape(interpolate(scene.goalPrompt))}</span></div>`:'';
-    return `<div class="lesson-layout"><div class="lesson-main"><div class="lesson-heading"><p class="eyebrow">CHAPTER 0${activeChapter.id} · ${escape(scene.topic)}${scene.graded?' · 하트 챌린지':''}</p><h2 tabindex="-1">${escape(scene.title)}</h2><p class="scene-quote">${escape(interpolate(scene.quote))}</p></div>${originMap[scene.experiment]?appOrigin(originMap[scene.experiment],true):''}${goalBanner}${brief}<div id="experiment" class="experiment"></div></div><aside class="lesson-companion"><div class="companion-character character" role="img" aria-label="하루"></div><div class="companion-note" id="companion-note"><small>하루의 한마디</small><span id="companion-note-text">${escape(interpolate(scene.graded?'어디가 문제인지 같이 찾아보자! 첫 시도에 맞히면 ♥ +1이야.':(scene.observe||scene.teacher?.ask||'함께 원리를 확인해 보자!')))}</span></div></aside></div>`;
+    return `<div class="lesson-layout"><div class="lesson-main"><div class="lesson-heading"><p class="eyebrow">CHAPTER 0${activeChapter.id} · ${escape(scene.topic)}${scene.graded?' · 하트 챌린지':''}</p><h2 tabindex="-1">${escape(scene.title)}</h2><p class="scene-quote">${escape(interpolate(scene.quote))}</p></div>${originMap[scene.experiment]?appOrigin(originMap[scene.experiment],true):''}${goalBanner}${brief}<div id="experiment" class="experiment"></div></div><aside class="lesson-companion"><div class="companion-character character" role="img" aria-label="하루"></div><div class="companion-note" id="companion-note"><small>하루의 한마디</small><span id="companion-note-text">${escape(interpolate(scene.graded?'고친 뒤 처음 실행하거나 처음 고른 답이 첫 시도야. 맞히면 ♥ +1! 고치기 전에 그냥 실행하는 건 버그 재현이라 괜찮아.':(scene.observe||scene.teacher?.ask||'함께 원리를 확인해 보자!')))}</span></div></aside></div>`;
   }
 
   function activity(){
@@ -424,6 +424,14 @@
       reducedMotion:()=>matchMedia('(prefers-reduced-motion: reduce)').matches,
       focusNext:()=>$('next-button').focus()
     });
+    // 짧은 화면: 활동 패널 아래에 더 볼 내용이 있으면 '아래에 더 있어요' 표시
+    const main=document.querySelector('.lesson-main');
+    if(main){
+      const cue=()=>main.classList.toggle('has-more',main.scrollHeight-main.scrollTop-main.clientHeight>24);
+      main.onscroll=cue;
+      if(typeof ResizeObserver==='function'){const ro=new ResizeObserver(cue);ro.observe(main);ro.observe($('experiment'));}
+      requestAnimationFrame(cue);
+    }
     if($('change-choice'))$('change-choice').onclick=()=>flowIntro();
     const introLines=activeScene.flow&&(state.shortMode&&activeScene.flow.shortIntro?activeScene.flow.shortIntro:activeScene.flow.intro);
     setBackward(introLines?.length?()=>flowIntro({startLine:Infinity}):sceneBack());
@@ -520,7 +528,8 @@
     const endingObj=scene.endings?.[outcome];
     if(!endingObj){renderEndingReport(scene,outcome);return;}
     const useCold=outcome==='friend'&&total===12&&cold&&Array.isArray(endingObj.coldLines)&&endingObj.coldLines.length;
-    const lines=useCold?endingObj.coldLines:(endingObj.lines||scene.lines||[]);
+    const useColdMid=!useCold&&outcome==='friend'&&cold&&Array.isArray(endingObj.coldMidLines)&&endingObj.coldMidLines.length;
+    const lines=useCold?endingObj.coldLines:useColdMid?endingObj.coldMidLines:(endingObj.lines||scene.lines||[]);
     phase='ending';
     dialogue(lines,{
       seenKey:`${scene.id}:${outcome}${useCold?':cold':''}`,

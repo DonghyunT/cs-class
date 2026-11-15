@@ -465,3 +465,11 @@ dialog::backdrop{background:#202a3b68}
 /* 짧은 화면(1366×768 등)에서 활동이 접히지 않게 머리 부분을 줄입니다 */
 @media (max-height:820px){.lesson-heading h2{font-size:26px;margin-bottom:4px}.scene-quote{font-size:15px;margin-bottom:8px}.goal-banner{padding:7px 12px;margin-bottom:8px;font-size:15px}.lesson-heading .eyebrow{margin-bottom:3px}}
 .chat-bubble{white-space:pre-line}
+/* I1: 활동 실행 버튼은 패널 아래에 붙여 짧은 화면에서도 보이게, 더 내릴 내용이 있으면 표시 */
+.lesson-main .experiment-actions{position:sticky;bottom:0;z-index:2;background:linear-gradient(to top,#fffaf1 75%,#fffaf100);padding:10px 0 6px;margin-bottom:0}
+.lesson-main.has-more::after{content:"아래에 더 있어요 ↓";position:sticky;bottom:6px;z-index:3;display:block;width:max-content;margin:6px auto 0;padding:4px 12px;border-radius:14px;background:var(--navy);color:#fffaf1;font-size:13px;font-weight:650;pointer-events:none}
+.result-repro{background:#eef3f9;border-color:#9fb3cc}
+.repro-badge{display:block;margin-bottom:6px;font-size:15px;color:#36445d}
+.chapter-hearts::before{content:"이 장";margin-right:6px;font-size:12px;font-weight:650;color:var(--muted)}
+#next-button:disabled{opacity:1;background:#d9d3c8;border-color:#bfb6a6;color:#3d3a35}
+.path-legend,.map-legend{margin:6px 0 4px}

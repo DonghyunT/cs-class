@@ -113,7 +113,7 @@ const lessonUrl = pathToFileURL(publicLessonPath).href;
       checks.push(`${motion}: 조명 4회 명령별 진행·일시정지/재개·완료 후 새 실행`);
 
       // ch3-3 (polygon ch3-q2): cheat-free 3/4/6 polygons, step-by-step timer playback, pause/resume
-      for (const [key, sides, angle] of [['triangle', 3, 120], ['square', 4, 90], ['hexagon', 6, 60]]) {
+      for (const [key, sides, angle] of [['triangle', 3, 120], ['pentagon', 5, 72], ['hexagon', 6, 60]]) {
         await enter('ch3-3', key);
         assert.equal(await page.locator('#fit').count(), 0);
         await page.locator('#turn').selectOption(String(angle));
