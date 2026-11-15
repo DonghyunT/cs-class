@@ -7,12 +7,12 @@
 - **학생용 CS 복습 게임 개편(Phase 2~4 반영·검증 완료):** [dist/festival-romance.html](dist/festival-romance.html) · [public/festival-romance.html](../../public/festival-romance.html)을 3개 챕터·22장면·12문항(`ch1-q1`~`ch3-q4`)·3갈래 엔딩(`썸 시작`/`찐친`/`어색한 사이`) 구조로 개편해 빌드와 테스트·Playwright QA를 통과했습니다([개편 설계안](../../docs/plans/festival-romance-review-game.md)).
 - **v3 개편(1~3장 반영):** [구현 계획](../../docs/plans/festival-romance-v3.md)의 엔진 기반과 1장을 사용자가 확인한 뒤, 학생 테스터 10명(Haiku max) 검토 루프를 3회 돌려 2·3장까지 고쳤습니다. 평균 점수는 1차 → 3차에 개연성 2.5→3.6, 활동 적절성 3.1→3.8, 재미 3.5→3.4, 복습 3.2→4.0이고 치명 지적은 0건입니다(10명 모두 아직 SATISFIED는 아님). 고치기 전 실행은 하트에 반영하지 않는 '버그 재현', 하루 대사 남녀 두 가지(3장 모두), 마음 선택지에 친근한 세 번째 답, 2장에서 선을 그으면 3장 일부 대사가 달라짐(`when: cold|warm`). 교사가 직접 해 본 뒤(2026-11-15) 문제가 길고 현학적이라는 지적에 따라 12문항을 모두 한 번의 선택이나 짧은 조작(약 30~60초, 미션 60자 이하·대화 1턴·블록 4줄·바꿀 블록 1개)으로 줄였고, 장별 예상 시간은 13~14분에서 약 8분이 됐습니다. 남은 결정은 아래 다음 작업 1번입니다.
 - **교사용 도입 수업 원본 보존:** [dist/festival-lesson.html](dist/festival-lesson.html) · [public/festival-lesson.html](../../public/festival-lesson.html) (기존 3차시 27장면)은 `build.cjs`와 분리해 바이트 단위로 그대로 유지했습니다.
-- **캐릭터 시트 v13 적용:** 현재 빌드는 [haru-boy-v13.png](assets/haru-boy-v13.png) · [haru-girl-v13.png](assets/haru-girl-v13.png)(`1536×2048` 3×2, `FESTIVAL_SPRITE_ROWS: { boy: 2, girl: 2 }`)를 씁니다. v3의 세 인물을 칸 경계에 닿지 않게 분리하고(이웃 칸 조각이 비치던 문제 해소, 인물 88% 축소), Codex 내장 imagegen으로 놀람(3)·머쓱함(4) 표정을 더했습니다. 장난기(5)는 환한 웃음 복사본입니다. 표정 칸 다섯 개는 바탕 얼굴에 눈·입 조각을 붙인 합성이라, 조각 안의 앞머리 가닥이 끊기던 것을 바탕 앞머리로 통일해 보정했습니다([2차 보정 기록](image-generation-notes.md#v13-앞머리-이음새-2차-보정-2026-11-15)). 제작 기록은 [이미지 제작 기록](image-generation-notes.md#겹침-분리표정-추가-v13-2026-11-15)에 있습니다.
+- **캐릭터 시트 v15 적용:** 현재 빌드는 [haru-boy-v15.png](assets/haru-boy-v15.png) · [haru-girl-v15.png](assets/haru-girl-v15.png)(`1536×2048` 3×2, `FESTIVAL_SPRITE_ROWS: { boy: 2, girl: 2 }`)를 씁니다. 순서는 미소·수줍음·환한 웃음 / 놀람·곤란·장난기입니다. v13 표정 칸은 바탕에 얼굴 조각을 붙인 합성이라 앞머리가 끊겼고, 보정으로도 한계가 있어 교사 요청(2026-11-15)으로 미소 칸을 레퍼런스 삼아 Codex 내장 imagegen으로 표정마다 전신을 새로 그렸습니다. 미소 칸은 v13 바탕과 픽셀 동일하고, 새 5칸은 위치·크기만 맞췄습니다(합성 없음). 제작 기록은 [이미지 제작 기록](image-generation-notes.md#표정-새로-그리기-v15-2026-11-15)에 있습니다.
 
 ## 2. 번들 산출물 및 검증 기록
 
 - **산출물 무결성 ([qa/build-manifest.json](qa/build-manifest.json)):**
-  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `12,484,416` bytes, SHA-256 `5b4f50df57c46feffae66115b995dd23fd6699f64eebf850cedd50705528cf0c`
+  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `17,328,976` bytes, SHA-256 `af6af93ce230e07e3e8c98f23288a30279f454d456204ec407189f82744bda60`
   - `public/festival-lesson.html` ≡ `dist/festival-lesson.html`: SHA-256 `8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c430b5` (원본 27장면 불변, 10/19 기준 검증은 [제작·검수 기록](제작-검수-기록.md))
 - **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 50/50 통과
   - `models.test.cjs` (14), `state.test.cjs` (7), `package.test.cjs` (3), `journey.test.cjs` (7), `refinement.test.cjs` (19)
@@ -27,7 +27,7 @@
 ## 3. 다음에 이어갈 작업
 
 1. **교사 확인:** 12문항을 짧게 줄인 판(2026-11-15)을 교사가 다시 해 보고 난이도·풀이 시간이 맞는지 확인합니다. 학생 테스터 검토를 다시 돌린다면 깊이·다양성 요구로 문항이 다시 길어지지 않게, 풀이 시간 상한(문항당 약 1분)을 지시에 넣습니다. 검토 자료는 `node teaching-materials/festival-romance/qa/student-review-pack.cjs`로 만듭니다. 3장 3번(반복 조건)은 보기가 ≠/= 두 개뿐이라 사실상 첫 시도에 맞히기 쉽습니다.
-2. **캐릭터 시트:** v13(겹침 분리·놀람·머쓱함)을 적용했습니다. 장난기 표정이나 체형 보정 시안(`haru-girl-v8.png` 등)으로 바꾸려면 같은 3×2 규격으로 만들어 `build.cjs`의 파일 이름만 바꿉니다(PNG 높이로 `rows`를 자동 감지).
+2. **캐릭터 시트:** v15(표정 5개 새로 그림)를 적용했습니다. 남학생 수줍음·환한 웃음·장난기는 소매 윤곽이 미소 칸보다 9~12px 넓어, 표정이 바뀔 때 소매가 살짝 움직여 보일 수 있습니다. 거슬리면 해당 칸만 같은 요청문으로 다시 그립니다(요청문은 이미지 제작 기록). 다른 시안으로 바꾸려면 같은 3×2 규격으로 만들어 `build.cjs`의 파일 이름만 바꿉니다(PNG 높이로 `rows`를 자동 감지).
 3. **Phase 5 메인 앱 임베드:** `cs-class` 본 사이트 내 복습 활동에서 `/festival-romance.html?embed=1`을 iframe으로 띄우고 `festival:init`/`festival:state`/`festival:complete`와 `useWork` 수동 저장을 연동합니다.
 4. **현장 확인:** 실제 학교 교실 프로젝터(교사용 `/festival-lesson.html`·`?mode=teacher`)와 학생 태블릿/크롬북(학생용 `/festival-romance.html`)에서 가독성과 터치 조작을 최종 점검합니다.
 

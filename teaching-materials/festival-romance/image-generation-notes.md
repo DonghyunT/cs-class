@@ -178,3 +178,26 @@ Fully clothed, wholesome and modest, no sexualized styling. Transparent alpha ba
 보정(OpenCV·Pillow, 생성 없음, 스크립트는 작업 임시 폴더에만 둠): 머리 가닥은 세로·사선, 눈썹·속눈썹은 가로라는 점을 이용해 색+방향으로 머리카락을 골라냈습니다. 조각 안에서 바탕의 앞머리는 모든 표정 위에 다시 얹고, 표정 칸에만 있던 떠도는 가닥은 바탕 픽셀로 되돌렸습니다(눈·눈썹 위에 걸친 가닥은 그대로 둠). 여학생 수줍음은 눈이 아래로 내려가 있어 왼쪽 눈은 표정 칸 그림을 쓰고 바탕 왼쪽 눈썹만 지웠습니다. 남학생은 이마·관자놀이를 바탕으로 되돌리고 놀람의 올라간 눈썹은 보호했으며, 수줍음·머쓱함 미간의 회색 주름 자국을 지웠습니다. 보정 전후 비교 이미지는 커밋하지 않는 `qa-results/haru-hair-before-after.png`에 만들었습니다.
 
 검증: 남녀 모두 칸 0과 전체 알파(실루엣)는 직전 커밋본과 픽셀 동일, 바뀐 곳은 칸 1~5의 얼굴 조각 영역뿐입니다(여학생 17,894px, 남학생 5,943px). 회색 미리보기를 다시 만들었습니다.
+
+## 표정 새로 그리기 v15 (2026-11-15)
+
+교사 판단: v13 표정 칸은 보정만으로는 한계가 있으니, 남녀 기본 표정(미소)을 레퍼런스로 5개 표정을 처음부터 다시 그린다. 결과는 `assets/haru-girl-v15.png`·`assets/haru-boy-v15.png`(1536×2048 RGBA, 3열×2행)와 같은 이름의 `-preview.png`(배경 #808080)입니다. 순서는 미소·수줍음·환한 웃음 / 놀람·곤란·장난기이며, 4번 칸 이름표는 '고민'에서 '곤란'으로 바꿨습니다(`src/models.js`). 장난기는 더 이상 환한 웃음 복사본이 아닙니다.
+
+방법: v13 미소 칸(512×1024)을 1.5배(768×1536)로 키워 1024×1536 투명 캔버스 가운데에 둔 레퍼런스를 만들고, Codex 내장 imagegen(레퍼런스 입력 편집, CLI/API·키·외부 서비스 없음)으로 표정마다 전신을 새로 그렸습니다. 모두 12회 생성(10장 + 남학생 놀람·곤란의 소매 폭 재시도 각 1회)했습니다. 얼굴 합성·붙여 넣기는 하지 않았고, 후처리는 몸통 특징점(ORB, 머리 위 38% 제외)으로 구한 닮음 변환으로 위치·크기만 맞춘 뒤(이동 1.5px 이하, 크기 차 0.1% 이하) 512×1024로 줄이고, 투명도 8 이하 잡티를 지운 것뿐입니다. 미소 칸은 v13 바탕과 픽셀 동일합니다.
+
+공통 요청문(발췌, 하위 에이전트 지시라 영어):
+
+```text
+Same character: identical face shape, hairstyle, hair length, part line, bangs, hair color, eye color,
+skin tone, art style (soft semi-realistic anime illustration), line weight, coloring, lighting.
+Same outfit and props, same pose, same front-facing head angle and tilt, same body proportions,
+same framing (head top at the same height, cut at mid-thigh like the reference).
+Draw the whole face as one coherent drawing, not a pasted patch. Bangs and strands must flow
+continuously over the forehead and around the eyes exactly as in the reference.
+Change only eyebrows, eyes/eyelids, mouth and blush. For averted gaze move only the irises.
+Transparent background. Single character. Fully clothed, wholesome, school-appropriate.
+```
+
+표정 지시: 수줍음(입 다문 수줍은 미소·양 볼 홍조·시선만 옆 아래), 환한 웃음(크게 웃는 입·웃는 눈), 놀람(눈썹 높이·큰 눈·작게 벌린 입, 버그에 놀람이지 공포 아님), 곤란(미간 올라간 걱정 눈썹·어색한 작은 미소·약한 홍조, 울거나 화내지 않음), 장난기(한쪽 입꼬리를 올린 놀리는 미소·한쪽 눈썹 살짝 올림·정면 응시, 얄밉지 않게). 남학생 재시도에는 "왼쪽 소매 가장 바깥 x=182(1024px 캔버스), 팔·몸통을 넓히지 말 것"을 덧붙였습니다.
+
+검증: 남녀 10장 모두 실제 알파 투명 배경, 몸통 영역 평균 색 차 5~7(255 기준), 실루엣 IoU 0.98~0.99, 6칸 모두 좌우 8px 안에 인물 없음. 4~8배 확대와 어두운 배경 위에서 앞머리 이음새·가장자리 흰 테두리를 확인했고 실제 게임 화면(1600×900)에서 남녀 6표정을 찍어 확인했습니다. 남은 차이: 남학생 수줍음·환한 웃음·장난기는 소매 윤곽이 미소 칸보다 약 9~12px(게임 칸 기준) 넓습니다. 새 그림이 세밀해 시트가 각 약 3MB로 커져 번들이 12.5MB에서 17.3MB가 됐습니다(테스트 상한 20MB).

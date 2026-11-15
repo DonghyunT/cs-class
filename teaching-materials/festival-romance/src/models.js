@@ -1,6 +1,6 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.FestivalModels=api;})(globalThis,function(){
   'use strict';
-  const EXPRESSION_LABELS=['미소','수줍음','환한 웃음','놀람','고민','장난기'];
+  const EXPRESSION_LABELS=['미소','수줍음','환한 웃음','놀람','곤란','장난기'];
   const V3_COLUMN_MAP=[0,1,2,1,1,2];
   function boundedInteger(raw,min,max){if(raw===''||raw===null||raw===undefined)return null;const n=Number(raw);return Number.isInteger(n)&&n>=min&&n<=max?n:null;}
   function formatInvitation(name){return `${name} 님의 초대장`;}
