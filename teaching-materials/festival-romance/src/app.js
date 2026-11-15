@@ -336,7 +336,7 @@
     const brief=flowChoice?`<div class="journey-brief"><span>선택한 진행 · ${escape(interpolate(flowChoice.label))}</span>${(scene.flow?.options?.length||0)>1?'<button type="button" id="change-choice" class="text-button">선택 다시 보기</button>':''}</div>`:'';
     const originMap={invitation:'초대장',variable:'약속 관리',event:'하루와 채팅',until:'디지털 카드'};
     const goalBanner=scene.goalPrompt?`<div class="goal-banner"><strong>미션 목표</strong><span>${escape(interpolate(scene.goalPrompt))}</span></div>`:'';
-    return `<div class="lesson-layout"><div class="lesson-main"><div class="lesson-heading"><p class="eyebrow">CHAPTER 0${activeChapter.id} · ${escape(scene.topic)}${scene.graded?' · 하트 챌린지':''}</p><h2 tabindex="-1">${escape(scene.title)}</h2><p class="scene-quote">${escape(interpolate(scene.quote))}</p></div>${originMap[scene.experiment]?appOrigin(originMap[scene.experiment],true):''}${goalBanner}${brief}<div id="experiment" class="experiment"></div></div><aside class="lesson-companion"><div class="companion-character character" role="img" aria-label="하루"></div><div class="companion-note" id="companion-note"><small>하루의 한마디</small><span id="companion-note-text">${escape(interpolate(scene.observe||scene.teacher?.ask||'함께 원리를 확인해 보자!'))}</span></div></aside></div>`;
+    return `<div class="lesson-layout"><div class="lesson-main"><div class="lesson-heading"><p class="eyebrow">CHAPTER 0${activeChapter.id} · ${escape(scene.topic)}${scene.graded?' · 하트 챌린지':''}</p><h2 tabindex="-1">${escape(scene.title)}</h2><p class="scene-quote">${escape(interpolate(scene.quote))}</p></div>${originMap[scene.experiment]?appOrigin(originMap[scene.experiment],true):''}${goalBanner}${brief}<div id="experiment" class="experiment"></div></div><aside class="lesson-companion"><div class="companion-character character" role="img" aria-label="하루"></div><div class="companion-note" id="companion-note"><small>하루의 한마디</small><span id="companion-note-text">${escape(interpolate(scene.graded?'어디가 문제인지 같이 찾아보자! 첫 시도에 맞히면 ♥ +1이야.':(scene.observe||scene.teacher?.ask||'함께 원리를 확인해 보자!')))}</span></div></aside></div>`;
   }
 
   function activity(){
@@ -380,12 +380,12 @@
         if(attempt.earnedHeart){
           expression(companionChar,2);
           if(noteBox){noteBox.classList.remove('is-wrong');noteBox.classList.add('is-right');}
-          if(noteText)noteText.textContent='역시 깔끔해! 첫 시도에 바로 해결했네 (+1 ♥)';
+          if(noteText)noteText.textContent=`역시 깔끔해! 첫 시도에 바로 해결했네 (+1 ♥) ${interpolate(activeScene.observe||'')}`.trim();
           renderHeartHud({deltaText:'+1 ♥ 첫 시도 성공!',deltaKind:'is-gain'});
         }else{
           expression(companionChar,0);
           if(noteBox){noteBox.classList.remove('is-wrong');noteBox.classList.add('is-right');}
-          if(noteText)noteText.textContent='좋아, 원리를 제대로 찾았어! 다음엔 첫 시도에 노려 보자.';
+          if(noteText)noteText.textContent=`좋아, 원리를 제대로 찾았어! 다음엔 첫 시도에 노려 보자. ${interpolate(activeScene.observe||'')}`.trim();
           if(!attempt.alreadySolved)renderHeartHud({deltaText:'♡ 재도전 해결 (0 ♥)',deltaKind:'is-recover'});
         }
       }else{

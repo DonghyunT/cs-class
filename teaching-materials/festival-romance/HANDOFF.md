@@ -11,10 +11,11 @@
 ## 2. 번들 산출물 및 검증 기록
 
 - **산출물 무결성 ([qa/build-manifest.json](qa/build-manifest.json)):**
-  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `15,167,492` bytes, SHA-256 `9ca74a575401ef2e4946219f1a6b27d31e46c5933fed9b09eedadc039d530a21`
+  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `15,167,616` bytes, SHA-256 `d58f72a7eb0bfc615140b79d1b99fe1eb6b4058d9b8208c0196bca28ca37d972`
   - `public/festival-lesson.html` ≡ `dist/festival-lesson.html`: SHA-256 `8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c430b5` (원본 27장면 불변, 10/19 기준 검증은 [제작·검수 기록](제작-검수-기록.md))
-- **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 27/27 통과
-  - `models.test.cjs` (10), `state.test.cjs` (6), `package.test.cjs` (3), `journey.test.cjs` (4), `refinement.test.cjs` (4)
+- **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 28/28 통과
+  - `models.test.cjs` (10), `state.test.cjs` (6), `package.test.cjs` (3), `journey.test.cjs` (4), `refinement.test.cjs` (5)
+  - 하트 문항 9개(`ch1-q3`·`ch1-q4`·`ch2-q1`~`q4`·`ch3-q1`~`q3`)의 미션 목표·주인공/하루 도입 대사는 고칠 방법 대신 목표만 말하고, 하루의 한마디는 풀기 전엔 중립 문구, 정답 뒤에 개념 요약(`observe`)을 보여 줍니다(`refinement.test.cjs`가 정답 단서 재유입을 막음).
 - **Playwright 브라우저 QA (`node teaching-materials/festival-romance/qa/browser.cjs`):** 9항목 통과 (`errors: []`, `consoleErrors: []`, `remoteRequests: 0`)
   - 학생 모드 은닉·순차 해금, 첫 시도 하트 규칙·오답 재도전 0하트·새로고침/이전버튼 치트 방지(`festival-romance.game.v2`), 12문항 완주 및 3갈래 엔딩(`11/12 찐친`, `12/12+cold 찐친`→재도전 `썸 시작`, `≤6 어색한 사이`), `이미 본 대사 건너뛰기`, 모바일 `390×844` 가로 넘침 0건, `?mode=teacher` 전 시뮬레이터 오답 힌트, `?embed=1` (`127.0.0.1` 동일 출처 HTTP 호스트에서 `postMessage` `festival:init`/`festival:state`/`festival:complete` 및 `localStorage` 0회 접근 확인), 원본 `festival-lesson.html` 27장면 무오류 로드 확인.
 - **Playwright 재생 QA (`node teaching-materials/festival-romance/qa/playback-app.cjs`):** 8항목 통과 (`reducedMotion: 'reduce'` / `'no-preference'` 조명 4회·다각형 3/4/6종·일시정지/재개·내각 함정·모달 보류·장면 이탈 정리·앱 메시지 UI·`390×844`·원본 27장면 무오류 로드)

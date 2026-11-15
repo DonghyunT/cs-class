@@ -84,3 +84,27 @@ test('소스 코드와 챕터 데이터에 치트 버튼·비밀번호 노출·�
     assert.equal(/\b(?:src|href)\s*=\s*["']https?:\/\//i.test(text), false, `${rel} 외부 URL 금지`);
   }
 });
+
+test('하트 문항은 풀기 전에 보이는 미션 목표·하루의 한마디에 정답을 적지 않는다', () => {
+  const answerHints = {
+    'ch1-q3': ['90°'],
+    'ch1-q4': ['괄호'],
+    'ch2-q1': ['≥', '>'],
+    'ch2-q2': ['그리고', 'AND'],
+    'ch2-q3': ['아니다', '또는'],
+    'ch2-q4': ['큰 기준', '≥'],
+    'ch3-q1': ['4번으로'],
+    'ch3-q2': ['360', '바깥'],
+    'ch3-q3': ['대답 =', '반복 안'],
+  };
+  const graded = [ch1, ch2, ch3].flatMap((ch) => ch.scenes.filter((s) => s.graded));
+  for (const [qId, hints] of Object.entries(answerHints)) {
+    const scene = graded.find((s) => s.questionId === qId);
+    for (const hint of hints) {
+      assert.equal(scene.goalPrompt.includes(hint), false, `${qId} 미션 목표에 정답 단서: ${hint}`);
+    }
+  }
+  // 하루의 한마디 첫 문구는 하트 문항에서 observe(정답 요약)를 쓰지 않는다.
+  const app = fs.readFileSync(path.join(root, 'src/app.js'), 'utf8');
+  assert.match(app, /companion-note-text">\$\{escape\(interpolate\(scene\.graded\?/);
+});
