@@ -139,3 +139,26 @@ v9은 사용자 재검토용입니다. 기존 버전·여학생·공개 HTML은 
 - 확인: PNG 1개의 열림·규격·알파·생성 원본 SHA-256 일치를 검사했습니다. Chrome에서 6표정과 수정 전후 얼굴 2개를 비교했고 페이지 오류 0개입니다. 캡처는 Git 제외 `scratch/festival-v7-qa/boy-v11-gray.png`, `boy-v11-shading-comparison.png`입니다.
 
 v11은 사용자 재검토용이며 게임에 적용하지 않았습니다. 공개 HTML·운영 사이트·여학생은 변경하지 않았습니다.
+
+## 겹침 분리·표정 추가 v13 (2026-11-15)
+
+원본 `assets/haru-girl-v3.png`·`assets/haru-boy-v3.png`는 변경하지 않았습니다. 내장 imagegen 편집을 남녀 각 1회 사용해 놀람·머쓱함을 생성했으며 CLI/API·외부 서비스·키는 사용하지 않았습니다. 결과는 `assets/haru-girl-v13.png`·`assets/haru-boy-v13.png`(1536×2048 RGBA, 512×1024 3열×2행)와 같은 이름의 `-preview.png`(배경 #808080)입니다. 게임에는 적용하지 않았습니다.
+
+보존·합성: v3 첫 인물의 머리·턱선·몸·의상·교표·가방을 공통 바탕으로 복사하고, 위 행의 수줍음·따뜻한 미소는 각각 v3의 기존 눈썹·눈·코·입 그림을 가져왔습니다. 아래 행은 새 놀람·머쓱함의 얼굴 안쪽만 합성했으며 마지막 칸은 위 행 미소의 정확한 복사입니다. 생성된 몸과 의상은 쓰지 않았습니다. 인물별로 몸과 알파 실루엣이 6칸 모두 같아 표정 교체 시 몸이 움직이지 않습니다. 원본 세 인물 전체를 그대로 떼어 놓은 픽셀 동일본은 아닙니다.
+
+사용 프롬프트는 각 v3 시트만 편집 대상으로 삼고 같은 1536×1024 배치·인물·그림체·얼굴형·머리·자세·착장을 고정했습니다. 여학생은 shoulder-length brown hairstyle / navy pleated skirt, 남학생은 short side-brushed brown Korean haircut / dark trousers를 명시했습니다. 실제 공통 표정 지시 발췌:
+
+```text
+Use case: identity-preserve.
+Change ONLY the facial expression in the FIRST TWO columns.
+Column 0: NEW surprised expression reacting to a sudden software bug: both eyebrows lifted, upper eyelids slightly wider, small softly open oval mouth, surprise rather than fear.
+Column 1: NEW sheepish/awkward expression: embarrassed and flustered, a small awkward asymmetric half-smile, subtly uneasy averted glance, gentle relaxed brows and slight blush; must feel friendly and bashful, NOT annoyed, NOT glaring, NOT sad or worried.
+Column 2 stays the original warm smile.
+Do not change hair, face silhouette, head tilt, pose, clothing or body proportions.
+Keep the original facial landmark locations so eye/nose/mouth details can be composited back into the source.
+Fully clothed, wholesome and modest, no sexualized styling. Transparent alpha background, no backdrop, no text, borders or watermark. This is an expression-only edit, not a redesign.
+```
+
+수동 정리(Pillow): 맞닿은 소매 윤곽을 따라 이웃 가방을 마스킹하고 작은 잔여 조각·거의 투명한 테두리를 제거했습니다. 얼굴 합성 경계는 부드럽게 연결하고 남학생은 턱선이 겹치지 않도록 이목구비 안쪽으로 제한했습니다. 소매·가방을 크게 자르는 대신 모든 칸에 같은 88% 등비 축소(Lanczos)와 아래쪽 정렬을 적용했습니다. 따라서 v3보다 인물이 12% 작고 머리 위 여백이 늘며, 보간 때문에 원본 픽셀과 같지는 않습니다. 기존 v3의 미세한 얼굴 방향 차이와 새 표정의 음영 차이는 남을 수 있습니다.
+
+검증: 새 시트 2개·12칸의 좌우 8px 구역에서 alpha>0 픽셀 0개, 여학생 전 칸 좌/우 16/19px·남학생 전 칸 36/9px 투명 여백을 확인했습니다. 머리 상단은 여학생 y=139·남학생 y=131로 각 6칸에서 같고, 실루엣·얼굴 아래 몸통 동일성과 2번/5번 완전 일치를 검사했습니다. 회색 미리보기 2개를 직접 열어 검수했습니다. 원본 SHA-256 불변도 확인했습니다. 실제 게임 전환·빌드는 확인하지 않았습니다.

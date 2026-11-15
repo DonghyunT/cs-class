@@ -120,7 +120,9 @@ test('3개 챕터·12개 등급 문항·마음 선택지·3가지 엔딩·교사
         assert.ok(sc.flow && Array.isArray(sc.flow.firstTrySuccess) && sc.flow.firstTrySuccess.length > 0, `${sc.id} firstTrySuccess 필수`);
         assert.ok(Array.isArray(sc.flow.retrySuccess) && sc.flow.retrySuccess.length > 0, `${sc.id} retrySuccess 필수`);
         assert.ok(sc.flow.wrongReaction && [3, 4].includes(sc.flow.wrongReaction.expression) && sc.flow.wrongReaction.line, `${sc.id} wrongReaction 필수`);
-        if (sc.experiment === 'quiz') {
+        if (sc.experiment === 'quiz' && sc.quiz?.style === 'chat') {
+          assert.ok(Array.isArray(sc.quiz.steps) && sc.quiz.steps.length > 0, `${sc.id} 대화 단계 필수`);
+        } else if (sc.experiment === 'quiz') {
           assert.ok(sc.quiz && sc.quiz.prompt && Array.isArray(sc.quiz.choices), `${sc.id} quiz 필수`);
           assert.equal(sc.quiz.choices.some((c) => c.correct), true, `${sc.id} 정답 보기 필수`);
           for (const c of sc.quiz.choices) {

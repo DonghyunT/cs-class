@@ -144,7 +144,16 @@ async function solveArrange(page, { keyboard = false } = {}) {
 
 async function solveCurrentChallenge(page, { meetingTime = '16:00', polygonAngle = '60', finish = true } = {}) {
   const type = await page.locator('#experiment').getAttribute('data-experiment');
-  if (type === 'quiz') {
+  if (type === 'quiz' && (await currentSceneData(page)).quiz.style === 'chat') {
+    const { quiz, questionId } = await currentSceneData(page);
+    for (const [i, step] of quiz.steps.entries()) {
+      const keys = step.choices.map((c) => c.key);
+      const shownOrder = await page.evaluate(() => [...document.querySelectorAll('[data-chat-choice]')].map((b) => b.dataset.chatChoice));
+      const seeded = await page.evaluate(({ id, n }) => window.FestivalModels.seededOrder(id, n), { id: `${questionId}:${i}`, n: keys.length });
+      assert.deepEqual(shownOrder, seeded.map((k) => keys[k]), `${questionId}:${i} 대화 보기 순서를 단계별 seed로 섞음`);
+      await page.locator(`[data-chat-choice="${step.choices.find((c) => c.correct).key}"]`).click();
+    }
+  } else if (type === 'quiz') {
     const scene = await currentSceneData(page);
     const keys = scene.quiz.choices.map((c) => c.key);
     const shownOrder = await page.evaluate(() => [...document.querySelectorAll('[data-quiz-choice]')].map((b) => b.dataset.quizChoice));
@@ -326,7 +335,7 @@ async function playChapterToEnd(page, chapterId, {
       attachGuards(page, errors, consoleErrors, remote);
       await page.goto(romanceUrl);
 
-      assert.deepEqual(await page.evaluate(() => window.FESTIVAL_SPRITE_ROWS), { boy: 1, girl: 1 });
+      assert.deepEqual(await page.evaluate(() => window.FESTIVAL_SPRITE_ROWS), { boy: 2, girl: 2 });
       assert.equal(await page.locator('#stage').getAttribute('data-mode'), 'student');
       assert.equal(await page.locator('#stage').getAttribute('data-embed'), null);
       assert.equal(await page.locator('#contents-button').isVisible(), false, '학생 모드에서 목차 숨김');
@@ -341,26 +350,26 @@ async function playChapterToEnd(page, chapterId, {
       assert.equal(await page.locator('#chapter-list').isVisible(), false, '새 학생은 챕터 카드 숨김(새 이야기 시작으로만 진입)');
       assert.equal(await page.locator('#previous-button').getAttribute('aria-label'), '이전', '이전 버튼 이름(한 줄 또는 이전 장면)');
       assert.equal(await page.locator('#resume-button').isVisible(), false, '새 학생은 이어하기 숨김');
-      assert.equal(await page.locator('.title-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 100%');
+      assert.equal(await page.locator('.title-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 200%');
       await page.screenshot({ path: path.join(resultsDir, 'v2-title-1366.png') });
 
       // Onboarding: test boy & girl v3 sprite preview + nickname
       await page.locator('#new-story-button').click();
-      assert.equal(await page.locator('#onboard-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 100%');
+      assert.equal(await page.locator('#onboard-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 200%');
       const boyBg = await page.locator('#onboard-character').evaluate((el) => el.style.backgroundImage);
       await page.locator('label:has(input[name="onboard-variant"][value="girl"])').click();
       const girlBg = await page.locator('#onboard-character').evaluate((el) => el.style.backgroundImage);
       assert.notEqual(girlBg, boyBg, '여학생/남학생 하루 스프라이트 전환');
-      assert.equal(await page.locator('#onboard-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 100%');
+      assert.equal(await page.locator('#onboard-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 200%');
       await page.screenshot({ path: path.join(resultsDir, 'v2-onboarding-girl.png') });
 
       await page.locator('label:has(input[name="onboard-variant"][value="boy"])').click();
       await page.locator('#onboard-name').fill('구름');
       await page.locator('#onboard-start').click();
-      checks.push('학생 모드 UI 은닉·순차 잠금·온보딩 남녀 v3 스프라이트(300% 100%) 확인');
+      checks.push('학생 모드 UI 은닉·순차 잠금·온보딩 남녀 v13 스프라이트(300% 200%) 확인');
 
       // Ch.1: advance ch1-1, verify v3 sprite crop & keyboard space/arrow
-      assert.equal(await page.locator('.story-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 100%');
+      assert.equal(await page.locator('.story-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 200%');
       // 줄 단위 이전: 버튼과 ← 키
       assert.match(await page.locator('#line-progress').innerText(), /^1 \//);
       assert.equal(await page.locator('#previous-button').isDisabled(), true, '1장 첫 장면 첫 줄에서는 이전 없음');
@@ -393,8 +402,8 @@ async function playChapterToEnd(page, chapterId, {
       assert.match(await page.locator('#result').innerText(), /\[이름\]이 아직 비어/);
       assert.match(await page.locator('.sim-screen').innerText(), /" 님, 환영해요!"/, '실행 기록에 빈 이름 인사 표시');
       assert.equal(await page.locator('.companion-character').getAttribute('data-expression'), '4');
-      assert.equal(await page.locator('.companion-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 100%');
-      assert.equal(await page.locator('.companion-character').evaluate((el) => el.style.backgroundPosition), '50% 0%');
+      assert.equal(await page.locator('.companion-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 200%');
+      assert.equal(await page.locator('.companion-character').evaluate((el) => el.style.backgroundPosition), '50% 100%');
       assert.equal(await page.locator('#chapter-hearts .heart-slot.missed').count(), 1);
       await page.screenshot({ path: path.join(resultsDir, 'v2-quiz-wrong-1366.png') });
 
@@ -451,7 +460,7 @@ async function playChapterToEnd(page, chapterId, {
       assert.equal(await page.locator('#experiment').count(), 0, '결과 대사로 이동');
       await page.locator('#previous-button').click();
       assert.equal(await page.locator('#experiment').count(), 1, '결과 대사에서 이전 → 활동 화면');
-      await page.locator('#run-arrange').click(); // 이미 푼 문항을 다시 틀려도
+      await page.locator('[data-chat-choice="stack"]').click(); // 이미 푼 문항을 다시 틀려도
       await waitForActivityFail(page);
       assert.equal(await page.locator('#total-hearts').innerText(), '총 ♥ 1/12', '이미 얻은 하트 유지');
       assert.equal(/첫 시도 실패/.test(await page.locator('#heart-delta').innerText()), false, '이미 푼 문항에 첫 시도 실패 안내 없음');
@@ -592,10 +601,12 @@ async function playChapterToEnd(page, chapterId, {
       await page.locator('[data-close="notes-dialog"]').click();
 
       // Verify wrong-attempt misconception feedback on every graded simulator
-      await enterExp('ch1-3'); // arrange: 초대장
-      await page.locator('#run-arrange').click();
+      await enterExp('ch1-3'); // 초대장: 실행 기록 보고 대화
+      assert.match(await page.locator('.sim-screen').innerText(), /정문 님! 내일 정문에서 만나요\. 보유 티켓: 3장/, '버그 초대장 실행 기록 표시');
+      assert.match(await page.locator('.sim-steps').innerText(), /대답: 구름|대답: /, '실행 기록에 대답 칸 변화');
+      await page.locator('[data-chat-choice="same-box"]').click();
       await waitForActivityFail(page);
-      assert.match(await page.locator('.sim-screen').innerText(), /정문 님! 내일 정문에서 만나요\. 보유 티켓: 3장/, '버그 초대장 재현');
+      assert.match(await page.locator('#result').innerText(), /서로 다른 변수/);
 
       await enterExp('ch1-5'); // map
       await page.locator('[data-key="ArrowUp"]').click(); // 연결되지 않은 신호 → 아무 일도 없음(채점 안 함)
@@ -867,10 +878,10 @@ async function playChapterToEnd(page, chapterId, {
           `<style>body{margin:0;background:#dbe3e8;font-family:sans-serif;display:grid;grid-template-columns:repeat(3,1fr)}figure{margin:10px;text-align:center}div{height:300px;aspect-ratio:1/2;margin:auto;background-image:url("${assets.assets[variant]}");background-repeat:no-repeat}</style>` +
             assets.crops.map((c, i) => `<figure><div style="background-size:${c.backgroundSize};background-position:${c.backgroundPosition}"></div><figcaption>${i}: ${assets.labels[i]}</figcaption></figure>`).join(''),
         );
-        await page.screenshot({ path: path.join(resultsDir, `expressions-v3-${variant}.png`) });
+        await page.screenshot({ path: path.join(resultsDir, `expressions-v13-${variant}.png`) });
       }
       await ctx.close();
-      checks.push('v3 남녀 3x1 스프라이트 6표정 매핑 시트 저장 확인');
+      checks.push('v13 남녀 3x2 6표정(겹침 분리·놀람·머쓱함) 시트 저장 확인');
     }
 
     assert.deepEqual(errors, []);

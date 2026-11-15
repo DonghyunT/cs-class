@@ -41,7 +41,7 @@ test('개편된 3챕터에는 optional:true 없이 1~3단원 핵심 개념 12문
     allGraded.map((s) => [s.questionId, s.experiment]),
     [
       ['ch1-q1', 'arrange'],
-      ['ch1-q2', 'arrange'],
+      ['ch1-q2', 'quiz'],
       ['ch1-q3', 'map'],
       ['ch1-q4', 'math'],
       ['ch2-q1', 'compare'],
@@ -133,7 +133,7 @@ test("대화형 문항(style:'chat')은 단계마다 정답 1개·보기 3~4개�
   for (const [id, q] of chats) {
     assert.ok(Array.isArray(q.steps) && q.steps.length >= 1, `${id} 단계 1개 이상`);
     q.steps.forEach((step, i) => {
-      assert.ok(step.prompt && !/\{\{/.test(step.prompt), `${id}:${i} 질문(변수 없는 평문)`);
+      assert.ok(typeof step.prompt === 'string' && step.prompt.trim(), `${id}:${i} 질문`);
       assert.ok(step.choices.length >= 3 && step.choices.length <= 4, `${id}:${i} 보기 3~4개`);
       assert.equal(step.choices.filter((c) => c.correct).length, 1, `${id}:${i} 정답 1개`);
       for (const c of step.choices.filter((x) => !x.correct)) assert.ok(c.why, `${id}:${i}:${c.key} 오답 이유`);
@@ -160,12 +160,22 @@ test('ch1-q3 도입 증상은 처음 설정(시작하기 버튼 신호·0°)으�
   }
 });
 
-test('ch1-q2는 장소를 먼저 묻고 저장해도 결과가 맞으면 정답이다', () => {
-  const goal = ch1.scenes.find((s) => s.questionId === 'ch1-q2').goal;
-  assert.deepEqual(M.evaluateArrange(['askPlace', 'setPlace', 'askName', 'setName', 'base', 'bonus'], goal, { bonus: 1 }), { correct: true, firstWrongId: null });
-  assert.deepEqual(M.evaluateArrange(['base', 'bonus', 'askName', 'setName', 'askPlace', 'setPlace'], goal, { bonus: 1 }), { correct: true, firstWrongId: null });
-  assert.equal(M.evaluateArrange(['askName', 'askPlace', 'setName', 'setPlace', 'base', 'bonus'], goal, { bonus: 1 }).correct, false, '대답 덮어쓰기 버그');
-  assert.equal(M.evaluateArrange(['askPlace', 'askName', 'setPlace', 'setName', 'base', 'bonus'], goal, { bonus: 1 }).correct, false, '장소 먼저여도 덮어쓰기 버그');
+test('순서 바꾸기는 1장 1번 하나뿐이고, 1장 2번은 실행 기록을 보고 하루와 2턴 대화로 푼다', () => {
+  const arranges = [ch1, ch2, ch3].flatMap((ch) => ch.scenes).filter((s) => s.experiment === 'arrange').map((s) => s.questionId);
+  assert.deepEqual(arranges, ['ch1-q1']);
+  const q = ch1.scenes.find((s) => s.questionId === 'ch1-q2').quiz;
+  assert.equal(q.style, 'chat');
+  assert.equal(q.steps.length, 2);
+  assert.ok(Array.isArray(q.code) && q.code.some((l) => l.includes('정하기')), '하루의 블록 코드 표시');
+  assert.ok(Array.isArray(q.trace) && q.trace.length >= 4, '실행 기록 표시');
+  assert.match(q.screen, /정문 님!.*3장/, '버그 초대장 화면');
+});
+
+test('환영 문구의 빈 이름은 버그라는 것을 먼저 알려 준다', () => {
+  const lines = ch1.scenes.find((s) => s.id === 'ch1-1').lines;
+  const blankAt = lines.findIndex((l) => typeof l.text === 'string' && l.text.includes('" 님, 환영해요!'));
+  assert.ok(blankAt > 0, '빈 이름 환영 문구 줄');
+  assert.match(lines[blankAt - 1].text, /이상/, '보여 주기 직전에 이상하다고 예고');
 });
 
 test('1장 1번은 우리말 메모를 프로그래밍 언어로 설명하지 않는다', () => {

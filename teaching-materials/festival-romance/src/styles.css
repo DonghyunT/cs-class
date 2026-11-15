@@ -163,7 +163,7 @@ button,select,input{accent-color:var(--navy)}
 .quiz-code{font-size:17px;line-height:1.45;white-space:normal}
 .code-line{display:flex;gap:10px;align-items:baseline}
 .code-line span:last-child{white-space:pre-wrap}
-.code-line.indent{padding-left:24px}
+.code-line.indent span:last-child{padding-left:24px}
 .line-no{font-size:13px;color:#7a8296;min-width:18px;user-select:none}
 .quiz-prompt{margin:2px 0 4px;font-size:20px;line-height:1.45}
 .quiz-choices{display:grid;gap:9px}

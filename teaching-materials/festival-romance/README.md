@@ -18,7 +18,7 @@
 
 | 챕터 | 정규 단원·주제 | 평가 문항 | 특징 |
 | :--- | :--- | :--- | :--- |
-| 1장 (`ch1`) | 순차·변수·입출력·문자/숫자 연산 | `ch1-q1`~`ch1-q4` (4문항) | 블록 순서 바꾸기(환영 화면·초대장)·길 안내 신호 칩·괄호 넣기+하루와 대화 |
+| 1장 (`ch1`) | 순차·변수·입출력·문자/숫자 연산 | `ch1-q1`~`ch1-q4` (4문항) | 블록 순서 바꾸기(환영 화면)·초대장 실행 기록 보고 하루와 2턴 대화·길 안내 신호 칩·괄호 넣기+대화 |
 | 2장 (`ch2`) | 비교·논리(`AND`/`OR`)·조건 분기 | `ch2-q1`~`ch2-q4` (4문항) | 비교·논리·경로·상품 분기 + 1차 마음 선택지 |
 | 3장 (`ch3`) | 횟수 반복·다각형 외각·조건 반복·종합 | `ch3-q1`~`ch3-q4` (4문항) | 카운트·다각형·조건 반복·퀴즈 + 2차 마음 선택지 + 엔딩 리포트 |
 
@@ -37,7 +37,7 @@
 - **교사 모드 (`?mode=teacher`):** 전체 챕터 즉시 해금, 목차·교사 메모·간결 대화·엔딩 미리보기 패널 활성화.
 - **임베드 모드 (`?embed=1`):** `body`와 `#stage`에 `data-embed="true"` 적용, `#fullscreen` 숨김, `createMemoryStorage` 사용으로 `localStorage` 접근 0회, `parent.postMessage`(`festival:init`, `festival:state`, `festival:complete`) 브리지 제공(메인 앱 연동은 Phase 5 예정).
 - **하루 말투:** 하루의 감정 대사는 `text: { boy, girl }`로 성별마다 조금 다르게 쓰고(문장 끝·감탄사 정도), CS 설명·앱 화면·내레이션·주인공 대사는 공통입니다. 학생 화면에는 파이썬 코드를 쓰지 않습니다(엔트리 블록 표현만).
-- **캐릭터 스프라이트:** 현재 번들은 [haru-boy-v3.png](assets/haru-boy-v3.png)와 [haru-girl-v3.png](assets/haru-girl-v3.png)(`1536×1024`, `FESTIVAL_SPRITE_ROWS: { boy: 1, girl: 1 }`)를 사용하며 `spriteCrop`이 6개 표정 슬롯을 매핑합니다. 최종 `1536×2048` 3×2 6표정 시트 교체 후 다시 빌드하면 `build.cjs`가 `rows: 2`를 자동 감지합니다([haru-boy-v6.png](assets/haru-boy-v6.png), [haru-girl-v7-preview.png](assets/haru-girl-v7-preview.png) 등 시안은 `assets/` 참고).
+- **캐릭터 스프라이트:** 현재 번들은 [haru-boy-v13.png](assets/haru-boy-v13.png)와 [haru-girl-v13.png](assets/haru-girl-v13.png)(`1536×2048` 3×2, `FESTIVAL_SPRITE_ROWS: { boy: 2, girl: 2 }`)를 씁니다. 위 행 미소·수줍음·환한 웃음, 아래 행 놀람·머쓱함(고민 칸)·환한 웃음 복사본(장난기 칸)이며 인물마다 칸 경계와 겹치지 않습니다. 1행 시트(`1536×1024`)를 넣으면 `build.cjs`가 `rows: 1`로 감지해 3표정을 6칸에 나눠 씁니다.
 
 - **보존된 원본 자료의 검증 기준:** V1 3차시 27장면 도입 수업(`/festival-lesson.html`) 검수 이력은 [제작·검수 기록](제작-검수-기록.md)에 보존되어 있으며, v2 개편 검증·남은 작업은 [HANDOFF.md](HANDOFF.md)에 있습니다.
 

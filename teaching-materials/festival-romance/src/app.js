@@ -420,7 +420,7 @@
     invalidate();
     E.render(activeScene.experiment,$('experiment'),{
       models:M,stateApi:S,state,scene:activeScene,choice:flowChoice,shortMode:state.shortMode,
-      notify,interval,stopTimers,complete,fail,invalidate,shapeSvg,
+      notify,interval,stopTimers,complete,fail,invalidate,shapeSvg,interpolate,
       reducedMotion:()=>matchMedia('(prefers-reduced-motion: reduce)').matches,
       focusNext:()=>$('next-button').focus()
     });

@@ -78,20 +78,20 @@
   }
 
   // 하루와 주고받는 대화형 선택. 단계마다 보기 순서를 섞고, 틀리면 그 단계만 다시 고릅니다.
-  function chatSteps(host,{M,steps,seedBase,onWrong,onStepRight,onAllRight}){
+  function chatSteps(host,{M,steps,seedBase,onWrong,onStepRight,onAllRight,fmt=v=>String(v??'')}){
     let i=0;
     host.innerHTML='<div class="chat-log" aria-live="polite"></div><div class="chat-replies" role="group" aria-label="하루에게 할 대답"></div>';
     const log=host.querySelector('.chat-log'),box=host.querySelector('.chat-replies');
     const bubble=(who,text)=>{const p=document.createElement('p');p.className='chat-bubble chat-'+who;p.textContent=text;log.appendChild(p);};
     const step=()=>{
       const s=steps[i],choices=Array.isArray(s.choices)?s.choices:[];
-      bubble('haru',s.prompt);
-      box.innerHTML=M.seededOrder(seedBase+':'+i,choices.length).map(ci=>{const c=choices[ci];return '<button type="button" class="chat-reply" data-chat-choice="'+escape(String(c.key??ci))+'">'+escape(c.label)+'</button>';}).join('');
+      bubble('haru',fmt(s.prompt));
+      box.innerHTML=M.seededOrder(seedBase+':'+i,choices.length).map(ci=>{const c=choices[ci];return '<button type="button" class="chat-reply" data-chat-choice="'+escape(String(c.key??ci))+'">'+escape(fmt(c.label))+'</button>';}).join('');
       box.querySelectorAll('[data-chat-choice]').forEach(btn=>btn.onclick=()=>{
         const g=M.gradeQuizAnswer(s,btn.dataset.chatChoice);
         if(!g.correct){btn.dataset.wrong='true';btn.disabled=true;onWrong(g.why,g.choice);return;}
-        bubble('me',g.choice?.label||btn.textContent);
-        if(g.choice?.reply)bubble('haru',g.choice.reply);
+        bubble('me',fmt(g.choice?.label)||btn.textContent);
+        if(g.choice?.reply)bubble('haru',fmt(g.choice.reply));
         box.innerHTML='';
         i++;
         if(i<steps.length){onStepRight?.(i);step();box.querySelector('button')?.focus();}else onAllRight(g.choice);
@@ -102,11 +102,13 @@
   renderers.quiz=({root,$,M,ctx,show,hide})=>{
     const q=ctx.scene?.quiz||{};
     if(q.style==='chat'){
-      root.innerHTML='<div class="board chat-board" id="chat-host"></div>'+result();
-      chatSteps($('chat-host'),{M,steps:q.steps||[],seedBase:ctx.scene?.questionId||ctx.scene?.id||'',
+      const fmt=v=>ctx.interpolate?ctx.interpolate(v):String(v??'');
+      const trace=Array.isArray(q.trace)?simLog(q.trace.map(r=>[fmt(r[0]),fmt(r[1])]),fmt(q.screen||'')):'';
+      root.innerHTML='<div class="board chat-board">'+(q.code?renderCodeLines(q.code):'')+trace+'<div id="chat-host"></div></div>'+result();
+      chatSteps($('chat-host'),{M,fmt,steps:q.steps||[],seedBase:ctx.scene?.questionId||ctx.scene?.id||'',
         onWrong:(why,choice)=>show('<strong>다시 생각해 보자!</strong><span class="explanation">'+escape(why)+'</span>',{valid:false,failWhy:why,failExpr:choice?.expression||4}),
         onStepRight:()=>hide(false),
-        onAllRight:()=>{show('<strong>'+escape(q.successTitle||'통했다!')+'</strong><span class="explanation">'+escape(q.explain||'하루가 고개를 끄덕였어요.')+'</span>',{valid:true,story:q.storyPatch,values:q.values});ctx.focusNext?.();}});
+        onAllRight:()=>{show('<strong>'+escape(q.successTitle||'통했다!')+'</strong><span class="explanation">'+escape(fmt(q.explain||'하루가 고개를 끄덕였어요.'))+'</span>',{valid:true,story:q.storyPatch,values:q.values});ctx.focusNext?.();}});
       return;
     }
     const isShort=q.inputType==='short';
@@ -213,20 +215,6 @@
       else if(id==='say'){screen='"'+name+' 님, 환영해요!"';rows.push([label[id],'화면: '+screen]);}
     }
     return simLog(rows,'앱 화면: '+(screen||'(인사 없음)'));
-  };
-  arrangeSims.invite=({order,picks,ctx,goal})=>{
-    const label=id=>{const b=goal.blocks.find(x=>x.id===id);return b.choices?b.choices[picks[id]??0]:b.label;};
-    const nick=ctx.state?.nickname||'나';
-    let answer='',name='',place='',tickets=0;const rows=[];
-    for(const id of order){
-      if(id==='askName'){answer=nick;rows.push([label(id),'대답: '+nick]);}
-      else if(id==='askPlace'){answer='정문';rows.push([label(id),'대답: 정문']);}
-      else if(id==='setName'){name=answer;rows.push([label(id),'[이름]: '+shown(name)]);}
-      else if(id==='setPlace'){place=answer;rows.push([label(id),'[장소]: '+shown(place)]);}
-      else if(id==='base'){tickets=6;rows.push([label(id),'[티켓]: 6']);}
-      else if(id==='bonus'){tickets=(picks.bonus??0)===1?tickets+3:3;rows.push([label(id),'[티켓]: '+tickets]);}
-    }
-    return simLog(rows,'도착한 초대장: "'+shown(name)+' 님! 내일 '+shown(place)+'에서 만나요. 보유 티켓: '+tickets+'장"');
   };
   renderers.invitation=({root,$,M,ctx})=>{
     root.innerHTML=`<div class="flow-grid"><div class="flow-card"><h3>입력</h3><label for="nickname">초대장에 쓸 이름</label><input id="nickname" maxlength="12" autocomplete="off" value="${escape(ctx.state.nickname)}"><p class="form-note">새 이름을 입력해 보세요.</p></div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-card"><h3>처리</h3><div class="code-mix"><span class="variable-chip" id="process-name"></span><span>＋</span><span>“ 님의 초대장”</span></div></div><span class="flow-arrow" aria-hidden="true">→</span><div class="flow-card"><h3>출력</h3><div id="placeholder" class="output-placeholder">어떤 문장이<br>나타날까요?</div><div id="invitation" class="invitation" role="status" hidden><strong id="invitation-title"></strong><p>하루와 함께<br>내일, 정문에서.</p></div></div></div>${prediction(['입력한 이름으로 바뀐다','항상 처음 이름으로 나온다'])}<div class="experiment-actions">${button('run-experiment','초대장 만들기 →',true)}${button('again','다시 예상하기')}</div><div class="result" id="takeaway" hidden>입력 → 처리 → 출력<span class="explanation">이름을 받아, 문장을 만들고, 화면에 보여줘요.</span></div>`;
@@ -355,7 +343,7 @@
         const chat=goal?.chat;
         if(!chat?.steps?.length){show(`<strong>한 사람당 ${fmt(expected)}장!</strong>`,{valid:true,story:goal?.storyPatch});return;}
         $('math-chat').hidden=false;
-        chatSteps($('math-chat'),{M,steps:chat.steps,seedBase:(ctx.scene?.questionId||'math')+':chat',
+        chatSteps($('math-chat'),{M,fmt:v=>ctx.interpolate?ctx.interpolate(v):String(v??''),steps:chat.steps,seedBase:(ctx.scene?.questionId||'math')+':chat',
           onWrong:(why,choice)=>show('<strong>다시 생각해 보자!</strong><span class="explanation">'+escape(why)+'</span>',{valid:false,failWhy:why,failExpr:choice?.expression||4}),
           onStepRight:()=>hide(false),
           onAllRight:()=>{show(`<strong>계산 성공! 한 사람당 ${fmt(expected)}장</strong><span class="explanation">${escape(chat.explain||'괄호로 덧셈을 먼저 하고, 횟수와 남는 장수는 몫과 나머지로 구했어요.')}</span>`,{valid:true,story:goal?.storyPatch});ctx.focusNext?.();}});

@@ -1,21 +1,3 @@
-// 앞뒤 순서 조건(before: [[먼저, 나중], ...])을 모두 지키는 블록 순서를 전부 만듭니다(초대장 문항의 정답 후보).
-function ordersRespecting(ids, before) {
-  const out = [];
-  const walk = (left, acc) => {
-    if (!left.length) {
-      out.push(acc);
-      return;
-    }
-    for (const id of left) {
-      const next = [...acc, id];
-      const ok = before.every(([a, b]) => !(next.includes(b) && !next.includes(a)));
-      if (ok) walk(left.filter((x) => x !== id), next);
-    }
-  };
-  walk(ids, []);
-  return out;
-}
-
 module.exports = {
   "id": 1,
   "title": "첫 단추와 밤의 디버깅",
@@ -33,7 +15,7 @@ module.exports = {
       "background": "night",
       "channel": "축제앱 · 하루와 채팅",
       "lines": [
-        { "speaker": "내 생각", "role": "narration", "text": "밤 11시 14분. 내일 축제 시간표를 보려고 학교 축제앱 베타를 처음 켰다.", "expression": 0 },
+        { "speaker": "내 생각", "role": "narration", "text": "밤 11시 14분. 내일 축제 시간표를 보려고 학교 축제앱 베타에 가입했다. 그런데 환영 문구가 좀 이상하다.", "expression": 0 },
         { "speaker": "축제앱", "role": "system", "text": "가입 완료! \" 님, 환영해요!\"", "expression": 0 },
         { "speaker": "내 생각", "role": "narration", "text": "이름이 들어가야 할 자리가 텅 비어 있다. 화면 구석의 [버그 제보] 버튼을 눌러 한 줄 적어 보냈다.", "expression": 0 },
         { "speaker": "축제앱", "role": "system", "text": "버그 제보 접수 · 담당: 하루 (축제 준비팀) · 새 메시지 1개", "expression": 0 },
@@ -208,49 +190,57 @@ module.exports = {
       "graded": true,
       "questionId": "ch1-q2",
       "conceptTitle": "변수 덮어쓰기와 대답 저장",
-      "experiment": "arrange",
+      "experiment": "quiz",
       "title": "버그 2 · 초대장에 찍힌 '정문 님'",
       "topic": "변수와 대답 덮어쓰기",
       "minutes": "3:00",
       "background": "night",
       "channel": "축제앱 · 하루와 채팅",
       "quote": "하루: \"네가 보낸 초대장이 '정문 님'으로 왔어 ㅋㅋ 티켓도 기본 6장에 가입 보너스 3장이면 9장인데 3장이래!\"",
-      "goalPrompt": "초대장에 보낸 사람 이름과 만날 장소가 각각 제대로 찍히고, 티켓이 기본 6장에 보너스 3장을 받은 만큼 나오도록 블록을 고쳐 실행해 보세요!",
+      "goalPrompt": "하루의 블록과 실행 기록을 보고, 초대장이 '정문 님, 티켓 3장'으로 온 까닭과 고칠 방법을 하루에게 알려 주세요!",
       "observe": "'대답'은 가장 최근에 받은 값 하나만 기억하므로 받자마자 변수에 저장해야 하고, '정하기'는 값을 바꾸고 '더하기'는 값을 보탭니다.",
-      "goal": {
-        "hat": "초대장 보내기 버튼을 클릭했을 때",
-        "blocks": [
-          { "id": "askName", "label": "\"보내는 사람 이름은?\" 묻고 대답 기다리기" },
-          { "id": "setName", "label": "[이름]을 (대답)으로 정하기" },
-          { "id": "askPlace", "label": "\"만날 장소는?\" 묻고 대답 기다리기" },
-          { "id": "setPlace", "label": "[장소]를 (대답)으로 정하기" },
-          { "id": "base", "label": "[티켓]을 6으로 정하기" },
-          { "id": "bonus", "label": "{choice}", "choices": ["[티켓]을 3으로 정하기", "[티켓]에 3만큼 더하기"], "initialChoice": 0 }
+      "quiz": {
+        "style": "chat",
+        "code": [
+          "초대장 보내기 버튼을 클릭했을 때",
+          "  \"보내는 사람 이름은?\" 묻고 대답 기다리기",
+          "  \"만날 장소는?\" 묻고 대답 기다리기",
+          "  [이름]을 (대답)으로 정하기",
+          "  [장소]를 (대답)으로 정하기",
+          "  [티켓]을 6으로 정하기",
+          "  [티켓]을 3으로 정하기"
         ],
-        "initialOrder": ["askName", "askPlace", "setName", "setPlace", "base", "bonus"],
-        "acceptOrders": [
-          ...ordersRespecting(
-            ["askName", "setName", "askPlace", "setPlace", "base", "bonus"],
-            [["askName", "setName"], ["setName", "askPlace"], ["askPlace", "setPlace"], ["base", "bonus"]]
-          ),
-          ...ordersRespecting(
-            ["askPlace", "setPlace", "askName", "setName", "base", "bonus"],
-            [["askPlace", "setPlace"], ["setPlace", "askName"], ["askName", "setName"], ["base", "bonus"]]
-          )
+        "trace": [
+          ["\"보내는 사람 이름은?\" 묻고 대답 기다리기", "대답: {{name}}"],
+          ["\"만날 장소는?\" 묻고 대답 기다리기", "대답: 정문"],
+          ["[이름]을 (대답)으로 정하기", "[이름]: 정문"],
+          ["[장소]를 (대답)으로 정하기", "[장소]: 정문"],
+          ["[티켓]을 6으로 정하기", "[티켓]: 6"],
+          ["[티켓]을 3으로 정하기", "[티켓]: 3"]
         ],
-        "expectedChoices": { "bonus": 1 },
-        "simulate": "invite",
+        "screen": "도착한 초대장: \"정문 님! 내일 정문에서 만나요. 보유 티켓: 3장\"",
         "successTitle": "초대장 정상 발송!",
-        "successText": "이름은 첫 대답을 받자마자 저장하고, 보너스 티켓은 원래 6장에 보탰어요.",
-        "wrongHints": {
-          "askPlace": "두 번째 질문을 하는 순간 '대답'에 있던 이름이 '정문'으로 바뀌어요! '대답'은 마지막 값 하나만 기억하니까 첫 대답을 받자마자 [이름]에 저장해야 해요.",
-          "setName": "[이름]을 정하는 순간 '대답'에 이름이 들어 있어야 해요. 그 줄이 실행될 때 '대답'에 무엇이 있는지 확인해 보세요.",
-          "setPlace": "[장소]를 정하는 순간 '대답'에 장소가 들어 있어야 해요. 장소를 묻고 난 다음에 저장해야 해요.",
-          "askName": "보내는 사람 이름을 먼저 물어야 [이름]에 담을 값이 생겨요.",
-          "base": "보너스를 받은 뒤에 기본 6장으로 정하면 앞에서 받은 보너스가 지워져요.",
-          "bonus": "'정하기'는 원래 있던 6장을 지우고 3으로 바꿔 버려요! 6장에 3장을 보태는 블록 표기를 골라야 해요."
-        },
-        "defaultWhy": "각 질문의 대답은 받자마자 변수에 저장하고, 티켓은 6장에 3장을 보태도록 고쳐 보세요."
+        "explain": "고친 초대장: \"{{name}} 님! 내일 정문에서 만나요. 보유 티켓: 9장\" — 대답은 받자마자 저장하고, 보너스는 원래 티켓에 보탰어요.",
+        "steps": [
+          {
+            "prompt": "실행 기록 좀 봐 줘. 이름부터 물어봤는데 왜 [이름]에 '정문'이 들어간 거야?",
+            "choices": [
+              { "key": "last-answer", "label": "대답은 마지막 값만 기억해서, [이름]을 정할 땐 이미 '정문'이었어.", "correct": true },
+              { "key": "stack", "label": "대답에 이름과 장소가 쌓여서, [이름]이 두 번째 값을 가져갔어.", "why": "'대답'은 여러 값을 모아 두는 목록이 아니라 가장 최근에 받은 값 하나만 기억해요. 실행 기록에서 두 번째 질문 뒤 '대답'이 '정문'으로 바뀐 것을 보세요." },
+              { "key": "same-box", "label": "[이름]과 [장소]가 같은 변수라서 하나를 정하면 둘 다 바뀌어.", "why": "[이름]과 [장소]는 서로 다른 변수예요. 둘 다 '정문'이 된 건 둘 다 같은 '대답'(그 순간 '정문')으로 정했기 때문이에요." },
+              { "key": "order-asked", "label": "묻기 블록이 이름보다 장소를 먼저 물어봐서 이렇게 된 거야.", "why": "실행 기록을 보면 이름을 먼저 물었어요. 문제는 묻는 순서가 아니라, 이름을 저장하기 전에 다음 질문으로 '대답'이 바뀐 거예요." }
+            ]
+          },
+          {
+            "prompt": "아하… 그럼 어떻게 고치지? 티켓도 6장에 보너스 3장이면 9장이어야 하는데.",
+            "choices": [
+              { "key": "save-add", "label": "이름을 묻자마자 [이름]에 넣고, 보너스는 3만큼 더하기로 바꾸자.", "correct": true },
+              { "key": "ask-again", "label": "맨 끝에 이름을 한 번 더 묻게 하고, 티켓 블록은 그대로 두자.", "why": "같은 질문을 두 번 하면 사용자가 귀찮고, 티켓은 여전히 '정하기'라서 6장이 지워지고 3장만 남아요." },
+              { "key": "set-nine", "label": "이름은 그대로 두고, 3으로 정하기를 9로 정하기로 바꾸자.", "why": "이름 칸의 '정문' 버그가 그대로 남아요. 또 9를 직접 적으면 기본 티켓이 바뀔 때마다 다시 고쳐야 해요. 보너스는 원래 값에 보태는 '더하기'가 맞아요." },
+              { "key": "swap-tickets", "label": "티켓 두 줄 순서만 바꾸면 6장이 남으니까 그걸로 충분해.", "why": "순서를 바꾸면 6장이 남지만 보너스 3장이 사라져요. '정하기'는 덮어쓰기라서, 보태려면 '더하기'를 써야 9장이 돼요." }
+            ]
+          }
+        ]
       },
       "flow": {
         "intro": [

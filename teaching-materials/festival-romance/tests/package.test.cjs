@@ -12,12 +12,14 @@ const publicPath = path.resolve(root, '../../public/festival-romance.html');
 const distLessonPath = path.join(root, 'dist/festival-lesson.html');
 const publicLessonPath = path.resolve(root, '../../public/festival-lesson.html');
 
-test('독립 HTML에 세 챕터·22장면·12문항·v3 스프라이트 정보가 포함된다', () => {
+test('독립 HTML에 세 챕터·22장면·12문항·겹침 없는 v13 6표정(2행) 스프라이트 정보가 포함된다', () => {
   assert.equal(/\r/.test(distHtml), false, 'dist/festival-romance.html은 LF 줄바꿈이어야 합니다');
   assert.equal((distHtml.match(/"id":"ch[1-3]-[1-9]"/g) || []).length, 22);
   const spriteMatch = distHtml.match(/window\.FESTIVAL_SPRITE_ROWS=([^;]+);/);
   assert.ok(spriteMatch, 'FESTIVAL_SPRITE_ROWS 주입 확인');
-  assert.deepEqual(JSON.parse(spriteMatch[1]), { boy: 1, girl: 1 });
+  assert.deepEqual(JSON.parse(spriteMatch[1]), { boy: 2, girl: 2 });
+  const build = fs.readFileSync(path.join(root, 'build.cjs'), 'utf8');
+  assert.ok(build.includes("'haru-boy-v13.png'") && build.includes("'haru-girl-v13.png'"), '빌드가 v13 시트를 사용');
   assert.ok(distHtml.includes('CS 복습 챌린지'));
   assert.ok(!distHtml.includes('금옥중학교'));
   assert.ok(Buffer.byteLength(distHtml) <= 20000000);

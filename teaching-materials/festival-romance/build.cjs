@@ -47,8 +47,8 @@ function loadChapters(chaptersDir) {
   return chapterFiles.map((entry) => require(path.join(chaptersDir, entry.name)));
 }
 
-const boySpriteFile = 'haru-boy-v3.png';
-const girlSpriteFile = 'haru-girl-v3.png';
+const boySpriteFile = 'haru-boy-v13.png';
+const girlSpriteFile = 'haru-girl-v13.png';
 const boySprite = readAsset(boySpriteFile);
 const girlSprite = readAsset(girlSpriteFile);
 const boyRows = detectSpriteRows(boySprite, boySpriteFile);
