@@ -44,13 +44,16 @@ const BADGES: readonly { id: BadgeId; kind: BadgeKind; title: string; how: strin
 export const STAMPS = ["concepts", "perfect-quiz", "missions", "lesson-complete"] as const satisfies readonly BadgeId[];
 const isStamp = (id: BadgeId) => (STAMPS as readonly BadgeId[]).includes(id);
 
+// The festival game is kept apart from the three archive reviews (D6): it neither earns nor counts toward 복습 완주.
+const countsForReviewBadge = (lesson: Lesson) => lesson.practice.type !== "festival";
+
 // Badges earned in one lesson; the completion card and live toasts announce these and the stamp board uses the stamps among them.
 export function lessonBadgesFor(lesson: Lesson, work: AnyWork): BadgeId[] {
   const progress = progressFor(lesson, work);
   // A lesson without questions counts as 100% solved, so it must not hand out quiz badges.
   const quizDone = lesson.quiz.length > 0 && progress.quiz.percent === 100;
   const comeback = quizDone && (work?.quizRound ?? 1) >= 3;
-  if (lesson.mode === "review") return [...(progress.status === "completed" ? ["review-complete" as const] : []), ...(comeback ? ["comeback" as const] : [])];
+  if (lesson.mode === "review") return [...(progress.status === "completed" && countsForReviewBadge(lesson) ? ["review-complete" as const] : []), ...(comeback ? ["comeback" as const] : [])];
   const earned: BadgeId[] = [];
   if (progress.concept.percent === 100) earned.push("concepts");
   // quizRound only grows on a retry, so round 1 with every question solved is a first-try full score.
@@ -68,7 +71,7 @@ export function lessonBadgesFor(lesson: Lesson, work: AnyWork): BadgeId[] {
 // Badges come from the saved records of open lessons only, so nothing new is stored or read.
 // `lessons` names where each badge was earned, for the badge page.
 export function badgesFor(lessons: readonly Lesson[], work: Record<string, AnyWork>): Badge[] {
-  const regular = lessons.filter(lesson => lesson.mode !== "review"), reviews = lessons.filter(lesson => lesson.mode === "review");
+  const regular = lessons.filter(lesson => lesson.mode !== "review"), reviews = lessons.filter(lesson => lesson.mode === "review" && countsForReviewBadge(lesson));
   const earnedIn = (list: readonly Lesson[], id: BadgeId) => list.filter(lesson => lessonBadgesFor(lesson, work[lesson.id]).includes(id));
   const optional = lessons.flatMap(lesson => lesson.practice.type === "programming" ? missionsFor(lesson.id).filter(mission => mission.optional).map(mission => ({ lesson, mission })) : []);
   const challenged = optional.filter(({ lesson, mission }) => work[lesson.id]?.missions?.[mission.id]?.submission);
