@@ -112,8 +112,9 @@ test('하트 문항은 풀기 전에 보이는 미션 목표·하루의 한마�
 });
 
 test('채점 선택지는 정답 보기만 유독 길지 않다(오답 평균의 ±25%)', () => {
-  const quizzes = [ch1, ch2, ch3].flatMap((ch) => ch.scenes.filter((s) => s.graded && s.quiz))
-    .flatMap((s) => (s.quiz.steps ? s.quiz.steps.map((st, i) => [`${s.questionId}:${i}`, st]) : [[s.questionId, s.quiz]]));
+  const quizzes = [ch1, ch2, ch3].flatMap((ch) => ch.scenes.filter((s) => s.graded))
+    .flatMap((s) => [s.quiz, s.goal?.chat].filter(Boolean).map((q) => [s.questionId, q]))
+    .flatMap(([id, q]) => (q.steps ? q.steps.map((st, i) => [`${id}:${i}`, st]) : [[id, q]]));
   assert.ok(quizzes.length > 0);
   for (const [id, q] of quizzes) {
     if (!Array.isArray(q.choices) || q.choices.length < 2) continue;

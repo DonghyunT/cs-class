@@ -147,14 +147,16 @@ async function solveCurrentChallenge(page, { meetingTime = '16:00', polygonAngle
   } else if (type === 'arrange') {
     await solveArrange(page);
   } else if (type === 'map') {
-    await page.locator('#map-event').selectOption('ArrowRight');
-    await page.locator('#map-angle').selectOption('90');
-    await page.locator('#run-map-block').click();
+    await page.locator('[data-map-event="ArrowRight"]').click();
+    await page.locator('[data-map-angle="90"]').click();
+    await page.locator('[data-key="ArrowRight"]').click(); // 연결한 신호를 실제로 보내야 실행됨
   } else if (type === 'math') {
-    await page.locator('[data-math-formula="paren"]').click();
-    await page.locator('#math-quotient').fill('3');
-    await page.locator('#math-remainder').fill('1');
+    await page.locator('[data-math-gap="0"]').click(); // (
+    await page.locator('[data-math-gap="3"]').click();
+    await page.locator('[data-math-gap="3"]').click(); // )
     await page.locator('#run').click();
+    const { goal } = await currentSceneData(page);
+    await page.locator(`[data-chat-choice="${goal.chat.steps[0].choices.find((c) => c.correct).key}"]`).click();
   } else if (type === 'compare') {
     await page.locator('#operator').selectOption('≥');
     await page.locator('#run').click();
@@ -568,20 +570,26 @@ async function playChapterToEnd(page, chapterId, {
       assert.match(await page.locator('.sim-screen').innerText(), /정문 님! 내일 정문에서 만나요\. 보유 티켓: 3장/, '버그 초대장 재현');
 
       await enterExp('ch1-5'); // map
-      await page.locator('#start-map').click();
+      await page.locator('[data-key="ArrowUp"]').click(); // 연결되지 않은 신호 → 아무 일도 없음(채점 안 함)
+      assert.equal(await page.locator('#result').isVisible(), false, '연결 안 된 신호는 채점하지 않음');
+      assert.match(await page.locator('#map-info').innerText(), /연결된 블록이 없/);
+      await page.locator('#start-map').click(); // 처음 연결(시작하기 버튼) 그대로 실행 → 사건 오답
       await waitForActivityFail(page);
-      await page.locator('#map-event').selectOption('ArrowRight');
-      await page.locator('#map-angle').selectOption('0');
-      await page.locator('#run-map-block').click();
+      await page.locator('[data-map-event="ArrowRight"]').click();
+      await page.locator('[data-key="ArrowRight"]').click(); // 방향 0° 그대로 → 방향각 오답
       await waitForActivityFail(page);
+      assert.match(await page.locator('#result').innerText(), /0°는 위쪽/);
 
       await enterExp('ch1-6'); // math
-      await page.locator('#run').click();
+      await page.locator('#run').click(); // 괄호 없이 실행 → 9.5
       await waitForActivityFail(page);
-      await page.locator('[data-math-formula="paren"]').click();
-      await page.locator('#math-quotient').fill('2');
-      await page.locator('#math-remainder').fill('1');
+      assert.match(await page.locator('#math-steps').innerText(), /9 ÷ 2 = 4\.5/);
+      await page.locator('[data-math-gap="0"]').click();
+      await page.locator('[data-math-gap="3"]').click();
+      await page.locator('[data-math-gap="3"]').click();
       await page.locator('#run').click();
+      assert.match(await page.locator('#math-steps').innerText(), /5 \+ 9 = 14/);
+      await page.locator('[data-chat-choice="half"]').click(); // 3.5번 → 몫·나머지 오답
       await waitForActivityFail(page);
 
       await enterExp('ch2-2'); // compare

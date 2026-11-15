@@ -443,3 +443,14 @@ dialog::backdrop{background:#202a3b68}
 .sim-steps li{overflow-wrap:anywhere}
 .sim-effect{margin-left:6px;color:#2f5f8a;font-weight:600}
 .sim-screen{margin:8px 0 0;padding:8px 12px;border-radius:8px;background:#222b3c;color:#fffaf1;font-size:16px;overflow-wrap:anywhere}
+.map-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.map-chip{min-height:44px;padding:6px 12px;border:1.5px solid #bda485;border-radius:20px;background:#fffdf8;font-size:16px}
+.map-chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fffaf1}
+.map-start{justify-content:center}
+.math-formula{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:26px;margin:8px 0}
+.math-token{padding:0 2px;font-weight:650}
+.math-gap{min-width:44px;min-height:44px;border:1.5px dashed #b08d5f;border-radius:6px;background:#fffbef;font-size:24px;line-height:1;color:#7a4d1f}
+.math-steps{margin:10px 0 0;padding-left:20px;display:grid;gap:4px;font-size:18px}
+.math-steps li{animation:math-step-in .35s both}
+@keyframes math-step-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.math-steps li{animation:none}}

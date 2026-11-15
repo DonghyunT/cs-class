@@ -48,6 +48,31 @@
     const wrongChoice=Object.entries(goal.expectedChoices||{}).find(([id,want])=>(picks[id]??0)!==want);
     return wrongChoice?{correct:false,firstWrongId:wrongChoice[0]}:{correct:true,firstWrongId:null};
   }
+  // 숫자·+·−·×·÷·괄호 토큰을 우선순위대로 계산합니다. 괄호 짝이 틀리면 null.
+  function evaluateTokens(tokens){
+    const list=Array.isArray(tokens)?tokens:[];
+    const steps=[];let i=0;
+    const fmt=n=>String(Math.round(n*1000)/1000);
+    const apply=(a,op,b)=>{const v=op==='+'?a+b:op==='−'||op==='-'?a-b:op==='×'?a*b:a/b;steps.push(fmt(a)+' '+op+' '+fmt(b)+' = '+fmt(v));return v;};
+    const factor=()=>{
+      const t=list[i];
+      if(typeof t==='number'){i++;return t;}
+      if(t==='('){i++;const v=expr();if(v===null||list[i]!==')')return null;i++;return v;}
+      return null;
+    };
+    const term=()=>{
+      let v=factor();
+      while(v!==null&&(list[i]==='×'||list[i]==='÷')){const op=list[i++];const r=factor();if(r===null)return null;v=apply(v,op,r);}
+      return v;
+    };
+    const expr=()=>{
+      let v=term();
+      while(v!==null&&(list[i]==='+'||list[i]==='−'||list[i]==='-')){const op=list[i++];const r=term();if(r===null)return null;v=apply(v,op,r);}
+      return v;
+    };
+    const value=expr();
+    return value===null||i!==list.length?null:{value,steps};
+  }
   function computeEndingOutcome(totalHearts,hasColdRejection){
     const hearts=Number(totalHearts)||0;
     if(hearts>=12&&!hasColdRejection)return 'some';
@@ -105,6 +130,6 @@
     EXPRESSION_LABELS,V3_COLUMN_MAP,
     boundedInteger,formatInvitation,overwriteDemo,answerDemo,moveOnMap,ticketMath,divideTickets,
     compareTicket,logicResult,chooseRoute,choosePrize,polygonTurn,polygonPath,untilTrace,incrementReady,
-    spriteCrop,seededOrder,evaluateArrange,computeEndingOutcome,gradeQuizAnswer,evaluatePolygonTurn,evaluatePrizeBranches
+    spriteCrop,seededOrder,evaluateArrange,evaluateTokens,computeEndingOutcome,gradeQuizAnswer,evaluatePolygonTurn,evaluatePrizeBranches
   };
 });

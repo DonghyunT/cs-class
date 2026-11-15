@@ -181,3 +181,13 @@ test('evaluateArrange는 허용 순서·블록 표기를 채점하고 처음 어
   assert.deepEqual(m.evaluateArrange(['ask', 'set', 'say'], goal, {}), { correct: false, firstWrongId: 'set' }, '표기 기본값 0');
   assert.deepEqual(m.evaluateArrange([], goal, {}), { correct: false, firstWrongId: null }, '빈 순서');
 });
+
+test('evaluateTokens는 괄호·우선순위대로 계산하고 계산 순서를 돌려준다', () => {
+  assert.deepEqual(m.evaluateTokens([5, '+', 9, '÷', 2]), { value: 9.5, steps: ['9 ÷ 2 = 4.5', '5 + 4.5 = 9.5'] });
+  assert.deepEqual(m.evaluateTokens(['(', 5, '+', 9, ')', '÷', 2]), { value: 7, steps: ['5 + 9 = 14', '14 ÷ 2 = 7'] });
+  assert.deepEqual(m.evaluateTokens([5, '+', '(', 9, '÷', 2, ')']), { value: 9.5, steps: ['9 ÷ 2 = 4.5', '5 + 4.5 = 9.5'] });
+  assert.deepEqual(m.evaluateTokens(['(', '(', 5, '+', 9, ')', ')', '÷', 2]).value, 7, '겹괄호');
+  assert.equal(m.evaluateTokens(['(', 5, '+', 9, '÷', 2]), null, '짝이 안 맞는 괄호');
+  assert.equal(m.evaluateTokens([')', 5, '+', 9, '(', '÷', 2]), null, '닫는 괄호가 먼저');
+  assert.equal(m.evaluateTokens(['(', ')', 5, '+', 9]), null, '빈 괄호');
+});
