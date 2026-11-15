@@ -55,11 +55,14 @@ export function initialReviewProject(type: string): ReviewProject {
   if (type === "sandwich") return { type, runId: "initial", input: "", commands: [] };
   return { type: "flowchart", mission: "1", placements: {}, cards: [], nodes: [{ id: "start", shape: "terminal", text: "시작", x: 80, y: 60 }, { id: "end", shape: "terminal", text: "종료", x: 80, y: 300 }], edges: [], current: "", goal: "", conditions: [], core: [], pan: { x: 0, y: 0 }, guideStep: 0 };
 }
+const sortedKeys = (value: unknown): unknown => Array.isArray(value) ? value.map(sortedKeys)
+  : value && typeof value === "object" ? Object.fromEntries(Object.keys(value).sort().map(key => [key, sortedKeys((value as Record<string, unknown>)[key])])) : value;
 // Only learning content invalidates verification; moving symbols or changing tabs does not.
 export function projectSnapshot(project: ReviewProject, missionId?: string): ReviewProject {
   if (project.type === "abstraction") return { ...project, step: 1, tutorialStep: 1, tutorialDone: false, view: "workbook", tutorialScenario: "chat", tutorialNoise: [], adopted: [] };
   if (project.type === "sandwich") return { ...project, input: "" };
-  if (project.type === "festival") return project;
+  // The game's map keys come back from Firestore in no promised order, so the snapshot fixes one.
+  if (project.type === "festival") return sortedKeys(project) as FestivalProject;
   if (missionId && missionId !== "free") return { ...initialReviewProject("flowchart") as FlowchartProject, mission: missionId as FlowchartProject["mission"], placements: { [missionId]: project.placements[missionId] ?? {} }, nodes: [] };
   return { ...project, mission: "free", placements: {}, guideStep: 0, pan: { x: 0, y: 0 }, nodes: project.nodes.map(node => ({ ...node, x: 0, y: 0 })).sort((a, b) => a.id.localeCompare(b.id)), edges: project.edges.map(({ from, to, label }) => ({ from, to, label })).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) };
 }

@@ -33,7 +33,8 @@ export function festivalStep(message: unknown, saved: Work, preview: boolean): F
   // The saved format holds the ending itself (endingOutcome), not the report's outcome.
   if (state && type === "festival:complete") delete state.outcome;
   const project = festivalProjectFrom(state);
-  if (!project) return null;
+  // A game edit outside the schema would otherwise stop saving while the rail still says 저장 완료.
+  if (!project) { console.warn(`festival: dropped a ${type} message that does not fit the saved format`); return null; }
   // The ending report renders again on every visit; a state already submitted only updates the draft.
   return type === "festival:complete" && basicReviewCheck(project).passed && !sameReviewProject(project, saved.submission?.reviewProject) ? { type: "finish", project } : { type: "update", project };
 }

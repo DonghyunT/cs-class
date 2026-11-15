@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { buildCustomRoute } from "next/dist/lib/build-custom-route";
+import { matchHas } from "next/dist/shared/lib/router/utils/prepare-destination";
 import nextConfig from "../next.config";
+import entryCdn from "../scripts/entryjs-cdn.json";
+import { sameWorkContent } from "../src/components/student/work-draft";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import { emptyWork } from "../src/lib/classroom/progress";
 import { FESTIVAL_FRAME, festivalFrame, festivalStep } from "../src/lib/classroom/review/festival-embed";
@@ -33,6 +36,20 @@ test("작업실 호스트는 게임 파일과 /entryjs/만 그대로 보내고 �
   for (const pathname of ["/festival-romance.html", "/entryjs/workspace.html"]) expect(moved(pathname), pathname).toBe(false);
 });
 
+test("앱 주소의 게임 사본은 embed로 열 때만 격리 헤더를 받고, 작업실 호스트와 주소 모드는 자기 출처를 지킨다", async () => {
+  const rule = (await nextConfig.headers!()).find(item => item.source === "/festival-romance.html");
+  expect(rule?.headers).toEqual([{ key: "Content-Security-Policy", value: "sandbox allow-scripts allow-forms" }]);
+  const route = buildCustomRoute("header", rule!);
+  const sandboxed = (pathname: string, host: string, query: Record<string, string>) =>
+    new RegExp(route.regex).test(pathname) && !!matchHas({ headers: { host } } as never, query, rule!.has, rule!.missing);
+  // A workspace-host frame redirected back to the app would otherwise run allow-same-origin on the app's own origin.
+  for (const host of [`${entryCdn.appHost}`, "localhost:3000"]) expect(sandboxed("/festival-romance.html", host, { embed: "1" }), host).toBe(true);
+  expect(sandboxed("/festival-romance.html", entryCdn.workspaceHost, { embed: "1" })).toBe(false);
+  // Address mode keeps its origin, so its localStorage save still works.
+  expect(sandboxed("/festival-romance.html", entryCdn.appHost, {})).toBe(false);
+  expect(sandboxed("/festival-lesson.html", entryCdn.appHost, { embed: "1" })).toBe(false);
+});
+
 test("게임 메시지: 준비되면 init, 상태는 초안, 저장 요청은 저장, 모르는 메시지는 무시", () => {
   expect(festivalStep({ type: "festival:ready" }, saved(), false)).toEqual({ type: "init" });
   expect(festivalStep({ type: "festival:save-request" }, saved(), false)).toEqual({ type: "save" });
@@ -56,6 +73,30 @@ test("엔딩 메시지는 아직 제출하지 않은 끝난 상태만 제출 단
   expect(festivalStep({ type: "festival:complete", payload: { ...ended, outcome: "some" } }, saved({ submission: { id: "s", order: [], submittedAt: 1, reviewProject: project } }), false)).toEqual({ type: "update", project });
   const unfinished = { ...ended, endingOutcome: null };
   expect(festivalStep({ type: "festival:complete", payload: { ...unfinished, outcome: "some" } }, saved(), false)).toEqual({ type: "update", project: festivalProjectFrom(unfinished) });
+});
+
+// Firestore need not return map keys in the order the game wrote them.
+const reordered = (value: unknown): unknown => Array.isArray(value) ? value.map(reordered)
+  : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).reverse().map(([key, item]) => [key, reordered(item)])) : value;
+test("저장된 기록의 키 순서가 달라도 같은 엔딩은 다시 제출하지 않고, 같은 상태는 바뀐 것으로 보지 않는다", () => {
+  const played = { ...ended, chapterResults: { ...ended.chapterResults, 1: { completed: true, hearts: 3, questions: { "ch1-q1": { firstAttempt: true, solved: true, conceptTitle: "출력" }, "ch1-q2": { firstAttempt: false, solved: true, conceptTitle: "변수", lastWrongWhy: "이유" } } } }, coldChoices: { "ch2-6": true as const }, seenScenes: { "ch1-1": true as const, "ch1-1:res": true as const, "ch3-7": true as const } };
+  const project = festivalProjectFrom(played)!, stored = reordered(project) as FestivalProject;
+  expect(JSON.stringify(stored)).not.toBe(JSON.stringify(project));
+  expect(festivalStep({ type: "festival:complete", payload: { ...played, outcome: "some" } }, saved({ submission: { id: "s", order: [], submittedAt: 1, reviewProject: stored } }), false)).toEqual({ type: "update", project });
+  const draft = emptyWork(lesson).draft;
+  expect(sameWorkContent({ ...draft, reviewProject: project }, { ...draft, reviewProject: stored })).toBe(true);
+  expect(sameWorkContent({ ...draft, reviewProject: project }, { ...draft, reviewProject: { ...stored, sceneId: "ch3-6" } })).toBe(false);
+});
+
+test("저장 형식에 맞지 않는 게임 상태는 버리되 학생 내용 없이 경고를 남긴다", () => {
+  const warned: unknown[][] = [], warn = console.warn;
+  console.warn = (...args: unknown[]) => { warned.push(args); };
+  try {
+    expect(festivalStep({ type: "festival:state", payload: { ...ended, nickname: "비밀별명", sceneId: "ch3-new-finale" } }, saved(), false)).toBeNull();
+    expect(festivalStep({ type: "festival:state", payload: ended }, saved(), false)).not.toBeNull();
+  } finally { console.warn = warn; }
+  expect(warned).toHaveLength(1);
+  expect(JSON.stringify(warned)).not.toContain("비밀별명");
 });
 
 test("교사 미리보기는 게임을 열기만 하고 받은 상태를 남기지 않는다", () => {

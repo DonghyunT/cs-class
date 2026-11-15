@@ -66,7 +66,8 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   }, [completed, lessonBadges, toasts]);
   const [celebration, setCelebration] = useState<BadgeId[] | null>(null);
   if (completed !== seen.completed || lessonBadges.join() !== seen.badges.join()) {
-    if (completed && !seen.completed) setCelebration(lessonBadges.filter(id => !seen.badges.includes(id)));
+    // The game fills the window with its own ending report and earns no badge (D1, D6), so it gets no card on top.
+    if (completed && !seen.completed && reviewType !== "festival") setCelebration(lessonBadges.filter(id => !seen.badges.includes(id)));
     setSeen({ completed, badges: lessonBadges });
   }
   const [practiceVisited, setPracticeVisited] = useState(initial.draft.stage === "practice");
@@ -138,7 +139,8 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     // A later edit may make the old validation invisible; the stage heading remains a safe focus target.
     const changed = JSON.stringify(controller.getDraft()) !== JSON.stringify(controller.actionFailure?.before.draft);
     const differentConcept = action.type === "check-concept" && action.conceptId !== displayedConcept.current;
-    setFocusRequest({ id: changed && action.type !== "retry-quiz" || differentConcept ? `stage-heading-${draft.stage}` : id });
+    // The game's status line and heading are screen-reader only: its finish button if still needed, else the game.
+    setFocusRequest({ id: reviewType === "festival" ? ["festival-finish", "festival-game"] : changed && action.type !== "retry-quiz" || differentConcept ? `stage-heading-${draft.stage}` : id });
   }
   function moveBlock(id: string, delta: number) {
     const index = draft.practiceOrder.indexOf(id);

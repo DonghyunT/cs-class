@@ -22,6 +22,13 @@ const nextConfig: NextConfig = {
     source: "/entryjs/workspace.html",
     missing: onWorkspaceHost,
     headers: [{ key: "Content-Security-Policy", value: "sandbox allow-scripts" }],
+  }, {
+    // The same for the festival game in the classroom frame (?embed): a workspace-host frame, which allows same-origin,
+    // redirected back here must not run on the app's origin. Address mode (no embed) keeps its origin for localStorage saves.
+    source: "/festival-romance.html",
+    has: [{ type: "query", key: "embed" }],
+    missing: onWorkspaceHost,
+    headers: [{ key: "Content-Security-Policy", value: "sandbox allow-scripts allow-forms" }],
   }],
   redirects: async () => onWorkspaceHost.length && appHost ? [{
     source: "/:path((?!entryjs/|festival-romance\\.html$).*)",

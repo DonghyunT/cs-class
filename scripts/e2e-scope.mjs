@@ -226,8 +226,8 @@ const ENTRY_HOSTING = {
     // Moves the workspace to the Entry CDN on production builds.
     /^scripts\/entryjs-cdn\.(?:mjs|json)$/,
     /^cloudflare\/entry-cdn\/.+$/,
-    // Only the Entry workspace's headers and its host's redirect live here (tests/festival-embed.test.ts checks the
-    // redirect's exception for the festival game, which runs only on production hosts); remove this entry if the config grows.
+    // Only the Entry workspace's headers and its host's redirect live here (tests/festival-embed.test.ts checks the festival
+    // game's redirect exception and its embed sandbox header); remove this entry if the config grows.
     /^next\.config\.ts$/,
     // Answers the sandboxed iframe's CORS preflights. Remove this entry if the matcher grows beyond /entryjs/.
     /^src\/proxy\.ts$/

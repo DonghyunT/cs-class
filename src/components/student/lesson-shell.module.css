@@ -66,16 +66,19 @@
 .shell[data-practice-type=festival] .navigation{display:none}
 .shell[data-practice-type=festival] .main{flex:1;min-height:0;width:100%;max-width:none;margin:0;padding:0;display:flex;flex-direction:column;overflow:auto}
 .shell[data-practice-type=festival] .main>:has(>[id=panel-practice]){flex:1 0 auto;display:flex;flex-direction:column}
-.shell[data-practice-type=festival] .main>:has(>[id=panel-practice])>section:not([id=panel-practice],[data-lesson-complete]){margin:8px}
-.shell[data-practice-type=festival] [id=panel-practice]:not([hidden]){flex:1 0 auto;display:flex;padding:0;min-height:320px}
+.shell[data-practice-type=festival] .main>:has(>[id=panel-practice])>section:not([id=panel-practice]){margin:8px}
+.shell[data-practice-type=festival] [id=panel-practice]>section{margin:8px}
+.shell[data-practice-type=festival] [id=panel-practice]:not([hidden]){flex:1 0 auto;display:flex;flex-direction:column;padding:0;min-height:320px}
 .shell[data-practice-type=festival] [id=panel-practice] iframe{flex:1;min-width:0;border:0;display:block}
 @media(min-aspect-ratio:16/9){
-  .shell[data-practice-type=festival]{flex-direction:row}
+  /* At high zoom the rail can outgrow the window. The shell scrolls rather than the rail, so the account panel that opens
+     beside the rail is not clipped. */
+  .shell[data-practice-type=festival]{flex-direction:row;overflow-y:auto}
   .shell[data-practice-type=festival] .header{width:104px;flex-shrink:0}
   .shell[data-practice-type=festival] .headerInner{flex-direction:column;flex-wrap:nowrap;align-items:stretch;padding:12px 8px;gap:12px;text-align:center}
   .shell[data-practice-type=festival] .nav{display:flex;flex-direction:column;gap:8px}
   .shell[data-practice-type=festival] .leave{flex-direction:column;justify-content:center;gap:2px;align-self:stretch;white-space:normal}
-  .shell[data-practice-type=festival] .currentLesson{order:0;padding:6px 8px;border-radius:12px;font-size:12px;line-height:1.4}
+  .shell[data-practice-type=festival] .currentLesson{order:0;padding:6px 8px;border-radius:12px;font-size:13px;line-height:1.4}
   .shell[data-practice-type=festival] .currentLesson span{white-space:normal;overflow-wrap:anywhere}
   .shell[data-practice-type=festival] .tools{flex:none;flex-direction:column;align-items:stretch;gap:12px;margin:0;max-width:none}
   .shell[data-practice-type=festival] .saveArea{flex-direction:column;flex-wrap:nowrap;align-items:stretch}
