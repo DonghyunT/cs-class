@@ -20,6 +20,7 @@ export function ReviewProjectPreview({ project }: { project: ReviewProject }) {
     return <><h3>{run.state.completed ? run.review.title : "샌드위치 실행 기록"}</h3><ol>{project.commands.map(command => <li key={command.id}>{command.text} · {command.source === "rules" ? "규칙 해석" : "AI 해석"}<ul>{command.actions.map((action, i) => <li key={i}>{action}</li>)}</ul></li>)}</ol><p>{run.state.completed && run.review.review}</p></>;
   }
   if (project.type === "abstraction") return <dl>{[["현재 상태", project.current], ["목표", project.goal], ["조건", project.conditions.join(" / ")], ["핵심", project.core.join(" / ")], ["덜어낸 정보", project.noise.join(" / ")], ["해결 계획", project.plans.join(" → ")]].map(([label, value]) => <div key={label}><dt><strong>{label}</strong></dt><dd>{value}</dd></div>)}</dl>;
+  if (project.type === "festival") return <p>하트 {project.totalHearts}/{project.maxHearts}개</p>;
   if (project.mission !== "free") {
     const mission = missions.find(m => String(m.id) === project.mission);
     return <ol>{mission?.slots.map(slot => <li key={slot.id}>{slot.fixed ? slot.label : mission.palette.find(block => block.id === project.placements[project.mission]?.[slot.id])?.text || "빈 기호"}</li>)}</ol>;

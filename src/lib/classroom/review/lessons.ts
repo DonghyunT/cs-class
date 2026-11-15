@@ -23,4 +23,7 @@ export const REVIEW_LESSONS: Lesson[] = [
       concept("branches", "선과 분기 읽기", "화살표는 실행 순서예요. 판단에서는 예·아니오를 표시해 어느 길로 갈지 알려 줘요.", "키가 150 이상이면 탑승, 아니면 대기해요.", "판단 기호에서 나가는 길에 필요한 것은?", "예·아니오 표시", "항상 같은 다음 단계"),
       concept("loop", "돌아가는 길도 설계해요", "반복은 조건을 다시 확인하도록 앞 단계에 연결해요. 끝나는 길도 있어야 해요.", "비밀번호가 틀리면 다시 입력하고, 맞으면 로그인해요.", "비밀번호가 틀렸을 때 연결할 곳은?", "비밀번호 입력 단계", "바로 종료"),
     ], quiz: quiz.flowchart, practice: { type: "flowchart", title: "순서도 연구소", description: "순차·선택·반복 퍼즐을 완성하고 자유 작품을 설계해요. 예시 공방은 원하는 만큼 연습할 수 있어요.", blocks: [] } },
+  // A game-only review: no concepts or quiz, so one submission completes it.
+  { id: "review-festival", mode: "review", title: "내일, 축제에서 만나", category: "정보 1~3단원 복습 게임", description: "축제를 앞둔 이야기 속에서 정보 1~3단원 문제를 풀며 마음을 얻어 봅니다.",
+    concepts: [], quiz: [], practice: { type: "festival", title: "내일, 축제에서 만나", description: "세 장을 끝까지 플레이하면 엔딩과 함께 실습이 제출돼요.", blocks: [] } },
 ];

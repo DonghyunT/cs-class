@@ -36,7 +36,7 @@ export interface Question {
   hint: string;
 }
 import type { ReviewProject } from "./review/project";
-export type PracticeType = "ordering" | "entryjs" | "programming" | "abstraction" | "sandwich" | "flowchart";
+export type PracticeType = "ordering" | "entryjs" | "programming" | "abstraction" | "sandwich" | "flowchart" | "festival";
 
 export interface PracticeBlock {
   id: string;

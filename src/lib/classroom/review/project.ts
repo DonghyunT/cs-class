@@ -12,17 +12,46 @@ export const flowNodeSchema = z.object({ id: z.string().max(80), shape: z.enum([
 export const flowCardSchema = z.object({ id: z.string().max(80), type: z.enum(["sequence", "selection", "loop"]), text, yes: text, no: text }).strict();
 const flowPort = z.enum(["top", "right", "bottom", "left"]).optional();
 export const flowchartSchema = z.object({ type: z.literal("flowchart"), mission: z.enum(["1", "2", "3", "guide", "free"]), placements: z.record(z.string().max(4), z.record(z.string().max(80), z.string().max(80))), cards: z.array(flowCardSchema).max(50), nodes: z.array(flowNodeSchema).max(200), edges: z.array(z.object({ from: z.string().max(80), to: z.string().max(80), label: z.enum(["", "예", "아니오"]), fromPort: flowPort, toPort: flowPort }).strict()).max(400), current: text, goal: text, conditions: list, core: list, pan: z.object({ x: z.number().finite().min(-10000).max(10000), y: z.number().finite().min(-10000).max(10000) }).strict(), guideStep: z.number().int().min(0).max(30) }).strict();
-export const reviewProjectSchema = z.discriminatedUnion("type", [abstractionSchema, sandwichSchema, flowchartSchema]);
+// Bounds mirror the game's own sanitizers (teaching-materials/festival-romance/src/state.js); the game does not cap the scene-key maps, so these caps are generous.
+const gameName = z.string().refine(value => Array.from(value).length >= 1 && Array.from(value).length <= 12);
+const flagMap = (max: number) => z.record(z.string().min(1).max(64), z.literal(true)).refine(map => Object.keys(map).length <= max);
+const gameQuestions = z.record(z.string().min(1).max(64), z.object({ firstAttempt: z.boolean(), solved: z.boolean(), conceptTitle: z.string().max(120), lastWrongWhy: z.string().max(300).optional() }).strict()).refine(map => Object.keys(map).length <= 20);
+const gameRun = z.object({ missedThisRun: flagMap(20), solvedThisRun: gameQuestions }).strict();
+const gameChapter = z.object({ completed: z.boolean(), hearts: z.number().int().min(0).max(4), questions: gameQuestions }).strict();
+const gameChapterId = z.union([z.literal(1), z.literal(2), z.literal(3)]);
+export const festivalSchema = z.object({
+  type: z.literal("festival"), version: z.literal(2), nickname: gameName, variant: z.enum(["boy", "girl"]), onboarded: z.boolean(),
+  chapterId: gameChapterId.nullable(), sceneId: z.string().regex(/^ch[123]-[\w-]{1,8}$/).nullable(),
+  story: z.object({ ticketName: gameName, meetingTime: z.enum(["16:00", "17:00"]), replyKey: z.enum(["warm", "casual"]), booth: z.enum(["game", "photo"]), boothAllowed: z.boolean(), boothOpen: z.boolean(), route: z.enum(["indoor", "outdoor", "wait"]), prize: z.enum(["large", "small", "sticker"]), polygon: z.union([z.literal(3), z.literal(4), z.literal(5), z.literal(6)]) }).strict(),
+  chapterResults: z.object({ 1: gameChapter, 2: gameChapter, 3: gameChapter }).strict(),
+  activeRuns: z.object({ 1: gameRun.optional(), 2: gameRun.optional(), 3: gameRun.optional() }).strict(),
+  coldChoices: flagMap(100), seenScenes: flagMap(400),
+  totalHearts: z.number().int().min(0).max(12), maxHearts: z.literal(12), hasColdRejection: z.boolean(), endingOutcome: z.enum(["some", "friend", "awkward"]).nullable(),
+}).strict();
+export const reviewProjectSchema = z.discriminatedUnion("type", [abstractionSchema, sandwichSchema, flowchartSchema, festivalSchema]);
 export type ReviewProject = z.infer<typeof reviewProjectSchema>;
 export type AbstractionProject = z.infer<typeof abstractionSchema>;
 export type SandwichProject = z.infer<typeof sandwichSchema>;
 export type FlowchartProject = z.infer<typeof flowchartSchema>;
+export type FestivalProject = z.infer<typeof festivalSchema>;
 export type FlowNode = z.infer<typeof flowNodeSchema>;
 export type FlowCard = z.infer<typeof flowCardSchema>;
-export const isReviewType = (type?: string) => ["abstraction", "sandwich", "flowchart"].includes(type ?? "");
+export const isReviewType = (type?: string) => ["abstraction", "sandwich", "flowchart", "festival"].includes(type ?? "");
+// The game posts festival:state without a type; null when it does not fit the saved format.
+export function festivalProjectFrom(payload: unknown): FestivalProject | null {
+  const parsed = festivalSchema.safeParse(typeof payload === "object" && payload ? { ...payload, type: "festival" } : null);
+  return parsed.success ? parsed.data : null;
+}
+export function festivalGameState(project: FestivalProject) {
+  const state: Partial<FestivalProject> = { ...project };
+  delete state.type;
+  return state as Omit<FestivalProject, "type">;
+}
 export const reviewMissionIds = ["1", "2", "3", "free"];
+const emptyChapter = { completed: false, hearts: 0, questions: {} };
 export function initialReviewProject(type: string): ReviewProject {
   if (type === "abstraction") return abstractionSchema.parse({ type, step: 1, tutorialStep: 1, tutorialDone: false, current: "", goal: "", conditions: [], core: [], noise: [], plans: [] });
+  if (type === "festival") return { type, version: 2, nickname: "여울", variant: "boy", onboarded: false, chapterId: null, sceneId: null, story: { ticketName: "여울", meetingTime: "17:00", replyKey: "casual", booth: "photo", boothAllowed: true, boothOpen: false, route: "indoor", prize: "small", polygon: 4 }, chapterResults: { 1: emptyChapter, 2: emptyChapter, 3: emptyChapter }, activeRuns: {}, coldChoices: {}, seenScenes: {}, totalHearts: 0, maxHearts: 12, hasColdRejection: false, endingOutcome: null };
   if (type === "sandwich") return { type, runId: "initial", input: "", commands: [] };
   return { type: "flowchart", mission: "1", placements: {}, cards: [], nodes: [{ id: "start", shape: "terminal", text: "시작", x: 80, y: 60 }, { id: "end", shape: "terminal", text: "종료", x: 80, y: 300 }], edges: [], current: "", goal: "", conditions: [], core: [], pan: { x: 0, y: 0 }, guideStep: 0 };
 }
@@ -30,6 +59,7 @@ export function initialReviewProject(type: string): ReviewProject {
 export function projectSnapshot(project: ReviewProject, missionId?: string): ReviewProject {
   if (project.type === "abstraction") return { ...project, step: 1, tutorialStep: 1, tutorialDone: false, view: "workbook", tutorialScenario: "chat", tutorialNoise: [], adopted: [] };
   if (project.type === "sandwich") return { ...project, input: "" };
+  if (project.type === "festival") return project;
   if (missionId && missionId !== "free") return { ...initialReviewProject("flowchart") as FlowchartProject, mission: missionId as FlowchartProject["mission"], placements: { [missionId]: project.placements[missionId] ?? {} }, nodes: [] };
   return { ...project, mission: "free", placements: {}, guideStep: 0, pan: { x: 0, y: 0 }, nodes: project.nodes.map(node => ({ ...node, x: 0, y: 0 })).sort((a, b) => a.id.localeCompare(b.id)), edges: project.edges.map(({ from, to, label }) => ({ from, to, label })).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) };
 }
@@ -40,6 +70,10 @@ export function frozenReviewProject(project: ReviewProject, missionId?: string):
   return snapshot.type === "flowchart" && snapshot.mission === "free" && project.type === "flowchart" ? { ...snapshot, nodes: structuredClone(project.nodes), edges: structuredClone(project.edges), pan: { ...project.pan } } : structuredClone(snapshot);
 }
 export function basicReviewCheck(project: ReviewProject, missionId?: string) {
+  if (project.type === "festival") {
+    const passed = project.endingOutcome !== null;
+    return { passed, message: passed ? "3장을 모두 마쳤어요." : "3장을 끝까지 마치면 제출할 수 있어요." };
+  }
   if (project.type === "sandwich") {
     const run = replaySandwich(project.commands);
     return { passed: run.state.completed && run.review.isFlawless, message: run.state.completed ? run.review.review : "아직 샌드위치가 완성되지 않았어요. 실행 기록에서 마지막으로 성공한 단계를 보고, 그다음 명령을 이어서 내려 주세요." };
