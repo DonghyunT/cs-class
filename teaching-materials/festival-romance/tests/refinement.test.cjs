@@ -323,3 +323,16 @@ test('1장 6번은 1단원 개념(변수 값이 바뀌면 계산도 바뀜)이�
   const card = ch1.scenes.find((s) => s.kind === 'summary').cards.map((c) => c.join(' ')).join(' ');
   assert.equal(/몫|나머지|우선순위/.test(card), false, '정리 카드도 1단원 범위');
 });
+
+test('임베드 계약: state에 activeRuns를 싣고, 부모 출처는 처음 받은 init에서 정하며, 장 완료·저장 요청을 보낸다', () => {
+  const app = fs.readFileSync(path.join(root, 'src/app.js'), 'utf8');
+  const payload = app.match(/function buildEmbedPayload\(\)\{[\s\S]*?\n  \}/)[0];
+  assert.match(payload, /activeRuns:state\.activeRuns/);
+  const post = app.match(/function postToParent\([\s\S]*?\n  \}/)[0];
+  assert.equal(post.includes('location.origin'), false, '게임 자신의 출처로 보내면 다른 도메인 부모가 못 받음');
+  assert.match(app, /postToParent\('festival:ready'\)/);
+  assert.match(app, /postToParent\('festival:save-request'\)/);
+  assert.match(app, /postToParent\('festival:chapter-complete',\{chapterId/);
+  // 장을 끝내는 세 곳(장면 끝·정리 화면·엔딩)이 모두 같은 함수를 쓴다.
+  assert.equal((app.match(/S\.commitChapterRun\(/g) || []).length, 1);
+});

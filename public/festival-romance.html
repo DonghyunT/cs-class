@@ -1238,6 +1238,7 @@ dialog::backdrop{background:#202a3b68}
       sceneId:state.sceneId,
       story:state.story,
       chapterResults:state.chapterResults,
+      activeRuns:state.activeRuns,
       coldChoices:state.coldChoices,
       seenScenes:state.seenScenes,
       totalHearts,
@@ -1246,12 +1247,21 @@ dialog::backdrop{background:#202a3b68}
       endingOutcome:state.chapterResults?.[3]?.completed?M.computeEndingOutcome(totalHearts,cold):null
     };
   }
+  // 게임이 다른 도메인에서 열릴 수 있어, 부모 출처는 처음 받은 festival:init에서 정합니다. 그 전에는 내용 없는 ready만 보냅니다.
+  let parentOrigin=null;
   function postToParent(type,payload){
     if(!isEmbed||!window.parent||window.parent===window)return;
-    try{
-      const origin=window.location.origin&&window.location.origin!=='null'?window.location.origin:'*';
-      window.parent.postMessage({type,payload},origin);
-    }catch{}
+    if(type!=='festival:ready'&&!parentOrigin)return;
+    try{window.parent.postMessage({type,payload},type==='festival:ready'?'*':parentOrigin);}catch{}
+  }
+  // 장을 끝낸 기록은 한 곳에서만 만들고, 장을 새로 시작하기 전까지 chapter-complete는 한 번만 보냅니다(다시 보기마다 저장하지 않음).
+  const reportedChapters=new Set();
+  function completeChapter(id){
+    S.commitChapterRun(state,id,chapterQuestionMetas(activeChapter));
+    record();
+    if(reportedChapters.has(id))return;
+    reportedChapters.add(id);
+    postToParent('festival:chapter-complete',{chapterId:id});
   }
 
   function notify(text){clearTimeout(toastTimer);$('toast').textContent=text;$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,4800);}
@@ -1333,7 +1343,7 @@ dialog::backdrop{background:#202a3b68}
       notify(`${chapterId-1}장을 먼저 완료하면 ${chapterId}장이 열려요!`);
       return;
     }
-    if(index===0)S.startChapterRun(state,chapterId);
+    if(index===0){S.startChapterRun(state,chapterId);reportedChapters.delete(chapterId);}
     showScene(chapterId,index);
   }
   function hasAnyProgress(){
@@ -1391,8 +1401,7 @@ dialog::backdrop{background:#202a3b68}
     if(!activeScene)return;
     const i=nextIndex(direction);
     if(i>=activeChapter.scenes.length){
-      S.commitChapterRun(state,activeChapter.id,chapterQuestionMetas(activeChapter));
-      record();
+      completeChapter(activeChapter.id);
       if(activeChapter.id<3&&!activeChapter.scenes.some(s=>s.kind==='summary')){
         startChapter(activeChapter.id+1,0);
         return;
@@ -1698,8 +1707,7 @@ dialog::backdrop{background:#202a3b68}
   }
 
   function initEnding(scene,forcedOutcome=null,{startLine=0}={}){
-    S.commitChapterRun(state,3,chapterQuestionMetas(activeChapter));
-    record();
+    completeChapter(3);
     const total=S.countTotalHearts(state);
     const cold=S.hasColdRejection(state);
     const outcome=forcedOutcome||M.computeEndingOutcome(total,cold);
@@ -1745,8 +1753,7 @@ dialog::backdrop{background:#202a3b68}
       else activity();
     }else{
       phase='summary';
-      S.commitChapterRun(state,activeChapter.id,chapterQuestionMetas(activeChapter));
-      record();
+      completeChapter(activeChapter.id);
       renderHeartHud();
       $('stage').dataset.kind='summary';
       $('scene-content').innerHTML=summaryMarkup(scene);
@@ -1889,6 +1896,7 @@ dialog::backdrop{background:#202a3b68}
       if(!msg||typeof msg!=='object'||msg.type!=='festival:init')return;
       const hydrated=S.sanitizeGameState(msg.payload,ids);
       if(!hydrated)return;
+      if(!parentOrigin)parentOrigin=e.origin&&e.origin!=='null'?e.origin:'*';
       Object.assign(state,hydrated);
       if(!isTeacher)state.shortMode=false;
       S.saveGameState(storage,state);
@@ -1899,6 +1907,13 @@ dialog::backdrop{background:#202a3b68}
       }
       showTitle();
     });
+  }
+
+  if(isEmbed){
+    document.addEventListener('keydown',e=>{
+      if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();postToParent('festival:save-request');}
+    });
+    postToParent('festival:ready');
   }
 
   showTitle();

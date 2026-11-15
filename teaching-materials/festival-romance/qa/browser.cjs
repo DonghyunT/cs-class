@@ -700,13 +700,9 @@ async function playChapterToEnd(page, chapterId, {
     // 4. Embed Mode (?embed=1): data-embed=true, hidden #fullscreen, 0 localStorage, postMessage contract
     {
       const romanceHtml = fs.readFileSync(publicRomancePath);
-      const server = http.createServer((req, res) => {
+      // 부모와 게임을 서로 다른 포트(다른 출처)로 띄워, 운영의 두 번째 도메인 구성과 같은 조건을 확인합니다.
+      const gameServer = http.createServer((req, res) => {
         const u = req.url.split('?')[0];
-        if (u === '/host.html') {
-          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-          res.end('<!doctype html><html lang="ko"><body style="margin:0"><iframe id="game" src="/festival-romance.html?embed=1" style="width:1280px;height:720px;border:0"></iframe><script>window.__msgs=[];window.addEventListener("message",e=>window.__msgs.push(e.data));</script></body></html>\n');
-          return;
-        }
         if (u === '/festival-romance.html') {
           res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(romanceHtml);
@@ -720,9 +716,21 @@ async function playChapterToEnd(page, chapterId, {
         res.writeHead(404);
         res.end();
       });
-      await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-      const { port } = server.address();
-      const baseUrl = `http://127.0.0.1:${port}`;
+      await new Promise((resolve) => gameServer.listen(0, '127.0.0.1', resolve));
+      const gameOrigin = `http://127.0.0.1:${gameServer.address().port}`;
+      const hostServer = http.createServer((req, res) => {
+        if (req.url.split('?')[0] === '/host.html') {
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(`<!doctype html><html lang="ko"><body style="margin:0"><iframe id="game" src="${gameOrigin}/festival-romance.html?embed=1" style="width:1280px;height:720px;border:0"></iframe><script>window.__msgs=[];window.__origins=[];window.addEventListener("message",e=>{window.__msgs.push(e.data);window.__origins.push(e.origin);});</script></body></html>
+`);
+          return;
+        }
+        res.writeHead(req.url === '/favicon.ico' ? 204 : 404);
+        res.end();
+      });
+      await new Promise((resolve) => hostServer.listen(0, '127.0.0.1', resolve));
+      const hostOrigin = `http://127.0.0.1:${hostServer.address().port}`;
+      assert.notEqual(hostOrigin, gameOrigin);
       const ctx = await browser.newContext({ viewport: { width: 1366, height: 768 }, reducedMotion: 'reduce' });
       try {
         await ctx.addInitScript(() => {
@@ -746,9 +754,9 @@ async function playChapterToEnd(page, chapterId, {
           if (msg.type() === 'error') consoleErrors.push(msg.text());
         });
         page.on('request', (req) => {
-          if (/^https?:/.test(req.url()) && !req.url().startsWith(baseUrl)) remote.push(req.url());
+          if (/^https?:/.test(req.url()) && !req.url().startsWith(hostOrigin) && !req.url().startsWith(gameOrigin)) remote.push(req.url());
         });
-        await page.goto(`${baseUrl}/host.html`);
+        await page.goto(`${hostOrigin}/host.html`);
         const frame = page.frameLocator('#game');
         await frame.locator('#stage[data-embed="true"]').waitFor();
         assert.equal(await frame.locator('body').getAttribute('data-embed'), 'true');
@@ -763,8 +771,13 @@ async function playChapterToEnd(page, chapterId, {
         });
         assert.equal(await frame.locator('#title-view').isVisible(), true);
 
+        // 게임은 부모 출처를 모르는 채로 내용 없는 ready만 보내고, init 전에는 다른 메시지를 보내지 않습니다.
+        await page.waitForFunction(() => window.__msgs.some((m) => m?.type === 'festival:ready'));
+        assert.deepEqual(await page.evaluate(() => window.__msgs.map((m) => m.type)), ['festival:ready']);
+        assert.equal(await page.evaluate(() => window.__msgs[0].payload), undefined, 'ready에는 내용이 없음');
+
         // Valid festival:init from parent hydrates state and jumps directly to ch3-6
-        await page.evaluate(() => {
+        await page.evaluate((origin) => {
           const iframe = document.getElementById('game');
           iframe.contentWindow.postMessage({
             type: 'festival:init',
@@ -794,11 +807,20 @@ async function playChapterToEnd(page, chapterId, {
               coldChoices: {},
               seenScenes: {},
             },
-          }, '*');
-        });
+          }, origin);
+        }, gameOrigin);
         await frame.locator('.story-heading h2').waitFor();
         assert.match(await frame.locator('.story-heading h2').innerText(), /마음 선택지/);
         await page.screenshot({ path: path.join(resultsDir, 'v2-embed-1366.png') });
+
+        // 게임 안 Ctrl+S는 저장 요청 메시지가 되고 브라우저 저장 창은 막습니다.
+        await gameFrame.evaluate(() => {
+          window.__saveDefaultPrevented = null;
+          document.addEventListener('keydown', (e) => { if (e.key === 's') window.__saveDefaultPrevented = e.defaultPrevented; });
+        });
+        await frame.locator('body').press('Control+s');
+        assert.equal(await gameFrame.evaluate(() => window.__saveDefaultPrevented), true, 'Ctrl+S 기본 동작 차단');
+        assert.equal((await page.evaluate(() => window.__msgs)).filter((m) => m?.type === 'festival:save-request').length, 1, 'festival:save-request 1회');
 
         // Advance ch3-6 warm -> ch3-7 -> ending report -> verify festival:state & festival:complete
         for (let i = 0; i < 30; i++) {
@@ -813,6 +835,11 @@ async function playChapterToEnd(page, chapterId, {
         const stateMsgs = embedInfo.filter((m) => m?.type === 'festival:state');
         const completeMsgs = embedInfo.filter((m) => m?.type === 'festival:complete');
         assert.ok(stateMsgs.length > 0, 'festival:state postMessage 송신');
+        assert.ok((await page.evaluate(() => window.__origins)).every((o) => o === gameOrigin), '다른 출처의 부모에도 메시지가 도착');
+        assert.deepEqual(stateMsgs[0].payload.activeRuns[3].solvedThisRun['ch3-q1'], { firstAttempt: true, solved: true, conceptTitle: 'q1' }, 'state에 activeRuns 포함');
+        const chapterMsgs = embedInfo.filter((m) => m?.type === 'festival:chapter-complete');
+        assert.equal(chapterMsgs.length, 1, 'festival:chapter-complete는 장당 1회');
+        assert.deepEqual(chapterMsgs[0].payload, { chapterId: 3 });
         assert.equal(completeMsgs.length, 1, 'festival:complete postMessage 송신');
         assert.equal(completeMsgs[0].payload.outcome, 'some');
         assert.equal(completeMsgs[0].payload.totalHearts, 12);
@@ -820,9 +847,10 @@ async function playChapterToEnd(page, chapterId, {
         assert.equal(lsCount, 0, 'embed 모드에서는 localStorage 접근 0회');
       } finally {
         await ctx.close();
-        await new Promise((resolve) => server.close(resolve));
+        await new Promise((resolve) => hostServer.close(resolve));
+        await new Promise((resolve) => gameServer.close(resolve));
       }
-      checks.push('임베드 모드(?embed=1)·postMessage(init/state/complete)·출처 검증·localStorage 0회 확인');
+      checks.push('임베드 모드(?embed=1, 다른 출처 부모)·postMessage(ready/init/state/save-request/chapter-complete/complete)·출처 검증·localStorage 0회 확인');
     }
 
     // 5. v3 sprite crop visual contact sheets (rows=1 mapping across 6 expression slots)
