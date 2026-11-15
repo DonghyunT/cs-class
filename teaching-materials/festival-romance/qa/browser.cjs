@@ -771,6 +771,23 @@ async function playChapterToEnd(page, chapterId, {
         });
         assert.equal(await frame.locator('#title-view').isVisible(), true);
 
+        // 처음 접속한 학생: payload:null init만 받아도 이후 메시지(Ctrl+S 저장 요청)가 부모에 닿아야 합니다.
+        {
+          const page2 = await ctx.newPage();
+          try {
+            await page2.goto(`${hostOrigin}/host.html`);
+            await page2.waitForFunction(() => window.__msgs.some((m) => m?.type === 'festival:ready'));
+            await page2.evaluate(() => document.getElementById('game').contentWindow.postMessage({ type: 'festival:init', payload: null }, '*'));
+            const frame2 = page2.frameLocator('#game');
+            await frame2.locator('#title-view').waitFor();
+            await frame2.locator('#title-view').click({ position: { x: 2, y: 2 } });
+            await frame2.locator('body').press('Control+s');
+            await page2.waitForFunction(() => window.__msgs.some((m) => m?.type === 'festival:save-request'), null, { timeout: 5000 });
+          } finally {
+            await page2.close();
+          }
+        }
+
         // 게임은 부모 출처를 모르는 채로 내용 없는 ready만 보내고, init 전에는 다른 메시지를 보내지 않습니다.
         await page.waitForFunction(() => window.__msgs.some((m) => m?.type === 'festival:ready'));
         assert.deepEqual(await page.evaluate(() => window.__msgs.map((m) => m.type)), ['festival:ready']);
@@ -837,6 +854,8 @@ async function playChapterToEnd(page, chapterId, {
         assert.ok(stateMsgs.length > 0, 'festival:state postMessage 송신');
         assert.ok((await page.evaluate(() => window.__origins)).every((o) => o === gameOrigin), '다른 출처의 부모에도 메시지가 도착');
         assert.deepEqual(stateMsgs[0].payload.activeRuns[3].solvedThisRun['ch3-q1'], { firstAttempt: true, solved: true, conceptTitle: 'q1' }, 'state에 activeRuns 포함');
+        // 게임이 보낸 state를 사이트가 그대로 다시 돌려줘도(init) activeRuns가 살아남아야 합니다.
+        assert.deepEqual(require('../src/state.js').sanitizeGameState(stateMsgs[0].payload).activeRuns, stateMsgs[0].payload.activeRuns, 'state payload가 sanitizeGameState를 통과해도 activeRuns 유지');
         const chapterMsgs = embedInfo.filter((m) => m?.type === 'festival:chapter-complete');
         assert.equal(chapterMsgs.length, 1, 'festival:chapter-complete는 장당 1회');
         assert.deepEqual(chapterMsgs[0].payload, { chapterId: 3 });

@@ -718,9 +718,10 @@
       if(e.source!==window.parent)return;
       const msg=e.data;
       if(!msg||typeof msg!=='object'||msg.type!=='festival:init')return;
+      // 처음 접속한 학생은 payload가 null이라 hydrated가 없어도, 이후 메시지를 보내려면 출처는 먼저 정해야 합니다.
+      if(!parentOrigin)parentOrigin=e.origin&&e.origin!=='null'?e.origin:'*';
       const hydrated=S.sanitizeGameState(msg.payload,ids);
       if(!hydrated)return;
-      if(!parentOrigin)parentOrigin=e.origin&&e.origin!=='null'?e.origin:'*';
       Object.assign(state,hydrated);
       if(!isTeacher)state.shortMode=false;
       S.saveGameState(storage,state);
