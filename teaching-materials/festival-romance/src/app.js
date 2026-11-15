@@ -14,7 +14,7 @@
   try{if(!isEmbed)rawLocal=window.localStorage;}catch{rawLocal=null;}
   const storage=S.createStorageAdapter({embed:isEmbed,local:rawLocal});
 
-  let activeChapter=null,activeScene=null,generation=0,advanceLine=null,forward=null,toastTimer,deltaTimer,phase='',flowChoice=null,flowResult=null,lastAttemptFirstTry=true;
+  let activeChapter=null,activeScene=null,generation=0,advanceLine=null,forward=null,backward=null,toastTimer,deltaTimer,phase='',flowChoice=null,flowResult=null,lastAttemptFirstTry=true;
   const timers=new Set();
 
   if(isEmbed){
@@ -80,8 +80,12 @@
 
   function notify(text){clearTimeout(toastTimer);$('toast').textContent=text;$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,4800);}
   function stopTimers(){timers.forEach(clearInterval);timers.clear();}
-  function disposeScene(){generation++;stopTimers();advanceLine=null;forward=null;clearTimeout(toastTimer);$('toast').hidden=true;}
+  function disposeScene(){generation++;stopTimers();advanceLine=null;forward=null;backward=null;$('previous-button').disabled=true;clearTimeout(toastTimer);$('toast').hidden=true;}
   function interval(callback,ms){const current=generation;const timer=setInterval(()=>{if(generation!==current){clearInterval(timer);timers.delete(timer);return;}if(document.querySelector('dialog[open]'))return;callback();},ms);timers.add(timer);return timer;}
+  function setBackward(action){backward=action||null;$('previous-button').disabled=!backward;}
+  function goBack(){if(!$('previous-button').disabled)backward?.();}
+  // 장 첫 장면에서는 이전 장으로 가지 않습니다(startChapter가 회차 기록을 지우므로 이전 경로에서 쓰지 않음).
+  function sceneBack(){return nextIndex(-1)>=0?()=>move(-1):null;}
   function setForward(label,action,disabled=false){$('next-button').textContent=label;$('next-button').disabled=disabled;forward=action;}
 
   function expression(el,index){
@@ -241,12 +245,12 @@
     });
   }
 
-  function dialogue(lines,{options=[],onChoice,onFinish=()=>move(1),finishLabel='다음 장면 →',heartChoice=false,seenKey=null}={}){
+  function dialogue(lines,{options=[],onChoice,onFinish=()=>move(1),finishLabel='다음 장면 →',heartChoice=false,seenKey=null,startLine=0,onBack=sceneBack()}={}){
     disposeScene();
     $('stage').dataset.kind='story';
     const safeLines=Array.isArray(lines)&&lines.length?lines:[{speaker:'하루',role:'haru',expression:0,text:'자, 다음으로 가 볼까?'}];
     $('scene-content').innerHTML=storyMarkup(activeScene);
-    let line=0;
+    let line=Math.min(Math.max(0,startLine),safeLines.length-1);
     const isHeart=Boolean(heartChoice||options.some(o=>o.cold||o.heartChoice));
     const canSkip=Boolean(seenKey&&S.isSceneSeen(state,seenKey));
 
@@ -278,6 +282,7 @@
       }
       const single=last&&options.length===1;
       setForward(last?(options.length>1?'답을 골라 주세요':finishLabel):'대사 계속 →',single?()=>onChoice(options[0]):advanceLine,last&&options.length>1);
+      setBackward(line>0?()=>{line--;render();}:onBack);
     };
 
     $('skip-seen-button').onclick=()=>{
@@ -290,7 +295,7 @@
     focusHeading();
   }
 
-  function initStory(scene){
+  function initStory(scene,{startLine=0}={}){
     if(scene.ending){initEnding(scene);return;}
     phase='story';
     const lines=state.shortMode&&scene.shortLines?scene.shortLines:scene.lines;
@@ -299,6 +304,7 @@
       options,
       heartChoice:Boolean(scene.heartChoice),
       seenKey:scene.id,
+      startLine,
       onFinish:()=>{S.markSceneSeen(state,scene.id);record();move(1);},
       onChoice:o=>{
         if(o.storyPatch){state.story=S.storyValues({...state.story,...o.storyPatch});}
@@ -311,13 +317,14 @@
         const replyLines=o.reply||[{speaker:'하루',role:'haru',text:scene.choiceReply||'좋아. 그렇게 하자.',expression:2}];
         dialogue(replyLines,{
           seenKey:`${scene.id}:reply:${o.key}`,
+          onBack:()=>initStory(scene,{startLine:Infinity}),
           onFinish:()=>{S.markSceneSeen(state,scene.id);S.markSceneSeen(state,`${scene.id}:reply:${o.key}`);record();move(1);}
         });
       }
     });
   }
 
-  function flowIntro(){
+  function flowIntro({startLine=0}={}){
     phase='intro';flowChoice=null;flowResult=null;
     const flow=activeScene.flow;
     const options=normalizeChoices(flow.options,null);
@@ -330,6 +337,7 @@
     dialogue(introLines,{
       options:options.length>1?options:[],
       seenKey:activeScene.id,
+      startLine,
       onChoice:choice=>{flowChoice=choice;activity();},
       onFinish:()=>{if(options.length===1)flowChoice=options[0];activity();},
       finishLabel:'버그 확인하기 →'
@@ -414,7 +422,9 @@
       reducedMotion:()=>matchMedia('(prefers-reduced-motion: reduce)').matches,
       focusNext:()=>$('next-button').focus()
     });
-    if($('change-choice'))$('change-choice').onclick=flowIntro;
+    if($('change-choice'))$('change-choice').onclick=()=>flowIntro();
+    const introLines=activeScene.flow&&(state.shortMode&&activeScene.flow.shortIntro?activeScene.flow.shortIntro:activeScene.flow.intro);
+    setBackward(introLines?.length?()=>flowIntro({startLine:Infinity}):sceneBack());
     applyCharacter();
     if(activeScene.initialExpression!==undefined)expression(companionChar,activeScene.initialExpression);
     focusHeading();
@@ -435,6 +445,7 @@
     if(!lines.length){move(1);return;}
     dialogue(lines,{
       seenKey:`${activeScene.id}:res`,
+      onBack:()=>activity(),
       onFinish:()=>{S.markSceneSeen(state,`${activeScene.id}:res`);record();move(1);},
       finishLabel:'다음 장면 →'
     });
@@ -489,6 +500,7 @@
     const expr=outcome==='some'?1:outcome==='friend'?2:4;
     expression(document.querySelector('.ending-character'),expr);
     setForward('처음 화면으로 ↗',showTitle);
+    setBackward(()=>initEnding(scene,outcome,{startLine:Infinity}));
     $('scene-content').querySelectorAll('[data-retry-chapter]').forEach(b=>b.onclick=()=>startChapter(Number(b.dataset.retryChapter),0));
     $('replay-ending-lines').onclick=()=>initEnding(scene,outcome);
     $('ending-home-btn').onclick=showTitle;
@@ -497,7 +509,7 @@
     focusHeading();
   }
 
-  function initEnding(scene,forcedOutcome=null){
+  function initEnding(scene,forcedOutcome=null,{startLine=0}={}){
     S.commitChapterRun(state,3,chapterQuestionMetas(activeChapter));
     record();
     const total=S.countTotalHearts(state);
@@ -511,6 +523,7 @@
     dialogue(lines,{
       seenKey:`${scene.id}:${outcome}${useCold?':cold':''}`,
       finishLabel:'최종 리포트 보기 →',
+      startLine,
       onFinish:()=>{
         S.markSceneSeen(state,`${scene.id}:${outcome}${useCold?':cold':''}`);
         record();
@@ -554,13 +567,13 @@
       if($('practice-button'))$('practice-button').onclick=showTitle;
       if($('retry-chapter-btn'))$('retry-chapter-btn').onclick=()=>startChapter(activeChapter.id,0);
       if($('revisit-ending-btn'))$('revisit-ending-btn').onclick=()=>showEndingScene();
+      setBackward(sceneBack());
       focusHeading();
     }
     $('chapter-indicator').textContent=`CHAPTER 0${chapterId} · ${chapter.subject}`;
     const mainScenes=chapter.scenes.filter(s=>!s.optional);
     $('progress-text').textContent=scene.optional?`${chapter.subject} · 확장 활동`:`${chapter.subject} · ${mainScenes.indexOf(scene)+1} / ${mainScenes.length} 장면`;
     $('timing-text').textContent=`${scene.kind==='summary'?'챕터 완료 · 정리':scene.graded?'하트 챌린지 · 첫 시도 +1 ♥':'스토리 진행'} · ${scene.minutes||''}`;
-    $('previous-button').disabled=nextIndex(-1)<0;
     $('reset-button').disabled=!isTeacher;
     $('teacher-button').disabled=!isTeacher;
     if(save)record();
@@ -660,7 +673,7 @@
   $('contents-button').onclick=openContents;
   $('settings-button').onclick=openSettings;
   $('teacher-button').onclick=openNotes;
-  $('previous-button').onclick=()=>move(-1);
+  $('previous-button').onclick=goBack;
   $('next-button').onclick=()=>{if(!$('next-button').disabled)forward?.();};
   $('reset-button').onclick=()=>{if(isTeacher&&activeScene)showScene(activeChapter.id,sceneIndex());};
   $('resume-button').onclick=()=>{
@@ -677,7 +690,7 @@
   document.addEventListener('keydown',e=>{
     if(e.isComposing||e.altKey||e.ctrlKey||e.metaKey||document.querySelector('dialog[open]')||e.target.closest('input,textarea,select,[contenteditable="true"],[data-experience]'))return;
     if(e.code==='Space'&&advanceLine&&!e.target.closest('button')){e.preventDefault();if(!$('next-button').disabled)forward?.();}
-    else if(activeScene&&['ArrowRight','ArrowLeft'].includes(e.key)){e.preventDefault();if(e.key==='ArrowLeft')move(-1);else if(!$('next-button').disabled)forward?.();}
+    else if(activeScene&&['ArrowRight','ArrowLeft'].includes(e.key)){e.preventDefault();if(e.key==='ArrowLeft')goBack();else if(!$('next-button').disabled)forward?.();}
   });
 
   if(isEmbed){

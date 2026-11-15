@@ -109,7 +109,7 @@ async function finishConceptResponse(page, { skipSeen = false } = {}) {
   }
 }
 
-async function solveCurrentChallenge(page, { meetingTime = '16:00', polygonAngle = '60' } = {}) {
+async function solveCurrentChallenge(page, { meetingTime = '16:00', polygonAngle = '60', finish = true } = {}) {
   const type = await page.locator('#experiment').getAttribute('data-experiment');
   if (type === 'quiz') {
     const firstChoices = ['ipo', 'save-and-add', 'fix-all-three'];
@@ -167,6 +167,10 @@ async function solveCurrentChallenge(page, { meetingTime = '16:00', polygonAngle
     await page.locator('#answer').click();
   } else {
     throw new Error(`알 수 없는 실험 타입: ${type}`);
+  }
+  if (!finish) {
+    await waitForActivityPass(page);
+    return type;
   }
   await finishConceptResponse(page);
   return type;
@@ -324,6 +328,25 @@ async function playChapterToEnd(page, chapterId, {
 
       // Ch.1: advance ch1-1, verify v3 sprite crop & keyboard space/arrow
       assert.equal(await page.locator('.story-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 100%');
+      // 줄 단위 이전: 버튼과 ← 키
+      assert.match(await page.locator('#line-progress').innerText(), /^1 \//);
+      assert.equal(await page.locator('#previous-button').isDisabled(), true, '1장 첫 장면 첫 줄에서는 이전 없음');
+      await page.keyboard.press('ArrowRight');
+      assert.match(await page.locator('#line-progress').innerText(), /^2 \//);
+      assert.equal(await page.locator('#previous-button').isDisabled(), false, '둘째 줄에서 이전 버튼 켜짐');
+      await page.locator('#previous-button').click();
+      assert.match(await page.locator('#line-progress').innerText(), /^1 \//, '이전 버튼으로 한 줄 뒤로');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('ArrowLeft');
+      assert.match(await page.locator('#line-progress').innerText(), /^1 \//, '← 키로 한 줄 뒤로');
+      // 선택 응답에서 이전 → 같은 선택지 다시
+      for (let i = 0; i < 20 && !(await page.locator('#story-choices button').first().isVisible()); i++) {
+        await page.locator('#next-button').click();
+      }
+      await page.locator('#story-choices button[data-flow-choice="sweet"]').click();
+      assert.equal(await page.locator('#story-choices').isVisible(), false);
+      await page.locator('#previous-button').click();
+      assert.equal(await page.locator('#story-choices button[data-flow-choice="sweet"]').isVisible(), true, '응답에서 이전 → 선택지 다시');
       await page.keyboard.press('ArrowRight');
       await page.keyboard.press('Space');
       await advanceDialogue(page, { choiceKey: 'sweet' });
@@ -366,8 +389,12 @@ async function playChapterToEnd(page, chapterId, {
       await advanceDialogue(page);
       assert.equal(await page.locator('#chapter-hearts .heart-slot.missed').count(), 1, '새로고침 후에도 첫 시도 실패 유지');
 
-      // Also test back button anti-cheat
-      await page.locator('#previous-button').click();
+      // 이전 버튼으로 1장 첫 장면까지 거슬러 올라가도 첫 시도 실패 유지
+      for (let i = 0; i < 40 && !/ 1 \/ /.test(await page.locator('#progress-text').innerText()); i++) {
+        if (await page.locator('#previous-button').isDisabled()) break;
+        await page.locator('#previous-button').click();
+      }
+      assert.match(await page.locator('#progress-text').innerText(), / 1 \/ /, '이전 버튼으로 첫 장면까지 이동');
       await advanceDialogue(page, { choiceKey: 'sweet', skipSeen: true });
       await advanceDialogue(page);
       assert.equal(await page.locator('#chapter-hearts .heart-slot.missed').count(), 1, '이전 장면 복귀 후에도 첫 시도 실패 유지');
@@ -380,8 +407,15 @@ async function playChapterToEnd(page, chapterId, {
 
       // Solve ch1-q2, ch1-4 (16:00), ch1-q3 (map), ch1-q4 (math) on 1st attempt -> 3/4
       await advanceDialogue(page);
-      await solveCurrentChallenge(page, { meetingTime: '16:00' });
+      await solveCurrentChallenge(page, { meetingTime: '16:00', finish: false });
       assert.equal(await page.locator('#total-hearts').innerText(), '총 ♥ 1/12');
+      // 결과 대사에서 이전 → 활동 화면, 다시 풀어도 하트 그대로
+      await page.locator('#next-button').click();
+      assert.equal(await page.locator('#experiment').count(), 0, '결과 대사로 이동');
+      await page.locator('#previous-button').click();
+      assert.equal(await page.locator('#experiment').count(), 1, '결과 대사에서 이전 → 활동 화면');
+      await solveCurrentChallenge(page, { meetingTime: '16:00' });
+      assert.equal(await page.locator('#total-hearts').innerText(), '총 ♥ 1/12', '되돌아가 다시 풀어도 하트 그대로');
 
       await advanceDialogue(page, { choiceKey: 'early' }); // 16:00 storyPatch
       await advanceDialogue(page);
