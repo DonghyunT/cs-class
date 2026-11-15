@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 import entryCdn from "./scripts/entryjs-cdn.json";
 
-// The Entry workspace host (scripts/entryjs-cdn.json) serves only /entryjs/; anything else there goes to the app,
-// except /_next/ (public build files), which Next.js never redirects.
+// The Entry workspace host (scripts/entryjs-cdn.json) serves only /entryjs/ and the festival game; anything else there goes
+// to the app, except /_next/ (public build files), which Next.js never redirects.
 const { workspaceHost, appHost } = entryCdn;
 const onWorkspaceHost = workspaceHost ? [{ type: "host" as const, value: workspaceHost.replaceAll(".", "\\.") }] : [];
 
@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
     headers: [{ key: "Content-Security-Policy", value: "sandbox allow-scripts" }],
   }],
   redirects: async () => onWorkspaceHost.length && appHost ? [{
-    source: "/:path((?!entryjs/).*)",
+    source: "/:path((?!entryjs/|festival-romance\\.html$).*)",
     has: onWorkspaceHost,
     destination: `https://${appHost}/:path`,
     permanent: false,

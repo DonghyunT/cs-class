@@ -18,6 +18,7 @@ import { isReviewType } from "@/lib/classroom/review/project";
 import { Sandwich } from "./review/sandwich";
 import { Abstraction } from "./review/abstraction";
 import { Flowchart } from "./review/flowchart";
+import { Festival } from "./review/festival";
 import reviewStyles from "./review/review.module.css";
 import styles from "./student.module.css";
 import type { LessonOrigin } from "./lesson-shell";
@@ -50,7 +51,7 @@ function DraftComparison({ lesson, draft }: { lesson: Lesson; draft: WorkDraft }
 export const LessonEditor = memo(function LessonEditor({ lesson, initial, controller, entryExport, mode = "student", workspaceWide, practiceFocused, onWorkspaceWideChange, onWorkspaceStageChange, onFrameChange }: { lesson: Lesson; initial: Work; controller: WorkController; entryExport: RefObject<EntryExport | null>; mode?: LessonMode; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
   const { work, draft, busy, update, perform, saveState, error, switchStage: changeStage, actionBlocked } = controller;
   const progress = progressFor(lesson, work);
-  const reviewType = lesson.practice.type === "sandwich" || lesson.practice.type === "abstraction" || lesson.practice.type === "flowchart" ? lesson.practice.type : null;
+  const reviewType = lesson.practice.type === "sandwich" || lesson.practice.type === "abstraction" || lesson.practice.type === "flowchart" || lesson.practice.type === "festival" ? lesson.practice.type : null;
   const completed = progress.status === "completed", lessonBadges = lessonBadgesFor(lesson, work);
   // Celebrate only the change to complete during this visit, whichever activity finished it,
   // and list just the badges whose count this change raised (the dashboard counts lessons per badge).
@@ -70,8 +71,8 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
   }
   const [practiceVisited, setPracticeVisited] = useState(initial.draft.stage === "practice");
   if (draft.stage === "practice" && !practiceVisited) setPracticeVisited(true);
-  // Keep local consultation and reading position for this lesson without adding server storage.
-  const keepPractice = practiceVisited && (reviewType === "sandwich" || reviewType === "abstraction");
+  // Keep local consultation and reading position for this lesson without adding server storage, and never reload the 17 MB game.
+  const keepPractice = practiceVisited && (reviewType === "sandwich" || reviewType === "abstraction" || reviewType === "festival");
   const [moveMessage, setMoveMessage] = useState("");
   const [switchingTo, setSwitchingTo] = useState<Stage | null>(null);
   const [focusRequest, setFocusRequest] = useState<{ id: string | readonly string[]; preventScroll?: boolean } | null>(null);
@@ -157,7 +158,8 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
     onFrameChange({ stage: draft.stage, saveLabel, save: mode === "student" ? controller.save : undefined, saveDisabled: locked || controller.capturing || controller.aiBusy || saveState === "saving" || controller.conflict || controller.actionBlocked || (needsNative && !nativeReady), learningStatus: <LearningStatus lesson={lesson} work={work} />, navigation, focusRequest });
   }, [onFrameChange, saveLabel, lesson, work, actionLocked, draft.stage, tabKey, switchStage, focusRequest, controller.save, controller.capturing, controller.aiBusy, controller.conflict, controller.actionBlocked, locked, mode, saveState, needsNative, nativeReady]);
   const content = <>
-    {completed && !practiceFocused && <CompletionBanner lesson={lesson} mode={mode} />}
+    {/* The game fills the window and shows its own ending. */}
+    {completed && !practiceFocused && reviewType !== "festival" && <CompletionBanner lesson={lesson} mode={mode} />}
     {error && <section id="work-save-error" tabIndex={-1} className={styles.errorPanel} role="alert"><strong>{controller.conflict ? "저장 기록이 서로 달라요." : "요청을 완료하지 못했어요."}</strong><p>{error}</p><p>현재 입력은 이 화면에 유지하고 있어요. 확인 전에는 창을 닫지 마세요.</p><Button variant="outline" disabled={busy} onClick={() => void (controller.conflict ? controller.compare() : controller.retry())}>{controller.conflict ? "서버 기록과 비교" : "저장 다시 확인"}</Button></section>}
     {controller.actionFailure && <section id="work-action-error" tabIndex={-1} className={styles.errorPanel} role="alert">
       <strong>{controller.actionFailure.uncertain ? "요청 결과를 확인해 주세요." : "행동 요청을 완료하지 못했어요."}</strong>
@@ -181,7 +183,7 @@ export const LessonEditor = memo(function LessonEditor({ lesson, initial, contro
 
     {draft.stage === "quiz" && <LessonQuizPanel lesson={lesson} controller={controller} mode={mode} locked={locked} actionLocked={actionLocked} runAction={runAction} switchStage={switchStage} quizQuestionId={quizQuestionId} moveQuestion={moveQuestion} />}
 
-    {isReviewType(lesson.practice.type) && (draft.stage === "practice" || keepPractice) && <section id="panel-practice" hidden={draft.stage !== "practice"} role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 className={reviewStyles.srOnly} id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2>{lesson.practice.type === "sandwich" ? <Sandwich mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "abstraction" ? <Abstraction mode={mode} controller={controller} practiceFocused={practiceFocused} /> : <Flowchart mode={mode} controller={controller} practiceFocused={practiceFocused} />}</section>}
+    {isReviewType(lesson.practice.type) && (draft.stage === "practice" || keepPractice) && <section id="panel-practice" hidden={draft.stage !== "practice"} role="tabpanel" aria-labelledby="tab-practice" className={reviewStyles.workspace}><h2 className={reviewStyles.srOnly} id="stage-heading-practice" tabIndex={-1}>{lesson.practice.title}</h2>{lesson.practice.type === "sandwich" ? <Sandwich mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "abstraction" ? <Abstraction mode={mode} controller={controller} practiceFocused={practiceFocused} /> : lesson.practice.type === "festival" ? <Festival mode={mode} controller={controller} /> : <Flowchart mode={mode} controller={controller} practiceFocused={practiceFocused} />}</section>}
     {lesson.practice.type !== "programming" && !isReviewType(lesson.practice.type) && draft.stage === "practice" && (
       <section id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" tabIndex={0} className={styles.stagePanel}>
         <div className={styles.stageHeading}>
