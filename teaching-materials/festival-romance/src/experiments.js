@@ -22,7 +22,7 @@
     // 고치기 전(아무것도 바꾸지 않고) 실행하면 버그 재현만 보여 주고 하트에는 영향을 주지 않습니다.
     let dirty=false,lastAction='';
     const graded=Boolean(ctx.scene?.graded);
-    const RUN='#run,#run-arrange,#run-until,#start-map,[data-key]';
+    const RUN='#run,#run-arrange,#run-until,#start-map,#step,#stop,[data-key]';
     const SCENARIO='#five,#six,#seven,#tickets,#rain,#umbrella,#passage';
     root.addEventListener('click',ev=>{
       const t=ev.target instanceof Element?ev.target:null;
@@ -234,18 +234,16 @@
   const simLog=(rows,screen)=>'<div class="sim-run"><h4>실행 기록</h4><ol class="sim-steps">'+rows.map(r=>'<li><span class="sim-line">'+escape(r[0])+'</span><span class="sim-effect">→ '+escape(r[1])+'</span></li>').join('')+'</ol><p class="sim-screen" role="status">'+escape(screen)+'</p></div>';
   const shown=v=>v===''?'(빈칸)':v;
   arrangeSims.finale=({picks,goal})=>{
-    const pick=id=>{const b=goal.blocks.find(x=>x.id===id);return b?.choices?b.choices[picks[id]??b.initialChoice??0]:'';};
-    const outer=Number((pick('outer').match(/(\d+)번/)||[])[1]||2),inner=Number(goal.innerTimes||3),fires=outer*inner;
-    const adds=/더하기/.test(pick('counter'));
-    const counter=adds?fires:1;
-    const loopTimes=(pick('ending').match(/(\d+)번/)||[])[1];
-    const rows=[[pick('outer')+' 안의 '+inner+'번 반복','불꽃 '+fires+'번 발사'],[pick('counter'),'[카운터]: '+counter],[pick('ending'),loopTimes?'드론 '+loopTimes+'번 반짝인 뒤 다음 줄로':'드론이 끝없이 반짝임(아래 줄로 못 감)']];
-    return simLog(rows,'제어반: 불꽃 '+fires+'번 · 카운터 '+counter+(loopTimes?' · "점등 완료!"':' · "점등 완료!" 안 뜸'));
+    const loop=goal.blocks.find(x=>x.id==='loop'),fires=Number((loop.label.match(/(\d+)번/)||[])[1]||6);
+    const b=goal.blocks.find(x=>x.id==='counter'),c=b.choices[picks.counter??b.initialChoice??0];
+    const n=Number((c.match(/(\d+)(?:만큼|로)/)||[])[1]||0),adds=/더하기/.test(c);
+    const values=Array.from({length:fires},(_,i)=>adds?(i+1)*n:n);
+    return simLog([[loop.label,'불꽃 '+fires+'번 발사'],[c,'[카운터]: '+values.join(' → ')]],'전광판: 불꽃 '+fires+'번 · 카운터 '+values.at(-1));
   };
   arrangeSims.share=({picks,goal})=>{
     const pick=id=>{const b=goal.blocks.find(v=>v.id===id);return b?.choices?b.choices[picks[id]??b.initialChoice??0]:b?.label;};
-    const mine=9;let haru=7;const rows=[[pick('mine'),'[내 티켓]: 9'],[pick('haru'),'[하루 티켓]: 7']];
-    haru=/더하기/.test(pick('spend'))?haru-2:-2;rows.push([pick('spend'),'[하루 티켓]: '+haru]);
+    const num=id=>Number((pick(id).match(/(\d+)로/)||[])[1]);
+    const mine=num('mine'),haru=num('haru');const rows=[[pick('mine'),'[내 티켓]: '+mine],[pick('haru'),'[하루 티켓]: '+haru]];
     const s=pick('share');const share=/÷ 2/.test(s)?(mine+haru)/2:/\+/.test(s)?mine+haru:8;
     rows.push([s,'[한 사람 몫]: '+share]);
     return simLog(rows,'티켓 나누기 화면: "'+share+'장씩!" (지금 티켓: 나 '+mine+'장 · 하루 '+haru+'장)');
@@ -294,35 +292,27 @@
     const start=goal?.start||{x:1,y:2,direction:0};
     const target=goal?.target||{x:4,y:2};
     if(graded){
-      // 연결한 신호를 실제로 보냈을 때 블록이 실행되고, 그 첫 실행을 채점합니다(연결 안 된 신호는 아무 일도 없음).
-      const events={start:'시작하기 버튼을 클릭했을 때',ArrowRight:'오른쪽 화살표 키를 눌렀을 때',ArrowUp:'위쪽 화살표 키를 눌렀을 때'};
-      const signalName={start:'시작하기 버튼',ArrowUp:'위쪽 화살표 키',ArrowDown:'아래쪽 화살표 키',ArrowLeft:'왼쪽 화살표 키',ArrowRight:'오른쪽 화살표 키'};
+      // → 키 사건에 연결된 블록의 방향각 하나만 고칩니다. → 키(버튼·키보드)를 보낸 첫 실행을 채점합니다.
+      const hat=goal?.hat||'오른쪽 화살표 키를 눌렀을 때';
+      const signalName={ArrowUp:'위쪽 화살표 키',ArrowDown:'아래쪽 화살표 키',ArrowLeft:'왼쪽 화살표 키',ArrowRight:'오른쪽 화살표 키'};
       const keyForAngle={0:'ArrowUp',90:'ArrowRight',180:'ArrowDown',270:'ArrowLeft'};
-      const expectedEv=goal?.expectedEvent||'ArrowRight',expectedAng=goal?.expectedAngle??90,wh=goal?.wrongHints||{};
-      let ev=goal?.initialEvent||'start',ang=Number(goal?.initialAngle??0),done=false;
+      const expectedAng=goal?.expectedAngle??90,wh=goal?.wrongHints||{};
+      let ang=Number(goal?.initialAngle??0),done=false;
       let pos={...start,direction:ang};
-      root.innerHTML=`<div class="two-columns"><div><div class="map-holder" id="map-holder" tabindex="0" data-experience="map" role="group" aria-label="길 안내 미니맵. 방향키로 신호를 보낼 수 있습니다."><div id="map" class="map-grid"></div></div><p class="form-note map-legend">신호 보내기(테스트)</p><div class="map-controls" aria-label="방향키 신호 보내기"><span></span><button type="button" data-key="ArrowUp" aria-label="위쪽 화살표 키 신호">↑</button><span></span><button type="button" data-key="ArrowLeft" aria-label="왼쪽 화살표 키 신호">←</button><button type="button" data-key="ArrowDown" aria-label="아래쪽 화살표 키 신호">↓</button><button type="button" data-key="ArrowRight" aria-label="오른쪽 화살표 키 신호">→</button></div><div class="experiment-actions map-start">${button('start-map','▶ 시작하기 버튼 누르기')}</div></div><div class="board"><h3>길 안내 블록 고치기</h3><p class="form-note">① 어떤 신호를 받았을 때 움직일까?</p><div class="map-chips" role="group" aria-label="시작 신호(사건) 고르기">${Object.entries(events).map(([k,l])=>`<button type="button" class="map-chip" data-map-event="${k}" aria-pressed="${k===ev}">${escape(l)}</button>`).join('')}</div><p class="form-note">② 이동 방향은 몇 도로 정할까?</p><div class="map-chips map-compass" role="group" aria-label="이동 방향각 고르기">${[0,90,180,270].map(a=>`<button type="button" class="map-chip" data-map-angle="${a}" aria-pressed="${a===ang}">${a}°</button>`).join('')}</div><pre class="block-code" id="map-script"></pre><p class="map-info" id="map-info" role="status">블록을 고친 뒤, 연결한 신호를 직접 보내 실행해 보세요(키보드 방향키도 돼요).</p></div></div>${result()}`;
+      root.innerHTML=`<div class="two-columns"><div><div class="map-holder" id="map-holder" tabindex="0" data-experience="map" role="group" aria-label="길 안내 미니맵. → 키로 신호를 보낼 수 있습니다."><div id="map" class="map-grid"></div></div><div class="experiment-actions map-start"><button type="button" class="primary-button" data-key="ArrowRight" aria-label="오른쪽 화살표 키 신호 보내기">→ 키 누르기</button></div></div><div class="board"><h3>길 안내 블록 고치기</h3><p class="form-note">이동 방향은 몇 도로 정할까?</p><div class="map-chips map-compass" role="group" aria-label="이동 방향각 고르기">${[0,90,180,270].map(a=>`<button type="button" class="map-chip" data-map-angle="${a}" aria-pressed="${a===ang}">${a}°</button>`).join('')}</div><pre class="block-code" id="map-script"></pre><p class="map-info" id="map-info" role="status">→ 키를 눌러 실행해 보세요(키보드 → 키도 돼요).</p></div></div>${result()}`;
       const draw=()=>{$('map').innerHTML=Array.from({length:25},(_,i)=>{const x=i%5,y=Math.floor(i/5),p=x===pos.x&&y===pos.y,g=x===target.x&&y===target.y;return `<div class="map-cell${p?' player':''}${g?' goal':''}"${p?' aria-label="현재 위치"':''}>${p?`<span style="transform:rotate(${pos.direction}deg)" aria-hidden="true">▲</span>`:g?'정문':''}</div>`;}).join('');};
-      const script=()=>{$('map-script').textContent=`${events[ev]}\n  이동 방향을 ${ang}°로 정하기\n  3칸 움직이기`;};
-      const pick=()=>{
-        root.querySelectorAll('[data-map-event]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mapEvent===ev)));
-        root.querySelectorAll('[data-map-angle]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.mapAngle)===ang)));
+      const script=()=>{$('map-script').textContent=`${hat}\n  이동 방향을 ${ang}°로 정하기\n  3칸 움직이기`;};
+      root.querySelectorAll('[data-map-angle]').forEach(b=>b.onclick=()=>{
+        if(done)return;ang=Number(b.dataset.mapAngle);
+        root.querySelectorAll('[data-map-angle]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
         pos={...start,direction:ang};draw();script();hide(false);
-      };
-      root.querySelectorAll('[data-map-event]').forEach(b=>b.onclick=()=>{if(done)return;ev=b.dataset.mapEvent;pick();});
-      root.querySelectorAll('[data-map-angle]').forEach(b=>b.onclick=()=>{if(done)return;ang=Number(b.dataset.mapAngle);pick();});
+      });
       const trigger=signal=>{
         if(done)return;
-        if(signal!==ev){$('map-info').textContent=`${signalName[signal]} 신호를 보냈지만 연결된 블록이 없어서 아무 일도 일어나지 않아요.`;return;}
+        if(signal!=='ArrowRight'){$('map-info').textContent=`${signalName[signal]} 신호를 보냈지만 연결된 블록이 없어서 아무 일도 일어나지 않아요.`;return;}
         pos={...start,direction:ang};
         for(let k=0;k<3;k++)pos=M.moveOnMap(pos,keyForAngle[ang]||'ArrowUp');
         pos={...pos,direction:ang};draw();
-        if(ev!==expectedEv){
-          const why=wh[ev]||wh.start||goal?.defaultWhy||'정문 길 안내가 어떤 신호에 반응해야 하는지 다시 생각해 보세요.';
-          $('map-info').textContent=`${signalName[signal]} 신호로 블록이 실행됐어요.`;
-          show(`<strong>사건 블록을 확인해 보세요!</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
-          return;
-        }
         if(ang!==expectedAng||pos.x!==target.x||pos.y!==target.y){
           const why=wh[String(ang)]||goal?.defaultWhy||'엔트리 방향각을 다시 확인해 보세요.';
           $('map-info').textContent=`방향 ${ang}°로 움직여 엉뚱한 곳에 도착했어요.`;
@@ -330,15 +320,14 @@
           return;
         }
         done=true;delete root.dataset.experience;
-        root.querySelectorAll('[data-map-event],[data-map-angle],[data-key],#start-map').forEach(b=>b.disabled=true);
-        $('map-info').textContent='오른쪽 화살표 키 신호로 정문에 정확히 도착했어요!';
-        show('<strong>정문 도착 완료!</strong><span class="explanation">오른쪽 화살표 키 신호에 연결하고 90°로 정하니 정문까지 세 칸 정확히 움직였어요.</span>',{valid:true,key:'arrived',story:goal?.storyPatch});
+        root.querySelectorAll('[data-map-angle],[data-key]').forEach(b=>b.disabled=true);
+        $('map-info').textContent='→ 키 신호로 정문에 정확히 도착했어요!';
+        show('<strong>정문 도착 완료!</strong><span class="explanation">→ 키 사건이 오자 블록이 실행되고, 90°로 정하니 정문까지 세 칸 정확히 움직였어요.</span>',{valid:true,key:'arrived',story:goal?.storyPatch});
       };
       // 활동 안 어디에 초점이 있든 방향키는 미니맵 신호입니다(대사 이동 ←/→로 새지 않게). 해결 뒤에는 대사 이동으로 돌려줍니다.
       root.dataset.experience='map';
       root.onkeydown=e=>{if(done||e.isComposing||!e.key.startsWith('Arrow'))return;e.preventDefault();e.stopPropagation();trigger(e.key);};
       root.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>trigger(b.dataset.key));
-      $('start-map').onclick=()=>trigger('start');
       draw();script();
       return;
     }
@@ -406,7 +395,25 @@
     const booth=goal?.booth||ctx.choice?.params?.booth||'photo';
     const threshold=goal?.threshold||ctx.choice?.params?.threshold||(booth==='photo'?6:4);
     const name=booth==='photo'?'사진 부스':'게임 부스';
-    const ops=graded?['>','≥','=','≠','<','≤']:['≥','>','=','≠','<','≤'];
+    if(graded){
+      // 기호 하나만 고르고 실행하면 앞뒤 손님(기준-1·기준·기준+1)까지 한 번에 검사합니다.
+      const ops=goal?.operators||['>','≥','=','≤'],initOp=goal?.initialOperator||'>',want=goal?.expectedOperator||'≥',ours=goal?.initialTickets??threshold;
+      root.innerHTML=`<div class="board compact-board"><h3>${name} 입장 규칙 (${threshold}장 이상 입장)</h3><div class="field-row"><label>비교 기호<select id="operator">${ops.map(op=>`<option${op===initOp?' selected':''}>${escape(op)}</option>`).join('')}</select></label></div><pre class="block-code" data-graded="true">만일 (입장 티켓 <span id="comparison">${escape(initOp)}</span> ${threshold}) 이라면 → 게이트 열기</pre><p class="form-note">실행하면 앞 손님 ${ours-1}장 · 우리 ${ours}장 · 뒤 손님 ${ours+1}장을 차례로 검사해요.</p></div><div class="experiment-actions">${button('run','게이트 실행하기',true)}</div>${result()}`;
+      $('operator').onchange=()=>{$('comparison').textContent=$('operator').value;hide();};
+      $('run').onclick=()=>{
+        const op=$('operator').value;
+        const rows=[ours-1,ours,ours+1].map(n=>`${n}장${n===ours?'(우리)':''}: ${n} ${escape(op)} ${threshold} → ${M.compareTicket(n,op,threshold)?'참 · 입장':'거짓 · 입장 불가'}`).join('<br>');
+        if(op!==want){
+          const why=goal?.wrongHints?.[op]||goal?.defaultWhy||`‘${threshold}장 이상’에는 ${threshold}장도 들어가요.`;
+          show(`${rows}<br><strong>규칙과 다르게 나왔어요!</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
+          return;
+        }
+        $('run').disabled=true;$('operator').disabled=true;
+        show(`${rows}<br><strong>참 · 입장 가능!</strong><span class="explanation">‘${threshold}장 이상’은 ${threshold}장도 포함해서 ≥로 비교해야 딱 ${threshold}장인 우리도 들어가요.</span>`,{valid:true,key:'allowed'});
+      };
+      return;
+    }
+    const ops=['≥','>','=','≠','<','≤'];
     const initOp=goal?.initialOperator||(graded?'>':'≥');
     const initTickets=goal?.initialTickets??threshold;
     root.innerHTML=`<div class="field-row">${numberField('tickets','테스트할 입장 티켓 수',initTickets)}<label>비교 기호<select id="operator">${ops.map(op=>`<option${op===initOp?' selected':''}>${op}</option>`).join('')}</select></label><label>안내판 기준<input value="${threshold}" readonly></label></div><label class="checkbox-line"${graded?' hidden':''}><input id="booth-open" type="checkbox" checked><span>${name} 운영을 시작했다</span></label><div class="board compact-board"><h3>${name} 입장 규칙 (${threshold}장 이상 입장)</h3><pre class="block-code"${graded?' data-graded="true"':''}><span id="comparison">${initTickets} ${initOp} ${threshold}</span>${graded?'\n참이면 → 입장 가능':' 그리고 (부스 운영 중)\n두 조건이 모두 참이면 → 입장 가능'}</pre><p class="form-note">딱 ${threshold}장을 가진 사람도 입장할 수 있게 비교 연산자를 맞춰 실행해 보세요.</p></div>${graded?'':prediction(['들어갈 수 있다','아직 기다려야 한다'])}<div class="experiment-actions">${button('five',`${threshold-1}장`)}${button('six',`${threshold}장`)}${button('seven',`${threshold+1}장`)}${button('run','비교 실행하기',true)}</div>${result()}`;
@@ -416,25 +423,7 @@
     $('run').onclick=()=>{
       const n=read('tickets');if(n===null)return;
       const op=$('operator').value,enough=M.compareTicket(n,op,threshold),open=$('booth-open').checked,allowed=enough&&open;
-      const expectedOp=goal?.expectedOperator||'≥';
-      const validOp=op===expectedOp;
-      if(graded&&!validOp){
-        const wh=goal?.wrongHints||{};
-        const why=wh[op]||goal?.defaultWhy||`기준(${threshold}장)과 똑같을 때도 입장하려면 ‘크거나 같다(${expectedOp})’를 써야 해요!`;
-        show(`입장 티켓 비교: ${n} ${escape(op)} ${threshold} → ${enough?'참':'거짓'}<br><strong>비교 연산자를 다시 살펴보자!</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
-        return;
-      }
-      if(graded&&!enough){
-        const resEl=$('result');resEl.classList.remove('result-wrong','result-correct');resEl.classList.add('result-repro');
-        resEl.innerHTML=`입장 티켓 비교: ${n} ${escape(op)} ${threshold} → 거짓<span class="explanation">규칙대로 ${n}장은 들어갈 수 없어요(하트와 상관없는 테스트). 이제 ${threshold}장을 가진 우리 둘로 확인해 보세요.</span>`;resEl.hidden=false;ctx.invalidate();
-        return;
-      }
-      const valid=validOp;
-      if(graded){
-        $('run').disabled=true;$('operator').disabled=true;
-        show(`입장 티켓 비교: ${n} ${escape(op)} ${threshold} → 참<br><strong>참 · 입장 가능!</strong><span class="explanation">‘${threshold}장 이상’은 ${threshold}장도 포함하니까 크거나 같다(≥)로 비교해야 딱 ${threshold}장인 사람도 들어갈 수 있어요.</span>`,{valid:true,key:'allowed'});
-        return;
-      }
+      const valid=op===(goal?.expectedOperator||'≥');
       show(`입장 티켓 비교: ${n} ${escape(op)} ${threshold} → ${enough?'참':'거짓'}<br>부스 운영 중: ${open?'참':'거짓'}<br><strong>${enough?'참':'거짓'} 그리고 ${open?'참':'거짓'} → ${allowed?'참 · 입장 가능':'거짓 · 아직 입장 불가'}</strong><span class="explanation">${valid?'경계값과 같은 수까지 포함하려면 ≥를 사용하고, 두 조건을 AND로 확인해요.':`지금 비교한 결과를 확인했어요. ‘${threshold}장 이상’을 표현하려면 ≥로 바꾸어 실행해 보세요.`}</span>`,{valid,key:allowed?'allowed':!enough&&!open?'both-blocked':enough?'wait':'blocked',story:{booth,boothAllowed:n>=threshold,boothOpen:open},values:{boothName:name,threshold,tickets:n}});
     };
   };
@@ -483,40 +472,25 @@
   renderers.route=({root,$,M,ctx,goal,show,hide})=>{
     const graded=Boolean(ctx.scene?.graded||goal);
     if(graded){
-      const initRain=goal?.rain!==undefined?Boolean(goal.rain):true;
-      const initUmb=goal?.umbrella!==undefined?Boolean(goal.umbrella):false;
-      const initPass=goal?.passage!==undefined?Boolean(goal.passage):true;
-      const initRainCheck=goal?.initialRainCheck||(goal?.expectedRainCheck==='not'?'rain':'not');
-      const initConn=goal?.initialConnector||'and';
-      const needNot=goal?.expectedRainCheck==='not';
-      root.innerHTML=`<div class="route-inputs"><label class="checkbox-line"><input id="rain" type="checkbox"${initRain?' checked':''}><span>비가 온다</span></label><label class="checkbox-line"><input id="umbrella" type="checkbox"${initUmb?' checked':''}><span>본관 로비가 열려 있다</span></label><label class="checkbox-line"><input id="passage" type="checkbox"${initPass?' checked':''}><span>실내 통로가 열렸다</span></label></div><div class="block-code route-code block-builder"><div>만일 (${needNot?`<select id="route-rain-check"><option value="rain"${initRainCheck==='rain'?' selected':''}>비가 온다</option><option value="not"${initRainCheck==='not'?' selected':''}>아니다(비가 온다)</option></select>`:'아니다(비가 온다)'}) 라면 → 야외 공연</div><div>아니면</div><div class="indent">만일 (본관 로비 <select id="route-connector"><option value="and"${initConn==='and'?' selected':''}>그리고</option><option value="or"${initConn==='or'?' selected':''}>또는</option></select> 실내 통로) 라면 → 실내 부스</div><div class="indent">아니면 → 잠깐 기다리기</div></div><p class="form-note path-legend">길 찾기 결과</p><div class="path-options route-paths"><div id="indoor" class="path-option">실내 부스</div><div id="outdoor" class="path-option">야외 공연</div><div id="wait" class="path-option">잠깐 기다리기</div></div><div class="experiment-actions">${button('run','조건 고쳐서 길 찾기',true)}</div>${result()}`;
-      const clear=()=>{root.querySelectorAll('.path-option').forEach(x=>x.classList.remove('chosen'));hide();};
-      ['rain','umbrella','passage','route-connector'].forEach(id=>$(id).onchange=clear);
-      if($('route-rain-check'))$('route-rain-check').onchange=clear;
+      // 상황(비·로비·통로)은 고정하고, 야외 공연으로 보내는 첫 줄 조건 하나만 고릅니다.
+      const rain=goal?.rain!==false,lobby=Boolean(goal?.umbrella),pass=goal?.passage!==false;
+      const checks=goal?.rainChecks||[['rain','비가 온다'],['not','아니다(비가 온다)']];
+      const want=goal?.expectedRainCheck||'not',initCheck=goal?.initialRainCheck||checks[0][0];
+      const tf=v=>v?'참':'거짓',places={indoor:'실내 부스',outdoor:'야외 공연',wait:'잠깐 기다리기'},to={indoor:'실내 부스로',outdoor:'야외 공연으로',wait:'잠깐 기다리기로'};
+      root.innerHTML=`<p class="form-note">지금 상황: 비가 온다(${tf(rain)}) · 본관 로비 열림(${tf(lobby)}) · 실내 통로 열림(${tf(pass)})</p><div class="block-code route-code block-builder"><div>만일 (<select id="route-rain-check" aria-label="야외 공연으로 가는 조건">${checks.map(([v,l])=>`<option value="${escape(v)}"${v===initCheck?' selected':''}>${escape(l)}</option>`).join('')}</select>) 라면 → 야외 공연</div><div>아니면</div><div class="indent">만일 (본관 로비 또는 실내 통로가 열림) 라면 → 실내 부스</div><div class="indent">아니면 → 잠깐 기다리기</div></div><p class="form-note path-legend">길 찾기 결과</p><div class="path-options route-paths">${Object.entries(places).map(([k,l])=>`<div id="${k}" class="path-option">${l}</div>`).join('')}</div><div class="experiment-actions">${button('run','날씨 안내 실행하기',true)}</div>${result()}`;
+      $('route-rain-check').onchange=()=>{root.querySelectorAll('.path-option').forEach(x=>x.classList.remove('chosen'));hide();};
       $('run').onclick=()=>{
-        const rain=$('rain').checked,umb=$('umbrella').checked,pass=$('passage').checked;
-        const rainCheck=$('route-rain-check')?$('route-rain-check').value:'not';
-        const conn=$('route-connector').value;
-        const outdoorCond=rainCheck==='not'?!rain:rain;
-        const shelterCond=conn==='or'?(umb||pass):(umb&&pass);
-        const simulated=outdoorCond?'outdoor':shelterCond?'indoor':'wait';
-        root.querySelectorAll('.path-option').forEach(x=>x.classList.toggle('chosen',x.id===simulated));
-        const wh=goal?.wrongHints||{};
-        if(needNot&&rainCheck!=='not'){
-          const why=wh.not||goal?.defaultWhy||'비가 오지 않을 때만 야외 공연으로 가야 해요! ‘비가 온다’를 뒤집는 ‘아니다(비가 온다)’를 골라야 해요.';
-          show(`<strong>야외 조건이 뒤집혔어요! (${simulated==='outdoor'?'비 오는데 야외로 출발!':''})</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
+        const pick=$('route-rain-check').value;
+        const outdoor={rain,not:!rain,notLobby:!lobby}[pick];
+        const route=outdoor?'outdoor':(lobby||pass)?'indoor':'wait';
+        root.querySelectorAll('.path-option').forEach(x=>x.classList.toggle('chosen',x.id===route));
+        if(pick!==want){
+          const why=goal?.wrongHints?.[pick]||goal?.defaultWhy||'야외 공연은 비가 오지 않을 때만 가야 해요.';
+          show(`<strong>${to[route]} 안내했어요!</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
           return;
         }
-        if(conn!==(goal?.expectedConnector||'or')){
-          const why=wh.and||wh.connector||goal?.defaultWhy||'본관 로비와 실내 통로 중 하나만 있어도 비를 피할 수 있어요! ‘그리고’ 대신 ‘또는(OR)’을 선택해 보세요.';
-          show(`<strong>연결 논리가 달라요!</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
-          return;
-        }
-        const route=M.chooseRoute(rain,umb,pass);
-        const notRain=M.logicResult(rain,false,'not');
-        const shelter=M.logicResult(umb,pass,'or');
-        $('run').disabled=true;
-        show(`<strong>정확한 길 안내: ${{indoor:'실내 부스로 이동!',outdoor:'야외 공연으로 이동!',wait:'잠깐 기다리기!'}[route]}</strong><span class="explanation">아니다(비가 온다) → ${notRain?'참':'거짓'}, 본관 로비 또는 실내 통로 → ${shelter?'참':'거짓'}로 올바른 경로를 찾았어요.</span>`,{valid:true,key:route,story:{route}});
+        $('run').disabled=true;$('route-rain-check').disabled=true;
+        show(`<strong>정확한 길 안내: ${to[route]} 이동!</strong><span class="explanation">아니다(비가 온다)는 ${tf(!rain)}, (본관 로비 또는 실내 통로)는 ${tf(lobby||pass)}! 그래서 비를 피해 실내로 갔어요.</span>`,{valid:true,key:route,story:{route}});
       };
       return;
     }
@@ -537,7 +511,7 @@
       let order=orderKeys();
       const initTickets=goal?.tickets??sortedDesc[0].min;
       const ordinal=['①','②','③','④','⑤'];
-      root.innerHTML=`${goal?.predict?'<div class="board chat-board" id="prize-predict"></div>':''}<div id="prize-fix"${goal?.predict?' hidden':''}><div class="field-row">${numberField('tickets','기념품 교환권 수',initTickets,0,30)}</div><p class="form-note">맨 위(①)에서 먼저 검사할 조건을 고르세요. 나머지 줄은 그 아래로 이어져요.</p><div class="map-chips" role="group" aria-label="맨 위에서 먼저 검사할 조건">${tiers.map(t=>`<button type="button" class="map-chip" data-prize-top="${escape(t.key)}" aria-pressed="${t.key===top}">교환권 ≥ ${t.min}</button>`).join('')}</div><div class="prize-rows" id="prize-rows"></div><div class="experiment-actions">${button('run','위에서부터 검사 실행',true)}</div></div>${result()}`;
+      root.innerHTML=`<div id="prize-fix"><p class="form-note">교환권 ${initTickets}장을 넣어요. 맨 위(①)에서 먼저 검사할 조건을 고르세요. 나머지 줄은 그 아래로 이어져요.</p><div class="map-chips" role="group" aria-label="맨 위에서 먼저 검사할 조건">${tiers.map(t=>`<button type="button" class="map-chip" data-prize-top="${escape(t.key)}" aria-pressed="${t.key===top}">교환권 ≥ ${t.min}</button>`).join('')}</div><div class="prize-rows" id="prize-rows"></div><div class="experiment-actions">${button('run','위에서부터 검사 실행',true)}</div></div>${result()}`;
       const renderRows=()=>{
         order=orderKeys();
         const ev=M.evaluatePrizeBranches(0,tiers,order);
@@ -546,16 +520,9 @@
       };
       const resetRows=()=>{hide();renderRows();};
       root.querySelectorAll('[data-prize-top]').forEach(b=>b.onclick=()=>{top=b.dataset.prizeTop;resetRows();});
-      if(goal?.predict){
-        chatSteps($('prize-predict'),{M,fmt:v=>ctx.interpolate?ctx.interpolate(v):String(v??''),steps:goal.predict.steps||[],seedBase:(ctx.scene?.questionId||'prize')+':predict',
-          onWrong:(why,choice)=>show('<strong>다시 생각해 보자!</strong><span class="explanation">'+escape(why)+'</span>',{valid:false,failWhy:why,failExpr:choice?.expression||4}),
-          onStepRight:()=>hide(false),
-          onAllRight:()=>{hide(false);$('prize-fix').hidden=false;root.querySelector('[data-prize-top]')?.focus();}});
-      }
-      $('tickets').oninput=()=>{hide();root.querySelectorAll('.prize-row').forEach(x=>{x.classList.remove('chosen','skipped');x.querySelector('.branch-status').textContent='';});};
       renderRows();
       $('run').onclick=()=>{
-        const n=read('tickets',0,30);if(n===null)return;
+        const n=initTickets;
         order=orderKeys();
         const ev=M.evaluatePrizeBranches(n,tiers,order);
         root.querySelectorAll('.prize-row').forEach((x,i)=>{
@@ -591,45 +558,26 @@
     const graded=Boolean(ctx.scene?.graded||goal);
     const initial=graded?(goal?.initialTimes??3):(ctx.choice?.params?.times||4);
     const timesOpts=[2,3,4,6];
-    let finalGuess='';
-    root.innerHTML=`<div class="count-toolbar">${graded?`<div class="board compact-board" style="flex:1"><h3>반복이 끝난 직후 조명은 어떤 상태일까요?</h3><div class="prediction"><button type="button" data-count-final="on" aria-pressed="false">켜진 채로 남아 있어요</button><button type="button" data-count-final="off" aria-pressed="false">꺼진 상태로 끝나요</button></div></div>`:prediction(['안쪽 세 명령을 모두 반복해요','불 켜기만 반복해요'])}<div class="field-row"><label>반복 횟수<select id="times">${timesOpts.map(n=>`<option${n===initial?' selected':''}>${n}</option>`).join('')}</select></label></div></div><div class="two-columns"><pre class="block-code"><span id="times-code">${initial}</span>번 반복하기\n  <span id="light-on-code">불 켜기</span>\n  <span id="light-wait-code">잠깐 기다리기</span>\n  <span id="light-off-code">불 끄기</span></pre><div class="board"><h3>실제 조명</h3><div id="lights" class="light-row"><span id="count-light" class="light-bulb"></span></div><div class="loop-status" id="light-state" role="status">불이 꺼져 있어요.</div><div class="loop-count" id="loop-count">0 / ${initial}회 완료</div><div id="completion-marks" class="completion-marks"></div></div></div><div class="experiment-actions">${button('step','명령 한 줄씩')}${button('run','전체 실행',true)}${button('stop','일시 정지')}</div>${result()}`;
+    root.innerHTML=`<div class="count-toolbar">${graded?'':prediction(['안쪽 세 명령을 모두 반복해요','불 켜기만 반복해요'])}<div class="field-row"><label>반복 횟수<select id="times">${timesOpts.map(n=>`<option${n===initial?' selected':''}>${n}</option>`).join('')}</select></label></div></div><div class="two-columns"><pre class="block-code"><span id="times-code">${initial}</span>번 반복하기\n  <span id="light-on-code">불 켜기</span>\n  <span id="light-wait-code">잠깐 기다리기</span>\n  <span id="light-off-code">불 끄기</span></pre><div class="board"><h3>실제 조명</h3><div id="lights" class="light-row"><span id="count-light" class="light-bulb"></span></div><div class="loop-status" id="light-state" role="status">불이 꺼져 있어요.</div><div class="loop-count" id="loop-count">0 / ${initial}회 완료</div><div id="completion-marks" class="completion-marks"></div></div></div><div class="experiment-actions">${button('step','명령 한 줄씩')}${button('run','전체 실행',true)}${button('stop','일시 정지')}</div>${result()}`;
     let done=0,command=0,running=false,on=false;const count=()=>Number($('times').value);
-    if(graded){
-      root.querySelectorAll('[data-count-final]').forEach(b=>b.onclick=()=>{
-        finalGuess=b.dataset.countFinal;
-        root.querySelectorAll('[data-count-final]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
-        hide(false);
-      });
-    }
     const draw=()=>{$('loop-count').textContent=`${done} / ${count()}회 완료`;$('count-light').classList.toggle('on',on);$('completion-marks').textContent=Array.from({length:count()},(_,i)=>i<done?'✓':'○').join(' ');$('step').disabled=running||done>=count();$('run').disabled=running;$('stop').disabled=!running;};
     const stop=()=>{ctx.stopTimers();running=false;draw();};
     const evaluateCompletion=()=>{
       if(!graded){show(`${done}번의 명령 묶음을 모두 실행했어요.<span class="explanation">마지막 ‘불 끄기’까지 실행해서 조명은 꺼져 있어요. ✓는 조명 상태가 아니라 완료한 반복 횟수예요.</span>`,{values:{times:done}});return;}
       const wh=goal?.wrongHints||{};
       const expectedTimes=goal?.expectedTimes;
-      const expectedOn=Boolean(goal?.expectedFinalOn);
       if(expectedTimes&&done!==expectedTimes){
         const why=wh.times||goal?.defaultWhy||`무대 신호에 맞게 정확히 ${expectedTimes}번 반복하도록 횟수를 맞춰 주세요!`;
         show(`<strong>반복 횟수가 달라요! (${done}번 실행됨)</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
         return;
       }
-      if(!finalGuess){
-        show('반복이 끝난 뒤 조명 상태(켜짐/꺼짐) 예상을 고르고 다시 실행해 주세요.',{valid:false});
-        return;
-      }
-      if((finalGuess==='on')!==expectedOn){
-        const why=wh.finalState||goal?.defaultWhy||'반복 묶음의 마지막 명령이 ‘불 끄기’이므로 모든 반복이 끝나면 조명은 꺼져 있어요!';
-        show(`<strong>최종 상태를 다시 확인하자!</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
-        return;
-      }
-      show(`<strong>정확해요! ${done}회 깜빡임 완료 후 꺼짐</strong><span class="explanation">안쪽 세 명령을 모두 한 묶음으로 ${done}번 실행해 마지막 불 끄기로 깔끔하게 끝났어요.</span>`,{valid:true,values:{times:done},story:goal?.storyPatch});
+      show(`<strong>정확해요! ${done}번 깜빡임 완료</strong><span class="explanation">켜기·기다리기·끄기 묶음을 한 번만 적고 ${done}번 반복했어요.</span>`,{valid:true,values:{times:done},story:goal?.storyPatch});
     };
     const step=()=>{if(done>=count())return;['light-on-code','light-wait-code','light-off-code'].forEach((id,i)=>$(id).classList.toggle('trace',i===command));if(command===0){on=true;$('light-state').textContent='불 켜기 실행 → 켜짐';command=1;}else if(command===1){$('light-state').textContent='기다리기 실행 → 켜진 채 기다림';command=2;}else{on=false;done++;command=0;$('light-state').textContent='불 끄기 실행 → 꺼짐 · 한 묶음 완료';}draw();if(done>=count()){stop();evaluateCompletion();}};
     const reset=()=>{stop();done=0;command=0;on=false;hide();$('times-code').textContent=count();$('light-state').textContent='불이 꺼져 있어요.';root.querySelectorAll('.trace').forEach(x=>x.classList.remove('trace'));draw();};
     if(ctx.choice&&!graded)$('times').disabled=true;
     $('times').onchange=reset;$('step').onclick=step;
     $('run').onclick=()=>{
-      if(graded&&!finalGuess){ctx.notify('반복이 끝난 뒤 조명 상태를 먼저 골라 주세요.');return;}
       stop();if(done>=count()){done=0;command=0;on=false;}hide(false);running=true;step();if(done<count())ctx.interval(step,ctx.reducedMotion()?450:320);
     };
     $('stop').onclick=stop;draw();
@@ -639,9 +587,10 @@
     const graded=Boolean(ctx.scene?.graded||goal);
     const initialSides=goal?.sides||ctx.choice?.params?.sides||4;
     const sidesOptions=goal?.sidesOptions||[3,4,5,6];
-    const turnOptions=goal?.turnOptions||[45,60,72,90,108,120,135];
     const trapMap={3:60,4:45,5:108,6:120};
     const defaultTrap=n=>trapMap[n]||60;
+    // 채점 문항은 보기를 안쪽 각·90°·바깥 회전각 세 개로 줄입니다.
+    const turnOptions=goal?.turnOptions||(graded?[...new Set([defaultTrap(initialSides),90,M.polygonTurn(initialSides)])].sort((a,b)=>a-b):[45,60,72,90,108,120,135]);
     const initTurn=graded?(goal?.initialTurn&&goal.initialTurn!==M.polygonTurn(initialSides)?goal.initialTurn:defaultTrap(initialSides)):90;
     root.innerHTML=`<div class="field-row"><label>선택한 도형의 변 수<select id="sides">${sidesOptions.map(n=>`<option${n===initialSides?' selected':''}>${n}</option>`).join('')}</select></label><label>한 번의 회전각<select id="turn">${turnOptions.map(a=>`<option value="${a}"${a===initTurn?' selected':''}>${a}°</option>`).join('')}</select></label></div>${graded?'':prediction(['처음 자리로 돌아와 닫혀요','경로가 어긋날 것 같아요'])}<div class="two-columns"><div><pre class="block-code"><span id="sides-code">${initialSides}</span>번 반복하기\n  <span id="move-code">80만큼 움직이기</span>\n  <span id="turn-line">이동 방향을 <span id="turn-code">${initTurn}</span>°만큼 회전하기</span></pre><p class="form-note">드론은 한 변을 날고 나서 정한 각도만큼 돌아요. 변을 한 번씩만 그리고 출발점으로 돌아와 정다각형이 닫혀야 성공!</p><p class="control-description" id="polygon-command" role="status">오른쪽을 보고 출발해요.</p></div><div class="polygon-stage" id="polygon-stage" role="img" aria-label="도형 실행 경로"></div></div><div class="experiment-actions">${button('step','명령 한 줄씩')}${button('run','드론 비행 실행',true)}${button('stop','일시 정지')}</div>${result()}`;
     let steps=0,running=false;const values=()=>({n:Number($('sides').value),a:Number($('turn').value)});
@@ -676,65 +625,30 @@
     const graded=Boolean(ctx.scene?.graded||goal);
     const secret=String(goal?.passcode||ctx.state.story.meetingTime.replace(':','')||'1700');
     if(graded){
-      const initCond=goal?.initialCondition||'!=';
-      const initBody=goal?.initialBody||'outside';
-      root.innerHTML=`<div class="board"><h3>1. 잠금 해제 반복 블록 디버깅</h3><p class="form-note">틀린 암호(‘1111’)가 들어오면 다시 묻고, 어젯밤 정한 약속 시각 네 자리 암호가 들어오면 바로 멈춰 잠금을 열어야 해요.</p><div class="block-code block-builder"><div id="until-before-line" class="form-note" hidden>암호 묻고 대답 기다리기</div><div>(<select id="until-cond"><option value="!="${initCond==='!='?' selected':''}>대답 ≠ 목표 암호</option><option value="="${initCond==='='?' selected':''}>대답 = 목표 암호</option></select>) 이(가) 될 때까지 반복하기</div><div class="indent"><select id="until-body"><option value="outside"${initBody==='outside'?' selected':''}>아무것도 묻지 않고 그대로 검사만 반복</option><option value="inside"${initBody==='inside'?' selected':''}>암호 묻고 대답 기다리기 (반복 안)</option></select></div><div>잠금 풀고 점등식 시작!</div></div><div class="password-status"><span id="until-trace-step">블록을 고친 뒤 실행해 오답(‘1111’)과 약속 시각 네 자리를 테스트해 보세요.</span></div><div class="experiment-actions">${button('run-until','조건 검사하고 잠금 테스트 시작 →',true)}</div><div id="until-pass-box" hidden style="margin-top:14px"><label class="form-field">2. 제어반 네 자리 암호 입력 (오답 1111 먼저 시험해 보기)<input id="password" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="네 자리 숫자"></label><div class="experiment-actions">${button('wrong','1111 시험 입력')}${button('answer','암호 입력해서 검사하기',true)}</div><p id="password-error" class="form-feedback" role="status"></p></div></div>${result()}`;
-      const resetPass=()=>{
-        $('until-before-line').hidden=$('until-body').value!=='outside';
-        $('until-pass-box').hidden=true;
-        $('run-until').disabled=false;
-        $('password-error').textContent='';
-        $('password').value='';
-        hide();
-      };
-      $('until-cond').onchange=resetPass;$('until-body').onchange=resetPass;
-      $('until-before-line').hidden=$('until-body').value!=='outside';
+      // 반복 조건 하나만 고칩니다. 실행하면 틀린 암호(1111) → 약속 시각 순서로 자동 입력한 실행 기록을 보여 줍니다.
+      const conds=[['!=','대답 ≠ 목표 암호'],['=','대답 = 목표 암호']];
+      const initCond=goal?.initialCondition||'!=',want=goal?.expectedCondition||'=';
+      root.innerHTML=`<div class="board"><h3>잠금 해제 블록 고치기</h3><div class="block-code block-builder"><div>암호 묻고 대답 기다리기</div><div>(<select id="until-cond" aria-label="반복을 멈출 조건">${conds.map(([v,l])=>`<option value="${v}"${v===initCond?' selected':''}>${l}</option>`).join('')}</select>) 이(가) 될 때까지 반복하기</div><div class="indent">암호 묻고 대답 기다리기</div><div>잠금 풀고 점등식 시작!</div></div><p class="form-note">시험 입력: 틀린 암호 1111 → 약속 시각 ${escape(secret)}</p><div class="experiment-actions">${button('run-until','잠금 테스트 실행',true)}</div><div id="until-sim" hidden></div></div>${result()}`;
+      $('until-cond').onchange=()=>{$('until-sim').hidden=true;hide();};
       $('run-until').onclick=()=>{
-        const cond=$('until-cond').value,body=$('until-body').value;
-        const expectedCond=goal?.expectedCondition||'=';
-        const expectedBody=goal?.expectedBody||'inside';
-        const wh=goal?.wrongHints||{};
-        if(body!==expectedBody){
-          const why=wh.body||wh.outside||goal?.defaultWhy||'묻기 블록이 반복 밖에 있으면 오답일 때 대답이 바뀌지 않아 무한 반복에 빠져요!';
-          $('until-trace-step').textContent='추적: 반복 안에 묻기 블록이 없어 대답이 갱신되지 않아요!';
-          show(`<strong>무한 반복 버그!</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
+        const cond=$('until-cond').value,sign=cond==='='?'=':'≠',rows=[];let answer='';
+        for(const a of ['1111',secret]){
+          answer=a;rows.push(['암호 묻고 대답 기다리기','대답: '+a]);
+          const stop=cond==='='?a===secret:a!==secret;
+          rows.push([`(대답 ${sign} 목표 암호)?`,stop?'참 → 반복 끝':'거짓 → 다시 묻기']);
+          if(stop)break;
+        }
+        const ok=answer===secret;
+        $('until-sim').innerHTML=simLog(rows,ok?`제어반: 약속 시각 ${secret}에서 잠금 해제!`:`제어반: 틀린 암호 ${answer}인데 잠금 해제!`);
+        $('until-sim').hidden=false;
+        if(cond!==want){
+          const why=goal?.wrongHints?.[cond]||goal?.defaultWhy||'‘~할 때까지 반복’은 조건이 참이 되면 멈춰요. 언제 멈춰야 할까요?';
+          show(`<strong>틀린 암호에 열려 버렸어요!</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
           return;
         }
-        if(cond!==expectedCond){
-          const why=wh.condition||wh['!=']||goal?.defaultWhy||'‘~할 때까지 반복’은 조건이 참이 될 때 멈춰요! ≠를 쓰면 ‘1111 ≠ 암호’가 참이라 오답인데도 바로 열려 버려요.';
-          $('until-trace-step').textContent='추적: ‘1111’ 입력 → (대답 ≠ 목표)가 참! 오답인데 열려 버림!';
-          show(`<strong>종료 조건 버그!</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
-          return;
-        }
-        hide(false);
-        $('run-until').disabled=true;
-        $('until-cond').disabled=true;
-        $('until-body').disabled=true;
-        $('until-pass-box').hidden=false;
-        $('until-trace-step').textContent='조건(대답 = 암호) 거짓 → 반복 안 질문 실행 중! 먼저 1111 같은 오답도 넣어 보세요.';
-        $('password').focus();
+        $('run-until').disabled=true;$('until-cond').disabled=true;
+        show(`<strong>제어반 잠금 해제 완료!</strong><span class="explanation">틀린 암호엔 다시 묻고, 약속 시각(${escape(ctx.state.story.meetingTime)}) 네 자리에서 조건이 참이 되어 멈췄어요.</span>`,{valid:true,key:'opened',story:goal?.storyPatch});
       };
-      $('wrong').onclick=()=>{$('password').value='1111';$('password').focus();};
-      const testPasscode=()=>{
-        const val=$('password').value.trim();
-        if(!/^\d{4}$/.test(val)){
-          $('password-error').textContent='네 자리 숫자를 입력해 주세요.';
-          $('password').focus();
-          return;
-        }
-        $('password-error').textContent='';
-        if(val!==secret){
-          $('until-trace-step').textContent=val==='1111'?'추적: ‘1111’ ≠ 암호 → 조건 거짓! 반복이 끝나지 않고 다시 물어요. 이제 어젯밤 정한 약속 시각 네 자리를 입력해 보세요!':`추적: ‘${val}’ ≠ 암호 → 조건 거짓! 다시 물어요. (힌트: 어젯밤 정한 약속 시각은 ${ctx.state.story.meetingTime}였어요!)`;
-          $('password').value='';
-          $('password').focus();
-          return;
-        }
-        $('until-trace-step').textContent=`추적: ‘${val}’ = 암호 → 조건 참! 반복 종료 후 제어반 잠금 해제!`;
-        $('password').disabled=true;$('wrong').disabled=true;$('answer').disabled=true;
-        show(`<strong>제어반 잠금 해제 완료!</strong><span class="explanation">‘(대답 = 암호)’가 될 때까지 반복 안에 묻기 블록을 두어, 틀리면 다시 묻고 약속 시각(${escape(ctx.state.story.meetingTime)}) 네 자리에서 정확히 멈추어 열렸어요.</span>`,{valid:true,key:'opened',story:goal?.storyPatch});
-      };
-      $('answer').onclick=testPasscode;
-      $('password').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();testPasscode();}};
       return;
     }
     root.innerHTML=`<p class="form-note">약속한 시각을 네 자리 숫자로 떠올려 카드를 열어 보세요.</p>${prediction(['오답 뒤에도 다시 물어요','한 번 물으면 바로 열려요'])}<details class="form-note"><summary>처음부터 조건이 참인 경우도 확인하기</summary><label class="checkbox-line"><input id="precorrect" type="checkbox"><span>시작할 때 대답이 이미 정답과 같다면?</span></label></details><pre class="block-code"><span id="until-check-code">(대답 = 목표 암호)이 될 때까지 반복하기</span>\n  <span id="until-ask-code">암호를 묻고 대답 기다리기</span>\n<span id="until-open-code">카드 열기</span></pre><div class="password-status"><span id="latest-answer">현재 대답: 비어 있음</span><span id="questions">질문 0번</span></div><p id="until-trace" class="execution-trace" role="status">아직 조건을 검사하지 않았어요.</p><div id="password-form" hidden><label class="form-field">카드의 네 자리 암호는?<input id="password" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="네 자리 숫자"></label><div class="experiment-actions">${button('wrong','1111 입력해 보기')}${button('answer','대답하고 다시 검사',true)}</div></div><p id="password-error" class="form-feedback" role="status"></p><div class="experiment-actions">${button('start','조건을 검사하고 시작',true)}${button('next-command','판정에 따라 다음 명령',true)}${button('restart','처음부터')}</div>${result()}`;

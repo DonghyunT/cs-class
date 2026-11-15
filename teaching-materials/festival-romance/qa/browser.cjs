@@ -176,7 +176,6 @@ async function solveCurrentChallenge(page, { meetingTime = '16:00', polygonAngle
   } else if (type === 'arrange') {
     await solveArrange(page);
   } else if (type === 'map') {
-    await page.locator('[data-map-event="ArrowRight"]').click();
     await page.locator('[data-map-angle="90"]').click();
     await page.locator('[data-key="ArrowRight"]').click(); // 연결한 신호를 실제로 보내야 실행됨
   } else if (type === 'math') {
@@ -195,16 +194,13 @@ async function solveCurrentChallenge(page, { meetingTime = '16:00', polygonAngle
     await page.locator('#run').click();
   } else if (type === 'route') {
     await page.locator('#route-rain-check').selectOption('not');
-    await page.locator('#route-connector').selectOption('or');
     await page.locator('#run').click();
   } else if (type === 'prize') {
     const { goal } = await currentSceneData(page);
-    for (const st of goal.predict?.steps || []) await page.locator(`[data-chat-choice="${st.choices.find((c) => c.correct).key}"]`).click();
     await page.locator(`[data-prize-top="${[...goal.tiers].sort((a, b) => b.min - a.min)[0].key}"]`).click();
     await page.locator('#run').click();
   } else if (type === 'count') {
     await page.locator('#times').selectOption('4');
-    await page.locator('[data-count-final="off"]').click();
     await page.locator('#run').click();
   } else if (type === 'polygon') {
     assert.equal(await page.locator('#fit').count(), 0, '다각형 #fit 치트 버튼 제거 확인');
@@ -215,12 +211,8 @@ async function solveCurrentChallenge(page, { meetingTime = '16:00', polygonAngle
     const bodyText = await page.locator('#experiment').innerText();
     assert.equal(bodyText.includes('비밀번호는 1600'), false, 'until 1600 치트 문구 제거 확인');
     await page.locator('#until-cond').selectOption('=');
-    await page.locator('#until-body').selectOption('inside');
     await page.locator('#run-until').click();
-    await page.locator('#wrong').click();
-    await page.locator('#answer').click();
-    await page.locator('#password').fill(meetingTime.replace(':', ''));
-    await page.locator('#answer').click();
+    assert.match(await page.locator('#until-sim .sim-screen').innerText(), new RegExp(`약속 시각 ${meetingTime.replace(':', '')}에서 잠금 해제`), '약속 시각 네 자리에서 열림');
   } else {
     throw new Error(`알 수 없는 실험 타입: ${type}`);
   }
@@ -416,6 +408,7 @@ async function playChapterToEnd(page, chapterId, {
       await waitForRepro(page, '고치기 전 실행은 버그 재현');
       assert.match(await page.locator('.sim-screen').innerText(), /" 님, 환영해요!"/, '재현 실행 기록에 빈 이름 인사');
       assert.equal(await page.locator('#chapter-hearts .heart-slot.missed').count(), 0, '버그 재현은 첫 시도 실패가 아님');
+      assert.equal(await page.locator('#chapter-hearts').getAttribute('data-label'), '1장', '상단 하트 칸 이름은 지금 장(1장)');
       await page.locator('[data-arrange-move="-1"][data-id="set"]').click(); // 한 줄만 옮긴 틀린 고침 → 첫 시도 실패
       await page.locator('#run-arrange').click();
       await waitForActivityFail(page);
@@ -622,23 +615,26 @@ async function playChapterToEnd(page, chapterId, {
 
       // Verify wrong-attempt misconception feedback on every graded simulator
       await enterExp('ch1-3'); // 초대장: 실행 기록 보고 대화
-      assert.match(await page.locator('.sim-screen').innerText(), /정문 님! 내일 정문에서 만나요\. 보유 티켓: 3장/, '버그 초대장 실행 기록 표시');
+      assert.match(await page.locator('.sim-screen').innerText(), /정문 님! 내일 정문에서 만나요\./, '버그 초대장 실행 기록 표시');
       assert.match(await page.locator('.sim-steps').innerText(), /대답: 구름|대답: /, '실행 기록에 대답 칸 변화');
+      assert.equal(await page.locator('.chat-reply').count(), 4, '대화는 한 번, 보기 4개');
       await page.locator('[data-chat-choice="same-box"]').click();
       await waitForActivityFail(page);
-      assert.match(await page.locator('#result').innerText(), /서로 다른 변수/);
+      assert.match(await page.locator('#result').innerText(), /따로 기억할 수 없/);
 
-      await enterExp('ch1-5'); // map
-      await page.locator('[data-key="ArrowUp"]').click(); // 연결되지 않은 신호 → 아무 일도 없음(채점 안 함)
+      await enterExp('ch1-5'); // map: → 키 사건 블록의 방향각 하나만 고침
+      assert.equal(await page.locator('[data-map-event], #start-map').count(), 0, '사건 고르기·시작 버튼 없이 방향각만 고름');
+      await page.locator('#map-holder').focus();
+      await page.keyboard.press('ArrowUp'); // 연결되지 않은 신호 → 아무 일도 없음(채점 안 함)
       assert.equal(await page.locator('#result').isVisible(), false, '연결 안 된 신호는 채점하지 않음');
       assert.match(await page.locator('#map-info').innerText(), /연결된 블록이 없/);
-      await page.locator('#start-map').click(); // 고치기 전 그대로 → 하늘로 날아가는 버그 재현
+      await page.locator('[data-key="ArrowRight"]').click(); // 고치기 전 그대로(0°) → 하늘로 날아가는 버그 재현
       await waitForRepro(page, '길 안내 버그 재현');
-      await page.locator('[data-map-event="ArrowRight"]').click();
-      await page.locator('[data-key="ArrowRight"]').click(); // 방향 0° 그대로 → 방향각 오답
+      await page.locator('[data-map-angle="180"]').click();
+      await page.locator('[data-key="ArrowRight"]').click(); // 180° → 방향각 오답
       await waitForActivityFail(page);
-      assert.match(await page.locator('#result').innerText(), /0°는 위쪽/);
-      const smallTargets = await page.evaluate(() => [...document.querySelectorAll('.map-chip, .map-controls button, #start-map')]
+      assert.match(await page.locator('#result').innerText(), /180°는 아래쪽/);
+      const smallTargets = await page.evaluate(() => [...document.querySelectorAll('.map-chip, [data-key]')]
         .map((b) => b.getBoundingClientRect()).filter((r) => r.width < 44 || r.height < 44).length);
       assert.equal(smallTargets, 0, '길 안내 버튼은 모두 44px 이상');
       await page.locator('[data-map-angle="90"]').click();
@@ -659,28 +655,30 @@ async function playChapterToEnd(page, chapterId, {
       await enterExp('ch2-2'); // compare
       await page.locator('#run').click(); // > 그대로 → 버그 재현
       await waitForRepro(page, '포토 부스 버그 재현');
-      assert.equal(await page.locator('#booth-open').isVisible(), false, '채점 화면에는 부스 운영 조건(AND) 없음');
-      await page.locator('#seven').click();
-      await page.locator('#operator').selectOption('<');
+      assert.equal(await page.locator('#booth-open, #tickets, #five, #six, #seven').count(), 0, '채점 화면에는 부스 운영 조건·티켓 입력·시험 버튼 없음');
+      await page.locator('#operator').selectOption('≤');
       await page.locator('#run').click();
       await waitForActivityFail(page);
+      assert.match(await page.locator('#result').innerText(), /8장: 8 ≤ 7 → 거짓 · 입장 불가/, '앞뒤 손님 결과로 규칙과 다름을 보여 줌');
 
       await enterExp('ch2-3'); // AND: 부스 스태프와 대화
       await clickWrongChat(page, (await currentSceneData(page)).quiz);
       await waitForActivityFail(page);
 
-      await enterExp('ch2-4'); // route
+      await enterExp('ch2-4'); // route: 첫 줄 조건 하나만 고름
+      assert.equal(await page.locator('#rain, #umbrella, #passage, #route-connector').count(), 0, '상황 체크·연결어 선택 없이 첫 줄 조건만 고름');
       await page.locator('#run').click(); // 고치기 전 → 버그 재현
       await waitForRepro(page, '날씨 길 안내 버그 재현');
       assert.equal(/우산/.test(await page.locator('#experiment').innerText()), false, '실내로 가는 조건은 로비·통로(우산 아님)');
-      await page.locator('#route-rain-check').selectOption('not');
+      await page.locator('#route-rain-check').selectOption('notLobby');
       await page.locator('#run').click();
       await waitForActivityFail(page);
+      assert.match(await page.locator('#result').innerText(), /야외 공연으로/);
 
-      await enterExp('ch2-5'); // prize: 예측 대화 뒤 맨 위 조건 고르기
+      await enterExp('ch2-5'); // prize: 맨 위 조건 고르기
       {
         const { goal } = await currentSceneData(page);
-        for (const st of goal.predict?.steps || []) await page.locator(`[data-chat-choice="${st.choices.find((c) => c.correct).key}"]`).click();
+        assert.equal(await page.locator('[data-chat-choice], #tickets').count(), 0, '예측 대화·교환권 입력 없이 바로 고치기');
         const rows = await page.locator('#prize-rows').innerText();
         assert.equal(/또는/.test(rows), false, '다중 선택 줄에 가짜 또는 없음');
         assert.match(rows, /아니면, 만일/);
@@ -695,13 +693,18 @@ async function playChapterToEnd(page, chapterId, {
       assert.equal(await page.locator('[data-arrange-move]').count(), 0, '피날레는 순서 이동 없이 표기만 바꿈');
       await page.locator('#run-arrange').click(); // 고치기 전 → 버그 재현
       await waitForRepro(page, '피날레 버그 재현');
-      assert.match(await page.locator('.sim-screen').innerText(), /점등 완료!" 안 뜸/);
-      await page.locator('[data-arrange-choice="counter"]').click(); // 카운터만 고치고 실행 → 오답(계속 반복 남음)
+      assert.match(await page.locator('.sim-screen').innerText(), /카운터 1(?!\d)/);
+      assert.equal(await page.locator('[data-arrange-choice]').count(), 1, '⇄ 블록은 하나');
+      await page.locator('[data-arrange-choice="counter"]').click();
+      await page.locator('[data-arrange-choice="counter"]').click(); // 6만큼 더하기 → 오답
       await page.locator('#run-arrange').click();
       await waitForActivityFail(page);
+      assert.match(await page.locator('.sim-screen').innerText(), /카운터 36/);
 
       await enterExp('ch3-2'); // count
-      await page.locator('[data-count-final="on"]').click();
+      for (let i = 0; i < 9; i++) await page.locator('#step').click(); // 명령 한 줄씩으로 고치기 전 그대로 끝까지 → 버그 재현(하트 영향 없음)
+      await waitForRepro(page, '한 줄씩 실행해도 고치기 전이면 버그 재현');
+      await page.locator('#times').selectOption('2');
       await page.locator('#run').click();
       await waitForActivityFail(page);
 
@@ -714,7 +717,9 @@ async function playChapterToEnd(page, chapterId, {
       await enterExp('ch3-4'); // until
       await page.locator('#run-until').click(); // 고치기 전 → 버그 재현
       await waitForRepro(page, '잠금 버그 재현');
-      await page.locator('#until-body').selectOption('inside');
+      assert.match(await page.locator('#until-sim .sim-screen').innerText(), /틀린 암호 1111인데 잠금 해제/);
+      await page.locator('#until-cond').selectOption('=');
+      await page.locator('#until-cond').selectOption('!='); // 바꿨다가 되돌린 뒤 실행 → 첫 시도 오답
       await page.locator('#run-until').click();
       await waitForActivityFail(page);
 
@@ -733,7 +738,7 @@ async function playChapterToEnd(page, chapterId, {
       checks.push('교사 모드(?mode=teacher)·전 시뮬레이터 오답 힌트·어색한 사이(<=6/12) 엔딩·엔딩 미리보기 확인');
     }
 
-    // 3b. 2턴 대화 하트 규칙·초점, 390px 터치 기기에서 키보드만으로 순서 바꾸기
+    // 3b. 대화 하트 규칙, 390px 터치 기기에서 키보드만으로 순서 바꾸기
     {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: 'reduce' });
       const page = await ctx.newPage();
@@ -744,17 +749,14 @@ async function playChapterToEnd(page, chapterId, {
         await page.locator(`[data-scene="${id}"]`).click();
         await advanceDialogue(page);
       };
-      // 2장 2번: 기호를 바르게 고친 뒤 6장 테스트(입장 불가가 맞음)는 첫 시도 실패가 아님
+      // 2장 1번: 기호를 바르게 고치면 앞 손님(6장)은 규칙대로 막히고 우리(7장)는 들어감 → 첫 시도 성공
       await jump('ch2-2');
       await page.locator('#operator').selectOption('≥');
-      await page.locator('#five').click(); // 기준-1 = 6장
-      await page.locator('#run').click();
-      assert.equal(await page.locator('#result.result-wrong').count(), 0, '규칙대로 막힌 6장 테스트는 오답 아님');
-      const ch2Run = await page.evaluate(() => JSON.parse(localStorage.getItem('festival-romance.game.v2')).activeRuns?.['2']);
-      assert.equal(Boolean(ch2Run?.missedThisRun?.['ch2-q1']), false, '6장 테스트로 하트를 잃지 않음');
-      await page.locator('#six').click(); // 기준 = 7장
       await page.locator('#run').click();
       await waitForActivityPass(page);
+      assert.match(await page.locator('#result').innerText(), /6장: 6 ≥ 7 → 거짓 · 입장 불가/, '앞 손님 6장은 규칙대로 막힘');
+      const ch2Run = await page.evaluate(() => JSON.parse(localStorage.getItem('festival-romance.game.v2')).activeRuns?.['2']);
+      assert.equal(Boolean(ch2Run?.missedThisRun?.['ch2-q1']), false, '바르게 고친 첫 실행은 하트를 잃지 않음');
       // 2장에서 선을 그었다면 3장 시작 대사가 달라짐
       await page.evaluate(() => { const k = 'festival-romance.game.v2'; const s = JSON.parse(localStorage.getItem(k)); s.coldChoices = { 'ch2-6': true }; localStorage.setItem(k, JSON.stringify(s)); });
       await page.reload();
@@ -769,24 +771,21 @@ async function playChapterToEnd(page, chapterId, {
       await waitForActivityPass(page);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, '390px 터치 순서 바꾸기 가로 넘침 없음');
 
-      // 2장 3번 대화(2턴): 1턴 정답·2턴 오답 → 하트 잃음, 2턴만 다시
+      // 2장 2번 대화(1턴): 오답 → 하트 잃음, 틀린 답은 잠기고 같은 질문에 다시 답함
       await jump('ch2-3');
       const chat = (await currentSceneData(page)).quiz;
-      const ok0 = chat.steps[0].choices.find((c) => c.correct).key;
-      const bad1 = chat.steps[1].choices.find((c) => !c.correct).key;
-      const ok1 = chat.steps[1].choices.find((c) => c.correct).key;
-      await page.locator(`[data-chat-choice="${ok0}"]`).click();
-      assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('chat-reply')), true, '대화 정답 뒤 초점이 다음 답 버튼으로');
-      await page.locator(`[data-chat-choice="${bad1}"]`).click();
+      assert.equal(chat.steps.length, 1, '대화는 한 번');
+      const bad = chat.steps[0].choices.find((c) => !c.correct).key;
+      const ok = chat.steps[0].choices.find((c) => c.correct).key;
+      await page.locator(`[data-chat-choice="${bad}"]`).click();
       await waitForActivityFail(page);
-      assert.equal(await page.locator(`[data-chat-choice="${ok0}"]`).count(), 0, '1턴은 다시 묻지 않음');
-      assert.equal(await page.locator(`[data-chat-choice="${bad1}"]`).isDisabled(), true);
-      await page.locator(`[data-chat-choice="${ok1}"]`).click();
+      assert.equal(await page.locator(`[data-chat-choice="${bad}"]`).isDisabled(), true, '틀린 답은 다시 못 누름');
+      await page.locator(`[data-chat-choice="${ok}"]`).click();
       await waitForActivityPass(page);
       const run = await page.evaluate(() => JSON.parse(localStorage.getItem('festival-romance.game.v2')).activeRuns['2'].solvedThisRun['ch2-q2']);
-      assert.equal(run.solved && run.firstAttempt, false, '2턴 오답 뒤 정답은 하트 없음');
+      assert.equal(run.solved && run.firstAttempt, false, '오답 뒤 정답은 하트 없음');
       await ctx.close();
-      checks.push('2턴 대화(1턴 정답·2턴 오답 → 하트 없음, 2턴만 재도전, 초점 이동)·390px 터치 기기 키보드만으로 순서 바꾸기 확인');
+      checks.push('대화 1턴(오답 → 하트 없음, 틀린 답 잠금 뒤 재도전)·2장 1번 앞뒤 손님 결과·390px 터치 기기 키보드만으로 순서 바꾸기 확인');
     }
 
     // 4. Embed Mode (?embed=1): data-embed=true, hidden #fullscreen, 0 localStorage, postMessage contract

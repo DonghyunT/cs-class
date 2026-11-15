@@ -147,29 +147,59 @@ test('첫 화면 하루 문구는 R1 결정 문장이다', () => {
   assert.equal(shell.includes('실력 좀 빌려줄래'), false, '옛 문구 제거');
 });
 
-test('ch1-q3 도입 증상은 처음 설정(시작하기 버튼 신호·0°)으로 실제 일어나는 일과 맞다', () => {
+test('ch1-q3 도입 증상은 처음 설정(→ 키 사건에 연결·0°)으로 실제 일어나는 일과 맞고, 고칠 것은 방향각 하나다', () => {
   const sc = ch1.scenes.find((s) => s.questionId === 'ch1-q3');
-  assert.equal(sc.goal.initialEvent, 'start');
+  assert.match(sc.goal.hat, /오른쪽 화살표 키/, '블록은 이미 → 키 사건에 연결됨');
+  assert.equal(sc.goal.initialEvent, undefined, '사건 고르기 없음(방향각 하나만 고침)');
   assert.equal(sc.goal.initialAngle, 0);
-  assert.match(sc.quote, /시작 버튼.*하늘/, '시작 버튼 → 위(하늘)로 감');
-  assert.match(sc.quote, /→ 키.*먹통/, '→ 키 → 연결 안 됨');
+  assert.match(sc.quote, /→ 키.*하늘/, '→ 키를 누르면 0°라 위(하늘)로 감');
   for (const line of sc.flow.intro.filter((l) => l.role === 'haru')) {
     for (const t of typeof line.text === 'string' ? [line.text] : Object.values(line.text)) {
-      assert.equal(/시작 버튼[^,.]*(안 움직|먹통)/.test(t), false, `시작 버튼이 먹통이라는 옛 증상: ${t}`);
+      assert.equal(/시작 버튼|먹통/.test(t), false, `사건 버그가 있던 옛 증상: ${t}`);
     }
   }
 });
 
-test('순서 바꾸기는 1장 1번 하나뿐이고, 1장 2번은 실행 기록을 보고 하루와 2턴 대화로 푼다', () => {
+test('순서 바꾸기는 1장 1번 하나뿐이고, 1장 2번은 실행 기록을 보고 하루와 한 번 대화로 푼다', () => {
   // 순서를 옮기는 퍼즐만 셉니다(fixedOrder 블록판은 표기만 바꾸는 조작 활동)
   const arranges = [ch1, ch2, ch3].flatMap((ch) => ch.scenes).filter((s) => s.experiment === 'arrange' && !s.goal?.fixedOrder).map((s) => s.questionId);
   assert.deepEqual(arranges, ['ch1-q1']);
   const q = ch1.scenes.find((s) => s.questionId === 'ch1-q2').quiz;
   assert.equal(q.style, 'chat');
-  assert.equal(q.steps.length, 2);
-  assert.ok(Array.isArray(q.code) && q.code.some((l) => l.includes('정하기')), '하루의 블록 코드 표시');
+  assert.equal(q.steps.length, 1);
+  // 실행 기록 왼쪽 칸이 하루의 블록 줄이라 코드 칸을 따로 두지 않습니다.
   assert.ok(Array.isArray(q.trace) && q.trace.length >= 4, '실행 기록 표시');
-  assert.match(q.screen, /정문 님!.*3장/, '버그 초대장 화면');
+  assert.ok(q.trace.some(([line, effect]) => line.includes('[이름]') && line.includes('정하기') && effect.includes('정문')), '[이름]이 정문이 되는 줄');
+  assert.match(q.screen, /정문 님!/, '버그 초대장 화면');
+});
+
+test('하트 문항은 짧게 풀리는 크기다(결정 하나·짧은 글·대화 1턴·⇄ 블록 하나·1분 30초 이내)', () => {
+  const graded = [ch1, ch2, ch3].flatMap((ch) => ch.scenes.filter((s) => s.graded));
+  const texts = (v) => (typeof v === 'string' ? [v] : Object.values(v));
+  for (const s of graded) {
+    const id = s.questionId;
+    assert.ok(s.goalPrompt.length <= 60, `${id} 미션 목표 ${s.goalPrompt.length}자(60자 이하)`);
+    assert.ok(s.observe.length <= 60, `${id} 정리 한마디 ${s.observe.length}자(60자 이하)`);
+    const shown = s.flow.intro.filter((l) => l.when !== 'cold'); // warm/cold 중 한쪽만 보임
+    assert.ok(shown.length <= 3, `${id} 도입 대사 ${shown.length}줄(3줄 이하)`);
+    const introChars = shown.reduce((n, l) => n + Math.max(...texts(l.text).map((t) => t.length)), 0);
+    assert.ok(introChars <= 180, `${id} 도입 대사 ${introChars}자(180자 이하)`);
+    assert.ok(s.flow.firstTrySuccess.length <= 2 && s.flow.retrySuccess.length <= 1, `${id} 성공 대사 1~2줄`);
+    const [m, sec] = s.minutes.split(':').map(Number);
+    assert.ok(m * 60 + sec <= 90, `${id} 예상 시간 ${s.minutes}(1:30 이하)`);
+    const q = s.quiz;
+    if (q?.style === 'chat') {
+      assert.equal(q.steps.length, 1, `${id} 대화 1턴`);
+      assert.ok((q.code || []).length <= 4 && (q.trace || []).length <= 4, `${id} 코드·실행 기록 4줄 이하`);
+    }
+    const g = s.goal || {};
+    if (g.blocks) assert.ok(g.blocks.length <= 4, `${id} 블록 ${g.blocks.length}줄(4줄 이하)`);
+    if (g.fixedOrder) assert.equal(g.blocks.filter((b) => b.choices).length, 1, `${id} ⇄ 블록은 하나`);
+    // 예전에 결정을 하나 더 얹던 설정(예측 대화·최종 상태 맞히기·연결어·묻기 위치·사건 고르기)은 없습니다.
+    for (const extra of ['predict', 'expectedFinalOn', 'expectedConnector', 'expectedBody', 'initialEvent']) {
+      assert.equal(g[extra], undefined, `${id} 추가 결정 ${extra} 없음`);
+    }
+  }
 });
 
 test('환영 문구의 빈 이름은 버그라는 것을 먼저 알려 준다', () => {
@@ -193,10 +223,18 @@ test('하트 문항의 도입 대사·인용·대화 질문에도 정답 단서�
     'ch1-q2': ['더하기', '저장해'],
     'ch1-q3': ['90°'],
     'ch1-q4': ['[내 티켓]', '÷ 2', '변수로'],
+    'ch2-q1': ['≥'],
+    'ch2-q2': ['그리고', 'AND'],
+    'ch2-q3': ['아니다'],
+    'ch2-q4': ['≥ 10', '큰 기준'],
+    'ch3-q1': ['4번'],
+    'ch3-q2': ['360', '바깥'],
+    'ch3-q3': ['대답 ='],
+    'ch3-q4': ['더하기'],
   };
   const texts = (v) => (v == null ? [] : typeof v === 'string' ? [v] : Object.values(v));
   for (const [qId, hints] of Object.entries(answerHints)) {
-    const sc = ch1.scenes.find((s) => s.questionId === qId);
+    const sc = [ch1, ch2, ch3].flatMap((ch) => ch.scenes).find((s) => s.questionId === qId);
     const pre = [sc.quote, ...(sc.flow.intro || []).flatMap((l) => texts(l.text)), ...((sc.goal?.chat?.steps || sc.quiz?.steps || []).map((st) => st.prompt))];
     for (const t of pre) for (const h of hints) assert.equal(t.includes(h), false, `${qId} 풀기 전 문구에 정답 단서 '${h}': ${t}`);
   }

@@ -70,9 +70,8 @@ const lessonUrl = pathToFileURL(publicLessonPath).href;
       const countPace = motion === 'reduce' ? 450 : 320;
       const polyPace = motion === 'reduce' ? 220 : 260;
 
-      // ch3-2 (count ch3-q1): test times 4 with final off state + pause/resume + restart + wrong times fail
+      // ch3-2 (count ch3-q1): test times 4 + pause/resume + restart
       await enter('ch3-2');
-      await page.locator('[data-count-final="off"]').click();
       await page.locator('#times').selectOption('4');
       await page.locator('#run').click();
       assert.equal(await page.locator('#next-button').isEnabled(), false, '자동 실행 직후 아직 완료되지 않음');

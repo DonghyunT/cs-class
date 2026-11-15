@@ -470,7 +470,7 @@ dialog::backdrop{background:#202a3b68}
 .lesson-main.has-more::after{content:"아래에 더 있어요 ↓";position:sticky;bottom:6px;z-index:3;display:block;width:max-content;margin:6px auto 0;padding:4px 12px;border-radius:14px;background:var(--navy);color:#fffaf1;font-size:13px;font-weight:650;pointer-events:none}
 .result-repro{background:#eef3f9;border-color:#9fb3cc}
 .repro-badge{display:block;margin-bottom:6px;font-size:15px;color:#36445d}
-.chapter-hearts::before{content:"이 장";margin-right:6px;font-size:12px;font-weight:650;color:var(--muted)}
+.chapter-hearts::before{content:attr(data-label);margin-right:6px;font-size:12px;font-weight:650;color:var(--muted)}
 #next-button:disabled{opacity:1;background:#d9d3c8;border-color:#bfb6a6;color:#3d3a35}
 .path-legend,.map-legend{margin:6px 0 4px}
 .lesson-main .experiment-actions{position:static;background:none;padding:0;margin-top:14px}
