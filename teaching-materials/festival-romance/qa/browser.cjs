@@ -302,9 +302,8 @@ async function playChapterToEnd(page, chapterId, {
       assert.equal(await page.locator('#site-url-field').isVisible(), false, '학생 설정에서 사이트 URL 숨김');
       await page.locator('[data-close="settings-dialog"]').click();
 
-      assert.equal(await page.locator('[data-chapter="1"]').isDisabled(), false, 'Ch.1 시작 해금');
-      assert.equal(await page.locator('[data-chapter="2"]').isDisabled(), true, 'Ch.2 초기 잠금');
-      assert.equal(await page.locator('[data-chapter="3"]').isDisabled(), true, 'Ch.3 초기 잠금');
+      assert.equal(await page.locator('#chapter-list').isVisible(), false, '새 학생은 챕터 카드 숨김(새 이야기 시작으로만 진입)');
+      assert.equal(await page.locator('#resume-button').isVisible(), false, '새 학생은 이어하기 숨김');
       assert.equal(await page.locator('.title-character').evaluate((el) => getComputedStyle(el).backgroundSize), '300% 100%');
       await page.screenshot({ path: path.join(resultsDir, 'v2-title-1366.png') });
 
@@ -349,6 +348,20 @@ async function playChapterToEnd(page, chapterId, {
       assert.equal(keys.v1, null);
 
       await page.reload();
+      assert.equal(await page.locator('#chapter-list').isVisible(), true, '진행 기록이 있으면 챕터 카드 표시');
+      assert.equal(await page.locator('[data-chapter="1"]').isDisabled(), false, 'Ch.1 시작 해금');
+      assert.equal(await page.locator('[data-chapter="2"]').isDisabled(), true, 'Ch.2 초기 잠금');
+      assert.equal(await page.locator('[data-chapter="3"]').isDisabled(), true, 'Ch.3 초기 잠금');
+      // 온보딩 없이 챕터 카드로 시작했던 예전 저장(onboarded:false + 진행 기록)도 카드·이어하기 유지
+      await page.evaluate(() => {
+        const key = 'festival-romance.game.v2';
+        const saved = JSON.parse(localStorage.getItem(key));
+        saved.onboarded = false;
+        localStorage.setItem(key, JSON.stringify(saved));
+      });
+      await page.reload();
+      assert.equal(await page.locator('#chapter-list').isVisible(), true, '예전 저장도 챕터 카드 표시');
+      assert.equal(await page.locator('#resume-button').isVisible(), true, '예전 저장도 이어하기 표시');
       await page.locator('#resume-button').click();
       await advanceDialogue(page);
       assert.equal(await page.locator('#chapter-hearts .heart-slot.missed').count(), 1, '새로고침 후에도 첫 시도 실패 유지');
@@ -613,6 +626,7 @@ async function playChapterToEnd(page, chapterId, {
         await frame.locator('#stage[data-embed="true"]').waitFor();
         assert.equal(await frame.locator('body').getAttribute('data-embed'), 'true');
         assert.equal(await frame.locator('#fullscreen').isVisible(), false, 'embed 모드에서 전체화면 버튼 숨김');
+        assert.equal(await frame.locator('#chapter-list').isVisible(), false, 'embed 모드에서 init 전 챕터 카드 숨김');
 
         // Spoofed festival:init from inside iframe must be ignored
         const gameFrame = page.frames().find((f) => f.url().includes('embed=1'));

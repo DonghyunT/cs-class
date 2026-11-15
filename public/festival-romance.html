@@ -1604,6 +1604,7 @@ dialog::backdrop{background:#202a3b68}
     return chapter.scenes.filter(s=>s.graded).map(s=>({questionId:s.questionId||s.id,conceptTitle:s.conceptTitle||s.title}));
   }
   function startChapter(chapterId,index=0){
+    if(!canPickChapter()){openOnboarding();return;}
     if(!S.isChapterUnlocked(state,chapterId,isTeacher)){
       notify(`${chapterId-1}챕터를 먼저 완료하면 ${chapterId}챕터가 열려요!`);
       return;
@@ -1614,6 +1615,8 @@ dialog::backdrop{background:#202a3b68}
   function hasAnyProgress(){
     return Boolean(state.onboarded||state.chapterId||[1,2,3].some(id=>state.chapterResults?.[id]?.completed));
   }
+  // 처음 온 학생은 이름·하루 성별을 정하는 '새 이야기 시작'으로만 들어옵니다.
+  function canPickChapter(){return isTeacher||hasAnyProgress();}
 
   function syncTitle(){
     $('chapter-list').innerHTML=chapters.map(c=>{
@@ -1624,6 +1627,7 @@ dialog::backdrop{background:#202a3b68}
       return `<button class="chapter-card ${badgeClass}" data-chapter="${c.id}"${unlocked?'':' disabled'}><span class="chapter-number">0${c.id}</span><span><strong>${escape(c.title)}</strong><small>${escape(c.subject)} · ${escape(status)}</small></span><span class="chapter-link" aria-hidden="true">${unlocked?'↗':'🔒'}</span></button>`;
     }).join('');
     $('chapter-list').querySelectorAll('[data-chapter]').forEach(b=>b.onclick=()=>startChapter(Number(b.dataset.chapter),0));
+    $('chapter-list').hidden=!canPickChapter();
 
     const canResume=Boolean(state.chapterId&&state.sceneId&&S.isChapterUnlocked(state,state.chapterId,isTeacher)&&ids.includes(state.sceneId));
     $('resume-button').hidden=!canResume;
@@ -1644,7 +1648,7 @@ dialog::backdrop{background:#202a3b68}
     delete $('stage').dataset.medium;
     background('day');
     $('chapter-indicator').textContent=isTeacher?'교사 검수 모드 · 전체 해금':'하나의 이야기 · 12문항 CS 챌린지';
-    $('progress-text').textContent='새 이야기를 시작하거나 해금된 챕터를 골라 보세요.';
+    $('progress-text').textContent=canPickChapter()?'새 이야기를 시작하거나 해금된 챕터를 골라 보세요.':'새 이야기 시작을 눌러 하루와의 이야기를 시작해 보세요.';
     $('timing-text').textContent='1~3단원 핵심 개념 총복습 · 3가지 엔딩';
     ['previous-button','next-button','reset-button','teacher-button'].forEach(id=>$(id).disabled=true);
     $('next-button').textContent='다음 →';
