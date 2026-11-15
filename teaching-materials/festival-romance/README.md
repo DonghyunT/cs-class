@@ -37,7 +37,10 @@
 
 - **기본 학생 모드 (`/festival-romance.html`):** 처음 온 학생은 `새 이야기 시작`(이름·하루 성별)으로만 시작(진행 기록이 생기면 챕터 카드·이어하기 표시), 순차 챕터 해금(1장 완료 시 2장 해금, 2장 완료 시 3장 해금), 이전 버튼·← 키는 대사 한 줄씩(첫 줄에서는 이전 장면) 되돌아가며 하트 기록은 바뀌지 않음, 목차(`#contents-button`)·교사 도구(`#teaching-tools`)·설정 내 교사 옵션 숨김, `localStorage` 키 `festival-romance.game.v2` 저장, 이미 본 장면(`seenScenes`)에 대한 `이미 본 대사 건너뛰기` 지원.
 - **교사 모드 (`?mode=teacher`):** 전체 챕터 즉시 해금, 목차·교사 메모·간결 대화·엔딩 미리보기 패널 활성화.
-- **임베드 모드 (`?embed=1`):** `body`와 `#stage`에 `data-embed="true"` 적용, `#fullscreen` 숨김, `createMemoryStorage` 사용으로 `localStorage` 접근 0회, `parent.postMessage`(`festival:init`, `festival:state`, `festival:complete`) 브리지 제공(메인 앱 연동은 Phase 5 예정).
+- **임베드 모드 (`?embed=1`):** `body`와 `#stage`에 `data-embed="true"` 적용, `#fullscreen` 숨김, `createMemoryStorage` 사용으로 `localStorage` 접근 0회, `parent.postMessage` 브리지 제공. 메인 앱은 이 모드로 게임을 복습 활동 `review-festival`에 넣습니다(Phase 5).
+  - **메시지 계약:** 게임 → 사이트 `festival:ready`(데이터 없음, 스크립트가 준비되면 한 번) · `festival:state`(저장 상태 + `activeRuns`, 이름 `nickname` 포함) · `festival:save-request`(게임 안 Ctrl/⌘+S, 기본 동작을 막음) · `festival:chapter-complete`(`{ chapterId }`, 장 결과 화면이 처음 나올 때 한 번) · `festival:complete`(`festival:state` 내용 + `outcome`). 사이트 → 게임 `festival:init`(`{ payload: 저장 상태 또는 null }`).
+  - **출처:** `festival:init`을 받기 전에는 `festival:ready`만 보내고, 처음 받은 `festival:init`의 `e.origin`을 이후 메시지의 대상 출처로 씁니다(부모가 다른 도메인이어도 전달됨).
+  - **사이트 쪽:** 학생 화면은 [`festival.tsx`](../../src/components/student/review/festival.tsx), 메시지 처리는 [`festival-embed.ts`](../../src/lib/classroom/review/festival-embed.ts), 저장 형식은 [`project.ts`](../../src/lib/classroom/review/project.ts)입니다. 번들 `public/festival-romance.html`은 `node teaching-materials/festival-romance/build.cjs`로 다시 만듭니다.
 - **하루 말투:** 하루의 감정 대사는 `text: { boy, girl }`로 성별마다 조금 다르게 쓰고(문장 끝·감탄사 정도), CS 설명·앱 화면·내레이션·주인공 대사는 공통입니다. 학생 화면에는 파이썬 코드를 쓰지 않습니다(엔트리 블록 표현만).
 - **캐릭터 스프라이트:** 현재 번들은 [haru-boy-v15.png](assets/haru-boy-v15.png)와 [haru-girl-v15.png](assets/haru-girl-v15.png)(`1536×2048` 3×2, `FESTIVAL_SPRITE_ROWS: { boy: 2, girl: 2 }`)를 씁니다. 위 행 미소·수줍음·환한 웃음, 아래 행 놀람·곤란·장난기입니다. 미소 칸은 v13 바탕 그대로이고 나머지 5칸은 미소 칸을 레퍼런스로 표정마다 전신을 새로 그려 위치만 맞췄습니다(얼굴 합성 없음). 1행 시트(`1536×1024`)를 넣으면 `build.cjs`가 `rows: 1`로 감지해 3표정을 6칸에 나눠 씁니다.
 

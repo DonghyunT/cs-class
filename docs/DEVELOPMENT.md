@@ -346,6 +346,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 
 - **코드 구조:** `src/lib/classroom/review/`에 순수 엔진(샌드위치, 순서도 실행기, 추상화 데이터)을 두고, 화면 컴포넌트는 `src/components/student/review/`에 배치합니다.
 - **순서도 (`flowchart.tsx`):** 퍼즐 실습(3열), 예시 공방(2열), 자유 공방(4열). 임의 JS 실행 없이 순수 표현식 인터프리터(`flow-runner.mjs`)로 동작합니다.
+- **축제 복습 게임 (`festival.tsx`):** 게임 번들 `public/festival-romance.html`은 `teaching-materials/festival-romance/build.cjs`로 다시 빌드하고([게임 README](../teaching-materials/festival-romance/README.md)) 학생 화면은 그것을 iframe으로 엽니다. iframe 주소·sandbox는 [`festival-embed.ts`](../src/lib/classroom/review/festival-embed.ts)의 `festivalFrame`이 고릅니다. 운영 빌드에서 엔트리 작업실 호스트가 정해져 있으면 그 호스트(`allow-same-origin` 허용, 다른 사이트라 쿠키에 닿지 못함), 아니면 같은 주소의 `allow-scripts allow-forms`입니다. 교사 화면은 [`festival-report.ts`](../src/lib/classroom/review/festival-report.ts)가 게임의 장 정의에서 문항 이름을 읽습니다.
 - **AI 엔드포인트 (`POST /api/classroom/ai`):** HMAC 기반 요청 검증, 학생별 사용량 장부(`csAiUsage/{uid}`, 한도는 [PRD §4.3](PRD.md#43-선택-복습-수업-공통-정책)), 결과 TTL 캐시(24시간)를 적용합니다.
 - **실제 AI 품질 검사:** 유료 Solar 호출은 [AGENTS의 먼저 묻는 일](../AGENTS.md#검증-및-배포-규칙)을 따릅니다.
 
