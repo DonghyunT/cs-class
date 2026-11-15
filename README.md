@@ -100,7 +100,7 @@ npm run dev:emulator
 
 `docs/plans/`에는 진행 중인 작업 계획만 두고, 끝난 계획과 지난 원문은 [`docs/archive/`](docs/archive/README.md)에 보관합니다. `docs/reference/`는 보관 원문과 HANDOFF가 가리키는 근거 자료(화면 캡처·날짜 붙은 검토 보고서)입니다.
 
-선생님이 직접 할 일은 [HANDOFF의 다음 작업·남은 한계](docs/HANDOFF.md#다음에-이어갈-작업), 수업 당일 순서는 [첫 실제 수업 확인 순서](docs/DEVELOPMENT.md#첫-실제-수업-확인-순서)에 있습니다. 교사가 투사하는 3차시 개념 수업 자료는 [내일, 축제에서 만나](teaching-materials/festival-romance/README.md)를 참고하세요. 독립 HTML 완성본과 수정 소스가 함께 있습니다.
+선생님이 직접 할 일은 [HANDOFF의 다음 작업·남은 한계](docs/HANDOFF.md#다음에-이어갈-작업), 수업 당일 순서는 [첫 실제 수업 확인 순서](docs/DEVELOPMENT.md#첫-실제-수업-확인-순서)에 있습니다. 교사 도입 수업(`/festival-lesson.html`)과 학생용 CS 복습 게임(`/festival-romance.html`) 자료는 [내일, 축제에서 만나](teaching-materials/festival-romance/README.md)를 참고하세요. 독립 HTML 완성본과 수정 소스가 함께 있습니다.
 
 ---
 
@@ -130,8 +130,8 @@ cs-class/
 ├─ public/concepts/       # 개념·퀴즈 화면의 엔트리 블록 이미지 캡처(조건·반복·함수 수업)
 ├─ cloudflare/entry-cdn/  # 엔트리 작업실(라이브러리·브리지·그림)을 올리는 Cloudflare Workers 정적 CDN 설정(절차는 FIREBASE_SETUP)
 ├─ scripts/               # 에뮬레이터 시드, 선별 검증기, 문서 검사 스크립트
-├─ teaching-materials/    # 교사용 독립 자료 (로그인·DB 미사용)
-│  ├─ festival-romance/   # 3차시 개념 수업 투사 자료(자체 빌드 build.cjs가 public/festival-romance.html도 만듦)
+├─ teaching-materials/    # 독립 수업·복습·안내 자료 (로그인·DB 미사용)
+│  ├─ festival-romance/   # 학생용 CS 복습 게임(build.cjs가 public/festival-romance.html 빌드; public/festival-lesson.html은 원본 3차시 교사 자료 보존)
 │  └─ instructor-guide/   # 강사님께 보내는 사이트 사용법 안내서(PDF와 원본 HTML, 캡처·PDF 다시 만들기 스크립트)
 ├─ docs/                  # PRD, DESIGN, DEVELOPMENT, FIREBASE_SETUP, HANDOFF 핵심 문서
 │  ├─ plans/              # 진행 중인 작업 계획 (필요할 때 만들고, 끝나면 보관)
