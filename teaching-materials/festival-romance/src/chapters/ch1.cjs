@@ -45,14 +45,14 @@ module.exports = {
           "label": "응, 지금 같이 보자. 코드 보내 줘.",
           "reply": [
             {
-              "speaker": "하루", "role": "haru", "expression": 3,
+              "speaker": "하루", "role": "haru", "expression": 2,
               "text": {
                 "boy": "진짜? 고맙다. 거절당하면 혼자 밤새울 각이었거든.",
                 "girl": "진짜?! 고마워… 거절당하면 혼자 밤새울 뻔했어."
               }
             },
             {
-              "speaker": "하루", "role": "haru", "expression": 1,
+              "speaker": "하루", "role": "haru", "expression": 0,
               "text": {
                 "boy": "그럼 환영 화면 코드부터 띄울게.",
                 "girl": "그럼 환영 화면 코드부터 띄워 볼게!"
@@ -181,7 +181,7 @@ module.exports = {
           {
             "speaker": "하루",
             "role": "haru",
-            "expression": 3,
+            "expression": 2,
             "text": {
               "boy": "와, 바로 뜬다. 메모부터 순서가 틀렸던 거네 ㅋㅋ",
               "girl": "와, 바로 떴어! 메모부터 순서가 틀렸던 거구나 ㅋㅋ"
@@ -300,7 +300,7 @@ module.exports = {
           {
             "speaker": "하루",
             "role": "haru",
-            "expression": 3,
+            "expression": 2,
             "text": {
               "boy": "오, '{{name}} 님'으로 왔다. 대답은 마지막 것만 남는 거였구나.",
               "girl": "오, '{{name}} 님'으로 왔어! 대답은 마지막 것만 남는 거였구나."

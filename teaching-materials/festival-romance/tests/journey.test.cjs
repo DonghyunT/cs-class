@@ -121,7 +121,7 @@ test('3개 챕터·12개 등급 문항·마음 선택지·3가지 엔딩·교사
         assert.ok(Array.isArray(sc.flow.retrySuccess) && sc.flow.retrySuccess.length > 0, `${sc.id} retrySuccess 필수`);
         assert.ok(sc.flow.wrongReaction && [3, 4].includes(sc.flow.wrongReaction.expression) && sc.flow.wrongReaction.line, `${sc.id} wrongReaction 필수`);
         // 카드 구조(정답 1개·오답 이유·실행 결과)는 refinement.test.cjs가 자세히 검사합니다.
-        assert.ok(sc.experiment === 'quiz' && (Array.isArray(sc.quiz?.choices) || sc.quiz?.variants), `${sc.id} 카드 문항 필수`);
+        assert.ok((sc.experiment === 'quiz' && (Array.isArray(sc.quiz?.choices) || sc.quiz?.variants)) || (['order', 'number'].includes(sc.experiment) && sc.task), `${sc.id} 카드 또는 조작·단답형 문항 필수`);
       }
 
       for (const text of collectTexts(sc)) {

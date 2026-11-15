@@ -143,10 +143,54 @@ async function clickCard(page, { correct, keyboard = false } = {}) {
   return card;
 }
 
+// 직접 조작·단답형 문항의 설정(3장 도형은 고른 도형의 설정)
+async function sceneTask(page) {
+  const scene = await currentSceneData(page);
+  const variant = await page.locator('#experiment').getAttribute('data-variant');
+  return { scene, task: { ...scene.task, ...(variant ? scene.task.variants[variant] : {}) } };
+}
+
+// 숫자 칸을 고치거나(number) 줄 순서를 옮긴 뒤(order) 실행. wrong이면 일부러 틀린 값·순서
+async function solveTask(page, { wrong = false } = {}) {
+  const type = await page.locator('#experiment').getAttribute('data-experiment');
+  const { task } = await sceneTask(page);
+  assert.equal(await page.locator('#run-task').isDisabled(), true, '처음(버그) 상태로는 실행할 수 없음');
+  if (type === 'number') {
+    let value = task.answer;
+    if (wrong) value = [task.answer + 1, task.answer + 2].find((v) => v !== task.initial && v <= task.max);
+    await page.locator('#task-num').fill(String(value));
+  } else {
+    const best = [...task.rows].sort((a, b) => b.min - a.min).map((r) => r.id);
+    if (wrong) {
+      await page.locator(`[data-move="-1"][data-id="${best[1]}"]`).click();
+    } else {
+      for (let i = 0; i < best.length; i++) {
+        for (let guard = 0; guard < best.length; guard++) {
+          const order = await page.evaluate(() => [...document.querySelectorAll('.order-row')].map((r) => r.dataset.row));
+          if (order.indexOf(best[i]) <= i) break;
+          await page.locator(`[data-move="-1"][data-id="${best[i]}"]`).click();
+        }
+      }
+    }
+  }
+  await page.locator('#run-task').click();
+}
+
 async function solveCurrentChallenge(page, { meetingTime = '16:00', finish = true } = {}) {
   const type = await page.locator('#experiment').getAttribute('data-experiment');
-  assert.equal(type, 'quiz', '하트 문항은 카드 선택');
   assert.equal(await page.locator('#experiment select').count(), 0, '드롭다운 없음');
+  assert.equal((await page.locator('body').innerText()).includes('{{'), false, '치환 안 된 {{변수}} 없음');
+  if (type !== 'quiz') {
+    assert.ok(['order', 'number'].includes(type), `알 수 없는 활동: ${type}`);
+    await solveTask(page);
+    assert.match(await page.locator('#result .sim-screen').innerText(), /실행 결과/, `${type} 실행 결과`);
+    if (!finish) {
+      await waitForActivityPass(page);
+      return type;
+    }
+    await finishConceptResponse(page);
+    return type;
+  }
   const { scene, shown, variantKey, quiz } = await shownQuiz(page);
   const seeded = await page.evaluate(({ id, n }) => window.FestivalModels.seededOrder(id, n), { id: scene.questionId + variantKey, n: quiz.choices.length });
   assert.deepEqual(shown, seeded.map((i) => quiz.choices[i].key), `${scene.questionId} 카드 순서를 문항별 seed로 섞음`);
@@ -458,7 +502,7 @@ async function playChapterToEnd(page, chapterId, {
       assert.match(await page.locator('.missed-list').innerText(), /프로그래밍과 입력·처리·출력/);
       assert.equal(await page.locator('[data-retry-chapter="1"]').isVisible(), true);
       await page.screenshot({ path: path.join(resultsDir, 'v2-ending-friend-report.png') });
-      checks.push('12문항 카드 완주 및 찐친 엔딩(11/12)·오답 리포트 확인');
+      checks.push('12문항(카드·조작·단답형) 완주 및 찐친 엔딩(11/12)·오답 리포트 확인');
 
       // Retry Ch.1 with skip-seen-dialogue -> 4/4 -> revisit ending -> 12/12 + cold Friend-zone!
       await page.locator('[data-retry-chapter="1"]').click();
@@ -554,6 +598,26 @@ async function playChapterToEnd(page, chapterId, {
       for (const [id, key] of [['ch1-2'], ['ch1-3'], ['ch1-5'], ['ch1-6'], ['ch2-2'], ['ch2-3'], ['ch2-4'], ['ch2-5'], ['ch3-2'], ['ch3-3', 'triangle'], ['ch3-4'], ['ch3-5']]) {
         await enterExp(id, key);
         assert.equal(await page.locator('.quiz-situation').isVisible(), true, `${id} 지금 상황`);
+        const type = await page.locator('#experiment').getAttribute('data-experiment');
+        if (type !== 'quiz') {
+          assert.equal(await page.locator('#experiment select').count(), 0, `${id} 드롭다운 없음`);
+          const tooSmall = await page.evaluate(() => [...document.querySelectorAll('#experiment button')].map((b) => b.getBoundingClientRect()).filter((r) => r.width < 44 || r.height < 44).length);
+          assert.equal(tooSmall, 0, `${id} 조작 버튼은 모두 44px 이상`);
+          if (type === 'number') assert.equal(await page.locator('.code-line.focus #task-num').count(), 1, `${id} 고칠 줄 안의 숫자 칸`);
+          const runBelow = await page.evaluate(() => document.getElementById('run-task').getBoundingClientRect().bottom > document.querySelector('.lesson-main').getBoundingClientRect().bottom + 1);
+          assert.equal(runBelow, false, `${id} 1366×768에서 실행 버튼이 스크롤 없이 보임`);
+          await solveTask(page, { wrong: true });
+          await waitForActivityFail(page);
+          assert.match(await page.locator('#result .sim-screen').innerText(), /실행 결과/, `${id} 틀린 시도의 실행 결과`);
+          if (id === 'ch3-3') assert.equal(await page.locator('.drone-path polyline').count(), 1, '드론 경로 그림');
+          if (id === 'ch2-5') {
+            const code = await page.locator('.order-rows').innerText();
+            assert.equal(/또는/.test(code), false, '다중 선택 줄에 가짜 또는 없음');
+            assert.match(code, /아니면, 만일/);
+          }
+          assert.equal(await page.locator('#run-task').isDisabled(), true, `${id} 같은 순서·값은 다시 실행할 수 없음`);
+          continue;
+        }
         assert.equal(await page.locator('.quiz-choice').count(), 3, `${id} 카드 3장`);
         assert.equal(await page.locator('#experiment select, #experiment input').count(), 0, `${id} 드롭다운·입력칸 없음`);
         const fit = await page.evaluate(() => {
@@ -571,11 +635,6 @@ async function playChapterToEnd(page, chapterId, {
         const res = await page.locator('#result').innerText();
         assert.match(res, /실행 결과/, `${id} 틀린 카드의 실행 결과`);
         assert.ok(res.includes(card.why.slice(0, 15)), `${id} 틀린 이유 표시`);
-        if (id === 'ch2-5') {
-          const code = await page.locator('.quiz-code').innerText();
-          assert.equal(/또는/.test(code), false, '다중 선택 줄에 가짜 또는 없음');
-          assert.match(code, /아니면, 만일/);
-        }
       }
 
       // Jump to ch3-7 with <= 6 hearts -> awkward ending + teacher ending preview pills
@@ -590,7 +649,7 @@ async function playChapterToEnd(page, chapterId, {
       assert.equal(await page.locator('.ending-report-layout').getAttribute('data-outcome'), 'some');
 
       await ctx.close();
-      checks.push('교사 모드(?mode=teacher)·12문항 카드(상황·고칠 줄·한 화면·틀린 카드 결과와 이유)·어색한 사이(<=6/12) 엔딩·엔딩 미리보기 확인');
+      checks.push('교사 모드(?mode=teacher)·카드 9문항(상황·고칠 줄·한 화면·틀린 카드 결과와 이유)·조작·단답형 3문항(처음 상태 실행 잠금·44px·틀린 시도 결과·드론 경로)·어색한 사이(<=6/12) 엔딩·엔딩 미리보기 확인');
     }
 
     // 3b. 대화 하트 규칙, 390px 터치 기기에서 키보드만으로 순서 바꾸기

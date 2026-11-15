@@ -494,3 +494,29 @@ dialog::backdrop{background:#202a3b68}
 .result .sim-screen{margin:0 0 8px;font-size:clamp(17px,1.35vw,20px);font-weight:650}
 @media (max-width:900px){.quiz-choices{grid-template-columns:1fr}.quiz-choice{min-height:0}}
 @media (max-height:820px){.quiz-board{gap:9px;padding:12px 18px}.quiz-situation{padding:7px 14px}.quiz-situation p{font-size:19px}.quiz-code{font-size:18px;line-height:1.45;padding:8px 12px}.quiz-prompt{font-size:21px}.quiz-choice{min-height:0;gap:6px;padding:10px 14px}}
+/* 직접 조작(줄 순서 옮기기)·단답형(숫자 칸) 문항 */
+.task-controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.task-run{min-height:48px;padding:10px 20px;font-size:18px}
+.task-run:disabled{opacity:.45;cursor:not-allowed}
+.task-hint{font-size:15px;color:var(--muted)}
+.step-button{min-width:48px;min-height:48px;font-size:24px;font-weight:700;line-height:1;border:2px solid #cab69a;border-radius:10px;background:#fffdf8;color:#3b2c1f}
+.step-button:disabled{opacity:.4}
+.code-input{width:4.2em;margin:0 4px;padding:1px 6px;font:inherit;font-weight:700;text-align:center;border:2px solid #e0a21f;border-radius:6px;background:#fff;color:#7a3e05}
+.code-input:focus-visible,.step-button:focus-visible,.order-move:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+.order-rows{list-style:none;margin:0;padding:6px 10px}
+.order-row{display:flex;align-items:center;gap:10px;padding:3px 4px}
+.order-row+.order-row{border-top:1px dashed #c6c9d4}
+.order-buttons{display:flex;gap:6px;margin-left:auto;flex-shrink:0}
+.order-move{min-width:44px;min-height:44px;font-size:20px;font-weight:700;border:2px solid #b8a68a;border-radius:8px;background:#fffdf8;color:#3b2c1f}
+.order-move:disabled{opacity:.3}
+.task-visual{display:flex;justify-content:center}
+.task-visual:empty{display:none}
+.lights-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:4px 0}
+.bulb{width:30px;height:30px;border-radius:50%;background:#ffe48a;box-shadow:0 0 10px #ffcf3f88;animation:bulb-blink .5s ease-in-out both}
+.bulb-more{font-size:22px;font-weight:700;color:var(--muted)}
+@keyframes bulb-blink{0%{background:#d8d2c6;box-shadow:none}50%{background:#ffd34d;box-shadow:0 0 16px #ffcf3f}100%{background:#ffe48a}}
+.drone-path{width:min(200px,55vw);height:auto;max-height:180px}
+.drone-path polyline{fill:none;stroke:var(--navy);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.drone-path .start{fill:#2f8f5b}
+.drone-path .end{fill:#c2410c}
+@media (prefers-reduced-motion:reduce){.bulb{animation:none}}

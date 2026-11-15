@@ -55,6 +55,16 @@ for (const ch of chapters) {
       md.push(`인용: ${fill(s.quote)}`, `질문: ${fill(s.goalPrompt)}`, `활동 종류: ${s.experiment}  (캡처: activity-${s.id}.png)`);
       if (s.flow?.intro) md.push('도입 대사:', lines(s.flow.intro, '  '));
       if (s.flow?.options) md.push('도입 뒤 선택:', ...s.flow.options.map((o) => `  ▶ (${o.key}) ${fill(o.label)}`));
+      if (s.task) {
+        const one = (q, indent) => [
+          ...(q.situation || []).map((l) => `${indent}지금 상황: ${fill(l)}`),
+          ...(q.rows ? [`${indent}직접 조작: 아래 줄을 ↑·↓로 옮긴 뒤 실행(손님 ${q.tests.join('·')}장으로 시험)`, ...q.initialOrder.map((id, i) => { const r = q.rows.find((x) => x.id === id); return `${indent}  ${i + 1}. ${i ? '아니면, 만일' : '만일'} (${q.subject} ≥ ${r.min}) 이라면 → ${r.then}`; })] : []),
+          ...(q.code ? [`${indent}단답형: 숫자 칸에 ${q.label} 값을 적고 실행(처음 ${q.initial}, 정답 ${q.answer})`, ...q.code.map((c, i) => `${indent}  ${i + 1}. ${c.replace('{n}', '[ ]')}`)] : []),
+          `${indent}틀린 이유: ${[...Object.values(q.whyTop || {}), q.whyRest, ...Object.values(q.whyBy || {}), q.whyLow, q.whyHigh, q.whyMulti].filter(Boolean).map(fill).join(' / ')}`,
+        ].join('\n');
+        if (s.task.variants) for (const [k, v] of Object.entries(s.task.variants)) md.push(`  [${k}을(를) 고른 경우]`, one({ ...s.task, ...v }, '    '));
+        else md.push(one(s.task, '  '));
+      }
       if (s.quiz?.variants) {
         for (const [k, v] of Object.entries(s.quiz.variants)) md.push(`  [${k}을(를) 고른 경우]`, cardSummary({ ...s.quiz, ...v }, '    '));
       } else if (s.quiz) {

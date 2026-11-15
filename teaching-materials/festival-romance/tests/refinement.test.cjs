@@ -39,7 +39,11 @@ test('개편된 3챕터에는 optional:true 없이 1~3단원 핵심 개념 12문
   assert.equal(allGraded.length, 12);
   assert.deepEqual(
     allGraded.map((s) => [s.questionId, s.experiment]),
-    ['ch1-q1', 'ch1-q2', 'ch1-q3', 'ch1-q4', 'ch2-q1', 'ch2-q2', 'ch2-q3', 'ch2-q4', 'ch3-q1', 'ch3-q2', 'ch3-q3', 'ch3-q4'].map((id) => [id, 'quiz']),
+    [
+      ['ch1-q1', 'quiz'], ['ch1-q2', 'quiz'], ['ch1-q3', 'quiz'], ['ch1-q4', 'quiz'],
+      ['ch2-q1', 'quiz'], ['ch2-q2', 'quiz'], ['ch2-q3', 'quiz'], ['ch2-q4', 'order'],
+      ['ch3-q1', 'number'], ['ch3-q2', 'number'], ['ch3-q3', 'quiz'], ['ch3-q4', 'quiz'],
+    ],
   );
   for (const ch of [ch1, ch2, ch3]) {
     assert.equal(ch.scenes.some((s) => s.optional), false);
@@ -100,7 +104,7 @@ test('하트 문항은 풀기 전에 보이는 미션 목표·하루의 한마�
 });
 
 test('채점 선택지는 정답 보기만 유독 길지 않다(오답 평균의 ±25%)', () => {
-  const quizzes = [ch1, ch2, ch3].flatMap((ch) => ch.scenes.filter((s) => s.graded))
+  const quizzes = [ch1, ch2, ch3].flatMap((ch) => ch.scenes.filter((s) => s.graded && s.quiz))
     .flatMap((s) => (s.quiz.variants ? Object.entries(s.quiz.variants).map(([k, v]) => [`${s.questionId}:${k}`, v]) : [[s.questionId, s.quiz]]));
   assert.ok(quizzes.length > 0);
   for (const [id, q] of quizzes) {
@@ -114,11 +118,11 @@ test('채점 선택지는 정답 보기만 유독 길지 않다(오답 평균의
   }
 });
 
-test('하트 문항 12개는 모두 큰 카드 3장에서 고른다(정답 1개·보기마다 실행 결과·오답마다 이유)', () => {
-  const graded = [ch1, ch2, ch3].flatMap((ch) => ch.scenes.filter((s) => s.graded));
+test('카드 문항은 큰 카드 3장에서 고른다(정답 1개·보기마다 실행 결과·오답마다 이유)', () => {
+  const graded = [ch1, ch2, ch3].flatMap((ch) => ch.scenes.filter((s) => s.graded && s.experiment === 'quiz'));
+  assert.ok(graded.length >= 8, '객관식이 어울리는 문항은 카드');
   for (const s of graded) {
     const id = s.questionId;
-    assert.equal(s.experiment, 'quiz', `${id} 카드 문항`);
     assert.equal(s.goal, undefined, `${id} 옛 조작판 설정 없음`);
     assert.equal(s.quiz.style, undefined, `${id} 대화형 아님`);
     const sets = s.quiz.variants ? Object.entries(s.quiz.variants) : [['', s.quiz]];
@@ -136,6 +140,36 @@ test('하트 문항 12개는 모두 큰 카드 3장에서 고른다(정답 1개�
       for (const c of q.choices) {
         assert.ok(c.key && c.label && c.screen, `${id}${k}:${c.key} 카드 글·실행 결과`);
         if (!c.correct) assert.ok(c.why, `${id}${k}:${c.key} 오답 이유`);
+      }
+    }
+  }
+});
+
+test('제어 구조(2·3장)에는 직접 조작·단답형 문항이 있고, 처음 상태는 버그이며 정답은 범위 안에 있다', () => {
+  const tasks = [ch2, ch3].flatMap((ch) => ch.scenes.filter((s) => s.graded && s.experiment !== 'quiz'));
+  assert.ok(tasks.length >= 3, `직접 조작·단답형 ${tasks.length}개(3개 이상)`);
+  for (const s of tasks) {
+    const id = s.questionId;
+    assert.ok(['order', 'number'].includes(s.experiment), `${id} 활동 종류`);
+    assert.equal(s.quiz, undefined, `${id} 카드 데이터 없음`);
+    const sets = s.task.variants ? Object.entries(s.task.variants) : [['', s.task]];
+    if (s.task.variants) assert.deepEqual(Object.keys(s.task.variants).sort(), s.flow.options.map((o) => o.key).sort(), `${id} 고른 도형마다 설정`);
+    for (const [k, v] of sets) {
+      const q = { ...s.task, ...v };
+      assert.ok(Array.isArray(q.situation) && q.situation.length >= 1 && q.situation.length <= 2, `${id}${k} 상황 1~2줄`);
+      for (const line of q.situation) assert.ok(line.length <= 45, `${id}${k} 상황 한 줄 ${line.length}자(45자 이하)`);
+      if (s.experiment === 'order') {
+        const best = [...q.rows].sort((a, b) => b.min - a.min).map((r) => r.id);
+        assert.notDeepEqual(q.initialOrder, best, `${id} 처음 순서는 버그`);
+        for (const r of q.rows) assert.ok(q.tests.some((n) => n >= r.min && !q.rows.some((o) => o.min > r.min && n >= o.min)), `${id} ${r.id} 줄을 시험하는 손님`);
+        assert.ok(q.whyTop && q.whyRest, `${id} 틀린 순서 이유`);
+      } else {
+        assert.ok(q.code.length <= 4 && q.code.filter((l) => l.includes('{n}')).length === 1, `${id}${k} 숫자 칸 하나`);
+        assert.ok(q.code[q.focus - 1].includes('{n}'), `${id}${k} 숫자 칸이 고칠 줄`);
+        assert.notEqual(q.initial, q.answer, `${id}${k} 처음 값은 버그`);
+        assert.ok(q.min <= q.answer && q.answer <= q.max, `${id}${k} 정답이 입력 범위 안`);
+        assert.ok(q.whyLow && q.whyHigh, `${id}${k} 작을 때·클 때 이유`);
+        if (q.visual === 'drone') assert.equal(q.answer * q.sides, 360, `${id}${k} 회전각 × 변의 수 = 360`);
       }
     }
   }
@@ -230,7 +264,8 @@ test('하트 문항의 도입 대사·인용·대화 질문에도 정답 단서�
   const texts = (v) => (v == null ? [] : typeof v === 'string' ? [v] : Object.values(v));
   for (const [qId, hints] of Object.entries(answerHints)) {
     const sc = [ch1, ch2, ch3].flatMap((ch) => ch.scenes).find((s) => s.questionId === qId);
-    const situations = sc.quiz.variants ? Object.values(sc.quiz.variants).flatMap((v) => v.situation) : sc.quiz.situation;
+    const data = sc.quiz || sc.task;
+    const situations = data.variants ? Object.values(data.variants).flatMap((v) => v.situation) : data.situation;
     const pre = [sc.quote, ...(sc.flow.intro || []).flatMap((l) => texts(l.text)), ...situations];
     for (const t of pre) for (const h of hints) assert.equal(t.includes(h), false, `${qId} 풀기 전 문구에 정답 단서 '${h}': ${t}`);
   }
