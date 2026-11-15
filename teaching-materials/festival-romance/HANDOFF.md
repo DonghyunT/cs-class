@@ -12,7 +12,7 @@
 ## 2. 번들 산출물 및 검증 기록
 
 - **산출물 무결성 ([qa/build-manifest.json](qa/build-manifest.json)):**
-  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `17,240,971` bytes, SHA-256 `1f0ae0508764ef7925de949d281a0bb5298c7d314507b834540199bbf9d5d8bb`
+  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `17,241,141` bytes, SHA-256 `20f91e23e7e721687d2609df7aefd217c2ecbbcf13ab61f35f44161c444fba2c`
   - `public/festival-lesson.html` ≡ `dist/festival-lesson.html`: SHA-256 `8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c430b5` (원본 27장면 불변, 10/19 기준 검증은 [제작·검수 기록](제작-검수-기록.md))
 - **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 55/55 통과
   - `models.test.cjs` (14), `state.test.cjs` (7), `package.test.cjs` (3), `journey.test.cjs` (7), `refinement.test.cjs` (24)

@@ -1896,6 +1896,8 @@ dialog::backdrop{background:#202a3b68}
       if(!msg||typeof msg!=='object'||msg.type!=='festival:init')return;
       // 처음 접속한 학생은 payload가 null이라 hydrated가 없어도, 이후 메시지를 보내려면 출처는 먼저 정해야 합니다.
       if(!parentOrigin)parentOrigin=e.origin&&e.origin!=='null'?e.origin:'*';
+      // 새 init은 새 출발이라 장 완료를 다시 알립니다(사이트는 이미 끝난 장으로 저장된 알림을 무시).
+      reportedChapters.clear();
       const hydrated=S.sanitizeGameState(msg.payload,ids);
       if(!hydrated)return;
       Object.assign(state,hydrated);

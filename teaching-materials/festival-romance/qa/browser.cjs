@@ -794,38 +794,36 @@ async function playChapterToEnd(page, chapterId, {
         assert.equal(await page.evaluate(() => window.__msgs[0].payload), undefined, 'ready에는 내용이 없음');
 
         // Valid festival:init from parent hydrates state and jumps directly to ch3-6
-        await page.evaluate((origin) => {
-          const iframe = document.getElementById('game');
-          iframe.contentWindow.postMessage({
-            type: 'festival:init',
-            payload: {
-              nickname: '임베드',
-              variant: 'girl',
-              onboarded: true,
-              chapterId: 3,
-              sceneId: 'ch3-6',
-              story: { meetingTime: '16:00', polygon: 6, prize: 'large' },
-              chapterResults: {
-                1: { completed: true, hearts: 4, questions: {} },
-                2: { completed: true, hearts: 4, questions: {} },
-                3: { completed: false, hearts: 0, questions: {} },
+        const initPayload = {
+          nickname: '임베드',
+          variant: 'girl',
+          onboarded: true,
+          chapterId: 3,
+          sceneId: 'ch3-6',
+          story: { meetingTime: '16:00', polygon: 6, prize: 'large' },
+          chapterResults: {
+            1: { completed: true, hearts: 4, questions: {} },
+            2: { completed: true, hearts: 4, questions: {} },
+            3: { completed: false, hearts: 0, questions: {} },
+          },
+          activeRuns: {
+            3: {
+              missedThisRun: {},
+              solvedThisRun: {
+                'ch3-q1': { firstAttempt: true, solved: true, conceptTitle: 'q1' },
+                'ch3-q2': { firstAttempt: true, solved: true, conceptTitle: 'q2' },
+                'ch3-q3': { firstAttempt: true, solved: true, conceptTitle: 'q3' },
+                'ch3-q4': { firstAttempt: true, solved: true, conceptTitle: 'q4' },
               },
-              activeRuns: {
-                3: {
-                  missedThisRun: {},
-                  solvedThisRun: {
-                    'ch3-q1': { firstAttempt: true, solved: true, conceptTitle: 'q1' },
-                    'ch3-q2': { firstAttempt: true, solved: true, conceptTitle: 'q2' },
-                    'ch3-q3': { firstAttempt: true, solved: true, conceptTitle: 'q3' },
-                    'ch3-q4': { firstAttempt: true, solved: true, conceptTitle: 'q4' },
-                  },
-                },
-              },
-              coldChoices: {},
-              seenScenes: {},
             },
-          }, origin);
-        }, gameOrigin);
+          },
+          coldChoices: {},
+          seenScenes: {},
+        };
+        const sendInit = () => page.evaluate(({ origin, payload }) => {
+          document.getElementById('game').contentWindow.postMessage({ type: 'festival:init', payload }, origin);
+        }, { origin: gameOrigin, payload: initPayload });
+        await sendInit();
         await frame.locator('.story-heading h2').waitFor();
         assert.match(await frame.locator('.story-heading h2').innerText(), /마음 선택지/);
         await page.screenshot({ path: path.join(resultsDir, 'v2-embed-1366.png') });
@@ -864,6 +862,20 @@ async function playChapterToEnd(page, chapterId, {
         assert.equal(completeMsgs[0].payload.totalHearts, 12);
         const lsCount = await gameFrame.evaluate(() => window.__lsAccessCount || 0);
         assert.equal(lsCount, 0, 'embed 모드에서는 localStorage 접근 0회');
+
+        // 다시 받은 init(충돌 뒤 서버 기록으로 이어하기 등)은 새 출발이라, 그 장을 다시 끝내면 chapter-complete를 또 보냅니다(이미 끝난 장이면 사이트가 무시).
+        await page.evaluate(() => { window.__msgs = []; });
+        await sendInit();
+        await frame.locator('.story-heading h2').waitFor();
+        for (let i = 0; i < 30; i++) {
+          if (await frame.locator('.ending-report-layout').count()) break;
+          if (await frame.locator('#story-choices button:visible').count()) {
+            await frame.locator('#story-choices button:not([data-cold-choice="true"])').first().click();
+          } else {
+            await frame.locator('#next-button').click();
+          }
+        }
+        assert.deepEqual((await page.evaluate(() => window.__msgs)).filter((m) => m?.type === 'festival:chapter-complete').map((m) => m.payload), [{ chapterId: 3 }], '다시 init한 뒤 끝낸 장도 chapter-complete 송신');
       } finally {
         await ctx.close();
         await new Promise((resolve) => hostServer.close(resolve));
