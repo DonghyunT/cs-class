@@ -4,7 +4,7 @@
 
 ## 현재 작업 상태
 
-- **페스티벌 복습 활동:** 사이트에 넣는 [계획](plans/festival-romance-embed.md)만 썼고, 시작 전 결정 D1~D6이 남았습니다([게임 인계](../teaching-materials/festival-romance/HANDOFF.md)).
+- **페스티벌 복습 활동(`feat/festival-embed`):** [계획](plans/festival-romance-embed.md)의 결정을 마쳤고(11/15) 과제 1부터 착수합니다([게임 인계](../teaching-materials/festival-romance/HANDOFF.md)).
 - **운영:** 설정·배포 게이트 상태는 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)을 봅니다.
 - **실제 학생 계정:** 등록 현황과 입장 방식(10/21부터 반 공통 첫 입장 코드)은 [운영 환경 현황](FIREBASE_SETUP.md#운영-환경-현황)에 있습니다. 명부 CSV·등록 직후 백업은 등록에 쓴 PC의 Git 제외 `private/`에만 있습니다.
 
