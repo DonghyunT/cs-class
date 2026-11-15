@@ -33,6 +33,21 @@
     for(let i=order.length-1;i>0;i--){const j=Math.floor(next()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
     return order;
   }
+  // 블록 순서·표기 채점. 틀리면 가장 비슷한 정답 순서와 처음 어긋난 줄의 블록 id를 돌려줍니다.
+  function evaluateArrange(order,goal,picks={}){
+    const list=Array.isArray(order)?order:[];
+    const accepts=Array.isArray(goal?.acceptOrders)?goal.acceptOrders:[];
+    if(!list.length||!accepts.length)return {correct:false,firstWrongId:null};
+    const same=a=>a.length===list.length&&a.every((id,i)=>id===list[i]);
+    if(!accepts.some(same)){
+      const score=a=>a.reduce((n,id,i)=>n+(id===list[i]?1:0),0);
+      const best=accepts.reduce((b,a)=>score(a)>score(b)?a:b);
+      const i=list.findIndex((id,k)=>id!==best[k]);
+      return {correct:false,firstWrongId:i>=0?list[i]:null};
+    }
+    const wrongChoice=Object.entries(goal.expectedChoices||{}).find(([id,want])=>(picks[id]??0)!==want);
+    return wrongChoice?{correct:false,firstWrongId:wrongChoice[0]}:{correct:true,firstWrongId:null};
+  }
   function computeEndingOutcome(totalHearts,hasColdRejection){
     const hearts=Number(totalHearts)||0;
     if(hearts>=12&&!hasColdRejection)return 'some';
@@ -90,6 +105,6 @@
     EXPRESSION_LABELS,V3_COLUMN_MAP,
     boundedInteger,formatInvitation,overwriteDemo,answerDemo,moveOnMap,ticketMath,divideTickets,
     compareTicket,logicResult,chooseRoute,choosePrize,polygonTurn,polygonPath,untilTrace,incrementReady,
-    spriteCrop,seededOrder,computeEndingOutcome,gradeQuizAnswer,evaluatePolygonTurn,evaluatePrizeBranches
+    spriteCrop,seededOrder,evaluateArrange,computeEndingOutcome,gradeQuizAnswer,evaluatePolygonTurn,evaluatePrizeBranches
   };
 });

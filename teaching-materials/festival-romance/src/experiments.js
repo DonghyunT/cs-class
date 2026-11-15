@@ -119,6 +119,57 @@
     });
   };
 
+  // 블록 줄 순서 바꾸기(↑·↓ 버튼)와 눌러서 바꾸는 표기. 처음 '실행'이 채점 실행입니다.
+  // goal: {blocks:[{id,label,choices?}], initialOrder, acceptOrders, expectedChoices?, wrongHints?, defaultWhy?, hat?, simulate?, successText?}
+  const arrangeSims={};
+  renderers.arrange=({root,$,M,ctx,goal,show})=>{
+    const g=goal||{};
+    const byId=Object.fromEntries((g.blocks||[]).map(b=>[b.id,b]));
+    const order=(g.initialOrder||Object.keys(byId)).filter(id=>byId[id]);
+    const picks=Object.fromEntries((g.blocks||[]).filter(b=>b.choices).map(b=>[b.id,b.initialChoice??0]));
+    let locked=false;
+    const labelOf=id=>{const b=byId[id];return b.choices?String(b.label||'').replace('{choice}',b.choices[picks[id]]):b.label;};
+    const draw=focus=>{
+      $('arrange-list').innerHTML=order.map((id,i)=>{
+        const b=byId[id],text=escape(labelOf(id));
+        const label=b.choices?`<button type="button" class="arrange-choice" data-arrange-choice="${escape(id)}" aria-label="${text} · 눌러서 바꾸기"${locked?' disabled':''}>${text} <span aria-hidden="true">⇄</span></button>`:`<span class="arrange-label">${text}</span>`;
+        return `<li class="arrange-row" data-block-id="${escape(id)}"><span class="arrange-index" aria-hidden="true">${i+1}</span>${label}<span class="arrange-moves"><button type="button" data-arrange-move="-1" data-id="${escape(id)}" aria-label="${i+1}번째 줄 '${text}' 위로"${locked||i===0?' disabled':''}>↑</button><button type="button" data-arrange-move="1" data-id="${escape(id)}" aria-label="${i+1}번째 줄 '${text}' 아래로"${locked||i===order.length-1?' disabled':''}>↓</button></span></li>`;
+      }).join('');
+      $('arrange-list').querySelectorAll('[data-arrange-move]').forEach(btn=>btn.onclick=()=>{
+        const id=btn.dataset.id,from=order.indexOf(id),to=from+Number(btn.dataset.arrangeMove);
+        if(to<0||to>=order.length)return;
+        [order[from],order[to]]=[order[to],order[from]];
+        $('arrange-live').textContent=`'${labelOf(id)}' → ${to+1}번째 줄`;
+        draw({id,dir:btn.dataset.arrangeMove});
+      });
+      $('arrange-list').querySelectorAll('[data-arrange-choice]').forEach(btn=>btn.onclick=()=>{
+        const id=btn.dataset.arrangeChoice;
+        picks[id]=(picks[id]+1)%byId[id].choices.length;
+        $('arrange-live').textContent=`바꾼 블록: '${labelOf(id)}'`;
+        draw({id,choice:true});
+      });
+      if(focus){
+        const sel=focus.choice?`[data-arrange-choice="${focus.id}"]`:`[data-arrange-move="${focus.dir}"][data-id="${focus.id}"]`;
+        const target=$('arrange-list').querySelector(sel);
+        (target&&!target.disabled?target:$('arrange-list').querySelector(`[data-id="${focus.id}"]:not(:disabled)`))?.focus();
+      }
+    };
+    root.innerHTML=`<div class="board arrange-board">${g.hat?`<p class="arrange-hat">${escape(g.hat)}</p>`:''}<ol id="arrange-list" class="arrange-list" aria-label="블록 순서"></ol><p id="arrange-live" class="sr-only" aria-live="polite"></p><div class="experiment-actions">${button('run-arrange',escape(g.runLabel||'실행해 보기'),true)}</div><div id="arrange-sim" class="arrange-sim" hidden></div></div>${result()}`;
+    draw();
+    $('run-arrange').onclick=()=>{
+      const r=M.evaluateArrange(order,g,picks);
+      const sim=g.simulate&&arrangeSims[g.simulate]?arrangeSims[g.simulate]({order:[...order],picks:{...picks},correct:r.correct,ctx,goal:g}):'';
+      if(sim){$('arrange-sim').innerHTML=sim;$('arrange-sim').hidden=false;}
+      if(r.correct){
+        locked=true;draw();$('run-arrange').disabled=true;
+        show(`<strong>${escape(g.successTitle||'실행 성공!')}</strong>${g.successText?`<span class="explanation">${escape(g.successText)}</span>`:''}`,{valid:true});
+        return;
+      }
+      const why=(r.firstWrongId&&g.wrongHints?.[r.firstWrongId])||g.defaultWhy||'블록 순서를 다시 살펴보자!';
+      show(`<strong>${escape(g.failTitle||'실행 결과가 이상해!')}</strong><span class="explanation">${escape(why)}</span>`,{valid:false,failWhy:why,failExpr:4});
+    };
+  };
+  renderers.arrange.sims=arrangeSims;
   renderers.terms=({root,$,show,hide})=>{
     root.innerHTML=`<div class="two-columns"><div class="board"><h3>같은 초대, 다른 표현</h3><div class="prediction"><button type="button" id="blocks" aria-pressed="true">블록 표현</button><button type="button" id="text" aria-pressed="false">텍스트 표현</button></div><pre class="block-code" id="language-code">시작하기 버튼을 눌렀을 때\n  “내일 축제 같이 다닐래?” 말하기</pre></div><div class="board"><h3>실행하면?</h3>${prediction(['같은 문장','다른 문장'])}${button('run','실행해 보기',true)}${result()}</div></div><div class="terms-grid"><div class="term-card"><strong>프로그래밍 언어</strong><p>컴퓨터가 할 일을 표현하는 약속</p></div><div class="term-card"><strong>프로그램</strong><p>할 일을 적어 놓은 명령의 모음</p></div><div class="term-card"><strong>프로그래밍</strong><p>생각하고 만들고 실행하며 고치는 과정</p></div></div>`;
     $('blocks').onclick=()=>{hide();$('blocks').setAttribute('aria-pressed','true');$('text').setAttribute('aria-pressed','false');$('language-code').textContent='시작하기 버튼을 눌렀을 때\n  “내일 축제 같이 다닐래?” 말하기';};

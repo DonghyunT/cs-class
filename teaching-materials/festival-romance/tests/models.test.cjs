@@ -166,3 +166,18 @@ test('seededOrder는 같은 seed에 같은 순열을 돌려준다', () => {
   // 정답이 늘 첫 칸에 있지 않도록: 지금 퀴즈 문항 중 하나 이상은 0번(정답)이 첫 칸이 아님
   assert.ok(['ch1-q1', 'ch1-q2', 'ch3-q4'].some((id) => m.seededOrder(id, 4)[0] !== 0));
 });
+
+test('evaluateArrange는 허용 순서·블록 표기를 채점하고 처음 어긋난 블록을 알려 준다', () => {
+  const goal = {
+    blocks: [{ id: 'ask' }, { id: 'set', choices: ['정하기', '더하기'] }, { id: 'say' }],
+    acceptOrders: [['ask', 'set', 'say'], ['set', 'ask', 'say']],
+    expectedChoices: { set: 1 },
+  };
+  assert.deepEqual(m.evaluateArrange(['ask', 'set', 'say'], goal, { set: 1 }), { correct: true, firstWrongId: null });
+  assert.deepEqual(m.evaluateArrange(['set', 'ask', 'say'], goal, { set: 1 }), { correct: true, firstWrongId: null }, '두 번째 허용 순서');
+  assert.deepEqual(m.evaluateArrange(['say', 'ask', 'set'], goal, { set: 1 }), { correct: false, firstWrongId: 'say' }, '첫 줄부터 틀림');
+  assert.deepEqual(m.evaluateArrange(['ask', 'say', 'set'], goal, { set: 1 }), { correct: false, firstWrongId: 'say' }, '둘째 줄이 틀림');
+  assert.deepEqual(m.evaluateArrange(['ask', 'set', 'say'], goal, { set: 0 }), { correct: false, firstWrongId: 'set' }, '순서는 맞고 표기가 틀림');
+  assert.deepEqual(m.evaluateArrange(['ask', 'set', 'say'], goal, {}), { correct: false, firstWrongId: 'set' }, '표기 기본값 0');
+  assert.deepEqual(m.evaluateArrange([], goal, {}), { correct: false, firstWrongId: null }, '빈 순서');
+});
