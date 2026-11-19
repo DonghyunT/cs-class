@@ -5,6 +5,7 @@ import { CONDITIONALS_LESSON } from "./conditionals-lesson";
 import { LOOPS_LESSON } from "./loops-lesson";
 import { FUNCTIONS_LESSON } from "./functions-lesson";
 import { BRICK_BREAKER_LESSON } from "./brick-breaker-lesson";
+import { HAMSTER_ROBOT_LESSON } from "./hamster-robot-lesson";
 import { REVIEW_LESSONS } from "./review/lessons";
 
 export const SAMPLE_LESSON: Lesson = {
@@ -228,9 +229,9 @@ export const ENTRY_BOT_LESSON: Lesson = {
   },
 };
 
-export const LESSONS: Lesson[] = [SAMPLE_LESSON, FLOWCHART_LESSON, ENTRY_BOT_LESSON, PROGRAMMING_LESSON, CONDITIONALS_LESSON, LOOPS_LESSON, FUNCTIONS_LESSON, BRICK_BREAKER_LESSON, ...REVIEW_LESSONS];
+export const LESSONS: Lesson[] = [SAMPLE_LESSON, FLOWCHART_LESSON, ENTRY_BOT_LESSON, PROGRAMMING_LESSON, CONDITIONALS_LESSON, LOOPS_LESSON, FUNCTIONS_LESSON, BRICK_BREAKER_LESSON, HAMSTER_ROBOT_LESSON, ...REVIEW_LESSONS];
 // Keep historical definitions readable; only completed lessons can be newly opened.
-export const RELEASED_LESSONS: Lesson[] = [PROGRAMMING_LESSON, CONDITIONALS_LESSON, LOOPS_LESSON, FUNCTIONS_LESSON, BRICK_BREAKER_LESSON, ...REVIEW_LESSONS];
+export const RELEASED_LESSONS: Lesson[] = [PROGRAMMING_LESSON, CONDITIONALS_LESSON, LOOPS_LESSON, FUNCTIONS_LESSON, BRICK_BREAKER_LESSON, HAMSTER_ROBOT_LESSON, ...REVIEW_LESSONS];
 
 export function findLesson(id: string) {
   return LESSONS.find((lesson) => lesson.id === id);

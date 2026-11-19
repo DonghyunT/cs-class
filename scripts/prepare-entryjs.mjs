@@ -49,7 +49,7 @@ await Promise.all(manifest.packages.map(async (asset) => {
     await mkdir(path.dirname(destination), { recursive: true });
     await cp(path.join(extracted, "package", file), destination, {
       recursive: true,
-      // Hardware and AI resources are outside this first practice.
+      // Connector-based hardware pictures are unused; images/hw_lite stays for the browser-connected robot lesson.
       filter: (source) => !/[/\\]images[/\\](?:hardware|hw)(?:[/\\]|$)/.test(source),
     });
   }

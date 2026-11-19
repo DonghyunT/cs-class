@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-11-16(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-11-19(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -162,7 +162,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
   ```
 - 수업 전용 컴포넌트·보조 파일·고정 파일(예: `functions`의 `function-concepts.tsx`·`function-editing.ts`, `tests/fixtures/entry-function-export.json`)도 `patterns`에 넣습니다. 빠뜨리면 그 파일만 바꿔도 미분류로 보아 `full`이 나옵니다.
 - [`tests/lesson-smoke.spec.ts`](../tests/lesson-smoke.spec.ts)의 `ALL_LESSON_IDS`에 수업 ID를 넣고, 같은 파일에 그 수업의 저장·새로고침 복원 검사 블록을 추가합니다.
-- `tests/lesson-ui-consistency.spec.ts`의 `lessons`에 새 수업을 넣어 공통 헤더·버튼 이름 검사를 받게 합니다.
+- `tests/lesson-ui-consistency.spec.ts`는 `RELEASED_LESSONS`를 읽으므로 수업을 따로 넣지 않습니다. 오답 문구 검사의 정답 표(`correct`)에만 새 수업의 개념·퀴즈 데이터를 더합니다.
 
 ### 2.3 학생 수업 수동 저장 아키텍처 및 코드 계약
 <a id="학생-수업-수동-저장-아키텍처-및-계약"></a>
@@ -256,6 +256,8 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 - **임의 지연 금지:** `waitForTimeout`이나 임의의 `sleep`으로 타이밍 문제를 회피하지 않습니다.
 - **기대 상태 대기:** 저장 배지의 `toHaveText()` 또는 `await expect(locator).toBeVisible()`처럼 자동 재시도하는 단언으로 준비 상태를 확인합니다. 필요한 경우 특정 요청의 응답을 기다린 뒤 화면 상태도 단언합니다. `networkidle`이나 클릭 직후 한 번의 `isVisible()` 조회를 준비 완료 기준으로 쓰지 않습니다. [Playwright 공식 권고](https://playwright.dev/docs/best-practices#use-web-first-assertions)를 따릅니다.
 - **수동 저장 이탈 검사:** Entry 작업실은 현재 작품을 비동기로 캡처한 뒤 이탈 확인창을 엽니다. 미저장 입력을 명시한 시나리오는 `expect(dialog).toBeVisible()` 후 나가기 선택과 서버 기록 보존을 확인합니다. 클릭 직후 `isVisible()` 한 번으로 확인창을 건너뛰지 않습니다.
+- **엔트리 작업실 대기:** 작업실이 켜지기를 기다리는 단언(첫 진입·새로고침·탭 복귀·다시 불러오기 뒤)에는 `{ timeout: 20000 }`을 줍니다. 화면이 불러오기 실패로 판정하는 시간과 같습니다. 로컬 `next dev`에서는 다시 켜지는 데만 3.7~5초가 걸려(11/10 측정) 기본 5초로는 PC가 조금 느려지면 실패합니다.
+- **새로 켠 서버의 첫 테스트:** 로컬 `next dev`는 화면을 처음 열 때 컴파일하느라 최대 약 20초가 더 걸립니다. 평소 25초를 넘는 테스트는 `test.slow()`로 기본 제한 45초를 늘립니다.
 - **원인 분석:** 실패 시 `test-results/` 폴더의 스크린샷과 Playwright 트레이스 zip을 열어 실제 렌더링 상태를 확인합니다.
 
 ---
@@ -281,7 +283,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 - **iframe 격리:** 작업실(`public/entryjs/workspace.html`)과 브리지(`workspace.js`)는 격리 iframe에서 구동되며 부모의 쿠키나 세션에 접근할 수 없습니다. 앱과 같은 주소면 `allow-scripts`만 허용하고, 다른 주소(작업실 도메인·CDN)일 때만 `allow-same-origin`을 더합니다([`entry-workspace-frame.ts`](../src/lib/classroom/entry-workspace-frame.ts)). 같은 주소에 둘을 함께 주면 iframe이 격리를 풀 수 있으므로 섞지 않습니다.
 - **CORS·포커스:** `next.config.ts`가 `/entryjs/` 응답에 `Access-Control-Allow-Origin: *`를 붙입니다. PreloadJS는 작업실과 같은 주소의 파일에 `X-Requested-With`를 붙여 격리 iframe에서 사전 요청(OPTIONS)을 만들고 CDN은 OPTIONS에 405로 답하므로, `workspace.js`가 `createjs.RequestUtils.isCrossDomain`을 늘 참으로 바꿔 효과음을 사전 요청 없이 GET으로 받습니다(빼면 `entry-cdn` 검사가 효과음 2개로 실패함). [`src/proxy.ts`](../src/proxy.ts)는 남은 사전 요청에만 204로 답하는 안전장치입니다. 프록시 matcher는 `access-control-request-method` 헤더가 있는 요청으로 한정해 일반 파일 요청마다 Vercel 함수가 실행(과금)되지 않게 하므로 넓히지 않습니다. `Entry.init` 전 이미지 생성에 `crossOrigin="anonymous"`를 적용하여 픽셀 클릭 판정을 보장합니다. 질문창 커서 깜빡임 방지를 위해 중복 `focus()` 호출을 제한합니다.
 - **수동 저장 연동:** 실행 중 전체 내보내기 대신 정지 상태의 코드만 반영하며, `useWork`를 통해 단일 불변 스냅샷으로 저장합니다.
-- **수업 팔레트와 블록 문장 변환:** 팔레트·이름표·미션별 허용 블록은 [`entry-palette.ts`](../src/lib/classroom/entry-palette.ts) 한 곳에 둡니다. 격리 iframe은 이 모듈을 가져올 수 없어 `workspace.js`의 `PROGRAMMING_PALETTE`에 복사본을 두며, `tests/entry-palette.test.ts`가 두 목록이 같은지 확인합니다. `EntryStatic.getAllBlocks`는 `Entry.init` 전에 바꿔야 반영됩니다. [`programming-entry.ts`](../src/lib/classroom/programming-entry.ts)의 `formatEntryNode`와 `entryBlockCategory`는 전체 106종 팔레트 블록(기존 12종 + 확장 94종)의 입력 슬롯(`params`), 드롭다운 라벨, 연산자 기호를 교사 열람용 한국어 문장과 8개 카테고리 색상으로 변환합니다.
+- **수업 팔레트와 블록 문장 변환:** 팔레트·이름표·미션별 허용 블록은 [`entry-palette.ts`](../src/lib/classroom/entry-palette.ts) 한 곳에 둡니다. 격리 iframe은 이 모듈을 가져올 수 없어 `workspace.js`의 `PROGRAMMING_PALETTE`에 복사본을 두며, `tests/entry-palette.test.ts`가 두 목록이 같은지 확인합니다. `EntryStatic.getAllBlocks`는 `Entry.init` 전에 바꿔야 반영됩니다. [`programming-entry.ts`](../src/lib/classroom/programming-entry.ts)의 `formatEntryNode`와 `entryBlockCategory`는 기본 106종 팔레트 블록(기존 12종 + 확장 94종)과 햄스터S 8종 블록의 입력 슬롯(`params`), 드롭다운 라벨, 연산자 기호를 교사 열람용 한국어 문장과 9개 카테고리 색상(기본 8종 + 하드웨어)으로 변환합니다.
 - **저장 파서와 기존 키:** `parseProgrammingProject`는 원래 12종 블록을 기존 분기 그대로 정제하고, 그 밖의 팔레트 블록만 일반 규칙(원래 `params`, 반복·조건 블록에만 `statements`)으로 보존합니다. 이 순서를 바꾸면 기존 작품의 `key`가 달라져 검증·제출 기록이 어긋납니다. `tests/fixtures/entry-legacy-keys.json`이 기존 키·정규화·채점 결과를 고정하며, 이 파일과 `entry-legacy-objects.json`을 다시 만들거나 고치는 변경은 `tests/`만 바꾸더라도 PR 경로로 합니다. 의도한 형식 변경이 아닌데 검사가 실패하면 고정 파일이 아니라 파서를 고칩니다.
 - **실행·이벤트 및 내부 패치 방어:**
   - **실행 버튼:** 프로그래밍 수업은 툴바 실행 버튼 없이 엔트리의 "시작하기/정지하기"를 씁니다(`entry-bot-lab`은 툴바 버튼 유지).
@@ -291,9 +293,15 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
   - **이름 실행 기록:** 강아지(`entity.parent.id === "entrybot"`)의 묻기·말하기만 남깁니다.
   - **테스트:** `tests/emulator.ts`의 `entryStart`·`entryStop`·`entryReset` 도우미를 씁니다.
 - **오브젝트 추가:** 프로그래밍 수업에서만 `objectEditable`·`objectaddable`·`objectdeletable`을 켭니다. `objectEditable`이 켜져 있어야 `objectaddable`이 동작합니다. 엔트리 추가 버튼의 `openSpriteManager`를 `add-object-request`로 전달하면 수업 화면이 `ENTRY_SPRITES` 대화상자를 열고, 고른 그림으로 만든 모델을 `add-object`로 보냅니다. `removeObject`는 불러오는 중이 아니면 `entrybot` 삭제를 막습니다. 엔트리는 새 오브젝트를 목록 맨 앞에 넣으므로 파서는 강아지를 `id`로 찾고, 추가 오브젝트의 그림은 목록 파일과 일치할 때만 받아 다시 조립합니다. 오브젝트가 강아지뿐이면 키·정규화는 이전과 같습니다.
-- **강아지 없는 작품(조건·반복·함수 수업):** `isFreeMission` 미션은 `workspace.html?...&free=1&locked=…`으로 열고 `pictureeditable`(모양 탭)을 켭니다. 그림판(`.entryPlaygroundPainter`)은 CSS로 숨기고 `openPictureManager`·`clonePicture`·`_removePicture`·`painter.newPicture`(‘새로 그리기’는 관리자 창을 거치지 않고 믿을 수 없는 빈 그림을 바로 더함)는 `picture-locked`로 막습니다. `LOCKED_OBJECTS`의 오브젝트와 마지막 오브젝트는 지울 수 없습니다. 파서는 `entrybot`이 없고 그림이 신뢰 목록에 있는 작품을 `free`(`mainIndex -1`)로 읽어 모든 오브젝트를 같은 방식으로 다시 조립합니다(최대 `MAX_FREE_OBJECTS` 12개). 채점과 `missionBlockIssue`는 시작 줄을 가진 한 오브젝트를 보고, 여러 오브젝트에 나뉘면 같은 문구로 화면 토스트와 검증 실패를 냅니다.
+- **강아지 없는 작품(조건·반복·함수·벽돌 깨기·햄스터S 수업):** `isFreeMission` 미션은 `workspace.html?...&free=1&locked=…`으로 열고 `pictureeditable`(모양 탭)을 켭니다. 그림판(`.entryPlaygroundPainter`)은 CSS로 숨기고 `openPictureManager`·`clonePicture`·`_removePicture`·`painter.newPicture`(‘새로 그리기’는 관리자 창을 거치지 않고 믿을 수 없는 빈 그림을 바로 더함)는 `picture-locked`로 막습니다. `LOCKED_OBJECTS`의 오브젝트와 마지막 오브젝트는 지울 수 없습니다. 파서는 `entrybot`이 없고 그림이 신뢰 목록에 있는 작품을 `free`(`mainIndex -1`)로 읽어 모든 오브젝트를 같은 방식으로 다시 조립합니다(최대 `MAX_FREE_OBJECTS` 12개). 채점과 `missionBlockIssue`는 시작 줄을 가진 한 오브젝트를 보고, 여러 오브젝트에 나뉘면 같은 문구로 화면 토스트와 검증 실패를 냅니다.
 - **엔트리 오브젝트 묶음:** 그림은 `public/entryjs/sprites/library/`, 목록은 `src/lib/classroom/entry-library.json`(`LIBRARY_SPRITES`)입니다. 바꾸려면 `scripts/entry-library-picks.json`(분류별 엔트리 오브젝트 id)을 고친 뒤 `node scripts/fetch-entry-library.mjs`를 돌려 커밋합니다. 스크립트는 엔트리 사이트의 오브젝트 목록을 읽어 모양 10장까지 내려받고 위험한 SVG를 버립니다. 앱은 실행 중 엔트리 사이트에 접속하지 않습니다. 출처 조건은 같은 폴더의 `NOTICE.md`에 있습니다.
 - **정규화·복제 제약:** 원래 12종 블록이 자기 분기 조건에 맞지 않으면 일반 규칙으로 넘기지 않고 거부합니다(교사 작품 보기 오류 방지). 파서는 정규화가 한 번에 수렴하도록 이름을 자른 뒤 다시 다듬고, 엔트리가 음수로 뒤집은 크기는 부호를 유지합니다. 서버는 받은 원문 대신 자체 정규화본을 저장하고 `MAX_PROJECT_BYTES`(32,768)를 클라이언트와 공유합니다. 파서 결과의 `key`(작품 전체)는 검증·제출 비교에 씁니다. `gradeKey`(채점 대상 코드만, 강아지 없는 작품은 모든 오브젝트 코드)는 이름 미션 실행 기록 비교가 없어진(#74) 뒤 앱에서 읽지 않습니다. 엔트리의 복제·붙여넣기(`addCloneObject`)는 강아지 복제를 막고, 오브젝트 수가 강아지 수업은 6개·강아지 없는 수업은 12개를 넘지 않게 합니다. ‘오브젝트 추가하기’ 직후에는 강아지 수업은 강아지를, 강아지 없는 수업은 새 오브젝트를 선택합니다. 채점 오류 중 인터프리터가 의도한 `MissionError`만 학생에게 보이고, 나머지는 미션의 채점 실패 문구(`failure`)로 대신합니다.
+- **햄스터S 수업:** `robot: true` 미션만 학생 작업실과 교사 실행 작업실을 `&robot=1`·iframe `allow="serial"`로 열어 엔트리의 웹 시리얼 연결(`HamsterSLite`, 모듈 `020E01`)을 켭니다. 다른 수업은 `allow`가 없어 포트를 쓸 수 없습니다.
+  - **팔레트:** `ROBOT_PALETTE`(`entry-palette.ts`, `workspace.js`에 복사본)의 첫 항목이 연결 버튼이고 나머지 8종이 로봇 블록입니다(센서 `손 찾음?` + 바퀴·LED·소리 7종). 포트 선택 창은 작업실 안 `햄스터S 연결하기` 클릭에서만 열립니다.
+  - **로드 순서:** 하드웨어 모드는 팔레트 블록을 잠시 x -99999에 두고 지연 정렬합니다. 그 사이에 끌면 블록이 보드 밖에 놓이므로 정렬을 기다린 뒤 `loaded`를 보냅니다.
+  - **채점:** `programming-grader.ts`가 해석기로 실행하지 않고 블록 구조와 순서를 봅니다(`robot-go`는 앞·뒤 이동 초 합계, `robot-signal`은 `robotLine`, `robot-sensor`는 `repeat_inf` 안 `checkSensorBody`).
+  - **실행 결과:** `workspace.js`는 로봇 미션의 `running`·`result` 메시지에 `robotConnected`를 함께 보냅니다. 학생 화면은 `false`일 때 실행 시작과 종료 모두 연결 안내를, 연결된 채 끝나거나(`finished`) `robot-sensor`를 수동 정지(`stopped`)했을 때 로봇 확인 안내를 보여 줍니다.
+  - **검사의 한계:** 실물 없이 자동 검사로 확인할 수 있는 것은 포트 권한(`getPorts`)까지이고, `requestPort`는 포트가 없어 `NotFoundError`로 끝납니다. 연결된 실행은 E2E가 그 `result` 메시지를 직접 보내 화면 문구만 확인하며, 실제 연결 상태 읽기(`Entry.hwLite.getStatus()`)는 실물로 확인해야 합니다.
 - **수업별 미션:** 미션 정의는 `programming-entry.ts`의 `PROGRAMMING_MISSIONS` 한 곳에 두고, 미션 ID는 수업이 달라도 겹치지 않게 짓습니다.
   - **필드:** `hint`는 화면의 한 줄 요약, `steps`는 접힌 번호 조립 순서, `tip`은 💡 한 줄(선택), `failure`는 채점 실패 문구(필수, 칩 없는 평문)입니다. `tests/fixtures/entry-legacy-keys.json`이 name·multiply·average·move·keys의 실패 문구를 고정하므로 이 다섯 `failure`는 바꾸지 않습니다.
   - **힌트 문구:** 블록 칩을 `` `블록종류: 보이는 글자` ``(예: `` `set_variable: A를 대답으로 정하기` ``)로 쓰고 화면은 `hintParts`, 평문 비교는 `hintPlain`으로 읽습니다(문구 기준은 [DESIGN §5.1](DESIGN.md#프로그래밍-13차시--경험-검토용-표현)).
@@ -407,7 +415,7 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 
 1. **수업 전:** 실제 학년도·명부·대상 반을 확인합니다. 이미 등록한 반은 다시 하지 않고, 아직 등록하지 않은 반만 명부 CSV·관리자 키가 있는 PC에서 위 변환·검증·계획·등록을 합니다. 교사의 `수업 관리`에서 해당 반의 공개 수업과 이번 수업을 확인합니다.
 2. **수업 직전:** 해당 반을 [명부 절차](#실학생-명부-준비와-반별-발급) 4단계 중 사용자가 정한 방법(`issue`, 교사 화면 학생별 초기화·일괄 발급, 또는 반 공통 `첫 입장 열기`)으로 입장시키고, 개별 임시값은 완료된 것만 학생별로 전달합니다. 학생은 최초 입장에서 본인 비밀번호를 정하고 배정된 반과 이번 수업 제목을 확인합니다. 만료·입장 실패는 교사가 계정 상태를 확인하며, 예전 공통 비밀번호(`CS_INITIAL_PASSWORD` 등)로 우회하지 않습니다.
-3. **수업 중:** 학생 한 명의 학교 브라우저에서 개념·퀴즈·실습 진입과 실제 엔트리 블록 입력·실행·정지를 확인합니다. 엔트리 수업은 기본 미션(기초 4개, 조건·반복·함수·벽돌 깨기 각 3개)과 선택 도전을 구분하고 `저장 완료`·검증 통과·제출 완료를 각각 확인합니다.
+3. **수업 중:** 학생 한 명의 학교 브라우저에서 개념·퀴즈·실습 진입과 실제 엔트리 블록 입력·실행·정지를 확인합니다. 엔트리 수업은 기본 미션(기초 4개, 조건·반복·함수·벽돌 깨기·햄스터S 각 3개)과 선택 도전을 구분하고 `저장 완료`·검증 통과·제출 완료를 각각 확인합니다.
 4. **저장 확인:** 저장 실패 때 입력이 남는지, 재시도 뒤 같은 작업을 이어가는지 확인합니다. 학교망·실제 입력기·로그아웃 후 재접속은 로컬 에뮬레이터 결과와 따로 기록합니다. 학생 비밀번호·작품 원문을 공개 화면이나 로그에 남기지 않습니다.
 5. **수업 종료 전:** 교사의 `학생 현황·계정`에서 진행과 제출을 확인합니다(제출 학생 수와 작품 수를 구분). 발견한 문제는 범위·환경과 함께 [HANDOFF](HANDOFF.md#남은-한계와-다음-결정)에 남깁니다.
 

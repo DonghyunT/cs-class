@@ -1,21 +1,18 @@
 import { expect, test, type Page } from "@playwright/test";
 import { db, headers, readyStudent } from "./emulator";
-import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { REVIEW_LESSONS } from "../src/lib/classroom/review/lessons";
 import { RELEASED_LESSONS } from "../src/lib/classroom/catalog";
-import { CONDITIONALS_LESSON } from "../src/lib/classroom/conditionals-lesson";
-import { LOOPS_LESSON } from "../src/lib/classroom/loops-lesson";
-import { FUNCTIONS_LESSON } from "../src/lib/classroom/functions-lesson";
-import { BRICK_BREAKER_LESSON } from "../src/lib/classroom/brick-breaker-lesson";
 import { emptyWork } from "../src/lib/classroom/progress";
 import { concepts, questions } from "../src/lib/classroom/programming-data";
 import { conditionalConcepts, conditionalQuestions } from "../src/lib/classroom/conditionals-data";
 import { loopConcepts, loopQuestions } from "../src/lib/classroom/loops-data";
 import { functionConcepts, functionQuestions } from "../src/lib/classroom/functions-data";
 import { brickBreakerQuestions } from "../src/lib/classroom/brick-breaker-data";
+import { hamsterConcepts, hamsterQuestions } from "../src/lib/classroom/hamster-robot-data";
 import { UNIT_QUIZ_DATA } from "../src/lib/server/review-quiz.mjs";
 import type { Work } from "../src/lib/classroom/types";
-const lessons = [PROGRAMMING_LESSON, CONDITIONALS_LESSON, LOOPS_LESSON, FUNCTIONS_LESSON, BRICK_BREAKER_LESSON, ...REVIEW_LESSONS];
+// Every lesson a class can open, so a new lesson is checked without being listed here.
+const lessons = RELEASED_LESSONS;
 // The game-only review has no stages or questions; review-festival.spec.ts checks its rail of the same header controls.
 const staged = (items: typeof lessons) => items.filter(lesson => lesson.concepts.length);
 let originalClass: FirebaseFirestore.DocumentData | undefined;
@@ -61,13 +58,13 @@ test("공통 수업 헤더·단계 폭과 완료 진도는 모든 수업에서 �
     await page.screenshot({ path: testInfo.outputPath(`lesson-${lesson.id}-1920.png`) });
   }
 });
-test("공개 7수업의 개념 확인·퀴즈 오답은 힌트와 다른 문구를 받고 화면에 '다시 생각해 보기'·같은 버튼 이름·바로 저장 안내로 보인다", async ({ page }) => {
+test("공개 수업의 개념 확인·퀴즈 오답은 힌트와 다른 문구를 받고 화면에 '다시 생각해 보기'·같은 버튼 이름·바로 저장 안내로 보인다", async ({ page }) => {
   test.setTimeout(120_000);
   await enter(page);
   await db.doc("csClasses/2-1").update({ openedLessonIds: RELEASED_LESSONS.map((lesson) => lesson.id) });
   const correct: Record<string, number> = {};
   concepts.forEach((c, i) => { correct[`pc${i}`] = c.correct; });
-  for (const item of [...questions, ...conditionalConcepts, ...conditionalQuestions, ...loopConcepts, ...loopQuestions, ...functionConcepts, ...functionQuestions, ...brickBreakerQuestions]) correct[item.id] = item.correct;
+  for (const item of [...questions, ...conditionalConcepts, ...conditionalQuestions, ...loopConcepts, ...loopQuestions, ...functionConcepts, ...functionQuestions, ...brickBreakerQuestions, ...hamsterConcepts, ...hamsterQuestions]) correct[item.id] = item.correct;
   for (const lesson of staged(RELEASED_LESSONS)) {
     const unit = Object.values(UNIT_QUIZ_DATA)[["review-abstraction", "review-sandwich", "review-flowchart"].indexOf(lesson.id)];
     const right = (id: string, kind: "concept" | "quiz") => unit ? kind === "concept" ? 0 : unit.questions.find((q) => String(q.id) === id)!.options.findIndex((o) => o.correct) : correct[id];
@@ -102,7 +99,7 @@ test("공개 7수업의 개념 확인·퀴즈 오답은 힌트와 다른 문구�
     const list = page.getByRole("navigation", { name: "개념 목록", exact: true });
     // Only lessons with a hands-on concept experience invite students to change things.
     if (lesson.id === "brick-breaker") await expect(list).toContainText("블록을 조립해 확인해 보세요");
-    else if (["conditionals", "loops"].includes(lesson.id)) { await expect(list).toContainText("예시를 읽고 결과를 예상한 뒤"); await expect(list).not.toContainText("직접 바꾸고"); }
+    else if (["conditionals", "loops", "hamster-robot"].includes(lesson.id)) { await expect(list).toContainText("예시를 읽고 결과를 예상한 뒤"); await expect(list).not.toContainText("직접 바꾸고"); }
     else await expect(list).toContainText("직접 바꾸고");
     await page.getByRole("tab", { name: /^퀴즈/ }).click();
     await expect(page.getByText("힌트 보기", { exact: true })).toBeVisible();

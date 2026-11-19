@@ -36,6 +36,8 @@ async function enter(page: Page, project?: string, waitForReady = true) {
 }
 
 test("실제 EntryJS 블록 조립·실행·저장·검증·제출·복원", async ({ page }, testInfo) => {
+  // About 35 seconds on a warm dev server; the first run also waits for the pages to compile.
+  test.slow();
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
@@ -92,7 +94,7 @@ test("실제 EntryJS 블록 조립·실행·저장·검증·제출·복원", asy
   await expect.poll(async () => parseEntryProject((await stored()).draft.entryProject)?.threads[0][1]).toEqual({ type: "move_direction", amount: 20 });
   expect((await stored()).submission).toEqual(submitted);
   await page.reload();
-  await expect(frame.locator("#entryWorkspaceBoard").getByText("20", { exact: true })).toBeVisible();
+  await expect(frame.locator("#entryWorkspaceBoard").getByText("20", { exact: true })).toBeVisible({ timeout: 20000 });
   await expect(page.getByRole("tab", { name: "실습 100%" })).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -116,7 +118,8 @@ test("EntryJS 저장 실패 복구 · 단계 이동 직전 입력 · 좁은 화�
   await page.getByRole("tab", { name: "개념 0%" }).click();
   await expect(page.getByRole("tab", { name: "개념 0%" })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("tab", { name: "실습 0%" }).click();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+  // Coming back to the tab boots EntryJS again.
+  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
   await expect(frame.locator("#entryWorkspaceBoard").getByText("20", { exact: true })).toBeVisible();
   await page.unroute(`**${endpoint}`);
   await page.getByRole("button", { name: "저장 다시 확인" }).click();
@@ -130,7 +133,8 @@ test("EntryJS 저장 실패 복구 · 단계 이동 직전 입력 · 좁은 화�
   const work: Work = await (await page.request.get(endpoint)).json();
   expect(parseEntryProject(work.draft.entryProject)?.threads[0][1]).toEqual({ type: "move_direction", amount: 30 });
   await page.getByRole("tab", { name: "실습 0%" }).click();
-  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled();
+  // Coming back to the tab boots EntryJS again.
+  await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
   await frame.locator("#entryWorkspaceBoard").getByText("30", { exact: true }).locator("..").click();
   await page.keyboard.press("Escape");
   await expect(page.locator("#entry-run")).toBeFocused();
@@ -153,7 +157,8 @@ test("EntryJS 파일 로딩 실패 뒤 다시 불러오기에서 저장본 유�
   const project = buildEntryProject(["when_run_button_click", "move_direction"]);
   await page.route("**/entryjs/vendor/entry/dist/entry.min.js", (route) => route.abort("failed"));
   await enter(page, project, false);
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("작업실을 불러오지 못했어요");
+  // The frame reports the failure only after its other scripts load. The page's own 20-second timer shows a different second sentence.
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("작업실을 불러오지 못했어요. 입력한 작품은", { timeout: 20000 });
   await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeDisabled();
   expect((await (await page.request.get(endpoint)).json()).draft.entryProject).toBe(project);
   await page.unroute("**/entryjs/vendor/entry/dist/entry.min.js");

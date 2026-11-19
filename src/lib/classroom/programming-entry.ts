@@ -1,12 +1,12 @@
 import { buildNameProject } from "./name-entry";
-import { CAT_SPRITE, CONTAINER_BLOCKS, ENTRYBOT_SPRITE, ENTRY_PALETTE, ENTRY_SPRITES, LIBRARY_SPRITES, MAX_ADDED_OBJECTS, MAX_FREE_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, TRUSTED_SPRITES, VALUE_BLOCKS, blockLabel, spritePictures } from "./entry-palette";
+import { CAT_SPRITE, CONTAINER_BLOCKS, ENTRYBOT_SPRITE, ENTRY_PALETTE, ENTRY_SPRITES, LIBRARY_SPRITES, MAX_ADDED_OBJECTS, MAX_FREE_OBJECTS, MISSION_BLOCKS, PALETTE_BLOCKS, ROBOT_PALETTE, TRUSTED_SPRITES, VALUE_BLOCKS, blockLabel, spritePictures } from "./entry-palette";
 
 // `variables` shows A·B on the stage; `keyEvents` keeps the run waiting for arrow keys.
 // `objects` missions grade every object's event code instead of only the dog's.
 // `hint` is the summary line, `steps` the folded assembly order and `tip` one 💡 reason. They write
 // block chips as `type: text` (the Entry block type and the filled-in block a student builds);
 // read them with `hintParts`/`hintPlain`. `failure` is the grader's plain failure message.
-export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; steps: readonly string[]; tip?: string; failure: string; experiment: string; optional?: true; variables?: true; keyEvents?: true; objects?: true; functions?: true };
+export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; steps: readonly string[]; tip?: string; failure: string; experiment: string; optional?: true; variables?: true; keyEvents?: true; objects?: true; functions?: true; robot?: true };
 
 // Every mission across lessons, keyed by an id no other lesson reuses. Grading and
 // saved records look missions up here; lessons list theirs in LESSON_MISSIONS.
@@ -33,6 +33,24 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
   { id: "paddle", title: "막대 움직이기", goal: "시작하기를 누르면 막대가 마우스의 x 좌표를 계속 따라가게 만들어요.", hint: "시작하기 아래 `repeat_inf: 계속 반복하기` 안에서 마우스 x로 이동해요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 아래에 `repeat_inf: 계속 반복하기`를 붙여요", "반복 안에 `locate_x: x: 10 위치로 이동하기`를 넣고 `coordinate_mouse: 마우스 x 좌푯값`을 넣어요"], tip: "x만 바꾸면 막대 높이는 그대로예요.", failure: "시작하기 아래 ‘계속 반복하기’ 안에서 ‘x: (마우스 x 좌푯값) 위치로 이동하기’를 실행해 막대가 마우스 x 좌푯값을 따라가게 해 주세요.", experiment: "시작하기를 누르고 무대 위에서 마우스를 좌우·위아래로 움직여 막대가 가로로만 따라오는지 확인해 보세요.", objects: true },
   { id: "ball", title: "통통 튀는 공 만들기", goal: "공을 클릭하면 움직이기 시작해 벽과 막대에서 튕기고, 아래쪽 벽에 닿으면 모든 코드를 멈추게 해요. 막대에서는 준비된 함수 ‘막대에서 튕기기’를 불러요.", hint: "공을 클릭하면 계속 움직이며 튕기고 아래쪽 벽에 닿으면 멈춰요.", steps: ["`when_object_click: 오브젝트를 클릭했을 때` 아래에 `repeat_inf: 계속 반복하기`를 붙여요", "반복 안에 `move_direction: 4만큼 움직이기`(10을 4로)와 `bounce_wall: 화면 끝에 닿으면 튕기기`를 넣어요", "반복 안 `_if: 만일 참(이)라면`에 `reach_something: 마우스포인터에 닿았는가?`(▾를 막대로)를 넣어요", "그 안에 ‘함수’ 꾸러미의 ‘막대에서 튕기기’를 넣어요", "반복 맨 아래 `_if: 만일 참(이)라면`에 `reach_something: 아래쪽 벽에 닿았는가?`, 안에 `stop_object: 모든 코드 멈추기`"], tip: "시작하기를 누른 뒤 공을 클릭해야 움직여요.", failure: "공의 ‘계속 반복하기’ 안에 이동·화면 끝 튕기기와 ‘막대에 닿았는가?’(▾를 막대로)일 때 ‘막대에서 튕기기’, ‘아래쪽 벽에 닿았는가?’일 때 ‘모든 코드 멈추기’를 모두 넣어 주세요.", experiment: "시작하기를 누르고 공을 클릭한 뒤 막대로 공을 받아 보세요. 일부러 놓쳐 아래쪽 벽에서 멈추는지도 확인해 보세요. 여유가 있으면 4를 5로 바꿔 더 빠르게 해 봐요.", objects: true, functions: true },
   { id: "brick", title: "벽돌 깨고 점수 올리기", goal: "벽돌1이 공에 닿으면 점수를 1 올리고 숨겨요. You win!의 승리 조건도 벽돌 수인 3으로 고쳐요.", hint: "공에 닿으면 점수를 올리고 숨겨요. You win!의 99는 3으로 고쳐요.", steps: ["벽돌1에 `when_run_button_click: 시작하기 버튼을 클릭했을 때`와 `repeat_inf: 계속 반복하기`를 붙여요", "반복 안 `_if: 만일 참(이)라면`에 `reach_something: 마우스포인터에 닿았는가?`(▾를 공으로)를 넣어요", "그 안에 `change_variable: A에 10만큼 더하기`(A▾를 점수로, 10을 1로)를 넣어요", "이어서 `hide: 모양 숨기기`를 넣어요", "오브젝트 목록에서 You win!을 눌러 `boolean_basic_operator: 점수 값 = 99`의 99를 3으로 고쳐요"], tip: "점수는 0에서 시작해요. 벽돌2를 눌러 완성된 코드를 보세요.", failure: "벽돌1이 공에 닿으면(▾를 공으로) 점수를 1 올리고 숨기는지, You win!의 99를 3으로 고쳐 승리 조건이 ‘점수 값 = 3’이고 ‘모든 코드 멈추기’로 끝나는지 확인해 보세요.", experiment: "시작하기를 누르고 공을 클릭해 벽돌 3개를 모두 깨면 You win!이 나타나며 멈추는지 확인해 보세요.", objects: true, functions: true },
+  { id: "robot-go", title: "앞으로 갔다가 돌아오기", goal: "시작하기 버튼을 누르면 햄스터S가 앞으로 갔다가, 같은 시간만큼 뒤로 돌아오게 해 주세요.", hint: "동글과 로봇 전원을 켠 뒤 ‘하드웨어’의 ‘햄스터S 연결하기’를 눌러요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 아래 ‘하드웨어’ 이동 블록", "`hamsterlite_move_forward_for_secs: 앞으로 1초 이동하기`", "`hamsterlite_move_backward_for_secs: 뒤로 1초 이동하기`"], tip: "같은 시간만큼 움직여야 처음 자리로 돌아와요.", failure: "시작하기 아래에 ‘앞으로’ 블록과 ‘뒤로’ 블록을 차례로 붙이고, 두 블록의 초를 같게 맞춰 주세요.", experiment: "초를 바꾸면 얼마나 멀리 갈까요? 바닥을 바꿔도 처음 자리로 돌아올까요?", robot: true },
+  { id: "robot-signal", title: "LED와 소리로 신호 보내기", goal: "LED를 켜고 앞으로 간 다음, 삐 소리를 내고 LED를 꺼서 출발과 도착을 알려 주세요.", hint: "‘하드웨어’ 꾸러미의 출력 블록 네 가지를 차례로 붙여요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 놓기", "그 아래 `hamsterlite_set_led_to: 양쪽 LED를 초록색으로 정하기`(왼쪽▾을 양쪽·초록색으로)", "`hamsterlite_move_forward_for_secs: 앞으로 1초 이동하기` → `hamsterlite_beep: 삐 소리내기`", "`hamsterlite_clear_led: 양쪽 LED 끄기`(왼쪽▾을 양쪽으로)"], tip: "LED와 소리는 로봇의 출력이에요.", failure: "시작하기 아래에 LED 켜기, 앞으로 이동, 삐 소리, LED 끄기 블록을 이 순서로 붙여 주세요. 앞으로 이동하는 초는 0보다 커야 해요.", experiment: "색이나 초를 바꾸면 어떤 신호처럼 보일까요?", robot: true },
+  {
+    id: "robot-sensor",
+    title: "손 감지 경보기 만들기",
+    goal: "근접 센서 앞에 손을 대면 LED를 켜고 삐 소리를 내고, 손을 떼면 LED를 끄는 경보기를 만들어 주세요.",
+    hint: "‘흐름’의 반복·만일과 ‘하드웨어’의 ‘손 찾음?’을 함께 써요.",
+    steps: [
+      "`when_run_button_click: 시작하기 버튼을 클릭했을 때` → `repeat_inf: 계속 반복하기`",
+      "반복 안에 `if_else: 만일 참(이)라면 아니면`, 조건에 `hamsterlite_hand_found: 손 찾음?`",
+      "위 칸 `hamsterlite_set_led_to: 양쪽 LED를 빨간색으로 정하기`(왼쪽▾을 양쪽으로)·`hamsterlite_beep: 삐 소리내기`",
+      "아래 칸 `hamsterlite_clear_led: 양쪽 LED 끄기`(왼쪽▾을 양쪽으로)",
+    ],
+    tip: "‘계속 반복하기’가 있어야 손을 댈 때마다 바로 알아채요.",
+    failure: "시작하기 아래 ‘계속 반복하기’ 안에 ‘만일 손 찾음?이라면 / 아니면’을 넣고, 위 칸에 LED 켜기·삐 소리, 아래 칸에 LED 끄기를 넣어 주세요.",
+    experiment: "실행한 뒤 햄스터S 앞에 손을 대었다 떼어 보세요. LED 색을 바꾸거나 한쪽만 켜면 어떻게 달라질까요?",
+    robot: true,
+  },
   { id: "brick-bounce", title: "도전 · 벽돌에서도 튕기는 공", goal: "공이 벽돌1·벽돌2·벽돌3에 닿았을 때도 방향을 회전해 통통 튕기며 깨게 만들어요.", hint: "공의 `repeat_inf: 계속 반복하기` 안에 벽돌에 닿을 때 회전을 더해요.", steps: ["공의 반복 안에 `_if: 만일 참(이)라면`과 `reach_something: 마우스포인터에 닿았는가?`(▾를 벽돌1로)", "그 안에 `direction_relative: 180° 회전하기`를 넣어 벽돌에서 튕기게 해요", "아래에 벽돌2·벽돌3에 닿았을 때 180° 회전하는 만일도 더해요"], tip: "90°나 180° 회전 모두 벽돌에서 튕길 수 있어요.", failure: "공이 벽돌1·벽돌2·벽돌3에 닿았을 때도 이동 방향을 회전해 튕기도록 공의 반복 안에 조건을 넣어 주세요.", experiment: "시작하기를 누르고 공을 클릭해 공이 벽돌1·벽돌2·벽돌3을 깰 때마다 방향을 바꿔 튕겨 나오는지 확인해 보세요.", optional: true, objects: true, functions: true },
 ];
 
@@ -51,9 +69,10 @@ const LESSON_MISSIONS: Readonly<Record<string, { active: readonly string[]; reti
   loops: { active: ["square", "polygon", "tree", "safe"] },
   functions: { active: ["cat-walk", "windows", "fix-shapes", "flower"] },
   "brick-breaker": { active: ["paddle", "ball", "brick", "brick-bounce"] },
+  "hamster-robot": { active: ["robot-go", "robot-signal", "robot-sensor"] },
 };
 // These lessons start without the dog: every object is equal and students pick from the Entry library.
-const FREE_MISSIONS: ReadonlySet<string> = new Set([...LESSON_MISSIONS.conditionals.active, ...LESSON_MISSIONS.conditionals.retired!, ...LESSON_MISSIONS.loops.active, ...LESSON_MISSIONS.functions.active, ...LESSON_MISSIONS["brick-breaker"].active]);
+const FREE_MISSIONS: ReadonlySet<string> = new Set([...LESSON_MISSIONS.conditionals.active, ...LESSON_MISSIONS.conditionals.retired!, ...LESSON_MISSIONS.loops.active, ...LESSON_MISSIONS.functions.active, ...LESSON_MISSIONS["brick-breaker"].active, ...LESSON_MISSIONS["hamster-robot"].active]);
 export const isFreeMission = (id: string) => FREE_MISSIONS.has(id);
 // Starter objects the mission needs; they cannot be deleted.
 const BRICK_OBJECTS = ["paddle", "ball", "brick1", "brick2", "brick3", "youwin"] as const;
@@ -344,9 +363,10 @@ export function programmingProjectMatches(a: unknown, b: unknown) {
   return !!current && !!saved && current.key === saved.key;
 }
 
-const BLOCK_CATEGORY: Readonly<Record<string, string>> = Object.fromEntries(
-  ENTRY_PALETTE.flatMap((group) => group.blocks.map((block) => [block, group.category])),
-);
+const BLOCK_CATEGORY: Readonly<Record<string, string>> = Object.fromEntries([
+  ...ENTRY_PALETTE.flatMap((group) => group.blocks.map((block) => [block, group.category])),
+  ...ROBOT_PALETTE.blocks.slice(1).map((block) => [block, ROBOT_PALETTE.category]),
+]);
 export const entryBlockCategory = (type: string): string => BLOCK_CATEGORY[type] ?? (VALUE_BLOCKS.has(type) ? "calc" : "flow");
 
 const DROPDOWN_LABELS: Readonly<Record<string, string>> = {
@@ -365,6 +385,9 @@ const DROPDOWN_LABELS: Readonly<Record<string, string>> = {
   number: "숫자", string: "문자", en: "영문", ko: "한글",
 };
 export const KEY_LABELS: Readonly<Record<string, string>> = { "37": "왼쪽", "38": "위쪽", "39": "오른쪽", "40": "아래쪽", "32": "스페이스", "13": "엔터" };
+// Hamster-S dropdowns are saved as these codes; the names are the ones Entry shows on the blocks.
+const ROBOT_SIDES: Readonly<Record<string, string>> = { LEFT: "왼쪽", RIGHT: "오른쪽", BOTH: "양쪽" };
+const LED_COLORS: Readonly<Record<string, string>> = { "4": "빨간색", "6": "노란색", "2": "초록색", "3": "하늘색", "1": "파란색", "5": "자주색", "7": "하얀색" };
 const COMPARE_LABELS: Readonly<Record<string, string>> = {
   EQUAL: "=", NOT_EQUAL: "≠", GREATER: ">", LESS: "<", SMALLER: "<", GREATER_OR_EQUAL: "≥", LESS_OR_EQUAL: "≤", SMALLER_OR_EQUAL: "≤",
 };
@@ -372,7 +395,7 @@ const REPORTER_BLOCKS: ReadonlySet<string> = new Set([
   ...VALUE_BLOCKS,
   ...ENTRY_PALETTE.find((g) => g.category === "judgement")!.blocks,
   ...ENTRY_PALETTE.find((g) => g.category === "calc")!.blocks.filter((b) => !["choose_project_timer_action", "set_visible_project_timer"].includes(b)),
-  "get_canvas_input_value", "get_variable",
+  "get_canvas_input_value", "get_variable", "hamsterlite_hand_found",
 ]);
 
 // Student variables are shown by the names in `names` (id → name, from `variableNames`); a deleted one as Entry shows it.
@@ -460,6 +483,11 @@ export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, 
     if (n.type === "hide_variable") return `${n.params[0] ? variableName(String(n.params[0]), names) : "변수"} 숨기기`;
     if (n.type === "choose_project_timer_action" || n.type === "set_visible_project_timer") return n.params[1] ? `초시계 ${val(n, 1)}` : blockLabel(n.type);
     if (n.type === "set_visible_answer") return n.params[0] ? `대답 ${val(n, 0)}` : blockLabel(n.type);
+    // The robot blocks with a dropdown: the rule below fills one blank only and would show the saved code.
+    const picked = (labels: Readonly<Record<string, string>>, index: number) => n.params && Object.hasOwn(labels, String(n.params[index])) ? labels[String(n.params[index])] : val(n, index);
+    if (n.type === "hamsterlite_turn_for_secs") return `${picked(ROBOT_SIDES, 0)}으로 ${val(n, 1)}초 돌기`;
+    if (n.type === "hamsterlite_set_led_to") return `${picked(ROBOT_SIDES, 0)} LED를 ${picked(LED_COLORS, 1)}으로 정하기`;
+    if (n.type === "hamsterlite_clear_led") return `${picked(ROBOT_SIDES, 0)} LED 끄기`;
     const label = blockLabel(n.type);
     return label.includes("( )") ? label.replace("( )", val(n, 0)) : label;
   };
