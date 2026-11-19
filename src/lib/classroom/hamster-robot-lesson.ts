@@ -6,7 +6,7 @@ const SHOWN: Record<string, number[]> = {
   hc0: [1, 0, 2], hc1: [2, 1, 0], hc2: [0, 2, 1], hc3: [1, 2, 0], hc4: [2, 0, 1],
   hq1: [2, 0, 1], hq2: [1, 2, 0], hq3: [0, 2, 1], hq4: [1, 0, 2], hq5: [2, 1, 0],
 };
-const options = (id: string, labels: readonly string[]) => SHOWN[id].map((i) => ({ id: String(i), label: labels[i] }));
+const options = (id: string, labels: readonly string[]) => (SHOWN[id] ?? labels.map((_, i) => i)).map((i) => ({ id: String(i), label: labels[i] }));
 
 export const HAMSTER_ROBOT_LESSON: Lesson = {
   id: "hamster-robot",

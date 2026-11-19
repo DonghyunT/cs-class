@@ -484,7 +484,7 @@ export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, 
     if (n.type === "choose_project_timer_action" || n.type === "set_visible_project_timer") return n.params[1] ? `초시계 ${val(n, 1)}` : blockLabel(n.type);
     if (n.type === "set_visible_answer") return n.params[0] ? `대답 ${val(n, 0)}` : blockLabel(n.type);
     // The robot blocks with a dropdown: the rule below fills one blank only and would show the saved code.
-    const picked = (labels: Readonly<Record<string, string>>, index: number) => Object.hasOwn(labels, String(n.params[index])) ? labels[String(n.params[index])] : val(n, index);
+    const picked = (labels: Readonly<Record<string, string>>, index: number) => n.params && Object.hasOwn(labels, String(n.params[index])) ? labels[String(n.params[index])] : val(n, index);
     if (n.type === "hamsterlite_turn_for_secs") return `${picked(ROBOT_SIDES, 0)}으로 ${val(n, 1)}초 돌기`;
     if (n.type === "hamsterlite_set_led_to") return `${picked(ROBOT_SIDES, 0)} LED를 ${picked(LED_COLORS, 1)}으로 정하기`;
     if (n.type === "hamsterlite_clear_led") return `${picked(ROBOT_SIDES, 0)} LED 끄기`;

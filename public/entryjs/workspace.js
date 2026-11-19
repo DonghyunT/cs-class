@@ -387,7 +387,7 @@ try {
         Entry.playground.blockMenu.reDraw.flush();
         // Hardware mode parks palette blocks at x -99999 until a delayed align; one dragged sooner lands off the board, so wait before opening the editor.
         if (robot) {
-          const palette = () => Entry.playground.blockMenu.code.getThreads().map((thread) => thread.getFirstBlock()).find((block) => block?.type === "when_run_button_click");
+          const palette = () => Entry.playground?.blockMenu?.code?.getThreads?.()?.map((thread) => thread?.getFirstBlock?.()).find((block) => block?.type === "when_run_button_click");
           for (let wait = 0; wait < 60 && palette()?.x < -9999; wait++) await new Promise((resolve) => setTimeout(resolve, 50));
           if (disposed) return;
         }

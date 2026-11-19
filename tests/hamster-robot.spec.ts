@@ -65,6 +65,8 @@ test("로봇 수업은 공개 목록에 있고 미션 세 개는 블록 순서�
   expect(sensor([[start, forever([ifElse(hand, [led], [off])])]]), "소리 없음").toBe(false);
   expect(sensor([[start, forever([ifElse(hand, [led, beep], [])])]]), "LED 끄기 없음").toBe(false);
   expect(sensor([[start, forever([ifElse(hand, [off], [led, beep])])]]), "참/거짓 뒤바뀜").toBe(false);
+  expect(sensor([[start, forever([_if(hand, [ifElse(hand, [led, beep], [off])])])]]), "바깥 조건에 막혀 손 뗄 때 끄지 못함").toBe(false);
+  expect(sensor([[start, forever([_if(hand, [led, beep]), off])]]), "LED 끄기가 조건 밖에 있어 깜빡임").toBe(false);
   expect(sensor([[forever([ifElse(hand, [led, beep], [off])])]]), "시작 블록 없음").toBe(false);
 });
 

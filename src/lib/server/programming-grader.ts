@@ -505,32 +505,36 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
       return found.every(Boolean) && check(found as EntryNode[]);
     });
   }
-  const seconds = (n: EntryNode) => { const value = (n.params[0] as EntryNode | null)?.params?.[0]; return entryNumeric(value) ? Number(value) : NaN; };
-  function hasType(nodes: readonly EntryNode[], type: string): boolean {
-    return nodes.some((n) => n.type === type || (n.statements ?? []).some((inner) => hasType(inner, type)));
-  }
-  function handCond(node: unknown): "found" | "away" | null {
+  const seconds = (n: EntryNode) => { const value = (n.params?.[0] as EntryNode | null)?.params?.[0]; return entryNumeric(value) ? Number(value) : NaN; };
+  function evalHand(node: unknown, hand: boolean): boolean | null {
     if (!node || typeof node !== "object") return null;
     const entry = node as EntryNode;
-    if (entry.type === "hamsterlite_hand_found") return "found";
-    if (entry.type === "boolean_not" && (entry.params[1] as EntryNode | undefined)?.type === "hamsterlite_hand_found") return "away";
+    if (entry.type === "hamsterlite_hand_found") return hand;
+    if (entry.type === "boolean_not") {
+      const inner = evalHand(entry.params?.[1], hand);
+      return inner === null ? null : !inner;
+    }
+    if (entry.type === "True" || entry.type === "False") return entry.type === "True";
     return null;
   }
+  // Simulate one repeat_inf pass for `hand = true` and `hand = false` so nested conditions cannot hide an unreachable branch.
+  type SensorTrace = { led: "on" | "off" | null; cleared: boolean; beeped: boolean };
+  function traceSensor(nodes: readonly EntryNode[], hand: boolean, state: SensorTrace = { led: null, cleared: false, beeped: false }): SensorTrace {
+    for (const n of nodes) {
+      if (n.type === "hamsterlite_set_led_to") state.led = "on";
+      else if (n.type === "hamsterlite_clear_led") { state.led = "off"; state.cleared = true; }
+      else if (n.type === "hamsterlite_beep") state.beeped = true;
+      else if (n.type === "_if" || n.type === "if_else") {
+        const cond = evalHand(n.params?.[0], hand);
+        if (cond === true) traceSensor(n.statements?.[0] ?? [], hand, state);
+        else if (cond === false && n.type === "if_else") traceSensor(n.statements?.[1] ?? [], hand, state);
+      }
+    }
+    return state;
+  }
   function checkSensorBody(body: readonly EntryNode[]): boolean {
-    const allNodes = (nodes: readonly EntryNode[]): EntryNode[] => nodes.flatMap((n) => [n, ...(n.statements ?? []).flatMap(allNodes)]);
-    const items = allNodes(body);
-    const hasIfElse = items.some((n) => {
-      if (n.type !== "if_else") return false;
-      const cond = handCond(n.params[0]);
-      if (!cond) return false;
-      const whenFound = cond === "found" ? (n.statements?.[0] ?? []) : (n.statements?.[1] ?? []);
-      const whenAway = cond === "found" ? (n.statements?.[1] ?? []) : (n.statements?.[0] ?? []);
-      return hasType(whenFound, "hamsterlite_set_led_to") && hasType(whenFound, "hamsterlite_beep") && hasType(whenAway, "hamsterlite_clear_led");
-    });
-    if (hasIfElse) return true;
-    const foundBranch = items.some((n) => n.type === "_if" && handCond(n.params[0]) === "found" && hasType(n.statements?.[0] ?? [], "hamsterlite_set_led_to") && hasType(n.statements?.[0] ?? [], "hamsterlite_beep"));
-    const awayBranch = items.some((n) => n.type === "_if" && handCond(n.params[0]) === "away" && hasType(n.statements?.[0] ?? [], "hamsterlite_clear_led"));
-    return foundBranch && awayBranch;
+    const found = traceSensor(body, true), away = traceSensor(body, false);
+    return found.led === "on" && found.beeped && !found.cleared && away.led === "off" && !away.beeped;
   }
   function grade(): boolean {
     if (id === "robot-go") return p!.added.flatMap((o) => o.threads).some((line) => {
@@ -544,7 +548,11 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     });
     // Zero seconds does not move and Entry drives backward on a negative number, so ‘앞으로’ needs a positive time.
     if (id === "robot-signal") return robotLine(["hamsterlite_set_led_to", "hamsterlite_move_forward_for_secs", "hamsterlite_beep", "hamsterlite_clear_led"], ([, ahead]) => seconds(ahead) > 0);
-    if (id === "robot-sensor") return p!.added.flatMap((o) => o.threads).some((t) => t[0]?.type === "when_run_button_click" && t.some((n) => n.type === "repeat_inf" && checkSensorBody(n.statements?.[0] ?? [])));
+    if (id === "robot-sensor") return p!.added.flatMap((o) => o.threads).some((t) => {
+      if (t[0]?.type !== "when_run_button_click") return false;
+      const loop = t.find((n) => n.type === "repeat_inf");
+      return !!loop && checkSensorBody(loop.statements?.[0] ?? []);
+    });
     if (id === "name") return ["초코", "보리"].every((value) => { const r = run("click", [value]); return r.asks === 1 && r.sayings.some((s) => s.input && s.text.includes(value)); });
     // The change challenge subtracts the price from the money paid and says it with ‘원’ in one line.
     if (id === "multiply" || id === "average" || id === "change") return (id === "change" ? [[5000, 3200], [10000, 7500], [1000, 1000], [3000, 450]] : [[6, 4], [3, 7], [-2, 5], [0, 9]]).every(([a, b]) => {
