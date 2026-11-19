@@ -182,17 +182,18 @@ test("selectE2E elevates to full if unmapped or shared code is modified", () => 
 });
 
 test("selectE2E maps concept pictures, Entry specs and logic-only tests", () => {
-  assert.deepEqual(matchLessons("src/components/student/concept-visual.module.css"), ["conditionals", "loops", "functions", "brick-breaker"]);
+  assert.deepEqual(matchLessons("src/components/student/concept-visual.module.css"), ["conditionals", "loops", "functions", "brick-breaker", "hamster-robot"]);
   assert.deepEqual(matchLessons("public/concepts/loops-repeat-triangle.png"), ["loops"]);
   assert.deepEqual(matchLessons("public/concepts/conditionals-nested-if.png"), ["conditionals"]);
+  assert.deepEqual(matchLessons("public/concepts/hamster-robot-input.png"), ["hamster-robot"]);
   assert.deepEqual(matchLessons("public/concepts/other.png"), []);
   assert.deepEqual(matchLessons("tests/ui-workspace-refinement.spec.ts"), ["programming-13"]);
   assert.deepEqual(matchLessons("tests/programming-name-mission.spec.ts"), ["programming-13"]);
 
   const picture = selectE2E(["src/components/student/concept-visual.tsx", "public/concepts/loops-repeat-until.png", "tests/lesson-feedback.test.ts"]);
   assert.equal(picture.mode, "affected");
-  assert.deepEqual(picture.lessonIds, ["brick-breaker", "conditionals", "functions", "loops"]);
-  assert.deepEqual(picture.testFiles, ["tests/brick-breaker.spec.ts", "tests/conditionals.spec.ts", "tests/functions.spec.ts", "tests/loops.spec.ts", "tests/teacher-lesson-preview.spec.ts"]);
+  assert.deepEqual(picture.lessonIds, ["brick-breaker", "conditionals", "functions", "hamster-robot", "loops"]);
+  assert.deepEqual(picture.testFiles, ["tests/brick-breaker.spec.ts", "tests/conditionals.spec.ts", "tests/functions.spec.ts", "tests/hamster-robot.spec.ts", "tests/loops.spec.ts", "tests/teacher-lesson-preview.spec.ts"]);
   assert.deepEqual(matchLessons("src/lib/classroom/brick-breaker-data.ts"), ["brick-breaker"]);
   assert.deepEqual(matchLessons("src/lib/classroom/brick-breaker-lesson.ts"), ["brick-breaker"]);
   assert.deepEqual(matchLessons("tests/brick-breaker.spec.ts"), ["brick-breaker"]);

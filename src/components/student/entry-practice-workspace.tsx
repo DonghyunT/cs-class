@@ -150,16 +150,16 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         if (message.running) {
           startOnly.current = program?.order.length === 1 && program.order[0] === "when_run_button_click";
           // Arrow-key missions never finish on their own, so the waiting notice shows from the start.
-          setResult(!mission ? "엔트리봇이 실행 중이에요." : program?.order.some((type) => type === "ask_and_wait") ? "실행 중이에요. 질문에는 무대 안의 입력칸으로 답해 주세요." : mission.keyEvents ? `실행 중이에요.${WAITING}` : "실행 중이에요.");
+          setResult(!mission ? "엔트리봇이 실행 중이에요." : mission.robot && message.robotConnected === false ? "실행 중이에요. 로봇이 연결되지 않았어요. ‘하드웨어’ 꾸러미의 ‘햄스터S 연결하기’를 먼저 눌러 주세요." : program?.order.some((type) => type === "ask_and_wait") ? "실행 중이에요. 질문에는 무대 안의 입력칸으로 답해 주세요." : mission.keyEvents ? `실행 중이에요.${WAITING}` : "실행 중이에요.");
         }
       } else if (message.type === "result" && typeof message.x === "number" && Number.isFinite(message.x) && typeof message.y === "number" && Number.isFinite(message.y) && typeof message.speech === "string") {
         const finish = message.reason === "timeout" ? "15초가 지나 실행을 멈췄어요." : message.reason === "reset" ? "무대를 처음 위치로 돌렸어요." : message.reason === "finished" ? "실행을 마쳤어요." : "실행을 멈췄어요.";
         if (message.reason === "finished" && startOnly.current) {
-          const nextBlock = mission?.id === "name" ? "질문 블록" : mission?.variables ? "두 수를 묻고 변수에 대답을 저장하는 블록" : asksQuestion ? "질문 블록과 ‘만일’ 블록" : "이동 블록";
+          const nextBlock = mission?.id === "name" ? "질문 블록" : mission?.variables ? "두 수를 묻고 변수에 대답을 저장하는 블록" : asksQuestion ? "질문 블록과 ‘만일’ 블록" : mission?.id === "robot-sensor" ? "‘계속 반복하기’와 ‘만일’ 블록" : "이동 블록";
           setResult(`시작 신호가 준비됐어요. 시작하기 아래에 ${nextBlock}을 연결해 보세요.`);
-        // Robot: a run without a connection finishes just the same, so say why the robot stayed still; only a finished run asks to watch it.
+        // Robot: a run without a connection finishes just the same, so say why the robot stayed still; only a finished run (or manual stop of the infinite sensor loop) asks to watch it.
         // An older workspace.js sends no robotConnected and keeps the plain message.
-        } else if (mission?.robot) setResult(message.reason === "reset" ? finish : message.robotConnected === false ? `${finish} 로봇이 연결되지 않았어요. ‘하드웨어’ 꾸러미의 ‘햄스터S 연결하기’를 먼저 눌러 주세요.` : message.reason === "finished" ? `${finish} 로봇이 코드대로 움직였는지 확인해 보세요.` : finish);
+        } else if (mission?.robot) setResult(message.reason === "reset" ? finish : message.robotConnected === false ? `${finish} 로봇이 연결되지 않았어요. ‘하드웨어’ 꾸러미의 ‘햄스터S 연결하기’를 먼저 눌러 주세요.` : message.reason === "finished" || (mission.id === "robot-sensor" && message.reason === "stopped") ? `${finish} 로봇이 코드대로 움직였는지 확인해 보세요.` : finish);
         else if (asksQuestion) setResult(`${finish} 마지막 말: ${message.speech.slice(0, 80) || "아직 없음"}`);
         else setResult(`${finish} 현재 위치 X ${Math.round(message.x * 100) / 100} · Y ${Math.round(message.y * 100) / 100}${message.speech ? ` · 마지막 말: ${message.speech.slice(0, 80)}` : ""}`);
       } else if (message.type === "error") { window.clearTimeout(bootTimer.current); setPhase("failed"); setError("작업실을 불러오지 못했어요. 입력한 작품은 이 화면에 유지하고 있어요."); }
@@ -267,7 +267,7 @@ export function EntryPracticeWorkspace({ lesson, work, draft, locked, busy, acti
         <span><strong>검증</strong>{validation ? validation.passed ? "검증 통과" : "조건 보완 필요" : work.validation ? "다시 검증 필요" : "검증 전"}</span>
         <span><strong>{mode === "preview" ? "체험 제출" : "제출"}</strong>{submitted ? mode === "preview" ? "현재 작품 체험 제출 확인" : "현재 작품 제출 완료" : work.submission ? mode === "preview" ? "이전 체험 제출 유지 · 수정 중" : "이전 제출 유지 · 수정 중" : mode === "preview" ? "체험 제출 전" : "아직 제출 전"}</span>
       </div>
-      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} {free ? "무대 아래 ‘시작하기’로 실행해요. ‘오브젝트 추가하기’로 엔트리 오브젝트와 배경을 더하고, 고른 오브젝트에 코드를 만들어요. 시작하기 코드는 한 오브젝트에만 두면 그 오브젝트의 코드로 검증해요. ‘모양’ 탭에서 오브젝트의 모양을 볼 수 있어요." : mission ? "무대 아래 ‘시작하기’로 실행하고, ‘오브젝트 추가하기’로 공·별 같은 오브젝트를 더할 수 있어요. 검증은 강아지의 코드로만 해요." : ""} {mission?.robot ? "로봇 연결은 PC의 Chrome·Edge·웨일에서 할 수 있어요. 연결이 안 되면 동글과 로봇 전원을 확인하고 ‘햄스터S 연결하기’를 다시 눌러 주세요." : ""} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 {mission ? "무대 초기화" : "실행"} 버튼으로 돌아와요.</p></details>
+      <details className={styles.help}><summary>작업실 사용 안내</summary><p id="entry-help">{mission ? "왼쪽 팔레트에서 필요한 블록을 끌어 연결하고, 질문과 숫자를 바꿔 보세요." : "시작·움직임·생김새에서 블록을 끌어 연결하고 숫자와 말을 바꿔 보세요."} {mission?.robot ? "무대 아래 ‘시작하기’로 실행하고, 계속 반복하는 코드는 ‘정지하기’로 멈춰요. 로봇 연결은 PC의 Chrome·Edge·웨일에서 할 수 있고, 연결이 안 되면 동글과 로봇 전원을 확인하고 ‘햄스터S 연결하기’를 다시 눌러 주세요." : free ? "무대 아래 ‘시작하기’로 실행해요. ‘오브젝트 추가하기’로 엔트리 오브젝트와 배경을 더하고, 고른 오브젝트에 코드를 만들어요. 시작하기 코드는 한 오브젝트에만 두면 그 오브젝트의 코드로 검증해요. ‘모양’ 탭에서 오브젝트의 모양을 볼 수 있어요." : mission ? "무대 아래 ‘시작하기’로 실행하고, ‘오브젝트 추가하기’로 공·별 같은 오브젝트를 더할 수 있어요. 검증은 강아지의 코드로만 해요." : ""} 좁은 화면에서는 작업실을 가로로 움직일 수 있어요. Esc를 누르면 {mission ? "무대 초기화" : "실행"} 버튼으로 돌아와요.</p></details>
       {free && <Dialog open={picking} onOpenChange={setPicking}><DialogContent className={styles.libraryDialog}><DialogHeader><DialogTitle>오브젝트 추가하기</DialogTitle><DialogDescription>분류를 고르거나 이름으로 찾아요. 오브젝트는 {MAX_FREE_OBJECTS}개까지 둘 수 있어요.</DialogDescription></DialogHeader>
         <EntryLibraryPicker onPick={(sprite) => {
           const added = newAddedObject(sprite.id, objectCount(editorProject.current ?? draft.entryProject), true);

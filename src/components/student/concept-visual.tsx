@@ -30,6 +30,20 @@ const box = { fill: "#fff", stroke: "#376fc8", strokeWidth: 2 };
 const flowHead = <marker id="cv-flow" viewBox="0 0 10 10" refX="10" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#526173" /></marker>;
 const flow = { stroke: "#526173", strokeWidth: 2, fill: "none", markerEnd: "url(#cv-flow)" };
 
+const RobotArt = ({ src, width, height }: { src: string; width: number; height: number }) =>
+  // eslint-disable-next-line @next/next/no-img-element -- bundled static illustration
+  <img className={styles.robotArt} src={`/concepts/${src}.png`} alt="" width={width} height={height} />;
+
+const IPO_STEPS = [
+  { id: "input", label: "입력 · 센서" },
+  { id: "process", label: "처리 · 코드" },
+  { id: "output", label: "출력 · 동작" },
+] as const;
+
+function IpoBar({ active }: { active: "input" | "process" | "output" }) {
+  return <div className={styles.ipoBar}>{IPO_STEPS.map((step, i) => <span key={step.id} className={styles.ipoRow}>{i > 0 && <Op>→</Op>}<span className={styles.ipoStep} data-active={active === step.id || undefined}>{step.label}{active === step.id && <small> · 지금 단계</small>}</span></span>)}</div>;
+}
+
 function Tree({ stage, clicks }: { stage: number; clicks: string }) {
   const crown = [5, 9][stage], trunk = [8, 14][stage];
   return <div className={styles.tree}><svg viewBox="0 0 70 80" width="70" height="80"><rect x="31" y={72 - trunk} width="8" height={trunk} rx="2" fill="#8a6a4a" /><circle cx="35" cy={72 - trunk - crown + 4} r={crown} fill="#4fae7b" /><ellipse cx="35" cy="73" rx="22" ry="5" fill="#d9c3a4" /></svg><small>{clicks}</small></div>;
@@ -68,6 +82,11 @@ export const CONCEPT_VISUALS: Record<string, { label: string; node: ReactNode; i
   bc1: { interactive: true, label: "무대 위에서 마우스를 움직이면 막대가 x만 따라가고 y는 그대로인 것을 보는 체험", node: <BrickConceptPlay id="bc1" /> },
   bc2: { interactive: true, label: "공을 벽에 갖다 대면 아래쪽 벽에서만 참이 되는 것을 보는 체험", node: <BrickConceptPlay id="bc2" /> },
   bc3: { interactive: true, label: "벽돌을 누르면 점수가 오르고 벽돌이 숨으며, 모두 깨면 You win!이 나타나는 체험", node: <BrickConceptPlay id="bc3" /> },
+  hc0: { label: "입력·처리·출력 중 입력 단계: 햄스터S가 근접 센서로 다가오는 손을 감지하고, 바닥·밝기 센서로 주변 정보를 받아들임", node: <div className={styles.robotVisual}><IpoBar active="input" /><div className={styles.robotMain}><RobotArt src="hamster-robot-input" width={560} height={418} /><div className={styles.robotTags}><div className={styles.robotTag}><strong>근접 센서</strong><span>손·벽 감지</span></div><div className={styles.robotTag}><strong>바닥 센서</strong><span>검은 선 감지</span></div><div className={styles.robotTag}><strong>밝기 센서</strong><span>빛의 세기</span></div></div></div></div> },
+  hc1: { label: "입력·처리·출력 중 처리 단계: 컴퓨터의 엔트리 코드가 손 찾음? 조건을 판단해 참이면 경고 신호, 거짓이면 대기로 명령을 정함", node: <div className={styles.robotVisual}><IpoBar active="process" /><div className={styles.robotMain}><RobotArt src="hamster-robot-process" width={560} height={418} /><div className={styles.robotTags}><div className={styles.robotTag} data-tone="blue"><strong>조건 판단</strong><span>만일 손 찾음?이라면</span></div><div className={styles.robotTag} data-tone="true"><strong>참</strong><span>경고 신호</span></div><div className={styles.robotTag} data-tone="false"><strong>거짓</strong><span>대기</span></div></div></div></div> },
+  hc2: { label: "입력·처리·출력 중 출력 단계: 햄스터S가 양쪽 바퀴로 이동하고 양쪽 LED 빛과 부저 삐 소리로 결과를 바깥에 나타냄", node: <div className={styles.robotVisual}><IpoBar active="output" /><div className={styles.robotMain}><RobotArt src="hamster-robot-output" width={560} height={560} /><div className={styles.robotTags}><div className={styles.robotTag}><strong>양쪽 바퀴</strong><span>이동·회전</span></div><div className={styles.robotTag}><strong>양쪽 LED</strong><span>색깔 빛</span></div><div className={styles.robotTag}><strong>부저</strong><span>삐 소리</span></div></div></div></div> },
+  hc3: { label: "컴퓨터에 USB 동글을 꽂고 햄스터S 전원을 켠 뒤 작업실의 햄스터S 연결하기 버튼으로 무선 연결하는 순서", node: <div className={styles.robotVisual}><div className={styles.robotMain}><RobotArt src="hamster-robot-connect" width={560} height={313} /><div className={styles.robotTags}><div className={styles.robotTag}><strong>1. USB 동글 꽂기</strong><span>컴퓨터 포트 연결</span></div><div className={styles.robotTag}><strong>2. 로봇 전원 켜기</strong><span>스위치 확인</span></div><div className={styles.robotTag} data-tone="blue"><strong>3. 햄스터S 연결하기</strong><span>하드웨어 꾸러미</span></div></div></div></div> },
+  hc4: { label: "0초부터 1초까지 앞으로 1초 이동하기를 끝낸 뒤에야 다음 블록인 삐 소리내기가 실행되는 시간 순서", node: <div className={styles.timeline}><div className={styles.timelineStep} data-tone="blue"><small>0초 ~ 1초</small><strong>앞으로 1초 이동하기</strong><span>움직이는 동안 기다려요</span></div><Op>→</Op><div className={styles.timelineStep} data-tone="teal"><small>1초 끝난 뒤</small><strong>삐 소리내기</strong><span>그다음 실행해요</span></div></div> },
 };
 
 export function ConceptVisual({ conceptId }: { conceptId: string }) {

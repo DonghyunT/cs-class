@@ -24,7 +24,7 @@ const DRAWING = " 그린 결과를 다 봤으면 무대 아래 ‘정지하기�
 const RESULT = " 결과를 다 봤으면 무대 아래 ‘정지하기’를 눌러 주세요. 정지하면 무대가 처음 상태로 돌아가요.";
 const withoutWaiting = (text: string) => [WAITING, DRAWING, RESULT].reduce((rest, notice) => rest.endsWith(notice) ? rest.slice(0, -notice.length) : rest, text);
 
-type EntryCategory = (typeof ENTRY_PALETTE)[number]["category"];
+type EntryCategory = (typeof ENTRY_PALETTE)[number]["category"] | "arduino";
 
 const CATEGORY_LABELS: Record<EntryCategory, string> = {
   start: "시작",
@@ -35,6 +35,7 @@ const CATEGORY_LABELS: Record<EntryCategory, string> = {
   judgement: "판단",
   calc: "계산",
   variable: "자료",
+  arduino: "하드웨어",
 };
 
 function BlockTree({ nodes, names, functionNames }: { nodes: EntryNode[]; names: Readonly<Record<string, string>>; functionNames: Readonly<Record<string, string>> }) {

@@ -73,6 +73,31 @@
 .nest .inner { display: grid; gap: 8px; padding: 10px; border-radius: 10px; background: rgba(255, 255, 255, .92); color: #0c5a85; }
 .tree { display: grid; justify-items: center; gap: 2px; }
 .tree small { font-size: 14px; font-weight: 700; color: #1d6b5a; }
+.robotVisual { display: grid; gap: 14px; width: 100%; min-width: 0; justify-items: center; }
+.ipoBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+.ipoRow { display: inline-flex; align-items: center; gap: 8px; }
+.ipoStep { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border: 1px solid #cbd8ec; border-radius: 999px; background: #fff; color: #334155; font-size: 14px; font-weight: 650; }
+.ipoStep small { font-size: 14px; font-weight: 700; color: #1e40af; }
+.ipoStep[data-active="true"] { border: 2px solid #2563eb; background: #e8f0ff; color: #1e3a8a; font-weight: 750; }
+.robotMain { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; width: 100%; min-width: 0; }
+.robotArt { max-width: 100%; height: auto; width: 280px; aspect-ratio: 4 / 3; object-fit: contain; border-radius: 12px; border: 1px solid #dce5f2; background: #f4f8ff; }
+.robotTags { display: grid; gap: 8px; flex: 1 1 200px; max-width: 280px; min-width: 0; }
+.robotTag { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; padding: 10px 14px; border: 1px solid #dce5f2; border-radius: 12px; background: #fff; text-align: left; }
+.robotTag strong { font-size: 15px; font-weight: 700; color: #1e3a8a; }
+.robotTag span { font-size: 14px; font-weight: 500; color: #475569; }
+.robotTag[data-tone="blue"] { border-color: #93c5fd; background: #eff6ff; }
+.robotTag[data-tone="true"] { border-color: #9fd3c3; background: #e4f4ee; }
+.robotTag[data-tone="true"] strong { color: #1d6b5a; }
+.robotTag[data-tone="false"] { border-color: #efb3b3; background: #fdecec; }
+.robotTag[data-tone="false"] strong { color: #a03a3a; }
+.timeline { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 16px; width: 100%; min-width: 0; }
+.timelineStep { display: grid; gap: 4px; flex: 1 1 190px; max-width: 250px; min-width: 0; padding: 14px 16px; border: 2px solid #c4d5f2; border-radius: 14px; background: #fff; text-align: left; }
+.timelineStep[data-tone="teal"] { border-color: #8fd3c7; background: #f0fdfa; }
+.timelineStep small { font-size: 14px; font-weight: 700; color: #1e40af; }
+.timelineStep[data-tone="teal"] small { color: #115e59; }
+.timelineStep strong { font-size: 16px; font-weight: 750; color: #17202e; }
+.timelineStep span { font-size: 14px; color: #475569; }
+@container (max-width: 520px) { .timeline { flex-direction: column; } .timeline .op { font-size: 0; } .timeline .op::after { content: "↓"; font-size: 22px; } .timelineStep, .robotTags { width: 100%; max-width: 100%; } }
 /* lc1 needs about 466px in one row (314 + 18 + 20 + 18 + 96); narrower, stack it as capture, ↓, triangle. */
 @container (max-width: 479px) { .capture + .op { flex-basis: 100%; font-size: 0; text-align: center; } .capture + .op::after { content: "↓"; font-size: 22px; } }
 @media (max-width: 600px) { .visual { padding: 16px 12px; } .card { min-width: 0; flex: 1 1 130px; } }

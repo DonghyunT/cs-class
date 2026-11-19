@@ -191,6 +191,8 @@
 .entryBlockPill[data-category="calc"] .entryBlockBadge { background: #fef3c7; color: #78350f; }
 .entryBlockPill[data-category="variable"] { border-left-color: #c026d3; background: #fdf4ff; }
 .entryBlockPill[data-category="variable"] .entryBlockBadge { background: #fae8ff; color: #701a75; }
+.entryBlockPill[data-category="arduino"] { border-left-color: #0d9488; background: #f0fdfa; }
+.entryBlockPill[data-category="arduino"] .entryBlockBadge { background: #ccfbf1; color: #115e59; }
 .entryBranches { display: grid; gap: 6px; margin-left: 10px; padding-left: 10px; border-left: 3px solid #93c5fd; min-width: 0; }
 .entryBranch { min-width: 0; }
 .entryElseDivider { font-size: 12px; font-weight: 700; color: #0c4a6e; padding: 2px 6px; border-radius: 6px; background: #e0f2fe; width: fit-content; }

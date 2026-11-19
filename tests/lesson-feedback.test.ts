@@ -33,7 +33,7 @@ test("공개 수업의 개념 확인·퀴즈 선택지 수와 정답 번호는 �
     ["loops", [["lc0", 3, 0], ["lc1", 3, 0], ["lc2", 3, 0], ["lc3", 3, 0], ["lc4", 3, 0]], [["distance", 3, 0], ["pentagon", 3, 0], ["counter", 3, 0], ["until", 3, 0], ["nested", 3, 0]]],
     ["functions", [["fc0", 3, 0], ["fc1", 3, 0], ["fc2", 3, 0], ["fc3", 3, 0], ["fc4", 3, 0]], [["calls", 3, 0], ["repeat-call", 3, 0], ["edit-definition", 3, 0], ["reset-bug", 3, 0], ["missing-call", 3, 0]]],
     ["brick-breaker", [["bc0", 0, 0], ["bc1", 0, 0], ["bc2", 0, 0], ["bc3", 0, 0]], [["bq1", 3, 0], ["bq2", 3, 0], ["bq3", 3, 0], ["bq4", 3, 0], ["bq5", 3, 0]]],
-    ["hamster-robot", [["hc0", 3, 0], ["hc1", 3, 0], ["hc2", 3, 0]], [["hq1", 3, 0], ["hq2", 3, 0], ["hq3", 3, 0]]],
+    ["hamster-robot", [["hc0", 3, 0], ["hc1", 3, 0], ["hc2", 3, 0], ["hc3", 3, 0], ["hc4", 3, 0]], [["hq1", 3, 0], ["hq2", 3, 0], ["hq3", 3, 0], ["hq4", 3, 0], ["hq5", 3, 0]]],
     ["review-abstraction", [["essential", 2, 0], ["state", 2, 0], ["decompose", 2, 0]], [["1", 4, 1], ["2", 4, 2], ["3", 4, 0], ["4", 4, 0]]],
     ["review-sandwich", [["clear", 2, 0], ["finite", 2, 0], ["structure", 2, 0]], [["1", 4, 1], ["2", 4, 0], ["3", 4, 0], ["4", 4, 1]]],
     ["review-flowchart", [["symbols", 2, 0], ["branches", 2, 0], ["loop", 2, 0]], [["1", 4, 0], ["2", 4, 1], ["3", 4, 2], ["4", 4, 0]]],
@@ -74,7 +74,7 @@ test("엔트리 수업 퀴즈의 모든 오답 보기에는 힌트·보기와 �
 
 test("개념 확인 오답 되묻기는 개념마다 있고 힌트·설명과 다르다", () => {
   const lessonConcepts = RELEASED_LESSONS.flatMap((lesson) => lesson.concepts);
-  const retries = [...concepts.map((c, i) => [`pc${i}`, c.retry] as const), ...[...conditionalConcepts, ...loopConcepts, ...functionConcepts, ...brickBreakerConcepts].map((c) => [c.id, c.retry] as const)];
+  const retries = [...concepts.map((c, i) => [`pc${i}`, c.retry] as const), ...[...conditionalConcepts, ...loopConcepts, ...functionConcepts, ...brickBreakerConcepts, ...hamsterConcepts].map((c) => [c.id, c.retry] as const)];
   for (const [id, retry] of retries) {
     const concept = lessonConcepts.find((c) => c.id === id)!;
     noAnswer(retry, id);
@@ -227,4 +227,12 @@ test("고장 난 도형 힌트는 고치기 전에 증상과 까닭을 말하고
 test("함수 개념 체험·예시와 퀴즈 코드는 미션 조립(창문 정사각형, 꽃잎, 고양이 걸음, 오각형 72°)을 그대로 보여 주지 않는다", () => {
   expect(readFileSync("src/components/student/function-concepts.tsx", "utf8")).not.toMatch(/창문|꽃잎|고양이 걸음|72/);
   for (const text of [...functionConcepts.map((c) => c.example), ...functionQuestions.flatMap((q) => q.scene)]) expect(text).not.toMatch(/창문|꽃잎|고양이 걸음|72°|90°만큼 회전/);
+});
+
+test("햄스터S 개념 다섯 개는 시각 자료가 등록되어 있고, 참조하는 로봇 그림 파일이 모두 존재한다", () => {
+  const source = readFileSync("src/components/student/concept-visual.tsx", "utf8");
+  for (const c of hamsterConcepts) expect(source).toMatch(new RegExp(`^\\s*${c.id}: \\{`, "m"));
+  const images = [...source.matchAll(/hamster-robot-[\w-]+/g)].map((m) => m[0]);
+  expect(new Set(images)).toEqual(new Set(["hamster-robot-input", "hamster-robot-process", "hamster-robot-output", "hamster-robot-connect"]));
+  for (const name of images) expect(existsSync(`public/concepts/${name}.png`), name).toBe(true);
 });

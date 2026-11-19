@@ -506,10 +506,45 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     });
   }
   const seconds = (n: EntryNode) => { const value = (n.params[0] as EntryNode | null)?.params?.[0]; return entryNumeric(value) ? Number(value) : NaN; };
+  function hasType(nodes: readonly EntryNode[], type: string): boolean {
+    return nodes.some((n) => n.type === type || (n.statements ?? []).some((inner) => hasType(inner, type)));
+  }
+  function handCond(node: unknown): "found" | "away" | null {
+    if (!node || typeof node !== "object") return null;
+    const entry = node as EntryNode;
+    if (entry.type === "hamsterlite_hand_found") return "found";
+    if (entry.type === "boolean_not" && (entry.params[1] as EntryNode | undefined)?.type === "hamsterlite_hand_found") return "away";
+    return null;
+  }
+  function checkSensorBody(body: readonly EntryNode[]): boolean {
+    const allNodes = (nodes: readonly EntryNode[]): EntryNode[] => nodes.flatMap((n) => [n, ...(n.statements ?? []).flatMap(allNodes)]);
+    const items = allNodes(body);
+    const hasIfElse = items.some((n) => {
+      if (n.type !== "if_else") return false;
+      const cond = handCond(n.params[0]);
+      if (!cond) return false;
+      const whenFound = cond === "found" ? (n.statements?.[0] ?? []) : (n.statements?.[1] ?? []);
+      const whenAway = cond === "found" ? (n.statements?.[1] ?? []) : (n.statements?.[0] ?? []);
+      return hasType(whenFound, "hamsterlite_set_led_to") && hasType(whenFound, "hamsterlite_beep") && hasType(whenAway, "hamsterlite_clear_led");
+    });
+    if (hasIfElse) return true;
+    const foundBranch = items.some((n) => n.type === "_if" && handCond(n.params[0]) === "found" && hasType(n.statements?.[0] ?? [], "hamsterlite_set_led_to") && hasType(n.statements?.[0] ?? [], "hamsterlite_beep"));
+    const awayBranch = items.some((n) => n.type === "_if" && handCond(n.params[0]) === "away" && hasType(n.statements?.[0] ?? [], "hamsterlite_clear_led"));
+    return foundBranch && awayBranch;
+  }
   function grade(): boolean {
-    if (id === "robot-go") return robotLine(["hamsterlite_move_forward_for_secs", "hamsterlite_move_backward_for_secs"], ([ahead, back]) => seconds(ahead) > 0 && seconds(ahead) === seconds(back));
+    if (id === "robot-go") return p!.added.flatMap((o) => o.threads).some((line) => {
+      if (line[0]?.type !== "when_run_button_click") return false;
+      const moves = line.filter((n) => n.type === "hamsterlite_move_forward_for_secs" || n.type === "hamsterlite_move_backward_for_secs");
+      const firstAhead = moves.findIndex((n) => n.type === "hamsterlite_move_forward_for_secs");
+      const firstBack = moves.findIndex((n) => n.type === "hamsterlite_move_backward_for_secs");
+      if (firstAhead < 0 || firstBack < firstAhead || !moves.every((n) => seconds(n) > 0)) return false;
+      const total = (type: string) => moves.filter((n) => n.type === type).reduce((sum, n) => sum + seconds(n), 0);
+      return Math.abs(total("hamsterlite_move_forward_for_secs") - total("hamsterlite_move_backward_for_secs")) < 1e-9;
+    });
     // Zero seconds does not move and Entry drives backward on a negative number, so ‘앞으로’ needs a positive time.
     if (id === "robot-signal") return robotLine(["hamsterlite_set_led_to", "hamsterlite_move_forward_for_secs", "hamsterlite_beep", "hamsterlite_clear_led"], ([, ahead]) => seconds(ahead) > 0);
+    if (id === "robot-sensor") return p!.added.flatMap((o) => o.threads).some((t) => t[0]?.type === "when_run_button_click" && t.some((n) => n.type === "repeat_inf" && checkSensorBody(n.statements?.[0] ?? [])));
     if (id === "name") return ["초코", "보리"].every((value) => { const r = run("click", [value]); return r.asks === 1 && r.sayings.some((s) => s.input && s.text.includes(value)); });
     // The change challenge subtracts the price from the money paid and says it with ‘원’ in one line.
     if (id === "multiply" || id === "average" || id === "change") return (id === "change" ? [[5000, 3200], [10000, 7500], [1000, 1000], [3000, 450]] : [[6, 4], [3, 7], [-2, 5], [0, 9]]).every(([a, b]) => {

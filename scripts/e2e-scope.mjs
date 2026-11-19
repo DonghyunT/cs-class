@@ -221,7 +221,9 @@ export const LESSON_MAPPINGS = {
     patterns: [
       ...ENTRY_SHARED,
       /^src\/lib\/classroom\/hamster-robot-(?:lesson|data)\.ts$/,
-      /^tests\/hamster-robot\.spec\.ts$/
+      /^tests\/hamster-robot\.spec\.ts$/,
+      CONCEPT_VISUAL,
+      /^public\/concepts\/hamster-robot-[\w-]+\.png$/
     ],
     tests: [
       "tests/hamster-robot.spec.ts",

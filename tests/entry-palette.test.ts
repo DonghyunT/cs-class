@@ -180,9 +180,12 @@ test("교사 작품 보기는 팔레트 블록 입력값과 반복 안쪽을 들
   expect(formatEntryNode(node("hamsterlite_turn_for_secs", "LEFT", node("text", "1"), null))).toBe("왼쪽으로 1초 돌기");
   expect(formatEntryNode(node("hamsterlite_clear_led", "RIGHT", null))).toBe("오른쪽 LED 끄기");
   expect(formatEntryNode(node("hamsterlite_move_backward_for_secs", node("text", "2"), null))).toBe("뒤로 2초 이동하기");
+  expect(formatEntryNode(node("hamsterlite_hand_found"))).toBe("손 찾음? · 아직 연결하지 않은 블록");
+  expect(formatEntryNode(ifElse(node("hamsterlite_hand_found"), [], []))).toBe("만일 손 찾음?(이)라면 / 아니면");
   expect(entryBlockCategory("when_run_button_click")).toBe("start");
   expect(entryBlockCategory("repeat_basic")).toBe("flow");
   expect(entryBlockCategory("set_variable")).toBe("variable");
+  expect(entryBlockCategory("hamsterlite_hand_found")).toBe("arduino");
 });
 
 // Entry puts a newly added object first in its list, so the dog is not always objects[0].
@@ -274,7 +277,7 @@ test("비슷한 블록과 다른 오브젝트에 만든 시작 줄을 구체적�
 
 // Words each chip must keep so students can find that one block on the palette (and not its look-alike).
 const CHIP_WORDS: Record<string, RegExp> = {
-  hamsterlite_move_forward_for_secs: /^앞으로 \d+초 이동하기$/, hamsterlite_move_backward_for_secs: /^뒤로 \d+초 이동하기$/, hamsterlite_set_led_to: /LED를 .+으로 정하기$/, hamsterlite_clear_led: /LED 끄기$/, hamsterlite_beep: /^삐 소리내기$/,
+  hamsterlite_hand_found: /^손 찾음\?$/, hamsterlite_move_forward_for_secs: /^앞으로 \d+초 이동하기$/, hamsterlite_move_backward_for_secs: /^뒤로 \d+초 이동하기$/, hamsterlite_set_led_to: /LED를 .+으로 정하기$/, hamsterlite_clear_led: /LED 끄기$/, hamsterlite_beep: /^삐 소리내기$/,
   when_run_button_click: /^시작하기 버튼을 클릭했을 때$/, when_some_key_pressed: /^.+ 키를 눌렀을 때$/, mouse_clicked: /^마우스를 클릭했을 때$/, ask_and_wait: /^.+[을를] 묻고 대답 기다리기$/,
   dialog: /^.+[을를] 말하기$/, set_variable: /^[AB]를 .+로 정하기$/, change_variable: /^.+에 \d+만큼 더하기$/, calc_basic: / [+\-x/] /, combine_something: /^.+ 과\(와\) .+ 을\(를\) 합친 값$/, boolean_basic_operator: /^.+ (=|!=|>|<|≥|≤) .+$/,
   boolean_and_or: /^참 (그리고|또는) /, if_else: /^만일 .+라면 아니면$/, _if: /^만일 .+라면$/, repeat_basic: /^.+번 반복하기$/, repeat_while_true: /될 때까지 반복하기$/,
@@ -592,6 +595,7 @@ test("조립 순서대로 만든 미션 해답(정사각형은 두 회전 블록
     ["brick-bounce", BRICK_SOLUTIONS["brick-bounce"]],
     ["robot-go", oneObject([[start(), node("hamsterlite_move_forward_for_secs", text("1"), null), node("hamsterlite_move_backward_for_secs", text("1"), null)]], [])],
     ["robot-signal", oneObject([[start(), node("hamsterlite_set_led_to", "BOTH", "2", null), node("hamsterlite_move_forward_for_secs", text("1"), null), node("hamsterlite_beep", null), node("hamsterlite_clear_led", "BOTH", null)]], [])],
+    ["robot-sensor", oneObject([[start(), forever([ifElse(node("hamsterlite_hand_found"), [node("hamsterlite_set_led_to", "BOTH", "4", null), node("hamsterlite_beep", null)], [node("hamsterlite_clear_led", "BOTH", null)])])]], [])],
   ];
   // Every mission a lesson still offers has a solution; retired ones (escape) are no longer graded.
   expect(new Set(solutions.map(([id]) => id))).toEqual(new Set(["programming-13", "conditionals", "loops", "functions", "brick-breaker", "hamster-robot"].flatMap((lesson) => missionsFor(lesson).map((mission) => mission.id))));

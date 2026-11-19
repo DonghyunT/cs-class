@@ -30,7 +30,7 @@ let disposed = false;
 // Copy of FUNCTION_PALETTE in src/lib/classroom/entry-palette.ts, kept equal by tests/entry-palette.test.ts.
 const FUNCTION_PALETTE = { category: "func", blocks: ["functionAddButton"] };
 // Copy of ROBOT_PALETTE in src/lib/classroom/entry-palette.ts, kept equal by tests/entry-palette.test.ts.
-const ROBOT_PALETTE = { category: "arduino", blocks: ["arduino_lite_reconnect", "hamsterlite_move_forward_for_secs", "hamsterlite_move_backward_for_secs", "hamsterlite_turn_for_secs", "hamsterlite_stop", "hamsterlite_set_led_to", "hamsterlite_clear_led", "hamsterlite_beep"] };
+const ROBOT_PALETTE = { category: "arduino", blocks: ["arduino_lite_reconnect", "hamsterlite_hand_found", "hamsterlite_move_forward_for_secs", "hamsterlite_move_backward_for_secs", "hamsterlite_turn_for_secs", "hamsterlite_stop", "hamsterlite_set_led_to", "hamsterlite_clear_led", "hamsterlite_beep"] };
 // Copy of ENTRY_PALETTE in src/lib/classroom/entry-palette.ts. This sandboxed
 // script cannot import it; tests/entry-palette.test.ts keeps both lists equal.
 const PROGRAMMING_PALETTE = [
@@ -337,7 +337,7 @@ try {
     keepsDrawing = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => RUN_STARTS.includes(thread.getFirstBlock()?.type) && typeof thread.getBlockList === "function" && drawsIn(thread.getBlockList())));
     keepsResult = Entry.container.getAllObjects().some((object) => object.script.getThreads().some((thread) => RUN_STARTS.includes(thread.getFirstBlock()?.type) && typeof thread.getBlockList === "function" && thread.getBlockList().some((block) => block.type === "stop_object")));
     startedAt = Date.now();
-    send("running", { running: true });
+    send("running", { running: true, ...(robot ? { robotConnected: Entry.hwLite?.getStatus() === "connected" } : {}) });
     clearInterval(monitor);
     monitor = setInterval(() => {
       const speech = speechNow();
