@@ -28,7 +28,7 @@
 수업별 개념·퀴즈·미션과 완료 기준은 [PRD §4](docs/PRD.md#4-수업-카탈로그-명세), 화면별 기능·한도는 [PRD §5](docs/PRD.md#5-핵심-서비스-기능-요구사항)가 기준입니다. 여기에는 큰 그림만 둡니다.
 
 * **📘 정규 수업:** 브라우저 안 **EntryJS 4.0.23** 작업실에서 미션을 조립·실행하고, 서버 채점을 통과한 뒤 학생이 직접 제출합니다. 공개 수업 목록은 `src/lib/classroom/catalog.ts`의 `RELEASED_LESSONS`입니다. [햄스터S 수업](docs/PRD.md#416-정규-수업-햄스터s와-만나는-피지컬-컴퓨팅)은 USB 동글로 실제 로봇을 연결합니다.
-* **🧪 선택 복습(성적 미반영):** 문제 추상화·알고리즘 설계·순서도 연구소. 일부 활동은 Upstage Solar AI와 연동됩니다.
+* **🧪 선택 복습(성적 미반영):** 문제 추상화·알고리즘 설계·순서도 연구소, 정보 1~3단원 축제 복습 게임. 일부 활동은 Upstage Solar AI와 연동됩니다.
 * **📊 학생 공간:** 정규 수업 합산 진도와 수업별 남은 활동, 완료 알림과 배지(`내 배지`), 내 할 일, 시간표 자동 연동, 우리 반 질문. 손들기 운영 여부는 [PRD §5.5](docs/PRD.md#설정과-손들기)를 따릅니다.
 * **🧑‍🏫 교사 공간:** 관리자·강사 권한 분리, 이번 수업 지정·수업 열고 닫기, 반 진도와 제출 작품 보기·인라인 실행, 학생 계정 관리(임시 비밀번호·반 공통 첫 입장 코드·명단에서 빼기), 학생 기록에 쓰지 않는 실제 수업 미리보기.
 
@@ -100,7 +100,7 @@ npm run dev:emulator
 
 `docs/plans/`에는 진행 중인 작업 계획만 두고, 끝난 계획과 지난 원문은 [`docs/archive/`](docs/archive/README.md)에 보관합니다. `docs/reference/`는 보관 원문과 HANDOFF가 가리키는 근거 자료(화면 캡처·날짜 붙은 검토 보고서)입니다.
 
-선생님이 직접 할 일은 [HANDOFF의 다음 작업·남은 한계](docs/HANDOFF.md#다음에-이어갈-작업), 수업 당일 순서는 [첫 실제 수업 확인 순서](docs/DEVELOPMENT.md#첫-실제-수업-확인-순서)에 있습니다. 교사가 투사하는 3차시 개념 수업 자료는 [내일, 축제에서 만나](teaching-materials/festival-romance/README.md)를 참고하세요. 독립 HTML 완성본과 수정 소스가 함께 있습니다.
+선생님이 직접 할 일은 [HANDOFF의 다음 작업·남은 한계](docs/HANDOFF.md#다음에-이어갈-작업), 수업 당일 순서는 [첫 실제 수업 확인 순서](docs/DEVELOPMENT.md#첫-실제-수업-확인-순서)에 있습니다. 교사 도입 수업(`/festival-lesson.html`)과 학생용 CS 복습 게임(`/festival-romance.html`, 수업 화면에서는 복습 `review-festival`) 자료는 [내일, 축제에서 만나](teaching-materials/festival-romance/README.md)를 참고하세요. 독립 HTML 완성본과 수정 소스가 함께 있습니다.
 
 ---
 
@@ -130,8 +130,8 @@ cs-class/
 ├─ public/concepts/       # 개념·퀴즈 화면의 엔트리 블록 이미지 캡처(조건·반복·함수 수업)
 ├─ cloudflare/entry-cdn/  # 엔트리 작업실(라이브러리·브리지·그림)을 올리는 Cloudflare Workers 정적 CDN 설정(절차는 FIREBASE_SETUP)
 ├─ scripts/               # 에뮬레이터 시드, 선별 검증기, 문서 검사 스크립트
-├─ teaching-materials/    # 교사용 독립 자료 (로그인·DB 미사용)
-│  ├─ festival-romance/   # 3차시 개념 수업 투사 자료(자체 빌드 build.cjs가 public/festival-romance.html도 만듦)
+├─ teaching-materials/    # 독립 수업·복습·안내 자료 (로그인·DB 미사용)
+│  ├─ festival-romance/   # 학생용 CS 복습 게임(build.cjs가 public/festival-romance.html 빌드; public/festival-lesson.html은 원본 3차시 교사 자료 보존)
 │  └─ instructor-guide/   # 강사님께 보내는 사이트 사용법 안내서(PDF와 원본 HTML, 캡처·PDF 다시 만들기 스크립트)
 ├─ docs/                  # PRD, DESIGN, DEVELOPMENT, FIREBASE_SETUP, HANDOFF 핵심 문서
 │  ├─ plans/              # 진행 중인 작업 계획 (필요할 때 만들고, 끝나면 보관)

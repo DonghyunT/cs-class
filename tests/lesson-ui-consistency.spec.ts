@@ -13,6 +13,8 @@ import { UNIT_QUIZ_DATA } from "../src/lib/server/review-quiz.mjs";
 import type { Work } from "../src/lib/classroom/types";
 // Every lesson a class can open, so a new lesson is checked without being listed here.
 const lessons = RELEASED_LESSONS;
+// The game-only review has no stages or questions; review-festival.spec.ts checks its rail of the same header controls.
+const staged = (items: typeof lessons) => items.filter(lesson => lesson.concepts.length);
 let originalClass: FirebaseFirestore.DocumentData | undefined;
 test.beforeEach(async () => { originalClass = (await db.doc("csClasses/2-1").get()).data(); });
 test.afterEach(async ({ page }) => {
@@ -31,7 +33,7 @@ test("공통 수업 헤더·단계 폭과 완료 진도는 모든 수업에서 �
   await page.setViewportSize({ width: 1920, height: 1080 });
   await enter(page);
   let first: { leave: number; leaveY: number; tabs: number } | undefined;
-  for (const lesson of lessons) {
+  for (const lesson of staged(lessons)) {
     await page.goto("about:blank");
     const work = emptyWork(lesson);
     work.conceptSolved = [lesson.concepts[0].id]; work.quizSolved = [lesson.quiz[0].id];
@@ -63,7 +65,7 @@ test("공개 수업의 개념 확인·퀴즈 오답은 힌트와 다른 문구�
   const correct: Record<string, number> = {};
   concepts.forEach((c, i) => { correct[`pc${i}`] = c.correct; });
   for (const item of [...questions, ...conditionalConcepts, ...conditionalQuestions, ...loopConcepts, ...loopQuestions, ...functionConcepts, ...functionQuestions, ...brickBreakerQuestions, ...hamsterConcepts, ...hamsterQuestions]) correct[item.id] = item.correct;
-  for (const lesson of RELEASED_LESSONS) {
+  for (const lesson of staged(RELEASED_LESSONS)) {
     const unit = Object.values(UNIT_QUIZ_DATA)[["review-abstraction", "review-sandwich", "review-flowchart"].indexOf(lesson.id)];
     const right = (id: string, kind: "concept" | "quiz") => unit ? kind === "concept" ? 0 : unit.questions.find((q) => String(q.id) === id)!.options.findIndex((o) => o.correct) : correct[id];
     const wrong = (id: string, kind: "concept" | "quiz", count: number) => String((right(id, kind) + 1) % count);

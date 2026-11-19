@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Transaction } from "firebase-admin/firestore";
 import { parseTimetableWeek, type TimetableFields } from "../classroom/timetable";
-import { decryptPayload, deobfuscate, extractPayload, readTimetableFields } from "./timetable-protocol";
+import { decryptPayload, deobfuscate, extractPayload, readFieldCipher, readSchoolCodeDivisor, readTimetableFields } from "./timetable-protocol";
 import { seoulToday, TIMETABLE_SCHOOL, type ClassTimetable, type TimetableSnapshot } from "../classroom/planner";
 import { admin } from "./firebase";
 import { requireCondition, ServiceError } from "./errors";
@@ -63,6 +63,8 @@ async function fetchSchoolTimetable(): Promise<TimetableSnapshot> {
   let weekQuery: (index: number) => string;
   let aesKey: Buffer | undefined;
   let fields: TimetableFields | undefined;
+  let decode: ((value: string) => string) | undefined;
+  let codeDivisor: number | null = null;
   let apiHeaders: Record<string, string> = {};
 
   if (page.includes("/* hour-obfuscated-v2 */")) {
@@ -91,6 +93,10 @@ async function fetchSchoolTimetable(): Promise<TimetableSnapshot> {
     const hexKey = rawParts[Number(permMatch[1])] + rawParts[Number(permMatch[2])] + rawParts[Number(permMatch[3])] + rawParts[Number(permMatch[4])];
     aesKey = Buffer.from(hexKey, "hex");
     fields = liveFields;
+    // Absent on pages from before 2026-11, whose values were plain.
+    decode = readFieldCipher(inner1) ?? undefined;
+    codeDivisor = readSchoolCodeDivisor(decoded1);
+    if (decode && !codeDivisor) throw new Error("TIMETABLE_PROTOCOL");
     endpoint = ep;
     schoolQuery = encodeURIComponent(Buffer.from(`${searchPrefix}${encodeURIComponent(TIMETABLE_SCHOOL.name.slice(0, 2))}_enc5`).toString("base64"));
     weekQuery = (index) => encodeURIComponent(Buffer.from(`${timetablePrefix}${TIMETABLE_SCHOOL.code}_0_${index}_enc5`).toString("base64"));
@@ -119,12 +125,15 @@ async function fetchSchoolTimetable(): Promise<TimetableSnapshot> {
     학교검색: z.array(z.array(z.union([z.number(), z.string()]))).max(50),
   }).parse(await json(`/${endpoint}?${schoolQuery}`));
 
-  const found = schools.학교검색.some((school) =>
-    school[1] === "서울" && school[2] === TIMETABLE_SCHOOL.name && school.slice(3).some((code) => String(code) === TIMETABLE_SCHOOL.code)
-  );
+  const found = schools.학교검색.some((school) => {
+    if (!decode) return school[1] === "서울" && school[2] === TIMETABLE_SCHOOL.name && school.slice(3).some((code) => String(code) === TIMETABLE_SCHOOL.code);
+    const text = (item: unknown) => typeof item === "string" ? decode(item) : "";
+    return school[0] !== 0 && text(school[1]) === "서울" && text(school[2]) === TIMETABLE_SCHOOL.name
+      && text(school[Math.floor(Number(school[0]) / codeDivisor!) + 2]) === TIMETABLE_SCHOOL.code;
+  });
   if (!found) throw new Error("TIMETABLE_SCHOOL");
 
-  const week = async (index: number) => parseTimetableWeek(await json(`/${endpoint}?${weekQuery(index)}`), fields);
+  const week = async (index: number) => parseTimetableWeek(await json(`/${endpoint}?${weekQuery(index)}`), fields, decode);
   const first = await week(1);
   const results = [first];
   if (!first.weeks.some(([index]) => index === 1) || new Set(first.weeks.map(([index]) => index)).size !== first.weeks.length) throw new Error("TIMETABLE_WEEKS");

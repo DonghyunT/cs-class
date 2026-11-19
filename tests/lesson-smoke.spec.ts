@@ -1,11 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { db, readyStudent, saveDraft } from "./emulator";
+import { db, headers, readyStudent, saveDraft } from "./emulator";
 
 // Environment variable CS_SMOKE_LESSON_IDS can specify a subset, e.g. '["review-sandwich"]'
 const ALL_LESSON_IDS = [
   "review-sandwich",
   "review-flowchart",
   "review-abstraction",
+  "review-festival",
   "programming-13",
   "conditionals",
   "loops",
@@ -93,6 +94,31 @@ test.describe("선별 수업 스모크 검증 (Lesson Smoke)", () => {
       await page.reload();
       await page.getByRole("tab", { name: /실습/ }).click();
       await expect(page.getByRole("button", { name: "버림 · 침대 이불 색깔" })).toBeVisible();
+    });
+  }
+
+  if (selectedLessons.includes("review-festival")) {
+    test("축제 게임: 게임 속 이름 변경 후 저장 및 새로고침 복원", async ({ page }) => {
+      const endpoint = "/api/classroom/work/review-festival";
+      await db.collection("csWork").doc("student-20101__review-festival").delete();
+      const work = await (await page.request.get(endpoint)).json();
+      // Opening on a saved scene shows the game took the saved state before anything is clicked.
+      expect((await page.request.post(endpoint, { headers, data: { revision: work.revision, draft: { ...work.draft, reviewProject: { ...work.draft.reviewProject, onboarded: true, chapterId: 1, sceneId: "ch1-1" } } } })).status()).toBe(200);
+      const marker = `스모크${Date.now() % 100000}`;
+      const game = page.frameLocator('iframe[title="내일, 축제에서 만나 게임"]');
+      const scene = game.getByRole("heading", { name: "밤 11시 14분, 버그 제보", exact: true });
+      await page.goto("/classroom/review-festival?from=lessons");
+      await expect(scene).toBeVisible();
+
+      await game.getByRole("button", { name: "설정", exact: true }).click();
+      await game.getByLabel("이야기 속 내 이름").fill(marker);
+      await game.getByRole("button", { name: "설정 적용", exact: true }).click();
+      await saveDraft(page);
+
+      await page.reload();
+      await expect(scene).toBeVisible();
+      await game.getByRole("button", { name: "설정", exact: true }).click();
+      await expect(game.getByLabel("이야기 속 내 이름")).toHaveValue(marker);
     });
   }
 

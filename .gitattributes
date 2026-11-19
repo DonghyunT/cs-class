@@ -18,3 +18,4 @@ src/app/fonts/OFL.txt -text whitespace=cr-at-eol,-blank-at-eol
 public/entryjs/sprites/library/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
 # Keep the published game identical to its byte-preserved offline artifact.
 public/festival-romance.html -text
+public/festival-lesson.html -text

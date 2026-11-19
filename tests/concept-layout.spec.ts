@@ -3,6 +3,8 @@ import { LESSONS } from "../src/lib/classroom/catalog";
 import { auth, clearLoginLimit, db, headers, initialPassword, loginStudent, resetStudent, studentPassword } from "./emulator";
 
 const studentId = "21003", uid = `student-${studentId}`, classPath = "csClasses/2-10";
+// The game-only review has no concept screen.
+const withConcepts = LESSONS.filter(lesson => lesson.concepts.length);
 let originalClass: FirebaseFirestore.DocumentData | undefined;
 test.beforeAll(async () => { originalClass = (await db.doc(classPath).get()).data(); });
 test.beforeEach(async ({ page }) => {
@@ -28,7 +30,7 @@ test("모든 수업 개념은 같은 목록·본문 배치로 읽고 좁은 창�
   test.setTimeout(120_000);
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
-  for (const lesson of LESSONS) {
+  for (const lesson of withConcepts) {
     await enter(page, lesson.id);
     const nav = page.getByRole("navigation", { name: "개념 목록" });
     // Only the first programming lesson has its own concept screen; later ones use the shared panel.
@@ -54,7 +56,7 @@ test("모든 수업 개념은 같은 목록·본문 배치로 읽고 좁은 창�
 
 test("수업별 체험·확인 문제·완료 기록과 마지막 개념의 퀴즈 이동을 유지", async ({ page }) => {
   test.setTimeout(120_000);
-  for (const lesson of LESSONS.filter(item => item.practice.type !== "programming")) {
+  for (const lesson of withConcepts.filter(item => item.practice.type !== "programming")) {
     await enter(page, lesson.id);
     const nav = page.getByRole("navigation", { name: "개념 목록" });
     const first = lesson.concepts[0];

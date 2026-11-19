@@ -26,7 +26,7 @@ export function emptyWork(lesson: Lesson): Work {
   return {
     lessonId: lesson.id, revision: 0,
     draft: {
-      stage: "concept",
+      stage: lesson.practice.type === "festival" ? "practice" : "concept",
       conceptAnswers: {},
       quizAnswers: {},
       practiceOrder: lesson.practice.type === "entryjs" ? parseEntryProject(lesson.practice.defaultProject)?.order ?? [] : lesson.practice.blocks.map((block) => block.id),

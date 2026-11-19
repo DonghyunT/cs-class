@@ -375,7 +375,7 @@ test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 �
   const reviewCard = page.getByRole("article", { name: review.title, exact: true });
   await expect(list).toHaveAttribute("aria-pressed", "true");
   await expect(grid).toHaveAttribute("aria-pressed", "false");
-  await expect(cards).toHaveCount(4);
+  await expect(cards).toHaveCount(1 + reviews.length);
   await expect(cards.first()).toHaveAccessibleName(programming.title);
   await expect(programCard).toContainText("이어갈 곳: 실습 · 곱셈 계산기");
   await expect(programCard.getByRole("progressbar")).toHaveCount(3);
@@ -398,7 +398,8 @@ test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 �
   const unfinished = filters.getByRole("button", { name: "미완료", exact: true });
   await unfinished.click();
   await expect(unfinished).toBeFocused();
-  await expect(cards).toHaveCount(3);
+  // Every opened lesson except the finished review.
+  await expect(cards).toHaveCount(reviews.length);
   await expect(finishedCard).toHaveCount(0);
   await expect(cards.first()).toHaveAccessibleName(programming.title);
   await list.focus();
@@ -417,7 +418,7 @@ test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 �
   await expect(cards.first()).toHaveAccessibleName(finishedReview.title);
   await expect(finishedCard.getByRole("progressbar")).toHaveCount(0);
   await filters.getByRole("button", { name: "전체", exact: true }).click();
-  await expect(cards).toHaveCount(4);
+  await expect(cards).toHaveCount(1 + reviews.length);
   await expect(cards.first()).toHaveAccessibleName(programming.title);
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 844 });
@@ -433,7 +434,7 @@ test("수업 목록·격자 전환에서 필터·현재 수업 순서·복습 �
   await expect(page.getByRole("alert").filter({ hasText: "격자 진도 조회 연결 실패" })).toContainText("마지막으로 확인한 수업");
   await expect(refresh).toBeFocused();
   await expect(grid).toHaveAttribute("aria-pressed", "true");
-  await expect(cards).toHaveCount(4);
+  await expect(cards).toHaveCount(1 + reviews.length);
   await expect(programRing).toHaveAttribute("aria-valuenow", "28");
   await page.unroute(studentEndpoint);
   const resume = programCard.getByRole("button", { name: "이어하기", exact: true });

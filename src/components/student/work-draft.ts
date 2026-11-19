@@ -1,6 +1,7 @@
 import type { WorkDraft } from "@/lib/classroom/types";
 import { PROGRAMMING_MISSIONS, missionStarter, parseProgrammingProject } from "@/lib/classroom/programming-entry";
 import { parseEntryProject } from "@/lib/classroom/entry-project";
+import { projectSnapshot } from "@/lib/classroom/review/project";
 
 type ContentNode = { type: string; params: unknown[]; statements?: ContentNode[][]; x?: number; y?: number };
 function scriptContent(threads: ContentNode[][]) {
@@ -47,7 +48,7 @@ function content(draft: WorkDraft) {
   } else if (project?.type === "flowchart") {
     const answers: Record<string, unknown> = { ...project }; delete answers.mission; delete answers.guideStep; delete answers.pan;
     next.reviewProject = answers;
-  }
+  } else if (project?.type === "festival") next.reviewProject = projectSnapshot(project);
   return next;
 }
 

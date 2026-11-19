@@ -1,697 +1,732 @@
 module.exports = {
   "id": 2,
-  "title": "너랑 가는 길",
-  "subject": "조건",
-  "subtitle": "같은 약속, 달라지는 축제 길",
-  "duration": "약 13분",
-  "recap": "하루와 {{meetingTime}}에 정문에서 만나기로 했습니다. 초대장에는 {{ticketName}} 이름이 적혀 있습니다.",
+  "title": "낮의 교정, 흔들리는 조건문",
+  "subject": "선택 제어와 논리 연산",
+  "subtitle": "부스 입장 게이트부터 소나기 대피까지, 삐걱거리는 분기 잡기",
+  "duration": "약 8분",
+  "recap": "약속한 {{meetingTime}}보다 먼저 정문에 나와 기다리고 있던 하루. 그런데 활기찬 축제 교정은 시작부터 버그투성이 조건문으로 시끌벅적합니다.",
   "scenes": [
     {
       "id": "ch2-1",
       "kind": "story",
-      "title": "일찍 온 사람 둘",
-      "topic": "지난 이야기 · 정문 약속",
-      "minutes": "0:40",
+      "title": "12분 전부터 기다린 사람",
+      "topic": "축제 당일 · 정문 앞 만남",
+      "minutes": "1:00",
       "background": "day",
+      "channel": "축제 교정 · 함께 다니는 중",
       "lines": [
+        { "speaker": "내 생각", "role": "narration", "text": "약속한 {{meetingTime}}보다 조금 일찍 정문에 도착했는데, 하루가 벌써 안내판 앞에서 손을 흔들고 있었다.", "expression": 0 },
         {
-          "speaker": "내 생각",
-          "role": "narration",
-          "text": "약속한 {{meetingTime}}보다 조금 일찍 정문에 도착했다. 하루는 안내판 옆에서 손을 흔들었다.",
-          "expression": 0
+          "speaker": "하루", "role": "haru", "expression": 2,
+          "text": {
+            "boy": "{{vocative}}! 왔네. 나도 방금 도착해서 지도 보던 참이다.",
+            "girl": "{{vocative}}! 왔구나! 나도 방금 막 도착해서 지도 보던 참이야."
+          }
         },
+        { "speaker": "축제앱", "role": "system", "text": "채팅 · 하루가 보낸 메시지 (12분 전): \"정문 앞 도착! 천천히 조심해서 와~\"", "expression": 0 },
+        { "speaker": "나", "role": "me", "text": "방금 도착했다면서, 이 메시지는 12분 전에 와 있는데?", "expression": 5 },
         {
-          "speaker": "하루",
-          "role": "haru",
-          "text": "나도 방금 왔어. 안내판 보고 있던 참이야.",
-          "expression": 0
-        },
-        {
-          "speaker": "축제앱",
-          "role": "system",
-          "text": "하루 · 12분 전: 정문 도착! 서두르지 말고 천천히 와.",
-          "expression": 0
-        },
-        {
-          "speaker": "나",
-          "role": "me",
-          "text": "방금이라기엔 메시지가 12분 전인데?",
-          "expression": 0
-        },
-        {
-          "speaker": "하루",
-          "role": "haru",
-          "text": "갈 만한 곳이 많더라고. 너 오면 같이 고르려고 기다렸어.",
-          "expression": 1
-        },
-        {
-          "speaker": "내 생각",
-          "role": "narration",
-          "text": "하루가 들고 있던 축제 지도 한쪽이 여러 번 접혀 있었다.",
-          "expression": 0
+          "speaker": "하루", "role": "haru", "expression": 1,
+          "text": {
+            "boy": "어? 아니 그게… 메시지 시간까지 볼 줄은 몰랐지. 그냥 부스 동선 좀 짜고 있었다고.",
+            "girl": "어, 어…?! 메시지 시간까지 볼 줄은 몰랐는데… 그, 그냥 너 기다리면서 부스 동선 좀 짜고 있었어!"
+          }
         }
       ],
       "shortLines": [
+        { "speaker": "하루", "role": "haru", "text": "{{vocative}}! 나도 방금 왔어— 아, 12분 전 메시지 들켰네. 아무튼 내가 짠 부스부터 보러 가자!", "expression": 1 }
+      ],
+      "choices": [
         {
-          "speaker": "내 생각",
-          "role": "narration",
-          "text": "약속한 {{meetingTime}}보다 조금 일찍 정문에 도착했다. 하루는 안내판 옆에서 손을 흔들었다.",
-          "expression": 0
+          "key": "sweet",
+          "label": "나도 너 오래 기다리게 하기 싫어서 조금 서둘렀어.",
+          "reply": [
+            {
+              "speaker": "하루", "role": "haru", "expression": 1,
+              "text": {
+                "boy": "진짜? …그럼 둘 다 일찍 온 거네. 나쁘지 않다.",
+                "girl": "진, 진짜? 그럼 우리 둘 다 일찍 온 거네… 왠지 기분 좋다."
+              }
+            },
+            {
+              "speaker": "하루", "role": "haru", "expression": 2,
+              "text": {
+                "boy": "자, 따라와. 내가 조건문으로 짠 포토 부스 게이트부터 가자.",
+                "girl": "자, 나 믿고 따라와! 내가 조건문으로 짠 포토 부스 게이트부터 가자!"
+              }
+            }
+          ]
         },
         {
-          "speaker": "하루",
-          "role": "haru",
-          "text": "나도 방금 왔어. 안내판 보고 있던 참이야.",
-          "expression": 0
-        },
-        {
-          "speaker": "축제앱",
-          "role": "system",
-          "text": "하루 · 12분 전: 정문 도착! 서두르지 말고 천천히 와.",
-          "expression": 0
-        },
-        {
-          "speaker": "나",
-          "role": "me",
-          "text": "방금이라기엔 메시지가 12분 전인데?",
-          "expression": 0
-        },
-        {
-          "speaker": "하루",
-          "role": "haru",
-          "text": "갈 만한 곳이 많더라고. 너 오면 같이 고르려고 기다렸어.",
-          "expression": 1
+          "key": "tease",
+          "label": "12분 전부터 대기면 거의 정문 마스코트 알바 수준인데?",
+          "reply": [
+            {
+              "speaker": "하루", "role": "haru", "expression": 5,
+              "text": {
+                "boy": "놀리지 마라 ㅋㅋ 그 시간에 포토 부스 게이트 코드도 한 번 더 봤거든.",
+                "girl": "야, 놀리지 마 ㅋㅋ 그 시간에 포토 부스 게이트 코드도 한 번 더 봤단 말이야!"
+              }
+            },
+            {
+              "speaker": "하루", "role": "haru", "expression": 2,
+              "text": {
+                "boy": "감동할 준비해, {{vocative}}. 바로 앞 인생네컷 부스로 출발.",
+                "girl": "감동할 준비해, {{vocative}}! 바로 앞 인생네컷 부스로 출발!"
+              }
+            }
+          ]
         }
       ],
       "teacher": {
-        "ask": "앱은 어떤 자료를 기억했다가 화면에 보여 준 걸까요?",
-        "answer": "메시지와 보낸 시각을 저장했다가 화면에 출력했습니다. 이전 차시의 저장과 출력에 연결합니다.",
-        "watch": "도착 메시지는 하루가 나에게 보낸 개인 채팅입니다. 공개 안내판이 개인의 입장 시각을 보여 주는 설정이 아닙니다.",
-        "short": "개인 채팅의 도착 메시지를 보고 하루가 먼저 기다렸음을 확인합니다."
-      },
-      "channel": "축제 현장 · 함께 다니는 중"
+        "ask": "축제앱 채팅에 하루의 메시지가 '12분 전'으로 남아 있는 것은 앞서 배운 어떤 개념과 이어질까요?",
+        "answer": "메시지 내용과 보낸 시각을 자료(변수)로 저장했다가 화면에 출력한 것입니다.",
+        "watch": "말투 선택(sweet/tease)은 하트와 관계없습니다.",
+        "short": "정문에서 하루와 만나 축제 부스로 출발합니다."
+      }
     },
     {
       "id": "ch2-2",
       "kind": "concept",
-      "experiment": "math",
-      "optional": true,
-      "title": "두 사람의 평균 티켓",
-      "topic": "산술 연산과 괄호",
-      "minutes": "1:40",
-      "quote": "하루: “내 기록엔 6장, 네 기록엔 4장이야. 두 사람 평균을 계산해 볼까?”",
-      "teacher": {
-        "ask": "6 + 4 ÷ 2와 (6 + 4) ÷ 2의 결과는 왜 다를까요?",
-        "answer": "괄호가 없으면 나눗셈부터 해서 8, 괄호가 있으면 합 10을 2로 나눠 평균 5입니다. 7÷2의 몫은 3, 나머지는 1입니다.",
-        "watch": "평균 계산은 선택 확장입니다. 이 값은 부스 입장권 수를 결정하지 않습니다.",
-        "short": "확장 활동입니다. 기본 이야기에서는 생략하며 목차에서 직접 열 수 있습니다."
+      "graded": true,
+      "questionId": "ch2-q1",
+      "conceptTitle": "비교 연산자와 경계값 (≥)",
+      "experiment": "quiz",
+      "title": "EP 5 · 7장 이상인데 7장은 튕기는 포토 부스",
+      "topic": "선택 구조 · 수 비교하기",
+      "minutes": "1:00",
+      "background": "day",
+      "channel": "축제 교정 · 함께 다니는 중",
+      "quote": "하루: \"7장 이상이면 입장인데, 딱 7장씩 가진 우리가 왜 튕겨?!\"",
+      "goalPrompt": "7장인 우리도 들어가려면 조건을 어떻게 바꿀까?",
+      "observe": "'이상'은 기준과 같은 수도 포함해서 ≥를 써요(7 > 7은 거짓, 7 ≥ 7은 참).",
+      "quiz": {
+        "situation": [
+          "입장 규칙: 티켓 7장 이상이면 입장",
+          "우리 티켓은 딱 7장인데 “입장 불가”가 떠요."
+        ],
+        "code": [
+          "만일 입장 티켓이 7장보다 많으면 (>)",
+          "  게이트 열기"
+        ],
+        "focus": 1,
+        "choices": [
+          {
+            "key": "ge",
+            "label": "만일 티켓이 7장 이상이면 (≥)",
+            "correct": true,
+            "screen": "6장 ✕ · 7장 ○ · 8장 ○"
+          },
+          {
+            "key": "eq",
+            "label": "만일 티켓이 딱 7장이면 (=)",
+            "screen": "6장 ✕ · 7장 ○ · 8장 ✕",
+            "why": "딱 7장만 들어가요. 7장 이상이면 8장 손님도 들어가야 해요."
+          },
+          {
+            "key": "le",
+            "label": "만일 티켓이 7장 이하이면 (≤)",
+            "screen": "6장 ○ · 7장 ○ · 8장 ✕",
+            "why": "7장 이하는 6장 손님이 들어가고 8장 손님이 막혀요. 규칙은 7장 이상이에요."
+          }
+        ],
+        "successTitle": "참 · 입장 가능!",
+        "explain": "'7장 이상'은 7장도 포함해요(≥). '7장보다 많으면'(>)은 딱 7장인 우리가 빠져요.",
+        "storyPatch": {
+          "booth": "photo",
+          "boothAllowed": true,
+          "boothOpen": true
+        },
+        "values": {
+          "boothName": "사진 부스",
+          "threshold": 7,
+          "tickets": 7
+        }
       },
-      "channel": "축제 현장 · 함께 다니는 중"
+      "flow": {
+        "intro": [
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 2,
+            "text": {
+              "boy": "짜잔, 내가 맡은 인생네컷 포토 부스. 입장 티켓 수로 게이트가 열리게 짰다.",
+              "girl": "짜잔! 내가 맡은 인생네컷 포토 부스야. 입장 티켓 수로 게이트가 열리게 짰지!"
+            }
+          },
+          {
+            "speaker": "부스 단말기",
+            "role": "system",
+            "text": "보유 입장 티켓: 7장 / 입장 조건: 7장 이상 → [거짓 · 입장 불가!]",
+            "expression": 0
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 3,
+            "text": {
+              "boy": "뭐야? 어젯밤에 나눠서 딱 7장씩 있잖아. 왜 거짓이냐.",
+              "girl": "뭐야?! 어젯밤에 나눠서 딱 7장씩 있잖아! 왜 거짓이래?!"
+            }
+          }
+        ],
+        "shortIntro": [
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "text": "입장 티켓이 딱 7장인데 '7장 이상' 부스에서 튕겨! 게이트 조건 좀 봐 줘!",
+            "expression": 3
+          }
+        ],
+        "wrongReaction": {
+          "expression": 3,
+          "line": "삐빅! 아직 규칙이랑 달라! 6장·7장·8장 손님 결과를 다시 보자!"
+        },
+        "firstTrySuccess": [
+          {
+            "speaker": "부스 단말기",
+            "role": "system",
+            "text": "7 ≥ 7 → 참! 포토 부스 게이트가 열립니다 📸",
+            "expression": 0
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 1,
+            "text": {
+              "boy": "열렸다. 기호 하나 차이였네. …첫 축제 인생네컷인데, 표정 연습 좀 할 걸.",
+              "girl": "열렸다! 기호 하나 차이였구나. …우리 첫 축제 인생네컷이네. 나 잘 나오려나…"
+            }
+          }
+        ],
+        "retrySuccess": [
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
+            "text": {
+              "boy": "휴, 이제 열린다. '이상'은 같은 수까지 포함. 외웠다.",
+              "girl": "휴, 이제야 열렸다! '이상'은 같은 수까지 포함, 외웠어."
+            }
+          }
+        ]
+      },
+      "teacher": {
+        "ask": "순차·선택·반복 중 이 장면은 어떤 제어 구조이며, '7장 이상'에서 딱 7장이 탈락한 까닭은 무엇일까요?",
+        "answer": "조건에 따라 실행이 달라지는 선택 구조입니다. '>'는 같을 때 거짓이므로 경계값 7을 포함하려면 '≥'를 써야 하며, 비교 결과는 항상 참 또는 거짓입니다.",
+        "watch": "카드마다 6·7·8장 손님 결과가 보여 '>'·'='·'≤'와의 차이를 바로 비교할 수 있습니다. 7장은 1장 끝의 '(9 + 5) ÷ 2 = 7장씩'과 이어집니다.",
+        "short": "경계값 7장에서 '>'를 '≥'로 고쳐 포토 부스에 입장합니다."
+      }
     },
     {
       "id": "ch2-3",
       "kind": "concept",
-      "experiment": "compare",
-      "title": "어느 부스에 들어갈 수 있을까?",
-      "topic": "비교와 그리고 · 입장 판단",
-      "minutes": "1:30",
-      "quote": "하루: “입장권은 쓰지 않고 보유 수만 확인하는 체험이래. 필요한 수 이상인지 살펴보자.”",
+      "graded": true,
+      "questionId": "ch2-q2",
+      "conceptTitle": "논리 연산 · 그리고(AND)",
+      "experiment": "quiz",
+      "title": "EP 6 · 쉬는 부스에 손님 들이는 게이트",
+      "topic": "논리 연산 · 두 조건 잇기",
+      "minutes": "1:00",
+      "background": "day",
+      "channel": "축제 교정 · 함께 다니는 중",
+      "quote": "부스 스태프: \"학생들! 우리 지금 쉬는 시간이라 문 닫았는데, 게이트가 왜 '어서 오세요'래?!\"",
+      "goalPrompt": "쉬는 시간엔 티켓이 있어도 닫히게 하려면 어떻게 고칠까?",
+      "observe": "'~이고'(그리고)는 두 조건이 모두 참일 때만 참이라, 쉬는 중이면 닫혀요.",
+      "quiz": {
+        "situation": [
+          "지금 부스는 쉬는 시간이에요. (운영 중: 거짓)",
+          "그런데 티켓 7장인 우리에게 게이트가 열렸어요."
+        ],
+        "code": [
+          "만일 티켓이 2장 이상이거나 부스가 운영 중이면",
+          "  게이트 열기"
+        ],
+        "focus": 1,
+        "choices": [
+          {
+            "key": "and",
+            "label": "만일 티켓이 2장 이상이고 부스가 운영 중이면",
+            "correct": true,
+            "screen": "쉬는 시간: 닫힘 🔒 · 운영 중: 열림"
+          },
+          {
+            "key": "raise",
+            "label": "만일 티켓이 3장 이상이거나 부스가 운영 중이면",
+            "screen": "쉬는 시간에도 열림 (7장은 3장 이상)",
+            "why": "'~거나'(또는)는 하나만 참이어도 참이라, 티켓만 넉넉하면 쉬는 시간에도 열려요."
+          },
+          {
+            "key": "drop",
+            "label": "만일 티켓이 2장 이상이면 (운영 조건 지우기)",
+            "screen": "쉬는 시간에도 열림",
+            "why": "운영 중인지 확인하는 조건이 사라져서 쉬는 시간을 전혀 막지 못해요."
+          }
+        ],
+        "successTitle": "쉬는 시간엔 잠금!",
+        "explain": "'~이고'(그리고)는 두 조건이 모두 참일 때만 참이에요. 티켓은 참, 운영 중은 거짓이라 게이트가 닫혀요."
+      },
       "flow": {
         "intro": [
           {
-            "speaker": "축제앱",
-            "role": "system",
-            "text": "내 입장권 · 축제 참여 선물 6장. 부스에서는 보유 수를 확인하며 표를 차감하지 않습니다.",
-            "expression": 0
-          },
-          {
-            "speaker": "하루",
-            "role": "haru",
-            "text": "사진 부스가 저쪽이고 게임 부스는 그 옆이래.",
-            "expression": 0
-          },
-          {
-            "speaker": "나",
-            "role": "me",
-            "text": "아까부터 지도를 보고 있었던 거야?",
-            "expression": 0
-          },
-          {
-            "speaker": "하루",
-            "role": "haru",
-            "text": "네가 좋아할 만한 것도 찾아봤어. 먼저 어디 가고 싶어?",
-            "expression": 1
-          },
-          {
             "speaker": "내 생각",
             "role": "narration",
-            "text": "안내판에는 필요한 입장권 수와 운영 시작 여부가 함께 적혀 있었다.",
+            "text": "사진을 찍고 옆 게임 부스로 가자 게이트가 '어서 오세요!' 하며 열렸다. 그런데 안에서 핫도그를 먹던 스태프가 놀라서 뛰어나왔다.",
             "expression": 0
+          },
+          {
+            "speaker": "부스 스태프",
+            "role": "system",
+            "text": "학생들, 미안! 지금 쉬는 시간이라 부스 닫았거든. 게이트가 왜 열렸지?",
+            "expression": 0
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 4,
+            "text": {
+              "boy": "이것도 내가 만든 게이트야. 사진 부스 코드에 '부스 운영 중' 조건만 하나 더 붙였는데… 코드 좀 봐 줘.",
+              "girl": "이것도 내가 만든 게이트야. 사진 부스 코드에 '부스 운영 중' 조건만 하나 더 붙였는데… 코드 좀 봐 줄래?"
+            }
           }
         ],
         "shortIntro": [
           {
-            "speaker": "축제앱",
+            "speaker": "하루",
+            "role": "haru",
+            "text": "부스가 쉬는 시간인데 게이트가 우리를 들여보냈어! 코드 보고 같이 고쳐 줘!",
+            "expression": 3
+          }
+        ],
+        "wrongReaction": {
+          "expression": 4,
+          "line": "어… 스태프가 아직 핫도그 들고 서 있어. 쉬는 시간엔 결과가 어떻게 되는지 보자!"
+        },
+        "firstTrySuccess": [
+          {
+            "speaker": "부스 단말기",
             "role": "system",
-            "text": "내 입장권 · 축제 참여 선물 6장. 부스에서는 보유 수를 확인하며 표를 차감하지 않습니다.",
+            "text": "(참) 그리고 (거짓) → 거짓 · \"지금은 입장할 수 없어요\" 🔒",
             "expression": 0
           },
           {
             "speaker": "하루",
             "role": "haru",
-            "text": "어느 부스부터 갈까? 필요한 입장권 수와 운영 시작 여부를 함께 확인하자.",
-            "expression": 0
-          }
-        ],
-        "options": [
-          {
-            "key": "photo",
-            "label": "사진 한 장 찍자.",
-            "params": {
-              "booth": "photo",
-              "threshold": 6
-            }
-          },
-          {
-            "key": "game",
-            "label": "게임 부스부터 가 보자.",
-            "params": {
-              "booth": "game",
-              "threshold": 4
+            "expression": 2,
+            "text": {
+              "boy": "됐다. 스태프분 핫도그 다 드실 때까지 우린 옆 구경 가자 ㅋㅋ",
+              "girl": "됐다! 스태프분 핫도그 다 드실 때까지 우린 옆 구경하자 ㅋㅋ"
             }
           }
         ],
-        "responses": {
-          "allowed": [
-            {
-              "speaker": "하루",
-              "role": "haru",
-              "text": "오, {{boothName}}에 들어갈 수 있대. 같이 들어가자. 네가 먼저 해 볼래?",
-              "expression": 3
-            },
-            {
-              "speaker": "나",
-              "role": "me",
-              "text": "좋아. 다음에는 네 차례야.",
-              "expression": 0
+        "retrySuccess": [
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
+            "text": {
+              "boy": "이제 안 열린다. '그리고'는 하나만 거짓이어도 거짓. 알았다.",
+              "girl": "이제 안 열리네! '그리고'는 하나만 거짓이어도 거짓, 알았어."
             }
-          ],
-          "blocked": [
-            {
-              "speaker": "하루",
-              "role": "haru",
-              "text": "{{boothName}}에 가려면 표가 더 필요하네. 다른 곳을 먼저 둘러보다가 다시 오자.",
-              "expression": 4
-            },
-            {
-              "speaker": "나",
-              "role": "me",
-              "text": "응. 같이 갈 데는 아직 많으니까.",
-              "expression": 0
-            }
-          ],
-          "wait": [
-            {
-              "speaker": "하루",
-              "role": "haru",
-              "text": "{{boothName}}은 아직 운영 전이네. 시간 좀 남았으니까 주변을 먼저 둘러볼까?",
-              "expression": 4
-            },
-            {
-              "speaker": "나",
-              "role": "me",
-              "text": "좋아. 문 열면 다시 와 보자.",
-              "expression": 0
-            }
-          ],
-          "both-blocked": [
-            {
-              "speaker": "하루",
-              "role": "haru",
-              "text": "입장권도 부족하고, 아직 문도 안 열렸네. 다른 곳부터 둘러보자.",
-              "expression": 4
-            },
-            {
-              "speaker": "나",
-              "role": "me",
-              "text": "응. 두 조건이 다 맞으면 그때 다시 오자.",
-              "expression": 0
-            }
-          ]
-        }
+          }
+        ]
       },
       "teacher": {
-        "ask": "입장권 수가 기준과 같고 부스도 운영 중이면 들어갈 수 있을까요? 둘 중 하나라도 거짓이면 어떻게 될까요?",
-        "answer": "기준 이상은 ≥이며, 같은 수를 포함합니다. 입장권 수 기준과 운영 상태를 그리고(AND)로 연결해 모두 참일 때만 입장 가능합니다.",
-        "watch": "이 실험은 입장 자격을 확인하며 입장권을 차감하지 않습니다. 기준과 같을 때도 포함하는 ≥를 사용합니다.",
-        "short": "선택한 부스의 기준을 보유 수와 비교합니다."
-      },
-      "observe": "입장권 비교 결과와 운영 상태를 그리고로 연결해, 두 조건이 모두 참일 때만 입장 가능한지 확인합니다.",
-      "channel": "축제 현장 · 함께 다니는 중"
+        "ask": "입장 티켓 조건(참)과 부스 운영 중(거짓)을 '또는'으로 이을 때와 '그리고'로 이을 때 결과는 어떻게 다를까요?",
+        "answer": "'또는(OR)'은 하나만 참이어도 참이라 쉬는 시간에도 열렸고, '그리고(AND)'는 두 조건이 모두 참일 때만 참이므로 쉬는 중(거짓)이면 닫힙니다.",
+        "watch": "조건별 참·거짓(티켓 7장: 참, 운영 중: 거짓)과 둘을 이은 결과를 나눠 읽게 하고, OR와 AND를 혼동하지 않게 합니다.",
+        "short": "OR 버그를 찾아 AND로 고칩니다."
+      }
     },
     {
       "id": "ch2-4",
       "kind": "concept",
-      "experiment": "and",
-      "title": "입장 신호에 필요한 두 조건",
-      "topic": "논리 연산 · 그리고",
-      "minutes": "1:30",
-      "quote": "하루: “입장권이 있는지, 부스가 운영 중인지 둘 다 확인해야 입장할 수 있대.”",
+      "graded": true,
+      "questionId": "ch2-q3",
+      "conceptTitle": "논리 연산 · 아니다(NOT)",
+      "experiment": "quiz",
+      "title": "EP 7 · 비 오는데 야외로 내보내는 날씨 안내",
+      "topic": "논리 연산 · 날씨에 따른 길 안내",
+      "minutes": "1:00",
+      "background": "day",
+      "channel": "축제 교정 · 함께 다니는 중",
+      "quote": "하루: \"빗방울 떨어지는데 내 앱이 자꾸 야외 공연장으로 가래!\"",
+      "goalPrompt": "비를 피해 안내하려면 1번 줄 조건을 무엇으로 바꿀까?",
+      "observe": "'비가 오지 않으면'(아니다)은 비가 올 때 거짓이라 야외로 가지 않아요.",
+      "quiz": {
+        "situation": [
+          "지금 비가 와요. 실내 통로는 열려 있어요.",
+          "그런데 날씨 안내가 “야외 공연으로!”라고 해요."
+        ],
+        "code": [
+          "만일 비가 오면",
+          "  야외 공연으로 안내",
+          "아니면",
+          "  실내 통로로 안내"
+        ],
+        "focus": 1,
+        "choices": [
+          {
+            "key": "not",
+            "label": "만일 비가 오지 않으면",
+            "correct": true,
+            "screen": "비 올 때 → 실내 통로 · 맑을 때 → 야외 공연"
+          },
+          {
+            "key": "passage",
+            "label": "만일 통로가 열려 있으면",
+            "screen": "비 올 때 → 야외 공연",
+            "why": "통로가 열려 있으면 오히려 야외로 보내요. 비가 오는지를 뒤집어서 확인해야 해요."
+          },
+          {
+            "key": "or",
+            "label": "만일 비가 오거나 통로가 열리면",
+            "screen": "비 올 때 → 야외 공연",
+            "why": "'~거나'(또는)는 하나만 참이어도 참이라 비가 오면 여전히 야외로 가요."
+          }
+        ],
+        "successTitle": "정확한 길 안내: 실내 통로로!",
+        "explain": "'비가 오지 않으면'은 '비가 온다'를 뒤집은 조건(아니다)이에요. 비가 오면 거짓이라 아니면 쪽(실내 통로)으로 가요.",
+        "storyPatch": {
+          "route": "indoor"
+        }
+      },
       "flow": {
         "intro": [
           {
-            "speaker": "하루",
-            "text": "{{boothName}}에 들어가려면 입장권 기준을 채우고 운영도 시작해야 한대. 두 가지를 같이 확인해 보자.",
+            "speaker": "내 생각",
+            "role": "narration",
+            "text": "그때 운동장에 굵은 빗방울이 후두둑 떨어졌다. 본관 로비는 행사 장비로 닫혀 있고, 실내 통로만 열려 있다.",
             "expression": 0
+          },
+          {
+            "speaker": "축제앱",
+            "role": "system",
+            "text": "[날씨 안내] 비가 온다(참) → 야외 공연장으로 이동!",
+            "expression": 0
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 3,
+            "text": {
+              "boy": "비 오는데 야외로 가라고? 조건을 어디 거꾸로 짰나 보다.",
+              "girl": "비 오는데 야외로 가래!! 조건을 어딘가 거꾸로 짰나 봐…"
+            }
           }
         ],
         "shortIntro": [
           {
             "speaker": "하루",
-            "text": "{{boothName}}에 들어가려면 입장권 기준을 채우고 운영도 시작해야 한대. 두 가지를 같이 확인해 보자.",
-            "expression": 0
+            "role": "haru",
+            "text": "비가 오는데 날씨 안내가 야외로 가래! 비를 피하게 고쳐 줘!",
+            "expression": 4
           }
         ],
-        "options": [
+        "wrongReaction": {
+          "expression": 4,
+          "line": "으악, 빗방울 더 세지는데 아직 야외로 가래! 첫 줄 조건이 지금 참인지 보자!"
+        },
+        "firstTrySuccess": [
           {
-            "key": "check",
-            "label": "두 조건의 입장 신호를 확인한다"
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 2,
+            "text": {
+              "boy": "실내 통로로 들어왔다. 비가 안 올 때만 야외로. 깔끔하다.",
+              "girl": "실내 통로로 쏙 들어왔다! 비가 안 올 때만 야외로, 깔끔해."
+            }
+          },
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
+            "text": {
+              "boy": "비 올 땐 실내, 맑을 땐 야외. 이제 날씨가 바뀌어도 걱정 없겠다.",
+              "girl": "비 올 땐 실내, 맑을 땐 야외! 이제 날씨가 바뀌어도 걱정 없겠다."
+            }
           }
         ],
-        "responses": {
-          "ready": [
-            {
-              "speaker": "하루",
-              "text": "{{boothName}}도 준비됐네. 같이 들어가자. 네가 먼저 해 볼래?",
-              "expression": 0
+        "retrySuccess": [
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
+            "text": {
+              "boy": "휴, 이제 실내로 안내한다. 비 다 맞을 뻔했다.",
+              "girl": "휴, 이제야 실내로 안내하네! 비 다 맞을 뻔했어."
             }
-          ],
-          "wait": [
-            {
-              "speaker": "하루",
-              "text": "{{boothName}}에 지금은 들어갈 수 없나 봐. 그동안 다른 곳을 둘러보자.",
-              "expression": 0
-            }
-          ]
-        }
+          }
+        ]
       },
       "teacher": {
-        "ask": "입장권 보유 수 기준 충족과 부스 운영 시작이 모두 필요하다면 한 조건이 거짓일 때 결과는 어떨까요?",
-        "answer": "AND는 두 조건이 모두 참일 때만 참입니다. 한 조건이라도 거짓이면 대기 신호가 됩니다.",
-        "watch": "입장권 보유 수 조건은 앞 장면의 결과를 이어받습니다. 두 체크박스를 바꾸면 가정한 상황의 참·거짓을 비교할 수 있습니다.",
-        "short": "확장 활동입니다. 기본 이야기에서는 생략하며 목차에서 직접 열 수 있습니다."
-      },
-      "observe": "입장권 보유와 부스 운영이 모두 참일 때만 입장 신호가 켜지는지 봅니다.",
-      "channel": "축제 현장 · 함께 다니는 중",
-      "optional": true
+        "ask": "비가 오는데 야외로 간 까닭은 무엇이며, NOT은 어떤 역할을 할까요?",
+        "answer": "첫 줄이 '비가 온다'라서 비 오는 날 참이 되어 야외로 갔습니다. NOT은 참·거짓을 뒤집어 '아니다(비가 온다)'로 비가 오지 않을 때만 야외로 가게 합니다.",
+        "watch": "NOT을 엉뚱한 조건(실내 통로)에 붙이거나, 또는으로 조건을 늘리면 해결된다고 생각하는 점을 확인합니다.",
+        "short": "첫 줄을 NOT(비가 온다)으로 고쳐 실내로 대피합니다."
+      }
     },
     {
       "id": "ch2-5",
       "kind": "concept",
-      "experiment": "or",
-      "title": "비를 피할 수 있는 방법",
-      "topic": "논리 연산 · 또는 · 아니다",
-      "minutes": "1:20",
-      "quote": "하루: “우산이나 실내 통로 중 하나만 있어도 비를 피할 수 있을까?”",
+      "graded": true,
+      "questionId": "ch2-q4",
+      "conceptTitle": "다중 선택(만일~아니면) 분기 순서",
+      "experiment": "order",
+      "title": "EP 8 · 교환권 10장 모았는데 스티커가 웬 말?!",
+      "topic": "여러 갈래 선택 · 경품 자판기",
+      "minutes": "1:00",
+      "background": "day",
+      "channel": "축제 교정 · 함께 다니는 중",
+      "quote": "하루: \"우리 둘이 교환권 10장이나 모았는데 왜 큰 키링 대신 별 스티커가 나와?!\"",
+      "goalPrompt": "10장이면 큰 키링이 나오게 줄 순서를 바꿔 보세요!",
+      "observe": "'만일 ~ 아니면'은 처음 참인 줄 하나만 실행하니, 까다로운 조건을 맨 위에 둬요.",
+      "task": {
+        "situation": [
+          "10장 이상 큰 키링 · 5장 이상 작은 키링 · 3장 이상 스티커",
+          "교환권 10장을 넣었는데 별 스티커가 나왔어요."
+        ],
+        "subject": "교환권이",
+        "rows": [
+          {
+            "id": "low",
+            "min": 3,
+            "then": "별 스티커"
+          },
+          {
+            "id": "mid",
+            "min": 5,
+            "then": "작은 키링"
+          },
+          {
+            "id": "high",
+            "min": 10,
+            "then": "큰 키링"
+          }
+        ],
+        "initialOrder": [
+          "low",
+          "mid",
+          "high"
+        ],
+        "tests": [
+          10,
+          5,
+          3
+        ],
+        "successTitle": "큰 키링 당첨!",
+        "explain": "'만일 ~ 아니면'은 위에서부터 처음 참인 줄 하나만 실행해요. 그래서 까다로운 조건(10장)을 맨 위에 둬요.",
+        "whyTop": {
+          "low": "10 ≥ 3이 참이라 첫 줄에서 바로 멈춰요. 아래 줄은 검사하지도 않아요.",
+          "mid": "10 ≥ 5도 참이라 첫 줄에서 멈춰요. 가장 까다로운 조건(10장)을 맨 위에 둬야 해요."
+        },
+        "whyRest": "5장 손님이 별 스티커를 받아요. 5장 이상 줄을 3장 이상 줄보다 위에 둬야 해요.",
+        "storyPatch": {
+          "prize": "large"
+        },
+        "values": {
+          "prizeName": "큰 키링"
+        },
+        "unit": "장"
+      },
       "flow": {
         "intro": [
           {
+            "speaker": "내 생각",
+            "role": "narration",
+            "text": "실내 통로의 게임 부스를 돌며 게임 점수만큼 받은 경품 교환권이 둘이 합쳐 10장 모였다.",
+            "expression": 0
+          },
+          {
             "speaker": "하루",
-            "text": "비가 올 것 같은데 우산 챙겼어? 실내 통로도 있는지 확인해 보자.",
+            "role": "haru",
+            "expression": 1,
+            "text": {
+              "boy": "10장 채웠다. 내가 만든 경품 자판기에서 큰 키링 뽑자. 커플… 아니, 기념으로.",
+              "girl": "10장 채웠어! 내가 만든 경품 자판기에서 큰 키링 뽑자. 커플… 아, 아니 기념으로!"
+            }
+          },
+          {
+            "speaker": "경품 자판기",
+            "role": "system",
+            "text": "교환권 10장 투입 → 지급 상품: [별 스티커] 1장",
             "expression": 0
           }
         ],
         "shortIntro": [
           {
             "speaker": "하루",
-            "text": "비가 올 것 같은데 우산 챙겼어? 실내 통로도 있는지 확인해 보자.",
-            "expression": 0
+            "role": "haru",
+            "text": "교환권 10장을 넣었는데 별 스티커가 나왔어! 자판기 코드를 같이 보자!",
+            "expression": 3
           }
         ],
-        "options": [
+        "wrongReaction": {
+          "expression": 4,
+          "line": "또 엉뚱한 경품이야…! 10장일 때 위에서부터 참·거짓을 따라가 보자."
+        },
+        "firstTrySuccess": [
           {
-            "key": "check-method",
-            "label": "비를 피할 방법을 조건으로 확인한다"
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 2,
+            "text": {
+              "boy": "나왔다, 큰 키링. 네 가방이랑 내 가방에 하나씩 달자.",
+              "girl": "나왔다, 큰 키링! 네 가방이랑 내 가방에 하나씩 달면 딱이겠다!"
+            }
           }
         ],
-        "responses": {
-          "default": [
-            {
-              "speaker": "하루",
-              "text": "움직이기 전에 지도도 보자. 비가 와도 다닐 길이 있는지 확인하게.",
-              "expression": 0
+        "retrySuccess": [
+          {
+            "speaker": "하루",
+            "role": "haru",
+            "expression": 0,
+            "text": {
+              "boy": "큰 키링 받았다. 줄 순서 하나에 결과가 이렇게 달라지네.",
+              "girl": "큰 키링 받았다! 줄 순서 하나 바꿨을 뿐인데 결과가 완전히 달라지네."
             }
-          ]
-        }
+          }
+        ]
       },
       "teacher": {
-        "ask": "우산이 없고 실내 통로가 열려 있으면 OR 결과는 무엇일까요? ‘우산이 있다’를 NOT로 뒤집으면 어떤 뜻일까요?",
-        "answer": "OR는 두 조건 중 하나 이상이 참이면 참이며, 둘 다 참이어도 참입니다. NOT는 ‘우산이 있다’의 참·거짓을 뒤집어 ‘우산이 없다’를 판단합니다.",
-        "watch": "OR는 정확히 하나만 참이라는 뜻이 아닙니다. NOT는 별개의 비 조건이 아니라 같은 ‘우산이 있다’ 조건의 참·거짓을 뒤집습니다.",
-        "short": "확장 활동입니다. 기본 이야기에서는 생략하며 목차에서 직접 열 수 있습니다."
-      },
-      "observe": "OR는 우산이나 실내 통로 중 하나 이상이 참이면 참인지, NOT는 ‘우산이 있다’를 ‘우산이 없다’로 뒤집는지 확인합니다.",
-      "channel": "축제 현장 · 함께 다니는 중",
-      "optional": true
+        "ask": "교환권이 10장일 때 '≥ 3'을 '≥ 10'보다 먼저 검사하면 왜 문제가 될까요?",
+        "answer": "10은 3 이상이기도 하므로 첫 조건에서 바로 참이 되어 별 스티커 분기만 실행하고 아래 분기는 검사하지 않기 때문입니다. 범위가 겹칠 때는 큰 기준부터 차례로 검사해야 합니다.",
+        "watch": "실행하면 10·5·3장 손님마다 어느 줄에서 멈추는지 보여 주어, 참인 분기가 모두 실행되는 것이 아니라 처음 참인 분기 하나만 실행됨을 확인합니다. 입장 티켓과 교환권은 서로 다른 화폐입니다.",
+        "short": "줄 순서를 큰 기준(≥ 10)부터로 바꿉니다."
+      }
     },
     {
       "id": "ch2-6",
-      "kind": "concept",
-      "experiment": "route",
-      "title": "날씨에 맞는 길을 고르자",
-      "topic": "또는·아니다와 선택 구조",
-      "minutes": "1:50",
-      "quote": "하루: “비가 오면 실내 부스로 가고, 맑으면 야외 공연부터 보자.”",
-      "flow": {
-        "intro": [
-          {
-            "speaker": "내 생각",
-            "role": "narration",
-            "text": "다음 부스로 가려는데 운동장 쪽에서 바람이 불었다. 사람들이 하늘을 한 번씩 올려다봤다.",
-            "expression": 0
-          },
-          {
-            "speaker": "하루",
-            "role": "haru",
-            "text": "비가 올 것 같은데. 우산 챙겼어?",
-            "expression": 4
-          },
-          {
-            "speaker": "나",
-            "role": "me",
-            "text": "안 가져왔어. 멀리 돌아가야 하나?",
-            "expression": 0
-          },
-          {
-            "speaker": "하루",
-            "role": "haru",
-            "text": "여기 실내 통로도 있대. 비가 오는지, 피할 방법이 있는지 같이 보고 정하자.",
-            "expression": 4
-          }
-        ],
-        "shortIntro": [
-          {
-            "speaker": "하루",
-            "role": "haru",
-            "text": "비가 오는지, 우산이나 실내 통로가 있는지 보고 다음 길을 정하자.",
-            "expression": 0
-          }
-        ],
-        "options": [
-          {
-            "key": "choose-route",
-            "label": "우산 없이도 갈 수 있는 길부터 보자."
-          },
-          {
-            "key": "take-time",
-            "label": "조금 기다려도 괜찮아. 날씨부터 보자."
-          }
-        ],
-        "responses": {
-          "indoor": [
-            {
-              "speaker": "하루",
-              "role": "haru",
-              "text": "실내로 가자. 저 통로 끝에 부스가 더 있대.",
-              "expression": 0
-            },
-            {
-              "speaker": "나",
-              "role": "me",
-              "text": "좋아. 이번에는 내가 지도 볼게.",
-              "expression": 0
-            }
-          ],
-          "outdoor": [
-            {
-              "speaker": "하루",
-              "role": "haru",
-              "text": "비가 안 오니까 야외 공연부터 보자. 아직 앞자리가 비어 있어.",
-              "expression": 0
-            },
-            {
-              "speaker": "나",
-              "role": "me",
-              "text": "빨리 가자. 같이 보고 싶은 공연이 있었어.",
-              "expression": 0
-            }
-          ],
-          "wait": [
-            {
-              "speaker": "하루",
-              "role": "haru",
-              "text": "비를 피해서 갈 방법이 없네. 조금 기다렸다 가자.",
-              "expression": 0
-            },
-            {
-              "speaker": "나",
-              "role": "me",
-              "text": "괜찮아. 여기 앉아서 다음에 갈 곳 골라도 되겠다.",
-              "expression": 0
-            }
-          ]
-        },
-        "choiceReplies": {
-          "choose-route": [
-            {
-              "speaker": "하루",
-              "role": "haru",
-              "text": "같이 방법 찾으니까 한결 낫다. 혼자였으면 그냥 돌아갔을지도 몰라.",
-              "expression": 0
-            }
-          ],
-          "take-time": [
-            {
-              "speaker": "하루",
-              "role": "haru",
-              "text": "서두를 필요 없지. 너랑 같이 고르면 되니까.",
-              "expression": 1
-            }
-          ]
-        }
-      },
-      "teacher": {
-        "ask": "비가 오는데 우산은 없고 실내 통로는 열려 있으면 갈 수 있을까요? 둘 다 없다면요?",
-        "answer": "우산 OR 실내 통로 중 하나 이상이 참이면 비를 피할 방법이 있습니다. 비가 오고 둘 다 없으면 기다립니다. 비가 오지 않으면 야외로 갑니다. NOT(비가 온다)는 비가 오지 않는다는 판단입니다.",
-        "watch": "OR는 둘 다 참이어도 참입니다. NOT는 같은 비 조건을 뒤집습니다. 한 번의 실행에서는 한 경로만 선택합니다.",
-        "short": "비와 맑음 경로를 한 번씩 실행합니다."
-      },
-      "observe": "우산 또는 실내 통로가 있으면 비를 피할 방법이 있습니다. 비가 아니다의 판단도 확인하고 한 경로를 실행합니다.",
-      "channel": "축제 현장 · 함께 다니는 중"
-    },
-    {
-      "id": "ch2-7",
-      "kind": "concept",
-      "experiment": "prize",
-      "title": "교환권으로 받는 기념품",
-      "topic": "여러 경우로 나누는 선택",
-      "minutes": "1:40",
-      "quote": "하루: “입장권과 별도로 기념품 교환권을 받았어. 교환권 수로 기념품을 확인해 보자.”",
-      "flow": {
-        "intro": [
-          {
-            "speaker": "내 생각",
-            "role": "narration",
-            "text": "함께 돌아다니다 보니 부스에서 받은 기념품 교환권이 꽤 모였다.",
-            "expression": 0
-          },
-          {
-            "speaker": "하루",
-            "role": "haru",
-            "text": "이거 그냥 주머니에 넣어 뒀는데, 기념품이랑 바꿀 수 있대.",
-            "expression": 0
-          },
-          {
-            "speaker": "나",
-            "role": "me",
-            "text": "어떤 게 있는데?",
-            "expression": 0
-          },
-          {
-            "speaker": "하루",
-            "role": "haru",
-            "text": "키링이랑 별 스티커. 오늘 같이 다닌 기념으로 하나 남기면 좋겠다.",
-            "expression": 0
-          }
-        ],
-        "shortIntro": [
-          {
-            "speaker": "하루",
-            "role": "haru",
-            "text": "부스에서 받은 기념품 교환권으로 오늘 기념품 하나 남기자. 무엇을 받을 수 있을까?",
-            "expression": 0
-          }
-        ],
-        "options": [
-          {
-            "key": "exchange",
-            "label": "오늘 기념으로 하나 챙기자."
-          },
-          {
-            "key": "small-is-fine",
-            "label": "작아도 좋아. 같이 다닌 기념이니까."
-          }
-        ],
-        "responses": {
-          "large": [
-            {
-              "speaker": "하루",
-              "text": "{{prizeName}} 받았네. 가방에 달면 멀리서도 바로 알아보겠다.",
-              "expression": 2
-            }
-          ],
-          "small": [
-            {
-              "speaker": "하루",
-              "text": "{{prizeName}}이면 네 가방에 잘 어울리겠다. 달아 볼래?",
-              "expression": 2
-            }
-          ],
-          "sticker": [
-            {
-              "speaker": "하루",
-              "text": "{{prizeName}}는 초대장에 붙이면 예쁘겠다. 네 이름 옆에 붙여 줄까?",
-              "expression": 2
-            }
-          ],
-          "default": [
-            {
-              "speaker": "하루",
-              "text": "{{prizeName}}도 챙겼으니 잠깐 쉬었다 가자.",
-              "expression": 2
-            }
-          ]
-        },
-        "choiceReplies": {
-          "exchange": [
-            {
-              "speaker": "하루",
-              "role": "haru",
-              "text": "이걸 보면 오늘 생각나겠다.",
-              "expression": 2
-            }
-          ],
-          "small-is-fine": [
-            {
-              "speaker": "하루",
-              "role": "haru",
-              "text": "그러게. 어떤 걸 받아도 우리한텐 오늘 기념이네.",
-              "expression": 1
-            }
-          ]
-        }
-      },
-      "teacher": {
-        "ask": "기념품 교환권이 6장이면 8장 이상과 5장 이상 중 어느 분기에서 멈출까요?",
-        "answer": "8장 이상은 거짓, 5장 이상은 참이므로 작은 키링입니다. 8장이면 첫 조건만 참이라 큰 키링 하나를 받습니다.",
-        "watch": "기념품 교환권은 기념품 교환용이며 입장권과 별개입니다. 조건은 위에서부터 검사합니다.",
-        "short": "6장과 8장를 실행해 두 경로를 비교합니다."
-      },
-      "observe": "기념품 교환권 수에 따라 위에서부터 조건을 검사해 기념품 하나만 선택하는지 확인합니다.",
-      "channel": "축제 현장 · 함께 다니는 중"
-    },
-    {
-      "id": "ch2-8",
       "kind": "story",
-      "title": "잠깐 쉬어 가는 길",
-      "topic": "선택한 경로와 기념품",
-      "minutes": "1:20",
+      "heartChoice": true,
+      "title": "비 그친 교정의 벤치 · 마음 선택지 ①",
+      "topic": "마음 선택지 · 저녁 약속",
+      "minutes": "1:40",
       "background": "day",
+      "channel": "축제 교정 · 함께 다니는 중",
       "lines": [
+        { "speaker": "내 생각", "role": "narration", "text": "소나기가 그치고 교정에 햇살이 다시 비쳤다. 우리는 받은 {{prizeName}}을 나란히 흔들어 보며 벤치에 잠깐 앉았다.", "expression": 0 },
         {
-          "speaker": "내 생각",
-          "role": "narration",
-          "text": "{{routeDescription}} 기념품으로 받은 {{prizeName}}도 챙기고 벤치에 잠깐 앉았다.",
-          "expression": 0
+          "speaker": "하루", "role": "haru", "expression": 0,
+          "text": {
+            "boy": "아 맞다, {{vocative}}. 저녁 노을 질 때 운동장에서 빛그림 점등식 하는 거 알지?",
+            "girl": "아참, {{vocative}}. 저녁 노을 질 때 운동장에서 빛그림 점등식 하는 거 기억나?"
+          }
         },
         {
-          "speaker": "하루",
-          "role": "haru",
-          "text": "이따 운동장에도 같이 가자. 어제 말한 빛그림 점등식을 준비해야 하거든.",
-          "expression": 0
+          "speaker": "하루", "role": "haru", "expression": 1,
+          "text": {
+            "boy": "내가 맡은 중앙 드론 조명 자리가 하나 남았거든. 다른 애들이 채우자고 했는데, 내가 일부러 너 몫으로 비워 뒀다.",
+            "girl": "사실 내가 맡은 중앙 드론 조명 자리가 하나 남아 있어… 다른 애들이 채우자고 했는데, 내가 일부러 너 몫으로 비워 뒀어."
+          }
         },
         {
-          "speaker": "나",
-          "role": "me",
-          "text": "운동장 조명들이 한꺼번에 켜지는 거지?",
-          "expression": 0
-        },
-        {
-          "speaker": "하루",
-          "role": "haru",
-          "text": "응. 준비팀이 앱에서 불빛 움직임을 미리 보고 조명 위치를 정해. 마지막에 내가 맡은 자리 하나를 너랑 같이 채우고 싶었어.",
-          "expression": 0
-        },
-        {
-          "speaker": "나",
-          "role": "me",
-          "text": "그럼 내가 골라도 돼?",
-          "expression": 0
-        },
-        {
-          "speaker": "하루",
-          "role": "haru",
-          "text": "같이 고르려고 기다린 거야. 공연 끝나기 전에 가 보자.",
-          "expression": 0
+          "speaker": "하루", "role": "haru", "expression": 1,
+          "text": {
+            "boy": "버그 핑계 말고. 그냥 오늘 너랑 다니는 게 좋아서. 이따 저녁에도 같이 있을래?",
+            "girl": "버그 고쳐 달라는 핑계 말고… 그냥 오늘 너랑 다니는 게 좋아서. 이따 저녁에도 같이 있어 줄래?"
+          }
         }
       ],
       "shortLines": [
+        { "speaker": "하루", "role": "haru", "text": "사실 운동장 점등식 중앙 자리, 일부러 너 몫으로 비워 뒀어. 그냥 오늘 너랑 다니는 게 좋아서… 이따 저녁에도 같이 있어 줄래?", "expression": 1 }
+      ],
+      "choices": [
         {
-          "speaker": "내 생각",
-          "role": "narration",
-          "text": "{{routeDescription}} 기념품으로 받은 {{prizeName}}도 챙기고 벤치에 잠깐 앉았다.",
-          "expression": 0
+          "key": "warm",
+          "label": "당연하지. 네가 만든 조명 옆에 내 조명도 나란히 띄우고 싶어.",
+          "cold": false,
+          "reply": [
+            {
+              "speaker": "하루", "role": "haru", "expression": 5,
+              "text": {
+                "boy": "진짜? …방금 한 말 취소 안 된다.",
+                "girl": "진짜?! …방금 한 말, 취소 못 한다?"
+              }
+            },
+            {
+              "speaker": "하루", "role": "haru", "expression": 1,
+              "text": {
+                "boy": "좋아. 그럼 점등식 전에 운동장으로 같이 가자. 네 자리 비워 둘게.",
+                "girl": "헤헤, 좋아! 그럼 점등식 전에 운동장으로 같이 가자. 네 자리 비워 둘게!"
+              }
+            },
+            { "speaker": "내 생각", "role": "narration", "text": "하루가 가방에 {{prizeName}}을 매달며 환하게 웃었다. 발걸음이 아까보다 한결 가벼워 보였다.", "expression": 0 }
+          ]
         },
         {
-          "speaker": "나",
-          "role": "me",
-          "text": "그럼 내가 골라도 돼?",
-          "expression": 0
+          "key": "friendly",
+          "label": "좋아, 같이 가자! 일단 점등식부터 무사히 성공시키고!",
+          "cold": false,
+          "reply": [
+            {
+              "speaker": "하루", "role": "haru", "expression": 5,
+              "text": {
+                "boy": "ㅋㅋ 그래, 우선순위 확실하네. 점등식 성공이 먼저지.",
+                "girl": "ㅋㅋ 그래, 우선순위 확실하네. 점등식 성공이 먼저지!"
+              }
+            },
+            {
+              "speaker": "하루", "role": "haru", "expression": 2,
+              "text": {
+                "boy": "그럼 노을 지기 전에 운동장으로 가자. 오늘 버그는 다 잡고 간다.",
+                "girl": "그럼 노을 지기 전에 운동장으로 가자! 오늘 버그는 하나도 안 남기고 잡는 거야."
+              }
+            },
+            { "speaker": "내 생각", "role": "narration", "text": "하루가 {{prizeName}}을 가방에 매달고 먼저 일어섰다. 운동장으로 가는 발걸음이 가벼웠다.", "expression": 0 }
+          ]
         },
         {
-          "speaker": "하루",
-          "role": "haru",
-          "text": "같이 고르려고 기다린 거야. 공연 끝나기 전에 가 보자.",
-          "expression": 0
+          "key": "cold",
+          "label": "그냥 준비팀 마감이 급해서 부르는 거지? 시간 맞춰 작업만 돕고 갈게.",
+          "cold": true,
+          "reply": [
+            {
+              "speaker": "하루", "role": "haru", "expression": 3,
+              "text": {
+                "boy": "아… 어. 그렇지.",
+                "girl": "아… 어? 그, 그렇구나…"
+              }
+            },
+            {
+              "speaker": "하루", "role": "haru", "expression": 4,
+              "text": {
+                "boy": "내가 괜히 혼자 들떴네. 미안. 작업 마무리까지만 잘 해 보자. 고맙다.",
+                "girl": "하하, 내가 괜히 혼자 들떠서… 미안. 작업 마무리까지만 잘 해 보자. 고마워."
+              }
+            },
+            { "speaker": "내 생각", "role": "narration", "text": "하루가 멋쩍게 웃으며 고개를 돌렸다. 방금 전까지 반짝이던 표정이 조용히 식은 것 같았다.", "expression": 0 }
+          ]
         }
       ],
       "teacher": {
-        "ask": "같은 규칙에서 입력을 바꾸면 어떤 결과가 달라졌나요?",
-        "answer": "날씨 입력은 이동 경로를 바꾸고, 기념품 교환권 수는 기념품 선택을 바꿉니다. 입장권 수는 기념품 교환에서 차감하지 않습니다.",
-        "watch": "기념품 교환용 기념품 교환권과 부스 입장권을 구분합니다. 이야기에는 실행 결과가 반영됩니다.",
-        "short": "선택한 경로와 기념품을 확인하고 운동장 약속으로 넘어갑니다."
-      },
-      "channel": "축제 현장 · 함께 다니는 중"
+        "ask": "이 장면은 이야기 분기에 어떤 영향을 미칠까요?",
+        "answer": "마음 선택지입니다. 거리를 두는 선택(cold)을 고르면 모든 문제를 맞혀도 최종 결말이 '썸 시작' 대신 '찐친'으로 분기합니다. 친구로서 다정하게 함께하겠다는 선택(friendly)은 cold가 아닙니다.",
+        "watch": "학생이 자신의 선택이 관계 엔딩 조건에 영향을 준다는 점을 자연스럽게 느끼게 하고, 연애 대사가 부담스러운 학생도 차갑지 않은 답을 고를 수 있게 합니다.",
+        "short": "하루의 저녁 제안에 대한 태도를 선택합니다."
+      }
     },
     {
-      "id": "ch2-9",
+      "id": "ch2-7",
       "kind": "summary",
-      "title": "조건에 따라 달라지는 길",
-      "topic": "조건 수업 정리",
-      "minutes": "1:00",
+      "title": "2장 완료 · 낮의 교정 돌파",
+      "topic": "선택 제어와 논리 연산 정리",
+      "minutes": "0:40",
+      "background": "day",
+      "channel": "축제 교정 · 함께 다니는 중",
       "cards": [
-        [
-          "비교 연산",
-          "두 값을 비교한 결과는 참·거짓이에요. 같은 값까지 포함하려면 ≥·≤를 써요."
-        ],
-        [
-          "논리 연산",
-          "그리고·또는·아니다로 여러 조건을 묶어 하나의 판단을 만들어요."
-        ],
-        [
-          "선택 구조",
-          "조건을 검사해 실행할 명령을 정해요. 경계값도 확인해요."
-        ]
+        ["비교 연산과 경계값", "비교 결과는 항상 참·거짓이에요. 기준과 같은 수까지 포함하려면 ≥(이상)·≤(이하)를 써요(7 > 7은 거짓, 7 ≥ 7은 참)."],
+        ["논리 연산 AND · OR · NOT", "AND는 둘 다 참일 때만 참, OR은 하나 이상 참(둘 다 참 포함)이면 참, NOT은 참·거짓을 뒤집어요."],
+        ["다중 선택 분기 순서", "'만일 ~ 아니면'은 위에서부터 검사해 처음 참이 된 분기 하나만 실행하고 아래는 건너뛰어요."]
       ],
-      "extra": "순차: 차례대로 실행 / 선택: 조건에 따라 실행 / 반복: 같은 명령을 여러 번 실행",
-      "mission": "여기서 조건 미션을 실습하거나, 아래 버튼으로 하루와 점등식 준비를 이어 가세요.",
+      "extra": "순차(차례대로) · 선택(조건에 따라) · 반복(여러 번 되풀이) 세 가지 제어 구조가 프로그램을 이룹니다.",
+      "mission": "이제 노을 진 운동장으로 이동해 마지막 빛그림 점등식의 반복 버그를 해결해 보세요!",
       "teacher": {
-        "ask": "보유 수가 기준과 정확히 같을 때도 포함하려면 어떤 비교를 써야 할까요?",
-        "answer": "‘크거나 같다(≥)’ 또는 ‘작거나 같다(≤)’처럼 같은 값을 포함하는 비교를 사용합니다.",
-        "watch": "숫자 계산 결과와 참·거짓인 판단 결과를 구분합니다.",
-        "short": "각 카드에서 한 문장씩 읽고 사이트 실습으로 전환합니다."
-      },
-      "channel": "축제 현장 · 함께 다니는 중"
+        "ask": "경계값(≥), 논리 연산(AND·OR·NOT), 분기 순서 중 실생활에서 가장 자주 틀리는 부분은 어디였나요?",
+        "answer": "'>'와 '≥'의 경계값 오차와 다중 선택에서 작은 조건을 먼저 적는 순서 버그가 대표적입니다.",
+        "watch": "2장 결과를 확인하고 3장(노을 진 운동장)으로 이어집니다.",
+        "short": "2장 핵심 카드를 확인하고 3장으로 이동합니다."
+      }
     }
   ]
 };

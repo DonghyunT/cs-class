@@ -5,7 +5,7 @@ import { emptyWork } from "../classroom/progress";
 import { isKnownLessonMission, knownMissionCount } from "../classroom/programming-entry";
 import { isReviewType, reviewMissionIds, reviewProjectSchema } from "../classroom/review/project";
 import type { Lesson, Submission, ValidationResult, Work } from "../classroom/types";
-import { authorized, identity } from "./auth";
+import { authorizedRead, identity } from "./auth";
 import { requireCondition } from "./errors";
 import { admin } from "./firebase";
 import { actionSchema, applyAction, draftSchema, revisionSchema, validateDraft } from "./learning";
@@ -38,7 +38,7 @@ const inputSchema = z.object({ classId: z.string().min(1).max(80), work: workSch
 
 export async function authorizeTeacherPreview(classId?: string, lessonId?: string): Promise<{ uid: string; classId: string; lesson: Lesson | null }> {
   const who = await identity();
-  return authorized(who, async (transaction, account) => {
+  return authorizedRead(who, async (transaction, account) => {
     requireCondition(account.role === "teacher" || account.role === "instructor", 403, "FORBIDDEN", "선생님만 수업을 미리 볼 수 있어요.");
     const selectedClassId = classId ?? account.classIds[0] ?? "";
     // With no arguments this checks the session and role before the route reads its body.

@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-11-10(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-11-19(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -224,13 +224,15 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
 
 **로컬 전체 실행:** 변경 범위와 관계없이 전체를 돌리는 명령은 `npm run test:e2e`입니다(`--full`은 선별 결과가 `full`일 때 실행을 허용할 뿐입니다). 앱과 에뮬레이터를 끄고 3000·8080·9099를 비운 뒤 실행합니다. 로컬은 `next dev`, CI는 빌드한 `next start`로 돌기 때문에 결과는 GitHub 실행과 구분해 실행 SHA와 함께 적습니다(PR 경로는 PR 설명, 그 밖에는 HANDOFF 남은 한계).
 
+**축제 복습 게임:** 게임 원본(`teaching-materials/festival-romance/**`)과 번들(`public/festival-romance.html`)도 `review-festival` 수업으로 매핑되어 `review-festival`·`teacher-lesson-preview` 검사와 그 수업의 스모크를 돌립니다. 게임 자체의 단위 테스트와 브라우저 QA는 E2E와 CI에 들어 있지 않으므로, 게임 파일을 바꾸면 [게임 README](../teaching-materials/festival-romance/README.md)의 명령으로 따로 돌립니다.
+
 **미분류 파일이 있을 때의 로컬 검사:** 로컬 선별 도구(`npm run test:e2e:scope`)는 수업에 매핑되지 않은 파일(서버·공통·설정·검사 파일 등)이 하나라도 있으면 `full`을 내고 멈춥니다. CI는 같은 경우 `smoke`로 낮춥니다. 이때는 전체 E2E를 돌리지 않고 아래 순서로 검사 파일을 직접 골라 돌립니다.
 
 1. 바꾼 코드를 직접 쓰는 검사와, 바꾼 파일 이름·API 경로(예: `/api/classroom/classes`)를 `git grep -l "<이름>" -- tests`로 찾아 나온 검사를 모두 고릅니다(예: `src/lib/server/auth.ts` → `auth-security`·`settings`·`guest-login`·`first-entry`·`roster-off-list`, 수업 설정 → `classroom-api`·`teacher-class-management`).
 2. 에뮬레이터가 실행 중인 상태에서 `npm run test:e2e:running -- tests/<파일>.spec.ts tests/lesson-smoke.spec.ts`로 공통 스모크와 함께 돌립니다. **파일을 지정하지 않으면 전체 E2E가 실행되므로** 반드시 파일을 지정합니다.
 3. 전체 E2E가 필요하다고 판단되면 사용자에게 묻습니다.
 
-`:running` 명령은 3000번에 떠 있는 앱을 그대로 씁니다. `npm run dev:emulator`로 띄운 앱은 `CS_TIMETABLE_FIXTURE` 없이 가짜 시간표 서버를 켜지 않아 `timetable` 검사가 실패하고 실제 시간표 사이트로 요청이 갈 수 있습니다. 직접 고른 검사에 `timetable`이 있으면 앱과 에뮬레이터를 모두 끄고(3000·8080·9099 비움) `npx.cmd firebase emulators:exec --only auth,firestore --project demo-cs-class "npx playwright test tests/<파일>.spec.ts"`로 돌립니다(Playwright가 가짜 시간표 서버와 함께 앱을 띄웁니다).
+`:running` 명령은 3000번에 떠 있는 앱을 그대로 씁니다. 로컬에서는 `:running`이 아니어도 3000번에 무엇이든 떠 있으면 Playwright가 그 서버를 재사용하므로, 다른 프로그램이 3000번을 쓰고 있으면 검사가 전부 실패합니다(먼저 포트를 확인). `npm run dev:emulator`로 띄운 앱은 `CS_TIMETABLE_FIXTURE` 없이 가짜 시간표 서버를 켜지 않아 `timetable` 검사가 실패하고 실제 시간표 사이트로 요청이 갈 수 있습니다. 직접 고른 검사에 `timetable`이 있으면 앱과 에뮬레이터를 모두 끄고(3000·8080·9099 비움) `npx.cmd firebase emulators:exec --only auth,firestore --project demo-cs-class "npx playwright test tests/<파일>.spec.ts"`로 돌립니다(Playwright가 가짜 시간표 서버와 함께 앱을 띄웁니다).
 
 자동 CI의 `app`에는 비문서 변경의 정책·단위 검사, lint, typecheck, 빌드와 위 선별/스모크 검사(`verified`이면 앞선 PR 실행 결과로 대신)가 포함됩니다. 스모크 성공을 전체 회귀 검증 성공으로 해석하지 않습니다. PR 경로에서 전체 검사가 필요하면 별도로 승인받아 병합 전에 PR 브랜치에서 `gh workflow run verify.yml --ref <브랜치>`로 실행합니다(`main`에서 돌리면 실패를 공개 뒤에 압니다). `main`에서 돌려야 하면 운영 반영을 확인한 뒤 실행합니다(같은 SHA에 `app` 실행이 하나 더 생겨 배포 대기가 늘 수 있음). 수동 실행 결과는 PR에 실행 SHA·범위와 함께 기록합니다. `main` push의 `app` 성공은 Vercel 운영 반영의 조건이기도 하며, 그 규칙(`[skip ci]` 금지·검사 이름 변경 순서 등)은 [서버 안내](FIREBASE_SETUP.md#ci와-운영-공개)가 단일 기준입니다.
 
@@ -354,6 +356,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 
 - **코드 구조:** `src/lib/classroom/review/`에 순수 엔진(샌드위치, 순서도 실행기, 추상화 데이터)을 두고, 화면 컴포넌트는 `src/components/student/review/`에 배치합니다.
 - **순서도 (`flowchart.tsx`):** 퍼즐 실습(3열), 예시 공방(2열), 자유 공방(4열). 임의 JS 실행 없이 순수 표현식 인터프리터(`flow-runner.mjs`)로 동작합니다.
+- **축제 복습 게임 (`festival.tsx`):** 게임 번들 `public/festival-romance.html`은 `teaching-materials/festival-romance/build.cjs`로 다시 빌드하고([게임 README](../teaching-materials/festival-romance/README.md)) 학생 화면은 그것을 iframe으로 엽니다. iframe 주소·sandbox는 [`festival-embed.ts`](../src/lib/classroom/review/festival-embed.ts)의 `festivalFrame`이 고릅니다. 운영 빌드에서 엔트리 작업실 호스트가 정해져 있으면 그 호스트(`allow-same-origin` 허용, 다른 사이트라 쿠키에 닿지 못함), 아니면 같은 주소의 `allow-scripts allow-forms`입니다. 교사 화면은 [`festival-report.ts`](../src/lib/classroom/review/festival-report.ts)가 게임의 장 정의에서 문항 이름을 읽습니다.
 - **AI 엔드포인트 (`POST /api/classroom/ai`):** HMAC 기반 요청 검증, 학생별 사용량 장부(`csAiUsage/{uid}`, 한도는 [PRD §4.3](PRD.md#43-선택-복습-수업-공통-정책)), 결과 TTL 캐시(24시간)를 적용합니다.
 - **실제 AI 품질 검사:** 유료 Solar 호출은 [AGENTS의 먼저 묻는 일](../AGENTS.md#검증-및-배포-규칙)을 따릅니다.
 
@@ -364,6 +367,7 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 
 - **반 선택 세션:** `SessionProvider`의 `useTeacherClass`는 탭 단위 `sessionStorage`로 선택 반을 관리하며 URL 쿼리(`?classId=...`)와 연동됩니다.
 - **교사 수업 미리보기 (`/teacher/preview/[id]`):** `LessonPreview`와 `usePreviewWork`는 실제 `LessonShell`(`preview` 속성)과 `LessonEditor`(`mode="preview"`)로 렌더링하며, 학생 학습 컬렉션 쓰기를 엄격히 차단하고 컴포넌트 메모리에서만 동작합니다.
+- **조회 전용 서버 함수:** 읽기만 하는 요청은 `authorizedRead`(읽기 전용 트랜잭션)로 세션을 확인합니다. `authorized`의 읽기·쓰기 트랜잭션은 읽은 문서를 끝날 때까지 잠가, 교사의 반 전체 조회가 학생 저장을 기다리게 합니다. 읽기 전용 안에서 쓰면 오류가 나므로 쓰기가 있는 함수만 `authorized`를 씁니다.
 - **수행평가 진행률 (`/teacher/assessment`):** 정책은 [PRD §5.6](PRD.md#수행평가-진행률)입니다. 서버 `teacherAssessment`는 세션·담당 반 확인 트랜잭션이 끝난 뒤, 트랜잭션 밖에서 명단 질의와 `getAll(..., { fieldMask })`로 진도 필드만 읽습니다(읽기·쓰기 트랜잭션이면 학생 저장과 잠금이 겹침). 진행률은 `progress.ts`의 `overallPercent`(진행률 고리와 공유), 점수·CSV는 `src/lib/classroom/assessment.ts`가 계산합니다. 선별 매핑이 없으니 바꿀 때는 [미분류 파일 절차](#검증)로 `tests/assessment.test.ts`·`teacher-assessment`와 진행률 고리 검사(`student-progress`·`classroom-connected-ui`)를 고릅니다.
 - **교사 제출 작품 열람 및 인라인 실행 (`SubmissionViewer` · `EntryProjectPreview`):** 화면·폭·`Escape` 순서는 [DESIGN §4.4](DESIGN.md#학생교사-대시보드)를 따르며, 파싱 실패 시에만 번호 목록으로 폴백합니다. E2E 검사에서는 iframe 언마운트 경합을 막기 위해 `무대 처음 위치로` 버튼이 활성화된 뒤 `Escape`를 입력합니다.
 - **읽기 최적화·손들기 중지 검사:** `tests/help-paused.spec.ts`는 손들기 중지·교사 수동 조회를, `tests/read-polling.spec.ts`는 [PRD §5.1 학생 화면 갱신](PRD.md#51-학생-대시보드-및-이번-수업-전환)·[§5.5 손들기](PRD.md#설정과-손들기)·[§6.2 활동 기록](PRD.md#62-세션-및-다중-접속-제어)의 간격과 권한·느린 응답 경합(PC 시계가 어긋난 경우 포함)을 확인합니다. 간격을 바꾸면 PRD와 이 검사를 함께 고칩니다.
@@ -374,7 +378,8 @@ npm run test:e2e:running -- tests/<대상>.spec.ts --headed
 <a id="학교-시간표-연동"></a>
 
 - 자동 테스트는 `CS_TIMETABLE_FIXTURE=1`로 실제 컴시간 서버(`comci.net`) 대신 `scripts/timetable-fixture.mjs`의 `127.0.0.1:4781` 합성 서버를 씁니다. Playwright `webServer`가 이 값으로 앱을 띄우며, 데모 프로젝트·로컬 에뮬레이터에서만 켜지고 Vercel에서는 켜지지 않습니다.
-- 합성 서버는 v1 형식이라 v2 암호화·난독화 해제는 `tests/timetable-parser.test.ts`의 단위 검사로만 고정합니다. 컴시간은 `자료###` 번호를 바꾸므로 코드에 고정하지 않고 화면 코드에서 읽습니다(`readTimetableFields`).
+- 합성 서버는 v1 형식이라 v2 암호화·난독화 해제는 `tests/timetable-parser.test.ts`의 단위 검사로만 고정합니다. 컴시간은 `자료###` 번호를 바꾸므로 코드에 고정하지 않고 화면 코드에서 읽습니다(`readTimetableFields`). 값마다 한 겹 더 씌운 암호화(2026-11)의 키와 학교 코드 칸 위치도 화면 코드에서 읽습니다(`readFieldCipher`, `readSchoolCodeDivisor`).
+- 컴시간이 형식을 바꿔 운영 갱신이 실패하면 `fetchSchoolTimetable`을 임시 로직 검사 파일에 복사해 실제 컴시간에 갱신 한두 번 분량만 실행해 원인을 찾고, 고친 뒤 같은 방법으로 확인합니다. 응답에 교사 이름이 있으므로 원문은 출력·커밋하지 않고 임시 파일은 지웁니다.
 
 ---
 
@@ -472,7 +477,7 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 - **절차와 상태를 나눕니다.** 절차 문서에는 절차만 씁니다. "현재 ~되어 있다" 같은 상태 중 운영 설정 상태는 FIREBASE_SETUP 끝의 운영 환경 현황 표(마지막 확인일 포함)에만, 작업 진행 상태는 HANDOFF에만 씁니다. HANDOFF는 운영 상태를 되풀이하지 않고 링크와 사용자 할 일만 둡니다.
 - **HANDOFF는 짧게 유지합니다.**
   - "최근 반영"에는 PR 경로 변경과 사용자에게 보이는 변경을 적습니다. 5개까지 두고, 항목마다 무엇·검증·한계를 2~3줄로 씁니다. 항목은 PR 번호(직접 push는 커밋 제목)로 식별하고, 전체 E2E를 돌렸는지 반드시 적습니다.
-  - 5개를 넘으면 가장 오래된 항목을 지웁니다. 지우기 전에 아직 유효한 한계는 "남은 한계"로 옮깁니다. 원문은 Git과 PR에 남습니다.
+  - 5개를 넘거나 아래 크기 한도에 걸리면 가장 오래된 항목을 지웁니다. 지우기 전에 아직 유효한 한계는 "남은 한계"로 옮깁니다. 원문은 Git과 PR에 남습니다.
   - HANDOFF 전체는 약 8KB 이내로 유지합니다. 10,000바이트(줄바꿈 LF 기준)를 넘거나 최근 반영이 5개를 넘으면 `node scripts/check-docs.mjs`가 실패합니다.
 - **PR 경로 작업은 같은 PR에서 문서를 정리합니다.** HANDOFF 최근 반영을 추가하고, 끝난 다음 작업·해소된 남은 한계를 지우고, 끝난 계획은 보관 스냅샷으로 옮깁니다. 이번에 바꾼 규칙·수치·파일 이름은 `git grep`으로 찾아 다른 문서의 사본을 고치거나 단일 위치 링크로 바꿉니다.
 - **기록은 반영과 함께 씁니다.**

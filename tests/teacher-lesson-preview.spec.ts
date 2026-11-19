@@ -29,14 +29,18 @@ test("teacher-preview: 모든 수업 실제 화면·메모리 답안·초기화�
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(lesson.title);
     await expect(page.getByRole("button", { name: "손들기", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "학생 메뉴", exact: true })).toHaveCount(0);
-    await page.getByRole("tab", { name: /^실습/ }).click();
+    // The game-only review has no stage tabs: the page is the game.
+    const game = lesson.practice.type === "festival";
+    if (game) await expect(page.getByTitle("내일, 축제에서 만나 게임", { exact: true })).toBeVisible();
+    else await page.getByRole("tab", { name: /^실습/ }).click();
     await expect(page.getByRole("tabpanel")).toBeVisible();
     if (lesson.practice.type === "entryjs" || lesson.practice.type === "programming") {
       await page.locator("iframe").scrollIntoViewIfNeeded();
       await expect(entryReset(page)).toBeEnabled({ timeout: 20000 });
     }
     await page.locator("[data-lesson-shell] > header").getByRole("button", { name: "체험 초기화", exact: true }).click();
-    await expect(page.getByRole("tab", { name: /^개념/ })).toHaveAttribute("aria-selected", "true");
+    if (game) await expect(page.getByTitle("내일, 축제에서 만나 게임", { exact: true })).toBeVisible();
+    else await expect(page.getByRole("tab", { name: /^개념/ })).toHaveAttribute("aria-selected", "true");
     await expect(page.locator("[data-lesson-shell] > header").getByRole("button", { name: "체험 초기화", exact: true })).toBeFocused();
   }
   await page.goto(previewUrl("sequence-lab"));

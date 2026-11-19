@@ -1,0 +1,18 @@
+{
+  "archivedAt": "2026-11-15 Asia/Seoul",
+  "sourceCommit": "5b882c1afd9c26d5356bbf2ccd0a011a28db3ab0",
+  "files": [
+    {
+      "source": "docs/plans/festival-romance-review-game.md",
+      "archived": "festival-romance-review-game.md",
+      "bytes": 12855,
+      "sha256": "2eafd61e3b193a7493ec7f8ab4f275521dd9c98930a9848d3ed6e01bef5e1a19"
+    },
+    {
+      "source": "docs/plans/festival-romance-v3.md",
+      "archived": "festival-romance-v3.md",
+      "bytes": 20935,
+      "sha256": "141bee3b023d6b386303428704ccceb289248a4bc03c0001f63d8b75f8ba7677"
+    }
+  ]
+}

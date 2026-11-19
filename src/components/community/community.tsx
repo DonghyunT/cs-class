@@ -199,7 +199,8 @@ function CommunityBoard({ uid, classId, teacher, onClassChange }: { uid: string;
         delete answers[id];
         return { ...previous, answers };
       });
-      if (data?.nextCursor === id) await refresh();
+      // The cursor moved to the question before it; reload only when none is left to continue from.
+      if (data?.nextCursor === id && data.questions.every(item => item.id === id)) await refresh();
       if (!active.current) return;
       setDeleteTarget(null);
       setMessage("질문과 답변을 삭제했어요.");

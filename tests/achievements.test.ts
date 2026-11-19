@@ -124,3 +124,14 @@ test("단계 배지는 고정 개수로 별을 올리고, 희귀·깜짝 배지�
   expect(seenKeys(threeStars)).toContain(badgeKey(twoStars));
   expect(seenKeys(badge(many, {}, "lesson-complete")!)).toEqual([]);
 });
+
+test("축제 복습 게임은 복습 완주 배지를 주지 않고 분모에서도 빠지며 기존 복습 배지는 그대로다", () => {
+  const festival = lesson("review-festival"), sandwich = lesson("review-sandwich"), abstraction = lesson("review-abstraction");
+  expect(lessonBadgesFor(festival, done(festival))).toEqual([]);
+  const reviews = [sandwich, abstraction];
+  const review = (list: Lesson[], work: Record<string, Work>) => badgesFor(list, work).find(badge => badge.id === "review-complete");
+  const finished = Object.fromEntries([...reviews, festival].map(item => [item.id, done(item)]));
+  expect(review([...reviews, festival], finished)).toMatchObject({ count: 2, total: 2, lessons: reviews.map(item => item.title) });
+  expect(review([festival], { [festival.id]: done(festival) })).toBeUndefined();
+  expect(review([...reviews, festival], { [sandwich.id]: done(sandwich) })).toMatchObject({ count: 1, total: 2 });
+});
