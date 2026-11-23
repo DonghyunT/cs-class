@@ -173,3 +173,77 @@ test('variantText는 문자열을 그대로, 객체는 성별로 고르고 없�
   assert.equal(s.variantText({ boy: 'b' }, 'girl'), 'b');
   assert.equal(s.variantText(undefined, 'girl'), undefined);
 });
+
+test('startSingleQuestionRetry는 기존 하트를 유지한 채 선택한 1문항만 재도전한다', () => {
+  const state = s.createStoryState();
+  const qMeta = [
+    { questionId: 'ch1-q1', conceptTitle: 'IPO' },
+    { questionId: 'ch1-q2', conceptTitle: '변수' },
+    { questionId: 'ch1-q3', conceptTitle: '방향각' },
+    { questionId: 'ch1-q4', conceptTitle: '계산' },
+  ];
+  s.startChapterRun(state, 1);
+  s.recordQuestionAttempt(state, 1, 'ch1-q1', { correct: false, conceptTitle: 'IPO', wrongWhy: '순서 오류' });
+  s.recordQuestionAttempt(state, 1, 'ch1-q1', { correct: true, conceptTitle: 'IPO' });
+  for (const id of ['ch1-q2', 'ch1-q3', 'ch1-q4']) {
+    s.recordQuestionAttempt(state, 1, id, { correct: true, conceptTitle: id });
+  }
+  s.commitChapterRun(state, 1, qMeta);
+  assert.equal(state.chapterResults[1].hearts, 3);
+
+  s.startSingleQuestionRetry(state, 1, 'ch1-q1');
+  assert.equal(s.countRunHearts(state.activeRuns[1]), 3);
+  assert.equal(state.activeRuns[1].missedThisRun['ch1-q1'], undefined);
+
+  const retryFirstTry = s.recordQuestionAttempt(state, 1, 'ch1-q1', { correct: true, conceptTitle: 'IPO' });
+  assert.equal(retryFirstTry.earnedHeart, true);
+  s.commitChapterRun(state, 1, qMeta);
+  assert.equal(state.chapterResults[1].hearts, 4);
+});
+
+test('0하트로 완료한 장은 빈 activeRun으로 commitChapterRun을 호출해도 오답 기록이 지워지지 않는다', () => {
+  const state = s.createStoryState();
+  const qMeta = [{ questionId: 'ch3-q1', conceptTitle: '반복' }];
+  s.startChapterRun(state, 3);
+  s.recordQuestionAttempt(state, 3, 'ch3-q1', { correct: false, conceptTitle: '반복', wrongWhy: '2배 곱하기 확인' });
+  s.recordQuestionAttempt(state, 3, 'ch3-q1', { correct: true, conceptTitle: '반복' });
+  s.commitChapterRun(state, 3, qMeta);
+  assert.equal(state.chapterResults[3].hearts, 0);
+  assert.equal(state.chapterResults[3].questions['ch3-q1'].lastWrongWhy, '2배 곱하기 확인');
+
+  s.startChapterRun(state, 3);
+  s.commitChapterRun(state, 3, qMeta);
+  assert.equal(state.chapterResults[3].questions['ch3-q1'].lastWrongWhy, '2배 곱하기 확인');
+});
+
+test('배열·미완료 하트 왜곡을 거르고 singleRetry 복귀 대상을 저장·복원한다', () => {
+  assert.equal(s.sanitizeGameState([], ids), null);
+  assert.equal(s.readBookmark({ getItem() { return '[]'; } }, ids), null);
+
+  const tampered = s.sanitizeGameState({
+    chapterId: 1,
+    sceneId: 'ch1-2',
+    chapterResults: { 1: { completed: false, hearts: 4, questions: {} } },
+    singleRetry: { chapterId: 1, qId: 'ch1-q1', returnTo: 'ending' },
+  }, ids);
+  assert.equal(tampered.chapterResults[1].completed, false);
+  assert.equal(tampered.chapterResults[1].hearts, 0);
+  assert.deepEqual(tampered.singleRetry, { chapterId: 1, qId: 'ch1-q1', returnTo: 'ending' });
+
+  assert.equal(
+    s.sanitizeGameState({
+      chapterId: 1,
+      sceneId: 'ch3-7',
+      singleRetry: { chapterId: 1, qId: 'ch1-q1', returnTo: 'ending' },
+    }, ids).singleRetry,
+    null,
+  );
+  assert.equal(
+    s.sanitizeGameState({
+      chapterId: 1,
+      sceneId: 'ch1-2',
+      singleRetry: { chapterId: 1, qId: 'ch1-q1', returnTo: 'bad' },
+    }, ids).singleRetry,
+    null,
+  );
+});

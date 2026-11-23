@@ -72,7 +72,7 @@ async function advanceDialogue(page, { choiceKey = null, cold = false, skipSeen 
 async function waitForActivityPass(page) {
   await page.waitForFunction(() => {
     const btn = document.getElementById('next-button');
-    return btn && !btn.disabled && /대화로 돌아가기|다음 장면/.test(btn.textContent || '');
+    return btn && !btn.disabled && /대화로 돌아가기|다음 장면|다시 보기|돌아가기/.test(btn.textContent || '');
   }, null, { timeout: 15000 });
 }
 
@@ -364,8 +364,9 @@ async function playChapterToEnd(page, chapterId, {
       // 줄 단위 이전: 버튼과 ← 키
       assert.match(await page.locator('#line-progress').innerText(), /^1 \//);
       assert.equal(await page.locator('#previous-button').isDisabled(), true, '1장 첫 장면 첫 줄에서는 이전 없음');
-      await page.keyboard.press('ArrowRight');
-      assert.match(await page.locator('#line-progress').innerText(), /^2 \//);
+      // 대화창 클릭으로도 다음 대사 진행
+      await page.locator('.dialogue-box').click({ position: { x: 40, y: 40 } });
+      assert.match(await page.locator('#line-progress').innerText(), /^2 \//, '대화창 클릭으로 다음 줄 이동');
       assert.equal(await page.locator('#previous-button').isDisabled(), false, '둘째 줄에서 이전 버튼 켜짐');
       await page.locator('#previous-button').click();
       assert.match(await page.locator('#line-progress').innerText(), /^1 \//, '이전 버튼으로 한 줄 뒤로');
@@ -504,16 +505,16 @@ async function playChapterToEnd(page, chapterId, {
       await page.screenshot({ path: path.join(resultsDir, 'v2-ending-friend-report.png') });
       checks.push('12문항(카드·조작·단답형) 완주 및 찐친 엔딩(11/12)·오답 리포트 확인');
 
-      // Retry Ch.1 with skip-seen-dialogue -> 4/4 -> revisit ending -> 12/12 + cold Friend-zone!
-      await page.locator('[data-retry-chapter="1"]').click();
-      assert.equal(await page.locator('#skip-seen-button').isVisible(), true, '재도전 시 이미 본 대사 건너뛰기 노출');
-      await playChapterToEnd(page, 1, { meetingChoice: 'early', skipSeen: true });
-      assert.match(await page.locator('.chapter-clear-banner').innerText(), /♥ 4 \/ 4/);
-      assert.equal(await page.locator('#total-hearts').innerText(), '총 ♥ 12/12');
-      await page.locator('#revisit-ending-btn').click();
+      // Retry ch1-q1 directly via single-question retry -> 4/4 -> revisit ending -> 12/12 + cold Friend-zone!
+      await page.locator('[data-retry-question="ch1-q1"]').click();
+      assert.equal(await page.locator('#experiment').getAttribute('data-experiment'), 'quiz', '놓친 문항만 바로 활동 화면으로 이동');
+      await clickCard(page, { correct: true });
+      await waitForActivityPass(page);
+      await page.locator('#next-button').click();
       await advanceDialogue(page, { skipSeen: true });
       assert.equal(await page.locator('.ending-report-layout').getAttribute('data-outcome'), 'friend');
       assert.equal(await page.locator('.cold-callout').isVisible(), true, '12/12 + cold 찐친 안내 표시');
+      assert.equal(await page.locator('#total-hearts').innerText(), '총 ♥ 12/12');
       assert.equal(await page.locator('[data-retry-chapter="2"]').isVisible(), true);
       await page.screenshot({ path: path.join(resultsDir, 'v2-ending-12-cold.png') });
 
@@ -606,6 +607,13 @@ async function playChapterToEnd(page, chapterId, {
           if (type === 'number') assert.equal(await page.locator('.code-line.focus #task-num').count(), 1, `${id} 고칠 줄 안의 숫자 칸`);
           const runBelow = await page.evaluate(() => document.getElementById('run-task').getBoundingClientRect().bottom > document.querySelector('.lesson-main').getBoundingClientRect().bottom + 1);
           assert.equal(runBelow, false, `${id} 1366×768에서 실행 버튼이 스크롤 없이 보임`);
+          if (id === 'ch3-2') {
+            await page.locator('#task-num').fill('08');
+            assert.equal(await page.locator('#run-task').isDisabled(), true, '앞자리 0(08)은 초기값 8과 같아 실행 잠금');
+            await page.locator('#task-num').fill('8.0');
+            assert.equal(await page.locator('#run-task').isDisabled(), true, '소수 표기(8.0)는 초기값 8과 같아 실행 잠금');
+            await page.locator('#task-num').fill('8');
+          }
           await solveTask(page, { wrong: true });
           await waitForActivityFail(page);
           assert.match(await page.locator('#result .sim-screen').innerText(), /실행 결과/, `${id} 틀린 시도의 실행 결과`);
@@ -637,11 +645,11 @@ async function playChapterToEnd(page, chapterId, {
         assert.ok(res.includes(card.why.slice(0, 15)), `${id} 틀린 이유 표시`);
       }
 
-      // Jump to ch3-7 with <= 6 hearts -> awkward ending + teacher ending preview pills
+      // Jump to ch3-7 with <= 6 hearts -> awkward ending (다시 맞출 콤비) + teacher ending preview pills
       await jump('ch3-7');
       await advanceDialogue(page);
       assert.equal(await page.locator('.ending-report-layout').getAttribute('data-outcome'), 'awkward');
-      assert.match(await page.locator('.ending-badge').innerText(), /어색한 사이/);
+      assert.match(await page.locator('.ending-badge').innerText(), /다시 맞출 콤비/);
       await page.screenshot({ path: path.join(resultsDir, 'v2-ending-awkward.png') });
 
       await page.locator('[data-preview-ending="some"]').click();
@@ -649,7 +657,7 @@ async function playChapterToEnd(page, chapterId, {
       assert.equal(await page.locator('.ending-report-layout').getAttribute('data-outcome'), 'some');
 
       await ctx.close();
-      checks.push('교사 모드(?mode=teacher)·카드 9문항(상황·고칠 줄·한 화면·틀린 카드 결과와 이유)·조작·단답형 3문항(처음 상태 실행 잠금·44px·틀린 시도 결과·드론 경로)·어색한 사이(<=6/12) 엔딩·엔딩 미리보기 확인');
+      checks.push('교사 모드(?mode=teacher)·카드 9문항(상황·고칠 줄·한 화면·틀린 카드 결과와 이유)·조작·단답형 3문항(처음 상태 실행 잠금·44px·틀린 시도 결과·드론 경로)·다시 맞출 콤비(<=6/12) 엔딩·엔딩 미리보기 확인');
     }
 
     // 3b. 대화 하트 규칙, 390px 터치 기기에서 키보드만으로 순서 바꾸기

@@ -324,6 +324,13 @@ test('1장 6번은 1단원 개념(변수 값이 바뀌면 계산도 바뀜)이�
   assert.equal(/몫|나머지|우선순위/.test(card), false, '정리 카드도 1단원 범위');
 });
 
+test('ch3-q1 observe 해설은 작업의 실제 깜빡임 수(answer * blinksPerCycle)와 일치한다', () => {
+  const q1 = ch3.scenes.find((s) => s.questionId === 'ch3-q1');
+  const total = q1.task.answer * (q1.task.blinksPerCycle || 1);
+  assert.ok(q1.observe.includes(`${total}번`), `observe(${q1.observe})에 실제 총 횟수 ${total}번 포함`);
+  assert.equal(q1.observe.includes('2 × 2 = 4번'), false, '오류 수식(2 × 2 = 4번) 금지');
+});
+
 test('임베드 계약: state에 activeRuns를 싣고, 부모 출처는 처음 받은 init에서 정하며, 장 완료·저장 요청을 보낸다', () => {
   const app = fs.readFileSync(path.join(root, 'src/app.js'), 'utf8');
   const payload = app.match(/function buildEmbedPayload\(\)\{[\s\S]*?\n  \}/)[0];
@@ -335,4 +342,17 @@ test('임베드 계약: state에 activeRuns를 싣고, 부모 출처는 처음 �
   assert.match(app, /postToParent\('festival:chapter-complete',\{chapterId/);
   // 장을 끝내는 세 곳(장면 끝·정리 화면·엔딩)이 모두 같은 함수를 쓴다.
   assert.equal((app.match(/S\.commitChapterRun\(/g) || []).length, 1);
+  assert.equal(app.includes('[data-experience]'), false, '오타 셀렉터([data-experience]) 금지');
+  assert.match(app, /\[data-experiment\]/);
+  assert.match(app, /e\.key==='ArrowLeft'&&phase==='activity'/);
+});
+
+test('QA 회귀 방지: ch3-q1 재도전 대사 수치, 드론 max 359, 엔딩 불빛 색상 우선순위를 유지한다', () => {
+  const q1 = ch3.scenes.find((s) => s.questionId === 'ch3-q1');
+  assert.equal(JSON.stringify(q1.flow.retrySuccess).includes('8번 반복'), false);
+  const q2 = ch3.scenes.find((s) => s.questionId === 'ch3-q2');
+  assert.equal(q2.task.max, 359);
+  const css = fs.readFileSync(path.join(root, 'src/styles.css'), 'utf8');
+  assert.match(css, /\.ending-report-layout \.ending-lights-some svg/);
+  assert.match(css, /\.ending-report-layout \.ending-lights-awkward svg/);
 });

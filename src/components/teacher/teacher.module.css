@@ -148,6 +148,13 @@
 .submission { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 .submission li { display: flex; align-items: center; gap: 12px; background: #f5f7fa; border: 1px solid #e3e8ef; border-radius: 10px; padding: 13px; font-size: 15px; line-height: 1.75; }
 .submission li > span { display: grid; place-items: center; flex-shrink: 0; width: 25px; height: 25px; border-radius: 8px; color: #376fc8; background: #eaf2ff; font-size: 13px; font-weight: 650; }
+.festivalSummary { display: grid; gap: 8px; }
+.festivalSummary p { margin: 0; font-size: 14px; line-height: 1.6; }
+.festivalHeadline { font-weight: 650; color: #202b3a; }
+.festivalChapters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.festivalChapters li { padding: 3px 9px; border-radius: 999px; background: #f0f4fa; border: 1px solid #d5e0ef; font-size: 13px; color: #2e4b6e; }
+.festivalSummary h4 { margin: 4px 0 0; font-size: 14px; font-weight: 650; color: #202b3a; }
+.festivalMissed { margin: 0; padding-left: 18px; list-style: disc; display: grid; gap: 4px; font-size: 14px; line-height: 1.55; color: #202b3a; }
 .entryPreview { display: grid; gap: 14px; margin-top: 12px; min-width: 0; }
 .entryPreviewBar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 10px 12px; border: 1px solid #dce5f2; border-radius: 14px; background: #f7f9fc; }
 .entryObjectChips { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }

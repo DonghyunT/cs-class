@@ -10,21 +10,50 @@ const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0
 
 const read = (file) => fs.readFileSync(path.join(source, file), 'utf8');
 const readAsset = (file) => fs.readFileSync(path.join(assetPath, file));
-const toDataUri = (buffer) => `data:image/png;base64,${buffer.toString('base64')}`;
-const image = (file) => toDataUri(readAsset(file));
+const toDataUri = (buffer, file = '') => {
+  const mime = /\.webp$/i.test(file) ? 'image/webp' : 'image/png';
+  return `data:${mime};base64,${buffer.toString('base64')}`;
+};
+const image = (file) => toDataUri(readAsset(file), file);
+
+function readImageDimensions(buffer, file) {
+  if (
+    buffer.length >= 24 &&
+    buffer.subarray(0, 8).equals(PNG_SIGNATURE) &&
+    buffer.toString('ascii', 12, 16) === 'IHDR'
+  ) {
+    return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
+  }
+  if (
+    buffer.length >= 30 &&
+    buffer.toString('ascii', 0, 4) === 'RIFF' &&
+    buffer.toString('ascii', 8, 12) === 'WEBP'
+  ) {
+    const chunk = buffer.toString('ascii', 12, 16);
+    if (chunk === 'VP8X') {
+      const width = 1 + (buffer[24] | (buffer[25] << 8) | (buffer[26] << 16));
+      const height = 1 + (buffer[27] | (buffer[28] << 8) | (buffer[29] << 16));
+      return { width, height };
+    }
+    if (chunk === 'VP8 ') {
+      const width = buffer.readUInt16LE(26) & 0x3fff;
+      const height = buffer.readUInt16LE(28) & 0x3fff;
+      return { width, height };
+    }
+    if (chunk === 'VP8L') {
+      const bits = buffer.readUInt32LE(21);
+      const width = (bits & 0x3fff) + 1;
+      const height = ((bits >> 14) & 0x3fff) + 1;
+      return { width, height };
+    }
+  }
+  throw new Error(`Invalid PNG/WebP header: ${file}`);
+}
 
 function detectSpriteRows(buffer, file) {
-  if (
-    buffer.length < 24 ||
-    !buffer.subarray(0, 8).equals(PNG_SIGNATURE) ||
-    buffer.toString('ascii', 12, 16) !== 'IHDR'
-  ) {
-    throw new Error(`Invalid PNG IHDR header: ${file}`);
-  }
-  const width = buffer.readUInt32BE(16);
-  const height = buffer.readUInt32BE(20);
+  const { width, height } = readImageDimensions(buffer, file);
   if (!width || !height) {
-    throw new Error(`Invalid PNG dimensions (${width}x${height}): ${file}`);
+    throw new Error(`Invalid image dimensions (${width}x${height}): ${file}`);
   }
   return height > width ? 2 : 1;
 }
@@ -47,8 +76,8 @@ function loadChapters(chaptersDir) {
   return chapterFiles.map((entry) => require(path.join(chaptersDir, entry.name)));
 }
 
-const boySpriteFile = 'haru-boy-v15.png';
-const girlSpriteFile = 'haru-girl-v15.png';
+const boySpriteFile = 'haru-boy-v15.webp';
+const girlSpriteFile = 'haru-girl-v15.webp';
 const boySprite = readAsset(boySpriteFile);
 const girlSprite = readAsset(girlSpriteFile);
 const boyRows = detectSpriteRows(boySprite, boySpriteFile);
@@ -56,12 +85,12 @@ const girlRows = detectSpriteRows(girlSprite, girlSpriteFile);
 const spriteRows = { boy: boyRows, girl: girlRows };
 
 const assets = {
-  background: image('festival-courtyard-preview.png'),
-  night: image('night-study.png'),
-  dusk: image('twilight-field.png'),
-  boy: toDataUri(boySprite),
-  girl: toDataUri(girlSprite),
-  app: image('festival-app-phone.png'),
+  background: image('festival-courtyard-preview.webp'),
+  night: image('night-study.webp'),
+  dusk: image('twilight-field.webp'),
+  boy: toDataUri(boySprite, boySpriteFile),
+  girl: toDataUri(girlSprite, girlSpriteFile),
+  app: image('festival-app-phone.webp'),
 };
 
 const chapters = loadChapters(path.join(source, 'chapters'));

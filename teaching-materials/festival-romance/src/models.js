@@ -75,7 +75,7 @@
   }
   function computeEndingOutcome(totalHearts,hasColdRejection){
     const hearts=Number(totalHearts)||0;
-    if(hearts>=12&&!hasColdRejection)return 'some';
+    if(hearts>=11&&!hasColdRejection)return 'some';
     if(hearts>=7)return 'friend';
     return 'awkward';
   }

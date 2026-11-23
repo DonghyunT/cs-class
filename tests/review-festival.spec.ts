@@ -284,3 +284,31 @@ test("200% 확대한 크롬북 창에서도 레일을 굴려 학생 메뉴의 �
   await expect(logout).toBeInViewport({ ratio: 1 });
   expect(errors).toEqual([]);
 });
+
+test("이미 완료한 1장을 재도전해 하트를 높여도 장 완료 시 자동 저장된다", async ({ page }) => {
+  await prepare(page, {
+    ...chapterOneEnd,
+    chapterResults: {
+      1: { completed: true, hearts: 3, questions: { ...firstTry("ch1-q1", "ch1-q2", "ch1-q3"), ...retried("ch1-q4") } },
+      2: { completed: false, hearts: 0, questions: {} },
+      3: { completed: false, hearts: 0, questions: {} },
+    },
+  });
+  const errors = watchErrors(page);
+  await open(page);
+  await expect(game(page).getByRole("heading", { name: "자정 직전, 첫 단추 완료", exact: true })).toBeVisible();
+  await playUntil(page, game(page).getByRole("heading", { name: "1장 완료 · 밤의 디버깅 보고서", exact: true }));
+  await expect(game(page).getByText("1장 하트: ♥ 4 / 4", { exact: true })).toBeVisible();
+  await expect.poll(async () => (await project(page)).chapterResults[1].hearts).toBe(4);
+  await expect(status(page)).toHaveText("저장 완료");
+  expect(errors).toEqual([]);
+});
+
+test("교사 미리보기는 교사 모드(목차 노출)로 열리고 학생 기록을 남기지 않는다", async ({ page }) => {
+  await readyTeacher(page.request);
+  const errors = watchErrors(page);
+  await page.goto("/teacher/preview/review-festival?classId=2-1");
+  await expect(frame(page)).toHaveAttribute("src", /mode=teacher/);
+  await expect(game(page).locator("#contents-button")).toBeVisible();
+  expect(errors).toEqual([]);
+});
