@@ -148,9 +148,11 @@
     document.querySelectorAll('input[name="onboard-variant"]').forEach(input=>{input.checked=input.value===state.variant;});
   }
   function background(key){
-    const image=key==='night'?window.FESTIVAL_ASSETS.night:key==='dusk'?window.FESTIVAL_ASSETS.dusk:window.FESTIVAL_ASSETS.background;
+    // 장면 전용 배경(lab·rain·lit)은 기존 세 톤(day·night·dusk)의 글자·그늘 규칙을 빌려 씁니다.
+    const tone={lab:'dusk',rain:'day',lit:'night'}[key];
+    const image=tone?window.FESTIVAL_ASSETS[key]:key==='night'?window.FESTIVAL_ASSETS.night:key==='dusk'?window.FESTIVAL_ASSETS.dusk:window.FESTIVAL_ASSETS.background;
     document.querySelector('.scenery').style.backgroundImage=`url("${image}")`;
-    $('stage').dataset.tone=key||'day';
+    $('stage').dataset.tone=tone||key||'day';
   }
   function record(){
     S.saveGameState(storage,state);
@@ -299,7 +301,7 @@
     return `<div class="app-origin${compact?' app-origin-compact':''}"><img src="${window.FESTIVAL_ASSETS.app}" width="64" height="80" alt=""><div><strong>축제앱</strong><span class="app-context">${escape(label)}</span></div></div>`;
   }
   function storyMarkup(scene){
-    return `<div class="story-layout">${scene.ending?`<div class="ending-lights" aria-label="함께 완성한 ${shapeName(state.story.polygon)} 조명">${shapeSvg()}</div>`:''}<div class="story-heading"><p class="eyebrow">CHAPTER 0${activeChapter.id} · ${escape(activeChapter.title)}</p><h2 tabindex="-1">${escape(interpolate(scene.title))}</h2>${scene.channel?`<p class="scene-channel">${escape(scene.channel)}</p>`:''}${scene===activeChapter.scenes[0]?`<p class="recap">${escape(interpolate(activeChapter.recap))}</p>`:''}</div><div class="story-character character" role="img" aria-label="하루 · 미소"></div><div class="dialogue-box"><div class="speaker" id="speaker"></div>${appOrigin('하루와 채팅')}<p class="dialogue-text" id="dialogue-text" aria-live="polite"></p><div class="dialogue-actions"><span class="line-progress" id="line-progress"></span><button type="button" id="skip-seen-button" class="skip-seen-button" hidden>이미 본 대사 건너뛰기 ⏭</button><span class="dialogue-hint" id="dialogue-hint">대화창 클릭 또는 → 키로 계속</span></div><div id="heart-choice-cue" class="heart-choice-cue" hidden>💭 마음 선택지 · 하루와의 거리를 결정하는 대답이에요</div><div id="story-choices" class="story-choices" hidden></div></div></div>`;
+    return `<div class="story-layout"${scene.entrance?' data-entrance':''}>${scene.ending?`<div class="ending-lights" aria-label="함께 완성한 ${shapeName(state.story.polygon)} 조명">${shapeSvg()}</div>`:''}<div class="story-heading"><p class="eyebrow">${escape(scene.eyebrow||`CHAPTER 0${activeChapter.id} · ${activeChapter.title}`)}</p><h2 tabindex="-1">${escape(interpolate(scene.title))}</h2>${scene.channel?`<p class="scene-channel">${escape(scene.channel)}</p>`:''}${scene===activeChapter.scenes[0]?`<p class="recap">${escape(interpolate(activeChapter.recap))}</p>`:''}</div><div class="story-character character" role="img" aria-label="하루 · 미소"></div><p class="name-card" id="name-card" hidden><strong>하루</strong><span id="name-card-text"></span></p><figure class="story-prop" id="story-prop" hidden><img src="${window.FESTIVAL_ASSETS.poster}" width="400" height="597" alt=""><figcaption><strong id="story-prop-title"></strong><span id="story-prop-note"></span></figcaption></figure><div class="dialogue-box"><div class="speaker" id="speaker"></div>${appOrigin('하루와 채팅')}<p class="dialogue-text" id="dialogue-text" aria-live="polite"></p><div class="dialogue-actions"><span class="line-progress" id="line-progress"></span><button type="button" id="skip-seen-button" class="skip-seen-button" hidden>이미 본 대사 건너뛰기 ⏭</button><span class="dialogue-hint" id="dialogue-hint">대화창 클릭 또는 → 키로 계속</span></div><div id="heart-choice-cue" class="heart-choice-cue" hidden>💭 마음 선택지 · 하루와의 거리를 결정하는 대답이에요</div><div id="story-choices" class="story-choices" hidden></div></div></div>`;
   }
   function focusHeading(){$('scene-content').querySelector('h2')?.focus({preventScroll:true});}
 
@@ -336,6 +338,13 @@
       $('line-progress').textContent=`${line+1} / ${safeLines.length}`;
       const character=document.querySelector('.story-character');
       if(voice==='haru'||!character.dataset.expression)expression(character,voice==='haru'?item.expression:0);
+      // 등장 장면(entrance)에서는 하루의 첫 대사 전까지 캐릭터를 숨기고, 대사에 딸린 이름표·포스터 소품을 그 줄에서만 보여 줍니다.
+      character.hidden=Boolean(activeScene.entrance)&&!safeLines.slice(0,line+1).some(l=>l.role==='haru');
+      $('name-card').hidden=!item.nameplate;
+      $('name-card-text').textContent=item.nameplate||'';
+      $('story-prop').hidden=!item.poster;
+      $('story-prop-title').textContent=item.poster?.[0]||'';
+      $('story-prop-note').textContent=item.poster?.[1]||'';
 
       const showOptions=last&&options.length>0;
       $('dialogue-hint').hidden=showOptions;

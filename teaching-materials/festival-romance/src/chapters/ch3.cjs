@@ -754,7 +754,7 @@ module.exports = {
       "title": "노을 아래 켜진 {{shapeName}}",
       "topic": "점등식 피날레 · 엔딩",
       "minutes": "1:20",
-      "background": "dusk",
+      "background": "lit",
       "channel": "운동장 · 빛그림 점등식",
       "lines": [
         { "speaker": "내 생각", "role": "narration", "text": "점등 버튼을 누르자 운동장 하늘 위로 {{shapeName}} 빛그림이 떠올랐다.", "expression": 0 }

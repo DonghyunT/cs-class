@@ -247,6 +247,28 @@ test('하트 문항은 짧게 풀리는 크기다(짧은 글·도입 3줄·1분 
   }
 });
 
+test('프롤로그는 문항 없이 하루를 소개하고 밤 장면의 계기(포스터 QR)를 남긴다', () => {
+  const [prologue, night] = ch1.scenes;
+  assert.equal(prologue.id, 'ch1-0');
+  assert.equal(night.id, 'ch1-1');
+  assert.ok(!prologue.graded && !prologue.choices && !prologue.heartChoice, '하트·선택지 없음');
+  assert.ok(prologue.lines.length <= 8, `프롤로그 대사 ${prologue.lines.length}줄(8줄 이하)`);
+  const [m, sec] = prologue.minutes.split(':').map(Number);
+  assert.ok(m * 60 + sec <= 60, '프롤로그는 1분 이내');
+  const firstHaru = prologue.lines.find((l) => l.role === 'haru');
+  assert.ok(firstHaru.nameplate, '하루 첫 대사에 이름표');
+  for (const lines of [prologue.lines, prologue.shortLines]) {
+    assert.ok(lines.at(-1).poster, '마지막 줄에 포스터 소품');
+    assert.match(lines.at(-1).text, /QR/);
+  }
+  assert.match(night.lines[0].text, /QR/, '밤 장면 첫 줄이 낮의 QR을 이어받음');
+  const build = fs.readFileSync(path.join(root, 'build.cjs'), 'utf8');
+  const backgrounds = [ch1, ch2, ch3].flatMap((c) => c.scenes.map((s) => s.background));
+  for (const key of new Set(backgrounds)) {
+    if (!['day', 'night', 'dusk'].includes(key)) assert.ok(build.includes(`  ${key}: image(`), `배경 ${key} 자산 연결`);
+  }
+});
+
 test('환영 문구의 빈 이름은 버그라는 것을 먼저 알려 준다', () => {
   const lines = ch1.scenes.find((s) => s.id === 'ch1-1').lines;
   const blankAt = lines.findIndex((l) => typeof l.text === 'string' && l.text.includes('" 님, 환영해요!'));

@@ -373,6 +373,28 @@ async function playChapterToEnd(page, chapterId, {
       await page.keyboard.press('ArrowRight');
       await page.keyboard.press('ArrowLeft');
       assert.match(await page.locator('#line-progress').innerText(), /^1 \//, '← 키로 한 줄 뒤로');
+      // 프롤로그(ch1-0): 하루 첫 대사 전에는 캐릭터 숨김 → 첫 대사에 등장·이름표 → 마지막 줄에 포스터 소품
+      assert.equal(await page.locator('.story-heading .eyebrow').innerText(), 'PROLOGUE · 축제 전날');
+      assert.match(await page.locator('.scenery').evaluate((el) => el.style.backgroundImage), /^url\("data:image\/webp/);
+      assert.equal(await page.locator('.story-character').isVisible(), false, '하루 등장 전에는 캐릭터 숨김');
+      assert.equal(await page.locator('#name-card').isVisible(), false);
+      await page.locator('#next-button').click();
+      await page.locator('#next-button').click();
+      assert.match(await page.locator('#line-progress').innerText(), /^3 \//);
+      assert.equal(await page.locator('.story-character').isVisible(), true, '하루 첫 대사에 등장');
+      assert.match(await page.locator('#name-card').innerText(), /하루[\s\S]*축제 준비팀 앱 담당/, '등장 이름표');
+      await page.screenshot({ path: path.join(resultsDir, 'prologue-nameplate.png') });
+      await page.locator('#next-button').click();
+      assert.equal(await page.locator('#name-card').isVisible(), false, '이름표는 등장 대사에서만');
+      for (let i = 0; i < 4; i++) await page.locator('#next-button').click();
+      assert.match(await page.locator('#line-progress').innerText(), /^8 \/ 8/);
+      assert.match(await page.locator('#story-prop').innerText(), /베타 테스터 모집/, '포스터 소품과 글자');
+      await page.screenshot({ path: path.join(resultsDir, 'prologue-poster.png') });
+      await page.locator('#next-button').click();
+      assert.match(await page.locator('.story-heading h2').innerText(), /밤 11시 14분/, '프롤로그 다음은 밤 장면');
+      assert.equal(await page.locator('.story-heading .recap').count(), 0, '장 요약은 프롤로그에만');
+      assert.equal(await page.locator('.story-character').isVisible(), true);
+      checks.push('프롤로그 등장 연출(캐릭터 숨김→이름표→포스터)과 밤 장면 연결 확인');
       // 선택 응답에서 이전 → 같은 선택지 다시
       for (let i = 0; i < 20 && !(await page.locator('#story-choices button').first().isVisible()); i++) {
         await page.locator('#next-button').click();
@@ -543,6 +565,7 @@ async function playChapterToEnd(page, chapterId, {
       // 하루 성별에 따라 같은 대사의 말투가 바뀜(여학생 → 남학생 전환 후 이전/다음으로 다시 그림)
       await page.locator('#home-button').click();
       await page.locator('[data-chapter="1"]').click();
+      for (let i = 0; i < 10 && !/밤 11시 14분/.test(await page.locator('.story-heading h2').innerText()); i++) await page.locator('#next-button').click();
       for (let i = 0; i < 6 && !/^5 \//.test(await page.locator('#line-progress').innerText()); i++) await page.locator('#next-button').click();
       assert.match(await page.locator('#dialogue-text').innerText(), /혹시 우리 반 구름\?/, '여학생 하루 말투');
       await page.locator('input[name="variant"][value="boy"]').check();

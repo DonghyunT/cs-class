@@ -3,9 +3,61 @@ module.exports = {
   "title": "첫 단추와 밤의 디버깅",
   "subject": "프로그래밍과 자료 처리",
   "subtitle": "축제 전날 밤, 버그 제보 하나로 시작된 대화",
-  "duration": "약 8분",
-  "recap": "정보 시간에 늘 실습을 깔끔하게 끝내던 {{name}}. 축제 전날 밤, 베타 앱의 버그를 제보했더니 앱을 만든 준비팀 하루에게서 답장이 왔습니다.",
+  "duration": "약 9분",
+  "recap": "정보 시간에 늘 실습을 깔끔하게 끝내던 {{name}}. 내일은 학교 축제고, 축제 준비팀은 아침에 공개할 축제앱을 막바지 손질 중입니다.",
   "scenes": [
+    {
+      "id": "ch1-0",
+      "kind": "story",
+      "entrance": true,
+      "eyebrow": "PROLOGUE · 축제 전날",
+      "title": "오후 4시 40분, 불 꺼진 정보실",
+      "topic": "프롤로그",
+      "minutes": "0:50",
+      "background": "lab",
+      "channel": "축제 전날 · 정보실 앞 복도",
+      "lines": [
+        { "speaker": "내 생각", "role": "narration", "text": "축제 전날 오후. 복도는 현수막과 상자로 어수선한데, 우리 반 부스는 진작 끝나서 나만 할 일이 없다.", "expression": 0 },
+        { "speaker": "내 생각", "role": "narration", "text": "정보실 앞을 지나는데, 불 꺼진 교실에 노트북 화면 하나만 켜져 있다. 그 앞에 누가 서 있다.", "expression": 0 },
+        {
+          "speaker": "하루", "role": "haru", "expression": 4,
+          "nameplate": "같은 반 · 축제 준비팀 앱 담당",
+          "text": {
+            "boy": "아니 왜 또 안 되는데… 아까는 됐잖아.",
+            "girl": "아니 왜 또 안 돼… 아까는 분명 됐단 말이야."
+          }
+        },
+        { "speaker": "내 생각", "role": "narration", "text": "하루. 같은 반인데 말해 본 건 손에 꼽는다. 정보 시간에 내 화면을 슬쩍 보고 간 적이 한 번 있었던가.", "expression": 0 },
+        { "speaker": "내 생각", "role": "narration", "text": "복도 끝에서 누가 외친다. \"하루야! 앱 내일 아침에 전교생한테 공개하는 거 맞지?\"", "expression": 0 },
+        {
+          "speaker": "하루", "role": "haru", "expression": 5,
+          "text": {
+            "boy": "어, 된다고 해. …될 거야, 아마.",
+            "girl": "응, 된다고 해 줘! …될 거야, 아마도."
+          }
+        },
+        { "speaker": "내 생각", "role": "narration", "text": "도와줄까. 문고리에 손을 올렸다가 그만뒀다. 뭐라고 말을 걸어야 할지 몰라서.", "expression": 0 },
+        {
+          "speaker": "내 생각", "role": "narration", "expression": 0,
+          "poster": ["축제앱 베타 테스터 모집", "버그 제보 환영"],
+          "text": "대신 문 옆에 붙은 포스터의 QR만 찍어 두었다. 「축제앱 베타 테스터 모집 — 버그 제보 환영」"
+        }
+      ],
+      "shortLines": [
+        { "speaker": "내 생각", "role": "narration", "text": "축제 전날 오후, 불 꺼진 정보실에서 같은 반 하루가 혼자 축제앱을 고치고 있었다. 내일 아침 전교생 공개라는데.", "expression": 0 },
+        {
+          "speaker": "내 생각", "role": "narration", "expression": 0,
+          "poster": ["축제앱 베타 테스터 모집", "버그 제보 환영"],
+          "text": "말은 못 걸고, 문 옆 「베타 테스터 모집」 포스터의 QR만 찍어 두었다."
+        }
+      ],
+      "teacher": {
+        "ask": "하루는 어떤 일을 맡았고, 내일 아침까지 무엇을 끝내야 할까요?",
+        "answer": "문항이 없는 도입 장면입니다. 하루(같은 반, 축제 준비팀 앱 담당)와 내일 아침 전교생 공개라는 상황, 포스터 QR로 베타 앱에 가입하게 되는 계기를 보여 줍니다.",
+        "watch": "하트와 관계없는 약 50초 분량입니다. 다시 볼 때는 '이미 본 대사 건너뛰기'로 넘길 수 있습니다.",
+        "short": "축제 전날 오후, 정보실에서 혼자 앱을 고치는 하루를 보고 포스터 QR을 찍어 둡니다."
+      }
+    },
     {
       "id": "ch1-1",
       "kind": "story",
@@ -15,7 +67,7 @@ module.exports = {
       "background": "night",
       "channel": "축제앱 · 하루와 채팅",
       "lines": [
-        { "speaker": "내 생각", "role": "narration", "text": "밤 11시 14분. 내일 축제 시간표를 보려고 학교 축제앱 베타에 가입했다. 그런데 환영 문구가 좀 이상하다.", "expression": 0 },
+        { "speaker": "내 생각", "role": "narration", "text": "밤 11시 14분. 낮에 찍어 둔 QR이 생각나 축제앱 베타에 가입했다. 시간표나 볼 생각이었는데, 환영 문구가 좀 이상하다.", "expression": 0 },
         { "speaker": "축제앱", "role": "system", "text": "가입 완료! \" 님, 환영해요!\"", "expression": 0 },
         { "speaker": "내 생각", "role": "narration", "text": "이름이 들어가야 할 자리가 텅 비어 있다. 화면 구석의 [버그 제보] 버튼을 눌러 한 줄 적어 보냈다.", "expression": 0 },
         { "speaker": "축제앱", "role": "system", "text": "버그 제보 접수 · 제보자: {{name}} · 담당: 하루 (축제 준비팀) · 새 메시지 1개", "expression": 0 },
