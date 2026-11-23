@@ -629,8 +629,6 @@
     $('stage').dataset.kind='summary';
     $('scene-content').innerHTML=endingReportMarkup(scene,outcome);
     applyCharacter();
-    const expr=outcome==='some'?1:outcome==='friend'?(S.hasColdRejection(state)?0:2):4;
-    expression(document.querySelector('.ending-character'),expr);
     playSfx('ending');
     setForward('처음 화면으로 ↗',()=>showTitle(true));
     setBackward(()=>initEnding(scene,outcome,{startLine:Infinity}));
