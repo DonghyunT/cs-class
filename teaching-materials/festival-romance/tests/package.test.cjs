@@ -12,9 +12,9 @@ const publicPath = path.resolve(root, '../../public/festival-romance.html');
 const distLessonPath = path.join(root, 'dist/festival-lesson.html');
 const publicLessonPath = path.resolve(root, '../../public/festival-lesson.html');
 
-test('독립 HTML에 세 챕터·22장면·12문항·새로 그린 v15 6표정(2행) 스프라이트 정보가 포함된다', () => {
+test('독립 HTML에 세 챕터·23장면(프롤로그 포함)·12문항·새로 그린 v15 6표정(2행) 스프라이트 정보가 포함된다', () => {
   assert.equal(/\r/.test(distHtml), false, 'dist/festival-romance.html은 LF 줄바꿈이어야 합니다');
-  assert.equal((distHtml.match(/"id":"ch[1-3]-[1-9]"/g) || []).length, 22);
+  assert.equal((distHtml.match(/"id":"ch[1-3]-[0-9]"/g) || []).length, 23);
   const spriteMatch = distHtml.match(/window\.FESTIVAL_SPRITE_ROWS=([^;]+);/);
   assert.ok(spriteMatch, 'FESTIVAL_SPRITE_ROWS 주입 확인');
   assert.deepEqual(JSON.parse(spriteMatch[1]), { boy: 2, girl: 2 });

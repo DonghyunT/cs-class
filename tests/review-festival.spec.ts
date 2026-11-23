@@ -100,7 +100,7 @@ test("교사가 연 축제 게임은 창을 채우고, 게임 안 Ctrl+S로 저�
   await game(page).getByRole("button", { name: "새 이야기 시작", exact: true }).click();
   await game(page).locator("#onboard-name").fill("축제단");
   await game(page).getByRole("button", { name: "1챕터 시작하기 →", exact: true }).click();
-  await expect(game(page).getByRole("heading", { name: "밤 11시 14분, 버그 제보", exact: true })).toBeVisible();
+  await expect(game(page).getByRole("heading", { name: "오후 4시 40분, 불 꺼진 정보실", exact: true })).toBeVisible();
   const episode = game(page).getByRole("heading", { name: /^EP 1 · / });
   await playUntil(page, episode);
   await expect(status(page)).toHaveText("저장하지 않은 변경 있음");

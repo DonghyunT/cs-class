@@ -18,7 +18,15 @@ const VARS = {
 const fill = (s) => String(s ?? '').replace(/\{\{(\w+)\}\}/g, (_, k) => VARS[k] ?? `{{${k}}}`);
 const text = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? `[남] ${fill(v.boy)}\n    [여] ${fill(v.girl)}` : fill(v));
 const who = (l) => (l.role === 'me' || l.speaker === '나' ? '나(주인공)' : l.speaker);
-const lines = (arr, indent = '') => (arr || []).map((l) => `${indent}- ${who(l)}: ${text(l.text)}`).join('\n');
+// 하루 대사에는 그 줄에서 보이는 표정을, 등장 이름표·소품이 있는 줄에는 그 표시를 덧붙입니다(표정·지문 어긋남 검토용).
+const EXPRESSIONS = ['미소', '수줍음', '환한 웃음', '놀람', '곤란', '장난기'];
+const stage = (l) => [
+  l.role === 'haru' || l.speaker === '하루' ? `표정: ${EXPRESSIONS[l.expression] ?? '미소'}` : '',
+  l.nameplate ? `이름표: 하루 · ${l.nameplate}` : '',
+  l.poster ? `화면 소품: 포스터 「${l.poster.join(' / ')}」` : '',
+  l.when ? `조건: ${l.when === 'cold' ? '앞에서 차갑게 선을 그은 경우만' : '차갑게 선을 긋지 않은 경우만'}` : '',
+].filter(Boolean).join(' · ');
+const lines = (arr, indent = '') => (arr || []).map((l) => `${indent}- ${who(l)}${stage(l) ? ` (${stage(l)})` : ''}: ${text(l.text)}`).join('\n');
 const cardSummary = (q, indent = '  ') => [
   ...(q.situation || []).map((l) => `${indent}지금 상황: ${fill(l)}`),
   ...(q.hat ? [`${indent}시작 블록: ${fill(q.hat)}`] : []),
@@ -30,8 +38,10 @@ const md = [
   '# 내일, 축제에서 만나 — 학생 테스터용 플레이 대본',
   '',
   '중학교 정보 1~3단원(프로그래밍·자료, 선택 구조·논리, 반복 구조) 복습 미연시 게임입니다. 학생은 이름과 하루(상대 캐릭터)의 성별을 고르고 3개 장을 순서대로 플레이합니다.',
-  '규칙: 하트 문항 12개(장마다 4개)를 **첫 시도**에 맞히면 ♥ +1, 틀리면 힌트를 보고 다시 풀어 통과(0 ♥). 총 하트와 두 번의 마음 선택지(차갑게 선을 그으면 cold)로 엔딩이 갈립니다: 12/12·cold 없음 = 썸 시작, 7~11 또는 12+cold = 찐친, 0~6 = 어색한 사이.',
+  '규칙: 하트 문항 12개(장마다 4개)를 **첫 시도**에 맞히면 ♥ +1, 틀리면 힌트를 보고 다시 풀어 통과(0 ♥). 총 하트와 두 번의 마음 선택지(차갑게 선을 그으면 cold)로 엔딩이 갈립니다: 11/12 이상·cold 없음 = 썸 시작, 7~10 또는 11 이상+cold = 찐친, 0~6 = 다시 맞출 콤비.',
   '대사의 [남]/[여]는 하루의 성별에 따라 바뀌는 말투입니다.',
+  '하루 대사 옆 (표정: …)은 그 줄에서 화면에 보이는 하루의 표정입니다(미소·수줍음·환한 웃음·놀람·곤란·장난기 6가지, 그림은 expressions-boy.png·expressions-girl.png). 「내 생각」·「나」 줄에서는 직전 하루 표정이 그대로 남습니다.',
+  '**이야기 화면 캡처 안내:** story-ch1-0-haru.png·story-ch1-0-poster.png(프롤로그 등장·포스터), story-ch2-4.png(소나기), story-ch3-7.png(점등 뒤 엔딩)는 장면 배경과 하루 위치를 보여 줍니다.',
   `**예시 값 안내:** 게임은 학생의 선택을 변수로 기억해 대사에 넣습니다. 이 대본은 예시 값으로 채웠습니다 — ${Object.entries(VARS).filter(([, v]) => v).map(([k, v]) => `{{${k}}}=${v}`).join(', ')}. 실제 게임에서는 학생 이름, 1장에서 고른 약속 시각(16:00/17:00, 3장 잠금 암호가 됨), 3장에서 완성한 도형(삼각형/오각형/육각형), 2장에서 받은 상품이 그대로 들어갑니다. 예시 값이 고정돼 있다고 보고하지 마세요.`,
   '**화면 캡처 안내:** activity-*.png는 장면으로 바로 이동하려고 교사 모드(?mode=teacher)로 찍었습니다. 그래서 목차·장면 초기화·교사 메모 버튼이 보이지만 학생 화면에는 없고, 학생은 1장부터 차례로만 엽니다.',
   '**엔딩 리포트 안내:** 엔딩 뒤 리포트에는 총 하트, 첫 시도에 놓친 개념과 그때의 힌트, 장별 재도전 버튼, 3장 핵심 정리 카드가 나옵니다.',
@@ -79,7 +89,8 @@ for (const ch of chapters) {
     if (s.ending) {
       for (const [k, e] of Object.entries(s.endings)) {
         md.push(`엔딩 [${k}] ${e.badge} · ${e.title} — ${fill(e.headline)}`, lines(e.lines, '  '), `  리포트 문구: ${fill(e.footer)}`);
-        if (e.coldLines) md.push(`엔딩 [${k} + cold] ${e.coldTitle} — ${fill(e.coldHeadline)}`, lines(e.coldLines, '  '));
+        if (e.coldLines) md.push(`엔딩 [${k} + cold, 11하트 이상] ${e.coldTitle} — ${fill(e.coldHeadline)}`, lines(e.coldLines, '  '));
+        if (e.coldMidLines) md.push(`엔딩 [${k} + cold, 7~10하트] 제목·머리말은 위 [${k}]와 같음`, lines(e.coldMidLines, '  '));
       }
     }
     md.push('');
@@ -106,6 +117,20 @@ console.log('transcript:', path.join(outDir, 'transcript.md'));
       }
       await page.screenshot({ path: path.join(outDir, `activity-${s.id}.png`), fullPage: true });
     }
+  }
+  // 이야기 화면: 프롤로그(하루 등장 줄·포스터 줄), 소나기, 점등 뒤 엔딩
+  const jump = async (id) => { await page.locator('#contents-button').click(); await page.locator(`[data-scene="${id}"]`).click(); };
+  const shot = async (name) => { await page.waitForTimeout(800); await page.screenshot({ path: path.join(outDir, name) }); };
+  await jump('ch1-0');
+  for (let i = 0; i < 2; i++) await page.locator('#next-button').click();
+  await shot('story-ch1-0-haru.png');
+  for (let i = 0; i < 5; i++) await page.locator('#next-button').click();
+  await shot('story-ch1-0-poster.png');
+  await jump('ch2-4'); await shot('story-ch2-4.png');
+  await jump('ch3-7'); await shot('story-ch3-7.png');
+  for (const v of ['boy', 'girl']) {
+    const src = path.join(root, 'qa-results', `expressions-v15-${v}.png`);
+    if (fs.existsSync(src)) fs.copyFileSync(src, path.join(outDir, `expressions-${v}.png`));
   }
   await browser.close();
   console.log('screenshots:', outDir);

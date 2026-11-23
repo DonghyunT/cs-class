@@ -5,7 +5,7 @@
 ## 파일 구성과 보존 원칙
 
 - **학생용 CS 복습 게임 (현재 주 빌드 대상):** [dist/festival-romance.html](dist/festival-romance.html) / [public/festival-romance.html](../../public/festival-romance.html) (`/festival-romance.html`)
-  - 3개 챕터, 총 22장면, 12문항(`ch1-q1`~`ch3-q4`) 구성
+  - 3개 챕터, 총 23장면(프롤로그 포함), 12문항(`ch1-q1`~`ch3-q4`) 구성
 - **교사용 도입 수업 자료 (원본 보존):** [dist/festival-lesson.html](dist/festival-lesson.html) / [public/festival-lesson.html](../../public/festival-lesson.html) (`/festival-lesson.html`)
   - 기존 3차시 27장면 도입 수업 자료를 바이트 단위로 그대로 보존하며 `build.cjs`가 덮어쓰지 않습니다.
 - **소스 및 빌드:**

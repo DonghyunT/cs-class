@@ -280,6 +280,11 @@
   function hasColdRejection(state){
     return Object.values(state?.coldChoices||{}).some(Boolean);
   }
+  // 조건 대사(when)는 지금 장면보다 앞 장면의 선택만 봅니다. 장을 다시 할 때, 아직 다시 고르지 않은 뒤 장면의 답이 앞 대사에 미리 반영되지 않게 합니다.
+  function hasColdBefore(state,sceneIds,sceneId){
+    const here=sceneIds.indexOf(sceneId);
+    return Object.keys(state?.coldChoices||{}).some(id=>state.coldChoices[id]&&sceneIds.indexOf(id)>=0&&sceneIds.indexOf(id)<here);
+  }
   function markSceneSeen(state,key){
     if(!isSafeKey(key))return;
     if(!state.seenScenes||typeof state.seenScenes!=='object')state.seenScenes={};
@@ -296,6 +301,6 @@
     sanitizeGameState,readGameState,saveGameState,clearGameState,
     createMemoryStorage,createStorageAdapter,isChapterUnlocked,
     startChapterRun,startSingleQuestionRetry,recordQuestionAttempt,countRunHearts,commitChapterRun,
-    countTotalHearts,countLiveTotalHearts,hasColdRejection,markSceneSeen,isSceneSeen
+    countTotalHearts,countLiveTotalHearts,hasColdRejection,hasColdBefore,markSceneSeen,isSceneSeen
   };
 });
