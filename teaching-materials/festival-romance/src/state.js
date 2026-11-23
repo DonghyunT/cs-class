@@ -27,6 +27,7 @@
       onboarded:false,
       chapterId:null,
       sceneId:null,
+      singleRetry:null,
       shortMode:false,
       siteUrl:'',
       story:storyValues(),
@@ -82,15 +83,23 @@
   function sanitizeChapterResults(raw){
     const out={};
     for(const id of CHAPTER_IDS){
-      const src=raw&&typeof raw==='object'?raw[id]||raw[String(id)]:null;
-      const hearts=src&&Number.isInteger(src.hearts)?Math.max(0,Math.min(4,src.hearts)):0;
+      const src=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw[id]||raw[String(id)]:null;
+      const completed=Boolean(src?.completed);
+      const hearts=completed&&src&&Number.isInteger(src.hearts)?Math.max(0,Math.min(4,src.hearts)):0;
       out[id]={
-        completed:Boolean(src?.completed),
+        completed,
         hearts,
         questions:sanitizeQuestionsMap(src?.questions)
       };
     }
     return out;
+  }
+  function sanitizeSingleRetry(raw){
+    if(!raw||typeof raw!=='object'||Array.isArray(raw))return null;
+    if(!CHAPTER_IDS.includes(raw.chapterId))return null;
+    if(typeof raw.qId!=='string'||!raw.qId||raw.qId.length>40)return null;
+    if(raw.returnTo!=='summary'&&raw.returnTo!=='ending')return null;
+    return {chapterId:raw.chapterId,qId:raw.qId,returnTo:raw.returnTo};
   }
   function sanitizeActiveRuns(raw){
     const out={};
@@ -106,7 +115,7 @@
     return out;
   }
   function sanitizeGameState(value,validSceneIds=[]){
-    if(!value||typeof value!=='object')return null;
+    if(!value||typeof value!=='object'||Array.isArray(value))return null;
     const validChap=CHAPTER_IDS.includes(value.chapterId)&&typeof value.sceneId==='string'&&value.sceneId.startsWith(`ch${value.chapterId}-`)&&(!validSceneIds.length||validSceneIds.includes(value.sceneId));
     const seen={...sanitizeBooleanMap(value.seenLines),...sanitizeBooleanMap(value.seenScenes)};
     return {
@@ -115,6 +124,7 @@
       onboarded:Boolean(value.onboarded),
       chapterId:validChap?value.chapterId:null,
       sceneId:validChap?value.sceneId:null,
+      singleRetry:validChap?sanitizeSingleRetry(value.singleRetry):null,
       shortMode:Boolean(value.shortMode),
       siteUrl:normalizeSiteUrl(value.siteUrl),
       story:storyValues(value.story&&typeof value.story==='object'?value.story:{}),
@@ -126,7 +136,7 @@
     };
   }
   function sanitizedBookmark(value,validSceneIds){
-    if(!value||typeof value!=='object'||!CHAPTER_IDS.includes(value.chapterId)||typeof value.sceneId!=='string'||!value.sceneId.startsWith(`ch${value.chapterId}-`)||!validSceneIds.includes(value.sceneId))return null;
+    if(!value||typeof value!=='object'||Array.isArray(value)||!CHAPTER_IDS.includes(value.chapterId)||typeof value.sceneId!=='string'||!value.sceneId.startsWith(`ch${value.chapterId}-`)||!validSceneIds.includes(value.sceneId))return null;
     return {
       nickname:normalizeNickname(value.nickname),
       variant:value.variant==='girl'?'girl':'boy',

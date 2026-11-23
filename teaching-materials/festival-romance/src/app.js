@@ -14,7 +14,7 @@
   try{if(!isEmbed)rawLocal=window.localStorage;}catch{rawLocal=null;}
   const storage=S.createStorageAdapter({embed:isEmbed,local:rawLocal});
 
-  let activeChapter=null,activeScene=null,generation=0,advanceLine=null,forward=null,backward=null,toastTimer,deltaTimer,phase='',flowChoice=null,flowResult=null,lastAttemptFirstTry=true,singleRetry=null;
+  let activeChapter=null,activeScene=null,generation=0,advanceLine=null,forward=null,backward=null,toastTimer,deltaTimer,phase='',flowChoice=null,flowResult=null,lastAttemptFirstTry=true;
   const timers=new Set();
   const SFX_KEY='festival-romance.sfx';
   let soundEnabled=true,audioCtx=null;
@@ -120,7 +120,7 @@
 
   function notify(text){clearTimeout(toastTimer);$('toast').textContent=text;$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,4800);}
   function stopTimers(){timers.forEach(clearInterval);timers.clear();}
-  function disposeScene(){generation++;stopTimers();advanceLine=null;forward=null;backward=null;$('previous-button').disabled=true;clearTimeout(toastTimer);$('toast').hidden=true;}
+  function disposeScene(){generation++;stopTimers();advanceLine=null;forward=null;backward=null;$('previous-button').disabled=true;clearTimeout(toastTimer);$('toast').hidden=true;clearTimeout(deltaTimer);$('heart-delta').hidden=true;}
   function interval(callback,ms){const current=generation;const timer=setInterval(()=>{if(generation!==current){clearInterval(timer);timers.delete(timer);return;}if(document.querySelector('dialog[open]'))return;callback();},ms);timers.add(timer);return timer;}
   function setBackward(action){backward=action||null;$('previous-button').disabled=!backward;}
   function goBack(){if(!$('previous-button').disabled)backward?.();}
@@ -197,17 +197,17 @@
       notify(`${chapterId-1}장을 먼저 완료하면 ${chapterId}장이 열려요!`);
       return;
     }
-    singleRetry=null;
+    state.singleRetry=null;
     if(index===0){S.startChapterRun(state,chapterId);reportedChapters.delete(chapterId);}
     showScene(chapterId,index);
   }
   function exitSingleRetry(returnTo,chapterId){
-    singleRetry=null;
+    state.singleRetry=null;
     if(returnTo==='ending'){showEndingScene();return;}
     const ch=chapters.find(c=>c.id===chapterId);
     const idx=ch?.scenes.findIndex(s=>s.kind==='summary')??-1;
     if(idx>=0)showScene(chapterId,idx);
-    else showTitle();
+    else showTitle(true);
   }
   function retrySingleQuestion(chapterId,qId,returnTo){
     if(!canPickChapter()){openOnboarding();return;}
@@ -220,7 +220,7 @@
     if(idx<0)return;
     S.startSingleQuestionRetry(state,chapterId,qId);
     reportedChapters.delete(chapterId);
-    singleRetry={chapterId,qId,returnTo};
+    state.singleRetry={chapterId,qId,returnTo};
     showScene(chapterId,idx);
   }
   function hasAnyProgress(){
@@ -250,9 +250,10 @@
     renderHeartHud();
   }
 
-  function showTitle(){
+  function showTitle(clearRetry=false){
     disposeScene();
-    activeChapter=null;activeScene=null;flowResult=null;flowChoice=null;singleRetry=null;
+    if(clearRetry&&state.singleRetry){state.singleRetry=null;record();}
+    activeChapter=null;activeScene=null;flowResult=null;flowChoice=null;
     $('title-view').hidden=false;$('scene-view').hidden=true;
     $('stage').dataset.kind='title';
     delete $('stage').dataset.voice;
@@ -404,7 +405,7 @@
     const flow=activeScene.flow;
     const options=normalizeChoices(flow.options,null);
     const introLines=state.shortMode&&flow.shortIntro?flow.shortIntro:flow.intro;
-    const retryTarget=singleRetry&&singleRetry.qId===(activeScene.questionId||activeScene.id)?singleRetry:null;
+    const retryTarget=state.singleRetry&&state.singleRetry.qId===(activeScene.questionId||activeScene.id)?state.singleRetry:null;
     if(!introLines||!introLines.length){
       if(options.length===1)flowChoice=options[0];
       activity();
@@ -501,9 +502,9 @@
       }
       S.markSceneSeen(state,activeScene.id);
       record();
-      if(singleRetry&&singleRetry.qId===qId){
+      if(state.singleRetry&&state.singleRetry.qId===qId){
+        const ret={...state.singleRetry};
         completeChapter(activeChapter.id);
-        const ret=singleRetry;
         setForward(ret.returnTo==='ending'?'엔딩 · 리포트 다시 보기 →':`${ret.chapterId}장 정리로 돌아가기 →`,()=>exitSingleRetry(ret.returnTo,ret.chapterId));
         setBackward(()=>exitSingleRetry(ret.returnTo,ret.chapterId));
         return;
@@ -535,7 +536,7 @@
     }
     if($('change-choice'))$('change-choice').onclick=()=>flowIntro();
     const introLines=activeScene.flow&&(state.shortMode&&activeScene.flow.shortIntro?activeScene.flow.shortIntro:activeScene.flow.intro);
-    const retryTarget=singleRetry&&singleRetry.qId===qId?singleRetry:null;
+    const retryTarget=state.singleRetry&&state.singleRetry.qId===qId?state.singleRetry:null;
     setBackward(retryTarget?()=>exitSingleRetry(retryTarget.returnTo,retryTarget.chapterId):(introLines?.length?()=>flowIntro({startLine:Infinity}):sceneBack()));
     applyCharacter();
     if(activeScene.initialExpression!==undefined)expression(companionChar,activeScene.initialExpression);
@@ -610,7 +611,7 @@
       return endOrSum?.cards?.length?{id:ch.id,title:`${ch.id}장 · ${ch.subject}`,cards:endOrSum.cards}:null;
     }).filter(Boolean);
     const totalCardCount=recapSections.reduce((n,s)=>n+s.cards.length,0);
-    return `<div class="ending-report-layout" data-outcome="${escape(outcome)}"><div class="ending-lights ending-lights-${escape(outcome)}" aria-hidden="true">${shapeSvg()}</div><div class="ending-report-grid"><div class="ending-report-main"><div class="ending-badges-row"><div class="ending-badge">${escape(interpolate(data.badge||outcome))}</div>${isPerfect?'<span class="perfect-badge">✨ 퍼펙트 12/12</span>':''}</div><h2 tabindex="-1">${escape(interpolate(title))}</h2><p class="ending-headline">${escape(interpolate(headline))}</p>${isEmbed&&!isTeacher?'<div class="embed-submitted-pill">✓ 복습 기록이 자동으로 제출됐어요 · 왼쪽(또는 위) ‘수업 나가기’로 돌아갈 수 있어요</div>':''}<div class="ending-score-row"><div class="score-pill"><strong>총 하트 ♥ ${total} / 12</strong><small>${[1,2,3].map(id=>`Ch.${id} ${state.chapterResults?.[id]?.hearts||0}/4`).join(' · ')}</small></div></div>${isColdFriend?`<div class="cold-callout"><strong>실력은 충분한데 찐친 엔딩이 된 이유!</strong><p>${escape(interpolate(data.coldCallout||'마음 선택지에서 거리를 두어 찐친 사이로 남았어요!'))}</p>${coldDetails.length?`<div class="retry-row">${coldDetails.map(d=>`<button type="button" class="secondary-button" data-retry-chapter="${d.chapterId}">${d.chapterId}장 마음 선택지 다시 고르기 (${escape(interpolate(d.title))})</button>`).join('')}</div>`:''}</div>`:''}<div class="report-card"><h3>CS 복습 리포트 ${missedItems.length?`· 놓친 개념 ${missedItems.length}개`:'· 퍼펙트 클리어!'}</h3>${missedItems.length?`<ul class="missed-list">${missedItems.map(m=>`<li class="missed-item"><div class="missed-copy"><strong>[${m.chapterId}장] ${escape(m.conceptTitle)}</strong>${m.lastWrongWhy?`<p>${escape(m.lastWrongWhy)}</p>`:''}</div><button type="button" class="secondary-button retry-single-btn" data-retry-question="${escape(m.qId)}" data-retry-chapter-id="${m.chapterId}">이 문항만 다시 풀기 →</button></li>`).join('')}</ul>`:'<p class="perfect-note">1~3단원 12개 핵심 CS 개념을 전부 첫 시도에 완벽하게 해결했어요!</p>'}${imperfectChapters.length?`<div class="retry-row">${imperfectChapters.map(id=>`<button type="button" class="primary-button" data-retry-chapter="${id}">${id}장 하트 채우러 가기 (재도전)</button>`).join('')}</div>`:''}</div>${footer?`<p class="ending-footer">${escape(interpolate(footer))}</p>`:''}<div class="ending-actions"><button type="button" id="replay-ending-lines" class="secondary-button">엔딩 대사 다시 보기</button><button type="button" id="ending-home-btn" class="secondary-button">처음 화면으로</button></div>${isTeacher?`<div class="teacher-ending-preview"><span>교사 엔딩 미리보기:</span>${['some','friend','awkward'].map(k=>`<button type="button" class="pill-button" data-preview-ending="${k}" aria-pressed="${k===outcome}">${k==='some'?'썸 시작':k==='friend'?'찐친':'다시 맞출 콤비'}</button>`).join('')}</div>`:''}${recapSections.length?`<details class="ending-recap"><summary>1~3장 핵심 개념 정리 펼쳐 보기 (${totalCardCount}개 카드)</summary><div class="recap-chapters">${recapSections.map(sec=>`<div class="recap-chapter"><h4>${escape(sec.title)}</h4><div class="card-grid">${sec.cards.map(([t,d])=>`<div class="summary-card"><strong>${escape(t)}</strong><p>${escape(d)}</p></div>`).join('')}</div></div>`).join('')}</div></details>`:''}</div><aside class="ending-portrait"><div class="ending-character character" data-expression="${expr}" role="img" aria-label="하루"></div></aside></div></div>`;
+    return `<div class="ending-report-layout" data-outcome="${escape(outcome)}"><div class="ending-lights ending-lights-${escape(outcome)}" aria-hidden="true">${shapeSvg()}</div><div class="ending-report-grid"><div class="ending-report-main"><div class="ending-badges-row"><div class="ending-badge">${escape(interpolate(data.badge||outcome))}</div>${isPerfect?'<span class="perfect-badge">✨ 퍼펙트 12/12</span>':''}</div><h2 tabindex="-1">${escape(interpolate(title))}</h2><p class="ending-headline">${escape(interpolate(headline))}</p>${isEmbed&&!isTeacher?'<div class="embed-submitted-pill">✓ 복습 기록이 자동으로 제출됐어요 · 왼쪽(또는 위) ‘수업 나가기’로 돌아갈 수 있어요</div>':''}<div class="ending-score-row"><div class="score-pill"><strong>총 하트 ♥ ${total} / 12</strong><small>${[1,2,3].map(id=>`Ch.${id} ${state.chapterResults?.[id]?.hearts||0}/4`).join(' · ')}</small></div></div>${isColdFriend?`<div class="cold-callout"><strong>실력은 충분한데 찐친 엔딩이 된 이유!</strong><p>${escape(interpolate(data.coldCallout||'마음 선택지에서 거리를 두어 찐친 사이로 남았어요!'))}</p>${coldDetails.length?`<div class="retry-row">${coldDetails.map(d=>`<button type="button" class="secondary-button" data-retry-chapter="${d.chapterId}">${d.chapterId}장 마음 선택지 다시 고르기 (${escape(interpolate(d.title))})</button>`).join('')}</div>`:''}</div>`:''}<div class="report-card"><h3>CS 복습 리포트 ${missedItems.length?`· 놓친 개념 ${missedItems.length}개`:'· 퍼펙트 클리어!'}</h3>${missedItems.length?`<ul class="missed-list">${missedItems.map(m=>`<li class="missed-item"><div class="missed-copy"><strong>[${m.chapterId}장] ${escape(m.conceptTitle)}</strong>${m.lastWrongWhy?`<p>${escape(m.lastWrongWhy)}</p>`:''}</div><button type="button" class="secondary-button retry-single-btn" data-retry-question="${escape(m.qId)}" data-retry-chapter-id="${m.chapterId}">이 문항만 다시 풀기 →</button></li>`).join('')}</ul>`:'<p class="perfect-note">1~3단원 12개 핵심 CS 개념을 전부 첫 시도에 완벽하게 해결했어요!</p>'}${imperfectChapters.length?`<div class="retry-row">${imperfectChapters.map(id=>`<button type="button" class="primary-button" data-retry-chapter="${id}">${id}장 하트 채우러 가기 (재도전)</button>`).join('')}</div>`:''}</div>${footer?`<p class="ending-footer">${escape(interpolate(footer))}</p>`:''}<div class="ending-actions"><button type="button" id="replay-ending-lines" class="secondary-button">엔딩 대사 다시 보기</button><button type="button" id="ending-home-btn" class="secondary-button">처음 화면으로</button></div>${isTeacher?`<div class="teacher-ending-preview"><span>교사 엔딩 미리보기:</span>${['some','friend','awkward'].map(k=>`<button type="button" class="pill-button" data-preview-ending="${k}" aria-pressed="${k===outcome}">${k==='some'?'썸 시작':k==='friend'?'찐친':'다시 맞출 콤비'}</button>`).join('')}</div>`:''}${recapSections.length?`<details class="ending-recap"><summary>1~3장 핵심 개념 정리 (${totalCardCount}개 카드)</summary><div class="recap-chapters">${recapSections.map(sec=>`<div class="recap-chapter"><h4>${escape(sec.title)}</h4><div class="card-grid">${sec.cards.map(([t,d])=>`<div class="summary-card"><strong>${escape(t)}</strong><p>${escape(d)}</p></div>`).join('')}</div></div>`).join('')}</div></details>`:''}</div><aside class="ending-portrait"><div class="ending-character character" data-expression="${expr}" role="img" aria-label="하루"></div></aside></div></div>`;
   }
 
   function renderEndingReport(scene,outcome){
@@ -622,12 +623,12 @@
     const expr=outcome==='some'?1:outcome==='friend'?2:4;
     expression(document.querySelector('.ending-character'),expr);
     playSfx('ending');
-    setForward('처음 화면으로 ↗',showTitle);
+    setForward('처음 화면으로 ↗',()=>showTitle(true));
     setBackward(()=>initEnding(scene,outcome,{startLine:Infinity}));
     $('scene-content').querySelectorAll('[data-retry-question]').forEach(b=>b.onclick=()=>retrySingleQuestion(Number(b.dataset.retryChapterId),b.dataset.retryQuestion,'ending'));
     $('scene-content').querySelectorAll('[data-retry-chapter]').forEach(b=>b.onclick=()=>startChapter(Number(b.dataset.retryChapter),0));
     $('replay-ending-lines').onclick=()=>initEnding(scene,outcome);
-    $('ending-home-btn').onclick=showTitle;
+    $('ending-home-btn').onclick=()=>showTitle(true);
     $('scene-content').querySelectorAll('[data-preview-ending]').forEach(b=>b.onclick=()=>initEnding(scene,b.dataset.previewEnding));
     postToParent('festival:complete',{...buildEmbedPayload(),outcome});
     focusHeading();
@@ -668,6 +669,8 @@
     activeScene=chapter.scenes[index];
     flowChoice=null;flowResult=null;
     state.chapterId=chapterId;state.sceneId=activeScene.id;
+    const targetQId=activeScene.questionId||activeScene.id;
+    if(state.singleRetry&&(chapterId!==state.singleRetry.chapterId||targetQId!==state.singleRetry.qId)){state.singleRetry=null;}
     const scene=activeScene;
     $('title-view').hidden=true;$('scene-view').hidden=false;
     background(scene.background||(chapterId===1?'night':chapterId===3?'dusk':'day'));
@@ -677,7 +680,7 @@
       initStory(scene);
     }else if(scene.kind==='concept'){
       const qId=scene.questionId||scene.id;
-      if(singleRetry&&singleRetry.qId===qId){
+      if(state.singleRetry&&state.singleRetry.qId===qId){
         if((scene.flow?.options?.length||0)>1)flowIntro({startLine:Infinity});
         else activity();
       }else if(scene.flow){
@@ -692,9 +695,9 @@
       $('stage').dataset.kind='summary';
       $('scene-content').innerHTML=summaryMarkup(scene);
       const nextChapter=chapters.find(c=>c.id===chapterId+1);
-      setForward(nextChapter?`${nextChapter.id}장으로 이어가기 →`:'처음 화면으로 ↗',nextChapter?()=>startChapter(nextChapter.id,0):showTitle);
+      setForward(nextChapter?`${nextChapter.id}장으로 이어가기 →`:'처음 화면으로 ↗',nextChapter?()=>startChapter(nextChapter.id,0):()=>showTitle(true));
       if($('next-chapter-btn'))$('next-chapter-btn').onclick=()=>startChapter(nextChapter.id,0);
-      if($('practice-button'))$('practice-button').onclick=showTitle;
+      if($('practice-button'))$('practice-button').onclick=()=>showTitle(true);
       $('scene-content').querySelectorAll('[data-retry-question]').forEach(b=>b.onclick=()=>retrySingleQuestion(Number(b.dataset.retryChapterId),b.dataset.retryQuestion,'summary'));
       if($('retry-chapter-btn'))$('retry-chapter-btn').onclick=()=>startChapter(activeChapter.id,0);
       if($('revisit-ending-btn'))$('revisit-ending-btn').onclick=()=>showEndingScene();
@@ -715,7 +718,7 @@
     if(!ch3)return;
     const endIdx=ch3.scenes.findIndex(s=>s.ending);
     if(endIdx>=0)showScene(3,endIdx);
-    else showTitle();
+    else showTitle(true);
   }
 
   function openOnboarding(){
@@ -739,7 +742,6 @@
       Object.assign(state,S.createStoryState());
       state.variant=keepVariant;
       reportedChapters.clear();
-      singleRetry=null;
     }
     S.applyIdentity(state,$('onboard-name').value);
     state.onboarded=true;
@@ -805,7 +807,7 @@
   };
 
   document.querySelectorAll('input[name="variant"]').forEach(input=>input.onchange=()=>{state.variant=input.value;applyCharacter();record();});
-  $('home-button').onclick=showTitle;
+  $('home-button').onclick=()=>showTitle(true);
   $('contents-button').onclick=openContents;
   $('settings-button').onclick=openSettings;
   $('teacher-button').onclick=openNotes;
@@ -824,9 +826,9 @@
   $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('stage').requestFullscreen?.();}catch{notify('일반 화면으로도 게임을 진행할 수 있습니다.');}};
 
   document.addEventListener('keydown',e=>{
-    if(e.isComposing||e.altKey||e.ctrlKey||e.metaKey||document.querySelector('dialog[open]')||e.target.closest('input,textarea,select,[contenteditable="true"],[data-experience]'))return;
-    if(e.code==='Space'&&advanceLine&&!e.target.closest('button')){e.preventDefault();if(!$('next-button').disabled)forward?.();}
-    else if(activeScene&&['ArrowRight','ArrowLeft'].includes(e.key)){e.preventDefault();if(e.key==='ArrowLeft')goBack();else if(!$('next-button').disabled)forward?.();}
+    if(e.isComposing||e.altKey||e.ctrlKey||e.metaKey||document.querySelector('dialog[open]')||e.target.closest('input,textarea,select,[contenteditable="true"],[data-experiment]'))return;
+    if((e.code==='Space'||e.key==='Enter')&&advanceLine&&!e.target.closest('button,a,summary')){e.preventDefault();if(!$('next-button').disabled)forward?.();}
+    else if(activeScene&&['ArrowRight','ArrowLeft'].includes(e.key)){if(e.key==='ArrowLeft'&&phase==='activity')return;e.preventDefault();if(e.key==='ArrowLeft')goBack();else if(!$('next-button').disabled)forward?.();}
   });
 
   if(isEmbed){

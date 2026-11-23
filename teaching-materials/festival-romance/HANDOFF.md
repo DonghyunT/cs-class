@@ -8,15 +8,15 @@
   - **용량 88.5% 경량화:** 6개 자산의 WebP 변환본([haru-boy-v15.webp](assets/haru-boy-v15.webp) 등, 원본 PNG 보존)과 `build.cjs` PNG/WebP 크기 감지를 적용해 번들을 `17,241,141` bytes → `1,979,921` bytes(~1.9MB)로 줄였습니다.
   - **문항·오답·버그 보강:** `ch3-q1` `observe`의 `(2 × 2 = 4번)` 오류를 고치고 2번씩 깜빡이는 묶음(`blinksPerCycle: 2`, 4번 반복 = 8번)으로 업그레이드했으며, `ch1-q2`·`ch1-q4`·`ch2-q1`~`q3`·`ch3-q3`·`ch3-q4`의 허수아비 보기를 실제 오개념 보기로 교체하고 `ch1-q3`·`ch2-q1`·`ch3-q4`에 결과 미니 시각화를 더했습니다. `renderers.number`의 `08`/`8.0` 비교·증감 버튼 소수점 버그와 0하트 장 재진입 덮어쓰기 버그도 고쳤습니다.
   - **게임성·포용성·재도전 개선:** `썸 시작` 기준을 `11/12` 이상으로 완화(`12/12`는 `✨ 퍼펙트 12/12` 배지), `awkward` 엔딩을 `다시 맞출 콤비 💪`로 순화, `ch3-6`에 2장 `cold` 이어받기 추가, 장 완료·엔딩 리포트에서 **놓친 문항만 1개씩 바로 재도전**(`startSingleQuestionRetry`) 지원, 1~3장 핵심 개념 11카드를 접이식 정리로 통합, 대화창 클릭 진행·Web Audio 효과음(설정 토글)·모바일 배지/아바타·임베드 제출 배지를 반영했습니다.
-  - **교실 임베드·교사 진단 개선:** 이미 완료한 장을 재도전하거나 마음 선택지를 바꿨을 때도 장 완료 시 자동 저장하고(`festival-embed.ts`), 충돌 비교에서 로컬 유지를 고르면 게임을 초기화하지 않게 고쳤으며(`festival.tsx`), 교사 미리보기(`mode === "preview"`)가 `&mode=teacher`로 열리고 교사 리포트(`festivalReport`)에 `lastWrongWhy`와 `missedDetails`를 함께 내도록 보완했습니다.
+  - **실전 QA 후속 다듬기 (P1·P2 반영):** `[data-experiment]` 오타와 `ArrowLeft` 퀴즈 이탈 방지, 대화 `Enter` 진행, 엔딩 리포트 도형 불빛 색상 우선순위, 단일 문항 재도전(`singleRetry`) 새로고침 유지, `#heart-delta` 장면 전환 정리, `ch3-q1` 재도전 대사(`4번 반복으로 8번 깜빡임`)·`ch3-q2` 최대값(`359`)·`ch3-q4` 교사 해설·`ch1-q2`/`ch1-q4` 오답 문구 교정, 비숫자 입력 안내 토스트, 모바일 44px 터치 영역·태블릿 여백·`work-details.tsx` 리포트 여백까지 다듬었습니다.
 - **교사용 도입 수업 원본 보존:** [dist/festival-lesson.html](dist/festival-lesson.html) · [public/festival-lesson.html](../../public/festival-lesson.html) (기존 3차시 27장면)은 `build.cjs`와 분리해 바이트 단위로 그대로 유지했습니다.
 
 ## 2. 번들 산출물 및 검증 기록
 
 - **산출물 무결성 ([qa/build-manifest.json](qa/build-manifest.json)):**
-  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `1,979,921` bytes, SHA-256 `ef88a5bc7e79ac1846679dc37083f762da3f0deb533cc8f033be02ee5b9de78c`
+  - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `1,983,602` bytes, SHA-256 `636eb431976c7ebaedacbc2d42d99260bb0166e888af5f8822bb41e2ca8c6688`
   - `public/festival-lesson.html` ≡ `dist/festival-lesson.html`: SHA-256 `8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c4430b5` (원본 27장면 불변)
-- **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 58/58 통과 (`models` 14, `state` 9, `package` 3, `journey` 7, `refinement` 25)
+- **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 60/60 통과 (`models` 14, `state` 10, `package` 3, `journey` 7, `refinement` 26)
 - **Playwright 브라우저 QA (`node teaching-materials/festival-romance/qa/browser.cjs`):** 10항목 통과 (`errors: []`, `consoleErrors: []`, `remoteRequests: 0`, 단일 문항 재도전·`08`/`8.0` 잠금·대화창 클릭·`다시 맞출 콤비` 엔딩·임베드·모바일 스크린샷 검수 포함)
 - **Playwright 재생 QA (`node teaching-materials/festival-romance/qa/playback-app.cjs`):** 4항목 통과 (`errors: []`, `consoleErrors: []`, `remoteRequests: 0`)
 

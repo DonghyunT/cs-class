@@ -18,7 +18,13 @@
       }else{
         ctx.complete(outcome);
       }
-      resEl.scrollIntoView({block:'nearest',behavior:'auto'});
+      const main=document.querySelector('.lesson-main');
+      if(main){
+        const m=main.getBoundingClientRect(),r=resEl.getBoundingClientRect();
+        if(r.bottom>m.bottom-8)resEl.scrollIntoView({block:'nearest',behavior:'smooth'});
+      }else{
+        resEl.scrollIntoView({block:'nearest',behavior:'auto'});
+      }
     };
     if(!renderers[type])throw Error('알 수 없는 실험: '+type);
     renderers[type]({root,ctx,$,M,show});
@@ -138,12 +144,15 @@
     const sync=()=>{
       const lock=done||busy;
       const raw=input.value.trim();
+      const bad=Boolean(input.validity?.badInput);
       const parsed=M.boundedInteger(raw,min,max);
-      $('run-task').disabled=lock||raw===''||parsed===lastRun;
+      $('run-task').disabled=lock||(!bad&&(raw===''||parsed===lastRun));
       input.disabled=lock;
       root.querySelectorAll('[data-step]').forEach(b=>{b.disabled=lock;});
     };
     input.addEventListener('input',sync);
+    input.addEventListener('beforeinput',e=>{if(!e.isComposing&&e.data&&/[^0-9.-]/.test(e.data)){e.preventDefault();ctx.notify(`${min}~${max} 사이의 숫자만 입력해 주세요.`);}});
+    input.addEventListener('compositionend',e=>{if(e.data&&/[^0-9.-]/.test(e.data))ctx.notify(`${min}~${max} 사이의 숫자만 입력해 주세요.`);});
     input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&!$('run-task').disabled){e.preventDefault();$('run-task').click();}});
     root.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{
       if(done||busy)return;
@@ -175,11 +184,11 @@
       const timer=ctx.interval(()=>{k++;$('task-visual').innerHTML=draw(k);if(k>=count){clearInterval(timer);onDone();}},ms);
     };
     const screenFor=n=>{
-      if(q.visual==='drone'){const sum=n*q.sides;return `${n}° × ${q.sides} = ${sum}°${sum===360?' → 도형 완성!':sum%360===0?' → 닫혔지만 한 바퀴보다 많이 돌아요':' → 제자리로 안 돌아와요'}`;}
+      if(q.visual==='drone'){const sum=n*q.sides,closed=sum%360===0&&n%360!==0;return `${n}° × ${q.sides} = ${sum}°${sum===360?' → 도형 완성!':closed?' → 닫혔지만 한 바퀴보다 많이 돌아요':' → 제자리로 안 돌아와요'}`;}
       return fmt(q.screen||'{n}').replaceAll('{n}',String(n)).replaceAll('{total}',String(n*per));
     };
     $('run-task').onclick=()=>{
-      const n=M.boundedInteger(input.value.trim(),min,max);
+      const n=input.validity?.badInput?null:M.boundedInteger(input.value.trim(),min,max);
       if(n===null){ctx.notify(`${min}~${max} 사이의 정수를 입력해 주세요.`);input.focus();return;}
       lastRun=n;input.value=String(n);
       $('result').hidden=true;
@@ -192,7 +201,7 @@
           return;
         }
         sync();
-        const why=q.whyBy?.[String(n)]||(q.visual==='drone'&&(n*q.sides)%360===0?q.whyMulti:null)||(n<q.answer?q.whyLow:q.whyHigh)||q.whyWrong||'다시 생각해 보자!';
+        const why=q.whyBy?.[String(n)]||(q.visual==='drone'&&(n*q.sides)%360===0&&n%360!==0?q.whyMulti:null)||(n<q.answer?q.whyLow:q.whyHigh)||q.whyWrong||'다시 생각해 보자!';
         show(`${screenHtml(screenFor(n),fmt)}<strong>다시 바꿔 보자!</strong><span class="explanation">${escape(fmt(why))}</span>`,{valid:false,failWhy:fmt(why),failExpr:4});
       });
     };

@@ -215,3 +215,35 @@ test('0하트로 완료한 장은 빈 activeRun으로 commitChapterRun을 호출
   s.commitChapterRun(state, 3, qMeta);
   assert.equal(state.chapterResults[3].questions['ch3-q1'].lastWrongWhy, '2배 곱하기 확인');
 });
+
+test('배열·미완료 하트 왜곡을 거르고 singleRetry 복귀 대상을 저장·복원한다', () => {
+  assert.equal(s.sanitizeGameState([], ids), null);
+  assert.equal(s.readBookmark({ getItem() { return '[]'; } }, ids), null);
+
+  const tampered = s.sanitizeGameState({
+    chapterId: 1,
+    sceneId: 'ch1-2',
+    chapterResults: { 1: { completed: false, hearts: 4, questions: {} } },
+    singleRetry: { chapterId: 1, qId: 'ch1-q1', returnTo: 'ending' },
+  }, ids);
+  assert.equal(tampered.chapterResults[1].completed, false);
+  assert.equal(tampered.chapterResults[1].hearts, 0);
+  assert.deepEqual(tampered.singleRetry, { chapterId: 1, qId: 'ch1-q1', returnTo: 'ending' });
+
+  assert.equal(
+    s.sanitizeGameState({
+      chapterId: 1,
+      sceneId: 'ch3-7',
+      singleRetry: { chapterId: 1, qId: 'ch1-q1', returnTo: 'ending' },
+    }, ids).singleRetry,
+    null,
+  );
+  assert.equal(
+    s.sanitizeGameState({
+      chapterId: 1,
+      sceneId: 'ch1-2',
+      singleRetry: { chapterId: 1, qId: 'ch1-q1', returnTo: 'bad' },
+    }, ids).singleRetry,
+    null,
+  );
+});

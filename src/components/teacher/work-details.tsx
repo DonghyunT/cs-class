@@ -23,7 +23,14 @@ export function ReviewProjectPreview({ project }: { project: ReviewProject }) {
   if (project.type === "abstraction") return <dl>{[["현재 상태", project.current], ["목표", project.goal], ["조건", project.conditions.join(" / ")], ["핵심", project.core.join(" / ")], ["덜어낸 정보", project.noise.join(" / ")], ["해결 계획", project.plans.join(" → ")]].map(([label, value]) => <div key={label}><dt><strong>{label}</strong></dt><dd>{value}</dd></div>)}</dl>;
   if (project.type === "festival") {
     const report = festivalReport(project);
-    return <><p>총 하트 {report.total}/{report.max}개 · 엔딩 {report.ending}</p><ul>{report.chapters.map(chapter => <li key={chapter.id}>{chapter.id}장 하트 {chapter.hearts}/4개</li>)}</ul><h4>첫 시도에 놓친 문항</h4>{report.missed.length ? <ul>{report.missed.map(title => <li key={title}>{title}</li>)}</ul> : <p>없음</p>}</>;
+    return (
+      <div className={styles.festivalSummary}>
+        <p className={styles.festivalHeadline}>총 하트 {report.total}/{report.max}개 · 엔딩 {report.ending}</p>
+        <ul className={styles.festivalChapters}>{report.chapters.map(chapter => <li key={chapter.id}>{chapter.id}장 하트 {chapter.hearts}/4개</li>)}</ul>
+        <h4>첫 시도에 놓친 문항</h4>
+        {report.missed.length ? <ul className={styles.festivalMissed}>{report.missed.map(title => <li key={title}>{title}</li>)}</ul> : <p>없음</p>}
+      </div>
+    );
   }
   if (project.mission !== "free") {
     const mission = missions.find(m => String(m.id) === project.mission);

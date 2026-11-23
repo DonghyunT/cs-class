@@ -342,4 +342,17 @@ test('임베드 계약: state에 activeRuns를 싣고, 부모 출처는 처음 �
   assert.match(app, /postToParent\('festival:chapter-complete',\{chapterId/);
   // 장을 끝내는 세 곳(장면 끝·정리 화면·엔딩)이 모두 같은 함수를 쓴다.
   assert.equal((app.match(/S\.commitChapterRun\(/g) || []).length, 1);
+  assert.equal(app.includes('[data-experience]'), false, '오타 셀렉터([data-experience]) 금지');
+  assert.match(app, /\[data-experiment\]/);
+  assert.match(app, /e\.key==='ArrowLeft'&&phase==='activity'/);
+});
+
+test('QA 회귀 방지: ch3-q1 재도전 대사 수치, 드론 max 359, 엔딩 불빛 색상 우선순위를 유지한다', () => {
+  const q1 = ch3.scenes.find((s) => s.questionId === 'ch3-q1');
+  assert.equal(JSON.stringify(q1.flow.retrySuccess).includes('8번 반복'), false);
+  const q2 = ch3.scenes.find((s) => s.questionId === 'ch3-q2');
+  assert.equal(q2.task.max, 359);
+  const css = fs.readFileSync(path.join(root, 'src/styles.css'), 'utf8');
+  assert.match(css, /\.ending-report-layout \.ending-lights-some svg/);
+  assert.match(css, /\.ending-report-layout \.ending-lights-awkward svg/);
 });
