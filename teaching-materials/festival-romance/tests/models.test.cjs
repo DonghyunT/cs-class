@@ -106,8 +106,10 @@ test('spriteCrop은 1행(v3)과 2행(6표정) 시트 모두에서 6표정 좌표
 
 test('computeEndingOutcome은 총 하트와 마음 선택지 거절 여부에 따라 3가지 엔딩을 판정한다', () => {
   assert.equal(m.computeEndingOutcome(12, false), 'some');
+  assert.equal(m.computeEndingOutcome(11, false), 'some');
   assert.equal(m.computeEndingOutcome(12, true), 'friend');
-  assert.equal(m.computeEndingOutcome(11, false), 'friend');
+  assert.equal(m.computeEndingOutcome(11, true), 'friend');
+  assert.equal(m.computeEndingOutcome(10, false), 'friend');
   assert.equal(m.computeEndingOutcome(7, false), 'friend');
   assert.equal(m.computeEndingOutcome(7, true), 'friend');
   assert.equal(m.computeEndingOutcome(6, false), 'awkward');

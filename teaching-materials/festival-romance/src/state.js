@@ -176,6 +176,23 @@
     state.activeRuns[chapterId]={missedThisRun:{},solvedThisRun:{}};
     return state.activeRuns[chapterId];
   }
+  function startSingleQuestionRetry(state,chapterId,questionId){
+    if(!state.activeRuns||typeof state.activeRuns!=='object')state.activeRuns={};
+    const saved=state.chapterResults?.[chapterId]?.questions||{};
+    const missedThisRun={},solvedThisRun={};
+    for(const [qId,entry] of Object.entries(saved)){
+      if(qId===questionId)continue;
+      if(entry?.solved){
+        solvedThisRun[qId]={...entry};
+        if(!entry.firstAttempt)missedThisRun[qId]=true;
+      }else if(entry&&!entry.firstAttempt){
+        missedThisRun[qId]=true;
+        solvedThisRun[qId]={...entry};
+      }
+    }
+    state.activeRuns[chapterId]={missedThisRun,solvedThisRun};
+    return state.activeRuns[chapterId];
+  }
   function recordQuestionAttempt(state,chapterId,questionId,{correct,conceptTitle='',wrongWhy=''}={}){
     const run=ensureActiveRun(state,chapterId);
     if(!correct){
@@ -210,6 +227,10 @@
   }
   function commitChapterRun(state,chapterId,questionList=[]){
     const run=ensureActiveRun(state,chapterId);
+    const prev=state.chapterResults?.[chapterId]||createEmptyChapterResult();
+    if(prev.completed&&!Object.keys(run.solvedThisRun).length){
+      return prev;
+    }
     const questions={};
     for(const meta of questionList){
       const qId=typeof meta==='string'?meta:meta.questionId;
@@ -225,8 +246,8 @@
       if(!questions[qId])questions[qId]={...entry};
     }
     const runHearts=Math.min(4,Object.values(questions).filter(q=>q.solved&&q.firstAttempt).length);
-    const prev=state.chapterResults?.[chapterId]||createEmptyChapterResult();
-    if(!prev.completed||runHearts>=prev.hearts){
+    const hasSolved=Object.values(run.solvedThisRun).some(q=>q&&q.solved);
+    if(!prev.completed||runHearts>prev.hearts||(runHearts===prev.hearts&&hasSolved)){
       state.chapterResults[chapterId]={completed:true,hearts:runHearts,questions};
     }else{
       state.chapterResults[chapterId]={...prev,completed:true};
@@ -264,7 +285,7 @@
     readBookmark,saveBookmark,clearBookmark,normalizeSiteUrl,
     sanitizeGameState,readGameState,saveGameState,clearGameState,
     createMemoryStorage,createStorageAdapter,isChapterUnlocked,
-    startChapterRun,recordQuestionAttempt,countRunHearts,commitChapterRun,
+    startChapterRun,startSingleQuestionRetry,recordQuestionAttempt,countRunHearts,commitChapterRun,
     countTotalHearts,countLiveTotalHearts,hasColdRejection,markSceneSeen,isSceneSeen
   };
 });

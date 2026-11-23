@@ -16,13 +16,33 @@ test("교사용 요약은 장별 하트, 총 하트, 엔딩 이름, 첫 시도�
   };
   const report = festivalReport(project);
   expect(report.chapters).toEqual([{ id: 1, hearts: 3 }, { id: 2, hearts: 2 }, { id: 3, hearts: 1 }]);
-  expect([report.total, report.max, report.ending]).toEqual([6, 12, "어색한 사이"]);
+  expect([report.total, report.max, report.ending]).toEqual([6, 12, "다시 맞출 콤비"]);
   // Game order within a chapter, not the order the saved map happens to list them.
   expect(report.missed).toEqual([
     "EP 2 · 초대장에 찍힌 '정문 님'",
     "EP 5 · 7장 이상인데 7장은 튕기는 포토 부스",
     "EP 8 · 교환권 10장 모았는데 스티커가 웬 말?!",
   ]);
+});
+
+test("오답 이유(lastWrongWhy)가 기록되면 missed와 missedDetails에 함께 노출한다", () => {
+  const project: FestivalProject = {
+    ...base, totalHearts: 11, endingOutcome: "some",
+    chapterResults: {
+      1: done(3, { "ch1-q2": { firstAttempt: false, solved: true, conceptTitle: "변수 덮어쓰기", lastWrongWhy: "'대답'은 마지막 값만 기억해요." } }),
+      2: done(4),
+      3: done(4),
+    },
+  };
+  const report = festivalReport(project);
+  expect(report.ending).toBe("썸 시작");
+  expect(report.missed).toEqual(["EP 2 · 초대장에 찍힌 '정문 님' — '대답'은 마지막 값만 기억해요."]);
+  expect(report.missedDetails).toEqual([{
+    id: "ch1-q2",
+    title: "EP 2 · 초대장에 찍힌 '정문 님'",
+    conceptTitle: "변수 덮어쓰기",
+    lastWrongWhy: "'대답'은 마지막 값만 기억해요.",
+  }]);
 });
 
 test("엔딩 이름과 아직 엔딩이 없는 상태", () => {

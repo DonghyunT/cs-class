@@ -46,6 +46,23 @@
   const screenHtml=(text,fmt)=>`<p class="sim-screen">실행 결과 · ${escape(fmt(text))}</p>`;
 
   // 카드 3장 중 고르기. 카드를 고르면 그 코드로 실행한 결과(screen)를 보여 주고, 처음 고른 카드가 첫 시도입니다.
+  function quizVisualHtml(visual,key){
+    if(visual==='compass'){
+      const end={90:{x:98,y:28},180:{x:38,y:48},270:{x:10,y:28}}[key]||{x:38,y:8};
+      const hit=key==='90';
+      return `<div class="mini-visual mini-compass" aria-hidden="true"><svg viewBox="0 0 160 56"><line x1="42" y1="28" x2="${end.x+4}" y2="${end.y}" class="compass-arrow${hit?' is-hit':' is-miss'}"/><circle cx="42" cy="28" r="5" class="compass-start"/><text x="108" y="33" class="compass-goal">★ 정문</text><text x="6" y="14" class="compass-axis">위 0°</text></svg></div>`;
+    }
+    if(visual==='gate'){
+      const allow={ge:[false,true,true],eq:[false,true,false],le:[true,true,false]}[key]||[false,false,false];
+      return `<div class="mini-visual mini-gate" aria-hidden="true">${[6,7,8].map((n,i)=>`<span class="gate-pill ${allow[i]?'is-open':'is-closed'}">${n}장${n===7?'(우리)':''} ${allow[i]?'○':'✕'}</span>`).join('')}</div>`;
+    }
+    if(visual==='counter'){
+      const vals={add1:[1,2,3,4,5,6],'reset-add':[1,1,1,1,1,1],set6:[6,6,6,6,6,6]}[key]||[1,1,1,1,1,1];
+      return `<div class="mini-visual mini-counter" aria-hidden="true">${vals.map((v,i)=>`<span class="counter-step${key==='add1'?' is-good':''}"><small>${i+1}발</small><b>${v}</b></span>`).join('')}</div>`;
+    }
+    return '';
+  }
+
   renderers.quiz=({root,M,ctx,show})=>{
     const {q,variantKey}=pick(ctx,'quiz',root),fmt=fmtOf(ctx);
     const choices=Array.isArray(q.choices)?q.choices:[];
@@ -55,16 +72,17 @@
       btn.onclick=()=>{
         const graded=M.gradeQuizAnswer(q,btn.dataset.quizChoice);
         const c=graded.choice;
+        const visual=q.visual?quizVisualHtml(q.visual,c?.key):'';
         const screen=c?.screen?screenHtml(c.screen,fmt):'';
         if(!graded.correct){
           btn.dataset.wrong='true';
           btn.disabled=true;
-          show(`${screen}<strong>다시 골라 보자!</strong><span class="explanation">${escape(fmt(graded.why))}</span>`,{valid:false,failWhy:fmt(graded.why),failExpr:c?.expression||4});
+          show(`${visual}${screen}<strong>다시 골라 보자!</strong><span class="explanation">${escape(fmt(graded.why))}</span>`,{valid:false,failWhy:fmt(graded.why),failExpr:c?.expression||4});
           return;
         }
         btn.dataset.correct='true';
         root.querySelectorAll('[data-quiz-choice]').forEach(b=>b.disabled=true);
-        show(`${screen}<strong>${escape(fmt(q.successTitle||'정답이에요!'))}</strong><span class="explanation">${escape(fmt(q.explain||c?.explain||''))}</span>`,{valid:true,quizKey:c?.key,story:c?.storyPatch||q.storyPatch,values:c?.values||q.values});
+        show(`${visual}${screen}<strong>${escape(fmt(q.successTitle||'정답이에요!'))}</strong><span class="explanation">${escape(fmt(q.explain||c?.explain||''))}</span>`,{valid:true,quizKey:c?.key,story:c?.storyPatch||q.storyPatch,values:c?.values||q.values});
       };
     });
   };
@@ -111,15 +129,17 @@
   // 처음 값이나 방금 실행한 값 그대로는 실행할 수 없고, 바꾼 뒤 처음 실행이 첫 시도입니다.
   renderers.number=({root,$,M,ctx,show})=>{
     const {q}=pick(ctx,'task',root),fmt=fmtOf(ctx);
-    const min=q.min??1,max=q.max??20;
-    let lastRun=String(q.initial),done=false;
+    const min=q.min??1,max=q.max??20,per=q.blinksPerCycle||1;
+    let lastRun=q.initial,done=false;
     const slot=`<input id="task-num" class="code-input" type="number" inputmode="numeric" min="${min}" max="${max}" step="1" value="${escape(String(q.initial))}" aria-label="${escape(fmt(q.label||'값'))}">`;
     root.innerHTML=`<div class="board quiz-board task-board">${boardTop(q,ctx,fmt,{slot})}<div class="task-controls"><button type="button" class="step-button" data-step="-1" aria-label="${escape(fmt(q.label||'값'))} 1 줄이기">−</button><button type="button" class="step-button" data-step="1" aria-label="${escape(fmt(q.label||'값'))} 1 늘리기">+</button><button type="button" id="run-task" class="primary-button task-run">${escape(fmt(q.runLabel||'실행하기 ▶'))}</button><span class="task-hint">${escape(fmt(q.label||'값'))} 칸을 바꾼 뒤 실행해요.</span></div><div class="task-visual" id="task-visual" aria-hidden="true"></div></div>${resultBox}`;
     const input=$('task-num');
     let busy=false;
     const sync=()=>{
       const lock=done||busy;
-      $('run-task').disabled=lock||input.value.trim()===lastRun;
+      const raw=input.value.trim();
+      const parsed=M.boundedInteger(raw,min,max);
+      $('run-task').disabled=lock||raw===''||parsed===lastRun;
       input.disabled=lock;
       root.querySelectorAll('[data-step]').forEach(b=>{b.disabled=lock;});
     };
@@ -127,15 +147,17 @@
     input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&!$('run-task').disabled){e.preventDefault();$('run-task').click();}});
     root.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{
       if(done||busy)return;
-      const n=Number(input.value)||0;
-      input.value=String(Math.min(max,Math.max(min,n+Number(b.dataset.step))));
+      const raw=Number(input.value);
+      const base=Number.isFinite(raw)&&input.value.trim()!==''?Math.trunc(raw):q.initial;
+      input.value=String(Math.min(max,Math.max(min,base+Number(b.dataset.step))));
       sync();
     });
     // 실행 과정을 한 장면씩 보여 줍니다: 조명은 깜빡일 때마다 전구가 하나씩 켜지고, 드론은 한 변씩 날아가며 선을 그립니다.
     const frames=n=>{
       if(q.visual==='lights'){
-        const shown=Math.min(n,20);
-        return {count:shown,ms:320,draw:k=>`<div class="lights-row">${Array.from({length:shown},(_,i)=>`<span class="bulb${i<k?' on':''}"></span>`).join('')}${n>shown?'<span class="bulb-more">…</span>':''}</div><p class="visual-caption">깜빡임 ${k}번</p>`};
+        const total=n*per;
+        const shown=Math.min(total,20);
+        return {count:shown,ms:per>1?240:320,draw:k=>`<div class="lights-row">${Array.from({length:shown},(_,i)=>{const tone=per===2?(i%2===0?' bulb-yellow':' bulb-blue'):'';return `<span class="bulb${tone}${i<k?' on':''}"></span>`;}).join('')}${total>shown?'<span class="bulb-more">…</span>':''}</div><p class="visual-caption">${per>1?`${n}번 반복 · `:''}깜빡임 ${k}번</p>`};
       }
       if(q.visual==='drone'){
         const pts=M.polygonPath(q.sides,60,n),xs=pts.map(p=>p.x),ys=pts.map(p=>p.y),f=v=>v.toFixed(1);
@@ -154,12 +176,12 @@
     };
     const screenFor=n=>{
       if(q.visual==='drone'){const sum=n*q.sides;return `${n}° × ${q.sides} = ${sum}°${sum===360?' → 도형 완성!':sum%360===0?' → 닫혔지만 한 바퀴보다 많이 돌아요':' → 제자리로 안 돌아와요'}`;}
-      return fmt(q.screen||'{n}').replace('{n}',String(n));
+      return fmt(q.screen||'{n}').replaceAll('{n}',String(n)).replaceAll('{total}',String(n*per));
     };
     $('run-task').onclick=()=>{
       const n=M.boundedInteger(input.value.trim(),min,max);
       if(n===null){ctx.notify(`${min}~${max} 사이의 정수를 입력해 주세요.`);input.focus();return;}
-      lastRun=String(n);input.value=String(n);
+      lastRun=n;input.value=String(n);
       $('result').hidden=true;
       busy=true;sync();
       play(n,()=>{

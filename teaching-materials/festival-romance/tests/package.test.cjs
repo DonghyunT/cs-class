@@ -19,10 +19,10 @@ test('독립 HTML에 세 챕터·22장면·12문항·새로 그린 v15 6표정(2
   assert.ok(spriteMatch, 'FESTIVAL_SPRITE_ROWS 주입 확인');
   assert.deepEqual(JSON.parse(spriteMatch[1]), { boy: 2, girl: 2 });
   const build = fs.readFileSync(path.join(root, 'build.cjs'), 'utf8');
-  assert.ok(build.includes("'haru-boy-v15.png'") && build.includes("'haru-girl-v15.png'"), '빌드가 v15 시트를 사용');
+  assert.ok(build.includes("'haru-boy-v15.webp'") && build.includes("'haru-girl-v15.webp'"), '빌드가 WebP v15 시트를 사용');
   assert.ok(distHtml.includes('CS 복습 챌린지'));
   assert.ok(!distHtml.includes('금옥중학교'));
-  assert.ok(Buffer.byteLength(distHtml) <= 20000000);
+  assert.ok(Buffer.byteLength(distHtml) <= 4000000);
   assert.ok(!/본문 제작 예정/.test(distHtml));
 });
 

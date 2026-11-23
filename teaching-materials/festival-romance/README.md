@@ -18,31 +18,31 @@
 
 | 챕터 | 정규 단원·주제 | 평가 문항 | 특징 |
 | :--- | :--- | :--- | :--- |
-| 1장 (`ch1`) | 순차·입출력·변수·대답·방향키 사건과 방향각(1단원) | `ch1-q1`~`ch1-q4` (4문항) | 환영 화면 블록 순서·초대장 [이름] 저장 위치·길 안내 방향각·티켓 나누기를 변수로 계산 — 모두 카드 3장 중 고르기 |
-| 2장 (`ch2`) | 비교·논리(`AND`/`OR`/`NOT`)·조건 분기 | `ch2-q1`~`ch2-q4` (4문항) | 7장 이상 비교 기호·쉬는 부스 또는→그리고·날씨 안내 아니다(카드 3장) · 자판기 줄 순서를 ↑·↓로 직접 옮기기 + 1차 마음 선택지 |
-| 3장 (`ch3`) | 횟수 반복·다각형 외각·조건 반복·카운터 | `ch3-q1`~`ch3-q4` (4문항) | 반복 횟수·드론 쇼 회전각을 숫자로 적고 실행(전구가 하나씩 켜짐·드론이 한 변씩 그림) · 암호 반복 조건·카운터 더하기(카드 3장) + 2차 마음 선택지 + 엔딩 리포트 |
+| 1장 (`ch1`) | 순차·입출력·변수·대답·방향키 사건과 방향각(1단원) | `ch1-q1`~`ch1-q4` (4문항) | 환영 화면 블록 순서·초대장 [이름] 저장 위치·길 안내 방향각(결과 미니 나침반)·티켓 나누기를 변수로 계산 — 모두 카드 3장 중 고르기 |
+| 2장 (`ch2`) | 비교·논리(`AND`/`OR`/`NOT`)·조건 분기 | `ch2-q1`~`ch2-q4` (4문항) | 7장 이상 비교 기호(결과 손님 게이트)·쉬는 부스 또는→그리고·날씨 안내 아니다(카드 3장) · 자판기 줄 순서를 ↑·↓로 직접 옮기기 + 1차 마음 선택지 |
+| 3장 (`ch3`) | 횟수 반복·다각형 외각·조건 반복·카운터 | `ch3-q1`~`ch3-q4` (4문항) | 2번씩 깜빡이는 묶음의 반복 횟수·드론 쇼 회전각을 숫자로 적고 실행(전구 노란/파란 불이 하나씩 켜짐·드론이 한 변씩 그림) · 암호 반복 조건·카운터 더하기(결과 발사표, 카드 3장) + 2차 마음 선택지 + 엔딩 리포트 |
 
-- **문항 화면:** 하트 문항은 위쪽이 같은 틀입니다(지금 상황 1~2줄 → 블록 코드 4줄 이하, 고칠 줄 강조 → 질문). 객관식이 어울리는 9문항은 큰 카드 3장(`renderers.quiz`)이고, 고르면 그 코드의 실행 결과와 이유가 나옵니다. 제어 구조 3문항은 직접 조작·단답형입니다: 2장 4번 자판기는 줄 순서를 ↑·↓로 옮기기(`renderers.order`), 3장 1번 조명·2번 드론은 코드 속 숫자 칸에 횟수·회전각 적기(`renderers.number`). 조작·단답형은 처음(버그) 상태나 방금 실행한 상태로는 실행할 수 없고, 바꾼 뒤 처음 실행이 첫 시도입니다. 단답형은 실행 과정을 한 장면씩 보여 준 뒤(조명은 전구가 하나씩 켜지고, 드론은 한 변씩 날며 선을 그림) 결과를 냅니다. 2·3장 조건은 기호식(`(비가 온다) 라면`·`아니다 (`·`≠`) 대신 "비가 오지 않으면"처럼 자연스러운 말로 적습니다. 드롭다운은 쓰지 않으며, 구성·제목(`EP N · …`)은 `tests/refinement.test.cjs`가 확인합니다.
+- **문항 화면:** 하트 문항은 위쪽이 같은 틀입니다(지금 상황 1~2줄 → 블록 코드 4줄 이하, 고칠 줄 강조 → 질문). 객관식이 어울리는 9문항은 큰 카드 3장(`renderers.quiz`)이고, 고르면 그 코드의 실행 결과(일부 문항 미니 시각화 포함)와 이유가 나옵니다. 제어 구조 3문항은 직접 조작·단답형입니다: 2장 4번 자판기는 줄 순서를 ↑·↓로 옮기기(`renderers.order`), 3장 1번 조명·2번 드론은 코드 속 숫자 칸에 횟수·회전각 적기(`renderers.number`). 조작·단답형은 처음(버그) 상태나 방금 실행한 상태로는 실행할 수 없고, 바꾼 뒤 처음 실행이 첫 시도입니다. 단답형은 실행 과정을 한 장면씩 보여 준 뒤(조명은 전구가 하나씩 켜지고, 드론은 한 변씩 날며 선을 그림) 결과를 냅니다. 2·3장 조건은 기호식(`(비가 온다) 라면`·`아니다 (`·`≠`) 대신 "비가 오지 않으면"처럼 자연스러운 말로 적습니다. 드롭다운은 쓰지 않으며, 구성·제목(`EP N · …`)은 `tests/refinement.test.cjs`가 확인합니다.
 
 - **첫 시도 정답 하트 규칙 (`src/state.js`):**
   - 각 문항을 **첫 시도**에 통과하면 `+1 ♥`(최대 `12 ♥`)를 얻습니다.
   - 오답 후 재도전해 통과하면 `0 ♥`로 다음 장면에 진행하며, 해당 문항은 회차 오답 기록(`missedThisRun`)과 엔딩 리포트에 남습니다.
-  - 챕터 재도전 시 최고 하트 기록은 유지되고, 해당 챕터의 차가운 선택지(`coldChoices`) 기록은 비워집니다.
+  - 장 완료 화면·엔딩 리포트에서 **놓친 문항만 1개씩 바로 다시 풀거나**(`startSingleQuestionRetry`), 장 전체를 다시 도전할 수 있습니다. 장 재도전 시 최고 하트 기록은 유지되고, 해당 장의 마음 선택지(`coldChoices`)도 다시 고를 수 있습니다.
 - **3갈래 엔딩 (`computeEndingOutcome`):**
-  - **썸 시작 (`some`):** `hearts >= 12` (12/12 만점)이고 `coldChoices` 거절이 없는 경우
-  - **찐친 (`friend`):** `hearts`가 `7~11`이거나, `hearts >= 12`이지만 `coldChoices`에서 선을 그은 경우(12/12 차가운 선택 분기 포함)
-  - **어색한 사이 (`awkward`):** `hearts <= 6` (0~6)
+  - **썸 시작 (`some`):** `hearts >= 11` (11~12 ♥; `12/12`는 `✨ 퍼펙트 12/12` 배지)이고 `coldChoices` 거절이 없는 경우
+  - **찐친 (`friend`):** `hearts`가 `7~10`이거나, `hearts >= 11`이지만 `coldChoices`에서 선을 그은 경우(고득점 차가운 선택 분기 포함)
+  - **다시 맞출 콤비 (`awkward`):** `hearts <= 6` (0~6)
 
 ## 실행 모드와 캐릭터 자산
 
-- **기본 학생 모드 (`/festival-romance.html`):** 처음 온 학생은 `새 이야기 시작`(이름·하루 성별)으로만 시작(진행 기록이 생기면 챕터 카드·이어하기 표시), 순차 챕터 해금(1장 완료 시 2장 해금, 2장 완료 시 3장 해금), 이전 버튼·← 키는 대사 한 줄씩(첫 줄에서는 이전 장면) 되돌아가며 하트 기록은 바뀌지 않음, 목차(`#contents-button`)·교사 도구(`#teaching-tools`)·설정 내 교사 옵션 숨김, `localStorage` 키 `festival-romance.game.v2` 저장, 이미 본 장면(`seenScenes`)에 대한 `이미 본 대사 건너뛰기` 지원.
-- **교사 모드 (`?mode=teacher`):** 전체 챕터 즉시 해금, 목차·교사 메모·간결 대화·엔딩 미리보기 패널 활성화.
-- **임베드 모드 (`?embed=1`):** `body`와 `#stage`에 `data-embed="true"` 적용, `#fullscreen` 숨김, `createMemoryStorage` 사용으로 `localStorage` 접근 0회, `parent.postMessage` 브리지 제공. 메인 앱은 이 모드로 게임을 복습 활동 `review-festival`에 넣습니다(Phase 5).
-  - **메시지 계약:** 게임 → 사이트 `festival:ready`(데이터 없음, 스크립트가 준비되면 한 번) · `festival:state`(저장 상태 + `activeRuns`, 이름 `nickname` 포함) · `festival:save-request`(게임 안 Ctrl/⌘+S, 기본 동작을 막음) · `festival:chapter-complete`(`{ chapterId }`, 장을 시작하거나 `festival:init`을 받은 뒤 장 결과 화면이 처음 나올 때 한 번) · `festival:complete`(`festival:state` 내용 + `outcome`). 사이트 → 게임 `festival:init`(`{ payload: 저장 상태 또는 null }`).
+- **기본 학생 모드 (`/festival-romance.html`):** 처음 온 학생은 `새 이야기 시작`(이름·하루 성별)으로만 시작(진행 기록이 생기면 챕터 카드·이어하기 표시), 순차 챕터 해금(1장 완료 시 2장 해금, 2장 완료 시 3장 해금), 대화창 클릭 또는 `Space`/`→` 진행, 이전 버튼·← 키는 대사 한 줄씩(첫 줄에서는 이전 장면) 되돌아가며 하트 기록은 바뀌지 않음, 설정에서 효과음 켜기/끄기 지원, 목차(`#contents-button`)·교사 도구(`#teaching-tools`)·설정 내 교사 옵션 숨김, `localStorage` 키 `festival-romance.game.v2` 저장, 이미 본 장면(`seenScenes`)에 대한 `이미 본 대사 건너뛰기` 지원.
+- **교사 모드 (`?mode=teacher`):** 전체 챕터 즉시 해금, 목차·교사 메모·간결 대화·엔딩 미리보기 패널 활성화. `cs-class` 교사 미리보기(`mode === "preview"`)도 `?embed=1&mode=teacher`로 열립니다.
+- **임베드 모드 (`?embed=1`):** `body`와 `#stage`에 `data-embed="true"` 적용, `#fullscreen` 숨김, `createMemoryStorage` 사용으로 `localStorage` 접근 0회, `parent.postMessage` 브리지 제공. 메인 앱은 이 모드로 게임을 복습 활동 `review-festival`에 넣습니다(Phase 5). 장 완료·재도전으로 장 결과나 마음 선택지가 달라지면 자동 저장되고, 엔딩 화면에 제출 완료 안내를 띄웁니다.
+  - **메시지 계약:** 게임 → 사이트 `festival:ready`(데이터 없음, 스크립트가 준비되면 한 번) · `festival:state`(저장 상태 + `activeRuns`, 이름 `nickname` 포함) · `festival:save-request`(게임 안 Ctrl/⌘+S, 기본 동작을 막음) · `festival:chapter-complete`(`{ chapterId }`, 장을 시작하거나 `festival:init`을 받은 뒤 장 결과 화면이나 단일 문항 재도전 완료 시 장당 한 번) · `festival:complete`(`festival:state` 내용 + `outcome`). 사이트 → 게임 `festival:init`(`{ payload: 저장 상태 또는 null }`).
   - **출처:** `festival:init`을 받기 전에는 `festival:ready`만 보내고, 처음 받은 `festival:init`의 `e.origin`을 이후 메시지의 대상 출처로 씁니다(부모가 다른 도메인이어도 전달됨).
-  - **사이트 쪽:** 학생 화면은 [`festival.tsx`](../../src/components/student/review/festival.tsx), 메시지 처리는 [`festival-embed.ts`](../../src/lib/classroom/review/festival-embed.ts), 저장 형식은 [`project.ts`](../../src/lib/classroom/review/project.ts)입니다. 번들 `public/festival-romance.html`은 `node teaching-materials/festival-romance/build.cjs`로 다시 만듭니다.
+  - **사이트 쪽:** 학생 화면은 [`festival.tsx`](../../src/components/student/review/festival.tsx), 메시지 처리는 [`festival-embed.ts`](../../src/lib/classroom/review/festival-embed.ts), 교사 요약은 [`festival-report.ts`](../../src/lib/classroom/review/festival-report.ts), 저장 형식은 [`project.ts`](../../src/lib/classroom/review/project.ts)입니다. 번들 `public/festival-romance.html`은 `node teaching-materials/festival-romance/build.cjs`로 다시 만듭니다.
 - **하루 말투:** 하루의 감정 대사는 `text: { boy, girl }`로 성별마다 조금 다르게 쓰고(문장 끝·감탄사 정도), CS 설명·앱 화면·내레이션·주인공 대사는 공통입니다. 학생 화면에는 파이썬 코드를 쓰지 않습니다(엔트리 블록 표현만).
-- **캐릭터 스프라이트:** 현재 번들은 [haru-boy-v15.png](assets/haru-boy-v15.png)와 [haru-girl-v15.png](assets/haru-girl-v15.png)(`1536×2048` 3×2, `FESTIVAL_SPRITE_ROWS: { boy: 2, girl: 2 }`)를 씁니다. 위 행 미소·수줍음·환한 웃음, 아래 행 놀람·곤란·장난기입니다. 미소 칸은 v13 바탕 그대로이고 나머지 5칸은 미소 칸을 레퍼런스로 표정마다 전신을 새로 그려 위치만 맞췄습니다(얼굴 합성 없음). 1행 시트(`1536×1024`)를 넣으면 `build.cjs`가 `rows: 1`로 감지해 3표정을 6칸에 나눠 씁니다.
+- **캐릭터 스프라이트:** 현재 번들은 WebP로 압축한 [haru-boy-v15.webp](assets/haru-boy-v15.webp)와 [haru-girl-v15.webp](assets/haru-girl-v15.webp)(`1536×2048` 3×2, `FESTIVAL_SPRITE_ROWS: { boy: 2, girl: 2 }`)를 쓰며, 원본 PNG도 함께 보관합니다. 위 행 미소·수줍음·환한 웃음, 아래 행 놀람·곤란·장난기입니다. 1행 시트(`1536×1024`)를 넣으면 `build.cjs`가 PNG/WebP 크기를 읽어 `rows: 1`로 자동 감지합니다.
 
 - **보존된 원본 자료의 검증 기준:** V1 3차시 27장면 도입 수업(`/festival-lesson.html`) 검수 이력은 [제작·검수 기록](제작-검수-기록.md)에 보존되어 있으며, v2 개편 검증·남은 작업은 [HANDOFF.md](HANDOFF.md)에 있습니다.
 

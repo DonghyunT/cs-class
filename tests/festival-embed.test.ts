@@ -6,7 +6,7 @@ import entryCdn from "../scripts/entryjs-cdn.json";
 import { sameWorkContent } from "../src/components/student/work-draft";
 import { LESSONS } from "../src/lib/classroom/catalog";
 import { emptyWork } from "../src/lib/classroom/progress";
-import { FESTIVAL_FRAME, festivalFrame, festivalStep } from "../src/lib/classroom/review/festival-embed";
+import { FESTIVAL_FRAME, FESTIVAL_PREVIEW_FRAME, festivalFrame, festivalStep } from "../src/lib/classroom/review/festival-embed";
 import { festivalGameState, festivalProjectFrom, initialReviewProject, type FestivalProject } from "../src/lib/classroom/review/project";
 import type { Work } from "../src/lib/classroom/types";
 
@@ -26,6 +26,9 @@ test("게임 iframe은 작업실 호스트가 있을 때만 그 호스트에서 
   expect(festivalFrame("https://entry-cdn.test/v/fedcba9876543210-0123456789abcdef/workspace.html")).toEqual(local);
   // The committed address is the local one; only production builds rewrite entry-workspace.json.
   expect(FESTIVAL_FRAME).toEqual(local);
+  expect(festivalFrame("/entryjs/workspace.html", true)).toEqual({ src: "/festival-romance.html?embed=1&mode=teacher", sandbox: "allow-scripts allow-forms" });
+  expect(festivalFrame("https://cs-class-sigma.vercel.app/entryjs/workspace.html", true)).toEqual({ src: "https://cs-class-sigma.vercel.app/festival-romance.html?embed=1&mode=teacher", sandbox: "allow-scripts allow-same-origin allow-forms" });
+  expect(FESTIVAL_PREVIEW_FRAME).toEqual({ src: "/festival-romance.html?embed=1&mode=teacher", sandbox: "allow-scripts allow-forms" });
 });
 
 test("작업실 호스트는 게임 파일과 /entryjs/만 그대로 보내고 나머지는 앱으로 보낸다", async () => {
@@ -59,10 +62,15 @@ test("게임 메시지: 준비되면 init, 상태는 초안, 저장 요청은 �
   }
 });
 
-test("장 끝 메시지는 저장된 기록에 그 장이 아직 끝나지 않았을 때만 저장한다", () => {
+test("장 끝 메시지는 처음 완료나 재도전으로 장 결과·마음 선택지가 달라졌을 때 저장한다", () => {
   expect(festivalStep({ type: "festival:chapter-complete", payload: { chapterId: 1 } }, withChapter1(false), false)).toEqual({ type: "save" });
-  // A reopened summary scene sends it again (D2 keeps chapter-end saves to at most 3).
-  expect(festivalStep({ type: "festival:chapter-complete", payload: { chapterId: 1 } }, withChapter1(true), false)).toBeNull();
+  // A reopened summary scene sends it again when unchanged (keeps chapter-end saves minimal).
+  expect(festivalStep({ type: "festival:chapter-complete", payload: { chapterId: 1 } }, withChapter1(true), false, withChapter1(true).draft.reviewProject)).toBeNull();
+  // Retrying a completed chapter and improving hearts (or clearing coldChoices) triggers auto-save.
+  const improved = { ...initial, chapterResults: { ...initial.chapterResults, 1: { ...chapter, completed: true, hearts: 4, questions: { "ch1-q1": { firstAttempt: true, solved: true, conceptTitle: "a" } } } } };
+  const previous = withChapter1(true).draft.reviewProject as FestivalProject;
+  expect(festivalStep({ type: "festival:chapter-complete", payload: { chapterId: 1 } }, withChapter1(true), false, improved)).toEqual({ type: "save" });
+  expect(festivalStep({ type: "festival:chapter-complete", payload: { chapterId: 1 } }, withChapter1(true), false, { ...previous, coldChoices: { "ch2-6": true } })).toEqual({ type: "save" });
   for (const chapterId of [0, 4, "1", undefined]) expect(festivalStep({ type: "festival:chapter-complete", payload: { chapterId } }, saved(), false), String(chapterId)).toBeNull();
 });
 
