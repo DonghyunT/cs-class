@@ -393,7 +393,7 @@ async function playChapterToEnd(page, chapterId, {
       await page.locator('#next-button').click();
       assert.match(await page.locator('.story-heading h2').innerText(), /밤 11시 14분/, '프롤로그 다음은 밤 장면');
       assert.equal(await page.locator('.story-heading .recap').count(), 0, '장 요약은 프롤로그에만');
-      assert.equal(await page.locator('.story-character').isVisible(), true);
+      assert.equal(await page.locator('.story-character').isVisible(), false, '밤 장면도 하루 첫 대사 전에는 숨김');
       checks.push('프롤로그 등장 연출(캐릭터 숨김→이름표→포스터)과 밤 장면 연결 확인');
       // 선택 응답에서 이전 → 같은 선택지 다시
       for (let i = 0; i < 20 && !(await page.locator('#story-choices button').first().isVisible()); i++) {
@@ -866,6 +866,8 @@ async function playChapterToEnd(page, chapterId, {
         });
         await frame.locator('body').press('Control+s');
         assert.equal(await gameFrame.evaluate(() => window.__saveDefaultPrevented), true, 'Ctrl+S 기본 동작 차단');
+        // 메시지는 비동기로 도착하므로 첫 요청이 올 때까지 기다린 뒤 정확히 1회인지 봅니다.
+        await page.waitForFunction(() => window.__msgs.some((m) => m?.type === 'festival:save-request'));
         assert.equal((await page.evaluate(() => window.__msgs)).filter((m) => m?.type === 'festival:save-request').length, 1, 'festival:save-request 1회');
 
         // Advance ch3-6 warm -> ch3-7 -> ending report -> verify festival:state & festival:complete

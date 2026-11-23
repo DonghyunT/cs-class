@@ -138,7 +138,7 @@
     const min=q.min??1,max=q.max??20,per=q.blinksPerCycle||1;
     let lastRun=q.initial,done=false;
     const slot=`<input id="task-num" class="code-input" type="number" inputmode="numeric" min="${min}" max="${max}" step="1" value="${escape(String(q.initial))}" aria-label="${escape(fmt(q.label||'값'))}">`;
-    root.innerHTML=`<div class="board quiz-board task-board">${boardTop(q,ctx,fmt,{slot})}<div class="task-controls"><button type="button" class="step-button" data-step="-1" aria-label="${escape(fmt(q.label||'값'))} 1 줄이기">−</button><button type="button" class="step-button" data-step="1" aria-label="${escape(fmt(q.label||'값'))} 1 늘리기">+</button><button type="button" id="run-task" class="primary-button task-run">${escape(fmt(q.runLabel||'실행하기 ▶'))}</button><span class="task-hint">${escape(fmt(q.label||'값'))} 칸을 바꾼 뒤 실행해요.</span></div><div class="task-visual" id="task-visual" aria-hidden="true"></div></div>${resultBox}`;
+    root.innerHTML=`<div class="board quiz-board task-board">${boardTop(q,ctx,fmt,{slot})}<div class="task-controls"><button type="button" class="step-button" data-step="-1" aria-label="${escape(fmt(q.label||'값'))} 1 줄이기">−</button><button type="button" class="step-button" data-step="1" aria-label="${escape(fmt(q.label||'값'))} 1 늘리기">+</button><button type="button" id="run-task" class="primary-button task-run">${escape(fmt(q.runLabel||'실행하기 ▶'))}</button><span class="task-hint">${escape(fmt(q.label||'값'))} 칸에 바로 적거나 −/+로 바꾼 뒤 실행해요.</span></div><div class="task-visual" id="task-visual" aria-hidden="true"></div></div>${resultBox}`;
     const input=$('task-num');
     let busy=false;
     const sync=()=>{
@@ -166,7 +166,7 @@
       if(q.visual==='lights'){
         const total=n*per;
         const shown=Math.min(total,20);
-        return {count:shown,ms:per>1?240:320,draw:k=>`<div class="lights-row">${Array.from({length:shown},(_,i)=>{const tone=per===2?(i%2===0?' bulb-yellow':' bulb-blue'):'';return `<span class="bulb${tone}${i<k?' on':''}"></span>`;}).join('')}${total>shown?'<span class="bulb-more">…</span>':''}</div><p class="visual-caption">${per>1?`${n}번 반복 · `:''}깜빡임 ${k}번</p>`};
+        return {count:shown,ms:per>1?240:320,draw:k=>`<div class="lights-row">${Array.from({length:shown},(_,i)=>{const tone=per===2?(i%2===0?' bulb-yellow':' bulb-blue'):'';return `<span class="bulb${tone}${i<k?' on':''}"></span>`;}).join('')}${total>shown?'<span class="bulb-more">…</span>':''}</div><p class="visual-caption">${per>1?`${n}번 반복 · `:''}깜빡임 ${k>=shown?total:k}번</p>`};
       }
       if(q.visual==='drone'){
         const pts=M.polygonPath(q.sides,60,n),xs=pts.map(p=>p.x),ys=pts.map(p=>p.y),f=v=>v.toFixed(1);
@@ -184,7 +184,7 @@
       const timer=ctx.interval(()=>{k++;$('task-visual').innerHTML=draw(k);if(k>=count){clearInterval(timer);onDone();}},ms);
     };
     const screenFor=n=>{
-      if(q.visual==='drone'){const sum=n*q.sides,closed=sum%360===0&&n%360!==0;return `${n}° × ${q.sides} = ${sum}°${sum===360?' → 도형 완성!':closed?' → 닫혔지만 한 바퀴보다 많이 돌아요':' → 제자리로 안 돌아와요'}`;}
+      if(q.visual==='drone'){const sum=n*q.sides,closed=sum%360===0&&n%360!==0;return `${n}° × ${q.sides} = ${sum}°${sum===360?' → 도형 완성!':closed?' → 출발점엔 왔지만 한 바퀴보다 많이 돌아요':' → 제자리로 안 돌아와요'}`;}
       return fmt(q.screen||'{n}').replaceAll('{n}',String(n)).replaceAll('{total}',String(n*per));
     };
     $('run-task').onclick=()=>{

@@ -315,7 +315,7 @@
   function dialogue(lines,{options=[],onChoice,onFinish=()=>move(1),finishLabel='다음 장면 →',heartChoice=false,seenKey=null,startLine=0,onBack=sceneBack()}={}){
     disposeScene();
     $('stage').dataset.kind='story';
-    const coldNow=S.hasColdRejection(state);
+    const coldNow=S.hasColdBefore(state,ids,activeScene.id);
     const pool=(Array.isArray(lines)?lines:[]).filter(l=>!l.when||(l.when==='cold')===coldNow);
     const safeLines=pool.length?pool:[{speaker:'하루',role:'haru',expression:0,text:'자, 다음으로 가 볼까?'}];
     $('scene-content').innerHTML=storyMarkup(activeScene);
@@ -437,7 +437,7 @@
       'ch1-q2':'고칠 줄 표시를 따라 한 줄씩 읽어 보면 바로 보일 거야!',
       'ch1-q3':'지금 방향이 어디를 가리키는지 머릿속으로 먼저 그려 보자!',
       'ch1-q4':'티켓 숫자가 나중에 또 바뀐다고 생각하고 식을 골라 줘!',
-      'ch2-q2':'두 조건이 각각 참인지 거짓인지 먼저 나눠서 따져 보자!',
+      'ch2-q2':'쉬는 시간인데 왜 열렸는지, 두 조건을 잇는 말을 봐 줘!',
       'ch2-q3':'비가 오는 지금 상황에서 첫 줄이 참이 될지 거짓이 될지 봐 줘!',
       'ch3-q2':'고른 도형 모양대로 한 바퀴 돌아 제자리에 오게 각도를 적어 보자!',
       'ch3-q3':'틀린 암호를 넣었을 때와 맞는 암호를 넣었을 때를 둘 다 따라가 보자!',
@@ -600,7 +600,7 @@
     const isPerfect=outcome==='some'&&total===12;
     const title=isColdFriend&&data.coldTitle?data.coldTitle:data.title;
     const headline=isColdFriend&&data.coldHeadline?data.coldHeadline:data.headline;
-    const footer=isColdFriend?(data.coldFooter||'✌️ 실력은 충분해요! 위 버튼으로 마음 선택지만 다시 고르면 숨겨진 썸 시작 엔딩이 열립니다.'):data.footer;
+    const footer=isColdFriend?(data.coldFooter||'✌️ 실력은 충분해요! 선을 그은 장을 다시 해 마음 선택을 모두 바꾸면 숨겨진 썸 시작 엔딩이 열립니다.'):data.footer;
     const coldDetails=findColdChoiceDetails();
     const missedItems=[];
     for(const ch of chapters){
@@ -614,7 +614,7 @@
       }
     }
     const imperfectChapters=[1,2,3].filter(id=>(state.chapterResults?.[id]?.hearts||0)<4);
-    const expr=outcome==='some'?1:outcome==='friend'?2:4;
+    const expr=outcome==='some'?1:outcome==='friend'?(S.hasColdRejection(state)?0:2):4;
     const recapSections=chapters.map(ch=>{
       const endOrSum=ch.scenes.find(s=>s.ending||s.kind==='summary');
       return endOrSum?.cards?.length?{id:ch.id,title:`${ch.id}장 · ${ch.subject}`,cards:endOrSum.cards}:null;
@@ -629,7 +629,7 @@
     $('stage').dataset.kind='summary';
     $('scene-content').innerHTML=endingReportMarkup(scene,outcome);
     applyCharacter();
-    const expr=outcome==='some'?1:outcome==='friend'?2:4;
+    const expr=outcome==='some'?1:outcome==='friend'?(S.hasColdRejection(state)?0:2):4;
     expression(document.querySelector('.ending-character'),expr);
     playSfx('ending');
     setForward('처음 화면으로 ↗',()=>showTitle(true));
@@ -655,11 +655,11 @@
     const lines=useCold?endingObj.coldLines:useColdMid?endingObj.coldMidLines:(endingObj.lines||scene.lines||[]);
     phase='ending';
     dialogue(lines,{
-      seenKey:`${scene.id}:${outcome}${useCold?':cold':''}`,
+      seenKey:`${scene.id}:${outcome}${useCold?':cold':useColdMid?':coldmid':''}`,
       finishLabel:'최종 리포트 보기 →',
       startLine,
       onFinish:()=>{
-        S.markSceneSeen(state,`${scene.id}:${outcome}${useCold?':cold':''}`);
+        S.markSceneSeen(state,`${scene.id}:${outcome}${useCold?':cold':useColdMid?':coldmid':''}`);
         record();
         renderEndingReport(scene,outcome);
       }

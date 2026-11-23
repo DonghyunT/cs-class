@@ -152,6 +152,16 @@ test('재도전 시 coldChoices 해제, 순차 해금, 임베드 메모리 저�
   delete state.coldChoices['ch2-6'];
   assert.equal(s.hasColdRejection(state), false);
 
+  // 조건 대사는 지금 장면보다 앞의 선택만 본다: 3장을 다시 할 때 아직 다시 고르지 않은 ch3-6 답이 ch3-1 대사에 반영되지 않는다.
+  state.coldChoices['ch3-6'] = true;
+  assert.equal(s.hasColdBefore(state, ids, 'ch3-6'), false);
+  assert.equal(s.hasColdBefore(state, ids, 'ch3-7'), true);
+  state.coldChoices['ch2-6'] = true;
+  assert.equal(s.hasColdBefore(state, ids, 'ch2-6'), false);
+  assert.equal(s.hasColdBefore(state, ids, 'ch3-6'), true);
+  assert.equal(s.hasColdBefore(state, ids, 'unknown'), false);
+  state.coldChoices = {};
+
   let localTouched = 0;
   const spyLocal = {
     getItem() { localTouched++; return null; },
