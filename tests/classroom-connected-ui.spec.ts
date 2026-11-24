@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { LESSONS } from "../src/lib/classroom/catalog";
+import { RECENT_ACTIVITY_MS } from "../src/lib/classroom/features";
 import type { Session, StudentRow, TeacherDashboard } from "../src/lib/classroom/types";
 import { localOnly, readyStudent, readyTeacher } from "./emulator";
 
@@ -10,7 +11,7 @@ const todoText = "다음 수업 준비물 확인하기";
 function classroomRows(checkedAt: number): StudentRow[] {
   // These students exist only in an HTTP response; no accounts or DB rows are created.
   return Array.from({ length: 27 }, (_, index) => {
-    const lastActiveAt = index === 0 ? checkedAt - 30_000 : index === 9 ? checkedAt - 90_000 : index === 18 ? checkedAt - 119_999 : index === 1 ? checkedAt - 120_000 : index === 2 ? checkedAt - 120_001 : null;
+    const lastActiveAt = index === 0 ? checkedAt - 30_000 : index === 9 ? checkedAt - 90_000 : index === 18 ? checkedAt - RECENT_ACTIVITY_MS + 1 : index === 1 ? checkedAt - RECENT_ACTIVITY_MS : index === 2 ? checkedAt - RECENT_ACTIVITY_MS - 1 : null;
     const student = { uid: `connected-ui-${index}`, studentId: `241${String(index + 1).padStart(2, "0")}`, nickname: `검증 학생 ${index + 1}`, mustChangePassword: false, lastActiveAt };
     if (index < 9) return { ...student, work: null };
     // Average moved to another lesson; an old average submission here is not counted.
@@ -33,7 +34,7 @@ async function teacherFixture(page: Page) {
   await localOnly(page.request);
   await readyTeacher(page.request);
   const checkedAt = Date.now();
-  // Fixed Date preserves real timers while making the 120-second activity boundary exact.
+  // Fixed Date preserves real timers while making the recent-activity boundary exact.
   await page.clock.setFixedTime(checkedAt);
   const students = classroomRows(checkedAt);
   await page.route("**/api/classroom/teacher?**", async route => {
@@ -59,7 +60,7 @@ test("반 전체 진도는 필수 활동 합산이며 선택 도전·최근 활�
   await expect(current.locator("svg [data-start-marker]")).toHaveCount(0);
   await expect(current.getByText("필수 활동 207/378개 완료", { exact: true })).toBeVisible();
   for (const state of ["not-started", "in-progress", "completed"]) await expect(current.locator(`[data-state="${state}"] b`)).toHaveText("9명");
-  await expect(current.getByText("등록 27명 · 최근 2분 활동 3명", { exact: true })).toBeVisible();
+  await expect(current.getByText("등록 27명 · 최근 4분 활동 3명", { exact: true })).toBeVisible();
   await expect(current.getByText(/출석/)).toHaveCount(0);
   const actions = page.getByRole("region", { name: "교사가 확인할 일", exact: true });
   for (const [stage, completed, percent] of [["개념", 18, "67"], ["퀴즈", 9, "33"], ["실습", 18, "67"]] as const) {
@@ -76,12 +77,12 @@ test("반 전체 진도는 필수 활동 합산이며 선택 도전·최근 활�
   const waiting = new Promise<void>(resolve => { release = resolve; });
   await page.route("**/api/classroom/teacher?**", async route => { await waiting; await route.fallback(); });
   try {
-    await page.clock.setFixedTime(checkedAt + 120_001);
+    await page.clock.setFixedTime(checkedAt + RECENT_ACTIVITY_MS + 1);
     await page.getByRole("button", { name: "수업 새로고침", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "확인 중…" })).toBeVisible();
-    await expect(current.getByText("등록 27명 · 최근 2분 활동 3명", { exact: true })).toBeVisible();
+    await expect(current.getByText("등록 27명 · 최근 4분 활동 3명", { exact: true })).toBeVisible();
     release();
-    await expect(current.getByText("등록 27명 · 최근 2분 활동 0명", { exact: true })).toBeVisible();
+    await expect(current.getByText("등록 27명 · 최근 4분 활동 0명", { exact: true })).toBeVisible();
     await expect(overall).toHaveAttribute("aria-valuenow", "55");
   } finally { release(); }
 

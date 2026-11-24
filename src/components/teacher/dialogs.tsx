@@ -207,8 +207,9 @@ export function BulkIssuePasswords({ classroomName, students, checkedAt, onLock,
   }
   const done = results?.filter(item => item.password) ?? [];
   const expiry = (time: number) => new Date(time).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Seoul" });
-  return <Dialog open disablePointerDismissal={!!results} onOpenChange={(next) => { if (!next && !busy.current) onClose(); }}>
-    <DialogContent className={styles.dialog} showCloseButton={!running}>
+  // 발급을 시작한 뒤에는 Escape로 닫히지 않아요. 아직 전달하지 않은 값은 `전달 완료`로만 닫아요.
+  return <Dialog open disablePointerDismissal={!!results} onOpenChange={(next) => { if (next) return; if (busy.current || holding.current) setLeaveBlocked(true); else onClose(); }}>
+    <DialogContent className={styles.dialog} showCloseButton={!results}>
       <DialogHeader><DialogTitle>{classroomName} 임시 비밀번호 한꺼번에 발급</DialogTitle><DialogDescription>{results ? "학생마다 자기 값만 전달해 주세요. 이 창을 닫으면 다시 표시하지 않아요." : "아직 자기 비밀번호를 정하지 않은 학생만 보여요. 오지 않은 학생이나 없는 번호는 체크를 빼 주세요. 이미 받은 임시값이 남아 있는 학생은 기본으로 빠져 있어요. 프로젝터를 끄고 진행해 주세요."}</DialogDescription></DialogHeader>
       {!results ? candidates.length ? <fieldset className={styles.bulkPick}><legend className="sr-only">발급할 학생</legend>{candidates.map(student => <label key={student.uid}><input type="checkbox" checked={selected.has(student.uid)} onChange={event => setSelected(previous => { const next = new Set(previous); if (event.target.checked) next.add(student.uid); else next.delete(student.uid); return next; })} />{student.studentId}{student.lastActiveAt && checkedAt - student.lastActiveAt < RECENT_MS ? <small>최근 접속</small> : student.temporaryExpiresAt && student.temporaryExpiresAt > checkedAt ? <small>{expiry(student.temporaryExpiresAt)}까지 발급됨</small> : null}</label>)}</fieldset> : <p className={styles.dialogNote}>비밀번호를 새로 정해야 하는 학생이 없어요.</p>
         : <><p role="status" className={styles.dialogNote}>{running ? `발급 중 ${results.length}/${selected.size}명` : `${done.length}명 발급 · ${results.length - done.length}명 건너뜀`}{done[0]?.expiresAt && ` · ${expiry(done[0].expiresAt)}까지 사용 가능`}</p>
@@ -262,7 +263,8 @@ export function FirstEntry({ classroomId, classroomName, students, onRefresh, on
     try { await onRefresh(); } finally { setBusy(false); }
   }
   const left = open ? Math.ceil((expiresAt - now) / 1000) : 0;
-  return <Dialog open onOpenChange={(next) => { if (!next && !busy) onClose(); }}>
+  // 코드가 열려 있는 동안에는 X 버튼과 `첫 입장 닫기`만 닫아요. Escape나 창 바깥 클릭으로 학생이 입력하던 코드가 닫히지 않아요.
+  return <Dialog open onOpenChange={(next, details) => { if (!next && !busy && (!open || details.reason === "close-press")) onClose(); }}>
     <DialogContent className={styles.dialog} showCloseButton={!busy}>
       <DialogHeader><DialogTitle>{classroomName} 첫 입장</DialogTitle><DialogDescription>{code ? "학생은 학생 로그인에서 자기 학번과 아래 코드를 비밀번호 칸에 넣고, 바로 자기 비밀번호를 정해요." : "아직 자기 비밀번호를 정하지 않은 학생이 반 공통 코드로 처음 입장해요. 열면 10분 동안 쓸 수 있고, 이 창을 닫으면 바로 닫혀요."}</DialogDescription></DialogHeader>
       {code && <>

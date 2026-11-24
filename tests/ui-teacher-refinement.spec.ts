@@ -388,6 +388,10 @@ test("임시 비밀번호 일괄 발급은 미설정 학생만 고르고 최근 
   await expect(dialog).toContainText("건너뛰었어요");
   const unloadBlocked = () => page.evaluate(() => { const event = new Event("beforeunload", { cancelable: true }); window.dispatchEvent(event); return event.defaultPrevented; });
   expect(await unloadBlocked()).toBe(true);
+  // Escape 한 번으로 아직 전달하지 않은 값을 잃지 않아요. 닫는 길은 `전달 완료` 하나예요.
+  await page.keyboard.press("Escape");
+  await expect(dialog.getByRole("alert")).toContainText("`전달 완료`로 창을 닫아 주세요");
+  await expect(dialog.getByRole("button", { name: "닫기", exact: true })).toHaveCount(0);
   await dialog.getByRole("button", { name: "비밀번호 보이기", exact: true }).click();
   await expect(dialog).toContainText("temp-ui-teacher-0");
   await page.emulateMedia({ media: "print" });
