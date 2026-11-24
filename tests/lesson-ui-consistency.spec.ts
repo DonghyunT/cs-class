@@ -3,12 +3,7 @@ import { db, headers, readyStudent } from "./emulator";
 import { REVIEW_LESSONS } from "../src/lib/classroom/review/lessons";
 import { RELEASED_LESSONS } from "../src/lib/classroom/catalog";
 import { emptyWork } from "../src/lib/classroom/progress";
-import { concepts, questions } from "../src/lib/classroom/programming-data";
-import { conditionalConcepts, conditionalQuestions } from "../src/lib/classroom/conditionals-data";
-import { loopConcepts, loopQuestions } from "../src/lib/classroom/loops-data";
-import { functionConcepts, functionQuestions } from "../src/lib/classroom/functions-data";
-import { brickBreakerQuestions } from "../src/lib/classroom/brick-breaker-data";
-import { hamsterConcepts, hamsterQuestions } from "../src/lib/classroom/hamster-robot-data";
+import { LESSON_ANSWERS } from "../src/lib/server/lesson-answers";
 import { UNIT_QUIZ_DATA } from "../src/lib/server/review-quiz.mjs";
 import type { Work } from "../src/lib/classroom/types";
 // Every lesson a class can open, so a new lesson is checked without being listed here.
@@ -63,8 +58,7 @@ test("공개 수업의 개념 확인·퀴즈 오답은 힌트와 다른 문구�
   await enter(page);
   await db.doc("csClasses/2-1").update({ openedLessonIds: RELEASED_LESSONS.map((lesson) => lesson.id) });
   const correct: Record<string, number> = {};
-  concepts.forEach((c, i) => { correct[`pc${i}`] = c.correct; });
-  for (const item of [...questions, ...conditionalConcepts, ...conditionalQuestions, ...loopConcepts, ...loopQuestions, ...functionConcepts, ...functionQuestions, ...brickBreakerQuestions, ...hamsterConcepts, ...hamsterQuestions]) correct[item.id] = item.correct;
+  for (const answers of Object.values(LESSON_ANSWERS)) for (const [id, answer] of Object.entries({ ...answers.concepts, ...answers.quiz })) if (answer.correct !== undefined) correct[id] = answer.correct;
   for (const lesson of staged(RELEASED_LESSONS)) {
     const unit = Object.values(UNIT_QUIZ_DATA)[["review-abstraction", "review-sandwich", "review-flowchart"].indexOf(lesson.id)];
     const right = (id: string, kind: "concept" | "quiz") => unit ? kind === "concept" ? 0 : unit.questions.find((q) => String(q.id) === id)!.options.findIndex((o) => o.correct) : correct[id];

@@ -7,6 +7,7 @@ import { checkProgrammingMission } from "../src/lib/server/programming-grader";
 import { PROGRAMMING_LESSON } from "../src/lib/classroom/programming-lesson";
 import { emptyWork, progressFor } from "../src/lib/classroom/progress";
 import { questions } from "../src/lib/classroom/programming-data";
+import { LESSON_ANSWERS } from "../src/lib/server/lesson-answers";
 import type { Work, WorkAction } from "../src/lib/classroom/types";
 import { auth, clearLoginLimit, db, headers, localOnly, loginStudent, readyStudent, readyTeacher, studentPassword, saveDraft, entryReset, entryStart, entryStop } from "./emulator";
 
@@ -606,9 +607,9 @@ test("저장 실패에도 미션 간 초안은 유지하고, 명시 저장한 �
   await page.getByRole("tab", { name: "개념 0%" }).click();
   await expect(page.getByRole("tab", { name: "개념 0%" })).toBeFocused();
   await page.getByRole("tab", { name: "퀴즈 0%" }).click();
-  await page.getByRole("radio").nth(questions[0].correct).check();
+  await page.getByRole("radio").nth(LESSON_ANSWERS["programming-13"].quiz[questions[0].id].correct).check();
   await saveDraft(page);
-  await expect.poll(async () => (await stored(page)).draft.quizAnswers[questions[0].id]).toBe(String(questions[0].correct));
+  await expect.poll(async () => (await stored(page)).draft.quizAnswers[questions[0].id]).toBe(String(LESSON_ANSWERS["programming-13"].quiz[questions[0].id].correct));
   await page.getByRole("button", { name: "다음 문제" }).click();
   await page.reload();
   await expect(page.locator("#quiz-question-title")).toHaveText(questions[1].prompt);
@@ -616,7 +617,7 @@ test("저장 실패에도 미션 간 초안은 유지하고, 명시 저장한 �
   await page.getByRole("navigation", { name: "퀴즈 문항 목록" }).getByRole("button", { name: /문제 1/ }).click();
   await expect(page.locator("#quiz-question-title")).toHaveText(questions[0].prompt);
   await expect(page.getByRole("button", { name: "이전 문제" })).toBeDisabled();
-  await expect(page.getByRole("radio").nth(questions[0].correct)).toBeChecked();
+  await expect(page.getByRole("radio").nth(LESSON_ANSWERS["programming-13"].quiz[questions[0].id].correct)).toBeChecked();
   expect((await stored(page)).draft.programming!.reflection).toBe("저장 실패 중에도 유지");
 });
 

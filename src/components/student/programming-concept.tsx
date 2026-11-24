@@ -19,7 +19,7 @@ const observations = [
 
 export type ProgrammingConceptState = { concept: number; conceptDone: number[]; conceptAnswers: Record<number, number> };
 
-export function ProgrammingConcept({ mode = "student", state, update, focus, next, onCheck, serverFeedback, serverCorrect, retryConcepts = [], locked = false, actionsBlocked = false }: { mode?: LessonMode; state: ProgrammingConceptState; update: (next: ProgrammingConceptState) => void; focus: (id: string) => void; next: () => void; onCheck?: () => void; serverFeedback?: string; serverCorrect?: boolean; retryConcepts?: number[]; locked?: boolean; actionsBlocked?: boolean }) {
+export function ProgrammingConcept({ mode = "student", state, update, focus, next, onCheck, serverFeedback, serverCorrect, retryConcepts = [], locked = false, actionsBlocked = false }: { mode?: LessonMode; state: ProgrammingConceptState; update: (next: ProgrammingConceptState) => void; focus: (id: string) => void; next: () => void; onCheck: () => void; serverFeedback?: string; serverCorrect?: boolean; retryConcepts?: number[]; locked?: boolean; actionsBlocked?: boolean }) {
   const [language, setLanguage] = useState("block");
   const [name, setName] = useState("초코");
   const [languageGreeting, setLanguageGreeting] = useState("");
@@ -27,7 +27,6 @@ export function ProgrammingConcept({ mode = "student", state, update, focus, nex
   const [A, setA] = useState(6);
   const [B, setB] = useState(4);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [feedback, setFeedback] = useState("");
   const c = concepts[state.concept];
   const positionIndex = conceptOrder.findIndex(index => index === state.concept);
   const answer = state.conceptAnswers[state.concept];
@@ -39,7 +38,7 @@ export function ProgrammingConcept({ mode = "student", state, update, focus, nex
     else setPosition({ x: 0, y: 0 });
   }}><RotateCcw size={16} aria-hidden="true" />체험 초기화</Button>;
   function move(index: number) {
-    update({ ...state, concept: index }); setFeedback(""); focus("concept-title");
+    update({ ...state, concept: index }); focus("concept-title");
   }
   function direction(dx: number, dy: number) { setPosition((p) => ({ x: Math.max(-3, Math.min(3, p.x + dx)), y: Math.max(-2, Math.min(2, p.y + dy)) })); }
   return <div className={`${conceptStyles.layout} ${styles.concept}`}>
@@ -74,10 +73,10 @@ export function ProgrammingConcept({ mode = "student", state, update, focus, nex
         </>}
         {state.concept !== 4 && <div className={styles.experimentActions}><p>새로고침하거나 수업에 다시 들어오면 체험값은 시작 상태로 돌아가요. 답안과 완료 기록은 유지돼요.</p></div>}
       </div>
-      <fieldset className={styles.conceptCheck} disabled={locked}><legend><span className={styles.eyebrow}>한 번만 확인해 볼까요?</span>{c.question}</legend><div className={styles.compactOptions}>{c.options.map((option, i) => <label key={option} data-selected={answer === i}><input type="radio" name={`concept-${state.concept}`} checked={answer === i} disabled={done} onChange={() => { update({ ...state, conceptAnswers: { ...state.conceptAnswers, [state.concept]: i } }); setFeedback(""); }} /><span>{option}</span></label>)}</div>
-        <Button variant={done ? "outline" : "default"} disabled={actionsBlocked || done || answer === undefined} onClick={() => { if (onCheck) { onCheck(); return; } const correct = answer === c.correct; if (correct) update({ ...state, conceptDone: [...state.conceptDone, state.concept] }); setFeedback(correct ? c.explanation : "다시 실험해 보고 골라보세요. 위의 변화가 단서예요."); focus("concept-feedback"); }}>{done ? <><Check size={16} />개념 확인 완료</> : "정답 확인"}</Button>
-        {((onCheck ? serverFeedback : feedback) || done) && <p id="concept-feedback" tabIndex={-1} role="status" className={done ? styles.good : styles.feedback}>{(done || serverCorrect === false) && <strong>{done ? "맞았어요." : "다시 생각해 보기"} </strong>}{(onCheck ? serverFeedback : feedback) || c.explanation}</p>}
-        {((onCheck ? serverFeedback : feedback) || done) && <p className={common.smallNote}>{mode === "preview" ? "확인 결과는 이 창에만 남아요." : "확인 결과는 저장 버튼 없이 바로 저장돼요."}</p>}
+      <fieldset className={styles.conceptCheck} disabled={locked}><legend><span className={styles.eyebrow}>한 번만 확인해 볼까요?</span>{c.question}</legend><div className={styles.compactOptions}>{c.options.map((option, i) => <label key={option} data-selected={answer === i}><input type="radio" name={`concept-${state.concept}`} checked={answer === i} disabled={done} onChange={() => update({ ...state, conceptAnswers: { ...state.conceptAnswers, [state.concept]: i } })} /><span>{option}</span></label>)}</div>
+        <Button variant={done ? "outline" : "default"} disabled={actionsBlocked || done || answer === undefined} onClick={onCheck}>{done ? <><Check size={16} />개념 확인 완료</> : "정답 확인"}</Button>
+        {(serverFeedback || done) && <p id="concept-feedback" tabIndex={-1} role="status" className={done ? styles.good : styles.feedback}>{(done || serverCorrect === false) && <strong>{done ? "맞았어요." : "다시 생각해 보기"} </strong>}{serverFeedback || c.explanation}</p>}
+        {(serverFeedback || done) && <p className={common.smallNote}>{mode === "preview" ? "확인 결과는 이 창에만 남아요." : "확인 결과는 저장 버튼 없이 바로 저장돼요."}</p>}
       </fieldset>
       <div className={styles.footer}><Button variant="ghost" disabled={locked || positionIndex === 0} onClick={() => move(conceptOrder[positionIndex - 1])}><ArrowLeft size={16} />이전 개념</Button>{positionIndex < conceptOrder.length - 1 ? <Button id={done ? "concept-next" : undefined} aria-describedby={done ? "concept-feedback" : undefined} variant={done ? "default" : "outline"} disabled={locked} onClick={() => move(conceptOrder[positionIndex + 1])}>다음 개념<ArrowRight size={16} /></Button> : <Button id={done ? "concept-next" : undefined} aria-describedby={done ? "concept-feedback" : undefined} variant={done ? "default" : "outline"} disabled={locked || actionsBlocked} onClick={next}>퀴즈로 이동<ArrowRight size={16} /></Button>}</div>
     </div>
