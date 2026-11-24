@@ -7,13 +7,9 @@
 .github
 .vercel
 .env*
-js/data/config.js
-백업용
-audit
 docs
 archive
 tests
-tools
 scratch
 private
 outputs
@@ -27,7 +23,6 @@ playwright-report
 *.tsbuildinfo
 *.pem
 *.pdf
-temp
 .gemini
 .vscode
 teacher_tacit_knowledge_report.html

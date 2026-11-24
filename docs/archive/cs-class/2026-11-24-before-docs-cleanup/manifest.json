@@ -1,0 +1,24 @@
+{
+  "archivedAt": "2026-11-24 Asia/Seoul",
+  "sourceCommit": "9b1fe92035b2a1dbd11178dac78696f9e7abab7b",
+  "files": [
+    {
+      "source": "docs/DEVELOPMENT.md",
+      "archived": "DEVELOPMENT.md",
+      "bytes": 90819,
+      "sha256": "006f3a1b043458a09d142b59f1bf6c8bbef612a6b79c581a5a9053b8f7332f33"
+    },
+    {
+      "source": "docs/FIREBASE_SETUP.md",
+      "archived": "FIREBASE_SETUP.md",
+      "bytes": 41818,
+      "sha256": "2491a828c8414809d1e3d53a07fca65067feaed369f0c33c807bf34dafc7a1e3"
+    },
+    {
+      "source": "teaching-materials/festival-romance/HANDOFF.md",
+      "archived": "festival-romance-HANDOFF.md",
+      "bytes": 8706,
+      "sha256": "8da9a77ca7e98c233ae1910c20fe4c20ed41ebe66a286cffdda071f646401ed7"
+    }
+  ]
+}
