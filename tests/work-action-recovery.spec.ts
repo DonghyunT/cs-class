@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { auth, clearLoginLimit, correctOrder, db, headers, initialPassword, lessonId, loginStudent, resetStudent, studentPassword, saveDraft } from "./emulator";
 import type { Work, WorkAction } from "../src/lib/classroom/types";
-import { questions } from "../src/lib/classroom/programming-data";
+import { LESSON_ANSWERS } from "../src/lib/server/lesson-answers";
 
 const studentId = "20109", uid = `student-${studentId}`;
 const endpoint = `/api/classroom/work/${lessonId}`;
@@ -71,8 +71,9 @@ for (const committed of [false, true]) test(`65초 응답 대기는 입력을 �
   } finally { release(); await page.unroute(`**${path}`); }
   await page.getByRole("button", { name: committed ? "결과 다시 확인" : "저장 다시 확인", exact: true }).click();
   await expect(page.locator(committed ? "#work-action-error" : "#work-save-error")).toHaveCount(0);
+  // The error clears as the retry starts, so wait for the retried request itself to land before reading its result.
+  await expect.poll(async () => (await stored(page)).revision).toBe(before.revision + 1);
   const after = await stored(page);
-  expect(after.revision).toBe(before.revision + 1);
   if (committed) expect(after.submission?.id).toBeTruthy();
   else expect(after.draft.conceptAnswers.algorithm).toBe("clear");
   await page.getByRole("link", { name: "수업 나가기", exact: true }).click();
@@ -348,7 +349,7 @@ for (const programming of [false, true]) {
     const question = programming ? "flow" : "q2", lateAnswer = programming ? "2" : "b";
     const answerLabel = programming ? "수 입력 → 곱하기 → 결과 보여 주기" : "숫자 입력 → 숫자 출력";
     // Programming quiz answers get the reason for the chosen wrong option; the private sequence lab keeps its hint fallback.
-    const hint = programming ? (questions.find((q) => q.id === "flow")!.why as Record<string, string>)["0"] : "화면에 보여 줄 값을 먼저 알아야 해요.";
+    const hint = programming ? LESSON_ANSWERS["programming-13"].quiz.flow.why["0"] : "화면에 보여 줄 값을 먼저 알아야 해요.";
     let before: Work;
     if (programming) {
       await db.doc(`csWork/${uid}__${id}`).delete();
