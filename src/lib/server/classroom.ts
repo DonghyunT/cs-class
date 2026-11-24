@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { FieldPath, type Transaction } from "firebase-admin/firestore";
 import { RELEASED_LESSONS, findLesson } from "../classroom/catalog";
-import { emptyWork, practiceMatches, progressFor, submissionTimes } from "../classroom/progress";
+import { dropStaleAnswers, emptyWork, practiceMatches, progressFor, submissionTimes } from "../classroom/progress";
 import { isLessonMission, missionsFor, programmingProjectMatches, requiredMissionsFor } from "../classroom/programming-entry";
 import type { ClassSettings, StudentDashboard, TeacherAssessment, TeacherDashboard, Work, WorkSummary } from "../classroom/types";
 import { isTrialStudentId } from "../classroom/roster";
@@ -23,7 +23,7 @@ export function toWork(data: StoredWork | undefined, lessonId: string): Work {
   // A mission that left the lesson opens as the first current one; its saved project stays.
   const programming = data.draft.programming;
   const draft = programming && !isLessonMission(lessonId, programming.mission) ? { ...data.draft, programming: { ...programming, mission: missionsFor(lessonId)[0].id } } : data.draft;
-  return { lessonId: data.lessonId, revision: data.revision, draft, conceptSolved: data.conceptSolved, conceptFeedback: data.conceptFeedback, quizSolved: data.quizSolved, quizRound: data.quizRound, quizRoundIds: data.quizRoundIds, quizRoundGraded: data.quizRoundGraded, quizFeedback: data.quizFeedback, validation: data.validation, submission: data.submission, updatedAt: data.updatedAt, ...(data.missions ? { missions: data.missions } : {}), ...(data.review ? { review: data.review } : {}), ...(data.aiReview ? { aiReview: data.aiReview } : {}) };
+  return dropStaleAnswers(lesson, { lessonId: data.lessonId, revision: data.revision, draft, conceptSolved: data.conceptSolved, conceptFeedback: data.conceptFeedback, quizSolved: data.quizSolved, quizRound: data.quizRound, quizRoundIds: data.quizRoundIds, quizRoundGraded: data.quizRoundGraded, quizFeedback: data.quizFeedback, validation: data.validation, submission: data.submission, updatedAt: data.updatedAt, ...(data.missions ? { missions: data.missions } : {}), ...(data.review ? { review: data.review } : {}), ...(data.aiReview ? { aiReview: data.aiReview } : {}) });
 }
 export async function studentClass(tx: Transaction, account: Account) {
   requireCondition(account.role === "student" && account.classId, 403, "FORBIDDEN", "학생 계정으로 입장해 주세요.");
