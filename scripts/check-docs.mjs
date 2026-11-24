@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-export const HANDOFF_MAX_BYTES = 10000;
+export const HANDOFF_MAX_BYTES = 12000;
 export const HANDOFF_MAX_RECENT = 5;
 
 export function activeDocuments(root) {

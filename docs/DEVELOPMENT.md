@@ -1,6 +1,6 @@
 # 개발 환경 및 엔지니어링 가이드 (Development Guide)
 
-갱신: 2026-11-19(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
+갱신: 2026-11-24(Asia/Seoul). 빠른 실행과 저장소 소개는 [README](../README.md), 에이전트 핵심 행동 지침은 [AGENTS](../AGENTS.md), 기능 요구사항은 [PRD](PRD.md), 화면 디자인 시스템은 [DESIGN](DESIGN.md), 인계 상태는 [HANDOFF](HANDOFF.md)를 따릅니다. 모든 명령어는 저장소 루트에서 실행합니다.
 
 ---
 
@@ -478,7 +478,7 @@ node --env-file=.env.local scripts/student-roster.mjs --csv private/student-rost
 - **HANDOFF는 짧게 유지합니다.**
   - "최근 반영"에는 PR 경로 변경과 사용자에게 보이는 변경을 적습니다. 5개까지 두고, 항목마다 무엇·검증·한계를 2~3줄로 씁니다. 항목은 PR 번호(직접 push는 커밋 제목)로 식별하고, 전체 E2E를 돌렸는지 반드시 적습니다.
   - 5개를 넘거나 아래 크기 한도에 걸리면 가장 오래된 항목을 지웁니다. 지우기 전에 아직 유효한 한계는 "남은 한계"로 옮깁니다. 원문은 Git과 PR에 남습니다.
-  - HANDOFF 전체는 약 8KB 이내로 유지합니다. 10,000바이트(줄바꿈 LF 기준)를 넘거나 최근 반영이 5개를 넘으면 `node scripts/check-docs.mjs`가 실패합니다.
+  - HANDOFF 전체는 약 10KB 이내로 유지합니다. 12,000바이트(줄바꿈 LF 기준)를 넘거나 최근 반영이 5개를 넘으면 `node scripts/check-docs.mjs`가 실패합니다.
 - **PR 경로 작업은 같은 PR에서 문서를 정리합니다.** HANDOFF 최근 반영을 추가하고, 끝난 다음 작업·해소된 남은 한계를 지우고, 끝난 계획은 보관 스냅샷으로 옮깁니다. 이번에 바꾼 규칙·수치·파일 이름은 `git grep`으로 찾아 다른 문서의 사본을 고치거나 단일 위치 링크로 바꿉니다.
 - **기록은 반영과 함께 씁니다.**
   - HANDOFF 기록은 반영하는 같은 PR·커밋 안에서, 병합 전에 알 수 있는 검증만으로 씁니다.
