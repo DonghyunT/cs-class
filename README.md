@@ -3,7 +3,7 @@
 > **설치 없이 브라우저로 시작하는 중학교 정보 수업 웹 플랫폼**<br>
 > `Next.js 16 (App Router)` · `React 19` · `TypeScript` · `Firebase Auth & Firestore` · `EntryJS 4.0` · `Upstage Solar AI`
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.3-black?style=flat-square)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4-black?style=flat-square)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-20232a?style=flat-square)](https://react.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-Auth%20%26%20Firestore-ffca28?style=flat-square&labelColor=2c384a)](https://firebase.google.com/)
 [![EntryJS](https://img.shields.io/badge/EntryJS-4.0.23-28a745?style=flat-square)](https://playentry.org/)
