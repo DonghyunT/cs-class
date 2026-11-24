@@ -3,6 +3,27 @@
   "baseline": "98781bd6e506e3ab5b1be08c39677e658215dba9",
   "records": [
     {
+      "source": "docs/DEVELOPMENT.md",
+      "archive": "docs/archive/cs-class/2026-11-24-before-docs-cleanup/DEVELOPMENT.md",
+      "origin": "before-docs-cleanup-20261124",
+      "baseCommit": "9b1fe92035b2a1dbd11178dac78696f9e7abab7b",
+      "sha256": "006f3a1b043458a09d142b59f1bf6c8bbef612a6b79c581a5a9053b8f7332f33"
+    },
+    {
+      "source": "docs/FIREBASE_SETUP.md",
+      "archive": "docs/archive/cs-class/2026-11-24-before-docs-cleanup/FIREBASE_SETUP.md",
+      "origin": "before-docs-cleanup-20261124",
+      "baseCommit": "9b1fe92035b2a1dbd11178dac78696f9e7abab7b",
+      "sha256": "2491a828c8414809d1e3d53a07fca65067feaed369f0c33c807bf34dafc7a1e3"
+    },
+    {
+      "source": "teaching-materials/festival-romance/HANDOFF.md",
+      "archive": "docs/archive/cs-class/2026-11-24-before-docs-cleanup/festival-romance-HANDOFF.md",
+      "origin": "before-docs-cleanup-20261124",
+      "baseCommit": "9b1fe92035b2a1dbd11178dac78696f9e7abab7b",
+      "sha256": "8da9a77ca7e98c233ae1910c20fe4c20ed41ebe66a286cffdda071f646401ed7"
+    },
+    {
       "source": "docs/plans/festival-romance-embed.md",
       "archive": "docs/archive/cs-class/2026-11-16-completed-plans/festival-romance-embed.md",
       "origin": "completed-plan-archived-20261116",

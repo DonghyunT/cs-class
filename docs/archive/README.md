@@ -1,8 +1,10 @@
 # 과거 기록 보관함
 
-목록 갱신: 2026-11-16. 각 원문의 보존 시점은 아래 기록을 따릅니다. 이 폴더는 역사 자료이며 현재 에이전트 지침·요구사항·작업 승인이 아닙니다. 현재 기준은 [프로젝트 안내](../../README.md)에서 확인합니다.
+목록 갱신: 2026-11-24. 각 원문의 보존 시점은 아래 기록을 따릅니다. 이 폴더는 역사 자료이며 현재 에이전트 지침·요구사항·작업 승인이 아닙니다. 현재 기준은 [프로젝트 안내](../../README.md)에서 확인합니다.
 
 ## 보관 기록
+
+- **[2026-11-24 문서 정리 전 원문](cs-class/2026-11-24-before-docs-cleanup/manifest.json):** `DEVELOPMENT`·`FIREBASE_SETUP`·축제 게임 인계 문서에서 지난 이력과 반복을 줄이기 전의 `9b1fe92` 판본을 내용 그대로 보존했습니다([안내](cs-class/2026-11-24-before-docs-cleanup/README.md)).
 
 - **[2026-11-16 완료 계획 원문](cs-class/2026-11-16-completed-plans/manifest.json):** 축제 복습 게임을 복습 활동 `review-festival`로 넣은 계획(사용자 결정 D1~D6)을 `docs/plans/`에서 `git mv`로 옮겨 내용 그대로 보존했습니다([안내](cs-class/2026-11-16-completed-plans/README.md)).
 
