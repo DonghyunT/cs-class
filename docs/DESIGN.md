@@ -1,6 +1,6 @@
 # Design System: CS Class
 
-갱신: 2026-11-19(Asia/Seoul). 공개 홈과 로그인·대시보드의 시각 디자인 기준, 수업 화면과 선택 복습의 UI 레이아웃 명세입니다. 제품 정책은 [PRD](PRD.md), 실행 및 검증 절차는 [DEVELOPMENT](DEVELOPMENT.md), 상태는 [HANDOFF](HANDOFF.md)를 따릅니다.
+갱신: 2026-11-24(Asia/Seoul). 공개 홈과 로그인·대시보드의 시각 디자인 기준, 수업 화면과 선택 복습의 UI 레이아웃 명세입니다. 제품 정책은 [PRD](PRD.md), 실행 및 검증 절차는 [DEVELOPMENT](DEVELOPMENT.md), 상태는 [HANDOFF](HANDOFF.md)를 따릅니다.
 
 ## 1. Visual Theme & Principles
 
