@@ -195,6 +195,12 @@ test("selectE2E maps concept pictures, Entry specs and logic-only tests", () => 
   assert.deepEqual(picture.lessonIds, ["brick-breaker", "conditionals", "functions", "hamster-robot", "loops"]);
   assert.deepEqual(picture.testFiles, ["tests/brick-breaker.spec.ts", "tests/conditionals.spec.ts", "tests/functions.spec.ts", "tests/hamster-robot.spec.ts", "tests/loops.spec.ts", "tests/teacher-lesson-preview.spec.ts"]);
   assert.deepEqual(matchLessons("src/lib/classroom/brick-breaker-data.ts"), ["brick-breaker"]);
+  assert.deepEqual(matchLessons("public/concepts/brick-quiz-ball.png"), ["brick-breaker"]);
+  // The manifest pins the Entry library version, and the answers file grades every Entry lesson's concept checks and quizzes.
+  for (const file of ["scripts/entryjs-assets.json", "src/lib/server/lesson-answers.ts"]) {
+    assert.deepEqual(matchLessons(file), ["programming-13", "conditionals", "loops", "functions", "brick-breaker", "hamster-robot"], file);
+  }
+  assert.ok(selectE2E(["src/components/student/review/flow-execution.tsx"]).testFiles.includes("tests/review-flowchart-execution-fixes.spec.ts"));
   assert.deepEqual(matchLessons("src/lib/classroom/brick-breaker-lesson.ts"), ["brick-breaker"]);
   assert.deepEqual(matchLessons("tests/brick-breaker.spec.ts"), ["brick-breaker"]);
   assert.deepEqual(matchLessons("src/lib/classroom/functions-data.ts"), ["functions"]);

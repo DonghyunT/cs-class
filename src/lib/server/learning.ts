@@ -5,10 +5,10 @@ import type { Lesson, Work, WorkAction } from "../classroom/types";
 import { parseEntryProject } from "../classroom/entry-project";
 import { MAX_PROJECT_BYTES, MAX_RAW_PROJECT_CHARS, isKnownLessonMission, isLessonMission, knownMissionCount, missionsFor, parseProgrammingProject, programmingProjectMatches } from "../classroom/programming-entry";
 import { checkProgrammingMission } from "./programming-grader";
-import { practiceMatches, submissionTimes } from "../classroom/progress";
+import { answerFits, practiceMatches, submissionTimes } from "../classroom/progress";
 import { requireCondition } from "./errors";
 import { getLessonSolution } from "./solutions";
-import { assembledIds, validAssembly } from "../classroom/assemble";
+import { assembledIds } from "../classroom/assemble";
 import { basicReviewCheck, frozenReviewProject, isReviewType, reviewMissionIds, reviewProjectSchema, sameReviewProject } from "../classroom/review/project";
 
 export const revisionSchema = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
@@ -37,11 +37,10 @@ export function sameOrder(a: string[], b: string[]) {
 
 export function validateDraft(draft: z.infer<typeof draftSchema>, lesson: Lesson) {
   for (const [id, value] of Object.entries(draft.conceptAnswers)) {
-    const question = lesson.concepts.find((c) => c.id === id)?.question;
-    requireCondition(question?.assemble ? validAssembly(question.assemble, value) : question?.options.some((option) => option.id === value), 400, "INVALID_ANSWER", "개념 답안을 확인해 주세요.");
+    requireCondition(answerFits(lesson.concepts.find((c) => c.id === id)?.question, value), 400, "INVALID_ANSWER", "개념 답안을 확인해 주세요.");
   }
   for (const [id, value] of Object.entries(draft.quizAnswers)) {
-    requireCondition(lesson.quiz.find((q) => q.id === id)?.options.some((option) => option.id === value), 400, "INVALID_ANSWER", "퀴즈 답안을 확인해 주세요.");
+    requireCondition(answerFits(lesson.quiz.find((q) => q.id === id), value), 400, "INVALID_ANSWER", "퀴즈 답안을 확인해 주세요.");
   }
   if (isReviewType(lesson.practice.type)) {
     requireCondition(draft.reviewProject?.type === lesson.practice.type && !draft.programming && !draft.entryProject && !draft.practiceOrder.length, 400, "INVALID_PROJECT", "이 복습 수업의 작품 형식을 확인해 주세요.");

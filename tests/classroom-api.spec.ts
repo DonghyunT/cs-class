@@ -252,3 +252,21 @@ test("EntryJS는 실제 스크립트의 연결·값을 검사하고 변경된 �
   expect(work.validation).toBeNull();
   expect((await request.post(`${endpoint}/action`, { headers, data: { revision: work.revision, action: { type: "submit-practice" } } })).status()).toBe(409);
 });
+
+test("수업에서 없어진 문항의 답이 저장본에 남아 있어도 읽고 저장할 수 있다", async ({ request }) => {
+  await readyStudent(request);
+  const endpoint = `/api/classroom/work/${lessonId}`;
+  let work: Work = await (await request.get(endpoint)).json();
+  work.draft.conceptAnswers = { algorithm: "clear" };
+  work = await (await request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } })).json();
+  // What a lesson edit leaves behind: an answer to a question that no longer exists, and that question in the quiz round.
+  await db.collection("csWork").doc(`student-20101__${lessonId}`).update({ "draft.conceptAnswers.removed": "x", "draft.quizAnswers.gone": "a", quizRoundIds: ["q1", "gone", "q2", "q3"] });
+  work = await (await request.get(endpoint)).json();
+  expect(work.draft.conceptAnswers).toEqual({ algorithm: "clear" });
+  expect(work.draft.quizAnswers).toEqual({});
+  expect(work.quizRoundIds).toEqual(["q1", "q2", "q3"]);
+  work.draft.quizAnswers = { q1: "a" };
+  const saved = await request.post(endpoint, { headers, data: { revision: work.revision, draft: work.draft } });
+  expect(saved.status()).toBe(200);
+  expect((await saved.json() as Work).draft.quizAnswers).toEqual({ q1: "a" });
+});

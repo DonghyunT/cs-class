@@ -115,7 +115,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
   1. 수업 정의: `catalog.ts`의 `LESSONS`(공개 시 `RELEASED_LESSONS`)에 가르치는 순서대로 정규 수업 맨 뒤(복습 앞)에 넣습니다. 학생 목록의 '최신 수업 먼저'와 `만점 행진` 배지가 이 순서를 씁니다.
   2. 미션: `PROGRAMMING_MISSIONS`·`LESSON_MISSIONS`([§4.1](#41-entryjs-4023-실습-환경)의 수업별 미션), 미션별 허용 블록 `MISSION_BLOCKS`, 강아지 없는 미션 `FREE_MISSIONS`에 등록합니다.
   3. 채점 규칙: `programming-grader.ts`. 규칙이 없는 미션은 통과하지 않습니다.
-  4. 개념·퀴즈 정답: 서버 `solutions.ts`에 넣습니다.
+  4. 개념·퀴즈 정답: 정답 번호(`correct`)·오답 되묻기(`retry`)·퀴즈 해설(`explanation`·`why`)은 서버 [`lesson-answers.ts`](../src/lib/server/lesson-answers.ts)에 문항 ID로 넣습니다. 학생 브라우저가 내려받는 `*-data.ts`에는 문제·보기·힌트만 둡니다(`tests/lesson-answers.test.ts`가 확인). 공개한 문항을 지우거나 ID·보기를 바꾸면 저장돼 있던 그 답은 읽을 때 걸러져 학생이 다시 답합니다.
   5. 핵심 한 줄: 설명이 60자를 넘으면 개념에 `keyPoint`를 넣고 `*-lesson.ts`에서 함께 넘깁니다(작성 규칙은 [설계 기록](reference/2026-11-08-concept-key-point.md)).
   6. 개념 그림: [`concept-visual.tsx`](../src/components/student/concept-visual.tsx)의 `CONCEPT_VISUALS`에 개념 ID로 등록합니다(없으면 그림 없이 표시). 함수 수업은 그림 대신 [`function-concepts.tsx`](../src/components/student/function-concepts.tsx)의 조작 체험을 씁니다([DESIGN](DESIGN.md)의 '함수 수업 개념 체험').
   7. 첫 작품: 따로 등록하지 않습니다. `emptyWork`가 `missionStarter`로 만듭니다.
@@ -162,7 +162,7 @@ node --input-type=module -e "import { spawn } from 'node:child_process'; import 
   ```
 - 수업 전용 컴포넌트·보조 파일·고정 파일(예: `functions`의 `function-concepts.tsx`·`function-editing.ts`, `tests/fixtures/entry-function-export.json`)도 `patterns`에 넣습니다. 빠뜨리면 그 파일만 바꿔도 미분류로 보아 `full`이 나옵니다.
 - [`tests/lesson-smoke.spec.ts`](../tests/lesson-smoke.spec.ts)의 `ALL_LESSON_IDS`에 수업 ID를 넣고, 같은 파일에 그 수업의 저장·새로고침 복원 검사 블록을 추가합니다.
-- `tests/lesson-ui-consistency.spec.ts`는 `RELEASED_LESSONS`를 읽으므로 수업을 따로 넣지 않습니다. 오답 문구 검사의 정답 표(`correct`)에만 새 수업의 개념·퀴즈 데이터를 더합니다.
+- `tests/lesson-ui-consistency.spec.ts`는 `RELEASED_LESSONS`를 읽으므로 수업을 따로 넣지 않습니다. 오답 문구 검사의 정답 표도 `lesson-answers.ts`에서 읽으므로 따로 더하지 않습니다.
 
 ### 2.3 학생 수업 수동 저장 아키텍처 및 코드 계약
 <a id="학생-수업-수동-저장-아키텍처-및-계약"></a>

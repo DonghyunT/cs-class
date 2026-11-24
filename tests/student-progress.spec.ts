@@ -784,11 +784,14 @@ test("배지의 받은 수업은 최신 세 개만 보이고 나머지는 키보
   await showDashboardFixture(page, lessons, lessons.at(-1)!.id, work);
   await page.goto("/student/badges");
   const allClear = page.locator('[data-badge="all-clear"][data-earned="true"]');
-  const newest = [...lessons].reverse();
+  // 올클리어 needs a challenge mission, so a lesson without one (hamster-robot) is finished without earning it.
+  const newest = lessons.filter(lesson => missionsFor(lesson.id).some(mission => mission.optional)).reverse();
+  expect(newest.length).toBeGreaterThan(3);
+  expect(newest.length).toBeLessThan(lessons.length);
   await expect(allClear.locator("p").filter({ hasText: /^받은 수업:/ })).toHaveText(`받은 수업: ${newest.slice(0, 3).map(lesson => lesson.title).join(", ")}`);
-  await expect(allClear).toContainText(`${lessons.length}개 수업에서 받음`);
+  await expect(allClear).toContainText(`${newest.length}개 수업에서 받음`);
   const more = allClear.locator("summary");
-  await expect(more).toHaveText(`나머지 ${lessons.length - 3}개 보기`);
+  await expect(more).toHaveText(`나머지 ${newest.length - 3}개 보기`);
   const older = allClear.locator("details p");
   await expect(older).toBeHidden();
   await more.focus(); await page.keyboard.press("Enter");

@@ -3,7 +3,7 @@
 // Each check is answered by assembling blocks: `slots` holds each slot's indent, and one block in `blocks` is not needed.
 // The order that counts as right stays on the server (solutions.ts).
 type AssembleBlock = { id: string; label: string; kind: "flow" | "moving" | "looks" | "variable" };
-export const brickBreakerConcepts: { id: string; title: string; tag: string; keyPoint: string; explanation: string; prompt: string; head: string; blocks: AssembleBlock[]; slots: number[]; hint: string; retry: string }[] = [
+export const brickBreakerConcepts: { id: string; title: string; tag: string; keyPoint: string; explanation: string; prompt: string; head: string; blocks: AssembleBlock[]; slots: number[]; hint: string }[] = [
   {
     id: "bc0",
     keyPoint: "변수는 게임 중에 바뀌는 값을 기억해요.",
@@ -21,7 +21,6 @@ export const brickBreakerConcepts: { id: string; title: string; tag: string; key
     ],
     slots: [0, 0, 1, 2],
     hint: "처음에 한 번만 할 일과 게임 내내 계속 확인할 일을 나눠 보세요.",
-    retry: "점수를 0으로 정하는 일은 반복이 시작되기 전에 한 번만 해요. 닿았는지 확인하는 ‘만일’은 반복 안에 넣고, 그 안에 점수를 10 올리는 블록을 넣어요.",
   },
   {
     id: "bc1",
@@ -38,7 +37,6 @@ export const brickBreakerConcepts: { id: string; title: string; tag: string; key
     ],
     slots: [0, 1],
     hint: "좌우로 움직인다는 말은 x와 y 중 어느 좌표가 바뀐다는 뜻인지 생각해 보세요.",
-    retry: "이동 블록이 반복 안에 있어야 마우스를 계속 따라가요. 막대의 높이를 바꾸지 않으려면 어느 좌표를 바꿔야 할지도 살펴보세요.",
   },
   {
     id: "bc2",
@@ -58,7 +56,6 @@ export const brickBreakerConcepts: { id: string; title: string; tag: string; key
     ],
     slots: [0, 1, 1, 1, 2],
     hint: "게임이 끝나는 조건과 그때 할 일을 짝지어 보세요. 움직이는 일은 계속 되풀이돼야 해요.",
-    retry: "움직이고 튕기는 일은 반복 안에서 되풀이하고, 아래쪽 벽에 닿았을 때 할 일은 ‘만일’ 안쪽에 넣어요. 게임을 끝내는 블록은 ‘모든 코드 멈추기’예요.",
   },
   {
     id: "bc3",
@@ -77,7 +74,6 @@ export const brickBreakerConcepts: { id: string; title: string; tag: string; key
     ],
     slots: [0, 1, 2, 2],
     hint: "벽돌이 깨지는 순간 일어나는 두 가지 일을 순서대로 말해 보세요.",
-    retry: "닿았는지는 게임 내내 확인해야 하니 ‘만일’이 반복 안에 들어가요. 사라지는 일은 점수를 올린 다음에 해요.",
   },
 ];
 
@@ -98,13 +94,7 @@ export const brickBreakerQuestions = [
       "‘모양 숨기기’ 블록이 없어서 점수가 오르지 않아요",
       "시작 블록 아래에서는 점수를 바꿀 수 없어요",
     ],
-    correct: 0,
-    explanation: "‘계속 반복하기’ 안의 블록은 계속 되풀이돼요. ‘점수를 0으로 정하기’가 그 안에 있어서 점수가 올라도 금방 0으로 돌아가요. 이 블록은 반복이 시작되기 전에 한 번만 실행되게 위로 옮겨야 해요.",
     hint: "‘계속 반복하기’ 안의 블록은 위에서 아래로 계속 되풀이돼요. 그 안의 첫 번째 블록이 점수를 어떻게 바꾸는지 보세요.",
-    why: {
-      1: "‘모양 숨기기’가 없어도 ‘점수에 1만큼 더하기’는 점수를 올려요. 점수가 다시 0이 되는 줄을 찾아보세요.",
-      2: "‘시작하기 버튼을 클릭했을 때’ 아래에서도 변수 값을 정하거나 바꿀 수 있어요. 반복 안의 첫 줄을 확인해 보세요.",
-    },
   },
   {
     id: "bq2",
@@ -116,13 +106,7 @@ export const brickBreakerQuestions = [
       "  └ x: (마우스 x 좌푯값) 위치로 이동하기",
     ],
     options: ["x: 80, y: -115", "x: 80, y: 40", "x: 0, y: 40"],
-    correct: 0,
-    explanation: "‘x: (마우스 x 좌푯값) 위치로 이동하기’는 가로 위치(x)만 마우스 x 좌푯값(80)으로 바꾸고, 세로 위치(y: -115)는 그대로 유지해요.",
     hint: "이동 블록의 맨 앞에 적힌 글자를 보세요. 그 글자가 아닌 좌표는 어떻게 될지 생각해 보세요.",
-    why: {
-      1: "막대의 y까지 마우스의 y 좌표(40)로 바뀌었어요. ‘x: ( ) 위치로 이동하기’ 블록이 x와 y 중 어느 좌표만 바꾸는지 다시 살펴보세요.",
-      2: "x 좌표가 바뀌지 않고 y 좌표가 바뀌었어요. 블록 이름에 적힌 좌표(x)와 마우스의 두 좌표(x: 80, y: 40)를 다시 비교해 보세요.",
-    },
   },
   {
     id: "bq3",
@@ -136,13 +120,7 @@ export const brickBreakerQuestions = [
       "    └ 모양 숨기기",
     ],
     options: ["4점", "3점", "2점"],
-    correct: 0,
-    explanation: "일반 벽돌 2개에서 1점씩(2점) 오르고 별 벽돌에서 2점이 더해져 2 + 2 = 4점이에요.",
     hint: "일반 벽돌 2개의 점수와 별 벽돌의 점수를 차례로 더해 보세요.",
-    why: {
-      1: "별 벽돌의 ‘점수에 ( )만큼 더하기’ 블록에 적힌 숫자를 다시 확인해 보세요.",
-      2: "2는 별 벽돌 하나만 깼을 때 오르는 값이에요. 일반 벽돌 2개의 점수도 더해 보세요.",
-    },
   },
   {
     id: "bq4",
@@ -158,13 +136,7 @@ export const brickBreakerQuestions = [
       "조건을 ‘점수 값 < 4’로 고쳐요",
       "‘모든 코드 멈추기’를 ‘모양 숨기기’로 고쳐요",
     ],
-    correct: 0,
-    explanation: "벽돌 4개를 다 깨면 점수는 4점이에요. ‘점수 값 > 4’는 점수가 4보다 커야 참이라서 4점일 때는 실행되지 않아요. 그래서 ‘점수 값 = 4’로 고쳐요.",
     hint: "‘>’는 ‘보다 크다’는 뜻이에요. 벽돌을 다 깼을 때 점수가 몇 점인지 떠올려 보세요.",
-    why: {
-      1: "‘점수 값 < 4’로 고치면 게임을 시작하자마자(점수가 0일 때) 바로 참이 되어 끝나 버려요.",
-      2: "말하기 블록 자체가 실행되지 않는 이유는 안쪽 동작이 아니라 ‘점수 값 > 4’라는 조건이 참이 되지 않기 때문이에요.",
-    },
   },
   {
     id: "bq5",
@@ -183,12 +155,6 @@ export const brickBreakerQuestions = [
       "어느 벽에 닿아도 바로 멈춰요",
       "아래쪽 벽에 닿아도 계속 움직여요",
     ],
-    correct: 0,
-    explanation: "‘화면 끝에 닿으면 튕기기’로 위·양옆 벽에서는 튕기며 날아가고, 아래쪽 벽에 닿는 순간 ‘아래쪽 벽에 닿았는가?’가 참이 되어 모든 코드가 멈춰요.",
     hint: "블록을 위에서 아래로 읽어 보세요. ‘만일’ 조건에 적힌 벽은 어느 쪽 벽인가요?",
-    why: {
-      1: "‘만일’ 조건은 벽 전체가 아니라 아래쪽 벽에 닿았을 때만 참이 돼요.",
-      2: "아래쪽 벽에 닿으면 ‘아래쪽 벽에 닿았는가?’가 참이 되어 ‘모든 코드 멈추기’가 실행돼요.",
-    },
   },
 ];

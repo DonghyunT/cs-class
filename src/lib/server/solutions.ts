@@ -1,13 +1,8 @@
 import "server-only";
 import type { WorkDraft } from "../classroom/types";
 import { runnableEntryBlocks } from "../classroom/entry-project";
-import { concepts, questions } from "../classroom/programming-data";
-import { conditionalConcepts, conditionalQuestions } from "../classroom/conditionals-data";
-import { loopConcepts, loopQuestions } from "../classroom/loops-data";
-import { functionConcepts, functionQuestions } from "../classroom/functions-data";
-import { brickBreakerConcepts, brickBreakerQuestions } from "../classroom/brick-breaker-data";
 import { BRICK_ASSEMBLY } from "./brick-assembly";
-import { hamsterConcepts, hamsterQuestions } from "../classroom/hamster-robot-data";
+import { LESSON_ANSWERS } from "./lesson-answers";
 import { UNIT_QUIZ_DATA } from "./review-quiz.mjs";
 import { REVIEW_LESSONS } from "../classroom/review/lessons";
 
@@ -53,55 +48,21 @@ const REVIEW_CONCEPT_RETRY: Readonly<Record<string, string>> = {
   loop: "틀렸을 때 바로 끝나면 다시 시도할 기회가 없어요. 비밀번호를 다시 받으려면 화살표가 어느 단계로 돌아가야 할까요?",
 };
 
+// The Entry lessons share one shape: answers and after-answer feedback come from lesson-answers.ts, missions are graded apart.
+const entryLesson = (lessonId: string): LessonSolution => {
+  const { concepts, quiz } = LESSON_ANSWERS[lessonId];
+  return {
+    lessonId,
+    conceptAnswers: lessonId === "brick-breaker" ? BRICK_ASSEMBLY : Object.fromEntries(Object.entries(concepts).map(([id, answer]) => [id, String(answer.correct)])),
+    quizAnswers: Object.fromEntries(Object.entries(quiz).map(([id, answer]) => [id, String(answer.correct)])),
+    quizFeedback: Object.fromEntries(Object.entries(quiz).map(([id, answer]) => [id, { correct: answer.explanation, incorrect: answer.why }])),
+    conceptRetry: Object.fromEntries(Object.entries(concepts).map(([id, answer]) => [id, answer.retry])),
+    practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
+  };
+};
+
 export const SOLUTIONS: Record<string, LessonSolution> = {
-  "programming-13": {
-    lessonId: "programming-13",
-    conceptAnswers: Object.fromEntries(concepts.map((c, i) => [`pc${i}`, String(c.correct)])),
-    quizAnswers: Object.fromEntries(questions.map((q) => [q.id, String(q.correct)])),
-    quizFeedback: Object.fromEntries(questions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
-    conceptRetry: Object.fromEntries(concepts.map((c, i) => [`pc${i}`, c.retry])),
-    practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
-  },
-  conditionals: {
-    lessonId: "conditionals",
-    conceptAnswers: Object.fromEntries(conditionalConcepts.map((c) => [c.id, String(c.correct)])),
-    quizAnswers: Object.fromEntries(conditionalQuestions.map((q) => [q.id, String(q.correct)])),
-    quizFeedback: Object.fromEntries(conditionalQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
-    conceptRetry: Object.fromEntries(conditionalConcepts.map((c) => [c.id, c.retry])),
-    practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
-  },
-  loops: {
-    lessonId: "loops",
-    conceptAnswers: Object.fromEntries(loopConcepts.map((c) => [c.id, String(c.correct)])),
-    quizAnswers: Object.fromEntries(loopQuestions.map((q) => [q.id, String(q.correct)])),
-    quizFeedback: Object.fromEntries(loopQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
-    conceptRetry: Object.fromEntries(loopConcepts.map((c) => [c.id, c.retry])),
-    practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
-  },
-  functions: {
-    lessonId: "functions",
-    conceptAnswers: Object.fromEntries(functionConcepts.map((c) => [c.id, String(c.correct)])),
-    quizAnswers: Object.fromEntries(functionQuestions.map((q) => [q.id, String(q.correct)])),
-    quizFeedback: Object.fromEntries(functionQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
-    conceptRetry: Object.fromEntries(functionConcepts.map((c) => [c.id, c.retry])),
-    practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
-  },
-  "brick-breaker": {
-    lessonId: "brick-breaker",
-    conceptAnswers: BRICK_ASSEMBLY,
-    quizAnswers: Object.fromEntries(brickBreakerQuestions.map((q) => [q.id, String(q.correct)])),
-    quizFeedback: Object.fromEntries(brickBreakerQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
-    conceptRetry: Object.fromEntries(brickBreakerConcepts.map((c) => [c.id, c.retry])),
-    practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
-  },
-  "hamster-robot": {
-    lessonId: "hamster-robot",
-    conceptAnswers: Object.fromEntries(hamsterConcepts.map((c) => [c.id, String(c.correct)])),
-    quizAnswers: Object.fromEntries(hamsterQuestions.map((q) => [q.id, String(q.correct)])),
-    quizFeedback: Object.fromEntries(hamsterQuestions.map((q) => [q.id, { correct: q.explanation, incorrect: q.why }])),
-    conceptRetry: Object.fromEntries(hamsterConcepts.map((c) => [c.id, c.retry])),
-    practice: { type: "entryjs", criteria: [], successMessage: "미션 조건을 확인했어요.", failureMessage: "미션 조건을 확인해 주세요." },
-  },
+  ...Object.fromEntries(Object.keys(LESSON_ANSWERS).map((lessonId) => [lessonId, entryLesson(lessonId)])),
   "sequence-lab": {
     lessonId: "sequence-lab",
     conceptAnswers: { algorithm: "clear", sequence: "save" },

@@ -5,10 +5,10 @@ const ENTRY_SHARED = [
   /^src\/components\/student\/programming-(?:lesson\.tsx|lesson\.module\.css)$/,
   /^src\/components\/student\/entry-practice-workspace(?:\.tsx|\.module\.css)$/,
   /^src\/lib\/classroom\/(?:programming-entry|entry-palette)\.ts$/,
-  /^src\/lib\/server\/programming-grader\.ts$/,
+  /^src\/lib\/server\/(?:programming-grader|lesson-answers)\.ts$/,
   /^tests\/(?:entry-palette\.test\.ts|entry-legacy-(?:inputs|objects)\.ts|fixtures\/entry-legacy-(?:keys|objects)\.json)$/,
   /^public\/entryjs\/.+$/,
-  /^scripts\/prepare-entryjs\.mjs$/,
+  /^scripts\/(?:prepare-entryjs\.mjs|entryjs-assets\.json)$/,
   /^src\/lib\/classroom\/entry-workspace(?:\.json|-frame\.ts)$/,
   // The teacher runner boots the same iframe for every Entry lesson; its E2E check lives in programming-learning.
   /^src\/components\/teacher\/entry-project-preview\.tsx$/,
@@ -103,6 +103,7 @@ export const LESSON_MAPPINGS = {
       "tests/review-flowchart-canvas-fixes.spec.ts",
       "tests/review-flowchart-puzzle-fixes.spec.ts",
       "tests/review-flowchart-studio-fixes.spec.ts",
+      "tests/review-flowchart-execution-fixes.spec.ts",
       "tests/flowchart-auto-completion.spec.ts",
       "tests/review-practice-ui.spec.ts",
       "tests/practice-focus.spec.ts",
@@ -209,6 +210,7 @@ export const LESSON_MAPPINGS = {
       /^src\/components\/student\/(?:brick-concept-play|concept-assemble)\.tsx$/,
       /^src\/lib\/classroom\/assemble\.ts$/,
       /^tests\/brick-breaker\.spec\.ts$/,
+      /^public\/concepts\/brick-[\w-]+\.png$/,
       CONCEPT_VISUAL
     ],
     tests: [

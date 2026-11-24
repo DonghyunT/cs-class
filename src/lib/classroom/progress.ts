@@ -1,6 +1,7 @@
 import { parseEntryProject } from "./entry-project";
 import { missionStarter, missionsFor, programmingProjectMatches, requiredMissionsFor } from "./programming-entry";
-import type { Lesson, Progress, Submission, ValidationResult, Work, WorkDraft, WorkSummary } from "./types";
+import type { Lesson, Progress, Question, Submission, ValidationResult, Work, WorkDraft, WorkSummary } from "./types";
+import { validAssembly } from "./assemble";
 import { initialReviewProject, isReviewType, sameReviewProject, reviewMissionIds } from "./review/project";
 
 // A new submission keeps the first one's time. A submission saved before firstSubmittedAt existed
@@ -37,6 +38,22 @@ export function emptyWork(lesson: Lesson): Work {
     conceptSolved: [], conceptFeedback: {}, quizSolved: [], quizRound: 1,
     quizRoundIds: lesson.quiz.map((question) => question.id), quizRoundGraded: false,
     quizFeedback: {}, validation: null, submission: null, updatedAt: null,
+  };
+}
+// Whether a saved answer still names an option (or, for an assembled answer, only blocks) of the question as it is now.
+export function answerFits(question: Question | undefined, answer: string): boolean {
+  return !!question && (question.assemble ? validAssembly(question.assemble, answer) : question.options.some((option) => option.id === answer));
+}
+// A lesson edit can remove a question, an option or a block that stored work still names. A draft naming one is rejected
+// on save, so stored work drops them when it is read; the student answers the current question again.
+export function dropStaleAnswers<T extends Pick<Work, "draft" | "quizRoundIds" | "quizRoundGraded" | "quizSolved">>(lesson: Lesson, work: T): T {
+  const current = (answers: Record<string, string>, questions: Question[]) => Object.fromEntries(Object.entries(answers).filter(([id, answer]) => answerFits(questions.find((question) => question.id === id), answer)));
+  const round = work.quizRoundIds.filter((id) => lesson.quiz.some((question) => question.id === id));
+  return {
+    ...work,
+    draft: { ...work.draft, conceptAnswers: current(work.draft.conceptAnswers, lesson.concepts.map((concept) => concept.question)), quizAnswers: current(work.draft.quizAnswers, lesson.quiz) },
+    // An ungraded round left with no question could never be graded, so it reopens with what is still unsolved.
+    quizRoundIds: round.length || work.quizRoundGraded ? round : lesson.quiz.map((question) => question.id).filter((id) => !work.quizSolved.includes(id)),
   };
 }
 export function practiceMatches(draft: WorkDraft, saved: Pick<ValidationResult, "order" | "entryProject" | "reviewProject"> | null | undefined): boolean {
