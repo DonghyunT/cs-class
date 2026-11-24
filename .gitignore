@@ -3,7 +3,6 @@
 # 강사님께 보내는 안내서 PDF(약 1.2MB)는 저장소에 둡니다.
 !teaching-materials/instructor-guide/*.pdf
 
-
 # 임시 파일 및 로컬 작업 공간
 *.tmp
 temp/

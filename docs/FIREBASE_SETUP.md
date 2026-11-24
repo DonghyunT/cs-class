@@ -72,8 +72,8 @@ main push는 CI와 Vercel 빌드를 병행합니다. Vercel 프로젝트의 Depl
 
 공개 후 확인은 [PR 경로](DEVELOPMENT.md#위험도별-반영-경로)의 기본 절차입니다.
 - **PR 경로:** SHA·운영 별칭·익명 API·로그인 화면을 확인합니다. 게이트가 `app`을 기다렸는지는 GitHub Production 배포 상태의 `success` 시각이 `app` 성공 직후인지로 판단합니다(배포 ID는 `gh api 'repos/DonghyunT/cs-class/deployments?sha=<SHA>&environment=Production'`로 찾고, 상태는 `gh api repos/DonghyunT/cs-class/deployments/<ID>/statuses`로 봅니다). Vercel 빌드 READY는 `app` 성공보다 먼저 올 수 있으므로 판단 근거로 쓰지 않습니다.
-- 익명 확인을 Windows Git Bash의 `curl`로 하면 인증서 폐기 확인 오류(`CRYPT_E_NO_REVOCATION_CHECK`)로 실패할 수 있습니다. 검사를 끄지 말고 Node의 `fetch`나 PowerShell로 요청합니다.
 - **직접 push 경로:** 게이트(`app` 성공 전 운영 미연결)에 맡기고, 이상이 있을 때만 확인합니다.
+- 익명 확인을 Windows Git Bash의 `curl`로 하면 인증서 폐기 확인 오류(`CRYPT_E_NO_REVOCATION_CHECK`)로 실패할 수 있습니다. 검사를 끄지 말고 Node의 `fetch`나 PowerShell로 요청합니다.
 - READY·익명 응답만으로 실제 계정 로그인·저장/재접속 성공을 주장하지 않습니다. CI와 Vercel의 검사 SHA가 같은지 확인하며 Force Promote는 기본 절차로 사용하지 않습니다.
 - 게이트를 우회하는 수동 Promote나 검사 제거는 사용자의 명시 요청이 있을 때만 하고, 우회한 릴리스는 `app` 검사 없이 공개했다고 HANDOFF에 기록합니다.
 - 오류 복구는 확인된 이전 운영 배포로 되돌리고, 재발 방지를 코드에 반영해 검사 후 공개합니다. 검사 명령은 [DEVELOPMENT](DEVELOPMENT.md#검증)를 따릅니다.
@@ -110,7 +110,7 @@ Vercel 프로젝트의 기존 SSO 보호 설정은 유지합니다. 보호가 �
 
 ### 엔트리 라이브러리 CDN
 
-11/3부터 꺼 둠(`base` 비움): 한국 접속이 Cloudflare LA로 가 수업 중 작업실이 20초 안에 열리지 않았습니다([개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)). 아래는 다시 켤 때의 절차입니다.
+11/3부터 꺼 둠(`base` 비움): 한국 접속이 Cloudflare LA로 가 수업 중 작업실이 20초 안에 열리지 않았습니다(경과는 [정리 전 개발 안내](archive/cs-class/2026-11-24-before-docs-cleanup/DEVELOPMENT.md)). 아래는 다시 켤 때의 절차입니다.
 
 엔트리 작업실 전체(라이브러리 `public/entryjs/vendor/`, 브리지 `workspace.html`·`workspace.js`·`workspace.css`, 그림 `sprites/` 등 `/entryjs/`의 나머지)는 Cloudflare Workers 정적 파일 `cs-class-entry`([`cloudflare/entry-cdn/wrangler.jsonc`](../cloudflare/entry-cdn/wrangler.jsonc))에서 열어 Vercel CDN 요청을 줄입니다. 서버 코드가 없는 정적 파일만이라 [무료 플랜에서도 요청이 무료·무제한](https://developers.cloudflare.com/workers/platform/pricing/)이고, [한도](https://developers.cloudflare.com/workers/platform/limits/#static-assets)(한 버전 20,000개·파일당 25MiB·`_headers` 규칙 100개) 안입니다(넘으면 묶음 단계가 멈춤). 주소 전환·CDN 구조·교체 순서는 [개발 안내 §4.1](DEVELOPMENT.md#entryjs-실습)에 있습니다.
 
