@@ -1,6 +1,6 @@
 # 페스티벌 로맨스 (`festival-romance`) 인수인계
 
-갱신: 2026-11-23(Asia/Seoul) · 브랜치 `feat/festival-prologue`
+갱신: 2026-11-23(Asia/Seoul) · #124로 `main`에 병합됨
 
 ## 1. 현재 작업 상태
 
@@ -26,7 +26,7 @@
 
 - **산출물 무결성 ([qa/build-manifest.json](qa/build-manifest.json)):**
   - `public/festival-romance.html` ≡ `dist/festival-romance.html`: `2,609,220` bytes, SHA-256 `5949497096b348e5e7f5b462cf4a7dce7124c1487b45112eb9a534c60dbcf02b`
-  - `public/festival-lesson.html` ≡ `dist/festival-lesson.html`: SHA-256 `8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c4430b5` (원본 27장면 불변)
+  - `public/festival-lesson.html` ≡ `dist/festival-lesson.html`: SHA-256 `8f73962cd5f71fad24e6eb001d60af2c705944e65e7b19b8de61213106c430b5` (원본 27장면 불변)
 - **단위·패키지·서사·상태 테스트 (`node --test teaching-materials/festival-romance/tests/*.test.cjs`):** 61/61 통과 (`models` 14, `state` 10, `package` 3, `journey` 7, `refinement` 27)
 - **Playwright 브라우저 QA (`node teaching-materials/festival-romance/qa/browser.cjs`):** 11항목 통과 (`errors: []`, `consoleErrors: []`, `remoteRequests: 0`, 프롤로그 등장 연출·밤 장면 연결, 단일 문항 재도전·`08`/`8.0` 잠금·대화창 클릭·`다시 맞출 콤비` 엔딩·임베드·모바일 스크린샷 검수 포함)
 - **Playwright 재생 QA (`node teaching-materials/festival-romance/qa/playback-app.cjs`):** 4항목 통과 (`errors: []`, `consoleErrors: []`, `remoteRequests: 0`)
