@@ -78,6 +78,12 @@ test("교사는 첫 입장 창에서 코드를 띄우고 이번에 입장한 학
     expect(code).toMatch(/^\d{6}$/);
     await expect(dialog.getByRole("status")).toContainText("남은 시간 10분");
 
+    // 코드가 열려 있는 동안 Escape나 창 바깥 클릭으로는 닫히지 않아, 학생이 입력하는 코드가 그대로예요.
+    await page.keyboard.press("Escape");
+    await page.mouse.click(5, 5);
+    await expect(dialog.getByLabel(/^입장 코드/)).toHaveText(code);
+    expect((await db.collection("csFirstEntry").doc(classId).get()).exists).toBe(true);
+
     expect((await loginStudent(student, code, "20771")).status()).toBe(200);
     expect((await student.post("/api/auth/password", { headers, data: { password: studentPassword } })).status()).toBe(200);
     await dialog.getByRole("button", { name: "입장 현황 새로고침", exact: true }).click();

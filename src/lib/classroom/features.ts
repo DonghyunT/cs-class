@@ -9,3 +9,5 @@ export const STUDENT_CLASS_POLL_MS = 10 * 60_000;
 // tests/session-timing.test.ts keeps one failed report from reaching the student's timeout warning.
 export const SESSION_ACTIVITY_MS = 3 * 60_000;
 export const SESSION_RETRY_MS = 30_000;
+// A working student's last report is up to SESSION_ACTIVITY_MS old, so the teacher's "recently active" count allows that plus a minute.
+export const RECENT_ACTIVITY_MS = SESSION_ACTIVITY_MS + 60_000;

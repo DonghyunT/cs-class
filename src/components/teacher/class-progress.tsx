@@ -1,4 +1,5 @@
 import { ActivityProgressRing } from "@/components/student/activity-progress-ring";
+import { RECENT_ACTIVITY_MS } from "@/lib/classroom/features";
 import { progressFor } from "@/lib/classroom/progress";
 import type { Lesson, StudentRow } from "@/lib/classroom/types";
 import styles from "./class-progress.module.css";
@@ -14,10 +15,10 @@ export function ClassProgress({ lesson, students, checkedAt, stagesOnly = false 
     return { stage, label, completed, total, percent: total ? Math.round(completed / total * 100) : 0 };
   });
   const total = parts.reduce((sum, part) => sum + part.total, 0), completed = parts.reduce((sum, part) => sum + part.completed, 0);
-  const recent = students.filter(student => student.lastActiveAt && checkedAt - student.lastActiveAt < 120_000).length;
+  const recent = students.filter(student => student.lastActiveAt && checkedAt - student.lastActiveAt < RECENT_ACTIVITY_MS).length;
   if (stagesOnly) return <div className={styles.stageGrid} role="group" aria-label="반 전체 단계별 완료 학생">{parts.map(part => <div key={part.stage} data-stage={part.stage}><div><span>{part.label}</span><strong>{part.completed}/{part.total}<small>명</small></strong></div><span className={styles.track} role="progressbar" aria-label={`반 전체 ${part.label} 완료 학생`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={part.percent} aria-valuetext={`전체 학생 ${part.total}명 중 ${part.completed}명 완료`}><i style={{ width: `${part.percent}%` }} /></span></div>)}</div>;
   return <div className={styles.overview} aria-label="이번 수업 학생 학습 현황">
     <ActivityProgressRing parts={parts} size="compact" interactive={false} label="반 전체 필수 활동 완료율" />
-    <div className={styles.metrics}><strong>필수 활동 {completed}/{total}개 완료</strong><div className={styles.states}>{([['not-started', '시작 전'], ['in-progress', '진행 중'], ['completed', '완료']] as const).map(([status, label]) => <span key={status} data-state={status}><i aria-hidden="true" />{label}<b>{progress.filter(value => value.status === status).length}명</b></span>)}</div><small>등록 {students.length}명 · 최근 2분 활동 {recent}명</small></div>
+    <div className={styles.metrics}><strong>필수 활동 {completed}/{total}개 완료</strong><div className={styles.states}>{([['not-started', '시작 전'], ['in-progress', '진행 중'], ['completed', '완료']] as const).map(([status, label]) => <span key={status} data-state={status}><i aria-hidden="true" />{label}<b>{progress.filter(value => value.status === status).length}명</b></span>)}</div><small>등록 {students.length}명 · 최근 {RECENT_ACTIVITY_MS / 60_000}분 활동 {recent}명</small></div>
   </div>;
 }

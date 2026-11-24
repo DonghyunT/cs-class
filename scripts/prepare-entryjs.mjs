@@ -43,7 +43,8 @@ await Promise.all(manifest.packages.map(async (asset) => {
   const extracted = path.join(cache, `prepared-${asset.directory}-${asset.version}`);
   await mkdir(extracted, { recursive: true });
   const files = ["package.json", ...asset.files];
-  execFileSync("tar", ["-xzf", archive, "-C", extracted, ...files.map((file) => `package/${file}`)]);
+  // Names relative to the cache: GNU tar (Git Bash on Windows) reads a drive letter such as "D:" as a remote host.
+  execFileSync("tar", ["-xzf", path.basename(archive), "-C", path.basename(extracted), ...files.map((file) => `package/${file}`)], { cwd: cache });
   for (const file of files) {
     const destination = path.join(output, asset.directory, file);
     await mkdir(path.dirname(destination), { recursive: true });
