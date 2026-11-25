@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type RefObject } from "react";
-import { ArrowLeft, ArrowRight, Check, Lightbulb } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Lightbulb, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProgrammingConcept as ProgrammingConceptView } from "./programming-concept";
 import { concepts } from "@/lib/classroom/programming-data";
@@ -31,7 +31,7 @@ export function ProgrammingLearningStage(props: Props) {
   return <section id={`panel-${draft.stage}`} role="tabpanel" aria-labelledby={`tab-${draft.stage}`} className={styles.panel}>
     <h2 id={`stage-heading-${draft.stage}`} tabIndex={-1} className={styles.srOnly}>{draft.stage === "concept" ? "직접 실험하고 생각해요" : "실습 미션에 도전해요"}</h2>
     {draft.stage === "concept" ? <ProgrammingConcept {...props} /> : <ProgrammingPractice {...props} />}
-    {draft.stage === "practice" && <div className={styles.reflection}><label htmlFor="programming-reflection">오늘 발견한 것을 한 줄로 남겨볼까요?</label><textarea id="programming-reflection" maxLength={500} disabled={locked} placeholder="예: 순서를 바꿔 실행하니 결과가 달라졌어요." value={draft.programming?.reflection ?? ""} onChange={(e) => { const current = controller.getDraft(); if (current.programming) controller.update({ ...current, programming: { ...current.programming, reflection: e.target.value } }); }} /><p>{props.mode === "preview" ? "이 창의 체험에만 남아요." : "내 작품과 함께 저장돼요. 다음 수업에도 이어갈 수 있어요."}</p></div>}
+    {draft.stage === "practice" && <div className={styles.reflection}><label htmlFor="programming-reflection">오늘 발견한 것을 한 줄로 남겨볼까요?</label><textarea id="programming-reflection" maxLength={500} disabled={locked} placeholder="예: 순서를 바꿔 실행하니 결과가 달라졌어요." value={draft.programming?.reflection ?? ""} onChange={(e) => { const current = controller.getDraft(); if (current.programming) controller.update({ ...current, programming: { ...current.programming, reflection: e.target.value } }); }} /><p>{props.mode === "preview" ? "이 창의 체험에만 남아요." : "내 작품과 함께 저장돼요. 다음 수업에도 이어갈 수 있어요."}</p>{props.mode !== "preview" && <Button variant="outline" disabled={locked || controller.capturing || controller.actionBlocked || controller.conflict || controller.saveState === "saving"} onClick={() => void controller.save()}><Save size={16} aria-hidden="true" />기록 저장</Button>}</div>}
   </section>;
 }
 

@@ -61,7 +61,7 @@ export function StudentDashboardView() {
   const reviewStart = shown.findIndex((lesson) => lesson.mode === "review" && lesson.id !== current?.id);
   return <div className={styles.dashboard}>
     <header className={styles.heading}>
-      <div><span className={styles.eyebrow}>{data.classroom.name} · 나의 학습 공간</span><h1>열린 수업을 살펴봐요.</h1><p>{session?.studentId} 학생의 학습 기록을 확인해요.</p></div>
+      <div><span className={styles.eyebrow}>{data.classroom.name} · 나의 학습 공간</span><h1>열린 수업을 살펴봐요.</h1><p>{session?.nickname || `${session?.studentId} 학생`}의 학습 기록을 확인해요.</p></div>
       <div className={styles.headingTools}>
         <dl className={styles.overview} aria-label="학습 현황"><div><dt>열린 수업</dt><dd>{data.lessons.length}<small>개</small></dd></div><div><dt>완료한 수업</dt><dd>{completed}<small>개</small></dd></div></dl>
         <Button variant="ghost" aria-label="수업 새로고침" aria-disabled={refreshing} onClick={() => void refresh(true)}>{refreshing ? <LoadingSpinner /> : <RefreshCw size={16} aria-hidden="true" />}<span>{refreshing ? "확인 중" : "새로고침"}</span></Button>

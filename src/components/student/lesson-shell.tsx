@@ -65,7 +65,7 @@ export function LessonShell({ lesson, returnOrigin, workspaceWide, practiceFocus
           if (event.key === "Escape" && menu.current?.open) { event.preventDefault(); event.stopPropagation(); menu.current.open = false; menuToggle.current?.focus({ preventScroll: true }); }
         }}>
           <summary ref={menuToggle} role="button" aria-label="학생 메뉴" aria-expanded={open}>{session?.studentId ?? "학생"}<ChevronDown size={16} aria-hidden="true" /></summary>
-          <div className={styles.accountPanel}><p>{session?.studentId} 학생으로 학습 중</p><Button ref={logoutButton} variant="ghost" disabled={leaving} onClick={() => void leaveAccount()}><LogOut size={17} aria-hidden="true" />{leaving ? "저장 확인 중…" : "로그아웃"}</Button></div>
+          <div className={styles.accountPanel}><p>{session?.nickname ? `${session.nickname} · ` : ""}{session?.studentId} 학생으로 학습 중</p><Button ref={logoutButton} variant="ghost" disabled={leaving} onClick={() => void leaveAccount()}><LogOut size={17} aria-hidden="true" />{leaving ? "저장 확인 중…" : "로그아웃"}</Button></div>
         </details>}</div>
       </div>
       {preview && <div className={styles.previewToolbar}><strong>교사 미리보기 · 이 창에서만 체험</strong><p>체험 내용은 새로고침·수업 변경·나가기 때 사라집니다. 학생 기록에는 반영되지 않아요.</p>{preview.controls}</div>}
