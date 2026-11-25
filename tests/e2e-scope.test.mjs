@@ -6,6 +6,20 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { selectE2E, matchLesson, matchLessons, smokeRelatedTests } from "../scripts/e2e-scope.mjs";
 
+test("shared progress, save and login files add the specs that pin them to automatic smoke", () => {
+  const groups = [
+    ["src/lib/classroom/catalog.ts", ["student-progress"]],
+    ["src/lib/classroom/achievements.ts", ["student-progress"]],
+    ["src/components/student/use-work.ts", ["manual-save", "work-action-recovery", "manual-save-entry"]],
+    ["src/lib/classroom/client.ts", ["manual-save", "work-action-recovery", "manual-save-entry"]],
+    ["src/lib/server/auth.ts", ["auth-security", "guest-login"]],
+  ];
+  for (const [file, specs] of groups) {
+    assert.deepEqual(new Set(smokeRelatedTests([file])), new Set(specs.map(spec => `tests/${spec}.spec.ts`)), file);
+    assert.equal(selectE2E([file]).mode, "full", "local manual selection remains required");
+  }
+});
+
 test("teacher smoke groups cover management, previews, assessment and work review without narrowing local scope", () => {
   const groups = [
     ["dashboard.tsx", ["teacher-class-management", "classroom-api", "teacher-preparation", "ui-teacher-refinement", "teacher-review-workflow"]],
