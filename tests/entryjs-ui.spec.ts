@@ -76,6 +76,8 @@ test("실제 EntryJS 블록 조립·실행·저장·검증·제출·복원", asy
   await page.screenshot({ path: testInfo.outputPath("entryjs-desktop.png"), fullPage: true });
   const submitted = (await stored()).submission;
   await page.reload();
+  // Practice is finished and concepts are not, so the lesson reopens at the concept stage.
+  await page.getByRole("tab", { name: "실습 100%" }).click();
   await expect(page.getByRole("button", { name: "이 작품 제출 완료" })).toBeDisabled();
   // The reload boots EntryJS again; wait as long as the first load does.
   await expect(page.getByRole("button", { name: "실행하기", exact: true })).toBeEnabled({ timeout: 20000 });
@@ -94,6 +96,7 @@ test("실제 EntryJS 블록 조립·실행·저장·검증·제출·복원", asy
   await expect.poll(async () => parseEntryProject((await stored()).draft.entryProject)?.threads[0][1]).toEqual({ type: "move_direction", amount: 20 });
   expect((await stored()).submission).toEqual(submitted);
   await page.reload();
+  await page.getByRole("tab", { name: "실습 100%" }).click();
   await expect(frame.locator("#entryWorkspaceBoard").getByText("20", { exact: true })).toBeVisible({ timeout: 20000 });
   await expect(page.getByRole("tab", { name: "실습 100%" })).toBeVisible();
   expect(errors).toEqual([]);
