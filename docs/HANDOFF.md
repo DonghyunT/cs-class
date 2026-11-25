@@ -10,7 +10,7 @@
 
 ## 최근 반영
 
-- **점검 보고서의 작은 수정 5건** (11/25): `계속 사용하기`가 같은 계정의 진행 중 요청(저장 등)을 끊지 않고, 퀴즈 `다시 도전` 문항 수를 현재 문항 기준으로 셉니다. 자동 CI 스모크에 진도·배지(`student-progress`), 저장(`manual-save`·`work-action-recovery`), 로그인(`auth-security`·`guest-login`) 검사를 관련 파일이 바뀔 때 추가하고, E2E `forbidOnly`와 축제 게임 단위 검사(`test:review`)를 넣었습니다. 검증: check, 지정 E2E, PR CI. 전체 E2E 미실행.
+- **#130 점검 보고서의 작은 수정 5건** (11/25): `계속 사용하기`가 같은 계정의 진행 중 요청(저장 등)을 끊지 않고, 퀴즈 `다시 도전` 문항 수를 현재 문항 기준으로 셉니다. 자동 CI 스모크에 진도·배지(`student-progress`), 저장(`manual-save`·`work-action-recovery`), 로그인(`auth-security`·`guest-login`) 검사를 관련 파일이 바뀔 때 추가하고, E2E `forbidOnly`와 축제 게임 단위 검사(`test:review`)를 넣었습니다. 검증: check, 지정 E2E 87, PR·main CI, 운영 `d631b96` 확인(비로그인 응답). 전체 E2E 미실행, 로그인 뒤 화면 미확인.
 - **유지보수 문서 정리** (11/24): `DEVELOPMENT`·`FIREBASE_SETUP`·축제 게임 인계 문서의 지난 이력과 안 쓰는 앵커를 줄이고([정리 전 원문](archive/cs-class/2026-11-24-before-docs-cleanup/README.md)), `최근 4분 활동` 기준·CDN 묶음이 낡은 사실·연달아 병합할 때의 HANDOFF 충돌 해결을 적었습니다. 없는 폴더의 무시 줄을 지우고 `package.json`에 `engines.node` `24.x`를 넣었습니다(Vercel이 이 값을 프로젝트 설정보다 먼저 씀). 검증: check, PR CI. 전체 E2E 미실행.
 - **HANDOFF 크기 한도 12,000바이트** (11/24): 기록할 때마다 한도에 걸려 10,000에서 올렸습니다(`check-docs.mjs`, 권장 약 10KB). 문서 점검에서 찾은 틀린 설명 9건(CDN 켜는 순서, 작업실 주소 예외, 없어진 실행 기록 등)도 고쳤습니다. 검증: check, PR CI. 전체 E2E 미실행.
 - **#127 정답 서버 이동·점검 5~9번** (11/24): 개념·퀴즈 정답과 답한 뒤 문구를 서버 `lesson-answers.ts`로 옮기고, 없어진 문항의 답은 저장본을 읽을 때 거릅니다. 선별 규칙·작업실 출처 검사 추가, `shadcn`은 개발 의존성. 검증: check, build, 지정 E2E 73, GitHub 전체 E2E 510 통과·실패 1(남은 한계), PR·main CI, 운영 `5c91660` 확인(공개 JS에 정답 없음). 로그인 뒤 화면 미확인.
