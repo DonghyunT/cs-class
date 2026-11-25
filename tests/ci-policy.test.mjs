@@ -74,10 +74,11 @@ test("shared changes retain related lesson tests and all registered lesson smoke
   assert.equal(plan.base, sha);
   assert.deepEqual(plan.lessonIds, ["review-sandwich"]);
   assert.deepEqual(new Set(plan.testFiles), new Set(["tests/review-sandwich.spec.ts", "tests/sandwich-conversation.spec.ts",
-    "tests/review-practice-ui.spec.ts", "tests/lesson-feedback-workspace.spec.ts", "tests/lesson-smoke.spec.ts"]));
+    "tests/review-practice-ui.spec.ts", "tests/lesson-feedback-workspace.spec.ts", "tests/lesson-smoke.spec.ts",
+    "tests/manual-save.spec.ts", "tests/work-action-recovery.spec.ts", "tests/manual-save-entry.spec.ts"]));
   const common = await selectScope(env, async () => sha, () => ["src/components/student/use-work.ts"], unverified);
   assert.equal(common.mode, "smoke");
-  assert.deepEqual(common.testFiles, ["tests/lesson-smoke.spec.ts"]);
+  assert.deepEqual(common.testFiles, ["tests/manual-save.spec.ts", "tests/work-action-recovery.spec.ts", "tests/manual-save-entry.spec.ts", "tests/lesson-smoke.spec.ts"]);
   // Hosting the Entry workspace (with its unit test) needs only programming-classroom, not every Entry lesson.
   const hosting = await selectScope(env, async () => sha, () => ["scripts/entryjs-cdn.mjs", "tests/entryjs-cdn.test.mjs"], unverified);
   assert.equal(hosting.mode, "smoke");
@@ -249,7 +250,7 @@ test("only pull_request events consult the tested-code lookup, and any failure r
   assert.equal((await selectScope(prEnv, async () => sha, lesson, refuse, refuse)).mode, "affected");
   const shared = await selectScope(prEnv, async () => sha, () => ["src/components/student/use-work.ts"], refuse, refuse);
   assert.equal(shared.mode, "smoke");
-  assert.deepEqual(shared.testFiles, ["tests/lesson-smoke.spec.ts"]);
+  assert.deepEqual(shared.testFiles, ["tests/manual-save.spec.ts", "tests/work-action-recovery.spec.ts", "tests/manual-save-entry.spec.ts", "tests/lesson-smoke.spec.ts"]);
   // A real lookup failing on the API also ends there, not in a crash or a skip.
   const unreachable = (runEnv) => findTestedRun(runEnv, async () => ({ ok: false }), () => "c".repeat(64));
   assert.equal((await selectScope(prEnv, async () => sha, lesson, refuse, unreachable)).mode, "affected");

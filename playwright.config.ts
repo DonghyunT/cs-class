@@ -4,6 +4,7 @@ export default defineConfig({
   testMatch: "**/*.spec.ts",
   fullyParallel: false,
   workers: 1,
+  forbidOnly: !!process.env.CI,
   timeout: 45000,
   use: {
     // Playwright's API cookie jar permits Secure cookies on localhost only.

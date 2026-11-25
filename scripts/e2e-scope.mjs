@@ -65,6 +65,27 @@ export const SMOKE_RELATED = [{
     /^tests\/timetable(?:-parser\.test|\.spec)\.ts$/
   ],
   tests: ["tests/timetable.spec.ts"]
+}, {
+  // Badge and progress counts move whenever a lesson is added (catalog), which no lesson mapping sees.
+  patterns: [
+    /^src\/lib\/classroom\/(?:achievements|catalog|progress|lesson-navigation)\.ts$/,
+    /^src\/components\/student\/(?:badges|badges-view|lesson-complete|learning-overview)\.tsx$/,
+    /^tests\/student-progress\.spec\.ts$/
+  ],
+  tests: ["tests/student-progress.spec.ts"]
+}, {
+  patterns: [
+    /^src\/components\/student\/use-work\.ts$/,
+    /^src\/lib\/classroom\/client\.ts$/,
+    /^tests\/(?:manual-save|work-action-recovery)\.spec\.ts$/
+  ],
+  tests: ["tests/manual-save.spec.ts", "tests/work-action-recovery.spec.ts", "tests/manual-save-entry.spec.ts"]
+}, {
+  patterns: [
+    /^src\/lib\/server\/(?:auth|guest-mode)\.ts$/,
+    /^tests\/(?:auth-security|guest-login)\.spec\.ts$/
+  ],
+  tests: ["tests/auth-security.spec.ts", "tests/guest-login.spec.ts"]
 }];
 
 export function smokeRelatedTests(files) {

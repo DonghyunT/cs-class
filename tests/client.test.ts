@@ -64,6 +64,11 @@ test("JSON이 아닌 실패 응답도 원래 HTTP 상태로 안내한다", async
   await expect(api("classroom/work/synthetic", {})).rejects.toMatchObject({ code: "SERVER", status: 503 });
 });
 
+test("같은 계정을 다시 확인해도 진행 중인 요청은 끊지 않는다", async () => {
+  globalThis.fetch = async () => { setExpectedUser("synthetic-student"); return Response.json({ ok: true }); };
+  await expect(api("classroom/work/synthetic", {})).resolves.toEqual({ ok: true });
+});
+
 test("이전 계정의 늦은 성공 응답은 새 계정에 전달하지 않는다", async () => {
   globalThis.fetch = async () => { setExpectedUser("another-synthetic-student"); return Response.json({ ok: true }); };
   await expect(api("classroom/work/synthetic", {})).rejects.toMatchObject({ code: "SESSION_REPLACED", status: 401 });

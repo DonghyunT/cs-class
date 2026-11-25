@@ -7,7 +7,8 @@ export class ApiError extends Error {
 }
 let expectedUser: string | null = null;
 let sessionEpoch = 0;
-export function setExpectedUser(uid: string | null) { expectedUser = uid; sessionEpoch += 1; }
+// Re-confirming the same account (계속 사용하기) must not abort its own requests in flight, such as a save.
+export function setExpectedUser(uid: string | null) { if (uid !== expectedUser) sessionEpoch += 1; expectedUser = uid; }
 export async function api<T>(path: string, body?: unknown, method = body === undefined ? "GET" : "POST", boundUid?: string): Promise<T> {
   if (boundUid && boundUid !== expectedUser) throw new ApiError("SESSION_REPLACED", "계정이 바뀌어 이전 작업의 전송을 중단했어요.", 401);
   if (path.startsWith("classroom/") && !expectedUser) throw new ApiError("SIGNED_OUT", "다시 로그인해 주세요.", 401);
