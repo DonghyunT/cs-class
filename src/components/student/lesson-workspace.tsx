@@ -4,6 +4,7 @@ import { BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { classroomApi } from "@/lib/classroom/client";
 import { STUDENT_CLASS_POLL_MS } from "@/lib/classroom/features";
+import { resumeStageFor } from "@/lib/classroom/lesson-navigation";
 import type { Lesson, StudentDashboard, Work, WorkDraft } from "@/lib/classroom/types";
 import { LessonShell } from "./lesson-shell";
 import { LessonEditor, type LessonFrame, type WorkspaceView } from "./lesson-editor";
@@ -46,7 +47,9 @@ export function LessonWorkspace({ lesson, uid, returnOrigin, workspaceWide, prac
 }
 
 
-const StudentWorkEditor = memo(function StudentWorkEditor({ lesson, initial, uid, ...view }: { lesson: Lesson; initial: Work; uid: string; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
+const StudentWorkEditor = memo(function StudentWorkEditor({ lesson, initial: loaded, uid, ...view }: { lesson: Lesson; initial: Work; uid: string; onFrameChange: (frame: LessonFrame) => void } & WorkspaceView) {
+  // Open at the first stage with something left; like useWork, only the first loaded record counts.
+  const [initial] = useState(() => ({ ...loaded, draft: { ...loaded.draft, stage: resumeStageFor(lesson, loaded) } }));
   const entryExport = useRef<EntryExport | null>(null);
   const readEditorDraft = useCallback((current: WorkDraft) => {
     if (entryExport.current) return readEntryDraft(lesson, current, entryExport.current.read);
@@ -54,6 +57,6 @@ const StudentWorkEditor = memo(function StudentWorkEditor({ lesson, initial, uid
   }, [lesson]);
   // An open Entry function editor holds edits the draft does not have yet, so leaving asks first.
   const editorBusy = useCallback(() => !!entryExport.current?.editing(), []);
-  const controller = useWork(initial, uid, lesson.practice.type === "entryjs" || lesson.practice.type === "programming" ? readEditorDraft : undefined, editorBusy);
+  const controller = useWork(loaded, uid, lesson.practice.type === "entryjs" || lesson.practice.type === "programming" ? readEditorDraft : undefined, editorBusy, initial.draft.stage);
   return <LessonEditor lesson={lesson} initial={initial} controller={controller} entryExport={entryExport} {...view} />;
 });

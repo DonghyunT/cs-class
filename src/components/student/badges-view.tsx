@@ -42,7 +42,7 @@ export function StudentBadgesView() {
   }, [data, seen, seenKey]);
   return <div className={styles.dashboard}>
     <header className={styles.heading}>
-      <div><span className={styles.eyebrow}>{data ? `${data.classroom.name} · ` : ""}{session?.studentId} 학생</span><h1>내 배지를 모아 봐요.</h1><p>배지마다 받는 방법과 받은 수업을 보여 줘요.</p></div>
+      <div><span className={styles.eyebrow}>{data ? `${data.classroom.name} · ` : ""}{session?.nickname || `${session?.studentId} 학생`}</span><h1>내 배지를 모아 봐요.</h1><p>배지마다 받는 방법과 받은 수업을 보여 줘요.</p></div>
     </header>
     {error && <div className={styles.notice} role="alert"><p>{error}</p><Button variant="outline" aria-disabled={loading} onClick={() => void load()}>다시 불러오기</Button></div>}
     <StudentBadges data={data} loading={loading} fresh={earned.filter(key => !seen.has(key))} />
