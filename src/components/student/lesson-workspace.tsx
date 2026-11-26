@@ -57,6 +57,6 @@ const StudentWorkEditor = memo(function StudentWorkEditor({ lesson, initial: loa
   }, [lesson]);
   // An open Entry function editor holds edits the draft does not have yet, so leaving asks first.
   const editorBusy = useCallback(() => !!entryExport.current?.editing(), []);
-  const controller = useWork(initial, uid, lesson.practice.type === "entryjs" || lesson.practice.type === "programming" ? readEditorDraft : undefined, editorBusy);
+  const controller = useWork(loaded, uid, lesson.practice.type === "entryjs" || lesson.practice.type === "programming" ? readEditorDraft : undefined, editorBusy, initial.draft.stage);
   return <LessonEditor lesson={lesson} initial={initial} controller={controller} entryExport={entryExport} {...view} />;
 });

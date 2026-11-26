@@ -27,12 +27,13 @@ type ActionFailure = {
   canResend?: boolean;
   verificationError?: string;
 };
-export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: WorkDraft) => Promise<WorkDraft>, editorBusy?: () => boolean) {
+export function useWork(initial: Work, uid: string, readEditorDraft?: (draft: WorkDraft) => Promise<WorkDraft>, editorBusy?: () => boolean, openStage = initial.draft.stage) {
   const key = `${uid}:${initial.lessonId}`;
   const [work, setWork] = useState(initial);
   const [draft, setDraft] = useState(() => {
     const cached = recovery.get(key);
-    return cached && Date.now() - cached.at < 20 * 60_000 ? cached.draft : initial.draft;
+    // openStage is a local, unsaved stage change like switchStage: the server record keeps its own stage until the next save.
+    return cached && Date.now() - cached.at < 20 * 60_000 ? cached.draft : openStage === initial.draft.stage ? initial.draft : { ...initial.draft, stage: openStage };
   });
   const [saveState, setSaveState] = useState<SaveState>(() => sameWorkContent(draft, initial.draft) ? "saved" : "dirty");
   const [capturing, setCapturing] = useState(false);

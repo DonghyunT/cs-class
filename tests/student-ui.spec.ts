@@ -113,6 +113,31 @@ test("개념·오답 재도전·순서 실습·제출 후 수정과 재접속", 
   expect(errors).toEqual([]);
 });
 
+test("이어 열린 단계에서 바로 누른 재도전이 저장된 예전 단계로 돌아가지 않음", async ({ page }) => {
+  await enter(page);
+  await page.getByRole("radio", { name: "컵에 물을 200mL 따른다" }).check();
+  await page.getByRole("button", { name: "정답 확인", exact: true }).first().click();
+  await page.getByRole("tab", { name: "퀴즈 0%" }).click();
+  await page.getByRole("radio", { name: "앞으로 3칸 이동한다" }).check();
+  await page.getByRole("button", { name: "다음 문제", exact: true }).click();
+  await page.getByRole("radio", { name: "숫자 출력 → 숫자 입력", exact: true }).check();
+  await page.getByRole("button", { name: "다음 문제", exact: true }).click();
+  await page.getByRole("radio", { name: "결과가 달라질 수 있어요" }).check();
+  await page.getByRole("button", { name: "이번 회차 결과 확인" }).click();
+  await expect(page.getByRole("tab", { name: "퀴즈 67%" })).toBeVisible();
+  // Finishing the concepts last leaves the concept stage as the saved one.
+  await page.getByRole("tab", { name: /^개념/ }).click();
+  await page.getByRole("button", { name: "다음 개념", exact: true }).click();
+  await page.getByRole("radio", { name: "내용을 저장해요", exact: true }).check();
+  await page.getByRole("button", { name: "정답 확인", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "개념 100%" })).toHaveAttribute("aria-selected", "true");
+  await page.reload();
+  await expect(page.getByRole("tab", { name: "퀴즈 67%" })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("button", { name: "틀린 문제만 다시 풀기" }).click();
+  await expect(page.locator("#quiz-question-title")).toBeFocused();
+  await expect(page.getByRole("tab", { name: "퀴즈 67%" })).toHaveAttribute("aria-selected", "true");
+});
+
 test("저장 실패 때 입력과 단계 유지, 재시도 후 이동", async ({ page }) => {
   await enter(page);
   await page.route(workPath, (route) => route.request().method() === "POST" ? route.abort("failed") : route.continue());
