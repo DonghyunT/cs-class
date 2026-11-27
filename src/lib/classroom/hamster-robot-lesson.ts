@@ -18,5 +18,5 @@ export const HAMSTER_ROBOT_LESSON: Lesson = {
     question: { id: c.id, prompt: c.prompt, options: options(c.id, c.options), hint: c.hint },
   })),
   quiz: hamsterQuestions.map((q) => ({ id: q.id, prompt: q.prompt, options: options(q.id, q.options), hint: q.hint })),
-  practice: { type: "programming", title: "햄스터S 움직이기", description: "로봇을 연결해 앞뒤로 움직이고, LED와 소리로 신호를 보내며, 근접 센서로 손 감지 경보기를 만들어요. 검증은 블록을 확인하고, 실제 움직임은 선생님과 함께 확인해요.", blocks: [] },
+  practice: { type: "programming", title: "햄스터S 움직이기", description: "로봇을 연결해 앞뒤로 움직이고, LED와 소리로 신호를 보내며, 근접 센서로 손 감지 경보기를 만들어요. 마지막 탐구 미션에서는 모든 블록으로 자유롭게 놀아요. 검증은 블록을 확인하고, 실제 움직임은 선생님과 함께 확인해요.", blocks: [] },
 };

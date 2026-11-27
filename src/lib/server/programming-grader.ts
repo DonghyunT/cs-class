@@ -536,7 +536,10 @@ export function checkProgrammingMission(id: string, raw: unknown): { passed: boo
     const found = traceSensor(body, true), away = traceSensor(body, false);
     return found.led === "on" && found.beeped && !found.cleared && away.led === "off" && !away.beeped;
   }
+  // Free play has no answer: one robot block under any start block is enough.
+  const usesRobot = (n: EntryNode): boolean => n.type.startsWith("hamsterlite_") || n.params.some((v) => !!v && typeof v === "object" && usesRobot(v as EntryNode)) || (n.statements ?? []).flat().some(usesRobot);
   function grade(): boolean {
+    if (id === "robot-free") return p!.added.flatMap((o) => o.threads).some((line) => /^(when_|mouse_click)/.test(line[0]?.type ?? "") && line.slice(1).some(usesRobot));
     if (id === "robot-go") return p!.added.flatMap((o) => o.threads).some((line) => {
       if (line[0]?.type !== "when_run_button_click") return false;
       const moves = line.filter((n) => n.type === "hamsterlite_move_forward_for_secs" || n.type === "hamsterlite_move_backward_for_secs");
