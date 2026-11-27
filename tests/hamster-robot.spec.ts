@@ -49,6 +49,11 @@ test("로봇 수업은 공개 목록에 있고 기본 미션 세 개는 블록 �
   expect(free([[node("when_some_key_pressed", null, "38"), forever([_if(node("hamsterlite_boolean", "TILT_FORWARD"), [beep])])]]).passed).toBe(true);
   expect(free([[start, node("wait_second", node("number", "1"), null)]]), "로봇 블록 없음").toEqual({ passed: false, message: "시작 블록 아래에 ‘하드웨어’ 꾸러미의 블록을 하나 이상 붙여 주세요." });
   expect(free([[note]]).passed, "시작 블록 없음").toBe(false);
+  // Start lines on several objects are fine here: free play is not tied to one object.
+  const bot = parseProgrammingProject(missionStarter("robot-free"))!.added[0];
+  const twoObjects = buildProgrammingProject(undefined, [{ ...bot, threads: [[start, note]] }, { ...bot, id: "bot2", threads: [[start, beep]] }], -1);
+  expect(checkProgrammingMission("robot-free", twoObjects).passed).toBe(true);
+  expect(checkProgrammingMission("robot-go", buildProgrammingProject(undefined, [{ ...bot, threads: [[start, forward(), backward()]] }, { ...bot, id: "bot2", threads: [[start, beep]] }], -1)).message).toContain("한 오브젝트에만");
   // The graded missions keep their own blocks: the extra palette blocks are named and refused.
   expect(checkProgrammingMission("robot-go", project("robot-go", [[start, wheels, forward(), backward()]])).message).toBe("이번 미션은 기본 블록으로 확인해요. ‘왼쪽 바퀴 ( ) 오른쪽 바퀴 ( )(으)로 정하기’ 블록을 빼고 다시 검증해 주세요.");
   const go = (threads: EntryNode[][]) => checkProgrammingMission("robot-go", project("robot-go", threads)).passed;
@@ -150,6 +155,30 @@ test("손 감지 경보기 미션은 실행 중에도 로봇 미연결을 알리
   await expect(page.getByRole("status").filter({ hasText: "실행을 멈췄어요. 로봇이 연결되지 않았어요." })).toBeVisible({ timeout: 20000 });
   await frame.evaluate('send("result", { x: 0, y: 0, speech: "", reason: "stopped", robotConnected: true })');
   await expect(page.getByRole("status").filter({ hasText: "실행을 멈췄어요. 로봇이 코드대로 움직였는지" })).toBeVisible();
+});
+
+test("탐구 미션은 새 블록을 로봇 없이 실행해도 오류 없이 끝나고 검증을 통과한다", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const text = (value: string) => node("text", value);
+  // One block of each new kind that does not wait for the robot: sensor reporters, wheels, sound, tempo, port, gripper.
+  const line = [start, _if(node("hamsterlite_boolean", "TILT_NOT"), [beep]), _if(node("boolean_basic_operator", node("hamsterlite_value", "leftProximity"), "GREATER", text("50")), [beep]),
+    node("hamsterlite_set_both_wheels_to", text("30"), text("30"), null), node("hamsterlite_change_wheel_by", "BOTH", text("10"), null), node("hamsterlite_stop", null),
+    node("hamsterlite_set_tempo_to", text("240"), null), node("hamsterlite_play_note_for", "4", "4", text("0.5"), null), node("hamsterlite_rest_for", text("0.25"), null),
+    node("hamsterlite_set_buzzer_to", text("1000"), null), node("hamsterlite_clear_buzzer", null), node("hamsterlite_set_port_to", "A", "8", null), node("hamsterlite_set_output_to", "A", text("90"), null),
+    node("hamsterlite_gripper", "OPEN", null), node("hamsterlite_release_gripper", null), led, off];
+  await open(page, id, "robot-free", project("robot-free", [line]));
+  await expect(page.getByRole("heading", { name: "탐구 · 햄스터S와 자유롭게 놀기" })).toBeVisible();
+  await expect(page.getByText("자유 탐구 · 기본 완료 조건에 포함되지 않아요")).toBeVisible();
+  await entryStart(page).click();
+  await expect(page.getByRole("status").filter({ hasText: "실행을 마쳤어요. 로봇이 연결되지 않았어요." })).toBeVisible({ timeout: 30000 });
+  await page.getByRole("button", { name: "조건 검증", exact: true }).click();
+  await expect(page.locator("#practice-feedback")).toContainText("목표 조건을 확인했어요");
+  await page.getByRole("button", { name: "작품 제출", exact: true }).click();
+  await expect(page.getByRole("button", { name: "이 작품 제출 완료", exact: true })).toBeVisible();
+  // The explore mission is not a required one: the practice tab still counts three.
+  await expect(page.locator("#tab-practice")).toContainText("0/3");
+  expect(errors).toEqual([]);
 });
 
 test("작업실이 열리자마자 끌어온 블록도 보드 안에 놓인다", async ({ page }) => {

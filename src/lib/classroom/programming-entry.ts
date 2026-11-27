@@ -53,7 +53,7 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
     robot: true,
   },
   // Free play instead of a challenge: no set answer, any robot block under a start block passes.
-  { id: "robot-free", title: "탐구 · 햄스터S와 자유롭게 놀기", goal: "‘하드웨어’ 꾸러미의 블록을 마음껏 골라 햄스터S를 움직여 보세요. 정해진 답은 없어요.", hint: "‘하드웨어’ 꾸러미에서 궁금한 블록을 찾아 써 보세요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 아래에 궁금한 블록 붙이기", "소리: `hamsterlite_play_note_for: 도 4 음을 0.5 박자 연주하기`", "바퀴: `hamsterlite_set_both_wheels_to: 왼쪽 바퀴 30 오른쪽 바퀴 30 (으)로 정하기`", "멈출 때: `hamsterlite_stop: 정지하기`"], tip: "바퀴 속도 블록은 ‘정지하기’ 전까지 계속 굴러가요.", failure: "시작 블록 아래에 ‘하드웨어’ 꾸러미의 블록을 하나 이상 붙여 주세요.", experiment: "로봇이 책상에서 떨어지지 않게 넓은 곳에서 실행해요. 집게·포트 블록은 부품이 없으면 반응하지 않아요.", optional: true, explore: true, robot: true },
+  { id: "robot-free", title: "탐구 · 햄스터S와 자유롭게 놀기", goal: "‘하드웨어’ 꾸러미의 블록을 마음껏 골라 햄스터S를 움직여 보세요. 정해진 답은 없어요.", hint: "‘하드웨어’ 꾸러미에서 궁금한 블록을 찾아 써 보세요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 아래에 궁금한 블록 붙이기", "소리: `hamsterlite_play_note_for: 도 4 음을 0.5 박자 연주하기`", "바퀴: `hamsterlite_set_both_wheels_to: 왼쪽 바퀴 30 오른쪽 바퀴 30 (으)로 정하기`", "그 아래 `wait_second: 2 초 기다리기` → `hamsterlite_stop: 정지하기`"], tip: "바퀴 속도 블록은 ‘기다리기’를 붙여야 그동안 굴러가요.", failure: "시작 블록 아래에 ‘하드웨어’ 꾸러미의 블록을 하나 이상 붙여 주세요.", experiment: "로봇이 책상에서 떨어지지 않게 넓은 곳에서 실행해요. 실행이 끝나면 로봇도 멈춰요. 집게·포트 블록은 부품이 없으면 반응하지 않아요.", optional: true, explore: true, robot: true },
   { id: "brick-bounce", title: "도전 · 벽돌에서도 튕기는 공", goal: "공이 벽돌1·벽돌2·벽돌3에 닿았을 때도 방향을 회전해 통통 튕기며 깨게 만들어요.", hint: "공의 `repeat_inf: 계속 반복하기` 안에 벽돌에 닿을 때 회전을 더해요.", steps: ["공의 반복 안에 `_if: 만일 참(이)라면`과 `reach_something: 마우스포인터에 닿았는가?`(▾를 벽돌1로)", "그 안에 `direction_relative: 180° 회전하기`를 넣어 벽돌에서 튕기게 해요", "아래에 벽돌2·벽돌3에 닿았을 때 180° 회전하는 만일도 더해요"], tip: "90°나 180° 회전 모두 벽돌에서 튕길 수 있어요.", failure: "공이 벽돌1·벽돌2·벽돌3에 닿았을 때도 이동 방향을 회전해 튕기도록 공의 반복 안에 조건을 넣어 주세요.", experiment: "시작하기를 누르고 공을 클릭해 공이 벽돌1·벽돌2·벽돌3을 깰 때마다 방향을 바꿔 튕겨 나오는지 확인해 보세요.", optional: true, objects: true, functions: true },
 ];
 
@@ -549,7 +549,8 @@ const OBJECT_EVENTS = ["when_run_button_click", "mouse_clicked", "when_object_cl
 
 export function missionBlockIssue(id: string, raw: unknown): string | null {
   const p = parseProgrammingProject(raw), allowed = MISSION_BLOCKS[id], mission = missionById(id);
-  if (!p || !allowed) return null;
+  // Free play accepts every block on any object, so nothing can be out of place.
+  if (!p || !allowed || mission?.explore) return null;
   const starts = (t: EntryNode[]) => t[0]?.type === "when_run_button_click" || (!!mission?.keyEvents && t[0]?.type === "when_some_key_pressed" && ["37", "38", "39", "40"].includes(String(t[0].params[1])));
   // Dog-free projects grade the start line of whichever object owns it, so it must be one object.
   const owners = p.free && !mission?.objects ? p.added.filter((o) => o.threads.some(starts)) : [];
