@@ -784,10 +784,9 @@ test("배지의 받은 수업은 최신 세 개만 보이고 나머지는 키보
   await showDashboardFixture(page, lessons, lessons.at(-1)!.id, work);
   await page.goto("/student/badges");
   const allClear = page.locator('[data-badge="all-clear"][data-earned="true"]');
-  // 올클리어 needs a challenge mission, so a lesson without one (hamster-robot) is finished without earning it.
+  // 올클리어 needs an optional mission; every programming lesson has one now (hamster-robot's is the explore mission).
   const newest = lessons.filter(lesson => missionsFor(lesson.id).some(mission => mission.optional)).reverse();
   expect(newest.length).toBeGreaterThan(3);
-  expect(newest.length).toBeLessThan(lessons.length);
   await expect(allClear.locator("p").filter({ hasText: /^받은 수업:/ })).toHaveText(`받은 수업: ${newest.slice(0, 3).map(lesson => lesson.title).join(", ")}`);
   await expect(allClear).toContainText(`${newest.length}개 수업에서 받음`);
   const more = allClear.locator("summary");

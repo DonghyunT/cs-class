@@ -254,8 +254,8 @@ function practiceLabel(lesson: Lesson, work: WorkSummary | null) {
     const required = requiredMissionsFor(lesson.id);
     const submitted = required.filter((mission) => work?.missions?.[mission.id]?.submission).length;
     const edited = work?.edited;
-    const challenge = missionsFor(lesson.id).some((mission) => mission.optional && work?.missions?.[mission.id]?.submission);
-    return `기본 ${submitted}/${required.length} 제출${challenge ? " · 도전 제출" : ""}${edited ? " · 수정 중" : ""}`;
+    const extra = missionsFor(lesson.id).find((mission) => mission.optional && work?.missions?.[mission.id]?.submission);
+    return `기본 ${submitted}/${required.length} 제출${extra ? extra.explore ? " · 탐구 제출" : " · 도전 제출" : ""}${edited ? " · 수정 중" : ""}`;
   }
   if (work?.submission) return work.edited ? "제출 완료 · 수정 중" : "제출 완료";
   if (lesson.practice.type === "flowchart") return `${Object.values(work?.missions ?? {}).filter(record => record.submission).length}/4 작품 제출${work?.review?.status === "pending" ? " · 확인 대기" : ""}`;

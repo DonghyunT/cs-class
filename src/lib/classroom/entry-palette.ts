@@ -16,9 +16,11 @@ export const ENTRY_PALETTE = [
 // The functions lesson adds Entry's function category: its ‘함수 만들기’ button, then each function's block.
 export const FUNCTION_PALETTE = { category: "func", blocks: ["functionAddButton"] } as const;
 
-// The robot lesson adds Entry's hardware category: the connect button first, then the Hamster-S blocks.
-export const ROBOT_PALETTE = { category: "arduino", blocks: ["arduino_lite_reconnect", "hamsterlite_hand_found", "hamsterlite_move_forward_for_secs", "hamsterlite_move_backward_for_secs", "hamsterlite_turn_for_secs", "hamsterlite_stop", "hamsterlite_set_led_to", "hamsterlite_clear_led", "hamsterlite_beep"] } as const;
+// The robot lesson adds Entry's hardware category: the connect button first, then every Hamster-S block in Entry's own order.
+export const ROBOT_PALETTE = { category: "arduino", blocks: ["arduino_lite_reconnect", "hamsterlite_hand_found", "hamsterlite_boolean", "hamsterlite_value", "hamsterlite_move_forward_once", "hamsterlite_turn_once", "hamsterlite_move_forward_for_secs", "hamsterlite_move_backward_for_secs", "hamsterlite_turn_for_secs", "hamsterlite_change_both_wheels_by", "hamsterlite_set_both_wheels_to", "hamsterlite_change_wheel_by", "hamsterlite_set_wheel_to", "hamsterlite_follow_line_using", "hamsterlite_follow_line_until", "hamsterlite_set_following_speed_to", "hamsterlite_stop", "hamsterlite_set_led_to", "hamsterlite_clear_led", "hamsterlite_beep", "hamsterlite_change_buzzer_by", "hamsterlite_set_buzzer_to", "hamsterlite_clear_buzzer", "hamsterlite_play_note", "hamsterlite_play_note_for", "hamsterlite_rest_for", "hamsterlite_change_tempo_by", "hamsterlite_set_tempo_to", "hamsterlite_set_port_to", "hamsterlite_change_output_by", "hamsterlite_set_output_to", "hamsterlite_gripper", "hamsterlite_release_gripper"] } as const;
 const ROBOT_BLOCKS: readonly string[] = ROBOT_PALETTE.blocks.slice(1);
+// The graded robot missions check these; the rest of the palette is for the explore mission.
+const ROBOT_BASIC = ["hamsterlite_hand_found", "hamsterlite_move_forward_for_secs", "hamsterlite_move_backward_for_secs", "hamsterlite_turn_for_secs", "hamsterlite_stop", "hamsterlite_set_led_to", "hamsterlite_clear_led", "hamsterlite_beep"];
 
 export const PALETTE_BLOCKS: ReadonlySet<string> = new Set([...ENTRY_PALETTE.flatMap((group) => group.blocks), ...ROBOT_BLOCKS]);
 // Literal inputs EntryJS nests inside other blocks.
@@ -73,9 +75,11 @@ export const MISSION_BLOCKS: Readonly<Record<string, ReadonlySet<string>>> = {
   ball: mission(BRICK_BALL),
   brick: mission(BRICK_BALL),
   "brick-bounce": mission(BRICK_BALL),
-  "robot-go": mission([...START, ...ROBOT_BLOCKS]),
-  "robot-signal": mission([...START, ...ROBOT_BLOCKS]),
-  "robot-sensor": mission([...START, "repeat_inf", "if_else", "_if", "boolean_not", ...ROBOT_BLOCKS]),
+  "robot-go": mission([...START, ...ROBOT_BASIC]),
+  "robot-signal": mission([...START, ...ROBOT_BASIC]),
+  "robot-sensor": mission([...START, "repeat_inf", "if_else", "_if", "boolean_not", ...ROBOT_BASIC]),
+  // Free play: every palette block is accepted.
+  "robot-free": new Set([...PALETTE_BLOCKS, ...VALUE_BLOCKS]),
 };
 
 export const BLOCK_LABELS: Readonly<Record<string, string>> = {
@@ -89,6 +93,12 @@ export const BLOCK_LABELS: Readonly<Record<string, string>> = {
   ask_and_wait: "( )을(를) 묻고 대답 기다리기", get_canvas_input_value: "대답", set_visible_answer: "대답 보이기·숨기기", get_variable: "변수 값", change_variable: "변수에 ( )만큼 더하기", set_variable: "변수를 ( )(으)로 정하기", show_variable: "변수 보이기", hide_variable: "변수 숨기기",
   text: "글자", number: "숫자", angle: "각도", True: "참", False: "거짓", color: "색", get_pictures: "모양",
   hamsterlite_hand_found: "손 찾음?", hamsterlite_move_forward_for_secs: "앞으로 ( )초 이동하기", hamsterlite_move_backward_for_secs: "뒤로 ( )초 이동하기", hamsterlite_turn_for_secs: "( )으로 ( )초 돌기", hamsterlite_stop: "정지하기", hamsterlite_set_led_to: "( ) LED를 ( )으로 정하기", hamsterlite_clear_led: "( ) LED 끄기", hamsterlite_beep: "삐 소리내기",
+  hamsterlite_boolean: "기울임·배터리 상태?", hamsterlite_value: "센서 값", hamsterlite_move_forward_once: "말판 앞으로 한 칸 이동하기", hamsterlite_turn_once: "말판 ( )으로 한 번 돌기",
+  hamsterlite_change_both_wheels_by: "왼쪽 바퀴 ( ) 오른쪽 바퀴 ( )만큼 바꾸기", hamsterlite_set_both_wheels_to: "왼쪽 바퀴 ( ) 오른쪽 바퀴 ( )(으)로 정하기", hamsterlite_change_wheel_by: "( ) 바퀴 ( )만큼 바꾸기", hamsterlite_set_wheel_to: "( ) 바퀴 ( )(으)로 정하기",
+  hamsterlite_follow_line_using: "( ) 선을 ( ) 바닥 센서로 따라가기", hamsterlite_follow_line_until: "( ) 선을 따라 ( ) 교차로까지 이동하기", hamsterlite_set_following_speed_to: "선 따라가기 속도를 ( )(으)로 정하기",
+  hamsterlite_change_buzzer_by: "버저 음을 ( )만큼 바꾸기", hamsterlite_set_buzzer_to: "버저 음을 ( )(으)로 정하기", hamsterlite_clear_buzzer: "버저 끄기", hamsterlite_play_note: "( ) ( ) 음을 연주하기", hamsterlite_play_note_for: "( ) ( ) 음을 ( )박자 연주하기",
+  hamsterlite_rest_for: "( )박자 쉬기", hamsterlite_change_tempo_by: "연주 속도를 ( )만큼 바꾸기", hamsterlite_set_tempo_to: "연주 속도를 ( ) BPM으로 정하기",
+  hamsterlite_set_port_to: "포트 ( )를 ( )으로 정하기", hamsterlite_change_output_by: "출력 ( )를 ( )만큼 바꾸기", hamsterlite_set_output_to: "출력 ( )를 ( )(으)로 정하기", hamsterlite_gripper: "집게 열기·닫기", hamsterlite_release_gripper: "집게 끄기",
 };
 
 // Sprites students can add as objects. Saved objects must use one of these files.
@@ -146,6 +156,12 @@ export const PALETTE_TEXT: Readonly<Record<string, string>> = {
   hide: "모양 숨기기", change_to_some_shape: "(모양 이름) 모양으로 바꾸기", change_to_next_shape: "다음 모양으로 바꾸기", dialog_time: "안녕! 을(를) 4 초 동안 말하기", dialog: "안녕! 을(를) 말하기",
   start_drawing: "그리기 시작하기", stop_drawing: "그리기 멈추기", brush_erase_all: "모든 붓 지우기",
   hamsterlite_hand_found: "손 찾음?", hamsterlite_move_forward_for_secs: "앞으로 1 초 이동하기", hamsterlite_move_backward_for_secs: "뒤로 1 초 이동하기", hamsterlite_turn_for_secs: "왼쪽 으로 1 초 돌기", hamsterlite_stop: "정지하기", hamsterlite_set_led_to: "왼쪽 LED를 빨간색 으로 정하기", hamsterlite_clear_led: "왼쪽 LED 끄기", hamsterlite_beep: "삐 소리내기",
+  wait_second: "2 초 기다리기", hamsterlite_boolean: "앞으로 기울임 ?", hamsterlite_value: "왼쪽 근접 센서", hamsterlite_move_forward_once: "말판 앞으로 한 칸 이동하기", hamsterlite_turn_once: "말판 왼쪽 으로 한 번 돌기",
+  hamsterlite_change_both_wheels_by: "왼쪽 바퀴 10 오른쪽 바퀴 10 만큼 바꾸기", hamsterlite_set_both_wheels_to: "왼쪽 바퀴 30 오른쪽 바퀴 30 (으)로 정하기", hamsterlite_change_wheel_by: "왼쪽 바퀴 10 만큼 바꾸기", hamsterlite_set_wheel_to: "왼쪽 바퀴 30 (으)로 정하기",
+  hamsterlite_follow_line_using: "검은색 선을 왼쪽 바닥 센서로 따라가기", hamsterlite_follow_line_until: "검은색 선을 따라 앞쪽 교차로까지 이동하기", hamsterlite_set_following_speed_to: "선 따라가기 속도를 5 (으)로 정하기",
+  hamsterlite_change_buzzer_by: "버저 음을 10 만큼 바꾸기", hamsterlite_set_buzzer_to: "버저 음을 1000 (으)로 정하기", hamsterlite_clear_buzzer: "버저 끄기", hamsterlite_play_note: "도 4 음을 연주하기", hamsterlite_play_note_for: "도 4 음을 0.5 박자 연주하기",
+  hamsterlite_rest_for: "0.25 박자 쉬기", hamsterlite_change_tempo_by: "연주 속도를 20 만큼 바꾸기", hamsterlite_set_tempo_to: "연주 속도를 60 BPM으로 정하기",
+  hamsterlite_set_port_to: "포트 A 를 아날로그 입력 으로 정하기", hamsterlite_change_output_by: "출력 A 를 10 만큼 바꾸기", hamsterlite_set_output_to: "출력 A 를 100 (으)로 정하기", hamsterlite_gripper: "집게 열기", hamsterlite_release_gripper: "집게 끄기",
   is_clicked: "마우스를 클릭했는가?", reach_something: "마우스포인터 에 닿았는가?", boolean_basic_operator: "10 = 10 (비교 6가지)", boolean_and_or: "참 그리고 참 · 참 또는 거짓", boolean_not: "참 (이)가 아니다",
   calc_basic: "10 + 10 (사칙연산 4가지)", coordinate_mouse: "마우스 x 좌푯값", quotient_and_mod: "10 / 10 의 몫", combine_something: "안녕! 과(와) 엔트리 을(를) 합친 값",
   ask_and_wait: "안녕! 을(를) 묻고 대답 기다리기", get_canvas_input_value: "대답", get_variable: "A 값", change_variable: "A 에 10 만큼 더하기", set_variable: "A 를 10 (으)로 정하기",
@@ -160,7 +176,9 @@ const UNLISTED: Readonly<Record<string, readonly string[]>> = {
   "robot-go": ["hamsterlite_hand_found"],
   "robot-signal": ["hamsterlite_hand_found"],
   "robot-sensor": ["boolean_not", "hamsterlite_move_forward_for_secs", "hamsterlite_move_backward_for_secs", "hamsterlite_turn_for_secs"],
+  // The explore mission lists the robot blocks and the few flow blocks they are combined with.
+  "robot-free": ENTRY_PALETTE.flatMap((group) => group.blocks as readonly string[]).filter((type) => !["when_run_button_click", "wait_second", "repeat_basic", "repeat_inf", "_if", "if_else"].includes(type)),
 };
-const LISTED_HARMLESS: Readonly<Record<string, readonly string[]>> = { brick: ["hide"], "brick-bounce": ["hide"] };
+const LISTED_HARMLESS: Readonly<Record<string, readonly string[]>> = { brick: ["hide"], "brick-bounce": ["hide"], "robot-free": ["wait_second"] };
 // Mission blocks shown to students in palette order; literal inputs, the harmless extras and same-meaning extras are left out.
 export const missionBlockTypes = (id: string): string[] => [...ENTRY_PALETTE.flatMap((group) => group.blocks), ...ROBOT_BLOCKS].filter((type) => MISSION_BLOCKS[id]?.has(type) && (!HARMLESS_BLOCKS.has(type) || LISTED_HARMLESS[id]?.includes(type)) && !ALSO_ACCEPTED.has(type) && !UNLISTED[id]?.includes(type));

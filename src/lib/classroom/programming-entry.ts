@@ -3,10 +3,11 @@ import { CAT_SPRITE, CONTAINER_BLOCKS, ENTRYBOT_SPRITE, ENTRY_PALETTE, ENTRY_SPR
 
 // `variables` shows A·B on the stage; `keyEvents` keeps the run waiting for arrow keys.
 // `objects` missions grade every object's event code instead of only the dog's.
+// `explore` marks an optional mission as free play (‘자유 탐구’) instead of a challenge.
 // `hint` is the summary line, `steps` the folded assembly order and `tip` one 💡 reason. They write
 // block chips as `type: text` (the Entry block type and the filled-in block a student builds);
 // read them with `hintParts`/`hintPlain`. `failure` is the grader's plain failure message.
-export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; steps: readonly string[]; tip?: string; failure: string; experiment: string; optional?: true; variables?: true; keyEvents?: true; objects?: true; functions?: true; robot?: true };
+export type ProgrammingMission = { id: string; title: string; goal: string; hint: string; steps: readonly string[]; tip?: string; failure: string; experiment: string; optional?: true; explore?: true; variables?: true; keyEvents?: true; objects?: true; functions?: true; robot?: true };
 
 // Every mission across lessons, keyed by an id no other lesson reuses. Grading and
 // saved records look missions up here; lessons list theirs in LESSON_MISSIONS.
@@ -51,6 +52,8 @@ export const PROGRAMMING_MISSIONS: readonly ProgrammingMission[] = [
     experiment: "실행한 뒤 햄스터S 앞에 손을 대었다 떼어 보세요. LED 색을 바꾸거나 한쪽만 켜면 어떻게 달라질까요?",
     robot: true,
   },
+  // Free play instead of a challenge: no set answer, any robot block under a start block passes.
+  { id: "robot-free", title: "탐구 · 햄스터S와 자유롭게 놀기", goal: "‘하드웨어’ 꾸러미의 블록을 마음껏 골라 햄스터S를 움직여 보세요. 정해진 답은 없어요.", hint: "‘하드웨어’ 꾸러미에서 궁금한 블록을 찾아 써 보세요.", steps: ["`when_run_button_click: 시작하기 버튼을 클릭했을 때` 아래에 궁금한 블록 붙이기", "소리: `hamsterlite_play_note_for: 도 4 음을 0.5 박자 연주하기`", "바퀴: `hamsterlite_set_both_wheels_to: 왼쪽 바퀴 30 오른쪽 바퀴 30 (으)로 정하기`", "멈출 때: `hamsterlite_stop: 정지하기`"], tip: "바퀴 속도 블록은 ‘정지하기’ 전까지 계속 굴러가요.", failure: "시작 블록 아래에 ‘하드웨어’ 꾸러미의 블록을 하나 이상 붙여 주세요.", experiment: "로봇이 책상에서 떨어지지 않게 넓은 곳에서 실행해요. 집게·포트 블록은 부품이 없으면 반응하지 않아요.", optional: true, explore: true, robot: true },
   { id: "brick-bounce", title: "도전 · 벽돌에서도 튕기는 공", goal: "공이 벽돌1·벽돌2·벽돌3에 닿았을 때도 방향을 회전해 통통 튕기며 깨게 만들어요.", hint: "공의 `repeat_inf: 계속 반복하기` 안에 벽돌에 닿을 때 회전을 더해요.", steps: ["공의 반복 안에 `_if: 만일 참(이)라면`과 `reach_something: 마우스포인터에 닿았는가?`(▾를 벽돌1로)", "그 안에 `direction_relative: 180° 회전하기`를 넣어 벽돌에서 튕기게 해요", "아래에 벽돌2·벽돌3에 닿았을 때 180° 회전하는 만일도 더해요"], tip: "90°나 180° 회전 모두 벽돌에서 튕길 수 있어요.", failure: "공이 벽돌1·벽돌2·벽돌3에 닿았을 때도 이동 방향을 회전해 튕기도록 공의 반복 안에 조건을 넣어 주세요.", experiment: "시작하기를 누르고 공을 클릭해 공이 벽돌1·벽돌2·벽돌3을 깰 때마다 방향을 바꿔 튕겨 나오는지 확인해 보세요.", optional: true, objects: true, functions: true },
 ];
 
@@ -69,7 +72,7 @@ const LESSON_MISSIONS: Readonly<Record<string, { active: readonly string[]; reti
   loops: { active: ["square", "polygon", "tree", "safe"] },
   functions: { active: ["cat-walk", "windows", "fix-shapes", "flower"] },
   "brick-breaker": { active: ["paddle", "ball", "brick", "brick-bounce"] },
-  "hamster-robot": { active: ["robot-go", "robot-signal", "robot-sensor"] },
+  "hamster-robot": { active: ["robot-go", "robot-signal", "robot-sensor", "robot-free"] },
 };
 // These lessons start without the dog: every object is equal and students pick from the Entry library.
 const FREE_MISSIONS: ReadonlySet<string> = new Set([...LESSON_MISSIONS.conditionals.active, ...LESSON_MISSIONS.conditionals.retired!, ...LESSON_MISSIONS.loops.active, ...LESSON_MISSIONS.functions.active, ...LESSON_MISSIONS["brick-breaker"].active, ...LESSON_MISSIONS["hamster-robot"].active]);
@@ -395,8 +398,27 @@ const REPORTER_BLOCKS: ReadonlySet<string> = new Set([
   ...VALUE_BLOCKS,
   ...ENTRY_PALETTE.find((g) => g.category === "judgement")!.blocks,
   ...ENTRY_PALETTE.find((g) => g.category === "calc")!.blocks.filter((b) => !["choose_project_timer_action", "set_visible_project_timer"].includes(b)),
-  "get_canvas_input_value", "get_variable", "hamsterlite_hand_found",
+  "get_canvas_input_value", "get_variable", "hamsterlite_hand_found", "hamsterlite_boolean", "hamsterlite_value",
 ]);
+// The other Hamster-S blocks as Entry words them: `%n` is the n-th saved value, shown through that slot's dropdown names.
+const ROBOT_ONOFF: Readonly<Record<string, string>> = { OPEN: "열기", CLOSE: "닫기" };
+const ROBOT_STATES: Readonly<Record<string, string>> = { TILT_FORWARD: "앞으로 기울임", TILT_BACKWARD: "뒤로 기울임", TILT_LEFT: "왼쪽으로 기울임", TILT_RIGHT: "오른쪽으로 기울임", TILT_FLIP: "거꾸로 뒤집음", TILT_NOT: "기울이지 않음", BATTERY_NORMAL: "배터리 정상", BATTERY_LOW: "배터리 부족", BATTERY_EMPTY: "배터리 없음" };
+const ROBOT_SENSORS: Readonly<Record<string, string>> = { leftProximity: "왼쪽 근접 센서", rightProximity: "오른쪽 근접 센서", leftFloor: "왼쪽 바닥 센서", rightFloor: "오른쪽 바닥 센서", accelerationX: "x축 가속도", accelerationY: "y축 가속도", accelerationZ: "z축 가속도", light: "밝기", temperature: "온도", signalStrength: "신호 세기", inputA: "입력 A", inputB: "입력 B" };
+const ROBOT_LINES: Readonly<Record<string, string>> = { BLACK: "검은색", WHITE: "하얀색" };
+const ROBOT_WAYS: Readonly<Record<string, string>> = { ...ROBOT_SIDES, FRONT: "앞쪽", REAR: "뒤쪽" };
+const ROBOT_NOTES: Readonly<Record<string, string>> = { "4": "도", "5": "도♯(레♭)", "6": "레", "7": "레♯(미♭)", "8": "미", "9": "파", "10": "파♯(솔♭)", "11": "솔", "12": "솔♯(라♭)", "13": "라", "14": "라♯(시♭)", "15": "시" };
+const ROBOT_PORTS: Readonly<Record<string, string>> = { A: "A", B: "B", AB: "A와 B" };
+const ROBOT_MODES: Readonly<Record<string, string>> = { "0": "아날로그 입력", "1": "디지털 입력", "8": "서보 출력", "9": "PWM 출력", "10": "디지털 출력" };
+const ROBOT_TEXT: Readonly<Record<string, readonly [string, ...(Readonly<Record<string, string>> | null)[]]>> = {
+  hamsterlite_boolean: ["%1?", ROBOT_STATES], hamsterlite_value: ["%1", ROBOT_SENSORS],
+  hamsterlite_turn_once: ["말판 %1으로 한 번 돌기", ROBOT_SIDES],
+  hamsterlite_change_both_wheels_by: ["왼쪽 바퀴 %1 오른쪽 바퀴 %2만큼 바꾸기"], hamsterlite_set_both_wheels_to: ["왼쪽 바퀴 %1 오른쪽 바퀴 %2(으)로 정하기"],
+  hamsterlite_change_wheel_by: ["%1 바퀴 %2만큼 바꾸기", ROBOT_SIDES], hamsterlite_set_wheel_to: ["%1 바퀴 %2(으)로 정하기", ROBOT_SIDES],
+  hamsterlite_follow_line_using: ["%1 선을 %2 바닥 센서로 따라가기", ROBOT_LINES, ROBOT_SIDES], hamsterlite_follow_line_until: ["%1 선을 따라 %2 교차로까지 이동하기", ROBOT_LINES, ROBOT_WAYS],
+  hamsterlite_play_note: ["%1 %2 음을 연주하기", ROBOT_NOTES], hamsterlite_play_note_for: ["%1 %2 음을 %3박자 연주하기", ROBOT_NOTES],
+  hamsterlite_set_port_to: ["포트 %1를 %2으로 정하기", ROBOT_PORTS, ROBOT_MODES], hamsterlite_change_output_by: ["출력 %1를 %2만큼 바꾸기", ROBOT_PORTS], hamsterlite_set_output_to: ["출력 %1를 %2(으)로 정하기", ROBOT_PORTS],
+  hamsterlite_gripper: ["집게 %1", ROBOT_ONOFF],
+};
 
 // Student variables are shown by the names in `names` (id → name, from `variableNames`); a deleted one as Entry shows it.
 const variableName = (id: string, names: Readonly<Record<string, string>> = {}) => Object.hasOwn(names, id) ? names[id] : id === COUNTER.id ? COUNTER.name : id === SCORE_VARIABLE.id ? SCORE_VARIABLE.name : LESSON_VARIABLES.includes(id) ? id.replace("cs-", "변수 ") : "대상 없음";
@@ -412,6 +434,10 @@ export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, 
     const s = String(v);
     if (s.startsWith("cs-") || s === SCORE_VARIABLE.id || Object.hasOwn(names, s)) return variableName(s, names);
     return DROPDOWN_LABELS[s] ?? s;
+  };
+  const robotText = (n: EntryNode): string | undefined => {
+    const form = ROBOT_TEXT[n.type];
+    return form && form[0].replace(/%(\d)/g, (_, slot) => { const labels = (form.slice(1) as (Readonly<Record<string, string>> | null)[])[Number(slot) - 1] ?? {}, saved = String(n.params[Number(slot) - 1]); return Object.hasOwn(labels, saved) ? labels[saved] : val(n, Number(slot) - 1); });
   };
   const expression = (n: EntryNode): string => {
     if (n.type === "get_canvas_input_value") return "대답";
@@ -444,7 +470,7 @@ export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, 
     if (n.type === "replace_string") return `${val(n, 1)}의 ${val(n, 3)}을(를) ${val(n, 5)}(으)로 바꾸기`;
     if (n.type === "reverse_of_string") return `${val(n, 1)} 뒤집기`;
     if (n.type === "change_string_case") return `${val(n, 1)}의 ${val(n, 3)} 바꾸기`;
-    return blockLabel(n.type);
+    return robotText(n) ?? blockLabel(n.type);
   };
   const line = (n: EntryNode): string => {
     const callee = functionCallId(n.type);
@@ -488,6 +514,8 @@ export function formatEntryNode(node: EntryNode, names: Readonly<Record<string, 
     if (n.type === "hamsterlite_turn_for_secs") return `${picked(ROBOT_SIDES, 0)}으로 ${val(n, 1)}초 돌기`;
     if (n.type === "hamsterlite_set_led_to") return `${picked(ROBOT_SIDES, 0)} LED를 ${picked(LED_COLORS, 1)}으로 정하기`;
     if (n.type === "hamsterlite_clear_led") return `${picked(ROBOT_SIDES, 0)} LED 끄기`;
+    const robot = robotText(n);
+    if (robot) return robot;
     const label = blockLabel(n.type);
     return label.includes("( )") ? label.replace("( )", val(n, 0)) : label;
   };
